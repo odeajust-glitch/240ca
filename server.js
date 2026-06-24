@@ -16,6 +16,7 @@ async function indexCroa() {
   const cases = manifest.map((entry) => ({
     filePath: path.join(CROA_DIR, entry.file),
     caseLabel: `${entry.caseLabel} (${entry.date})`,
+    date: entry.date,
   }));
   return indexCaseBatch(cases, 'croa');
 }
@@ -32,7 +33,7 @@ app.get('/api/sources', (req, res) => {
 });
 
 app.post('/api/ask', async (req, res) => {
-  const { question, sources: requestedSources } = req.body;
+  const { question, sources: requestedSources, dateFrom, dateTo } = req.body;
   if (!question || !question.trim()) {
     return res.status(400).json({ error: 'Question is required.' });
   }
@@ -57,7 +58,12 @@ app.post('/api/ask', async (req, res) => {
       if (valid.length < ALL_SOURCE_IDS.length) sources = valid;
     }
 
-    const chunks = searchIndex.search(question, { topK: 9, sources });
+    const chunks = searchIndex.search(question, {
+      topK: 9,
+      sources,
+      dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null,
+      dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null,
+    });
 
     if (chunks.length === 0) {
       send({ type: 'chunk', text: 'No matching passages were found in the selected document(s) for this question.' });

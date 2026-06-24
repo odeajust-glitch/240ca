@@ -81,6 +81,32 @@
   }
   .source-item input { accent-color: var(--blue); width: 15px; height: 15px; }
   .source-item label { cursor: pointer; }
+  .date-range {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .date-range.show { display: block; }
+  .date-range .date-range-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .date-range .date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .date-range input[type="date"] {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .date-range .date-sep { color: var(--muted); font-size: 13px; }
   .search-box {
     display: flex;
     gap: 8px;
@@ -166,6 +192,14 @@
         </span>
       </div>
       <div class="source-list" id="sourceList">Loading sources&hellip;</div>
+      <div class="date-range" id="croaDateRange">
+        <div class="date-range-label">CROA case date range (optional)</div>
+        <div class="date-inputs">
+          <input type="date" id="croaDateFrom">
+          <span class="date-sep">to</span>
+          <input type="date" id="croaDateTo">
+        </div>
+      </div>
     </div>
 
     <div class="search-box">
@@ -190,6 +224,13 @@ let sourceNames = {};
 
 const sourceListEl = document.getElementById('sourceList');
 
+const croaDateRangeEl = document.getElementById('croaDateRange');
+
+function updateCroaDateRangeVisibility() {
+  const croaBox = document.getElementById('src-croa');
+  croaDateRangeEl.classList.toggle('show', !!croaBox?.checked);
+}
+
 async function loadSources() {
   try {
     const res = await fetch('/api/sources');
@@ -206,6 +247,10 @@ async function loadSources() {
         </div>`
       )
       .join('');
+
+    const croaBox = document.getElementById('src-croa');
+    if (croaBox) croaBox.addEventListener('change', updateCroaDateRangeVisibility);
+    updateCroaDateRangeVisibility();
   } catch (err) {
     sourceListEl.textContent = 'Could not load document list.';
   }
@@ -222,12 +267,14 @@ document.getElementById('selectAll').addEventListener('click', () => {
     const el = document.getElementById(`src-${s.id}`);
     if (el) el.checked = true;
   });
+  updateCroaDateRangeVisibility();
 });
 document.getElementById('selectNone').addEventListener('click', () => {
   sourceList.forEach((s) => {
     const el = document.getElementById(`src-${s.id}`);
     if (el) el.checked = false;
   });
+  updateCroaDateRangeVisibility();
 });
 
 loadSources();
@@ -268,11 +315,14 @@ async function ask() {
   citationsEl.innerHTML = '';
   answerEl.textContent = '';
 
+  const dateFrom = document.getElementById('croaDateFrom').value || null;
+  const dateTo = document.getElementById('croaDateTo').value || null;
+
   try {
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, sources }),
+      body: JSON.stringify({ question, sources, dateFrom, dateTo }),
     });
 
     if (!res.ok) {
