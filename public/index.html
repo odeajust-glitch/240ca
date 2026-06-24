@@ -243,7 +243,8 @@ function renderCitations(citations) {
   citationsEl.innerHTML = citations
     .map((c) => {
       const docName = sourceNames[c.source] || c.source;
-      return `<div class="citation"><div class="label">${escapeHtml(docName)} &middot; page ${c.page}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
+      const locator = /^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page;
+      return `<div class="citation"><div class="label">${escapeHtml(docName)} &middot; ${escapeHtml(String(locator))}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
     })
     .join('');
   citationsEl.classList.add('show');

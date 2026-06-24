@@ -1,10 +1,24 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const { buildIndex } = require('./lib/indexer');
+const { buildIndex, indexCaseBatch } = require('./lib/indexer');
 const { SearchIndex } = require('./lib/search');
 const { streamKimi } = require('./lib/kimi');
 const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
+
+const CROA_DIR = path.join(__dirname, 'data', 'croa');
+const CROA_MANIFEST_PATH = path.join(__dirname, 'data', 'croa_manifest.json');
+
+async function indexCroa() {
+  if (!fs.existsSync(CROA_MANIFEST_PATH)) return [];
+  const manifest = JSON.parse(fs.readFileSync(CROA_MANIFEST_PATH, 'utf-8'));
+  const cases = manifest.map((entry) => ({
+    filePath: path.join(CROA_DIR, entry.file),
+    caseLabel: `${entry.caseLabel} (${entry.date})`,
+  }));
+  return indexCaseBatch(cases, 'croa');
+}
 
 const PORT = process.env.PORT || 5174;
 const app = express();
@@ -81,9 +95,14 @@ app.get('/api/status', (req, res) => {
 
 async function start() {
   console.log('Indexing collective agreements...');
-  const chunks = await buildIndex(SOURCES.map(({ filePath, id }) => ({ filePath, label: id })));
-  searchIndex = new SearchIndex(chunks);
-  console.log(`Indexed ${chunks.length} chunks.`);
+  const staticSources = SOURCES.filter((s) => !s.dynamic);
+  const chunks = await buildIndex(staticSources.map(({ filePath, id }) => ({ filePath, label: id })));
+
+  const croaChunks = await indexCroa();
+  console.log(`Indexed ${croaChunks.length} CROA case chunks.`);
+
+  searchIndex = new SearchIndex([...chunks, ...croaChunks]);
+  console.log(`Indexed ${searchIndex.chunks.length} total chunks.`);
 
   app.listen(PORT, () => {
     console.log(`Collective Agreement Search running at http://localhost:${PORT}`);
