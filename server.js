@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5174;
 const ALWAYS_INCLUDED = ['rest_rules', 'crew_calling'];
 const CRAFT_SOURCES = {
   conductors: ['conductors', 'conductors_addendum'],
-  engineers: ['engineers'],
+  engineers: ['engineers', 'mileage_guidelines'],
 };
 const app = express();
 app.use(express.json());
@@ -78,6 +78,7 @@ async function start() {
     { filePath: path.join(__dirname, 'data', 'engineers.pdf'), label: 'engineers' },
     { filePath: path.join(__dirname, 'data', 'rest_rules.pdf'), label: 'rest_rules' },
     { filePath: path.join(__dirname, 'data', 'crew_calling_manual.pdf'), label: 'crew_calling' },
+    { filePath: path.join(__dirname, 'data', 'mileage_guidelines.txt'), label: 'mileage_guidelines' },
   ]);
   searchIndex = new SearchIndex(chunks);
   console.log(`Indexed ${chunks.length} chunks.`);

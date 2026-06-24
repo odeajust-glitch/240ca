@@ -206,6 +206,7 @@ function renderCitations(citations) {
         engineers: 'Engineers Agreement',
         rest_rules: 'Duty &amp; Rest Period Rules (Transport Canada)',
         crew_calling: 'Crew Calling Manual (TCRC Sarnia)',
+        mileage_guidelines: 'Engineer Mileage Committee Operating Guidelines',
       };
       const docName = docNames[c.source] || c.source;
       return `<div class="citation"><div class="label">${docName} &middot; page ${c.page}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
