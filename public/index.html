@@ -39,27 +39,48 @@
     margin: 0 auto;
     padding: 24px 20px 60px;
   }
-  .scope {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    margin-bottom: 16px;
-  }
-  .scope button {
+  .sources-filter {
     background: var(--panel);
     border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .sources-filter .filter-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .sources-filter .filter-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .sources-filter .filter-actions button {
+    background: none;
+    border: none;
     color: var(--blue);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
     cursor: pointer;
+    padding: 2px 6px;
+    text-decoration: underline;
   }
-  .scope button.active {
-    background: var(--blue);
-    color: white;
-    border-color: var(--blue);
+  .source-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+  }
+  .source-item input { accent-color: var(--blue); width: 15px; height: 15px; }
+  .source-item label { cursor: pointer; }
   .search-box {
     display: flex;
     gap: 8px;
@@ -128,39 +149,23 @@
   }
   .loading { color: var(--muted); font-size: 14px; margin-top: 16px; text-align: center; }
   .error { color: #c0392b; }
-  .sources-badge {
-    margin-top: 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255, 184, 34, 0.18);
-    border: 1px solid rgba(255, 184, 34, 0.55);
-    color: #fff7e6;
-    font-size: 11.5px;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 14px;
-  }
-  .sources-badge .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--gold);
-    flex-shrink: 0;
-  }
 </style>
 </head>
 <body>
   <header>
     <h1>Collective Agreement Search</h1>
     <div class="sub">TCRC Division 240 &middot; Conductors &amp; Locomotive Engineers</div>
-    <div class="sources-badge"><span class="dot"></span>Also searches Transport Canada's Duty &amp; Rest Period Rules and the Sarnia Crew Calling Manual</div>
   </header>
   <main>
-    <div class="scope">
-      <button data-scope="" class="active">Both Agreements</button>
-      <button data-scope="conductors">Conductors</button>
-      <button data-scope="engineers">Engineers</button>
+    <div class="sources-filter">
+      <div class="filter-head">
+        <span class="filter-title">Documents to search</span>
+        <span class="filter-actions">
+          <button type="button" id="selectAll">All</button>
+          <button type="button" id="selectNone">None</button>
+        </span>
+      </div>
+      <div class="source-list" id="sourceList">Loading sources&hellip;</div>
     </div>
 
     <div class="search-box">
@@ -180,15 +185,52 @@
   </main>
 
 <script>
-let scope = '';
+let sourceList = [];
+let sourceNames = {};
 
-document.querySelectorAll('.scope button').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.scope button').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    scope = btn.dataset.scope;
+const sourceListEl = document.getElementById('sourceList');
+
+async function loadSources() {
+  try {
+    const res = await fetch('/api/sources');
+    const data = await res.json();
+    sourceList = data.sources;
+    sourceNames = Object.fromEntries(sourceList.map((s) => [s.id, s.name]));
+
+    sourceListEl.innerHTML = sourceList
+      .map(
+        (s) => `
+        <div class="source-item">
+          <input type="checkbox" id="src-${s.id}" value="${s.id}" checked>
+          <label for="src-${s.id}">${escapeHtml(s.name)}</label>
+        </div>`
+      )
+      .join('');
+  } catch (err) {
+    sourceListEl.textContent = 'Could not load document list.';
+  }
+}
+
+function getCheckedSources() {
+  return sourceList
+    .map((s) => s.id)
+    .filter((id) => document.getElementById(`src-${id}`)?.checked);
+}
+
+document.getElementById('selectAll').addEventListener('click', () => {
+  sourceList.forEach((s) => {
+    const el = document.getElementById(`src-${s.id}`);
+    if (el) el.checked = true;
   });
 });
+document.getElementById('selectNone').addEventListener('click', () => {
+  sourceList.forEach((s) => {
+    const el = document.getElementById(`src-${s.id}`);
+    if (el) el.checked = false;
+  });
+});
+
+loadSources();
 
 const questionEl = document.getElementById('question');
 const askBtn = document.getElementById('askBtn');
@@ -200,16 +242,8 @@ function renderCitations(citations) {
   if (!citations || !citations.length) return;
   citationsEl.innerHTML = citations
     .map((c) => {
-      const docNames = {
-        conductors: 'Conductors Agreement',
-        conductors_addendum: 'Conductors Agreement Addenda',
-        engineers: 'Engineers Agreement',
-        rest_rules: 'Duty &amp; Rest Period Rules (Transport Canada)',
-        crew_calling: 'Crew Calling Manual (TCRC Sarnia)',
-        mileage_guidelines: 'Engineer Mileage Committee Operating Guidelines',
-      };
-      const docName = docNames[c.source] || c.source;
-      return `<div class="citation"><div class="label">${docName} &middot; page ${c.page}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
+      const docName = sourceNames[c.source] || c.source;
+      return `<div class="citation"><div class="label">${escapeHtml(docName)} &middot; page ${c.page}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
     })
     .join('');
   citationsEl.classList.add('show');
@@ -218,6 +252,13 @@ function renderCitations(citations) {
 async function ask() {
   const question = questionEl.value.trim();
   if (!question) return;
+
+  const sources = getCheckedSources();
+  if (sources.length === 0) {
+    answerEl.innerHTML = '<span class="error">Select at least one document to search.</span>';
+    answerEl.classList.add('show');
+    return;
+  }
 
   askBtn.disabled = true;
   loadingEl.style.display = 'block';
@@ -230,7 +271,7 @@ async function ask() {
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, scope }),
+      body: JSON.stringify({ question, sources }),
     });
 
     if (!res.ok) {

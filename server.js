@@ -4,21 +4,21 @@ const express = require('express');
 const { buildIndex } = require('./lib/indexer');
 const { SearchIndex } = require('./lib/search');
 const { streamKimi } = require('./lib/kimi');
+const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
 
 const PORT = process.env.PORT || 5174;
-const ALWAYS_INCLUDED = ['rest_rules', 'crew_calling'];
-const CRAFT_SOURCES = {
-  conductors: ['conductors', 'conductors_addendum'],
-  engineers: ['engineers', 'mileage_guidelines'],
-};
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 let searchIndex = null;
 
+app.get('/api/sources', (req, res) => {
+  res.json({ sources: SOURCES.map(({ id, name }) => ({ id, name })) });
+});
+
 app.post('/api/ask', async (req, res) => {
-  const { question, scope } = req.body;
+  const { question, sources: requestedSources } = req.body;
   if (!question || !question.trim()) {
     return res.status(400).json({ error: 'Question is required.' });
   }
@@ -32,12 +32,21 @@ app.post('/api/ask', async (req, res) => {
   const send = (obj) => res.write(JSON.stringify(obj) + '\n');
 
   try {
-    const craft = scope === 'conductors' || scope === 'engineers' ? scope : null;
-    const sources = craft ? [...CRAFT_SOURCES[craft], ...ALWAYS_INCLUDED] : null;
+    let sources = null;
+    if (Array.isArray(requestedSources) && requestedSources.length > 0) {
+      const valid = requestedSources.filter((id) => ALL_SOURCE_IDS.includes(id));
+      if (valid.length === 0) {
+        send({ type: 'chunk', text: 'No documents are selected to search. Enable at least one source.' });
+        send({ type: 'done', citations: [] });
+        return res.end();
+      }
+      if (valid.length < ALL_SOURCE_IDS.length) sources = valid;
+    }
+
     const chunks = searchIndex.search(question, { topK: 9, sources });
 
     if (chunks.length === 0) {
-      send({ type: 'chunk', text: 'No matching passages were found in the agreement(s) for this question.' });
+      send({ type: 'chunk', text: 'No matching passages were found in the selected document(s) for this question.' });
       send({ type: 'done', citations: [] });
       return res.end();
     }
@@ -72,14 +81,7 @@ app.get('/api/status', (req, res) => {
 
 async function start() {
   console.log('Indexing collective agreements...');
-  const chunks = await buildIndex([
-    { filePath: path.join(__dirname, 'data', 'conductors.pdf'), label: 'conductors' },
-    { filePath: path.join(__dirname, 'data', 'conductors_addendum.pdf'), label: 'conductors_addendum' },
-    { filePath: path.join(__dirname, 'data', 'engineers.pdf'), label: 'engineers' },
-    { filePath: path.join(__dirname, 'data', 'rest_rules.pdf'), label: 'rest_rules' },
-    { filePath: path.join(__dirname, 'data', 'crew_calling_manual.pdf'), label: 'crew_calling' },
-    { filePath: path.join(__dirname, 'data', 'mileage_guidelines.txt'), label: 'mileage_guidelines' },
-  ]);
+  const chunks = await buildIndex(SOURCES.map(({ filePath, id }) => ({ filePath, label: id })));
   searchIndex = new SearchIndex(chunks);
   console.log(`Indexed ${chunks.length} chunks.`);
 
