@@ -2,9 +2,13 @@
 // and keep only the ones within a recent date window (based on the
 // award's actual "Heard in ..., <date>" text, not the case number).
 //
-// Usage: node scripts/fetch-croa.js [yearsBack]
+// Usage: node scripts/fetch-croa.js [yearsBack] [minCandidateNum]
 // Downloads land in data/croa/, and a manifest is written to
-// data/croa_manifest.json for server.js to index.
+// data/croa_manifest.json for server.js to index. minCandidateNum is a
+// lower bound on case number to even bother checking (found by sampling
+// a few award PDFs' real "Heard in ..., <date>" text for the target
+// years-back window) — pick it a bit below the true boundary as a
+// safety margin, since case numbers aren't perfectly chronological.
 
 const fs = require('fs');
 const path = require('path');
@@ -13,7 +17,7 @@ const { PDFParse } = require('pdf-parse');
 const LINKS_FILE = path.join(__dirname, '..', 'croa_all_links.txt');
 const CROA_DIR = path.join(__dirname, '..', 'data', 'croa');
 const MANIFEST_PATH = path.join(__dirname, '..', 'data', 'croa_manifest.json');
-const MIN_CANDIDATE_NUM = 4650; // safety margin below the known ~5yr boundary
+const MIN_CANDIDATE_NUM = parseInt(process.argv[3], 10) || 4650;
 
 const MONTHS = {
   january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
