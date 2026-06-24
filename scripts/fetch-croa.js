@@ -41,11 +41,23 @@ function caseLabelFromFilename(filename) {
   return `${m[1].toUpperCase()} ${m[2]}`;
 }
 
-async function downloadFile(url) {
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const buf = Buffer.from(await res.arrayBuffer());
-  return buf;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function downloadFile(url, attempts = 4) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      return buf;
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+      await sleep(800 * (i + 1)); // backoff: 800ms, 1600ms, 2400ms
+    }
+  }
+  return null;
 }
 
 async function main() {
@@ -110,8 +122,12 @@ async function main() {
       console.error(`Error on ${filename}: ${err.message}`);
     }
 
+    // small delay between requests so we don't hammer croa.com's server
+    await sleep(120);
+
     if (checked % 50 === 0) {
       console.log(`...${checked}/${candidates.length} checked, ${kept} kept, ${failed} failed`);
+      fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2)); // incremental save
     }
   }
 
