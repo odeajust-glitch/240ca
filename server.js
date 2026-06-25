@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let searchIndex = null;
 
 app.get('/api/sources', (req, res) => {
-  res.json({ sources: SOURCES.map(({ id, name }) => ({ id, name })) });
+  res.json({ sources: SOURCES.map(({ id, name, crafts }) => ({ id, name, crafts })) });
 });
 
 app.post('/api/ask', async (req, res) => {

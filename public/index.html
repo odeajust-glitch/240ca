@@ -68,6 +68,23 @@
     padding: 2px 6px;
     text-decoration: underline;
   }
+  .craft-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .craft-btn {
+    background: var(--panel);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .craft-btn:hover { background: rgba(26, 102, 176, 0.08); }
+  .craft-btn.active { background: var(--blue); color: #fff; }
   .source-list {
     display: flex;
     flex-direction: column;
@@ -200,6 +217,17 @@
     padding-top: 16px;
     border-top: 1px dashed var(--border);
   }
+  .answer-divider {
+    display: block;
+    margin: 20px 0 16px;
+    padding: 4px 0 4px 10px;
+    border-left: 3px solid var(--gold);
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
   .spinner {
     width: 13px;
     height: 13px;
@@ -240,6 +268,10 @@
           <button type="button" id="selectAll">All</button>
           <button type="button" id="selectNone">None</button>
         </span>
+      </div>
+      <div class="craft-buttons">
+        <button type="button" class="craft-btn" id="craftConductor">Conductor</button>
+        <button type="button" class="craft-btn" id="craftEngineer">Engineer</button>
       </div>
       <div class="source-list" id="sourceList">Loading sources&hellip;</div>
       <div class="date-range" id="croaDateRange">
@@ -302,6 +334,11 @@ async function loadSources() {
     const croaBox = document.getElementById('src-croa');
     if (croaBox) croaBox.addEventListener('change', updateCroaDateRangeVisibility);
     updateCroaDateRangeVisibility();
+
+    sourceList.forEach((s) => {
+      const el = document.getElementById(`src-${s.id}`);
+      if (el) el.addEventListener('change', clearCraftActiveState);
+    });
   } catch (err) {
     sourceListEl.textContent = 'Could not load document list.';
   }
@@ -313,11 +350,16 @@ function getCheckedSources() {
     .filter((id) => document.getElementById(`src-${id}`)?.checked);
 }
 
+function clearCraftActiveState() {
+  document.querySelectorAll('.craft-btn').forEach((b) => b.classList.remove('active'));
+}
+
 document.getElementById('selectAll').addEventListener('click', () => {
   sourceList.forEach((s) => {
     const el = document.getElementById(`src-${s.id}`);
     if (el) el.checked = true;
   });
+  clearCraftActiveState();
   updateCroaDateRangeVisibility();
 });
 document.getElementById('selectNone').addEventListener('click', () => {
@@ -325,8 +367,22 @@ document.getElementById('selectNone').addEventListener('click', () => {
     const el = document.getElementById(`src-${s.id}`);
     if (el) el.checked = false;
   });
+  clearCraftActiveState();
   updateCroaDateRangeVisibility();
 });
+
+function selectCraft(craft, btn) {
+  sourceList.forEach((s) => {
+    const el = document.getElementById(`src-${s.id}`);
+    if (el) el.checked = (s.crafts || []).includes(craft);
+  });
+  document.querySelectorAll('.craft-btn').forEach((b) => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateCroaDateRangeVisibility();
+}
+
+document.getElementById('craftConductor').addEventListener('click', (e) => selectCraft('conductor', e.target));
+document.getElementById('craftEngineer').addEventListener('click', (e) => selectCraft('engineer', e.target));
 
 loadSources();
 
@@ -408,6 +464,17 @@ function addWaitingNote(text) {
   return note;
 }
 
+// Once the deeper-search answer actually starts streaming, the transient
+// spinner note becomes a permanent labeled divider instead of disappearing
+// — keeps a clear, lasting boundary between the two answers.
+function settleWaitingNoteIntoDivider(note) {
+  note.className = 'answer-divider';
+  note.innerHTML = '';
+  const label = document.createElement('span');
+  label.textContent = 'Deeper search result';
+  note.appendChild(label);
+}
+
 function addErrorNote(text) {
   const note = document.createElement('span');
   note.className = 'error';
@@ -482,7 +549,7 @@ async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append,
           renderCitations(evt.citations);
         } else if (evt.type === 'chunk') {
           if (waitingNote) {
-            waitingNote.remove();
+            settleWaitingNoteIntoDivider(waitingNote);
             waitingNote = null;
           }
           if (!started) {
