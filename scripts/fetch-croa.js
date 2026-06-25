@@ -24,15 +24,33 @@ const MONTHS = {
   july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
 };
 
+const MONTH_NAMES = 'January|February|March|April|May|June|July|August|September|October|November|December';
+
 function parseHearingDate(text) {
-  const m = text.match(
-    /heard[^.]{0,80}?,\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s*(\d{4})/i
+  // Two date formats appear across the archive's history:
+  //   "Month Day[st/nd/rd/th], Year"  e.g. "July 5th, 1965"
+  //   "Day Month Year"                e.g. "Tuesday 12 November 1991" (no comma)
+  const monthDayYear = text.match(
+    new RegExp(`heard[^.]{0,80}?,\\s*(${MONTH_NAMES})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})`, 'i')
   );
-  if (!m) return null;
-  const month = MONTHS[m[1].toLowerCase()];
-  const day = parseInt(m[2], 10);
-  const year = parseInt(m[3], 10);
-  return new Date(year, month, day);
+  if (monthDayYear) {
+    const month = MONTHS[monthDayYear[1].toLowerCase()];
+    const day = parseInt(monthDayYear[2], 10);
+    const year = parseInt(monthDayYear[3], 10);
+    return new Date(year, month, day);
+  }
+
+  const dayMonthYear = text.match(
+    new RegExp(`heard[^.]{0,80}?\\s(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_NAMES})\\s+(\\d{4})`, 'i')
+  );
+  if (dayMonthYear) {
+    const day = parseInt(dayMonthYear[1], 10);
+    const month = MONTHS[dayMonthYear[2].toLowerCase()];
+    const year = parseInt(dayMonthYear[3], 10);
+    return new Date(year, month, day);
+  }
+
+  return null;
 }
 
 function caseLabelFromFilename(filename) {
@@ -79,7 +97,10 @@ async function main() {
   const links = fs.readFileSync(LINKS_FILE, 'utf-8').split('\n').map((l) => l.trim()).filter(Boolean);
 
   const candidates = links.filter((url) => {
-    const m = url.match(/\/(?:CR|BA)([0-9]{4})/i);
+    // BA-prefixed files are French-language translations of the same
+    // cases (e.g. BA3249.pdf duplicates CR3249.pdf in French) — skip
+    // them, we only want the English originals.
+    const m = url.match(/\/CR([0-9]{4})/i);
     if (!m) return false;
     return parseInt(m[1], 10) >= MIN_CANDIDATE_NUM;
   });
