@@ -77,6 +77,7 @@ app.post('/api/ask', async (req, res) => {
         source: c.source,
         page: c.page,
         snippet: c.text.slice(0, 220),
+        fullText: c.text,
       })),
     });
 

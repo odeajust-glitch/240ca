@@ -161,12 +161,22 @@
     padding: 10px 0;
     font-size: 13px;
     color: var(--muted);
+    cursor: pointer;
   }
+  .citation:hover { background: rgba(26, 102, 176, 0.04); }
   .citation .label {
     color: var(--navy);
     font-weight: 600;
     margin-bottom: 4px;
   }
+  .citation .toggle {
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  .citation .snippet-text { white-space: pre-wrap; }
   .disclaimer {
     margin-top: 28px;
     font-size: 12px;
@@ -327,13 +337,44 @@ let lastQuery = null; // { question, sources, dateFrom, dateTo } — for the man
 
 function renderCitations(citations) {
   if (!citations || !citations.length) return;
-  citationsEl.innerHTML = citations
-    .map((c) => {
-      const docName = sourceNames[c.source] || c.source;
-      const locator = /^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page;
-      return `<div class="citation"><div class="label">${escapeHtml(docName)} &middot; ${escapeHtml(String(locator))}</div>${escapeHtml(c.snippet)}&hellip;</div>`;
-    })
-    .join('');
+  citationsEl.innerHTML = '';
+
+  citations.forEach((c) => {
+    const docName = sourceNames[c.source] || c.source;
+    const locator = /^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page;
+    const hasMore = c.fullText && c.fullText.length > c.snippet.length;
+
+    const item = document.createElement('div');
+    item.className = 'citation';
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = `${docName} · ${locator}`;
+    item.appendChild(label);
+
+    const snippetText = document.createElement('span');
+    snippetText.className = 'snippet-text';
+    snippetText.textContent = c.snippet + (hasMore ? '…' : '');
+    item.appendChild(snippetText);
+
+    if (hasMore) {
+      const toggle = document.createElement('span');
+      toggle.className = 'toggle';
+      toggle.textContent = 'Show more';
+      item.appendChild(document.createElement('br'));
+      item.appendChild(toggle);
+
+      let expanded = false;
+      item.addEventListener('click', () => {
+        expanded = !expanded;
+        snippetText.textContent = expanded ? c.fullText : c.snippet + '…';
+        toggle.textContent = expanded ? 'Show less' : 'Show more';
+      });
+    }
+
+    citationsEl.appendChild(item);
+  });
+
   citationsEl.classList.add('show');
 }
 
