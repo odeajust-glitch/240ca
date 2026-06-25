@@ -17,6 +17,7 @@ async function indexCroa() {
     filePath: path.join(CROA_DIR, entry.file),
     caseLabel: `${entry.caseLabel} (${entry.date})`,
     date: entry.date,
+    url: `http://croa.com/PDFAWARDS/${entry.file}`,
   }));
   return indexCaseBatch(cases, 'croa');
 }
@@ -78,6 +79,7 @@ app.post('/api/ask', async (req, res) => {
         page: c.page,
         snippet: c.text.slice(0, 220),
         fullText: c.text,
+        url: c.url || null,
       })),
     });
 

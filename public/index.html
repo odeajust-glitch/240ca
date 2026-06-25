@@ -372,6 +372,19 @@ function renderCitations(citations) {
       });
     }
 
+    if (c.url) {
+      const link = document.createElement('a');
+      link.href = c.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'toggle';
+      link.style.marginLeft = hasMore ? '12px' : '0';
+      link.textContent = 'View original case ↗';
+      link.addEventListener('click', (e) => e.stopPropagation());
+      if (!hasMore) item.appendChild(document.createElement('br'));
+      item.appendChild(link);
+    }
+
     citationsEl.appendChild(item);
   });
 
