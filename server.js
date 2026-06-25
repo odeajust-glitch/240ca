@@ -4,7 +4,7 @@ const path = require('path');
 const express = require('express');
 const { buildIndex, indexCaseBatch } = require('./lib/indexer');
 const { SearchIndex } = require('./lib/search');
-const { streamKimi } = require('./lib/kimi');
+const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib/kimi');
 const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
 
 const CROA_DIR = path.join(__dirname, 'data', 'croa');
@@ -33,7 +33,7 @@ app.get('/api/sources', (req, res) => {
 });
 
 app.post('/api/ask', async (req, res) => {
-  const { question, sources: requestedSources, dateFrom, dateTo } = req.body;
+  const { question, sources: requestedSources, dateFrom, dateTo, tier } = req.body;
   if (!question || !question.trim()) {
     return res.status(400).json({ error: 'Question is required.' });
   }
@@ -80,13 +80,31 @@ app.post('/api/ask', async (req, res) => {
       })),
     });
 
-    await streamKimi({
+    const wantsSlow = tier === 'slow';
+    const model = wantsSlow ? SLOW_MODEL : FAST_MODEL;
+
+    const firstAnswer = await streamKimi({
       question,
       contextChunks: chunks,
+      model,
       onToken: (text) => send({ type: 'chunk', text }),
     });
 
-    send({ type: 'done' });
+    // Auto-escalate to the slower, more capable model only when the fast
+    // model explicitly said it couldn't find the answer — avoids doubling
+    // cost/latency on questions that already answer well.
+    if (!wantsSlow && NOT_FOUND_PATTERN.test(firstAnswer)) {
+      send({ type: 'escalating' });
+      await streamKimi({
+        question,
+        contextChunks: chunks,
+        model: SLOW_MODEL,
+        onToken: (text) => send({ type: 'chunk', text }),
+      });
+      send({ type: 'done', escalated: true });
+    } else {
+      send({ type: 'done', canEscalate: !wantsSlow });
+    }
     res.end();
   } catch (err) {
     console.error(err);

@@ -8,5 +8,7 @@ services:
     envVars:
       - key: KIMI_API_KEY
         sync: false
-      - key: KIMI_MODEL
+      - key: KIMI_MODEL_FAST
+        value: moonshot-v1-8k
+      - key: KIMI_MODEL_SLOW
         value: kimi-k2.6

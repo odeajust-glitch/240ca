@@ -175,6 +175,28 @@
   }
   .loading { color: var(--muted); font-size: 14px; margin-top: 16px; text-align: center; }
   .error { color: #c0392b; }
+  .escalating {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13.5px;
+    display: block;
+    margin: 10px 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .deeper-search {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .deeper-search:hover:not(:disabled) { background: rgba(26, 102, 176, 0.08); }
+  .deeper-search:disabled { opacity: 0.5; cursor: default; }
 </style>
 </head>
 <body>
@@ -210,6 +232,7 @@
 
     <div class="loading" id="loading" style="display:none;">Searching the agreement&hellip;</div>
     <div id="answer"></div>
+    <button type="button" class="deeper-search" id="deeperSearchBtn" style="display:none;">Try a deeper search</button>
     <div id="citations"></div>
 
     <div class="disclaimer">
@@ -284,6 +307,9 @@ const askBtn = document.getElementById('askBtn');
 const answerEl = document.getElementById('answer');
 const citationsEl = document.getElementById('citations');
 const loadingEl = document.getElementById('loading');
+const deeperSearchBtn = document.getElementById('deeperSearchBtn');
+
+let lastQuery = null; // { question, sources, dateFrom, dateTo } — for the manual retry button
 
 function renderCitations(citations) {
   if (!citations || !citations.length) return;
@@ -297,37 +323,28 @@ function renderCitations(citations) {
   citationsEl.classList.add('show');
 }
 
-async function ask() {
-  const question = questionEl.value.trim();
-  if (!question) return;
+// Streams one /api/ask call. `append: true` keeps existing answer text
+// (used by the manual "deeper search" retry) instead of clearing it.
+async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append }) {
+  deeperSearchBtn.style.display = 'none';
 
-  const sources = getCheckedSources();
-  if (sources.length === 0) {
-    answerEl.innerHTML = '<span class="error">Select at least one document to search.</span>';
-    answerEl.classList.add('show');
-    return;
+  if (!append) {
+    answerEl.classList.remove('show');
+    citationsEl.classList.remove('show');
+    citationsEl.innerHTML = '';
+    answerEl.textContent = '';
   }
-
-  askBtn.disabled = true;
-  loadingEl.style.display = 'block';
-  answerEl.classList.remove('show');
-  citationsEl.classList.remove('show');
-  citationsEl.innerHTML = '';
-  answerEl.textContent = '';
-
-  const dateFrom = document.getElementById('croaDateFrom').value || null;
-  const dateTo = document.getElementById('croaDateTo').value || null;
 
   try {
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, sources, dateFrom, dateTo }),
+      body: JSON.stringify({ question, sources, dateFrom, dateTo, tier }),
     });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      answerEl.innerHTML = `<span class="error">Error: ${escapeHtml(data.error || 'Something went wrong.')}</span>`;
+      answerEl.innerHTML += `<span class="error">Error: ${escapeHtml(data.error || 'Something went wrong.')}</span>`;
       answerEl.classList.add('show');
       return;
     }
@@ -358,20 +375,67 @@ async function ask() {
             answerEl.classList.add('show');
           }
           answerEl.textContent += evt.text;
+        } else if (evt.type === 'escalating') {
+          const note = document.createElement('span');
+          note.className = 'escalating';
+          note.textContent = 'That didn’t find an answer — trying a more thorough search…';
+          answerEl.appendChild(note);
+        } else if (evt.type === 'done') {
+          if (evt.canEscalate) deeperSearchBtn.style.display = 'inline-block';
         } else if (evt.type === 'error') {
-          answerEl.innerHTML = `<span class="error">Error: ${escapeHtml(evt.error)}</span>`;
+          answerEl.innerHTML += `<span class="error">Error: ${escapeHtml(evt.error)}</span>`;
           answerEl.classList.add('show');
         }
       }
     }
   } catch (err) {
-    answerEl.innerHTML = `<span class="error">Network error: ${escapeHtml(String(err))}</span>`;
+    answerEl.innerHTML += `<span class="error">Network error: ${escapeHtml(String(err))}</span>`;
     answerEl.classList.add('show');
+  }
+}
+
+async function ask() {
+  const question = questionEl.value.trim();
+  if (!question) return;
+
+  const sources = getCheckedSources();
+  if (sources.length === 0) {
+    answerEl.innerHTML = '<span class="error">Select at least one document to search.</span>';
+    answerEl.classList.add('show');
+    return;
+  }
+
+  const dateFrom = document.getElementById('croaDateFrom').value || null;
+  const dateTo = document.getElementById('croaDateTo').value || null;
+  lastQuery = { question, sources, dateFrom, dateTo };
+
+  askBtn.disabled = true;
+  loadingEl.style.display = 'block';
+
+  try {
+    await streamAnswer({ ...lastQuery, tier: 'fast', append: false });
   } finally {
     askBtn.disabled = false;
     loadingEl.style.display = 'none';
   }
 }
+
+async function tryDeeperSearch() {
+  if (!lastQuery) return;
+  deeperSearchBtn.disabled = true;
+  const note = document.createElement('span');
+  note.className = 'escalating';
+  note.textContent = 'Searching more thoroughly…';
+  answerEl.appendChild(note);
+
+  try {
+    await streamAnswer({ ...lastQuery, tier: 'slow', append: true });
+  } finally {
+    deeperSearchBtn.disabled = false;
+  }
+}
+
+deeperSearchBtn.addEventListener('click', tryDeeperSearch);
 
 function escapeHtml(s) {
   return String(s)
