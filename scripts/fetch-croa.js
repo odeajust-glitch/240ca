@@ -45,19 +45,30 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const MIN_VALID_SIZE = 1024; // real award PDFs are always at least a few KB —
+// anything smaller is a truncated/empty response from a throttled server,
+// not a genuinely tiny PDF. Treat it as a failure worth retrying rather
+// than silently trying to parse it (which can succeed with empty text and
+// get miscounted as "no date found" instead of a real failure).
+
 async function downloadFile(url, attempts = 4) {
+  let lastReason = 'unknown';
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch(url);
-      if (!res.ok) return null;
-      const buf = Buffer.from(await res.arrayBuffer());
-      return buf;
+      if (!res.ok) {
+        lastReason = `HTTP ${res.status}`;
+      } else {
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (buf.length >= MIN_VALID_SIZE) return buf;
+        lastReason = `suspiciously small response (${buf.length} bytes)`;
+      }
     } catch (err) {
-      if (i === attempts - 1) throw err;
-      await sleep(800 * (i + 1)); // backoff: 800ms, 1600ms, 2400ms
+      lastReason = err.message;
     }
+    if (i < attempts - 1) await sleep(800 * (i + 1)); // backoff: 800ms, 1600ms, 2400ms
   }
-  return null;
+  throw new Error(`download failed after ${attempts} attempts: ${lastReason}`);
 }
 
 async function main() {
@@ -78,10 +89,22 @@ async function main() {
 
   fs.mkdirSync(CROA_DIR, { recursive: true });
 
-  const manifest = [];
+  // Merge into the existing manifest rather than rebuilding from scratch,
+  // so an early abort (e.g. due to throttling) can't lose entries for
+  // cached files that this run never got back around to revisiting.
+  const manifestMap = new Map();
+  if (fs.existsSync(MANIFEST_PATH)) {
+    const existing = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
+    for (const entry of existing) manifestMap.set(entry.file, entry);
+  }
+
   let checked = 0;
   let kept = 0;
   let failed = 0;
+  let noDate = 0;
+  let consecutiveFailures = 0;
+  const CONSECUTIVE_FAILURE_LIMIT = 15;
+  let abortedEarly = false;
 
   for (const url of candidates) {
     checked++;
@@ -90,14 +113,10 @@ async function main() {
 
     try {
       let buf;
-      if (fs.existsSync(localPath)) {
+      if (fs.existsSync(localPath) && fs.statSync(localPath).size >= MIN_VALID_SIZE) {
         buf = fs.readFileSync(localPath);
       } else {
-        buf = await downloadFile(url);
-        if (!buf) {
-          failed++;
-          continue;
-        }
+        buf = await downloadFile(url); // throws after retries exhausted
       }
 
       const parser = new PDFParse({ data: buf });
@@ -105,35 +124,49 @@ async function main() {
       const date = parseHearingDate(result.text.slice(0, 1000));
 
       if (!date || date < cutoff) {
+        if (!date) noDate++;
         if (fs.existsSync(localPath)) fs.unlinkSync(localPath); // don't keep out-of-window files on disk
+        manifestMap.delete(filename);
+        consecutiveFailures = 0; // a successful parse, even with no date, proves the server is responding
         continue;
       }
 
       if (!fs.existsSync(localPath)) fs.writeFileSync(localPath, buf);
 
-      manifest.push({
+      manifestMap.set(filename, {
         file: filename,
         caseLabel: caseLabelFromFilename(filename),
         date: date.toISOString().slice(0, 10),
       });
       kept++;
+      consecutiveFailures = 0;
     } catch (err) {
       failed++;
+      consecutiveFailures++;
       console.error(`Error on ${filename}: ${err.message}`);
+      if (consecutiveFailures >= CONSECUTIVE_FAILURE_LIMIT) {
+        console.error(
+          `\nAborting: ${consecutiveFailures} consecutive failures — croa.com is likely throttling/blocking us again. ` +
+          `Stopping early rather than burning through the rest of the list. Re-run later once the site is reachable again; ` +
+          `already-downloaded files are cached, so it'll resume from here.`
+        );
+        abortedEarly = true;
+        break;
+      }
     }
 
     // small delay between requests so we don't hammer croa.com's server
     await sleep(120);
 
     if (checked % 50 === 0) {
-      console.log(`...${checked}/${candidates.length} checked, ${kept} kept, ${failed} failed`);
-      fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2)); // incremental save
+      console.log(`...${checked}/${candidates.length} checked, ${kept} kept, ${noDate} no-date, ${failed} failed`);
+      fs.writeFileSync(MANIFEST_PATH, JSON.stringify([...manifestMap.values()], null, 2)); // incremental save
     }
   }
 
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
-  console.log(`Done. Checked ${checked}, kept ${kept}, failed ${failed}.`);
-  console.log(`Manifest written to ${MANIFEST_PATH}`);
+  fs.writeFileSync(MANIFEST_PATH, JSON.stringify([...manifestMap.values()], null, 2));
+  console.log(`${abortedEarly ? 'Aborted early' : 'Done'}. Checked ${checked}/${candidates.length}, kept ${kept}, no-date ${noDate}, failed ${failed}.`);
+  console.log(`Manifest now has ${manifestMap.size} total entries, written to ${MANIFEST_PATH}`);
 }
 
 main();
