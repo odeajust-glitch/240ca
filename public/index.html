@@ -179,10 +179,24 @@
     color: var(--muted);
     font-style: italic;
     font-size: 13.5px;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 10px 0;
     padding-top: 10px;
     border-top: 1px dashed var(--border);
+  }
+  .spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
   .deeper-search {
     margin-top: 10px;
@@ -323,9 +337,37 @@ function renderCitations(citations) {
   citationsEl.classList.add('show');
 }
 
+function addWaitingNote(text) {
+  const note = document.createElement('span');
+  note.className = 'escalating';
+  const spinner = document.createElement('span');
+  spinner.className = 'spinner';
+  const label = document.createElement('span');
+  label.textContent = text;
+  note.appendChild(spinner);
+  note.appendChild(label);
+  answerEl.appendChild(note);
+  return note;
+}
+
+function addErrorNote(text) {
+  const note = document.createElement('span');
+  note.className = 'error';
+  note.textContent = text;
+  answerEl.appendChild(note);
+}
+
 // Streams one /api/ask call. `append: true` keeps existing answer text
 // (used by the manual "deeper search" retry) instead of clearing it.
-async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append }) {
+// `waitingNoteText`, if given, shows a spinner note immediately (before
+// the fetch even starts) — used for the manual retry, since there's no
+// 'escalating' SSE event when tier is forced to 'slow' from the start.
+//
+// Streamed text is written into its own "run" span rather than directly
+// into answerEl via textContent += — appending to answerEl.textContent
+// would destroy any sibling note/spinner elements on every token, since
+// the textContent setter replaces ALL child nodes with one text node.
+async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append, waitingNoteText }) {
   deeperSearchBtn.style.display = 'none';
 
   if (!append) {
@@ -333,6 +375,17 @@ async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append 
     citationsEl.classList.remove('show');
     citationsEl.innerHTML = '';
     answerEl.textContent = '';
+  }
+
+  let waitingNote = waitingNoteText ? addWaitingNote(waitingNoteText) : null;
+  let currentRun = null; // text-only span currently receiving streamed chunks
+
+  function appendText(text) {
+    if (!currentRun) {
+      currentRun = document.createElement('span');
+      answerEl.appendChild(currentRun);
+    }
+    currentRun.textContent += text;
   }
 
   try {
@@ -344,7 +397,7 @@ async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append 
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      answerEl.innerHTML += `<span class="error">Error: ${escapeHtml(data.error || 'Something went wrong.')}</span>`;
+      addErrorNote(`Error: ${data.error || 'Something went wrong.'}`);
       answerEl.classList.add('show');
       return;
     }
@@ -369,27 +422,34 @@ async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append 
         if (evt.type === 'citations') {
           renderCitations(evt.citations);
         } else if (evt.type === 'chunk') {
+          if (waitingNote) {
+            waitingNote.remove();
+            waitingNote = null;
+          }
           if (!started) {
             started = true;
             loadingEl.style.display = 'none';
             answerEl.classList.add('show');
           }
-          answerEl.textContent += evt.text;
+          appendText(evt.text);
         } else if (evt.type === 'escalating') {
-          const note = document.createElement('span');
-          note.className = 'escalating';
-          note.textContent = 'That didn’t find an answer — trying a more thorough search…';
-          answerEl.appendChild(note);
+          currentRun = null; // next chunk starts a fresh run after this note
+          waitingNote = addWaitingNote(
+            'That didn’t find an answer — trying a more thorough search, this may take a bit longer…'
+          );
         } else if (evt.type === 'done') {
           if (evt.canEscalate) deeperSearchBtn.style.display = 'inline-block';
         } else if (evt.type === 'error') {
-          answerEl.innerHTML += `<span class="error">Error: ${escapeHtml(evt.error)}</span>`;
+          if (waitingNote) { waitingNote.remove(); waitingNote = null; }
+          currentRun = null;
+          addErrorNote(`Error: ${evt.error}`);
           answerEl.classList.add('show');
         }
       }
     }
   } catch (err) {
-    answerEl.innerHTML += `<span class="error">Network error: ${escapeHtml(String(err))}</span>`;
+    if (waitingNote) { waitingNote.remove(); waitingNote = null; }
+    addErrorNote(`Network error: ${String(err)}`);
     answerEl.classList.add('show');
   }
 }
@@ -423,13 +483,14 @@ async function ask() {
 async function tryDeeperSearch() {
   if (!lastQuery) return;
   deeperSearchBtn.disabled = true;
-  const note = document.createElement('span');
-  note.className = 'escalating';
-  note.textContent = 'Searching more thoroughly…';
-  answerEl.appendChild(note);
 
   try {
-    await streamAnswer({ ...lastQuery, tier: 'slow', append: true });
+    await streamAnswer({
+      ...lastQuery,
+      tier: 'slow',
+      append: true,
+      waitingNoteText: 'Searching more thoroughly — this may take a bit longer than usual…',
+    });
   } finally {
     deeperSearchBtn.disabled = false;
   }
