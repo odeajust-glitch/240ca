@@ -47,6 +47,15 @@ app.post('/api/ask', async (req, res) => {
 
   const send = (obj) => res.write(JSON.stringify(obj) + '\n');
 
+  // If the client navigates away mid-answer, abort the upstream Kimi call
+  // instead of streaming (and paying for) tokens into a dead socket.
+  const abort = new AbortController();
+  let clientGone = false;
+  req.on('close', () => {
+    clientGone = true;
+    abort.abort();
+  });
+
   try {
     let sources = null;
     if (Array.isArray(requestedSources) && requestedSources.length > 0) {
@@ -91,6 +100,7 @@ app.post('/api/ask', async (req, res) => {
       contextChunks: chunks,
       model,
       onToken: (text) => send({ type: 'chunk', text }),
+      signal: abort.signal,
     });
 
     // Auto-escalate to the slower, more capable model only when the fast
@@ -103,6 +113,7 @@ app.post('/api/ask', async (req, res) => {
         contextChunks: chunks,
         model: SLOW_MODEL,
         onToken: (text) => send({ type: 'chunk', text }),
+        signal: abort.signal,
       });
       send({ type: 'done', escalated: true });
     } else {
@@ -110,6 +121,9 @@ app.post('/api/ask', async (req, res) => {
     }
     res.end();
   } catch (err) {
+    // A client disconnect aborts the Kimi fetch on purpose — the socket is
+    // already gone, so there's nothing to report and nothing to end.
+    if (clientGone || err.name === 'AbortError') return;
     console.error(err);
     send({ type: 'error', error: err.message });
     res.end();
