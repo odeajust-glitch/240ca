@@ -48,12 +48,18 @@ app.post('/api/ask', async (req, res) => {
   const send = (obj) => res.write(JSON.stringify(obj) + '\n');
 
   // If the client navigates away mid-answer, abort the upstream Kimi call
-  // instead of streaming (and paying for) tokens into a dead socket.
+  // instead of streaming (and paying for) tokens into a dead socket. Listen on
+  // the RESPONSE closing, not req's 'close' — the latter fires as soon as the
+  // POST body is read (before any answer is sent), which would abort every
+  // request immediately. writableEnded distinguishes a real early disconnect
+  // (false) from our own normal res.end() (true).
   const abort = new AbortController();
   let clientGone = false;
-  req.on('close', () => {
-    clientGone = true;
-    abort.abort();
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      clientGone = true;
+      abort.abort();
+    }
   });
 
   try {
