@@ -1,26 +1,10 @@
 require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const { buildIndex, indexCaseBatch } = require('./lib/indexer');
+const { loadOrBuildChunks } = require('./lib/corpus');
 const { SearchIndex } = require('./lib/search');
 const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib/kimi');
 const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
-
-const CROA_DIR = path.join(__dirname, 'data', 'croa');
-const CROA_MANIFEST_PATH = path.join(__dirname, 'data', 'croa_manifest.json');
-
-async function indexCroa() {
-  if (!fs.existsSync(CROA_MANIFEST_PATH)) return [];
-  const manifest = JSON.parse(fs.readFileSync(CROA_MANIFEST_PATH, 'utf-8'));
-  const cases = manifest.map((entry) => ({
-    filePath: path.join(CROA_DIR, entry.file),
-    caseLabel: `${entry.caseLabel} (${entry.date})`,
-    date: entry.date,
-    url: `http://croa.com/PDFAWARDS/${entry.file}`,
-  }));
-  return indexCaseBatch(cases, 'croa');
-}
 
 const PORT = process.env.PORT || 5174;
 const app = express();
@@ -141,19 +125,19 @@ app.get('/api/status', (req, res) => {
 });
 
 async function start() {
-  console.log('Indexing collective agreements...');
-  const staticSources = SOURCES.filter((s) => !s.dynamic);
-  const chunks = await buildIndex(staticSources.map(({ filePath, id }) => ({ filePath, label: id })));
-
-  const croaChunks = await indexCroa();
-  console.log(`Indexed ${croaChunks.length} CROA case chunks.`);
-
-  searchIndex = new SearchIndex([...chunks, ...croaChunks]);
-  console.log(`Indexed ${searchIndex.chunks.length} total chunks.`);
-
+  // Listen before indexing so /api/status can report progress and the
+  // deploy's port check passes immediately; /api/ask returns 503 until
+  // the index is ready.
   app.listen(PORT, () => {
     console.log(`Collective Agreement Search running at http://localhost:${PORT}`);
   });
+
+  console.log('Loading corpus...');
+  const { chunks, fromCache } = await loadOrBuildChunks();
+  console.log(fromCache ? 'Loaded chunks from cache.' : 'Parsed source documents and saved chunk cache.');
+
+  searchIndex = new SearchIndex(chunks);
+  console.log(`Indexed ${searchIndex.chunks.length} total chunks.`);
 }
 
 start();

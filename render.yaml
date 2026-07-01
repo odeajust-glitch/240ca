@@ -3,7 +3,7 @@ services:
     name: collective-agreement-search
     env: node
     plan: starter
-    buildCommand: npm install
+    buildCommand: npm install && node scripts/build-cache.js
     startCommand: npm start
     envVars:
       - key: KIMI_API_KEY
