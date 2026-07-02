@@ -10,6 +10,14 @@ const { rateLimit } = require('./lib/rate-limit');
 const PORT = process.env.PORT || 5174;
 const MAX_QUESTION_LENGTH = 500;
 
+// The deep pass widens retrieval, not just the model: when the fast pass
+// says "could not find", the usual culprit is the right passage missing
+// from the top results — a smarter model can't answer from excerpts that
+// don't contain the answer. 24 chunks ≈ 7k tokens, well within the slow
+// model's context.
+const TOP_K = 9;
+const TOP_K_DEEP = 24;
+
 const app = express();
 // Render terminates TLS at its proxy; without this, req.ip is the proxy's
 // address for everyone and the rate limit would be shared globally.
@@ -74,11 +82,16 @@ app.post('/api/ask', askLimiter, async (req, res) => {
       if (valid.length < ALL_SOURCE_IDS.length) sources = valid;
     }
 
-    const chunks = searchIndex.search(question, {
-      topK: 9,
+    const searchOpts = {
       sources,
       dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null,
       dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null,
+    };
+
+    const wantsSlow = tier === 'slow';
+    const chunks = searchIndex.search(question, {
+      topK: wantsSlow ? TOP_K_DEEP : TOP_K,
+      ...searchOpts,
     });
 
     if (chunks.length === 0) {
@@ -87,9 +100,9 @@ app.post('/api/ask', askLimiter, async (req, res) => {
       return res.end();
     }
 
-    send({
+    const sendCitations = (list) => send({
       type: 'citations',
-      citations: chunks.map((c) => ({
+      citations: list.map((c) => ({
         source: c.source,
         page: c.page,
         snippet: c.text.slice(0, 220),
@@ -97,8 +110,8 @@ app.post('/api/ask', askLimiter, async (req, res) => {
         url: c.url || null,
       })),
     });
+    sendCitations(chunks);
 
-    const wantsSlow = tier === 'slow';
     const model = wantsSlow ? SLOW_MODEL : FAST_MODEL;
 
     const firstAnswer = await streamKimi({
@@ -111,12 +124,16 @@ app.post('/api/ask', askLimiter, async (req, res) => {
 
     // Auto-escalate to the slower, more capable model only when the fast
     // model explicitly said it couldn't find the answer — avoids doubling
-    // cost/latency on questions that already answer well.
+    // cost/latency on questions that already answer well. The retry gets
+    // wider retrieval, and the citations are re-sent to match what the
+    // model now sees (the frontend re-renders the list on each event).
     if (!wantsSlow && NOT_FOUND_PATTERN.test(firstAnswer)) {
       send({ type: 'escalating' });
+      const deepChunks = searchIndex.search(question, { topK: TOP_K_DEEP, ...searchOpts });
+      sendCitations(deepChunks);
       await streamKimi({
         question,
-        contextChunks: chunks,
+        contextChunks: deepChunks,
         model: SLOW_MODEL,
         onToken: (text) => send({ type: 'chunk', text }),
         signal: abort.signal,
