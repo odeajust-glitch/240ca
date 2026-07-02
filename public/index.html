@@ -543,7 +543,12 @@ async function streamAnswer({ question, sources, dateFrom, dateTo, tier, append,
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        const evt = JSON.parse(line);
+        let evt;
+        try {
+          evt = JSON.parse(line);
+        } catch {
+          continue; // skip a malformed line rather than killing the whole answer
+        }
 
         if (evt.type === 'citations') {
           renderCitations(evt.citations);
