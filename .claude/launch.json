@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "collective-agreement-search",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 5174
+    }
+  ]
+}
