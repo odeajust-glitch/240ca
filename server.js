@@ -5,11 +5,24 @@ const { loadOrBuildChunks } = require('./lib/corpus');
 const { SearchIndex } = require('./lib/search');
 const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib/kimi');
 const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
+const { rateLimit } = require('./lib/rate-limit');
 
 const PORT = process.env.PORT || 5174;
+const MAX_QUESTION_LENGTH = 500;
+
 const app = express();
+// Render terminates TLS at its proxy; without this, req.ip is the proxy's
+// address for everyone and the rate limit would be shared globally.
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Cost protection for the paid Kimi calls behind /api/ask.
+const askLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: 'Too many questions in a short time — please wait a few minutes and try again.',
+});
 
 let searchIndex = null;
 
@@ -17,10 +30,13 @@ app.get('/api/sources', (req, res) => {
   res.json({ sources: SOURCES.map(({ id, name, crafts }) => ({ id, name, crafts })) });
 });
 
-app.post('/api/ask', async (req, res) => {
+app.post('/api/ask', askLimiter, async (req, res) => {
   const { question, sources: requestedSources, dateFrom, dateTo, tier } = req.body;
   if (!question || !question.trim()) {
     return res.status(400).json({ error: 'Question is required.' });
+  }
+  if (question.length > MAX_QUESTION_LENGTH) {
+    return res.status(400).json({ error: `Question is too long (maximum ${MAX_QUESTION_LENGTH} characters).` });
   }
   if (!searchIndex) {
     return res.status(503).json({ error: 'Index still building, try again shortly.' });
