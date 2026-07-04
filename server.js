@@ -38,6 +38,21 @@ app.get('/api/sources', (req, res) => {
   res.json({ sources: SOURCES.map(({ id, name, crafts }) => ({ id, name, crafts })) });
 });
 
+// Serve the source PDFs so citations can deep-link to a page
+// (/docs/conductors.pdf#page=47). Whitelisted from SOURCES rather than
+// exposing data/ wholesale — the chunk cache and CROA corpus stay private.
+const DOC_FILES = Object.fromEntries(
+  SOURCES.filter((s) => s.filePath && s.filePath.toLowerCase().endsWith('.pdf'))
+    .map((s) => [s.id, s.filePath])
+);
+
+app.get('/docs/:file', (req, res) => {
+  const id = req.params.file.replace(/\.pdf$/i, '');
+  const filePath = DOC_FILES[id];
+  if (!filePath) return res.status(404).json({ error: 'Unknown document.' });
+  res.sendFile(filePath);
+});
+
 app.post('/api/ask', askLimiter, async (req, res) => {
   const { question, sources: requestedSources, dateFrom, dateTo, tier } = req.body;
   if (!question || !question.trim()) {
@@ -107,7 +122,12 @@ app.post('/api/ask', askLimiter, async (req, res) => {
         page: c.page,
         snippet: c.text.slice(0, 220),
         fullText: c.text,
-        url: c.url || null,
+        // CROA chunks carry their own external URL; agreement chunks get a
+        // page deep-link into the locally served PDF. Non-PDF sources (the
+        // mileage guidelines .txt) get no link.
+        url: c.url || (DOC_FILES[c.source] && /^\d+$/.test(String(c.page))
+          ? `/docs/${c.source}.pdf#page=${c.page}`
+          : null),
       })),
     });
     sendCitations(chunks);

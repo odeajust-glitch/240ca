@@ -439,7 +439,9 @@ function renderCitations(citations) {
       link.rel = 'noopener noreferrer';
       link.className = 'toggle';
       link.style.marginLeft = hasMore ? '12px' : '0';
-      link.textContent = 'View original case ↗';
+      link.textContent = c.source === 'croa'
+        ? 'View original case ↗'
+        : `Open document at page ${c.page} ↗`;
       link.addEventListener('click', (e) => e.stopPropagation());
       if (!hasMore) item.appendChild(document.createElement('br'));
       item.appendChild(link);
