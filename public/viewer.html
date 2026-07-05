@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Viewer · Div. 240</title>
+<style>
+  :root {
+    --navy: #105292;
+    --blue: #1a66b0;
+    --gold: #ffb822;
+    --bg: #f4f6fa;
+    --border: #dbe3ef;
+    --text: #1c2733;
+    --muted: #5c6b7e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'DM Sans', -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--navy);
+    color: #fff;
+    border-bottom: 3px solid var(--gold);
+  }
+  header .title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  header .page-indicator {
+    font-size: 13px;
+    color: #d7e6fb;
+    white-space: nowrap;
+  }
+  header a {
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  #pages {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 12px 8px 40px;
+  }
+  .page-slot {
+    position: relative;
+    margin: 0 auto 12px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(16, 82, 146, 0.15);
+    scroll-margin-top: 56px; /* keep scrollIntoView clear of the sticky header */
+  }
+  .page-slot canvas { display: block; width: 100%; height: 100%; }
+  .page-slot .page-num {
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.8);
+    padding: 1px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  #status {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  #status.error { color: #c0392b; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="title" id="docTitle">Loading&hellip;</span>
+    <span class="page-indicator" id="pageIndicator"></span>
+    <a id="downloadLink" href="#" target="_blank" rel="noopener">Original&nbsp;&darr;</a>
+  </header>
+  <div id="status">Loading document&hellip;</div>
+  <div id="pages"></div>
+
+<script type="module">
+import * as pdfjsLib from '/pdfjs/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+
+const params = new URLSearchParams(location.search);
+const doc = params.get('doc') || '';
+const targetPage = Math.max(1, parseInt(params.get('page'), 10) || 1);
+
+const statusEl = document.getElementById('status');
+const pagesEl = document.getElementById('pages');
+const titleEl = document.getElementById('docTitle');
+const indicatorEl = document.getElementById('pageIndicator');
+const downloadEl = document.getElementById('downloadLink');
+
+// Only ever render a window of pages around the viewport — some of these
+// documents are 800+ pages, and a canvas per page would exhaust memory
+// on a phone. Slots outside the window are blanked back to placeholders.
+const MAX_RENDERED = 12;
+const rendered = new Map(); // pageNum -> canvas
+const rendering = new Set();
+
+function fail(msg) {
+  statusEl.textContent = msg;
+  statusEl.classList.add('error');
+}
+
+function showTitle() {
+  fetch('/api/sources')
+    .then((r) => r.json())
+    .then(({ sources }) => {
+      const s = sources.find((s) => s.id === doc);
+      if (s) { titleEl.textContent = s.name; document.title = `${s.name} · Div. 240`; }
+    })
+    .catch(() => {}); // title is cosmetic — the document still loads without it
+}
+
+async function main() {
+  if (!doc) return fail('No document specified.');
+  downloadEl.href = `/docs/${encodeURIComponent(doc)}.pdf`;
+  titleEl.textContent = doc;
+  showTitle();
+
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument(`/docs/${encodeURIComponent(doc)}.pdf`).promise;
+  } catch (err) {
+    return fail(`Could not load the document. (${err.message})`);
+  }
+
+  const slotWidth = Math.min(pagesEl.clientWidth - 16, 884);
+
+  // Size every placeholder from page 1's aspect ratio so the scroll bar
+  // and target-page jump are roughly right before anything renders;
+  // each slot is corrected to its own true size when it first renders.
+  const first = await pdf.getPage(1);
+  const vp1 = first.getViewport({ scale: 1 });
+  const defaultHeight = slotWidth * (vp1.height / vp1.width);
+
+  statusEl.remove();
+  const slots = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    const slot = document.createElement('div');
+    slot.className = 'page-slot';
+    slot.dataset.page = n;
+    slot.style.width = slotWidth + 'px';
+    slot.style.height = defaultHeight + 'px';
+    const num = document.createElement('span');
+    num.className = 'page-num';
+    num.textContent = n;
+    slot.appendChild(num);
+    pagesEl.appendChild(slot);
+    slots.push(slot);
+  }
+
+  async function renderPage(n) {
+    if (rendered.has(n) || rendering.has(n)) return;
+    rendering.add(n);
+    try {
+      const page = await pdf.getPage(n);
+      const scale = slotWidth / page.getViewport({ scale: 1 }).width;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const viewport = page.getViewport({ scale: scale * dpr });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const slot = slots[n - 1];
+      slot.style.height = (viewport.height / dpr) + 'px';
+      slot.insertBefore(canvas, slot.firstChild);
+      rendered.set(n, canvas);
+      evictFarPages(n);
+    } catch { /* leave the placeholder; scrolling back retries */ }
+    rendering.delete(n);
+  }
+
+  function evictFarPages(current) {
+    if (rendered.size <= MAX_RENDERED) return;
+    const byDistance = [...rendered.keys()].sort((a, b) => Math.abs(b - current) - Math.abs(a - current));
+    while (rendered.size > MAX_RENDERED) {
+      const n = byDistance.shift();
+      const canvas = rendered.get(n);
+      rendered.delete(n);
+      canvas.width = 0; // release the bitmap immediately, not at GC time
+      canvas.remove();
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) renderPage(parseInt(e.target.dataset.page, 10));
+    }
+  }, { rootMargin: '600px 0px' });
+  slots.forEach((s) => observer.observe(s));
+
+  // Track the page shown in the header as the user scrolls.
+  const pageTracker = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) indicatorEl.textContent = `Page ${e.target.dataset.page} / ${pdf.numPages}`;
+    }
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  slots.forEach((s) => pageTracker.observe(s));
+
+  const target = Math.min(targetPage, pdf.numPages);
+  indicatorEl.textContent = `Page ${target} / ${pdf.numPages}`;
+  if (target > 1) slots[target - 1].scrollIntoView();
+}
+
+main();
+</script>
+</body>
+</html>

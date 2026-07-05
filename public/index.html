@@ -433,8 +433,16 @@ function renderCitations(citations) {
     }
 
     if (c.url) {
+      // Android Chrome hands PDFs to an external viewer that drops the
+      // #page= fragment, so agreement links there go through our PDF.js
+      // viewer instead. Desktop and iOS keep the native viewer, which
+      // honors the fragment and has better search/zoom. CROA links are
+      // external (croa.com) and can't go through the viewer (CORS).
+      const isAndroid = /Android/i.test(navigator.userAgent);
       const link = document.createElement('a');
-      link.href = c.url;
+      link.href = isAndroid && c.url.startsWith('/docs/')
+        ? `/viewer.html?doc=${encodeURIComponent(c.source)}&page=${encodeURIComponent(c.page)}`
+        : c.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.className = 'toggle';
