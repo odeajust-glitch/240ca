@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usage · Collective Agreement Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #105292;
+    --blue: #1a66b0;
+    --gold: #ffb822;
+    --bg: #f4f6fa;
+    --panel: #ffffff;
+    --border: #dbe3ef;
+    --text: #1c2733;
+    --muted: #5c6b7e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'DM Sans', -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 22px 24px;
+    text-align: center;
+    background: var(--navy);
+    color: #fff;
+    border-bottom: 4px solid var(--gold);
+  }
+  header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+  header .sub { color: #d7e6fb; font-size: 13px; margin-top: 4px; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--navy);
+    text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
+  input {
+    width: 100%; padding: 10px 12px; font: inherit; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; background: #fff;
+  }
+  input:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
+  button {
+    margin-top: 10px; padding: 10px 18px; font: inherit; font-weight: 600;
+    color: #fff; background: var(--navy); border: 0; border-radius: 8px; cursor: pointer;
+  }
+  button:hover { background: var(--blue); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .tile .n { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+  .tile .k { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--navy); margin: 24px 0 10px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--blue); border-radius: 3px; min-width: 2px; }
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .error { color: #a3282d; font-size: 14px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Usage</h1>
+  <div class="sub">Collective Agreement Search · Division 240</div>
+</header>
+
+<main>
+  <div class="panel" id="gate">
+    <label for="key">Access key</label>
+    <input id="key" type="password" autocomplete="off" placeholder="STATS_KEY">
+    <button id="go">View usage</button>
+    <p class="error hidden" id="err"></p>
+  </div>
+
+  <div id="report" class="hidden">
+    <div class="tiles">
+      <div class="tile"><div class="n" id="t-today-v">–</div><div class="k">Visitors today</div></div>
+      <div class="tile"><div class="n" id="t-today-q">–</div><div class="k">Questions today</div></div>
+      <div class="tile"><div class="n" id="t-7">–</div><div class="k">Questions, last 7 days</div></div>
+      <div class="tile"><div class="n" id="t-total">–</div><div class="k">Questions, all time</div></div>
+    </div>
+
+    <h2>Daily</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th class="num">Visitors</th><th class="num">Questions</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <h2>How this is counted</h2>
+    <p class="note">
+      Visitors are counted with a one-way hash that is re-salted every day, so the
+      same person on two different days cannot be linked. That makes the daily
+      number accurate, but it means a multi-day visitor total would double-count
+      anyone who returns — so only questions are totalled across days. No IP
+      addresses and no question text are stored.
+    </p>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  async function load(key) {
+    const res = await fetch('/api/stats?key=' + encodeURIComponent(key));
+    if (!res.ok) throw new Error('Key not accepted.');
+    return res.json();
+  }
+
+  function render(s) {
+    $('t-today-v').textContent = s.today.visitors;
+    $('t-today-q').textContent = s.today.questions;
+    $('t-7').textContent = s.last7.questions;
+    $('t-total').textContent = s.totalQuestions;
+
+    const days = s.byDay.slice(-30).reverse();
+    const peak = Math.max(1, ...days.map((d) => d.questions));
+    $('rows').innerHTML = days.map((d) => `
+      <tr>
+        <td>${d.date}</td>
+        <td class="num">${d.visitors}</td>
+        <td class="num">${d.questions}</td>
+        <td style="width:35%"><div class="bar" style="width:${(d.questions / peak) * 100}%"></div></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4">No activity recorded yet.</td></tr>';
+
+    $('gate').classList.add('hidden');
+    $('report').classList.remove('hidden');
+  }
+
+  async function submit() {
+    const key = $('key').value.trim();
+    if (!key) return;
+    $('err').classList.add('hidden');
+    try {
+      render(await load(key));
+      // Kept for this tab only, so a refresh doesn't re-prompt but the key
+      // never persists to disk on a shared or borrowed device.
+      sessionStorage.setItem('statsKey', key);
+    } catch (e) {
+      $('err').textContent = e.message;
+      $('err').classList.remove('hidden');
+    }
+  }
+
+  $('go').addEventListener('click', submit);
+  $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+  const saved = sessionStorage.getItem('statsKey');
+  if (saved) load(saved).then(render).catch(() => sessionStorage.removeItem('statsKey'));
+</script>
+</body>
+</html>

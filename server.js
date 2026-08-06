@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const path = require('path');
 const express = require('express');
 const { loadOrBuildChunks } = require('./lib/corpus');
@@ -6,6 +7,7 @@ const { SearchIndex } = require('./lib/search');
 const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib/kimi');
 const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
 const { rateLimit } = require('./lib/rate-limit');
+const { Analytics } = require('./lib/analytics');
 
 const PORT = process.env.PORT || 5174;
 const MAX_QUESTION_LENGTH = 500;
@@ -33,6 +35,7 @@ const askLimiter = rateLimit({
 });
 
 let searchIndex = null;
+const analytics = new Analytics();
 
 app.get('/api/sources', (req, res) => {
   res.json({ sources: SOURCES.map(({ id, name, crafts }) => ({ id, name, crafts })) });
@@ -69,6 +72,10 @@ app.post('/api/ask', askLimiter, async (req, res) => {
   if (!searchIndex) {
     return res.status(503).json({ error: 'Index still building, try again shortly.' });
   }
+
+  // Counted here, after validation and readiness checks, so the numbers
+  // reflect real answered questions rather than rejected or retried noise.
+  analytics.recordQuestion(req.ip);
 
   res.setHeader('Content-Type', 'application/x-ndjson');
   res.setHeader('Cache-Control', 'no-cache');
@@ -178,9 +185,36 @@ app.post('/api/ask', askLimiter, async (req, res) => {
   }
 });
 
+// Usage numbers are for the operator only. Without STATS_KEY set the
+// endpoint doesn't exist at all (404, not 401) so it isn't discoverable on
+// the public URL. Comparison is constant-time to avoid leaking the key a
+// character at a time.
+app.get('/api/stats', (req, res) => {
+  const expected = process.env.STATS_KEY;
+  if (!expected) return res.status(404).json({ error: 'Not found.' });
+
+  const provided = String(req.query.key || '');
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(404).json({ error: 'Not found.' });
+  }
+
+  res.json(analytics.summary());
+});
+
 app.get('/api/status', (req, res) => {
   res.json({ ready: !!searchIndex, chunkCount: searchIndex ? searchIndex.chunks.length : 0 });
 });
+
+// Render sends SIGTERM on every deploy and restart; without this the last
+// few minutes of counts (still inside the save debounce) would be lost.
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    analytics.flush();
+    process.exit(0);
+  });
+}
 
 async function start() {
   // Listen before indexing so /api/status can report progress and the

@@ -5,7 +5,18 @@ services:
     plan: starter
     buildCommand: npm install && node scripts/build-cache.js
     startCommand: npm start
+    # Usage counts must survive deploys and restarts; Render's normal
+    # filesystem is wiped on both.
+    disk:
+      name: analytics
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
+      - key: ANALYTICS_DIR
+        value: /var/data
+      # Gates /api/stats and /stats.html. Unset means the endpoint 404s.
+      - key: STATS_KEY
+        sync: false
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_MODEL_FAST
