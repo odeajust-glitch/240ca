@@ -5,7 +5,7 @@ const express = require('express');
 const { loadOrBuildChunks } = require('./lib/corpus');
 const { SearchIndex } = require('./lib/search');
 const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib/kimi');
-const { SOURCES, ALL_SOURCE_IDS } = require('./lib/sources');
+const { SOURCES, SOURCE_NAMES, ALL_SOURCE_IDS, DEFAULT_SOURCE_IDS, findConflict } = require('./lib/sources');
 const { rateLimit } = require('./lib/rate-limit');
 const { Analytics } = require('./lib/analytics');
 
@@ -38,7 +38,11 @@ let searchIndex = null;
 const analytics = new Analytics();
 
 app.get('/api/sources', (req, res) => {
-  res.json({ sources: SOURCES.map(({ id, name, crafts }) => ({ id, name, crafts })) });
+  res.json({
+    sources: SOURCES.map(({ id, name, crafts, manualOnly, conflictsWith }) => ({
+      id, name, crafts, manualOnly: !!manualOnly, conflictsWith: conflictsWith || [],
+    })),
+  });
 });
 
 // Serve the source PDFs so citations can deep-link to a page
@@ -98,7 +102,9 @@ app.post('/api/ask', askLimiter, async (req, res) => {
   });
 
   try {
-    let sources = null;
+    // No selection means the defaults — manual-only sources (e.g. 4.3) are
+    // only ever searched when explicitly requested.
+    let sources = DEFAULT_SOURCE_IDS;
     if (Array.isArray(requestedSources) && requestedSources.length > 0) {
       const valid = requestedSources.filter((id) => ALL_SOURCE_IDS.includes(id));
       if (valid.length === 0) {
@@ -106,8 +112,15 @@ app.post('/api/ask', askLimiter, async (req, res) => {
         send({ type: 'done', citations: [] });
         return res.end();
       }
-      if (valid.length < ALL_SOURCE_IDS.length) sources = valid;
+      const conflict = findConflict(valid);
+      if (conflict) {
+        send({ type: 'chunk', text: `${SOURCE_NAMES[conflict[0]]} can't be searched together with ${SOURCE_NAMES[conflict[1]]}. Deselect one of them.` });
+        send({ type: 'done', citations: [] });
+        return res.end();
+      }
+      sources = valid;
     }
+    if (sources.length === ALL_SOURCE_IDS.length) sources = null;
 
     const searchOpts = {
       sources,
