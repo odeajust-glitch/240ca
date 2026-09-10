@@ -99,7 +99,13 @@
   .source-item input { accent-color: var(--blue); width: 15px; height: 15px; }
   .source-item label { cursor: pointer; }
   .source-item.disabled label { cursor: default; opacity: 0.45; }
-  .source-item .source-note { font-size: 12px; opacity: 0.7; }
+  .source-section-label {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
   .date-range {
     margin-top: 10px;
     padding-top: 10px;
@@ -323,15 +329,19 @@ async function loadSources() {
     sourceList = data.sources;
     sourceNames = Object.fromEntries(sourceList.map((s) => [s.id, s.name]));
 
-    sourceListEl.innerHTML = sourceList
-      .map(
-        (s) => `
+    const renderItem = (s) => `
         <div class="source-item" id="item-${s.id}">
           <input type="checkbox" id="src-${s.id}" value="${s.id}"${s.manualOnly ? '' : ' checked'}>
-          <label for="src-${s.id}">${escapeHtml(s.name)}${s.manualOnly ? ' <span class="source-note">(Western Canada &mdash; select manually)</span>' : ''}</label>
-        </div>`
-      )
-      .join('');
+          <label for="src-${s.id}">${escapeHtml(s.name)}</label>
+        </div>`;
+    // Manual-only (Western Canada) agreements get their own section below
+    // the Division 240 documents.
+    const manual = sourceList.filter((s) => s.manualOnly);
+    sourceListEl.innerHTML =
+      sourceList.filter((s) => !s.manualOnly).map(renderItem).join('') +
+      (manual.length
+        ? `<div class="source-section-label">Western Canada &mdash; select manually</div>` + manual.map(renderItem).join('')
+        : '');
 
     const croaBox = document.getElementById('src-croa');
     if (croaBox) croaBox.addEventListener('change', updateCroaDateRangeVisibility);
