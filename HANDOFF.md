@@ -40,12 +40,12 @@ position/ETA, plus a runaround (call-out-of-order) audit.
 ## Next action: owner re-runs the updated probe on the spareboard screen
 The first run (2026-10-13) captured the login but not the board itself, because
 CATS draws its screens inside a frame and the probe only read the top page.
-The probe now captures every frame. Re-run it the same way (Windows: from the
-unzipped folder in `C:\Users\odeaj\OneDrive\Desktop`), **after downloading
-the branch ZIP again**:
+The probe now captures every frame. The owner replaces just
+`scripts\board-probe.js` in the existing unzipped folder
+(`C:\Users\odeaj\OneDrive\Desktop\…`), using GitHub's "Download raw file"
+button. That keeps `probe-out\profile`, so the run also tests whether the
+saved session survived. No reinstall is needed; then run:
 ```
-npm install
-npm install --no-save playwright && npx playwright install chromium
 node scripts/board-probe.js
 ```
 Sign in if asked, go to the spareboard screen, press Enter in the terminal,
