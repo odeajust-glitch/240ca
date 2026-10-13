@@ -37,7 +37,17 @@ position/ETA, plus a runaround (call-out-of-order) audit.
   credentials. The browser profile persists in `probe-out/profile` so the
   Authenticator approval carries over between runs. `probe-out/` is git-ignored.
 
-## Next action: owner names the screen + columns, and re-runs the probe once more
+## Owner decisions (2026-10-13)
+- **Risk sign-off given:** owner is fine with a tool keeping a CATS session open
+  under their login. Storing their password for auto re-login has **not** been
+  agreed; ask separately if needed.
+- Owner is teaching how to read the board screen. Everything they explain goes
+  into [docs/board-checker/SCREENS.md](docs/board-checker/SCREENS.md) before code.
+  Design intent: the board *reader* is deterministic code driven by that screen
+  map, not an LLM eyeballing the screen. The LLM's job is explaining flagged
+  runarounds with citations from the agreements.
+
+## Next action: owner teaches the screen (SCREENS.md), and re-runs the probe once more
 Run 2 captured the board screen. The probe now also outputs `screenGrid`: masked
 rows with column x-positions, so we can map columns precisely. Ask the owner
 which CATS screen it was (spareboard or a pool?), what each column means, and
