@@ -21,7 +21,7 @@ position/ETA, plus a runaround (call-out-of-order) audit.
 - Handoff lives here in the repo; CLAUDE.md points at it.
 
 ## Current state
-- Plan written: `docs/board-checker/PLAN.md`. **No code yet.**
+- Plan written: `docs/board-checker/PLAN.md`. Only code so far is the Phase 0 probe.
 - Board rules pulled from `data/crew_calling_cty.pdf` and
   `data/crew_calling_manual.pdf` into the plan's rule table.
 - **Board site facts (from owner, 2026-10-13):** `https://cats.cn.ca`, sign in
