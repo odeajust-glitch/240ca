@@ -24,11 +24,11 @@ position/ETA, plus a runaround (call-out-of-order) audit.
 - Plan written: `docs/board-checker/PLAN.md`. **No code yet.**
 - Board rules pulled from `data/crew_calling_cty.pdf` and
   `data/crew_calling_manual.pdf` into the plan's rule table.
-- **Board site facts (from owner, 2026-10-13):** `https://cats.cn.com`, sign in
+- **Board site facts (from owner, 2026-10-13):** `https://cats.cn.ca`, sign in
   with name + password, then Microsoft Authenticator (approval lasts ~24 h).
   No CN VPN needed; it's on the public internet.
 - **The cloud container can't reach it:** the environment's network policy blocks
-  `cats.cn.com` (proxy CONNECT 403). The owner could allow the domain in the
+  `cats.cn.ca` (proxy CONNECT 403). The owner could allow the domain in the
   environment's network settings, but MFA needs a human anyway, so the probe
   runs on the owner's own computer.
 - `scripts/board-probe.js` is written and was tested against a local fake board

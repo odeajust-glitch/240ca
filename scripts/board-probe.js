@@ -1,6 +1,6 @@
 // Phase 0 of the board checker (docs/board-checker/PLAN.md): find out
 // whether the CATS board can be read automatically. Run it on your own
-// computer — the cloud sessions can't reach cats.cn.com.
+// computer — the cloud sessions can't reach cats.cn.ca.
 //
 // You sign in yourself in a normal browser window, so the script never
 // sees your name, password or Authenticator code. The browser profile is
@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const START_URL = process.argv[2] || 'https://cats.cn.com/';
+const START_URL = process.argv[2] || 'https://cats.cn.ca/';
 const OUT_DIR = path.join(__dirname, '..', 'probe-out');
 const PROFILE_DIR = path.join(OUT_DIR, 'profile');
 const RESP_DIR = path.join(OUT_DIR, 'responses');

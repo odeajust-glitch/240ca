@@ -76,7 +76,7 @@ violation so the claim summary carries a real page citation, same as `/api/ask`.
 
 ### Phase 0 — Scrape feasibility spike (probe written; owner to run, see HANDOFF)
 Answer one question: **can we reliably read the board automatically?**
-1. Board is `https://cats.cn.com`: name + password + Microsoft Authenticator
+1. Board is `https://cats.cn.ca`: name + password + Microsoft Authenticator
    (~24 h), no VPN needed.
 2. Probe runs on the owner's machine: the cloud container's network policy
    blocks the host, and MFA needs a person.
