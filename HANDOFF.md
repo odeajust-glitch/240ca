@@ -37,10 +37,11 @@ position/ETA, plus a runaround (call-out-of-order) audit.
   credentials. The browser profile persists in `probe-out/profile` so the
   Authenticator approval carries over between runs. `probe-out/` is git-ignored.
 
-## Next action: owner re-runs the updated probe on the spareboard screen
-The first run (2026-10-13) captured the login but not the board itself, because
-CATS draws its screens inside a frame and the probe only read the top page.
-The probe now captures every frame. The owner replaces just
+## Next action: owner names the screen + columns, and re-runs the probe once more
+Run 2 captured the board screen. The probe now also outputs `screenGrid`: masked
+rows with column x-positions, so we can map columns precisely. Ask the owner
+which CATS screen it was (spareboard or a pool?), what each column means, and
+to re-run on the spareboard screen. The owner replaces just
 `scripts\board-probe.js` in the existing unzipped folder
 (`C:\Users\odeaj\OneDrive\Desktop\…`), using GitHub's "Download raw file"
 button. That keeps `probe-out\profile`, so the run also tests whether the
@@ -76,21 +77,41 @@ shows how long a session lasts. Note the time since the last run.
   screens; parsers must fail loudly, not silently mis-read.
 - Top page title empty, no tables: the board lives in a frame (fixed in probe).
 
-**Run 2, 2026-10-13 (~1 h after run 1):**
+**Run 2, 2026-10-13 17:56 UTC (~8 min after run 1); board captured:**
 - **Session reuse:** the saved browser profile did *not* skip sign-in; the owner
-  had to enter name + password again. **Authenticator was not asked again**, so
-  the MFA approval was remembered while the Entra/App Proxy session cookies
-  (session-only, dropped when the browser closed) were not. Implication: an
-  automated collector should keep one long-running browser open, and/or
-  re-enter the password itself. The latter means storing the password, which
-  needs the owner's explicit decision.
-- The Microsoft sign-in page takes ~10 s to load before the form appears.
-  Automation must wait for it, not use fixed short timeouts.
-- Board layout: _(pending: owner to paste summary.json from this run.)_
+  re-entered name + password, but **Authenticator was not asked again**. The
+  App Proxy/Entra session cookies are session-only, so they're lost when the browser
+  closes. The MFA approval is remembered. Implication: run one long-lived
+  browser. CATS itself pings `KeepAlive?JBS` on a timer (`keepAliveURL` /
+  `keepAliveInterval` hidden fields), so an open page stays alive by itself.
+  Re-entering the password automatically would mean storing it: the owner must
+  decide that explicitly.
+- Microsoft's sign-in page takes ~10 s to load. Automation must wait for
+  elements, never fixed short sleeps.
+- **Frames:** top page → frame `jacadaframe` (`/Xhtml?JacadaApplicationName`)
+  holds the screen. No tables and no `<pre>`; ~90 **absolutely-positioned
+  elements**, one per mainframe field. Rows must be rebuilt from element
+  top/left coordinates (the probe now does this: `screenGrid`).
+- **Navigation is a 3270 emulation:** hidden `sessionId`, `processId`,
+  `sequenceNumber` (increments per screen; don't replay raw POSTs, drive
+  the page), PF keys as submit buttons `acc_F1`…`acc_F24` (owner used `acc_F3`),
+  input fields named `txt_Sub0802501055_<n>` (`_138/_139/_140` look like
+  the selection fields on the board screen; `_21/_20/_22/_23` on an earlier one).
+  The `<n>` suffix looks like a field index, so it's probably stable per screen.
+- **Board screen content (masked):** board words seen: TURN, POS, EMPLOYEE, NAME,
+  POOL, REST, CO, PREV. Header has a selection prompt like
+  `(9=AAAA, 9-9=AAAA, A=AAAA)`. Data repeats per row as roughly:
+  `AA99 | 9 | 999 | NAME+ | A | AAAA | A9 | AA | AA`, i.e. turn id, position,
+  a 3-digit number, name (`+` suffix = more info?), a 1-letter flag, a status
+  word, a code, and two short codes (CO etc.). **Column meanings unconfirmed;
+  ask the owner.** It may be a pool screen rather than the spareboard ("POOL" appears).
 
-**Go / no-go:** not yet. Reading looks technically possible. Still open:
-board layout (run 2), session lifetime, and the owner's risk sign-off on
-automated logins (MFA every ~24 h means a human approves daily at minimum).
+**Go / no-go:** **technically GO for reading via browser automation**: the
+board is plain text in positioned fields, reachable in a few screens, with a
+built-in keep-alive. Still open before building: (1) owner confirms which screen
+this is and what each column means; (2) owner runs the updated probe once more
+so `screenGrid` shows real columns (masked); (3) owner's risk sign-off on
+automated logins / long-running session.
 
 ## Ground rules for whoever picks this up
 - Never commit credentials, raw captures with coworkers' names, or `probe-out/`.

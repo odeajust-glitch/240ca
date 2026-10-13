@@ -82,7 +82,45 @@ async function describeFrame(frame) {
       textLines: lines.length,
       boardWordsFound: [...found].sort(),
       maskedLayout: lines.slice(0, 60).map((l) => l.replace(/[A-Za-z]/g, 'A').replace(/[0-9]/g, '9')),
+      screenGrid: screenGrid(words),
     };
+
+    // CATS draws each mainframe field as an absolutely-positioned element.
+    // Grouping fields by their top offset rebuilds the screen's rows, and the
+    // left offsets give the columns. Text is masked unless it's a board word,
+    // a short code (CO, LE, SB01) or a small number (positions, times), so
+    // names and employee numbers don't come through.
+    function maskToken(tok) {
+      const core = tok.replace(/[^A-Za-z0-9]/g, '');
+      if (!core) return tok;
+      if (words.has(core.toUpperCase())) return tok;
+      if (/^[A-Za-z]{1,2}$/.test(core)) return tok;
+      if (/^[0-9]{1,4}$/.test(core)) return tok;
+      if (/[0-9]/.test(core) && /[A-Za-z]/.test(core) && core.length <= 6) return tok;
+      return tok.replace(/[A-Za-z]/g, 'A').replace(/[0-9]/g, '9');
+    }
+    function mask(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
+    function screenGrid() {
+      const cells = [];
+      for (const el of document.querySelectorAll('body *')) {
+        if (getComputedStyle(el).position !== 'absolute') continue;
+        const isField = /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
+        if (!isField && el.querySelector('*:not(br)')) continue; // leaf elements only
+        if (isField && /hidden|submit|button/.test(el.type)) continue;
+        const raw = (isField ? el.value : el.textContent).replace(/\s+$/, '');
+        const r = el.getBoundingClientRect();
+        if (!raw.trim() && !isField) continue;
+        cells.push({ top: Math.round(r.top), left: Math.round(r.left), text: (isField ? '[' : '') + mask(raw) + (isField ? ']' : '') });
+      }
+      cells.sort((a, b) => a.top - b.top || a.left - b.left);
+      const rows = [];
+      for (const c of cells) {
+        const row = rows.length && Math.abs(rows[rows.length - 1].top - c.top) <= 4 ? rows[rows.length - 1] : null;
+        if (row) row.cells.push(`${c.left}:${c.text}`);
+        else rows.push({ top: c.top, cells: [`${c.left}:${c.text}`] });
+      }
+      return rows.slice(0, 80).map((r) => `${r.top} | ${r.cells.join(' | ')}`);
+    }
   }, [...BOARD_WORDS]);
 }
 
