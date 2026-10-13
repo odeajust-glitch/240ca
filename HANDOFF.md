@@ -7,6 +7,23 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## ⏸ Paused here (2026-10-13). Resume with this
+Owner paused the work. Phase 0 is a technical **go** and risk is signed off.
+We were about to have the owner **teach the board screen**. To resume:
+1. Ask the owner the 7 questions now listed as blanks in
+   [docs/board-checker/SCREENS.md](docs/board-checker/SCREENS.md): how to reach the
+   board, the prompt line's options, each column's heading and meaning, codes
+   (REST, CO, `+`), paging, Fast/Slow/pools, and how a call or runaround shows on
+   screen. Write the answers into SCREENS.md.
+2. Ask them to re-run the probe on the **spareboard** screen (they replace only
+   `scripts\board-probe.js` via GitHub's "Download raw file", then run
+   `node scripts/board-probe.js` in `C:\Users\odeaj\OneDrive\Desktop\<unzipped folder>`)
+   and paste `summary.json`. Its `screenGrid` gives masked rows with column
+   x-positions; fill the `x` column in SCREENS.md from it.
+3. Then start Phase 1: `lib/board/` screen map + parser, with `node --test`
+   tests from masked fixtures.
+The owner is non-technical and on Windows (cmd). Give click-by-click steps.
+
 ## What the project is
 `240ca` is a Q&A web app over TCRC Division 240 (CN Rail, Sarnia) collective
 agreements and work rules (Express 5, CommonJS, BM25 + Kimi LLM, deployed on
