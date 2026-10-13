@@ -76,8 +76,17 @@ shows how long a session lasts. Note the time since the last run.
   screens; parsers must fail loudly, not silently mis-read.
 - Top page title empty, no tables: the board lives in a frame (fixed in probe).
 
-**Run 2:** _(pending: board screen layout, frame structure, form field names,
-session reuse.)_
+**Run 2, 2026-10-13 (~1 h after run 1):**
+- **Session reuse:** the saved browser profile did *not* skip sign-in; the owner
+  had to enter name + password again. **Authenticator was not asked again**, so
+  the MFA approval was remembered while the Entra/App Proxy session cookies
+  (session-only, dropped when the browser closed) were not. Implication: an
+  automated collector should keep one long-running browser open, and/or
+  re-enter the password itself. The latter means storing the password, which
+  needs the owner's explicit decision.
+- The Microsoft sign-in page takes ~10 s to load before the form appears.
+  Automation must wait for it, not use fixed short timeouts.
+- Board layout: _(pending: owner to paste summary.json from this run.)_
 
 **Go / no-go:** not yet. Reading looks technically possible. Still open:
 board layout (run 2), session lifetime, and the owner's risk sign-off on
