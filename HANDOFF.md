@@ -24,24 +24,37 @@ position/ETA, plus a runaround (call-out-of-order) audit.
 - Plan written: `docs/board-checker/PLAN.md`. **No code yet.**
 - Board rules pulled from `data/crew_calling_cty.pdf` and
   `data/crew_calling_manual.pdf` into the plan's rule table.
-- The docs don't give a URL for the board. The only system they name is
-  **"CATS"**, the system the CMC (Crew Management Center) uses.
+- **Board site facts (from owner, 2026-10-13):** `https://cats.cn.com`, sign in
+  with name + password, then Microsoft Authenticator (approval lasts ~24 h).
+  No CN VPN needed; it's on the public internet.
+- **The cloud container can't reach it:** the environment's network policy blocks
+  `cats.cn.com` (proxy CONNECT 403). The owner could allow the domain in the
+  environment's network settings, but MFA needs a human anyway, so the probe
+  runs on the owner's own computer.
+- `scripts/board-probe.js` is written and was tested against a local fake board
+  page (it captures tables, a JSON fetch, and scrubs tokens). It opens a visible
+  browser and **the owner signs in by hand**, so the script never handles
+  credentials. The browser profile persists in `probe-out/profile` so the
+  Authenticator approval carries over between runs. `probe-out/` is git-ignored.
 
-## Next action: Phase 0 scrape spike. BLOCKED on the owner for:
-1. **The board URL**, or the name of the app/site members use to view the board.
-2. **How you sign in:** plain username/password, CN SSO, MFA/phone prompt?
-   Does it only work on CN's network/VPN?
-3. **Where to run the test.** The cloud container can only reach the public
-   internet (through a proxy). An intranet or VPN-only site means the probe
-   runs on the owner's machine with `node scripts/board-probe.js`.
-4. **Risk sign-off.** Using a member's login in an automated tool may break CN
-   IT policy. The owner should decide this knowingly (see PLAN → Risks).
-   Phase 0 is a single manual read by the account owner.
+## Next action: owner runs the probe, then shares `probe-out/summary.json`
+On the owner's machine, in a clone of this branch:
+```
+npm install
+npm install --no-save playwright && npx playwright install chromium
+node scripts/board-probe.js
+```
+Sign in, open the spareboard page, press Enter in the terminal. Share
+**only** `probe-out/summary.json` (structure, no names). `board.html`,
+`board.png` and `responses/` contain coworkers' names and stay local.
 
-Once you have 1–3: write `scripts/board-probe.js` (Playwright; creds from env
-vars `BOARD_USER`/`BOARD_PASS` only; save HTML + screenshot to git-ignored
-`probe-out/`; add `probe-out/` to `.gitignore`). Run it once, then record the
-findings below and make the go/no-go call with the owner.
+To measure session lifetime: run it again a few hours later and again the next day.
+`startedOnLoginPage: false` means the saved session still worked.
+
+Then fill in "Phase 0 findings" and make the go/no-go call with the owner.
+Still open: **risk sign-off** before any *scheduled* scraping (PLAN → Risks).
+Automating a login that has MFA every 24 h means a human re-approves daily,
+or we keep a long-lived session alive. Raise that trade-off with the owner.
 
 ## Phase 0 findings
 _(empty. Fill in: auth type, HTML vs JSON endpoint, board structure, session

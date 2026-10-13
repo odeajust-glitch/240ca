@@ -74,15 +74,15 @@ violation so the claim summary carries a real page citation, same as `/api/ask`.
 
 ## Phases
 
-### Phase 0 — Scrape feasibility spike (BLOCKED on inputs, see HANDOFF)
+### Phase 0 — Scrape feasibility spike (probe written; owner to run, see HANDOFF)
 Answer one question: **can we reliably read the board automatically?**
-1. Get the board URL / app name (docs only mention the CMC's system "CATS").
-2. Decide where the probe runs. If the board is on CN's intranet/VPN or behind
-   SSO+MFA, the cloud container can't reach it — probe must run on the
-   member's own machine.
-3. Throwaway `scripts/board-probe.js` (Playwright, already available in the
-   cloud container): log in with creds from env vars only, save raw HTML +
-   screenshot to a git-ignored `probe-out/`, exit. No loops, no polling.
+1. Board is `https://cats.cn.com`: name + password + Microsoft Authenticator
+   (~24 h), no VPN needed.
+2. Probe runs on the owner's machine: the cloud container's network policy
+   blocks the host, and MFA needs a person.
+3. `scripts/board-probe.js` (Playwright): owner signs in by hand in a visible
+   browser, the script saves raw HTML, a screenshot and JSON responses to the
+   git-ignored `probe-out/`, plus a names-free `summary.json`. No loops, no polling.
 4. Record in HANDOFF: auth type (form / SSO / MFA), whether data is in HTML or
    an XHR JSON endpoint, page structure, any rate-limit/ToS/robots language,
    session lifetime.
