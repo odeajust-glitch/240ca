@@ -31,34 +31,57 @@ position/ETA, plus a runaround (call-out-of-order) audit.
   `cats.cn.ca` (proxy CONNECT 403). The owner could allow the domain in the
   environment's network settings, but MFA needs a human anyway, so the probe
   runs on the owner's own computer.
-- `scripts/board-probe.js` is written and was tested against a local fake board
-  page (it captures tables, a JSON fetch, and scrubs tokens). It opens a visible
+- `scripts/board-probe.js` is written and was tested against local fake pages
+  (a frameset like CATS, tables, a JSON fetch; scrubs tokens, masks names). It opens a visible
   browser and **the owner signs in by hand**, so the script never handles
   credentials. The browser profile persists in `probe-out/profile` so the
   Authenticator approval carries over between runs. `probe-out/` is git-ignored.
 
-## Next action: owner runs the probe, then shares `probe-out/summary.json`
-On the owner's machine, in a clone of this branch:
+## Next action: owner re-runs the updated probe on the spareboard screen
+The first run (2026-10-13) captured the login but not the board itself, because
+CATS draws its screens inside a frame and the probe only read the top page.
+The probe now captures every frame. Re-run it the same way (Windows: from the
+unzipped folder in `C:\Users\odeaj\OneDrive\Desktop`), **after downloading
+the branch ZIP again**:
 ```
 npm install
 npm install --no-save playwright && npx playwright install chromium
 node scripts/board-probe.js
 ```
-Sign in, open the spareboard page, press Enter in the terminal. Share
-**only** `probe-out/summary.json` (structure, no names). `board.html`,
-`board.png` and `responses/` contain coworkers' names and stay local.
-
-To measure session lifetime: run it again a few hours later and again the next day.
-`startedOnLoginPage: false` means the saved session still worked.
-
-Then fill in "Phase 0 findings" and make the go/no-go call with the owner.
-Still open: **risk sign-off** before any *scheduled* scraping (PLAN → Risks).
-Automating a login that has MFA every 24 h means a human re-approves daily,
-or we keep a long-lived session alive. Raise that trade-off with the owner.
+Sign in if asked, go to the spareboard screen, press Enter in the terminal,
+and paste `probe-out/summary.json`. If it says "Already signed in", that
+shows how long a session lasts. Note the time since the last run.
 
 ## Phase 0 findings
-_(empty. Fill in: auth type, HTML vs JSON endpoint, board structure, session
-lifetime, any ToS/robots/rate-limit language, go/no-go.)_
+**Run 1, 2026-10-13 (login flow only; board not captured):**
+- **Sign-in:** Microsoft Entra ID (Azure AD), CN tenant `fd753b92-…`, then
+  Authenticator push (`SAS/BeginAuth` → `EndAuth` polling). CATS sits behind
+  **Azure AD Application Proxy** (`AzureAppProxy*` cookies on `.cn.ca`), so
+  every request needs a valid Entra session. A scraper can't just send a
+  username and password; it needs a browser session that went through MFA.
+  (The flow also detoured through `login.live.com`, a personal Microsoft
+  account. Probably just how the owner picked their account; worth checking.)
+- **Session lifetime clues:** `AzureAppProxyAccessCookie` is a session cookie.
+  `ESTSAUTHPERSISTENT` (Entra "stay signed in") expires ~3 months out, but
+  CN's MFA policy re-prompts about every 24 h (owner). Real lifetime is
+  still unmeasured; the second run will tell us.
+- **The app is Jacada** (`/Xhtml?JacadaApplicationName`, POSTs with `JBS`):
+  a web front end over a legacy mainframe "green screen". There is **no JSON
+  API**. Each screen is server-rendered HTML, and moving between screens means
+  POSTing a form (like pressing keys on a terminal). The owner reached the
+  board in 3 POSTs after the landing page.
+- **What that means for scraping:** feasible, but by driving the screens the
+  way a person does (Playwright filling fields and pressing keys), then
+  parsing fixed-position text. That works but breaks if CN changes the
+  screens; parsers must fail loudly, not silently mis-read.
+- Top page title empty, no tables: the board lives in a frame (fixed in probe).
+
+**Run 2:** _(pending: board screen layout, frame structure, form field names,
+session reuse.)_
+
+**Go / no-go:** not yet. Reading looks technically possible. Still open:
+board layout (run 2), session lifetime, and the owner's risk sign-off on
+automated logins (MFA every ~24 h means a human approves daily at minimum).
 
 ## Ground rules for whoever picks this up
 - Never commit credentials, raw captures with coworkers' names, or `probe-out/`.
