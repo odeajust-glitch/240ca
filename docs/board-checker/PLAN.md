@@ -3,6 +3,13 @@
 Status: **planning** · Owner: odeajust · Branch: `claude/auto-board-checker-plan-hdk1n5`
 Read [HANDOFF.md](../../HANDOFF.md) first — it holds current state and the next action.
 
+> **2026-10-14 update:** the owner is in the **Chain Gang (SR pool), road only**,
+> not on the spareboard. The board check is now specified in
+> [BOARD-CHECK.md](BOARD-CHECK.md): order of trains out of Sarnia → A (3) / B (2) /
+> SR (rest + deadheads) → the owner's place in the SR rotation, plus an accuracy
+> check. Where this plan says "spareboard", read "road pools (SA/SB/SR)". The
+> spareboard only supplies backfills.
+
 ## Goal
 
 Give Division 240 members two things the app can't do today:

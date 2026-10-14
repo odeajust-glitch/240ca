@@ -1,0 +1,79 @@
+# How the owner checks the board, and how the tool will
+
+Taught by the owner on 2026-10-14. This is the spec for the board check: the
+tool should reproduce exactly what the owner does by hand, then flag where
+CATS disagrees. Rule cites are from `data/crew_calling_cty.pdf` (TCRC-CTY
+Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
+
+## Scope
+- **Road work out of Sarnia only.** Yard work is out of scope.
+- The owner holds a **Chain Gang (SR pool)** turn. They are *not* on the spareboard.
+- The spareboard matters only as the source of crews that backfill holes.
+
+## The daily road sequence out of Sarnia (owner)
+1. The first **3** unassigned trains go to **A turns** (SA pool).
+2. The next **2** go to **B turns** (SB pool).
+3. **Everything after that goes to the Chain Gang (SR)**, including **every
+   deadhead ordered**.
+4. **Holes** in any of these turns (the turn's owner off, booked rest, etc.) are
+   backfilled by **spareboard** employees.
+
+What the manual says (check against the owner's version):
+| Rule | Manual says | Owner says | Status |
+|---|---|---|---|
+| A pool | first **3** unassigned trains **after 0459** daily, by **train ordering time**; Sarnia→Toronto; no deadheads to Toronto, work trains, plows, spreaders or short turns | first 3 | ✅ |
+| B pool | "3 turns per day" heading; next **3** after A exhausted; same exclusions | next **2** | ❓ **Ask.** Turn counts are set at each Change of Card, so 2 may be current. Keep the counts in config, not in code. |
+| Chain Gang (SR) | any unassigned train >100 mi one direction after A and B are used; **"NO SCOOP" at home terminal**; **first in, first out at home and away**; continuous rotation; all extras to Niagara Falls / Port Robinson / Fort Erie; may run Via, A/B turns or 330 if the joint spareboard is exhausted | everything after A/B, plus all deadheads | ✅ (deadheads consistent: A/B "do not deadhead to Toronto") |
+| SR missed call | not called again until next due out in rotation | — | |
+| Train 330 (S4) | own pool, 3 crews, window time; not part of the A/B/SR count | — | ❓ Confirm 330 is excluded from the count |
+| Relief (holes) in SA/SB/SR | 1st available on **Slow board** (2 h call) → junior available (Art. 49.5 a) → junior off 14 h (49.5 b) → bullpen → road availability list → canvass … | backfilled by spareboard | ✅ |
+
+## The owner's check, step by step
+1. **Establish what's been ordered out of Sarnia** (trains + deadheads, with
+   ordering times) for the current day (from 0459?). This gives the order of trains.
+2. **Allocate** that ordered list: first 3 → A, next 2 → B, the rest (plus deadheads) → SR.
+3. **Find where the owner sits in the SR rotation** (first in, first out), i.e.
+   how many SR-bound trains have to go before the owner's turn is up.
+4. That gives "I'm N trains away" and, from ordering times, roughly when.
+
+## What the tool will do (same steps, plus an accuracy check)
+1. **Read two CATS screens** (names TBD by owner):
+   - the **train line-up / orders** out of Sarnia: train id, ordering time,
+     destination, whether it's a deadhead, extra, Via, 330, work train, etc.;
+   - the **SR (Chain Gang) turn list**: turn order, who holds each turn, status.
+   Plus A and B turn lists, and the spareboard for backfills.
+2. **Compute the expected allocation** with the rules above (counts from config).
+3. **Owner's position:** the number of SR-bound trains ahead of the owner's turn,
+   and the ordering time of the train that should be theirs.
+4. **Accuracy check:** compare expected vs what CATS actually did:
+   - a train given to the wrong pool (e.g. a 4th train to A, or a deadhead to A/B);
+   - an SR train given to someone out of rotation (a **runaround**);
+   - a hole filled out of relief order (e.g. not the first available on the Slow board);
+   - the owner's turn skipped or moved.
+   Every flag shows the two snapshots it came from and the rule it relies on,
+   for a human to judge. The tool flags; it never files a claim.
+
+## How we prove it's accurate before trusting it
+1. **Shadow mode.** Each time the owner does their normal board check, the tool
+   runs on the same screens. The owner writes down their own answer
+   ("I'm 3rd out, nothing wrong"), and the tool's answer is compared with it.
+2. Fix every disagreement, either a parsing bug or a rule we got wrong. Each one
+   becomes a test case (masked fixture + expected answer).
+3. Trust it only after **~10–15 checks in a row agree**, including at least one
+   day with a hole and one with a deadhead.
+4. After that, automatic checks: snapshots every 10–15 min while the owner
+   chooses, plus an alert when their position changes or a possible runaround
+   is flagged.
+
+## Open questions for the owner
+1. **B turns: 2 or 3?** The manual says 3; you said 2. Is 2 the current Change of
+   Card number? (Does A ever change from 3?)
+2. **Day boundary:** the manual says A takes the first 3 trains *after 0459* by
+   *ordering time*. Is that how you count "each day"?
+3. **Which CATS screens** do you look at for (a) what's been ordered out of
+   Sarnia, and (b) the chain gang turn order? How do you get to each?
+4. **Holes:** when a spareboard person fills a hole in an SR turn, does that turn
+   keep its normal place in the rotation?
+5. **What's excluded** from the count: 330, Via, work trains, short turns,
+   trains under 100 mi?
+6. **Craft:** you're working as a conductor (the CTY procedures), correct?

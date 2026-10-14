@@ -7,6 +7,17 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## 2026-10-14: scope refocused (read this first)
+The owner works **road only** and holds a **Chain Gang (SR pool)** turn. They are
+**not** on the spareboard. Road order out of Sarnia each day: first 3 trains → A
+turns, next 2 → B turns, everything else **plus all deadheads** → Chain Gang;
+holes backfilled from the spareboard. Their board check: (1) what's been
+ordered out of Sarnia → order of trains, (2) where they sit in that order.
+**Spec and open questions: [docs/board-checker/BOARD-CHECK.md](docs/board-checker/BOARD-CHECK.md).**
+This supersedes the spareboard-centred parts of PLAN.md and the "board screen"
+guesses in SCREENS.md (run 2 probably captured a pool screen, not the spareboard).
+Note: the manual says B = 3 turns; the owner says 2. Ask; keep counts in config.
+
 ## ⏸ Paused here (2026-10-13). Resume with this
 Owner paused the work. Phase 0 is a technical **go** and risk is signed off.
 We were about to have the owner **teach the board screen**. To resume:
