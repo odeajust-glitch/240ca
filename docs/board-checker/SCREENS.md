@@ -74,8 +74,13 @@ Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program 
 100:EN | 136:NAME*+ | 262:JE | 289:xxxxx | 388:S305
 100:CO | 136:NAME*+(xxx)x | 289:xxxxx | 388:SB05
 ```
-- **Train line:** manifest symbol (`A42431`; owner's example `A424 61 03`),
-  `14` (day ❓), **ON DUTY AT** Sarnia/Toronto, date, **on-duty time (24 h)**.
+- **Train line:** manifest symbol, e.g. `A42431 14` = **train `A424`** +
+  **routing `31`** + **origin day `14`** (owner, 2026-10-14). The origin day is
+  the day the train *originated*, which is **not** necessarily the day a Sarnia
+  crew went on it: bypass trains come from elsewhere (e.g. **302 from Winnipeg**
+  always lags). **Never use the origin day for the day boundary; use the on-duty
+  date column.** Then **ON DUTY AT** Sarnia/Toronto, on-duty date, **on-duty
+  time (24 h)**. Identify a train by its number (A424) plus origin day, not routing.
 - **Crew lines:** craft `EN` engineer, `CO` conductor, `ET` (engineer trainee ❓);
   yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks ❓,
   sometimes a `(…)` code ❓, initials ❓, another word ❓, then the **turn id**.
@@ -85,7 +90,7 @@ Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program 
 - **Yard jobs start** with a block like `XXXX99 0800 … S1/S1 ON DUTY AT: SARNIA`.
   That's where paging stops (page 3 of 31 on 2026-10-14).
 
-First reading (2026-10-14, dates were masked so not certain all are today):
+First reading (2026-10-14; on-duty dates were masked, so not certain all are today. M30241's `12` is just its origin day, since 302 comes from Winnipeg):
 on duty **at Sarnia**, in time order: L50231 0545 (S5, excluded) · Z14891 0735
 **SA02** · M30241 0845 **SA03** · X38261 0945 **SA04** · A42431 0950 **SB05** ·
 X39291 1300 **SB06**, i.e. **3 A then 2 B, matching the rule**. At Toronto (crews
