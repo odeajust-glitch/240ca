@@ -52,6 +52,11 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    an A/B/SR slot. The crew keeps their place (e.g. the 2nd A crew takes the next
    train, which becomes the 2nd A train). Flag it if a cancelled crew lost their
    place or the next train went to someone else.
+7d. **Deadheads (owner, 2026-10-14):** a deadhead can be ordered **at any time of
+   day**, even before the A/B trains are used up, and it **always takes the next
+   Chain Gang turn** out of Sarnia. For the tool: deadheads **never count toward
+   the 3 A / 2 B**. Each one is an SR step at its own time, slotted into the SR
+   rotation in time order with the SR-bound trains.
 8. **Not in the A/B/SR count (owner, 2026-10-14):** **work trains** and **short
    turns** go to the **spareboard**. **330 and Via trains** don't appear at all.
    **L502/L501** is excluded (item 5).
