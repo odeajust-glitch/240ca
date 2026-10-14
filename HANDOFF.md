@@ -22,7 +22,7 @@ every session**: state, decisions, what you tried, what's next.
   (stand-in for outer switch time) and assumed home when reached; `**` ignores
   its time (`starsHaveExpiry: false`) until the owner confirms; a status time
   with no day is taken as the snapshot's day.
-**Next:** owner runs the probe on the 15th (Call Board pages to the yard jobs,
+**Next:** (calendar reminder set for 2026-10-15 12:00 Toronto) owner runs the probe on the 15th with the latest board-probe.js (Call Board pages to the yard jobs,
 23 with CO, 41) → run board-check on it → compare with the 14th's prediction.
 
 ## 2026-10-14: rules settled, first prediction agreed
