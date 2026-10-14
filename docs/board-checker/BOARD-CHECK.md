@@ -187,3 +187,29 @@ Still open:
 3. ~~L502~~ **Answered:** S5 turns. A/B/SR go only to Toronto.
 4. ~~A/B with no crew in Sarnia~~ **Answered:** still counts as A/B (goes spare).
 5. What should a check report back, and how (e.g. phone alert only on change)?
+
+## Worked example: 2026-10-14 ~16:00 snapshot (first manual prediction, unverified)
+Inputs: Call Board pages 1–3 and screen 23 (SR, CO) and 41 (E, 24 h) from the
+owner's walkthroughs. Line-up times were masked, so **list order is assumed to be
+ordering-time order**, and the 0459 boundary is assumed to fall just before
+L50231 15 (L502 is on duty ~0545).
+
+Today (14th) out of Sarnia, already on duty: L50231 14 (S5, excluded) · Z14891 13
+SA02 · M30241 12 SA03 · X38261 13 SA04 → 3 A · A42431 14 SB05 · X39291 13 SB06 →
+2 B. So **every further train today goes to the Chain Gang**.
+
+| # | Line-up 41 | Expected | Reasoning |
+|---|---|---|---|
+| 1 | DHT141B 14 | SR01 | deadhead → always next SR turn; SR01 is POS 1, no rest |
+| 2 | E27861 14 | SR07 | A/B used up today; SR07 is next |
+| 3 | M39671 13 | SR08 | next SR |
+| 4 | DHT211B 05 | SR02 *or* SR06 | deadhead → SR. SR02 is on rest until 0100/15: if called before 0100 → skip to SR06 (SR05 on HT until 0559/16 is skipped too) |
+| 5 | L50231 15 | S5 | L502 is excluded from A/B/SR |
+| 6 | Z14891 14 | A | first train after 0459/15 |
+| 7 | M30241 13 | A | 2nd |
+| 8 | M39491 14 | A | 3rd |
+| 9 | X30241 13 | B | 4th → B |
+| 10 | A42431 15 | B | 5th → B |
+| 11 | E27861 15 | SR | next SR in line (SR02/SR06, then SR04 with `**` → goes spare) |
+| 12 | M39291 14 | SR | next |
+| 13 | M38261 15 | SR | next; returning turns (SR14, SR03, SR12) slot in by when they tie up in Sarnia ❓ |
