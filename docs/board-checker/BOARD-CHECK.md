@@ -33,6 +33,19 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    uses its place in the rotation, so **the Chain Gang order is unaffected**.
    For the tool, a vacant turn counts as a normal step in the rotation. If the
    next SR person was used instead of the spareboard, that's a flag.
+7b. **Rest (owner, 2026-10-14):** this is *different* from a vacant turn.
+   - **A/B turns** are never really on rest. But if an A/B crew is on a *reset*
+     (which can show as rest), their turn **goes spare to the spareboard**. The
+     train still counts as A/B, and the sequence is unchanged.
+   - **Chain Gang (SR):** if the SR person due out is **on rest**, the train **goes to
+     the next SR person**, and the rested person **keeps their position**. They're
+     first in line again as soon as their rest is up.
+   - So for the owner's position: people ahead of them who are on rest when a
+     given SR train comes up **don't count** for that train. The tool needs each
+     SR turn's rest-until time and compares it with each train's time.
+     ❓ Which time is compared: on-duty time or call time (calls go 2 h ahead)?
+   - Flags: an SR train given to someone *behind* a rested-up, available person
+     is a possible runaround. A rested person losing their position is too.
 8. **Not in the A/B/SR count (owner, 2026-10-14):** **work trains** and **short
    turns** go to the **spareboard**. **330 and Via trains** don't appear at all.
    **L502/L501** is excluded (item 5).
@@ -103,10 +116,13 @@ What the manual says (check against the owner's version):
 ## Open questions for the owner
 Answered 2026-10-14: turn counts (3 A / 2 B, change only by union vote); day
 boundary (after 0459 by ordering time, on-duty = ordering − 15 min prep); holes
-(vacant SR turn → spareboard, SR order unchanged); exclusions (work trains and
+(vacant SR turn → spareboard, SR order unchanged); rest (A/B on reset → spare;
+SR on rest → next SR person, rested person keeps position); exclusions (work trains and
 short turns → spareboard; 330/Via not seen; L502/L501 excluded); craft (conductor).
 
 Still open:
+0. **Rest cut-off:** for an SR person on rest, is their rest compared with the
+   train's on-duty time or its call time? (When do they count as available?)
 1. **Screens:** the owner will teach the order of CATS screens: what's been ordered
    out of Sarnia, then the A/B/SR turn lists. Capture it in SCREENS.md, step by step.
 2. Does CATS show the **ordered time**, the **on-duty time**, or both?
