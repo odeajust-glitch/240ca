@@ -16,7 +16,7 @@ ordered out of Sarnia → order of trains, (2) where they sit in that order.
 **Spec and open questions: [docs/board-checker/BOARD-CHECK.md](docs/board-checker/BOARD-CHECK.md).**
 This supersedes the spareboard-centred parts of PLAN.md and the "board screen"
 guesses in SCREENS.md (run 2 probably captured a pool screen, not the spareboard).
-Note: the manual says B = 3 turns; the owner says 2. Ask; keep counts in config.
+Turn counts settled: **3 A, 2 B**. They only change by a union-meeting vote, so assume them unless the owner says otherwise.
 
 ## ⏸ Paused here (2026-10-13). Resume with this
 Owner paused the work. Phase 0 is a technical **go** and risk is signed off.

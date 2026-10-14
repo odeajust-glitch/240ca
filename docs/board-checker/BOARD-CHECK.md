@@ -28,7 +28,7 @@ What the manual says (check against the owner's version):
 | Rule | Manual says | Owner says | Status |
 |---|---|---|---|
 | A pool | first **3** unassigned trains **after 0459** daily, by **train ordering time**; Sarnia→Toronto; no deadheads to Toronto, work trains, plows, spreaders or short turns | first 3 | ✅ |
-| B pool | "3 turns per day" heading; next **3** after A exhausted; same exclusions | next **2** | ❓ **Ask.** Turn counts are set at each Change of Card, so 2 may be current. Keep the counts in config, not in code. |
+| B pool | "3 turns per day" heading; next **3** after A exhausted; same exclusions | next **2** | ✅ **Settled (owner, 2026-10-14): use 3 A and 2 B.** The counts only change by a vote at a union meeting, so treat 3/2 as fixed unless the owner says otherwise. Keep them as named config values, not literals in code. |
 | Chain Gang (SR) | any unassigned train >100 mi one direction after A and B are used; **"NO SCOOP" at home terminal**; **first in, first out at home and away**; continuous rotation; all extras to Niagara Falls / Port Robinson / Fort Erie (**no such trains run now**, per owner); may run Via, A/B turns or 330 if the joint spareboard is exhausted | everything after A/B, plus all deadheads | ✅ (deadheads consistent: A/B "do not deadhead to Toronto") |
 | SR missed call | not called again until next due out in rotation | — | |
 | Train 330 (S4) | own pool, 3 crews, window time; not part of the A/B/SR count | **L502** (Sarnia) / **L501** (return) is excluded from A/B/SR | ❓ Is L502 today's equivalent of 330? Who crews it? |
@@ -72,8 +72,7 @@ What the manual says (check against the owner's version):
    is flagged.
 
 ## Open questions for the owner
-1. **B turns: 2 or 3?** The manual says 3; you said 2. Is 2 the current Change of
-   Card number? (Does A ever change from 3?)
+1. ~~B turns: 2 or 3?~~ **Answered:** 3 A, 2 B. Only changes by a union-meeting vote.
 2. **Day boundary:** the manual says A takes the first 3 trains *after 0459* by
    *ordering time*. Is that how you count "each day"?
 3. **Which CATS screens** do you look at for (a) what's been ordered out of
