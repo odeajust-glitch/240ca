@@ -69,6 +69,7 @@ const BOARD_WORDS = new Set(('SPARE SPAREBOARD BOARD FAST SLOW POOL TURN TURNS P
 // long digit runs, so both get masked. Runs in Node and, via its source,
 // inside the page.
 function maskTokenWith(tok, words) {
+  if (/^\d{2}\/\d{2}\/\d{2}(-\d{4})?$/.test(tok)) return tok; // dates aren't personal
   const core = tok.replace(/[^A-Za-z0-9]/g, '');
   if (!core) return tok;
   if (words.has(core.toUpperCase())) return tok;

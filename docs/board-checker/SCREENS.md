@@ -55,6 +55,42 @@ Route for the tool: sign-on → `3` Enter → `6` Enter → Enter → F8 until t
 Note: the 2026-10-14 run's `screenGrid` was empty because CATS nests text inside
 positioned boxes. Fixed: the probe now places every text node by its own box.
 
+## Train Service menu (`45 SA 3`): what's on it
+From the 2026-10-14 walkthrough (some words masked). Numbered options, read
+with the owner's help to come:
+- 005 TERMINAL LINEUP · **006 CALL BOARD** · 009–012 TRAIN SLOW … · 013–015 TRAIN FAST …
+- 017/018 … S/B … · **019 A POOL – POS · 020 A POOL – TURN · 021 B POOL – POS ·
+  022 B POOL – TURN · 023 CHAIN GANG – POS · 024 CHAIN GANG – TURN**
+- 025/026 …MANIFEST… · 027/028 … POOL · 029–031 …PL… · 032/033 330 POOL
+- 034–040 other pools · **041 TRAIN LINE-UP** (likely the *ordered* trains ❓)
+- Keys: F1 help, F3 exit, F7 up, F8 down.
+
+## Call Board (`45 SA 6`, then Enter): crews on duty
+Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program id
+`CNP27N`, then `TRAINS`. Then one block per train:
+
+```
+46:A42431 | 109:14 | 154:ON DUTY AT: | 262:SARNIA | 451:MM/DD/YY | 532:0950
+100:EN | 136:NAME*+ | 262:JE | 289:xxxxx | 388:S305
+100:CO | 136:NAME*+(xxx)x | 289:xxxxx | 388:SB05
+```
+- **Train line:** manifest symbol (`A42431`; owner's example `A424 61 03`),
+  `14` (day ❓), **ON DUTY AT** Sarnia/Toronto, date, **on-duty time (24 h)**.
+- **Crew lines:** craft `EN` engineer, `CO` conductor, `ET` (engineer trainee ❓);
+  yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks ❓,
+  sometimes a `(…)` code ❓, initials ❓, another word ❓, then the **turn id**.
+- **Turn ids seen:** conductors **SA01–SA04** (A pool), **SB03–SB06** (B pool),
+  **SR14** (Chain Gang), **MU01** (❓); engineers **S1nn** (with SA crews),
+  **S3nn** (with SB), **SD10** (with SR), **S502** (S5, on L50231).
+- **Yard jobs start** with a block like `XXXX99 0800 … S1/S1 ON DUTY AT: SARNIA`.
+  That's where paging stops (page 3 of 31 on 2026-10-14).
+
+First reading (2026-10-14, dates were masked so not certain all are today):
+on duty **at Sarnia**, in time order: L50231 0545 (S5, excluded) · Z14891 0735
+**SA02** · M30241 0845 **SA03** · X38261 0945 **SA04** · A42431 0950 **SB05** ·
+X39291 1300 **SB06**, i.e. **3 A then 2 B, matching the rule**. At Toronto (crews
+heading home): E27531 SA01, M39731 SB03, SQ13931 SB04, Z14931 **SR14** 1645.
+
 ## Board screen: _(name as shown on screen)_
 
 Header / prompt line seen: `(9=AAAA, 9-9=AAAA, A=AAAA)` _(owner: what are the
