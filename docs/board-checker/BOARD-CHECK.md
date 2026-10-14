@@ -42,8 +42,13 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      first in line again as soon as their rest is up.
    - So for the owner's position: people ahead of them who are on rest when a
      given SR train comes up **don't count** for that train. The tool needs each
-     SR turn's rest-until time and compares it with each train's time.
-     ❓ Which time is compared: on-duty time or call time (calls go 2 h ahead)?
+     SR turn's rest-until time and compares it with each train's **call time**.
+   - **Answered (owner, 2026-10-14): compare with the CALL time.** Nobody can be
+     called while on rest. So an SR person is available for a train only if
+     `restUntil <= callTime`, where `callTime = onDutyTime - callLead`.
+     ❓ Call lead for Chain Gang turns: 2 h like the spareboard (manual p.3)?
+     Edge case: short calls (min 1 h at home, manual p.1) shorten the lead for
+     people who've asked for them. Ignore those until the owner says they matter.
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.
 7c. **Cancelled trains (owner, 2026-10-14):** if a train is cancelled, the crew
@@ -132,8 +137,8 @@ SR on rest → next SR person, rested person keeps position); exclusions (work t
 short turns → spareboard; 330/Via not seen; L502/L501 excluded); craft (conductor).
 
 Still open:
-0. **Rest cut-off:** for an SR person on rest, is their rest compared with the
-   train's on-duty time or its call time? (When do they count as available?)
+0. ~~Rest cut-off~~ **Answered:** the call time (they can't be called while on rest).
+   Still to confirm: is the Chain Gang call lead 2 h?
 1. **Screens:** the owner will teach the order of CATS screens: what's been ordered
    out of Sarnia, then the A/B/SR turn lists. Capture it in SCREENS.md, step by step.
 2. Does CATS show the **ordered time**, the **on-duty time**, or both?
