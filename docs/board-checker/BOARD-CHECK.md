@@ -17,15 +17,21 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    deadhead ordered**.
 4. **Holes** in any of these turns (the turn's owner off, booked rest, etc.) are
    backfilled by **spareboard** employees.
+5. **Excluded: the L502 / L501 train.** Manifest numbers starting **`L502`** out
+   of Sarnia (**`L501`** coming back from the away-from-home terminal) belong to
+   neither A, B nor the Chain Gang. They are skipped when counting the sequence
+   (owner, 2026-10-14). Who crews it is still to be asked: possibly the old 330 / S4 pool.
+6. **No trains run to Niagara Falls, Port Robinson or Fort Erie** today, so
+   that line of the manual doesn't apply (owner, 2026-10-14).
 
 What the manual says (check against the owner's version):
 | Rule | Manual says | Owner says | Status |
 |---|---|---|---|
 | A pool | first **3** unassigned trains **after 0459** daily, by **train ordering time**; Sarnia→Toronto; no deadheads to Toronto, work trains, plows, spreaders or short turns | first 3 | ✅ |
 | B pool | "3 turns per day" heading; next **3** after A exhausted; same exclusions | next **2** | ❓ **Ask.** Turn counts are set at each Change of Card, so 2 may be current. Keep the counts in config, not in code. |
-| Chain Gang (SR) | any unassigned train >100 mi one direction after A and B are used; **"NO SCOOP" at home terminal**; **first in, first out at home and away**; continuous rotation; all extras to Niagara Falls / Port Robinson / Fort Erie; may run Via, A/B turns or 330 if the joint spareboard is exhausted | everything after A/B, plus all deadheads | ✅ (deadheads consistent: A/B "do not deadhead to Toronto") |
+| Chain Gang (SR) | any unassigned train >100 mi one direction after A and B are used; **"NO SCOOP" at home terminal**; **first in, first out at home and away**; continuous rotation; all extras to Niagara Falls / Port Robinson / Fort Erie (**no such trains run now**, per owner); may run Via, A/B turns or 330 if the joint spareboard is exhausted | everything after A/B, plus all deadheads | ✅ (deadheads consistent: A/B "do not deadhead to Toronto") |
 | SR missed call | not called again until next due out in rotation | — | |
-| Train 330 (S4) | own pool, 3 crews, window time; not part of the A/B/SR count | — | ❓ Confirm 330 is excluded from the count |
+| Train 330 (S4) | own pool, 3 crews, window time; not part of the A/B/SR count | **L502** (Sarnia) / **L501** (return) is excluded from A/B/SR | ❓ Is L502 today's equivalent of 330? Who crews it? |
 | Relief (holes) in SA/SB/SR | 1st available on **Slow board** (2 h call) → junior available (Art. 49.5 a) → junior off 14 h (49.5 b) → bullpen → road availability list → canvass … | backfilled by spareboard | ✅ |
 
 ## The owner's check, step by step
@@ -74,6 +80,7 @@ What the manual says (check against the owner's version):
    Sarnia, and (b) the chain gang turn order? How do you get to each?
 4. **Holes:** when a spareboard person fills a hole in an SR turn, does that turn
    keep its normal place in the rotation?
-5. **What's excluded** from the count: 330, Via, work trains, short turns,
-   trains under 100 mi?
+5. **What's excluded** from the count: L502 is (answered). Anything else? Via,
+   work trains, short turns, trains under 100 mi? Who crews L502, and is it the
+   old "330"?
 6. **Craft:** you're working as a conductor (the CTY procedures), correct?
