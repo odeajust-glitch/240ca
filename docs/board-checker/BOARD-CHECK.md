@@ -51,6 +51,18 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      people who've asked for them. Ignore those until the owner says they matter.
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.
+7b2. **Chain Gang status marks on screen 23 (owner, 2026-10-14):**
+   - **`HT` = hold turn**: treated **the same as rest**. The turn keeps moving
+     up the board but **isn't called** while held, so the train passes to the next
+     SR person.
+   - **`**`** beside a turn: if that turn comes up while marked `**`, it **goes
+     spare**. The train goes to the **spareboard** (like a vacant turn), *not* to
+     the next SR person, so the SR order isn't affected.
+     ❓ Does the time shown with `**` mean "until then"? After going spare, does
+     that turn rotate to the bottom as if it had been used?
+   So for each SR train, in position order: on rest / HT (until after call time)
+   → skip to the next person; `**` → that turn uses the train and the spareboard
+   covers; otherwise → that person gets it.
 7c. **Cancelled trains (owner, 2026-10-14):** if a train is cancelled, the crew
    that was on it **goes on the next train**, and the order is maintained. For
    the tool: **drop the cancelled train from the sequence**, so it doesn't use up
