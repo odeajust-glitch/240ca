@@ -58,11 +58,31 @@ const BOARD_WORDS = new Set(('SPARE SPAREBOARD BOARD FAST SLOW POOL TURN TURNS P
   'NO NUM NUMBER STATUS REST CALL CALLED CALLING TIME DATE ON OFF DUTY BOOK BOOKED AVAIL AVAILABLE ' +
   'LIST TERMINAL SARNIA YARD ROAD TRAIN JOB ASSIGNMENT CREW CONDUCTOR ENGINEER LE CO RC YM ' +
   'UP DOWN OUT FIRST NEXT PREV PAGE ENTER PF1 PF2 PF3 PF4 PF5 PF6 PF7 PF8 PF9 PF10 PF11 PF12 ' +
-  'MARKED MARK UNION VACATION VAC SICK LOA ETA HRS HOURS MILES MILEAGE SENIORITY').split(' '));
+  'MARKED MARK UNION VACATION VAC SICK LOA ETA HRS HOURS MILES MILEAGE SENIORITY ' +
+  'TRAINS LINEUP LINE CHAIN GANG ORDER ORDERED ORDERS DEADHEAD DH CANCEL CANCELLED VACANT RESET ' +
+  'SHORT WORK VIA MANIFEST SYMBOL TORONTO MAC MACMILLAN ARRIVED ARRIVAL ARR DEPART DEP DEPARTED ' +
+  'CALLED TIE TIED HOME AWAY TERM PREP OD FROM TO DEST ORIGIN ENGR CONDR CREWED').split(' '));
+
+// Masks one token unless it's safe to show: a board word, a short code
+// (CO, LE), a small number (positions, times) or a train/turn symbol
+// (SB01, L50221, Q14851). Names are letters only and employee numbers are
+// long digit runs, so both get masked. Runs in Node and, via its source,
+// inside the page.
+function maskTokenWith(tok, words) {
+  const core = tok.replace(/[^A-Za-z0-9]/g, '');
+  if (!core) return tok;
+  if (words.has(core.toUpperCase())) return tok;
+  if (/^[A-Za-z]{1,2}$/.test(core)) return tok;
+  if (/^[0-9]{1,4}$/.test(core)) return tok;
+  if (/^[A-Za-z]{1,3}[0-9][A-Za-z0-9]*$/.test(core) && core.length <= 10) return tok;
+  return tok.replace(/[A-Za-z]/g, 'A').replace(/[0-9]/g, '9');
+}
 
 async function describeFrame(frame) {
-  return frame.evaluate((boardWords) => {
+  return frame.evaluate(([boardWords, maskSrc]) => {
     const words = new Set(boardWords);
+    // eslint-disable-next-line no-eval
+    const maskTokenWith = eval(`(${maskSrc})`);
     const text = document.body ? document.body.innerText : '';
     const lines = text.split('\n').map((l) => l.replace(/\s+$/, '')).filter((l) => l.trim());
     const found = new Set();
@@ -90,15 +110,7 @@ async function describeFrame(frame) {
     // left offsets give the columns. Text is masked unless it's a board word,
     // a short code (CO, LE, SB01) or a small number (positions, times), so
     // names and employee numbers don't come through.
-    function maskToken(tok) {
-      const core = tok.replace(/[^A-Za-z0-9]/g, '');
-      if (!core) return tok;
-      if (words.has(core.toUpperCase())) return tok;
-      if (/^[A-Za-z]{1,2}$/.test(core)) return tok;
-      if (/^[0-9]{1,4}$/.test(core)) return tok;
-      if (/[0-9]/.test(core) && /[A-Za-z]/.test(core) && core.length <= 6) return tok;
-      return tok.replace(/[A-Za-z]/g, 'A').replace(/[0-9]/g, '9');
-    }
+    function maskToken(tok) { return maskTokenWith(tok, words); }
     function mask(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
     function screenGrid() {
       const cells = [];
@@ -121,7 +133,7 @@ async function describeFrame(frame) {
       }
       return rows.slice(0, 80).map((r) => `${r.top} | ${r.cells.join(' | ')}`);
     }
-  }, [...BOARD_WORDS]);
+  }, [[...BOARD_WORDS], maskTokenWith.toString()]);
 }
 
 function looksLikeLogin(url, hasPassword) {
@@ -142,6 +154,20 @@ async function main() {
   let saved = 0;
   page.on('framenavigated', (frame) => {
     if (frame === page.mainFrame()) redirects.push(scrubUrl(frame.url()));
+  });
+  // The key pressed and the fields typed into on the last CATS screen POST,
+  // attached to the next recorded screen as "how we got here".
+  let lastAction = null;
+  page.on('request', (req) => {
+    if (req.method() !== 'POST' || !/\/Xhtml/.test(req.url())) return;
+    try {
+      const form = new URLSearchParams(req.postData() || '');
+      const keys = [...form.keys()];
+      const key = keys.find((k) => /^acc_F\d+$/.test(k)) || (keys.includes('btn_Button') ? 'Enter' : null);
+      const typed = keys.filter((k) => k.startsWith('txt_') && form.get(k).trim())
+        .map((k) => ({ field: k, value: form.get(k).trim().split(/(\s+)/).map((t) => (/\s/.test(t) ? t : maskTokenWith(t, BOARD_WORDS))).join('') }));
+      lastAction = { key: key ? key.replace('acc_', '') : null, typed };
+    } catch { /* not a form */ }
   });
   page.on('response', async (resp) => {
     const req = resp.request();
@@ -175,7 +201,38 @@ async function main() {
   console.log(startedOnLogin
     ? '\nSign in in the browser window (name, password, Authenticator).'
     : '\nAlready signed in from a previous run — the saved session still works.');
-  await waitForEnter('Then open the spareboard page you want checked, and press Enter here... ');
+  console.log('Then go through the CATS screens in your usual order. Every screen is recorded.');
+
+  // CATS bumps the hidden sequenceNumber on every screen, so a change means
+  // a new screen to record.
+  const screens = [];
+  let recording = true;
+  let lastSeq = null;
+  const recorder = (async () => {
+    while (recording) {
+      const frame = page.frames().find((f) => f.name() === 'jacadaframe');
+      if (frame) {
+        try {
+          const seq = await frame.$eval('input[name=sequenceNumber]', (el) => el.value);
+          if (seq !== lastSeq) {
+            lastSeq = seq;
+            await frame.waitForLoadState('domcontentloaded');
+            const step = screens.length + 1;
+            const d = await describeFrame(frame);
+            fs.writeFileSync(path.join(OUT_DIR, `screen-${String(step).padStart(2, '0')}.html`), await frame.content());
+            await page.screenshot({ path: path.join(OUT_DIR, `screen-${String(step).padStart(2, '0')}.png`), fullPage: true });
+            screens.push({ step, at: new Date().toISOString(), cameFrom: lastAction, boardWordsFound: d.boardWordsFound, inputs: d.inputs.filter((i) => i.type === 'text').map((i) => i.name), screenGrid: d.screenGrid });
+            lastAction = null;
+            console.log(`  recorded screen ${step}`);
+          }
+        } catch { /* frame mid-navigation; try again next tick */ }
+      }
+      await new Promise((r) => setTimeout(r, 700));
+    }
+  })();
+  await waitForEnter('Press Enter here when you have finished... ');
+  recording = false;
+  await recorder;
 
   await page.screenshot({ path: path.join(OUT_DIR, 'board.png'), fullPage: true });
 
@@ -196,6 +253,7 @@ async function main() {
     startedOnLoginPage: startedOnLogin,
     boardUrl: scrubUrl(page.url()),
     navigation: redirects,
+    screens,
     frames,
     responsesSaved: saved,
     requests: requests.filter((r) => r.type !== 'document' || r.status < 300),
@@ -209,7 +267,7 @@ async function main() {
   fs.writeFileSync(path.join(OUT_DIR, 'summary.json'), JSON.stringify(summary, null, 2));
 
   await context.close();
-  console.log(`\nDone. Share probe-out/summary.json; keep the board-frame-*.html files, board.png and responses/ to yourself.`);
+  console.log(`\nDone. Share probe-out/summary.json; keep the screen-*, board-frame-* files, board.png and responses/ to yourself.`);
 }
 
 main().catch((err) => {

@@ -13,6 +13,13 @@ Mechanics (from the Phase 0 probe; see HANDOFF "Phase 0 findings"):
 - Read the screen like a person: drive the page, never replay raw POSTs
   (`sequenceNumber` changes every screen).
 
+## How we capture screens
+Run `node scripts/board-probe.js`, sign in, step through CATS in the usual
+order, then press Enter. `summary.json` → `screens[]` has, per screen: step
+number, `cameFrom` (key pressed and masked text typed), and `screenGrid` (rows
+as `top | left:text | …`, names and employee numbers masked; codes, times and
+train/turn symbols kept). The owner adds what each screen means.
+
 ## Getting to the board
 _(Owner: steps from the first screen after sign-in to the board. What you
 type, in which box, and which key you press.)_

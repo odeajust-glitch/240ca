@@ -7,7 +7,15 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## 2026-10-14: scope refocused (read this first)
+## 2026-10-14: screen walkthrough (current step)
+The probe now has a **recording mode**: the owner navigates CATS normally, and
+every screen is captured in order (`summary.json` → `screens[]`: masked
+`screenGrid`, the key pressed / masked text typed to get there, text field
+names). Raw `screen-NN.html/png` stay on the owner's PC. The owner pastes the
+summary and describes each screen in plain words; record both in SCREENS.md.
+First screen to teach: **finding the train currently working** (on duty out of Sarnia).
+
+## 2026-10-14: scope refocused
 The owner works **road only** and holds a **Chain Gang (SR pool)** turn. They are
 **not** on the spareboard. Road order out of Sarnia each day: first 3 trains → A
 turns, next 2 → B turns, everything else **plus all deadheads** → Chain Gang;
