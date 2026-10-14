@@ -82,11 +82,14 @@ Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program 
   date column.** Then **ON DUTY AT** Sarnia/Toronto, on-duty date, **on-duty
   time (24 h)**. Identify a train by its number (A424) plus origin day, not routing.
 - **Crew lines:** craft `EN` engineer, `CO` conductor, `ET` (engineer trainee ❓);
-  yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks ❓,
+  yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks
+  = **qualifications** (belt pack / engineer qualified; owner). These are for crew
+  callers, so the board check ignores them,
   sometimes a `(…)` code ❓, initials ❓, another word ❓, then the **turn id**.
 - **Turn ids seen:** conductors **SA01–SA04** (A pool), **SB03–SB06** (B pool),
-  **SR14** (Chain Gang), **MU01** (❓); engineers **S1nn** (with SA crews),
-  **S3nn** (with SB), **SD10** (with SR), **S502** (S5, on L50231).
+  **SR14** (Chain Gang), **MU01** = **make-up turn** (e.g. a short-turn rescue
+  off the spareboard; owner). Engineers **S1nn** pair with **SA**, **S3nn** with
+  **SB**, **SDnn** with **SR**, and **S502** is S5 (on L50231).
 - **Yard jobs start** with a block like `XXXX99 0800 … S1/S1 ON DUTY AT: SARNIA`.
   That's where paging stops (page 3 of 31 on 2026-10-14).
 

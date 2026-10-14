@@ -122,7 +122,12 @@ time = on-duty + prep (15 min for Sarnia thru freight).
    - a train given to the wrong pool (e.g. a 4th train to A, or a deadhead to A/B);
    - an SR train given to someone out of rotation (a **runaround**);
    - a hole filled out of relief order (e.g. not the first available on the Slow board);
-   - the owner's turn skipped or moved.
+   - the owner's turn skipped or moved;
+   - **engineer/conductor turn mismatch** (owner, 2026-10-14): **S1↔SA, S3↔SB,
+     SD↔SR**. Any other pairing on a road train may be a crew-calling mistake;
+   - an **MU (make-up) turn on a road train** that should have gone to an A/B/SR
+     turn. MU is legit for things like a short-turn rescue off the spareboard,
+     but callers sometimes code a turn as MU by mistake.
    Every flag shows the two snapshots it came from and the rule it relies on,
    for a human to judge. The tool flags; it never files a claim.
 
