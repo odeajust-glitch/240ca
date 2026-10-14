@@ -107,6 +107,38 @@ on duty **at Sarnia**, in time order: L50231 0545 (S5, excluded) · Z14891 0735
 X39291 1300 **SB06**, i.e. **3 A then 2 B, matching the rule**. At Toronto (crews
 heading home): E27531 SA01, M39731 SB03, SQ13931 SB04, Z14931 **SR14** 1645.
 
+## Chain Gang position (`45 SA 23`) (walkthrough 2026-10-14)
+Prompt boxes: **POOL `SR`**, **TERM `0`** (`0`=home/Sarnia, `1-9`=away), **CC**
+(craft). The owner typed **`CO`** in CC to show conductors only (otherwise each
+turn shows EN / CO / B1 rows). F8 pages, F10 switches terminal.
+Columns: `CC | TURN | T | POS | EMPLOYEE NAME | ST | RN | (time) | (day) | SC | REST (time) (day) | TURN …`
+Home (T=0) order seen, conductors:
+| POS | Turn | Notes |
+|---|---|---|
+| 001 | SR01 | |
+| 002 | SR07 | |
+| 003 | SR08 | |
+| 004 | SR02 | **REST until 0100 / 15th** |
+| 005 | SR05 | ST `**` RN `HT` 0559 / 16th; rest 0120 / 15th |
+| 006 | SR06 | |
+| 007 | SR04 | ST `**` RN `**` 1026 |
+| 008 | SR09 | ST `**` RN `**` 1600 / 14th |
+| (T=1, away) 001 | SR12 | rest 1949 / 14th |
+❓ Owner: what are ST, RN (e.g. `HT`), the time/day after them, and SC? Which
+turn is yours? Missing turns (SR03, SR10, SR11, SR13, SR14) are out working.
+
+## Train Line-up (`45 SA 41`) (walkthrough 2026-10-14)
+Prompt: station (5-digit code), direction **`E`**, POOL (blank), **HOURS IN
+ADVANCE `24`**. Rows, in screen order (times were masked in this run; probe fixed):
+`DHT141B 14` (deadhead: `SD DT A1 B`), `E27861 14`, `M39671 13`, `DHT211B 05`
+(deadhead), `L50231 15`, `Z14891 14`, `M30241 13`, `M39491 14`, `X30241 13`,
+`A42431 15`, `E27861 15`, `M39291 14`, `M38261 15`.
+Each row: `HHMM-HHMM` (❓ order/on-duty times), `E`, 3-letter code, train symbol,
+origin day, a 5-digit number, a 4-letter code, a code like `999AAA`, a letter,
+a 4-letter code, then two date-like codes (`99AAA99`).
+❓ Owner: what is each column? Is the list in ordering-time order? Do trains
+already on duty (e.g. Z14891 14) stay on it?
+
 ## Board screen: _(name as shown on screen)_
 
 Header / prompt line seen: `(9=AAAA, 9-9=AAAA, A=AAAA)` _(owner: what are the
