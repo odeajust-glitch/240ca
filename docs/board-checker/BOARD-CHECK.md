@@ -46,6 +46,12 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      ❓ Which time is compared: on-duty time or call time (calls go 2 h ahead)?
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.
+7c. **Cancelled trains (owner, 2026-10-14):** if a train is cancelled, the crew
+   that was on it **goes on the next train**, and the order is maintained. For
+   the tool: **drop the cancelled train from the sequence**, so it doesn't use up
+   an A/B/SR slot. The crew keeps their place (e.g. the 2nd A crew takes the next
+   train, which becomes the 2nd A train). Flag it if a cancelled crew lost their
+   place or the next train went to someone else.
 8. **Not in the A/B/SR count (owner, 2026-10-14):** **work trains** and **short
    turns** go to the **spareboard**. **330 and Via trains** don't appear at all.
    **L502/L501** is excluded (item 5).
