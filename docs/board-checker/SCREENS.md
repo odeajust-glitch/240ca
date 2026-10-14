@@ -81,6 +81,14 @@ Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program 
   always lags). **Never use the origin day for the day boundary; use the on-duty
   date column.** Then **ON DUTY AT** Sarnia/Toronto, on-duty date, **on-duty
   time (24 h)**. Identify a train by its number (A424) plus origin day, not routing.
+- **Dates are `YY/MM/DD`** (e.g. `26/10/14` = 2026-10-14); the page header is
+  `YY/MM/DD-HHMM`. Section heading: `TRAINS ENROUTE`. (Confirmed from the owner's
+  screenshot, 2026-10-14.)
+- **Crew line layout** (owner's screenshot, names omitted here):
+  `craft | SURNAME + qualification marks (*, +) | optional (NET) | initials | FIRST NAME | turn id`.
+  So the word after the initials **is the first name**. The parser must treat
+  everything between craft and turn id as the person's name and never store it
+  in fixtures. `(NET)` meaning ❓.
 - **Crew lines:** craft `EN` engineer, `CO` conductor, `ET` (engineer trainee ❓);
   yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks
   = **qualifications** (belt pack / engineer qualified; owner). These are for crew

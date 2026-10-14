@@ -129,7 +129,9 @@ time = on-duty + prep (15 min for Sarnia thru freight).
      a crew-calling mistake.
      **First confirmed catch (2026-10-14):** L50231 had engineer **S502** with the
      conductor on **MU01**. The owner confirmed it's a **miscoding**: it should
-     have been the matching S5 conductor turn. Keep this as a test case;
+     have been the matching S5 conductor turn. Keep this as a test case.
+     **Second candidate (2026-10-14 screenshot):** E27121 on duty Toronto 1725,
+     conductor **SR03** with the engineer on **MU02** (expected SD). ❓ Ask the owner;
    - an **MU (make-up) turn on a road train** that should have gone to an A/B/SR
      turn. MU is legit for things like a short-turn rescue off the spareboard,
      but callers sometimes code a turn as MU by mistake.
