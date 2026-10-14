@@ -194,28 +194,29 @@ Still open:
 4. ~~A/B with no crew in Sarnia~~ **Answered:** still counts as A/B (goes spare).
 5. What should a check report back, and how (e.g. phone alert only on change)?
 
-## Worked example: 2026-10-14 ~16:00 snapshot (first manual prediction, unverified)
-Inputs: Call Board pages 1–3 and screen 23 (SR, CO) and 41 (E, 24 h) from the
-owner's walkthroughs. Line-up times were masked, so **list order is assumed to be
-ordering-time order**, and the 0459 boundary is assumed to fall just before
-L50231 15 (L502 is on duty ~0545).
+## Worked example: 2026-10-14 16:17 line-up (first manual prediction, unverified)
+Today's A/B already used: Z14891 13 SA02, M30241 12 SA03, X38261 13 SA04 (3 A),
+A42431 14 SB05, X39291 13 SB06 (2 B); L50231 14 S5. Chain Gang home order at ~16:00:
+SR01, SR07, SR08, SR02 (rest → 0100/15), SR05 (HT → 0559/16), SR06, SR04 (`**`),
+SR09 (`**` 1600/14). Coming home, by outer switch: SR14 (Z14931), SR03 (owner,
+E27121), SR12 (resting in Toronto → 1949).
 
-Today (14th) out of Sarnia, already on duty: L50231 14 (S5, excluded) · Z14891 13
-SA02 · M30241 12 SA03 · X38261 13 SA04 → 3 A · A42431 14 SB05 · X39291 13 SB06 →
-2 B. So **every further train today goes to the Chain Gang**.
+| Order time | Train | STA | Expected | Reasoning |
+|---|---|---|---|---|
+| 14th 2330 | DHT141B | ORD | **SR01** | deadhead → next SR; SR01 is 1st, no rest |
+| 15th 0015 | E27861 14 | PLN | **SR07** | before 0459, so still the 14th's day; A/B used → SR |
+| 15th 0033 | M39671 13 | PLN | **SR08** | same day → SR |
+| 15th 0230 | DHT211B | ORD | **SR06** | deadhead → SR. Called ~0030 (≈2 h before): SR02 still on rest to 0100 → skipped, keeps position; SR05 HT → skipped |
+| 15th 0400 | L50231 15 | PLN | S5 | excluded |
+| 15th 0545 | Z14891 14 | PLN | **A** (1st) | first train after 0459 |
+| 15th 0705 | M30241 13 | PLN | **A** (2nd) | |
+| 15th 0935 | M39491 14 | PLN | **A** (3rd) | |
+| 15th 0956 | X30241 13 | PLN | **B** (1st) | |
+| 15th 1100 | A42431 15 | PLN | **B** (2nd) | |
+| 15th 1310 | E27861 15 | PLN | **SR02** | back to SR; SR02's rest is over and it kept its spot |
+| 15th 1415 | M39291 14 | PLN | **SR04** (spare) | SR05 still HT → skipped; SR04 `**` → turn goes out with a spareboard employee |
+| 15th 1500 | M38261 15 | PLN | **SR09** | if its `**` has lapsed; otherwise it goes spare the same way |
+| next | — | | SR14, then **SR03 (owner)** | returning turns at the bottom by outer switch time; SR05 rejoins at the top once HT ends 0559/16 |
 
-| # | Line-up 41 | Expected | Reasoning |
-|---|---|---|---|
-| 1 | DHT141B 14 | SR01 | deadhead → always next SR turn; SR01 is POS 1, no rest |
-| 2 | E27861 14 | SR07 | A/B used up today; SR07 is next |
-| 3 | M39671 13 | SR08 | next SR |
-| 4 | DHT211B 05 | SR02 *or* SR06 | deadhead → SR. SR02 is on rest until 0100/15: if called before 0100 → skip to SR06 (SR05 on HT until 0559/16 is skipped too) |
-| 5 | L50231 15 | S5 | L502 is excluded from A/B/SR |
-| 6 | Z14891 14 | A | first train after 0459/15 |
-| 7 | M30241 13 | A | 2nd |
-| 8 | M39491 14 | A | 3rd |
-| 9 | X30241 13 | B | 4th → B |
-| 10 | A42431 15 | B | 5th → B |
-| 11 | E27861 15 | SR | next SR in line (SR02/SR06, then SR04 with `**` → goes spare) |
-| 12 | M39291 14 | SR | next |
-| 13 | M38261 15 | SR | next; returning turns (SR14, SR03, SR12) join the bottom in outer-switch-time order |
+Note: CATS's planned crew column shows `SA` (A pool) for every planned train,
+including ones the 3/2 rule sends to B or SR. Treat it as a default, not a prediction.

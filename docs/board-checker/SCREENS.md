@@ -127,17 +127,40 @@ Home (T=0) order seen, conductors:
 `HT` = **hold turn** (acts like rest); `**` = turn **goes spare** if called (owner). ❓ Still: what do the ST/RN/SC headings stand for, and is the time beside them an "until" time? Which
 turn is yours? Missing turns (SR03, SR10, SR11, SR13, SR14) are out working.
 
-## Train Line-up (`45 SA 41`) (walkthrough 2026-10-14)
-Prompt: station (5-digit code), direction **`E`**, POOL (blank), **HOURS IN
-ADVANCE `24`**. Rows, in screen order (times were masked in this run; probe fixed):
-`DHT141B 14` (deadhead: `SD DT A1 B`), `E27861 14`, `M39671 13`, `DHT211B 05`
-(deadhead), `L50231 15`, `Z14891 14`, `M30241 13`, `M39491 14`, `X30241 13`,
-`A42431 15`, `E27861 15`, `M39291 14`, `M38261 15`.
-Each row: `HHMM-HHMM` (❓ order/on-duty times), `E`, 3-letter code, train symbol,
-origin day, a 5-digit number, a 4-letter code, a code like `999AAA`, a letter,
-a 4-letter code, then two date-like codes (`99AAA99`).
-❓ Owner: what is each column? Is the list in ordering-time order? Do trains
-already on duty (e.g. Z14891 14) stay on it?
+## Train Line-up (`45 SA 41`): "TRAIN LINE UP FIELD INQUIRY" (program PSTS02H)
+Prompt: **STATION `47130`** (Sarnia), **DIR `E`**, POOL blank, **HOURS IN FUTURE `24`**
+(default 16). Ends with `END OF FILE`. **No names on this screen** (owner's
+screenshot 2026-10-14), so the probe shows it unmasked.
+
+Columns: `TRN ORDER MMDD-HRMN` | `Z` (direction) | **`STA`** | `TRAIN/ASGN` +
+origin day | `ORSTN` (origin station) | `INFORMATION` | `ENG CRW` | `TRN CRW`.
+- **`STA`: `ORD` = ordered, `PLN` = planned.** Planned times are **estimates**.
+- **TRN ORDER** = ordering time `MMDD-HHMM`, 24 h (on duty = order − prep).
+- INFORMATION: `TOPC`, then a route/destination code (`200MAC`, `300MAC`,
+  `400MAC` → MacMillan Yard, Toronto; `100BIT`; `500GAR` for L502), `A`/`B`
+  (deadheads `B`), `EnCo`. Deadheads show `SD DT A1 B`.
+- **ENG CRW / TRN CRW = the pool CATS *plans* to use:** `45SAS10`/`45SASA0`
+  (S1 / SA, i.e. **A pool**) on every planned train, even ones that will go B or
+  Chain Gang by the 3/2 rule. That looks like a default, not the real
+  assignment. Deadheads plan `45SASD0`/`45SASR0` (**SD/SR, Chain Gang**). L502
+  plans `45SAS50` (S5).
+
+2026-10-14 16:17 line-up (all `E`, origin station 47130):
+```
+1014-2330 ORD DHT141B 14  SD DT A1 B   SASD0/SASR0
+1015-0015 PLN E27861  14  200MAC A     SAS10/SASA0
+1015-0033 PLN M39671  13  300MAC A
+1015-0230 ORD DHT211B 05  SD DT A1 B   SASD0/SASR0
+1015-0400 PLN L50231  15  500GAR A     SAS50/SAS50
+1015-0545 PLN Z14891  14  100BIT A
+1015-0705 PLN M30241  13  300MAC A
+1015-0935 PLN M39491  14  300MAC A
+1015-0956 PLN X30241  13  300MAC A
+1015-1100 PLN A42431  15  400MAC A
+1015-1310 PLN E27861  15  200MAC A
+1015-1415 PLN M39291  14  300MAC A
+1015-1500 PLN M38261  15  300MAC A
+```
 
 ## Board screen: _(name as shown on screen)_
 

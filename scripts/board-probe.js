@@ -118,7 +118,11 @@ async function describeFrame(frame) {
     // a short code (CO, LE, SB01) or a small number (positions, times), so
     // names and employee numbers don't come through.
     function maskToken(tok) { return maskTokenWith(tok, words); }
-    function mask(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
+    // The Train Line-up screen lists trains only, never people (owner
+    // confirmed via screenshot 2026-10-14), so it's shown unmasked.
+    const noNames = /TRAIN LINE UP/.test(text);
+    function mask(t) { if (noNames) return t; return maskAll(t); }
+    function maskAll(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
     function screenGrid() {
       // Every text node is placed by its own on-screen box, whatever element
       // wraps it. CATS nests its text, so walking positioned elements misses it.
