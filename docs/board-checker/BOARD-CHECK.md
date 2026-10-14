@@ -97,6 +97,10 @@ What the manual says (check against the owner's version):
 - Applies to both trains that are **ordered** (not yet on duty) and trains
   **already on duty**.
 
+## Times
+**Always 24-hour clock** (owner). The Call Board shows **on-duty** times; ordering
+time = on-duty + prep (15 min for Sarnia thru freight).
+
 ## The owner's check, step by step
 1. **Establish what's been ordered out of Sarnia** (trains + deadheads, with
    ordering times) for the current day (from 0459?). This gives the order of trains.

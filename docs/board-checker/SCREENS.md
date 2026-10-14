@@ -34,19 +34,23 @@ still to be confirmed by the owner.
    menu choice. Owner picks **3 = Train Service** and presses Enter.
 3. **Train Service menu.** Owner picks **6 = Call Board** and presses Enter.
 4. **Call Board prompt** (boxes prefilled `45` / `SA`). Owner just presses **Enter**.
-5. **Call Board list: trains ordered / working out of Sarnia** (header mentions
-   TRAINS ON DUTY, Sarnia/Toronto). Owner presses **F8** to page down until
+5. **Call Board list: crews ON DUTY** (header TRAINS ON DUTY). Owner, 2026-10-14:
+   this screen shows **only who is on duty**, not trains that are merely ordered.
+   **Times are on-duty times, 24-hour clock**. Always parse and show times as 24 h.
+   **Row kinds:** road trains have a **manifest number** like `A424 61 03`;
+   **yard jobs** look like `PR0640`. **Trains always come before yard jobs.**
+   **Stop paging (F8) at the first yard job**, i.e. once manifest numbers stop.
+   ❓ Where are trains that are *ordered but not yet on duty*? (another screen) Owner presses **F8** to page down until
    they've seen every train currently working. This is the source for
    *"what's been ordered out of Sarnia"* (BOARD-CHECK step 1).
    Each train looks like: train symbol (`A99999`, e.g. Q14851), day (`99`), crew
    rows with a craft code (`CO` …), name (`NAME*+`, where ❓ `*` and `+` mean
    something), a 1-letter flag, a status word, a code like `A999`/`AA99`, and
    date `99/99/99` with time `9999` (ordered or on-duty time? ❓).
-   ❓ Owner: what is each column? What do `*` and `+` after names mean? How
-   do you tell "ordered" from "already on duty"? How do you know you've reached
-   the last page?
+   Columns and the `*`/`+` marks: owner will explain once the probe shows the
+   real (masked) layout.
 
-Route for the tool: sign-on → `3` Enter → `6` Enter → Enter → F8 until the last page.
+Route for the tool: sign-on → `3` Enter → `6` Enter → Enter → F8 until the first yard job (`PR0640`-style) appears.
 
 Note: the 2026-10-14 run's `screenGrid` was empty because CATS nests text inside
 positioned boxes. Fixed: the probe now places every text node by its own box.
