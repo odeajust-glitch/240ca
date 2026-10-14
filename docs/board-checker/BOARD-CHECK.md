@@ -23,6 +23,17 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    (owner, 2026-10-14). Who crews it is still to be asked: possibly the old 330 / S4 pool.
 6. **No trains run to Niagara Falls, Port Robinson or Fort Erie** today, so
    that line of the manual doesn't apply (owner, 2026-10-14).
+7. **Holes don't move the Chain Gang (owner, 2026-10-14).** If an SR turn shows
+   **spare** (vacant) when its train comes up, that train goes to the
+   **spareboard**, *not* to the next person on the Chain Gang. The turn still
+   uses its place in the rotation, so **the Chain Gang order is unaffected**.
+   For the tool, a vacant turn counts as a normal step in the rotation. If the
+   next SR person was used instead of the spareboard, that's a flag.
+8. **Not in the A/B/SR count (owner, 2026-10-14):** **work trains** and **short
+   turns** go to the **spareboard**. **330 and Via trains** don't appear at all.
+   **L502/L501** is excluded (item 5).
+9. **Craft:** owner is a **conductor**, so the CTY procedures apply
+   (`data/crew_calling_cty.pdf`).
 
 What the manual says (check against the owner's version):
 | Rule | Manual says | Owner says | Status |
@@ -86,13 +97,13 @@ What the manual says (check against the owner's version):
    is flagged.
 
 ## Open questions for the owner
-1. ~~B turns: 2 or 3?~~ **Answered:** 3 A, 2 B. Only changes by a union-meeting vote.
-2. ~~Day boundary~~ **Answered:** yes, after 0459 by ordering time. On-duty shows 15 min earlier (prep), so the first A can be on duty at 0445. Still to confirm: does CATS show the ordering time, the on-duty time, or both?
-3. **Which CATS screens** do you look at for (a) what's been ordered out of
-   Sarnia, and (b) the chain gang turn order? How do you get to each?
-4. **Holes:** when a spareboard person fills a hole in an SR turn, does that turn
-   keep its normal place in the rotation?
-5. **What's excluded** from the count: L502 is (answered). Anything else? Via,
-   work trains, short turns, trains under 100 mi? Who crews L502, and is it the
-   old "330"?
-6. **Craft:** you're working as a conductor (the CTY procedures), correct?
+Answered 2026-10-14: turn counts (3 A / 2 B, change only by union vote); day
+boundary (after 0459 by ordering time, on-duty = ordering − 15 min prep); holes
+(vacant SR turn → spareboard, SR order unchanged); exclusions (work trains and
+short turns → spareboard; 330/Via not seen; L502/L501 excluded); craft (conductor).
+
+Still open:
+1. **Screens:** the owner will teach the order of CATS screens: what's been ordered
+   out of Sarnia, then the A/B/SR turn lists. Capture it in SCREENS.md, step by step.
+2. Does CATS show the **ordered time**, the **on-duty time**, or both?
+3. **L502:** who crews it? Is the away-from-home terminal Toronto?
