@@ -67,6 +67,12 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    So for each SR train, in position order: on rest / HT (until after call time)
    → skip to the next person; `**` → that turn uses the train and the spareboard
    covers; otherwise → that person gets it.
+7b3. **Returning turns (owner, 2026-10-14):** a Chain Gang turn coming home
+   goes to the **bottom of the Sarnia SR order by its outer switch time** (the
+   time its inbound train passed the Sarnia outer switch). Several returning turns
+   are ordered among themselves by outer switch time. Accuracy check: if CATS
+   places a returning turn out of outer-switch order, flag it.
+   ❓ Which screen shows the outer switch time?
 7c. **Cancelled trains (owner, 2026-10-14):** if a train is cancelled, the crew
    that was on it **goes on the next train**, and the order is maintained. For
    the tool: **drop the cancelled train from the sequence**, so it doesn't use up
@@ -212,4 +218,4 @@ SA02 · M30241 12 SA03 · X38261 13 SA04 → 3 A · A42431 14 SB05 · X39291 13 
 | 10 | A42431 15 | B | 5th → B |
 | 11 | E27861 15 | SR | next SR in line (SR02/SR06, then SR04 with `**` → goes spare) |
 | 12 | M39291 14 | SR | next |
-| 13 | M38261 15 | SR | next; returning turns (SR14, SR03, SR12) slot in by when they tie up in Sarnia ❓ |
+| 13 | M38261 15 | SR | next; returning turns (SR14, SR03, SR12) join the bottom in outer-switch-time order |
