@@ -7,6 +7,10 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
 
 ## Scope
 - **Road work out of Sarnia only.** Yard work is out of scope.
+- **Sarnia line-ups only (owner, 2026-10-14).** Trains home from Toronto follow
+  a different order, but the Toronto line-ups are reliable, so they're out of
+  scope for now. The tool takes the Sarnia SR line-up as CATS shows it (returning
+  crews already placed). It doesn't try to work out where arrivals should slot in.
 - The owner holds a **Chain Gang (SR pool)** turn. They are *not* on the spareboard.
 - The spareboard matters only as the source of crews that backfill holes.
 
