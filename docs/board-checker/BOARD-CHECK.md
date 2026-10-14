@@ -44,11 +44,18 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      given SR train comes up **don't count** for that train. The tool needs each
      SR turn's rest-until time and compares it with each train's **call time**.
    - **Answered (owner, 2026-10-14): compare with the CALL time.** Nobody can be
-     called while on rest. So an SR person is available for a train only if
-     `restUntil <= callTime`, where `callTime = onDutyTime - callLead`.
-     ❓ Call lead for Chain Gang turns: 2 h like the spareboard (manual p.3)?
-     Edge case: short calls (min 1 h at home, manual p.1) shorten the lead for
-     people who've asked for them. Ignore those until the owner says they matter.
+     called while on rest. The call goes **2 h before on-duty**, and:
+     - **deadhead:** on-duty = order time (no prep), so **call = order − 2 h**;
+     - **train:** on-duty = order − 15 min prep, so **call = order − 2 h 15 min**.
+     The person is available only if their **rest ends before the call time**
+     (`restUntil < callTime`). Owner's examples, order 1200:
+     | Kind | On duty | Call | Rest until 1100 | Rest until 0959 | Rest until 0944 |
+     |---|---|---|---|---|---|
+     | Deadhead | 1200 | 1000 | skipped | **called** | called |
+     | Train | 1145 | 0945 | skipped | skipped | **called** |
+     Rest exactly equal to the call time is treated as still on rest (owner's
+     examples use one minute before). The same goes for HT (hold turn).
+     Short calls (min 1 h at home) are ignored until the owner says they matter.
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.
 7b2. **Chain Gang status marks on screen 23 (owner, 2026-10-14):**
@@ -186,7 +193,7 @@ short turns → spareboard; 330/Via not seen; L502/L501 excluded); craft (conduc
 
 Still open:
 0. ~~Rest cut-off~~ **Answered:** the call time (they can't be called while on rest).
-   Still to confirm: is the Chain Gang call lead 2 h?
+   Call lead confirmed: 2 h before on-duty (deadhead: order − 2 h; train: order − 2 h 15).
 1. **Screens:** the owner will teach the order of CATS screens: what's been ordered
    out of Sarnia, then the A/B/SR turn lists. Capture it in SCREENS.md, step by step.
 2. Does CATS show the **ordered time**, the **on-duty time**, or both?
