@@ -88,7 +88,7 @@ Header: `MM/DD/YY-HHMM CN … PAGE 001 OF 031`, `SARNIA`, `CALL BOARD`, program 
   `craft | SURNAME + qualification marks (*, +) | optional (NET) | initials | FIRST NAME | turn id`.
   So the word after the initials **is the first name**. The parser must treat
   everything between craft and turn id as the person's name and never store it
-  in fixtures. `(NET)` meaning ❓.
+  in fixtures. `(NET)` = **no engineer trainee** (qualified engineer too new to take a trainee; owner). Ignore it.
 - **Crew lines:** craft `EN` engineer, `CO` conductor, `ET` (engineer trainee ❓);
   yard jobs use `FO` (foreman) and `S1` (helper ❓). Name with `*`/`+` marks
   = **qualifications** (belt pack / engineer qualified; owner). These are for crew
