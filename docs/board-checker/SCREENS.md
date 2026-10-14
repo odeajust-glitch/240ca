@@ -21,10 +21,30 @@ as `top | left:text | …`, names and employee numbers masked; codes, times and
 train/turn symbols kept). The owner adds what each screen means.
 
 ## Getting to the board
-_(Owner: steps from the first screen after sign-in to the board. What you
-type, in which box, and which key you press.)_
+From the owner's recorded walkthrough (2026-10-14, probe `screens[]`). Meanings
+still to be confirmed by the owner.
 
-1. …
+1. **CATS sign-on** (after Microsoft sign-in). Text boxes: `txt_Sub0802501055_21`
+   = employee number; `txt_Sub1202501055_20` = **CATS password** (password box);
+   `_22` = `D`, `_23` = `N` (default options, meaning ❓). Enter.
+   ⚠ This is a **second credential** inside CATS. Automation must either keep
+   the CATS session alive or store this password; the latter needs the owner's
+   explicit OK.
+2. **Main entry screen.** Three boxes: `_138` (function, `45`), `_139`
+   (location, `SA` = Sarnia), `_140` (option). Typed `45 / SA / 3` → screen 3.
+3. **`45 SA 3`**: a screen mentioning LINEUP, CHAIN GANG, POOL, TURN, POS, FAST/SLOW
+   BOARD, MANIFEST, SENIORITY (a menu or a line-up? ❓). Then typed `45 / SA / 6`.
+4. **`45 SA 6`**: a small screen (BOARD, CALL). Then `45 / SA` with no option.
+5. **`45 SA` (no option) → TRAINS ON DUTY, Sarnia/Toronto.** Paged with **F8**
+   (screens 6–7). Final page header `99/99/99-9999` (date-time). Each train looks
+   like: train symbol (`A99999`, e.g. Q14851), day (`99`), crew rows with a
+   craft code (`CO` …), name (`NAME*+`, where ❓ `*` and `+` mean something), a
+   1-letter flag, a status word, a code like `A999`/`AA99`, and date `99/99/99`
+   with time `9999`.
+   ❓ Owner: what is each column, and what do `*` and `+` after names mean?
+
+Note: the 2026-10-14 run's `screenGrid` was empty because CATS nests text inside
+positioned boxes. Fixed: the probe now places every text node by its own box.
 
 ## Board screen: _(name as shown on screen)_
 

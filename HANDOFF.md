@@ -14,6 +14,15 @@ every screen is captured in order (`summary.json` → `screens[]`: masked
 names). Raw `screen-NN.html/png` stay on the owner's PC. The owner pastes the
 summary and describes each screen in plain words; record both in SCREENS.md.
 First screen to teach: **finding the train currently working** (on duty out of Sarnia).
+**Walkthrough 1 (2026-10-14):** route recorded (sign-on → `45 SA 3` → `45 SA 6`
+→ `45 SA` = TRAINS ON DUTY, F8 to page); see SCREENS.md. Two probe bugs found
+and fixed: (a) screen text was missed (nested in positioned boxes), so the
+grid now walks text nodes; (b) **the masked shape of the owner's CATS
+password was recorded** (it was typed on the CATS sign-on screen), so typed
+values are now kept only for visible text boxes and passwords are never
+recorded. The owner was told and advised to change that password.
+**Next:** owner re-runs with the fixed probe (download raw file again) and
+describes each screen's columns.
 
 ## 2026-10-14: scope refocused
 The owner works **road only** and holds a **Chain Gang (SR pool)** turn. They are

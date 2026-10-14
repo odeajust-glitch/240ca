@@ -113,16 +113,26 @@ async function describeFrame(frame) {
     function maskToken(tok) { return maskTokenWith(tok, words); }
     function mask(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
     function screenGrid() {
+      // Every text node is placed by its own on-screen box, whatever element
+      // wraps it. CATS nests its text, so walking positioned elements misses it.
       const cells = [];
-      for (const el of document.querySelectorAll('body *')) {
-        if (getComputedStyle(el).position !== 'absolute') continue;
-        const isField = /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
-        if (!isField && el.querySelector('*:not(br)')) continue; // leaf elements only
-        if (isField && /hidden|submit|button/.test(el.type)) continue;
-        const raw = (isField ? el.value : el.textContent).replace(/\s+$/, '');
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const range = document.createRange();
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const raw = node.textContent.replace(/\s+$/, '');
+        if (!raw.trim() || node.parentElement.closest('script,style,noscript')) continue;
+        range.selectNodeContents(node);
+        const r = range.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        cells.push({ top: Math.round(r.top), left: Math.round(r.left), text: mask(raw.trim()) });
+      }
+      for (const el of document.querySelectorAll('input,select,textarea')) {
+        if (/hidden|submit|button|image/.test(el.type)) continue;
         const r = el.getBoundingClientRect();
-        if (!raw.trim() && !isField) continue;
-        cells.push({ top: Math.round(r.top), left: Math.round(r.left), text: (isField ? '[' : '') + mask(raw) + (isField ? ']' : '') });
+        if (!r.width) continue;
+        // Never show what's in a password box, not even masked.
+        const text = el.type === 'password' ? '[password]' : `[${mask(el.value.trim())}]`;
+        cells.push({ top: Math.round(r.top), left: Math.round(r.left), text });
       }
       cells.sort((a, b) => a.top - b.top || a.left - b.left);
       const rows = [];
@@ -131,7 +141,7 @@ async function describeFrame(frame) {
         if (row) row.cells.push(`${c.left}:${c.text}`);
         else rows.push({ top: c.top, cells: [`${c.left}:${c.text}`] });
       }
-      return rows.slice(0, 80).map((r) => `${r.top} | ${r.cells.join(' | ')}`);
+      return rows.slice(0, 120).map((r) => `${r.top} | ${r.cells.join(' | ')}`);
     }
   }, [[...BOARD_WORDS], maskTokenWith.toString()]);
 }
@@ -158,14 +168,18 @@ async function main() {
   // The key pressed and the fields typed into on the last CATS screen POST,
   // attached to the next recorded screen as "how we got here".
   let lastAction = null;
+  const screens = [];
   page.on('request', (req) => {
     if (req.method() !== 'POST' || !/\/Xhtml/.test(req.url())) return;
     try {
       const form = new URLSearchParams(req.postData() || '');
       const keys = [...form.keys()];
       const key = keys.find((k) => /^acc_F\d+$/.test(k)) || (keys.includes('btn_Button') ? 'Enter' : null);
+      const textBoxes = new Set(screens.length ? screens[screens.length - 1].inputs : []);
       const typed = keys.filter((k) => k.startsWith('txt_') && form.get(k).trim())
-        .map((k) => ({ field: k, value: form.get(k).trim().split(/(\s+)/).map((t) => (/\s/.test(t) ? t : maskTokenWith(t, BOARD_WORDS))).join('') }));
+        .map((k) => (textBoxes.has(k)
+          ? { field: k, value: form.get(k).trim().split(/(\s+)/).map((t) => (/\s/.test(t) ? t : maskTokenWith(t, BOARD_WORDS))).join('') }
+          : { field: k, value: '(not recorded)' }));
       lastAction = { key: key ? key.replace('acc_', '') : null, typed };
     } catch { /* not a form */ }
   });
@@ -205,7 +219,6 @@ async function main() {
 
   // CATS bumps the hidden sequenceNumber on every screen, so a change means
   // a new screen to record.
-  const screens = [];
   let recording = true;
   let lastSeq = null;
   const recorder = (async () => {
