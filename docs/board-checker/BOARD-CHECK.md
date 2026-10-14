@@ -34,6 +34,20 @@ What the manual says (check against the owner's version):
 | Train 330 (S4) | own pool, 3 crews, window time; not part of the A/B/SR count | **L502** (Sarnia) / **L501** (return) is excluded from A/B/SR | ❓ Is L502 today's equivalent of 330? Who crews it? |
 | Relief (holes) in SA/SB/SR | 1st available on **Slow board** (2 h call) → junior available (Art. 49.5 a) → junior off 14 h (49.5 b) → bullpen → road availability list → canvass … | backfilled by spareboard | ✅ |
 
+## Day boundary and prep time (owner, 2026-10-14)
+- The road day starts with trains **ordered after 0459**, counted by **ordering time**
+  (manual p.12; owner confirms).
+- CATS often shows the **on-duty / call time**, which is the ordering time minus
+  **prep time**. Sarnia thru freight prep is **15 min** (manual p.4: "PREP TIMES",
+  Sarnia thru freight / ex shop 15 min; work trains and rescue/relief nil). So a
+  job **ordered 0800 is called for 0745**, and the **first A turn can show on
+  duty at 0445** (ordered 0500).
+- Rule for the tool: **ordering time = on-duty time + prep time** for that train
+  type. Allocate by ordering time with the cutoff at 0459. Never treat a 0445
+  on-duty time as belonging to the previous day.
+- Applies to both trains that are **ordered** (not yet on duty) and trains
+  **already on duty**.
+
 ## The owner's check, step by step
 1. **Establish what's been ordered out of Sarnia** (trains + deadheads, with
    ordering times) for the current day (from 0459?). This gives the order of trains.
@@ -73,8 +87,7 @@ What the manual says (check against the owner's version):
 
 ## Open questions for the owner
 1. ~~B turns: 2 or 3?~~ **Answered:** 3 A, 2 B. Only changes by a union-meeting vote.
-2. **Day boundary:** the manual says A takes the first 3 trains *after 0459* by
-   *ordering time*. Is that how you count "each day"?
+2. ~~Day boundary~~ **Answered:** yes, after 0459 by ordering time. On-duty shows 15 min earlier (prep), so the first A can be on duty at 0445. Still to confirm: does CATS show the ordering time, the on-duty time, or both?
 3. **Which CATS screens** do you look at for (a) what's been ordered out of
    Sarnia, and (b) the chain gang turn order? How do you get to each?
 4. **Holes:** when a spareboard person fills a hole in an SR turn, does that turn
