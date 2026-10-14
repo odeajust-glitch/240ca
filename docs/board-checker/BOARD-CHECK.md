@@ -124,7 +124,12 @@ time = on-duty + prep (15 min for Sarnia thru freight).
    - a hole filled out of relief order (e.g. not the first available on the Slow board);
    - the owner's turn skipped or moved;
    - **engineer/conductor turn mismatch** (owner, 2026-10-14): **S1↔SA, S3↔SB,
-     SD↔SR**. Any other pairing on a road train may be a crew-calling mistake;
+     SD↔SR**, and S5 engineer turns (e.g. S502) ↔ the matching S5 conductor turn
+     (❓ what that turn id looks like). Any other pairing on a road train may be
+     a crew-calling mistake.
+     **First confirmed catch (2026-10-14):** L50231 had engineer **S502** with the
+     conductor on **MU01**. The owner confirmed it's a **miscoding**: it should
+     have been the matching S5 conductor turn. Keep this as a test case;
    - an **MU (make-up) turn on a road train** that should have gone to an A/B/SR
      turn. MU is legit for things like a short-turn rescue off the spareboard,
      but callers sometimes code a turn as MU by mistake.
