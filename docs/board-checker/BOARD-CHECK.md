@@ -201,7 +201,7 @@ Still open:
 4. ~~A/B with no crew in Sarnia~~ **Answered:** still counts as A/B (goes spare).
 5. What should a check report back, and how (e.g. phone alert only on change)?
 
-## Worked example: 2026-10-14 16:17 line-up (first manual prediction, unverified)
+## Worked example: 2026-10-14 16:17 line-up (owner agrees with the reading; outcome not yet verified)
 Today's A/B already used: Z14891 13 SA02, M30241 12 SA03, X38261 13 SA04 (3 A),
 A42431 14 SB05, X39291 13 SB06 (2 B); L50231 14 S5. Chain Gang home order at ~16:00:
 SR01, SR07, SR08, SR02 (rest → 0100/15), SR05 (HT → 0559/16), SR06, SR04 (`**`),

@@ -7,7 +7,20 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## 2026-10-14: screen walkthrough (current step)
+## 2026-10-14 (latest): rules settled, first prediction agreed
+The owner (conductor, **SR03**) has taught the three screens the check needs:
+**Call Board** (`3`→`6`→Enter, on-duty crews), **Chain Gang position** (`23`, POOL
+SR, TERM 0, CC `CO`), and **Train Line-up** (`41`, station 47130, dir E, 24 h;
+`ORD`/`PLN`). All rules are in BOARD-CHECK.md, including the call-time/rest
+maths, HT, `**`, MU, pairing, returning turns, and 3 A / 2 B after 0459. The
+owner agreed with the worked prediction in BOARD-CHECK.md ("that's how I'd
+read it").
+**Next:** (1) shadow-check that prediction against what actually happened on
+the 15th; (2) build Phase 1: `lib/board/` parsers for the three screens plus
+the rule engine, with `node --test` tests built from the worked example
+(names stripped).
+
+## 2026-10-14: screen walkthrough
 The probe now has a **recording mode**: the owner navigates CATS normally, and
 every screen is captured in order (`summary.json` → `screens[]`: masked
 `screenGrid`, the key pressed / masked text typed to get there, text field
