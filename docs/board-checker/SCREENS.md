@@ -30,18 +30,23 @@ still to be confirmed by the owner.
    ⚠ This is a **second credential** inside CATS. Automation must either keep
    the CATS session alive or store this password; the latter needs the owner's
    explicit OK.
-2. **Main entry screen.** Three boxes: `_138` (function, `45`), `_139`
-   (location, `SA` = Sarnia), `_140` (option). Typed `45 / SA / 3` → screen 3.
-3. **`45 SA 3`**: a screen mentioning LINEUP, CHAIN GANG, POOL, TURN, POS, FAST/SLOW
-   BOARD, MANIFEST, SENIORITY (a menu or a line-up? ❓). Then typed `45 / SA / 6`.
-4. **`45 SA 6`**: a small screen (BOARD, CALL). Then `45 / SA` with no option.
-5. **`45 SA` (no option) → TRAINS ON DUTY, Sarnia/Toronto.** Paged with **F8**
-   (screens 6–7). Final page header `99/99/99-9999` (date-time). Each train looks
-   like: train symbol (`A99999`, e.g. Q14851), day (`99`), crew rows with a
-   craft code (`CO` …), name (`NAME*+`, where ❓ `*` and `+` mean something), a
-   1-letter flag, a status word, a code like `A999`/`AA99`, and date `99/99/99`
-   with time `9999`.
-   ❓ Owner: what is each column, and what do `*` and `+` after names mean?
+2. **Main menu.** Three boxes: `_138` (`45`), `_139` (`SA` = Sarnia), `_140` =
+   menu choice. Owner picks **3 = Train Service** and presses Enter.
+3. **Train Service menu.** Owner picks **6 = Call Board** and presses Enter.
+4. **Call Board prompt** (boxes prefilled `45` / `SA`). Owner just presses **Enter**.
+5. **Call Board list: trains ordered / working out of Sarnia** (header mentions
+   TRAINS ON DUTY, Sarnia/Toronto). Owner presses **F8** to page down until
+   they've seen every train currently working. This is the source for
+   *"what's been ordered out of Sarnia"* (BOARD-CHECK step 1).
+   Each train looks like: train symbol (`A99999`, e.g. Q14851), day (`99`), crew
+   rows with a craft code (`CO` …), name (`NAME*+`, where ❓ `*` and `+` mean
+   something), a 1-letter flag, a status word, a code like `A999`/`AA99`, and
+   date `99/99/99` with time `9999` (ordered or on-duty time? ❓).
+   ❓ Owner: what is each column? What do `*` and `+` after names mean? How
+   do you tell "ordered" from "already on duty"? How do you know you've reached
+   the last page?
+
+Route for the tool: sign-on → `3` Enter → `6` Enter → Enter → F8 until the last page.
 
 Note: the 2026-10-14 run's `screenGrid` was empty because CATS nests text inside
 positioned boxes. Fixed: the probe now places every text node by its own box.
