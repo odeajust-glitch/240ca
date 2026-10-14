@@ -58,8 +58,12 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    - **`**`** beside a turn: if that turn comes up while marked `**`, it **goes
      spare**. The train goes to the **spareboard** (like a vacant turn), *not* to
      the next SR person, so the SR order isn't affected.
-     ❓ Does the time shown with `**` mean "until then"? After going spare, does
-     that turn rotate to the bottom as if it had been used?
+     **Answered (owner):** the turn **still goes out**. A spareboard employee works
+     *that turn* (e.g. SR04) to Toronto, and the Call Board shows the turn id SR04
+     with the spareboard person's name. So for the rotation, a `**` turn is
+     **used exactly like a normal call**: it leaves the Sarnia list. The tool must
+     identify crews by **turn id**, not by name.
+     ❓ Does the time shown with `**` mean "until then"?
    So for each SR train, in position order: on rest / HT (until after call time)
    → skip to the next person; `**` → that turn uses the train and the spareboard
    covers; otherwise → that person gets it.
