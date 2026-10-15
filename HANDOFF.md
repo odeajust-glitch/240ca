@@ -21,8 +21,8 @@ on trouble). Loader → `sdHome` (EN/LE rows, one per turn); engine gives each
 Chain Gang line-up train the next callable SD turn by the same skip/spare
 rules as SR (`gangQueue` / `firstCallable`); view shows an SD BOARD and
 "Chain Gang: SR04 + SD11". **27's layout is assumed to match 23 — not
-recorded yet.** ❓ Confirm on the owner's first run (send auto-summary.json)
-and that SD rules really match SR. A pool screen that can't be parsed is now
+recorded yet.** ❓ Confirm on the owner's first run (send auto-summary.json).
+Owner confirmed 2026-10-15: the SD list works exactly like the SR list. A pool screen that can't be parsed is now
 skipped instead of failing the check. 22 tests.
 
 ## 2026-10-15: owner's view after each check
