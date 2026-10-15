@@ -28,8 +28,8 @@ read its `HANDOFF-auto-board-checker.md` first). What's there already:
   This project's auto checker does log in (owner signs in by hand; nothing
   stored). ❓ Raise with the owner before wiring the two together; the app
   treats its records as evidence.
-- That handoff describes the user as an engineer named Justin; this owner
-  says they're a conductor on SR03. ❓ Confirm whose app / which turn.
+- Owner confirmed (2026-10-15): it's their app; the owner is Justin.
+  (Its handoff calls him an engineer; here he's on SR03 Chain Gang conductor.)
 Plan options to put to the owner (not decided):
 1. Laptop pushes each check's snapshot (JSON from `lib/board/view.js`
    snapshot + predictions) to a small relay (e.g. this repo's Render app,
