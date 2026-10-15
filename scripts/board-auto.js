@@ -1,6 +1,6 @@
 // Does the board check by itself: you sign in to CATS once, then it walks
 // the route the owner taught (Call Board to the yard jobs, Chain Gang 23
-// with CO, A/B pools 19/21, Train Line-up 41) and prints when you go to work,
+// with CO, A/B pools 19/21, SD pool 27, Train Line-up 41) and prints when you go to work,
 // the Chain Gang board, the line-up with who's projected on each train, and
 // what changed since the last check.
 //
@@ -185,9 +185,20 @@ async function runRoute(page) {
     await capture();
   };
   await pool(23, 'Chain Gang');
-  for (const [option, name] of [[19, 'A pool'], [21, 'B pool']]) {
+  // 27: the SD (engineer) list that goes with the Chain Gang trains. Not
+  // recorded yet, so it's read as it first appears and again with CC = EN.
+  const sdPool = async () => {
+    const s = expect(await chooseFromMenus(page, 27), is.poolPosition, 'SD pool (27)');
+    await capture();
+    if (/CC:/.test(s.text)) {
+      await fill(page, { '-1': 'EN' });
+      expect(await press(page, 'Enter'), is.poolPosition, 'SD pool (27) with EN');
+      await capture();
+    }
+  };
+  for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool]]) {
     try {
-      await pool(option, name);
+      await (read ? read() : pool(option, name));
     } catch (err) {
       if (err instanceof NeedSignIn) throw err;
       console.log(`  (skipped ${name} ${option}: ${err.message})`);

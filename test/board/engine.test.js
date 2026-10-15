@@ -315,3 +315,28 @@ test('owner view: Chain Gang board, line-up crews and changes (08:13 run)', () =
   assert.match(diff, /- SR10 off the Sarnia board/);
   assert.match(formatReport(result, input.seen, { changes: { prev: cur, cur } }), /CHANGES since the last check \(15th 0815\): none\./);
 });
+
+test('SD turns (option 27) go with the Chain Gang trains by the same rules', () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  // Option 27 assumed laid out like 23 (not recorded yet): SD08 on rest past
+  // E27861's call, so SD11 takes it and SD08 the next one.
+  const sd = fx.screens[5].screenGrid
+    .filter((l) => !/\| 37:SR/.test(l) || /SR05|SR04/.test(l))
+    .map((l) => l.replace('118:SR', '118:SD').replace('[CO]', '[EN]').replace(/10:CO \| 37:SR05/, '10:EN | 37:SD08').replace(/10:CO \| 37:SR04/, '10:EN | 37:SD11'))
+    .map((l) => (/SD08/.test(l) ? l.replace(/\| 343:.*$/, '| 505:1400 | 550:15') : /SD11/.test(l) ? l.replace(/\| 343:.*$/, '') : l));
+  // A screen that can't be read (no headings) mustn't sink the check.
+  const junk = ['1 | 10:45', '37 | 46:POOL: | 100:( | 118:SD | 145:) | 181:TERM: | 235:( | 253:0 | 271:) | 550:CC: | 600:POS'];
+  const input = loadSummary({ ...fx, screens: [...fx.screens, { screenGrid: junk }, { screenGrid: sd }] });
+  assert.equal(input.seen.sdPool, true);
+  assert.deepEqual(input.sdHome.map((t) => t.turn), ['SD08', 'SD11']);
+  const r = runBoardCheck({ ...input, me: 'SR03' });
+  const by = Object.fromEntries(r.predictions.map((p) => [`${p.symbol} ${p.originDay}`, p]));
+  assert.equal(by['E27861 15'].turn, 'SR04');
+  assert.equal(by['E27861 15'].engineer, 'SD11');
+  assert.equal(by['M39671 14'].engineer, 'SD08');
+  assert.equal(by['A42431 15'].engineer, undefined);
+  const { formatReport } = require('../../lib/board/report');
+  const text = formatReport(r, input.seen);
+  assert.match(text, /SD BOARD/);
+  assert.match(text, /Chain Gang: SR04 \+ SD11/);
+});

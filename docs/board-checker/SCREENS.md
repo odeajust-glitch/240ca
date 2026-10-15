@@ -24,6 +24,8 @@ train/turn symbols kept). The owner adds what each screen means.
 Sign in → **3** (Train Service) → **6** Call Board → Enter, F8 to the yard jobs →
 F3 → **23** (Chain Gang POS, CC `CO`) → F3 → **41** (47130, E, 24 h).
 Screens 19/21 (A/B turns) aren't needed for "when do I go" and are optional.
+Option **27** (owner): the SD (engineer) list that goes with the SR trains; the
+auto route reads it with CC `EN`. Layout assumed to match 23 until recorded.
 Screens 19/21 are assumed to share 23's layout (POOL/TERM/CC prompt, CC TURN T
 POS … REST heading); the parser handles any pool. ❓ Confirm on the first run.
 
