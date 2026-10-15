@@ -37,7 +37,7 @@ test('2026-10-14 line-up matches the owner-agreed prediction', () => {
 
 test('owner (SR03) is behind SR05 and SR14 after the line-up', () => {
   const { me } = check();
-  assert.deepEqual(me.aheadAfterLineup.map((s) => s.split(' ')[0]), ['SR05', 'SR14']);
+  assert.deepEqual(me.ahead.map((a) => a.turn), ['SR05', 'SR14']);
 });
 
 test('today: 3 A then 2 B out of Sarnia, no pool mismatch', () => {
@@ -167,7 +167,7 @@ test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241',
     ['M39671', 'SR09', false],
   ]);
   assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
-  assert.deepEqual(r.me.aheadAfterLineup.map((s) => s.split(' ')[0]), ['SR05']);
+  assert.deepEqual(r.me.ahead.map((a) => a.turn), ['SR05']);
 });
 
 test('CATS crew codes on ordered line-up rows map to pools', () => {
