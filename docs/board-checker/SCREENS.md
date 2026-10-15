@@ -57,6 +57,12 @@ still to be confirmed by the owner.
    Columns and the `*`/`+` marks: owner will explain once the probe shows the
    real (masked) layout.
 
+`scripts/board-auto.js` follows this route by itself and recognises screens by:
+main menu = `MILEAGE` (3 boxes: 45 / SA / selection); Train Service = `CHAIN GANG`
++ `LINE-UP`; Call Board prompt = `CALL BOARD` without `PAGE n OF n`; Call Board
+list = `CALL BOARD` + `PAGE n OF n`; pool = `POOL:` + `TERM:` (CC is the last
+box); line-up = `TRAIN LINE UP` (boxes station, dir, pool, hours).
+
 Route for the tool: sign-on → `3` Enter → `6` Enter → Enter → F8 until the first yard job (`PR0640`-style) appears.
 
 Note: the 2026-10-14 run's `screenGrid` was empty because CATS nests text inside

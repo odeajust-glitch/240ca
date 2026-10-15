@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-15 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
@@ -13,6 +13,21 @@ are unreliable. The tool's one job is telling them when they'll be called.
 Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
+
+## 2026-10-15: automatic board check built
+`scripts/board-auto.js --me SR03 [--every 20]`: owner signs in by hand (stops
+at the CATS main menu); the script then walks the route itself (3→6→Enter,
+F8 to the yard jobs; 3→23, CC `CO`; 3→41, 47130/E/24, F8 to END OF FILE; F3
+back to the main menu), saves masked `probe-out/auto-summary.json` and prints
+only "WHEN YOU GO". `--every N` (min 5) re-checks and speaks up on changes;
+if CATS signs out it waits for the owner to sign in again. It never sees or
+stores credentials. Screen capture is shared with the probe in
+`lib/board/capture.js`. Screens are recognised by their text (whitespace
+collapsed, since CATS splits words into boxes); boxes are filled by order.
+Tested end to end against a fake CATS built from the recorded menus and the
+15b screens: same answer as `board-check.js`, planted names/password absent.
+**Not yet run on real CATS.** If it stops with "Expected the … screen", ask
+for the message and `probe-out/auto-summary.json`.
 
 ## 2026-10-15: rules confirmed
 `**` time = until (no day = today); B0 at a normal position = working another
