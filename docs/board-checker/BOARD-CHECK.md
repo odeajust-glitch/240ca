@@ -6,6 +6,8 @@ CATS disagrees. Rule cites are from `data/crew_calling_cty.pdf` (TCRC-CTY
 Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
 
 ## Scope
+- **Main goal (owner, 2026-10-15): predict when the owner goes to work.** The
+  report leads with it. Exact Toronto return order matters less.
 - **Road work out of Sarnia only.** Yard work is out of scope.
 - **Sarnia line-ups only (owner, 2026-10-14).** Trains home from Toronto follow
   a different order, but the Toronto line-ups are reliable, so they're out of

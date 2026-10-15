@@ -183,3 +183,27 @@ test('Call Board clock: split header is read, masked header is ignored', () => {
   assert.equal(S.callBoardTime(parseGrid(['1 | 19:26/10/15- | 109:142 | 352:CN'])), at(2026, 10, 15, 1, 42));
   assert.equal(S.callBoardTime(parseGrid(['1 | 19:99/99/99- | 109:142 | 352:CN'])), null);
 });
+
+test('report leads with when the owner goes to work (2026-10-15 run)', () => {
+  const { formatReport } = require('../../lib/board/report');
+  const input = loadSummary(fixture15);
+  const text = formatReport(runBoardCheck({ ...input, me: 'SR03' }), input.seen);
+  const lines = text.split('\n');
+  assert.match(lines[2], /^WHEN YOU GO \(SR03\): not on the line-up yet \(the line-up only runs to 15th 2216\)/);
+  assert.match(text, /the 1st Chain Gang train or deadhead after that if it's called before 16th 0559 \(SR05 on hold turn\)/);
+  assert.match(text, /Called after 16th 0559: the 2nd one/);
+  assert.match(text, /Your own rest is up at 15th 1015/);
+});
+
+test('owner on a line-up train gets call and on-duty times', () => {
+  const r = runBoardCheck({
+    now: NOW,
+    callBoard: [],
+    chainGangHome: [{ craft: 'CO', turn: 'SR03', terminal: 0, pos: 1, restUntil: null, statusUntil: null }],
+    lineup: [{ order: at(2026, 10, 14, 22, 16), symbol: 'M39671', trainNo: 'M396', originDay: '14', status: 'PLN', deadhead: false }],
+    me: 'SR03',
+  }, { aTurnsPerDay: 0, bTurnsPerDay: 0 });
+  assert.equal(r.me.train, 'M39671 14');
+  assert.equal(r.me.onDuty, at(2026, 10, 14, 22, 1));
+  assert.equal(r.me.call, at(2026, 10, 14, 20, 1));
+});
