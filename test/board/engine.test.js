@@ -38,9 +38,11 @@ test('2026-10-14 line-up matches the owner-agreed prediction', () => {
   ]);
 });
 
-test('owner (SR03) is behind SR05 and SR14 after the line-up', () => {
-  const { me } = check();
-  assert.deepEqual(me.ahead.map((a) => a.turn), ['SR05', 'SR14']);
+test('owner (SR03) still in Toronto on the 14th is reported as coming home, not placed in line', () => {
+  // Turns in Toronto can't come up in Sarnia (owner, 15th).
+  const { me, predictions } = check();
+  assert.equal(me.comingHome, 'E27121 14');
+  assert.ok(!predictions.some((p) => p.turn === 'SR03' || p.turn === 'SR14'));
 });
 
 test('today: 3 A then 2 B out of Sarnia, no pool mismatch', () => {

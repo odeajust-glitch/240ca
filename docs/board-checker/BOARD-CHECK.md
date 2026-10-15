@@ -74,8 +74,7 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      identify crews by **turn id**, not by name.
      **Answered (owner, 2026-10-15):** the time beside `**` is an **"until" time**.
      After it, the turn works its own train (SR04 `** 1026`: no longer spare after
-     10:26). With no day shown, it's taken as the snapshot's day. ❓ SR04 showed
-     `** 1026` on both the 14th and the 15th; confirm it means 10:26 of the day shown.
+     10:26). With no day shown, it means **today** (owner confirmed).
    So for each SR train, in position order: on rest / HT (until after call time)
    → skip to the next person; `**` → that turn uses the train and the spareboard
    covers; otherwise → that person gets it.
@@ -84,7 +83,7 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    time its inbound train passed the Sarnia outer switch). Several returning turns
    are ordered among themselves by outer switch time. Accuracy check: if CATS
    places a returning turn out of outer-switch order, flag it.
-   ❓ Which screen shows the outer switch time?
+   (Outer switch time: not needed, out of scope.)
 7c. **Cancelled trains (owner, 2026-10-14):** if a train is cancelled, the crew
    that was on it **goes on the next train**, and the order is maintained. For
    the tool: **drop the cancelled train from the sequence**, so it doesn't use up
@@ -268,3 +267,7 @@ Answered (owner, confirmed 2026-10-15): `B0` on the position screens (19/21/23) 
   **another job**, so the turn **goes spare** if called (like `**`: the turn still goes
   out, worked by a spareboard employee).
 SB02/SB04 "rest" times are **resets**, so an A/B turn on reset goes spare, as the tool does.
+
+## Limits (owner, 2026-10-15)
+- Train Line-up (41): **24 hours is the maximum**. Past it, "when you go" is given as
+  "the Nth Chain Gang train after the line-up ends", with holds/rest that change N.

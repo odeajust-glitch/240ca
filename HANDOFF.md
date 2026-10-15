@@ -7,7 +7,14 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## 2026-10-15 (latest): report leads with "when you go"; A/B turns
+## 2026-10-15 (latest): rules confirmed
+`**` time = until (no day = today); B0 at a normal position = working another
+job → goes spare (at POS 999 with a train = out on its own train); A/B "rest"
+= resets → goes spare; turns in Toronto never get a Sarnia train until they're
+back on the Sarnia list; outer switch / return order is out of scope; line-up
+max is 24 h. Shadow checks: 2 so far. 20 tests.
+
+## 2026-10-15: report leads with "when you go"; A/B turns
 Owner's main goal is predicting **when they go to work**; the report now opens
 with it. The route adds screens **19 (A) and 21 (B)** with CC `CO`, so A/B trains
 get turn numbers (first in, first out; an A/B turn on rest/hold/** goes spare
