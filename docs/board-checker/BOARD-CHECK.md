@@ -227,3 +227,23 @@ E27121), SR12 (resting in Toronto → 1949).
 
 Note: CATS's planned crew column shows `SA` (A pool) for every planned train,
 including ones the 3/2 rule sends to B or SR. Treat it as a default, not a prediction.
+
+## Shadow check #1: 14th 16:17 prediction vs the 15th 01:43 board
+| Prediction (14th) | What happened (15th 01:43) | Verdict |
+|---|---|---|
+| DHT141B (ORD 2330) → SR01 | SR01 now at Toronto (T=1), rest to 0929 | ✅ |
+| E27861 14 (PLN 0015) → SR07 | Not run: gone from the line-up | plan changed |
+| M39671 13 (PLN 0033) → SR08 | Went on duty **2330 on the 14th** with **SR07** | ✅ by the rules: with E27861 gone, M39671 was the next SR train |
+| DHT211B (ORD 0230) → SR06 | On duty 0300 with **SR08** | ✅ by the rules: one SR train fewer ahead of it |
+| (not in line-up) | **DHT211C** added, on duty 0300 with **SR06** | ✅ SR02 skipped (rest to 0100 = call 0100, still on rest); SR05 on HT |
+| L50231 15 → S5 | On duty 0300, EN **S501** + CO **S501** | ✅ confirms S5 conductor and engineer share the turn id |
+| SR03 (owner) behind SR14 by Toronto on-duty time | Owner home first: **POS 5**, rest to 1015 | ⚠ stand-in for outer switch time was wrong; SR14 (Z14931) still out |
+
+Conclusion: no rule broke. Every difference came from the line-up changing
+(a planned train dropped, a deadhead added, times moved). Also confirmed:
+rest ending exactly at the call time = still on rest.
+Gaps found and fixed: deadheads on the Call Board weren't parsed; turns out
+working (POS 999, `B0` + train) were treated as at home; a snapshot after
+midnight can't see the day's A/B trains (now inferred from CATS sending a
+train to SR, and from the crew code on ORD rows, e.g. `45SASR0`); the Call
+Board clock can be masked, so the probe time is the fallback.

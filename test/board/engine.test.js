@@ -136,3 +136,50 @@ test('grid parser keeps a literal "|" inside screen text', () => {
   const [row] = parseGrid(['49 | 33:/ | 185:| | 233:A | B']);
   assert.deepEqual(row.cells.map((c) => c.text), ['/', '|', 'A | B']);
 });
+
+// --- 2026-10-15 ~01:43: the owner's first real shadow-check run ------------
+
+const fixture15 = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15.json'), 'utf8'));
+
+test('2026-10-15 run: clock falls back to probe time when the header is masked', () => {
+  const input = loadSummary(fixture15);
+  assert.equal(input.now, at(2026, 10, 15, 1, 43));
+});
+
+test('2026-10-15 run: deadheads on the Call Board are read, working turns leave the queue', () => {
+  const input = loadSummary(fixture15);
+  assert.ok(input.callBoard.some((t) => t.symbol === 'DHT211C' && t.crew.some((c) => c.turn === 'SR06')));
+  const r = runBoardCheck({ ...input, me: 'SR03' });
+  const assigned = r.predictions.filter((p) => p.turn).map((p) => p.turn);
+  for (const busy of ['SR07', 'SR08', 'SR06']) assert.ok(!assigned.includes(busy), `${busy} is out working`);
+});
+
+test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241', () => {
+  const r = runBoardCheck({ ...loadSummary(fixture15), me: 'SR03' });
+  assert.deepEqual(r.predictions.map((p) => [p.symbol, p.pool === 'SR' ? p.turn : p.pool, !!p.spare]), [
+    ['M30241', 'SR02', false], // ORD, CATS crew code SASR0 agrees
+    ['M39491', 'A', false],
+    ['Z14891', 'A', false],
+    ['A42431', 'A', false],
+    ['E27861', 'B', false],
+    ['X30241', 'B', false],
+    ['M38261', 'SR04', true], // SR05 on hold turn; SR04 ** goes spare
+    ['M39671', 'SR09', false],
+  ]);
+  assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
+  assert.deepEqual(r.me.aheadAfterLineup.map((s) => s.split(' ')[0]), ['SR05']);
+});
+
+test('CATS crew codes on ordered line-up rows map to pools', () => {
+  const { poolFromCrewCode } = require('../../lib/board/engine');
+  assert.equal(poolFromCrewCode('45SASR0'), 'SR');
+  assert.equal(poolFromCrewCode('45SASA0'), 'A');
+  assert.equal(poolFromCrewCode('45SAS50'), 'S5');
+  assert.equal(poolFromCrewCode(''), null);
+});
+
+test('Call Board clock: split header is read, masked header is ignored', () => {
+  const S = require('../../lib/board/screens');
+  assert.equal(S.callBoardTime(parseGrid(['1 | 19:26/10/15- | 109:142 | 352:CN'])), at(2026, 10, 15, 1, 42));
+  assert.equal(S.callBoardTime(parseGrid(['1 | 19:99/99/99- | 109:142 | 352:CN'])), null);
+});

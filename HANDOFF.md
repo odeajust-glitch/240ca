@@ -7,7 +7,17 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## 2026-10-14 (latest): board brain built (Phase 1)
+## 2026-10-15: first shadow check done
+Owner's real run (15th 01:43) is `test/fixtures/board/2026-10-15.json`; results
+are in BOARD-CHECK.md "Shadow check #1". No rule broke; four gaps were fixed
+(deadhead symbols, working turns, A/B count after midnight, masked clock).
+15 tests pass. The probe had a bug on the 15th (noNames used before it was
+declared): fixed and verified end to end with a fake CATS.
+Owner's folder is nested: `C:\Users\odeaj\OneDrive\Desktop\240ca-…\240ca-…`.
+**Next:** more shadow checks (aim ~10–15 agreeing runs). Open: where to read
+outer switch times (returning-turn order); is the time beside `**` an "until"?
+
+## 2026-10-14: board brain built (Phase 1)
 - `lib/board/`: `grid.js` (probe grid → rows), `screens.js` (Call Board, Chain
   Gang 23, Line-up 41 parsers; names never copied out), `engine.js` (3 A / 2 B
   after 0459, deadheads → SR, rest/HT vs call time, `**` goes spare, returning

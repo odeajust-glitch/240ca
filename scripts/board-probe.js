@@ -72,7 +72,7 @@ function maskTokenWith(tok, words) {
   // Dates, times and codes aren't personal: 26/10/14, 0745-0800, 14OCT26,
   // 100MIL-style codes, 5-digit station/train numbers. Employee numbers are
   // 6+ digits and stay masked.
-  if (/^\d{2}\/\d{2}\/\d{2}(-\d{4})?$/.test(tok)) return tok;
+  if (/^\d{2}\/\d{2}\/\d{2}(-\d{0,4})?$/.test(tok)) return tok;
   if (/^\d{4}-\d{4}$/.test(tok)) return tok;
   if (/^\d{1,3}[A-Za-z]{2,4}\d{0,2}$/.test(tok)) return tok;
   if (/^\d{5}$/.test(tok)) return tok;
