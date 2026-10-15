@@ -14,6 +14,32 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-15 late: NEXT = get board-check results into the shift tracker app
+Owner wants the board checker's output (when I go, Chain Gang + SD boards,
+41 line-up with crews, changes) in their **shift tracker app** =
+private repo `odeajust-glitch/RailroadTracker` (Android: Kotlin, Compose, Room;
+read its `HANDOFF-auto-board-checker.md` first). What's there already:
+- Lineup tab: board checks logged as `lineup_snapshots` (Room schema v16) from
+  **screenshots read by Claude** (`ui/lineup/BoardReader.kt`), as evidence for a
+  Transport Canada complaint about CATS accuracy (DRPR 6.6 / 7.2).
+- Its own rotation forecast (`data/model/ChainGangForecast.kt`).
+- Its handoff (2026-10-13) records a decision *against* software logging into
+  CATS (CN acceptable-use risk for a union rep, credentials, evidence quality).
+  This project's auto checker does log in (owner signs in by hand; nothing
+  stored). ❓ Raise with the owner before wiring the two together; the app
+  treats its records as evidence.
+- That handoff describes the user as an engineer named Justin; this owner
+  says they're a conductor on SR03. ❓ Confirm whose app / which turn.
+Plan options to put to the owner (not decided):
+1. Laptop pushes each check's snapshot (JSON from `lib/board/view.js`
+   snapshot + predictions) to a small relay (e.g. this repo's Render app,
+   key-gated), and the Android app polls it and shows a "Board" card/tab.
+2. Simpler: board-auto writes a file the phone picks up (shared folder /
+   email) and the app imports it as a lineup snapshot flagged "from auto
+   check" (keeps the evidence trail honest).
+3. Notifications when "when you go" changes.
+Don't commit to RailroadTracker without the owner's go-ahead.
+
 ## 2026-10-15 evening: `**` always goes spare; RETN = return
 Owner, looking at option 27 (SD08 `** ** 1016` at 16:53): the time is the
 RETN (return) column, not an "until". While `**` shows, the turn goes spare,
