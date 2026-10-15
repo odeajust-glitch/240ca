@@ -1,8 +1,9 @@
-// Reads a board-probe summary.json and prints the board check: where each
-// Sarnia train should go, where you stand, and anything that looks wrong.
+// Reads a board-probe summary.json and says when you go to work while you
+// wait in Sarnia. --details shows the full working behind the answer.
 //
 //   node scripts/board-check.js probe-out/summary.json --me SR03
 //   node scripts/board-check.js summary.json --me SR03 --now 2026-10-14T16:17
+//   node scripts/board-check.js summary.json --me SR03 --details   (full working)
 //
 // It only reads the file; it never logs in or touches CATS.
 const fs = require('fs');
@@ -31,7 +32,7 @@ function main() {
   }
   const input = loadSummary(JSON.parse(fs.readFileSync(file, 'utf8')), { now });
   const result = runBoardCheck({ ...input, me: arg('--me') });
-  console.log(formatReport(result, input.seen));
+  console.log(formatReport(result, input.seen, { details: process.argv.includes('--details') }));
 }
 
 try {

@@ -7,7 +7,14 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## 2026-10-15 (latest): rules confirmed
+## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"
+The owner runs board checks only while waiting in Sarnia, because the line-ups
+are unreliable. The tool's one job is telling them when they'll be called.
+Don't add predictions, flags or questions beyond that. The default report
+prints just that answer (`--details` for the working). Route: Call Board, 23
+(CO), 41. Screens 19/21 are optional.
+
+## 2026-10-15: rules confirmed
 `**` time = until (no day = today); B0 at a normal position = working another
 job → goes spare (at POS 999 with a train = out on its own train); A/B "rest"
 = resets → goes spare; turns in Toronto never get a Sarnia train until they're

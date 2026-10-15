@@ -6,6 +6,11 @@ CATS disagrees. Rule cites are from `data/crew_calling_cty.pdf` (TCRC-CTY
 Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
 
 ## Scope
+- **The tool's only job (owner, 2026-10-15): tell the owner when they go to work
+  while they're waiting in Sarnia.** Nothing else: no flags, no checks on other
+  crews, no Toronto order. The report shows only that answer; other trains'
+  turns, flags and notes are internal working (`--details`), not something to
+  raise with the owner. Don't ask questions that don't affect this answer.
 - **Main goal (owner, 2026-10-15): predict when the owner goes to work.** The
   report leads with it. Exact Toronto return order matters less.
 - **Road work out of Sarnia only.** Yard work is out of scope.

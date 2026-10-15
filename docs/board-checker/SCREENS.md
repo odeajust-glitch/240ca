@@ -22,8 +22,8 @@ train/turn symbols kept). The owner adds what each screen means.
 
 ## The board-check route (owner, 2026-10-15)
 Sign in → **3** (Train Service) → **6** Call Board → Enter, F8 to the yard jobs →
-F3 → **19** (A pool POS, CC `CO`) → F3 → **21** (B pool POS, CC `CO`) →
 F3 → **23** (Chain Gang POS, CC `CO`) → F3 → **41** (47130, E, 24 h).
+Screens 19/21 (A/B turns) aren't needed for "when do I go" and are optional.
 Screens 19/21 are assumed to share 23's layout (POOL/TERM/CC prompt, CC TURN T
 POS … REST heading); the parser handles any pool. ❓ Confirm on the first run.
 

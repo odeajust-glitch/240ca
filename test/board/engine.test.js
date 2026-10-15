@@ -194,7 +194,10 @@ test('report leads with when the owner goes to work (2026-10-15 run)', () => {
   const input = loadSummary(fixture15);
   const text = formatReport(runBoardCheck({ ...input, me: 'SR03' }), input.seen);
   assert.match(text, /\nWHEN YOU GO \(SR03\): not on the line-up yet \(the line-up only runs to 15th 2216\)/);
-  assert.ok(text.indexOf('WHEN YOU GO') < text.indexOf('POSSIBLE PROBLEMS'), 'owner section comes first');
+  // Nothing but the answer by default (owner: only "when do I go").
+  assert.doesNotMatch(text, /POSSIBLE PROBLEMS|Coming up|Notes:/);
+  const full = formatReport(runBoardCheck({ ...input, me: 'SR03' }), input.seen, { details: true });
+  assert.match(full, /Coming up/);
   assert.match(text, /the 1st Chain Gang train or deadhead after that if it's called before 16th 0559 \(SR05 on hold turn\)/);
   assert.match(text, /Called after 16th 0559: the 2nd one/);
   assert.match(text, /Your own rest is up at 15th 1015/);
