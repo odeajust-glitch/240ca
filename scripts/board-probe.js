@@ -92,6 +92,10 @@ async function describeFrame(frame) {
     const maskTokenWith = eval(`(${maskSrc})`);
     const text = document.body ? document.body.innerText : '';
     const lines = text.split('\n').map((l) => l.replace(/\s+$/, '')).filter((l) => l.trim());
+    // The Train Line-up screen lists trains only, never people (owner
+    // confirmed via screenshot 2026-10-14), so it's shown unmasked. Declared
+    // before the return below, which calls mask() through screenGrid().
+    const noNames = /TRAIN LINE UP/.test(text);
     const found = new Set();
     for (const w of text.toUpperCase().match(/[A-Z][A-Z0-9]*/g) || []) if (words.has(w)) found.add(w);
     return {
@@ -118,9 +122,6 @@ async function describeFrame(frame) {
     // a short code (CO, LE, SB01) or a small number (positions, times), so
     // names and employee numbers don't come through.
     function maskToken(tok) { return maskTokenWith(tok, words); }
-    // The Train Line-up screen lists trains only, never people (owner
-    // confirmed via screenshot 2026-10-14), so it's shown unmasked.
-    const noNames = /TRAIN LINE UP/.test(text);
     function mask(t) { if (noNames) return t; return maskAll(t); }
     function maskAll(t) { return t.split(/(\s+)/).map((x) => (/\s/.test(x) ? x : maskToken(x))).join(''); }
     function screenGrid() {
@@ -232,6 +233,7 @@ async function main() {
   // a new screen to record.
   let recording = true;
   let lastSeq = null;
+  let lastError = null;
   const recorder = (async () => {
     while (recording) {
       const frame = page.frames().find((f) => f.name() === 'jacadaframe');
@@ -249,7 +251,14 @@ async function main() {
             lastAction = null;
             console.log(`  recorded screen ${step}`);
           }
-        } catch { /* frame mid-navigation; try again next tick */ }
+        } catch (err) {
+          // Mid-navigation errors are normal and retried next tick; anything
+          // else is a bug the owner should see rather than silently losing screens.
+          if (!/navigat|detached|context was destroyed|Target closed/i.test(err.message) && err.message !== lastError) {
+            lastError = err.message;
+            console.log(`  (couldn't record this screen: ${err.message.split('\n')[0]})`);
+          }
+        }
       }
       await new Promise((r) => setTimeout(r, 700));
     }
