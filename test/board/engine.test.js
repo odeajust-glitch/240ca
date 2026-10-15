@@ -30,8 +30,11 @@ test('2026-10-14 line-up matches the owner-agreed prediction', () => {
     ['X30241', '13', 'B', false],
     ['A42431', '15', 'B', false],
     ['E27861', '15', 'SR02', false],
-    ['M39291', '14', 'SR04', true], // ** → goes out with a spareboard employee
-    ['M38261', '15', 'SR09', true],
+    // ** is an "until" time (owner, 15th): SR04's ** lapsed 14th 1026 and
+    // SR09's 14th 1600, so both work their own trains. (On the 14th we
+    // first assumed ** always goes spare.)
+    ['M39291', '14', 'SR04', false],
+    ['M38261', '15', 'SR09', false],
   ]);
 });
 
@@ -163,7 +166,7 @@ test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241',
     ['A42431', 'A', false],
     ['E27861', 'B', false],
     ['X30241', 'B', false],
-    ['M38261', 'SR04', true], // SR05 on hold turn; SR04 ** goes spare
+    ['M38261', 'SR04', false], // SR05 on hold turn; SR04's ** lapsed at 1026
     ['M39671', 'SR09', false],
   ]);
   assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
@@ -242,7 +245,7 @@ test('2026-10-15 08:13 run: A/B turns from screens 19/21, Chain Gang as before',
     ['A42431', '15', 'A', 'SA07', false], // 3rd A today after SA05, SA06
     ['X30241', '13', 'B', 'SB01', false],
     ['M38261', '15', 'B', 'SB02', true], // SB02 on rest to 2300 → goes spare
-    ['E27861', '15', 'SR', 'SR04', true], // SR05 held; SR04 ** goes spare
+    ['E27861', '15', 'SR', 'SR04', false], // SR05 held; SR04's ** lapsed at 1026
     ['M39671', '14', 'SR', 'SR09', false],
     ['L50231', '16', 'S5', null, false],
     ['M39491', '15', 'A', 'SA08', false], // new road day 16th

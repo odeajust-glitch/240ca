@@ -72,7 +72,10 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      with the spareboard person's name. So for the rotation, a `**` turn is
      **used exactly like a normal call**: it leaves the Sarnia list. The tool must
      identify crews by **turn id**, not by name.
-     ❓ Does the time shown with `**` mean "until then"?
+     **Answered (owner, 2026-10-15):** the time beside `**` is an **"until" time**.
+     After it, the turn works its own train (SR04 `** 1026`: no longer spare after
+     10:26). With no day shown, it's taken as the snapshot's day. ❓ SR04 showed
+     `** 1026` on both the 14th and the 15th; confirm it means 10:26 of the day shown.
    So for each SR train, in position order: on rest / HT (until after call time)
    → skip to the next person; `**` → that turn uses the train and the spareboard
    covers; otherwise → that person gets it.
