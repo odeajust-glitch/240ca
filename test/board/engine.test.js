@@ -230,3 +230,25 @@ test('A/B position screens (19/21) give each A/B train its turn; resting A/B tur
     ['X30241', 'B', 'SB06', false],
   ]);
 });
+
+// --- 2026-10-15 ~08:13: first run with A (19) and B (21) screens -----------
+
+test('2026-10-15 08:13 run: A/B turns from screens 19/21, Chain Gang as before', () => {
+  const fixture15b = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  const input = loadSummary(fixture15b);
+  assert.deepEqual(input.aHome.map((t) => t.turn), ['SA07', 'SA08', 'SA09', 'SA01', 'SA05', 'SA06']);
+  const r = runBoardCheck({ ...input, me: 'SR03' });
+  assert.deepEqual(r.predictions.map((p) => [p.symbol, p.originDay, p.pool, p.turn || null, !!p.spare]), [
+    ['A42431', '15', 'A', 'SA07', false], // 3rd A today after SA05, SA06
+    ['X30241', '13', 'B', 'SB01', false],
+    ['M38261', '15', 'B', 'SB02', true], // SB02 on rest to 2300 → goes spare
+    ['E27861', '15', 'SR', 'SR04', true], // SR05 held; SR04 ** goes spare
+    ['M39671', '14', 'SR', 'SR09', false],
+    ['L50231', '16', 'S5', null, false],
+    ['M39491', '15', 'A', 'SA08', false], // new road day 16th
+    ['Z14891', '15', 'A', 'SA09', false],
+    ['M30241', '14', 'A', 'SA01', false],
+  ]);
+  // Today's A trains already out match the sequence: no pool flags.
+  assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
+});

@@ -249,3 +249,13 @@ working (POS 999, `B0` + train) were treated as at home; a snapshot after
 midnight can't see the day's A/B trains (now inferred from CATS sending a
 train to SR, and from the crew code on ORD rows, e.g. `45SASR0`); the Call
 Board clock can be masked, so the probe time is the fallback.
+
+## Shadow check #2: 15th 01:43 prediction vs the 15th 08:13 board
+| Prediction (01:43) | What happened (08:13) | Verdict |
+|---|---|---|
+| M30241 (ORD 0400) → SR02 | On duty 0345 with SR02 | ✅ |
+| M39491 → A | On duty 0615 with SA05 | ✅ |
+| Z14891 → A | On duty 0945 with SA06 | ✅ |
+| E27861 15 → B, X30241 → B, M38261 → SR | Line-up re-planned: E27861 moved to 1610, after M38261 (1600), so now X30241 → B, M38261 → B, E27861 → SR | plan changed (pending) |
+First run with screens 19 (A) and 21 (B): same layout as 23, confirmed.
+Open: SR14 sits at POS 005 at home with ST `B0` and no train. What does `B0` mean there?
