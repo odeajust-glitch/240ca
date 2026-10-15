@@ -14,7 +14,7 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
-## 2026-10-15 late: NEXT = get board-check results into the shift tracker app
+## 2026-10-15 late: board-check results → shift tracker app (built, not switched on)
 Owner wants the board checker's output (when I go, Chain Gang + SD boards,
 41 line-up with crews, changes) in their **shift tracker app** =
 private repo `odeajust-glitch/RailroadTracker` (Android: Kotlin, Compose, Room;
@@ -30,15 +30,36 @@ read its `HANDOFF-auto-board-checker.md` first). What's there already:
   treats its records as evidence.
 - Owner confirmed (2026-10-15): it's their app; the owner is Justin.
   (Its handoff calls him an engineer; here he's on SR03 Chain Gang conductor.)
-Plan options to put to the owner (not decided):
-1. Laptop pushes each check's snapshot (JSON from `lib/board/view.js`
-   snapshot + predictions) to a small relay (e.g. this repo's Render app,
-   key-gated), and the Android app polls it and shows a "Board" card/tab.
-2. Simpler: board-auto writes a file the phone picks up (shared folder /
-   email) and the app imports it as a lineup snapshot flagged "from auto
-   check" (keeps the evidence trail honest).
-3. Notifications when "when you go" changes.
-Don't commit to RailroadTracker without the owner's go-ahead.
+**Owner decided (2026-10-15 night):** (a) auto-check results stay **separate
+from the evidence log**: own Board tab, never `lineup_snapshots`; (b) delivery
+by a **relay on Render**.
+
+**Built (2026-10-15 night):**
+- `lib/board/relay.js` + `server.js`: `POST /api/board` (laptop) and
+  `GET /api/board/latest` (phone), `Authorization: Bearer <BOARD_KEY>`; 404
+  when the key is wrong or `BOARD_KEY` is unset (like `/api/stats`). Keeps only
+  the newest check, in `$ANALYTICS_DIR/board-latest.json` (persistent disk);
+  an older check arriving late doesn't replace a newer one. Payload:
+  `{checkedAt, me[], report, changes[], myAnswerChanged}`. 27 tests.
+- `scripts/board-auto.js` pushes each check when `.env` has
+  `BOARD_RELAY_URL` + `BOARD_KEY` ("Sent to your phone." / "Not sent…: why");
+  a failed push never stops the check.
+- RailroadTracker branch `board-relay` (not merged, not installed): Board tab,
+  WorkManager look every 15 min, notification when `myAnswerChanged`. See its
+  `HANDOFF-auto-board-checker.md` §8.
+- Tested end to end on the emulator against a local relay fed the 15th's two
+  fixtures: the tab shows the check; see §8 there for the notification test.
+- Note: `myAnswerChanged` is true whenever the "when you go" text changes,
+  including just the line-up's end time moving. Same as the laptop's beep.
+
+**Owner's steps to switch it on (not done yet):**
+1. Pick a long random key. On Render: service → Environment → add
+   `BOARD_KEY`. Merge/deploy this branch's server change (it's on this branch
+   only; Render deploys the branch its dashboard names, probably `main`).
+2. Laptop `.env`: `BOARD_RELAY_URL=https://<app>.onrender.com` and the same
+   `BOARD_KEY`.
+3. Phone: install the `board-relay` build (backup procedure in RailroadTracker's
+   handoff §6), Board tab → Set up → address + key, allow notifications.
 
 ## 2026-10-15 evening: `**` always goes spare; RETN = return
 Owner, looking at option 27 (SD08 `** ** 1016` at 16:53): the time is the
