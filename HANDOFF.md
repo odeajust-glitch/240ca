@@ -14,6 +14,17 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-15: owner's view after each check
+Owner asked (after the auto check worked on real CATS): after each check show
+(1) when I go, (2) the Chain Gang board status, (3) the 41 line-up with who's
+projected on each train, (4) changes since the previous check. Built in
+`lib/board/view.js`; `formatReport` prints 1–3 by default (both scripts) and
+4 when given `changes`. `board-auto.js` keeps the last check's snapshot in
+`probe-out/last-check.json` (carries over between runs), prints the full view
+every check and beeps when the "when you go" answer changes. The auto route
+now also reads 19/21 (CC `CO`) to name A/B turns; failures there are skipped.
+Tested on the fake CATS (normal + "later" board). 21 tests.
+
 ## 2026-10-15: automatic board check built
 `scripts/board-auto.js --me SR03 [--every 20]`: owner signs in by hand (stops
 at the CATS main menu); the script then walks the route itself (3→6→Enter,
@@ -26,7 +37,7 @@ stores credentials. Screen capture is shared with the probe in
 collapsed, since CATS splits words into boxes); boxes are filled by order.
 Tested end to end against a fake CATS built from the recorded menus and the
 15b screens: same answer as `board-check.js`, planted names/password absent.
-**Not yet run on real CATS.** If it stops with "Expected the … screen", ask
+Owner ran it on real CATS 2026-10-15: works. If it stops with "Expected the … screen", ask
 for the message and `probe-out/auto-summary.json`.
 
 ## 2026-10-15: rules confirmed

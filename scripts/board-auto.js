@@ -1,10 +1,12 @@
 // Does the board check by itself: you sign in to CATS once, then it walks
 // the route the owner taught (Call Board to the yard jobs, Chain Gang 23
-// with CO, Train Line-up 41) and prints when you go to work.
+// with CO, A/B pools 19/21, Train Line-up 41) and prints when you go to work,
+// the Chain Gang board, the line-up with who's projected on each train, and
+// what changed since the last check.
 //
 //   node scripts/board-auto.js --me SR03              one check
-//   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min,
-//                                                     speak up only on change
+//   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
+//                                                     (beeps when your answer changes)
 //
 // You do the sign-in yourself (Microsoft, Authenticator, CATS password); the
 // script never sees or stores any of it. It only reads screens and presses
@@ -17,11 +19,13 @@ const { parseGrid } = require('../lib/board/grid');
 const S = require('../lib/board/screens');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
-const { formatReport } = require('../lib/board/report');
+const { formatReport, describeMe } = require('../lib/board/report');
+const { snapshot } = require('../lib/board/view');
 const { at } = require('../lib/board/time');
 
 const OUT_DIR = path.join(__dirname, '..', 'probe-out');
 const PROFILE_DIR = path.join(OUT_DIR, 'profile');
+const LAST_FILE = path.join(OUT_DIR, 'last-check.json');
 const START_URL = 'https://cats.cn.ca/';
 
 function arg(name) {
@@ -171,11 +175,24 @@ async function runRoute(page) {
     expect(await press(page, 'F8'), is.callBoardList, 'next Call Board page');
   }
 
-  // Chain Gang position: 23, conductors only (CC = CO).
-  expect(await chooseFromMenus(page, 23), is.poolPosition, 'Chain Gang (23)');
-  await fill(page, { '-1': 'CO' });
-  expect(await press(page, 'Enter'), is.poolPosition, 'Chain Gang (23) with CO');
-  await capture();
+  // Pool positions, conductors only (CC = CO): 23 Chain Gang (needed), then
+  // 19 A pool and 21 B pool (only to name the A/B turns on the line-up, so a
+  // problem there doesn't stop the check).
+  const pool = async (option, name) => {
+    expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
+    await fill(page, { '-1': 'CO' });
+    expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with CO`);
+    await capture();
+  };
+  await pool(23, 'Chain Gang');
+  for (const [option, name] of [[19, 'A pool'], [21, 'B pool']]) {
+    try {
+      await pool(option, name);
+    } catch (err) {
+      if (err instanceof NeedSignIn) throw err;
+      console.log(`  (skipped ${name} ${option}: ${err.message})`);
+    }
+  }
 
   // Train Line-up: 41, Sarnia (47130), eastbound, 24 h ahead.
   expect(await chooseFromMenus(page, 41), is.lineup, 'Train Line-up (41)');
@@ -191,9 +208,18 @@ async function runRoute(page) {
   return { probedAt: new Date().toISOString(), screens };
 }
 
+// The full view, plus what changed since the previous check (kept in
+// probe-out/last-check.json, so it carries over between runs).
 function answer(summary, me, nowOverride) {
   const input = loadSummary(summary, { now: nowOverride });
-  return formatReport(runBoardCheck({ ...input, me }), input.seen);
+  const result = runBoardCheck({ ...input, me });
+  const cur = snapshot(result, result.me ? describeMe(result.me) : []);
+  let prev = null;
+  try { prev = JSON.parse(fs.readFileSync(LAST_FILE, 'utf8')); } catch { /* first check */ }
+  const text = formatReport(result, input.seen, { changes: { prev, cur } });
+  fs.writeFileSync(LAST_FILE, JSON.stringify(cur, null, 2));
+  const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
+  return { text, myAnswerChanged };
 }
 
 // --- Main ----------------------------------------------------------------------
@@ -240,20 +266,13 @@ async function main() {
     + 'Stop at the CATS main menu; the script takes over from there. Leave the window alone while it works.';
   await waitForMainMenu(page, signIn);
 
-  let last = null;
   for (;;) {
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const text = answer(summary, me, nowOverride);
-      const body = text.split('\n').slice(1).join('\n').trim(); // without the "as of" line
-      if (body !== last) {
-        console.log(`${last === null ? '' : '\x07CHANGED: '}${text}`);
-        last = body;
-      } else {
-        console.log(`[${stamp()}] No change.`);
-      }
+      const { text, myAnswerChanged } = answer(summary, me, nowOverride);
+      console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
     } catch (err) {
       if (err instanceof NeedSignIn) {
         await waitForMainMenu(page, '\x07\nCATS signed you out. Sign in again and stop at the main menu.');

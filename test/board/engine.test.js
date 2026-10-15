@@ -277,3 +277,41 @@ test('B0 (working another job) makes a Chain Gang turn go spare, like **', () =>
   assert.deepEqual(r.predictions.map((p) => [p.turn, !!p.spare]), [['SR14', true], ['SR03', false]]);
   assert.match(r.predictions[0].reason, /B0 \(working another job\)/);
 });
+
+test('owner view: Chain Gang board, line-up crews and changes (08:13 run)', () => {
+  const { formatReport, describeMe } = require('../../lib/board/report');
+  const { snapshot } = require('../../lib/board/view');
+  const fx = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  const input = loadSummary(fx);
+  const result = runBoardCheck({ ...input, me: 'SR03' });
+  const cur = snapshot(result, describeMe(result.me));
+  const text = formatReport(result, input.seen, { changes: { prev: null, cur } });
+  assert.match(text, /CHAIN GANG BOARD/);
+  assert.match(text, /001 {2}SR05 {2}hold turn until 16th 0559/);
+  assert.match(text, /002 {2}SR04 {2}\*\* goes spare if called before 15th 1026/);
+  assert.match(text, /004 {2}SR03 {2}rest until 15th 1015 {3}← YOU/);
+  assert.match(text, /999 {2}SR07 {2}out working on M39671/);
+  assert.match(text, /15th 1610 {2}PLN {2}E27861 15 +call ~1355 {2}Chain Gang: SR04/);
+  assert.match(text, /M38261 15 .*B pool: SB02 \(goes spare/);
+  assert.match(text, /L50231 16 .*S5/);
+  assert.match(text, /CHANGES: none to show/);
+
+  // A later board: SR09 gone, E27861 ordered later.
+  const prev = JSON.parse(JSON.stringify(cur));
+  prev.asOf -= 60;
+  prev.gang.push({ turn: 'SR10', pos: 6, status: 'available' });
+  prev.gang.find((g) => g.turn === 'SR03').pos = 5;
+  prev.trains.find((t) => t.train === 'E27861 15').order -= 20;
+  prev.trains.find((t) => t.train === 'A42431 15').status = 'ORD';
+  prev.trains.push({ train: 'Q14851 15', order: prev.asOf, status: 'ORD', goesTo: 'A pool' });
+  prev.me = ['WHEN YOU GO (SR03): something else'];
+  const diff = formatReport(result, input.seen, { changes: { prev, cur } });
+  assert.match(diff, /CHANGES since the last check \(15th 0715\):/);
+  assert.match(diff, /Your answer changed\. It was:\n {6}WHEN YOU GO \(SR03\): something else/);
+  assert.match(diff, /~ E27861 15 time 15th 1550 → 15th 1610/);
+  assert.match(diff, /~ A42431 15 ORD → PLN/);
+  assert.match(diff, /- Q14851 15 off the line-up/);
+  assert.match(diff, /~ SR03 position 005 → 004/);
+  assert.match(diff, /- SR10 off the Sarnia board/);
+  assert.match(formatReport(result, input.seen, { changes: { prev: cur, cur } }), /CHANGES since the last check \(15th 0815\): none\./);
+});
