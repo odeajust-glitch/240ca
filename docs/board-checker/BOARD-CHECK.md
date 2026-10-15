@@ -258,7 +258,10 @@ Board clock can be masked, so the probe time is the fallback.
 | Z14891 → A | On duty 0945 with SA06 | ✅ |
 | E27861 15 → B, X30241 → B, M38261 → SR | Line-up re-planned: E27861 moved to 1610, after M38261 (1600), so now X30241 → B, M38261 → B, E27861 → SR | plan changed (pending) |
 First run with screens 19 (A) and 21 (B): same layout as 23, confirmed.
-Answered (owner, corrected): **`B0` = the person is working another job.** Their turn
-**goes spare** if it's called (like `**`: the turn still goes out, worked by a spareboard
-employee). At POS 999 with a train beside it, the turn itself is out on that train.
+Answered (owner, confirmed 2026-10-15): `B0` on the position screens (19/21/23) means:
+- **POS 999 + B0 + a train beside it** (e.g. SR07 · M39671 13): the crew is out working
+  **its own turn's** train. Not in the queue.
+- **B0 at a normal position with no train** (e.g. SR14 at POS 005): the person is working
+  **another job**, so the turn **goes spare** if called (like `**`: the turn still goes
+  out, worked by a spareboard employee).
 SB02/SB04 "rest" times are **resets**, so an A/B turn on reset goes spare, as the tool does.
