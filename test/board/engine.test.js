@@ -252,3 +252,20 @@ test('2026-10-15 08:13 run: A/B turns from screens 19/21, Chain Gang as before',
   // Today's A trains already out match the sequence: no pool flags.
   assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
 });
+
+test('B0 (working another job) makes a Chain Gang turn go spare, like **', () => {
+  const r = runBoardCheck({
+    now: NOW,
+    callBoard: [],
+    chainGangHome: [
+      { craft: 'CO', turn: 'SR14', terminal: 0, pos: 1, st: 'B0', rn: null, restUntil: null, statusUntil: null },
+      { craft: 'CO', turn: 'SR03', terminal: 0, pos: 2, st: null, rn: null, restUntil: null, statusUntil: null },
+    ],
+    lineup: [
+      { order: at(2026, 10, 14, 12, 0), symbol: 'M39671', trainNo: 'M396', originDay: '14', status: 'PLN', deadhead: false },
+      { order: at(2026, 10, 14, 14, 0), symbol: 'M38261', trainNo: 'M382', originDay: '14', status: 'PLN', deadhead: false },
+    ],
+  }, { aTurnsPerDay: 0, bTurnsPerDay: 0 });
+  assert.deepEqual(r.predictions.map((p) => [p.turn, !!p.spare]), [['SR14', true], ['SR03', false]]);
+  assert.match(r.predictions[0].reason, /B0 \(working another job\)/);
+});
