@@ -20,6 +20,13 @@ number, `cameFrom` (key pressed and masked text typed), and `screenGrid` (rows
 as `top | left:text | …`, names and employee numbers masked; codes, times and
 train/turn symbols kept). The owner adds what each screen means.
 
+## The board-check route (owner, 2026-10-15)
+Sign in → **3** (Train Service) → **6** Call Board → Enter, F8 to the yard jobs →
+F3 → **19** (A pool POS, CC `CO`) → F3 → **21** (B pool POS, CC `CO`) →
+F3 → **23** (Chain Gang POS, CC `CO`) → F3 → **41** (47130, E, 24 h).
+Screens 19/21 are assumed to share 23's layout (POOL/TERM/CC prompt, CC TURN T
+POS … REST heading); the parser handles any pool. ❓ Confirm on the first run.
+
 ## Getting to the board
 From the owner's recorded walkthrough (2026-10-14, probe `screens[]`). Meanings
 still to be confirmed by the owner.

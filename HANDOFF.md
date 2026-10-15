@@ -7,6 +7,13 @@ Last updated: 2026-10-13 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## 2026-10-15 (latest): report leads with "when you go"; A/B turns
+Owner's main goal is predicting **when they go to work**; the report now opens
+with it. The route adds screens **19 (A) and 21 (B)** with CC `CO`, so A/B trains
+get turn numbers (first in, first out; an A/B turn on rest/hold/** goes spare
+but still takes the train). The 19/21 layout is assumed to match 23 until a
+real run confirms it. 18 tests.
+
 ## 2026-10-15: first shadow check done
 Owner's real run (15th 01:43) is `test/fixtures/board/2026-10-15.json`; results
 are in BOARD-CHECK.md "Shadow check #1". No rule broke; four gaps were fixed

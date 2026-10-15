@@ -188,8 +188,8 @@ test('report leads with when the owner goes to work (2026-10-15 run)', () => {
   const { formatReport } = require('../../lib/board/report');
   const input = loadSummary(fixture15);
   const text = formatReport(runBoardCheck({ ...input, me: 'SR03' }), input.seen);
-  const lines = text.split('\n');
-  assert.match(lines[2], /^WHEN YOU GO \(SR03\): not on the line-up yet \(the line-up only runs to 15th 2216\)/);
+  assert.match(text, /\nWHEN YOU GO \(SR03\): not on the line-up yet \(the line-up only runs to 15th 2216\)/);
+  assert.ok(text.indexOf('WHEN YOU GO') < text.indexOf('POSSIBLE PROBLEMS'), 'owner section comes first');
   assert.match(text, /the 1st Chain Gang train or deadhead after that if it's called before 16th 0559 \(SR05 on hold turn\)/);
   assert.match(text, /Called after 16th 0559: the 2nd one/);
   assert.match(text, /Your own rest is up at 15th 1015/);
@@ -206,4 +206,27 @@ test('owner on a line-up train gets call and on-duty times', () => {
   assert.equal(r.me.train, 'M39671 14');
   assert.equal(r.me.onDuty, at(2026, 10, 14, 22, 1));
   assert.equal(r.me.call, at(2026, 10, 14, 20, 1));
+});
+
+test('A/B position screens (19/21) give each A/B train its turn; resting A/B turns go spare', () => {
+  const gangRow = (pool, top, turn, pos, extra = '') => `${top} | 10:CO | 37:${turn} | 82:0 | 100:${String(pos).padStart(3, '0')} | 136:AAAA+        A | 289:AAAA${extra}`;
+  const screen = (pool, rows) => ({ screenGrid: [
+    `37 | 46:POOL: | 100:( | 118:${pool} | 145:) | 181:TERM: | 235:( | 253:0 | 271:) | 550:CC: | 586:( | 604:[CO] | 631:)`,
+    '73 | 10:CC | 37:TURN | 82:T | 100:POS | 136:EMPLOYEE NAME | 343:ST | 379:RN | 415:AAAA | 478:SC | 514:REST | 577:AAAA | 622:TURN | 667:AAAA',
+    ...rows,
+  ] });
+  const summary = { ...fixture15, screens: [
+    ...fixture15.screens,
+    screen('SA', [gangRow('SA', 91, 'SA03', 1), gangRow('SA', 109, 'SA04', 2, ' | 505:0700 | 550:15'), gangRow('SA', 127, 'SA01', 3)]),
+    screen('SB', [gangRow('SB', 91, 'SB05', 1), gangRow('SB', 109, 'SB06', 2)]),
+  ] };
+  const r = runBoardCheck({ ...loadSummary(summary), me: 'SR03' });
+  const ab = r.predictions.filter((p) => p.pool === 'A' || p.pool === 'B').map((p) => [p.symbol, p.pool, p.turn, !!p.spare]);
+  assert.deepEqual(ab, [
+    ['M39491', 'A', 'SA03', false],
+    ['Z14891', 'A', 'SA04', true], // called ~0513, rest to 0700 → goes spare
+    ['A42431', 'A', 'SA01', false],
+    ['E27861', 'B', 'SB05', false],
+    ['X30241', 'B', 'SB06', false],
+  ]);
 });
