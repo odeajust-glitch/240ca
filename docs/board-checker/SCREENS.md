@@ -131,7 +131,7 @@ Home (T=0) order seen, conductors:
 | 007 | SR04 | ST `**` RN `**` 1026 |
 | 008 | SR09 | ST `**` RN `**` 1600 / 14th |
 | (T=1, away) 001 | SR12 | rest 1949 / 14th |
-`HT` = **hold turn** (acts like rest); `**` = turn **goes spare** if called (owner). ❓ Still: what do the ST/RN/SC headings stand for, and is the time beside them an "until" time? Which
+`B0` = **booked on** (with a train beside it: out working on that train; alone: available). `HT` = **hold turn** (acts like rest); `**` = turn **goes spare** if called (owner). ❓ Still: what do the ST/RN/SC headings stand for, and is the time beside them an "until" time? Which
 turn is yours? Missing turns (SR03, SR10, SR11, SR13, SR14) are out working.
 
 ## Train Line-up (`45 SA 41`): "TRAIN LINE UP FIELD INQUIRY" (program PSTS02H)
