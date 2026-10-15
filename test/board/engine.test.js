@@ -30,11 +30,10 @@ test('2026-10-14 line-up matches the owner-agreed prediction', () => {
     ['X30241', '13', 'B', false],
     ['A42431', '15', 'B', false],
     ['E27861', '15', 'SR02', false],
-    // ** is an "until" time (owner, 15th): SR04's ** lapsed 14th 1026 and
-    // SR09's 14th 1600, so both work their own trains. (On the 14th we
-    // first assumed ** always goes spare.)
-    ['M39291', '14', 'SR04', false],
-    ['M38261', '15', 'SR09', false],
+    // ** goes spare while CATS shows it; the time beside it is RETN, when
+    // they're due back (owner, 15th 17:00, back to the 14th's reading).
+    ['M39291', '14', 'SR04', true],
+    ['M38261', '15', 'SR09', true],
   ]);
 });
 
@@ -168,7 +167,7 @@ test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241',
     ['A42431', 'A', false],
     ['E27861', 'B', false],
     ['X30241', 'B', false],
-    ['M38261', 'SR04', false], // SR05 on hold turn; SR04's ** lapsed at 1026
+    ['M38261', 'SR04', true], // SR05 on hold turn; SR04 still ** → goes spare
     ['M39671', 'SR09', false],
   ]);
   assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
@@ -250,7 +249,7 @@ test('2026-10-15 08:13 run: A/B turns from screens 19/21, Chain Gang as before',
     ['A42431', '15', 'A', 'SA07', false], // 3rd A today after SA05, SA06
     ['X30241', '13', 'B', 'SB01', false],
     ['M38261', '15', 'B', 'SB02', true], // SB02 on rest to 2300 → goes spare
-    ['E27861', '15', 'SR', 'SR04', false], // SR05 held; SR04's ** lapsed at 1026
+    ['E27861', '15', 'SR', 'SR04', true], // SR05 held; SR04 ** → goes spare
     ['M39671', '14', 'SR', 'SR09', false],
     ['L50231', '16', 'S5', null, false],
     ['M39491', '15', 'A', 'SA08', false], // new road day 16th
@@ -288,7 +287,7 @@ test('owner view: Chain Gang board, line-up crews and changes (08:13 run)', () =
   const text = formatReport(result, input.seen, { changes: { prev: null, cur } });
   assert.match(text, /CHAIN GANG BOARD/);
   assert.match(text, /001 {2}SR05 {2}hold turn until 16th 0559/);
-  assert.match(text, /002 {2}SR04 {2}\*\* goes spare if called before 15th 1026/);
+  assert.match(text, /002 {2}SR04 {2}\*\* goes spare, return 15th 1026/);
   assert.match(text, /004 {2}SR03 {2}rest until 15th 1015 {3}← YOU/);
   assert.match(text, /999 {2}SR07 {2}out working on M39671/);
   assert.match(text, /15th 1610 {2}PLN {2}E27861 15 +call ~1355 {2}Chain Gang: SR04/);
@@ -338,5 +337,5 @@ test('SD turns (option 27) go with the Chain Gang trains by the same rules', () 
   const { formatReport } = require('../../lib/board/report');
   const text = formatReport(r, input.seen);
   assert.match(text, /SD BOARD/);
-  assert.match(text, /Chain Gang: SR04 \+ SD11/);
+  assert.match(text, /Chain Gang: SR04 \(goes spare → spareboard\) \+ SD11/);
 });

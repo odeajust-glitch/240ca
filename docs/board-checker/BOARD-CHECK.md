@@ -77,9 +77,11 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      with the spareboard person's name. So for the rotation, a `**` turn is
      **used exactly like a normal call**: it leaves the Sarnia list. The tool must
      identify crews by **turn id**, not by name.
-     **Answered (owner, 2026-10-15):** the time beside `**` is an **"until" time**.
-     After it, the turn works its own train (SR04 `** 1026`: no longer spare after
-     10:26). With no day shown, it means **today** (owner confirmed).
+     **Corrected (owner, 2026-10-15 evening):** the time beside `**` is the
+     **RETN** column, when they're due to **return**. It does *not* end the `**`:
+     while CATS still shows `**`, the turn **goes spare**, even after that time
+     (report shows "goes spare, return <time>"). No day shown = today. (Earlier
+     that day it was read as an "until" time; superseded.)
    So for each SR train, in position order: on rest / HT (until after call time)
    → skip to the next person; `**` → that turn uses the train and the spareboard
    covers; otherwise → that person gets it.

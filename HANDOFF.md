@@ -14,14 +14,22 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-15 evening: `**` always goes spare; RETN = return
+Owner, looking at option 27 (SD08 `** ** 1016` at 16:53): the time is the
+RETN (return) column, not an "until". While `**` shows, the turn goes spare,
+even past that time; the report says "** goes spare, return <time>".
+`config.starsHaveExpiry` is now false (supersedes the earlier "until" rule).
+Option 27's real layout matches 23 (heading `… ST RN RETN SC REST USHR TURN`),
+so it parses. 22 tests.
+
 ## 2026-10-15: SD (engineer) list, option 27
 Owner: option 27 lists which SD turns go with the SR (Chain Gang) trains. The
 auto route now reads 27 (as shown, then CC `EN` if there's a CC box; skipped
 on trouble). Loader → `sdHome` (EN/LE rows, one per turn); engine gives each
 Chain Gang line-up train the next callable SD turn by the same skip/spare
 rules as SR (`gangQueue` / `firstCallable`); view shows an SD BOARD and
-"Chain Gang: SR04 + SD11". **27's layout is assumed to match 23 — not
-recorded yet.** ❓ Confirm on the owner's first run (send auto-summary.json).
+"Chain Gang: SR04 + SD11". 27's layout matches 23 (owner's screenshot,
+2026-10-15).
 Owner confirmed 2026-10-15: the SD list works exactly like the SR list. A pool screen that can't be parsed is now
 skipped instead of failing the check. 22 tests.
 
@@ -52,7 +60,7 @@ Owner ran it on real CATS 2026-10-15: works. If it stops with "Expected the … 
 for the message and `probe-out/auto-summary.json`.
 
 ## 2026-10-15: rules confirmed
-`**` time = until (no day = today); B0 at a normal position = working another
+`**` = goes spare while shown, time = RETN/return (see 'evening' above); B0 at a normal position = working another
 job → goes spare (at POS 999 with a train = out on its own train); A/B "rest"
 = resets → goes spare; turns in Toronto never get a Sarnia train until they're
 back on the Sarnia list; outer switch / return order is out of scope; line-up
