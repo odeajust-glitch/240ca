@@ -12,6 +12,10 @@
 // script never sees or stores any of it. It only reads screens and presses
 // Enter/F3/F8, the same keys you would. Each check's masked screens are saved
 // to probe-out/auto-summary.json (no names) if you want to share one.
+//
+// With BOARD_RELAY_URL and BOARD_KEY in .env, each check is also sent to the
+// 240ca server so the RailroadTracker app on your phone shows it.
+require('dotenv').config({ quiet: true });
 const fs = require('fs');
 const path = require('path');
 const { describeFrame } = require('../lib/board/capture');
@@ -20,7 +24,8 @@ const S = require('../lib/board/screens');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
-const { snapshot } = require('../lib/board/view');
+const { snapshot, changeLines } = require('../lib/board/view');
+const { pushCheck } = require('../lib/board/relay');
 const { at } = require('../lib/board/time');
 
 const OUT_DIR = path.join(__dirname, '..', 'probe-out');
@@ -230,7 +235,7 @@ function answer(summary, me, nowOverride) {
   const text = formatReport(result, input.seen, { changes: { prev, cur } });
   fs.writeFileSync(LAST_FILE, JSON.stringify(cur, null, 2));
   const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
-  return { text, myAnswerChanged };
+  return { text, me: cur.me, changes: changeLines(prev, cur).filter((l) => l), myAnswerChanged };
 }
 
 // --- Main ----------------------------------------------------------------------
@@ -267,6 +272,10 @@ async function main() {
     nowOverride = at(+m[1], +m[2], +m[3], +m[4], +m[5]);
   }
 
+  const relay = process.env.BOARD_RELAY_URL && process.env.BOARD_KEY
+    ? { url: process.env.BOARD_RELAY_URL, key: process.env.BOARD_KEY }
+    : null;
+
   const { chromium } = loadPlaywright();
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const context = await chromium.launchPersistentContext(PROFILE_DIR, { headless: false });
@@ -282,8 +291,13 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
+      if (relay) {
+        const check = { checkedAt: summary.probedAt, me: meLines, report: text, changes, myAnswerChanged };
+        const sent = await pushCheck({ ...relay, check });
+        console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
+      }
     } catch (err) {
       if (err instanceof NeedSignIn) {
         await waitForMainMenu(page, '\x07\nCATS signed you out. Sign in again and stop at the main menu.');
