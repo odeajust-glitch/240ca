@@ -20,8 +20,9 @@ first out; rest/reset, hold, **, B0 → still takes the train, goes spare). S1
 has one more turn than the A pool (no logic change: the board is read as
 shown). Built: turn regex accepts S1nn/S3nn; loader `s1Home`/`s3Home`;
 engine 3c pairs them with A/B line-up trains; view shows S1/S3 BOARDs and
-"A pool: SA07 + S104". **Option numbers unknown** ❓: the auto route reads
-them only when given `--s1 N --s3 N` (CC `EN` like 27). Layout assumed = 23.
+"A pool: SA07 + S104". Options: **S1 = 25, S3 = 26** (owner; in
+`config.poolOptions`, `--s1/--s3` override), read with CC `EN` like 27.
+Layout assumed = 23 ❓ confirm from the first real run.
 Tested on the fake CATS (as 25/26) + unit test. 23 tests.
 
 ## 2026-10-16 evening: running on the dedicated board-checker laptop

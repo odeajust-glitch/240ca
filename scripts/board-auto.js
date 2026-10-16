@@ -5,7 +5,6 @@
 // what changed since the last check.
 //
 //   node scripts/board-auto.js --me SR03              one check
-//   node scripts/board-auto.js --me SR03 --s1 NN --s3 NN   also read S1/S3
 //   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
 //                                                     (beeps when your answer changes)
 //
@@ -36,6 +35,7 @@ const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { at } = require('../lib/board/time');
+const config = require('../lib/board/config');
 
 const OUT_DIR = DATA_DIR;
 const LAST_FILE = path.join(OUT_DIR, 'last-check.json');
@@ -214,7 +214,7 @@ async function runRoute(page, opts = {}) {
   };
   await pool(23, 'Chain Gang');
   // Engineer lists: 27 SD (with the Chain Gang), and S1 (with A) / S3 (with
-  // B) when their option numbers are given (--s1 N --s3 N). Read as they
+  // B), options 25/26 (config; --s1 N / --s3 N override). Read as they
   // first appear and again with CC = EN.
   const enginePool = (option, name) => async () => {
     const s = expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
@@ -419,7 +419,7 @@ async function main() {
     process.exit(1);
   }
   const every = arg('--every') ? Math.max(5, +arg('--every')) : null;
-  const poolOpts = { s1: optionArg('--s1'), s3: optionArg('--s3') };
+  const poolOpts = { s1: optionArg('--s1') ?? config.poolOptions.S1, s3: optionArg('--s3') ?? config.poolOptions.S3 };
   const url = arg('--url') || START_URL; // --url is for testing against a local copy
   let nowOverride;
   if (arg('--now')) {
