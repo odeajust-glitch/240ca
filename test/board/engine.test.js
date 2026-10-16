@@ -339,3 +339,20 @@ test('SD turns (option 27) go with the Chain Gang trains by the same rules', () 
   assert.match(text, /SD BOARD/);
   assert.match(text, /Chain Gang: SR04 \(goes spare → spareboard\) \+ SD11/);
 });
+
+// Owner, 2026-10-15: SB01/SB02 were already out on the 15th's B trains, but
+// the earlier A trains had left, so the check counted those B trains as A
+// slots and handed the 15th's next trains to SB03/SB04.
+test("a B train on the Call Board means that road day's A trains are used up", () => {
+  const dep = (symbol, h, co) => ({ symbol, trainNo: symbol.slice(0, -2), originDay: '15', station: 'SARNIA', onDuty: at(2026, 10, 15, h, 0), crew: [{ craft: 'EN', turn: 'S301' }, { craft: 'CO', turn: co }] });
+  const r = runBoardCheck({
+    now: at(2026, 10, 15, 19, 45),
+    callBoard: [dep('A42431', 14, 'SA07'), dep('X30241', 16, 'SB01'), dep('M38261', 18, 'SB02')],
+    chainGangHome: [{ craft: 'CO', turn: 'SR03', terminal: 0, pos: 1, restUntil: null, statusUntil: null }],
+    bHome: [{ craft: 'CO', turn: 'SB03', terminal: 0, pos: 1, restUntil: null, statusUntil: null }],
+    lineup: [{ order: at(2026, 10, 16, 1, 0), symbol: 'M39671', trainNo: 'M396', originDay: '14', status: 'PLN', deadhead: false }],
+  });
+  assert.equal(r.predictions[0].pool, 'SR');
+  assert.equal(r.predictions[0].turn, 'SR03');
+  assert.deepEqual(r.flags.filter((f) => f.rule === 'pool'), []);
+});

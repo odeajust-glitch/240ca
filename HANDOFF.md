@@ -14,6 +14,21 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-15 night: two fixes from the owner's live run
+- **B trains already out count.** The 19:45 check gave SB03/SB04 the 16th
+  0100/0425 trains as the 15th's B trains, though SB01/SB02 were already out
+  on them (owner). The 15th's earlier A trains had left, so the Sarnia Call
+  Board trains were numbered from A #1. Now the first B train seen on a road
+  day fills that day's A slots (like the existing SR rule). On that board SR03
+  moves from "not on the line-up" to DHT431B 16. 28 tests.
+- **"No F3 key on this screen"** (19:30–19:40): CATS sat on a screen with only
+  Enter. `toMainMenu` now presses Enter when there's no F3; an off-route check
+  saves the masked screen to `probe-out/stuck-screen.json`. Tested on a fake
+  frame only; the real screen hasn't been seen yet.
+- ⚠ The owner runs an **old copy** at `Desktop\240ca-claude-auto-board-checker-plan-hdk1n5`
+  (not git, 17:08, no relay). These fixes are only in this worktree; it needs
+  `npm install --no-save playwright` here, plus `.env`, to run from here.
+
 ## 2026-10-15 late: board-check results → shift tracker app (built, not switched on)
 Owner wants the board checker's output (when I go, Chain Gang + SD boards,
 41 line-up with crews, changes) in their **shift tracker app** =
