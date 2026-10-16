@@ -75,7 +75,7 @@ function oneTrain({ deadhead, order, restUntil }) {
       { craft: 'CO', turn: 'SR01', terminal: 0, pos: 1, restUntil, statusUntil: null },
       { craft: 'CO', turn: 'SR02', terminal: 0, pos: 2, restUntil: null, statusUntil: null },
     ],
-    lineup: [{ order, symbol: deadhead ? 'DHT999B' : 'M99931', trainNo: deadhead ? 'DHT999' : 'M999', originDay: '14', status: 'ORD', deadhead }],
+    lineup: [{ order, symbol: deadhead ? 'DHT999B' : 'M99831', trainNo: deadhead ? 'DHT999' : 'M998', originDay: '14', status: 'ORD', deadhead }],
   }, { aTurnsPerDay: 0, bTurnsPerDay: 0 }).predictions[0].turn;
 }
 
@@ -355,4 +355,24 @@ test("a B train on the Call Board means that road day's A trains are used up", (
   assert.equal(r.predictions[0].pool, 'SR');
   assert.equal(r.predictions[0].turn, 'SR03');
   assert.deepEqual(r.flags.filter((f) => f.rule === 'pool'), []);
+});
+
+// Owner, 2026-10-16: an odd third digit in the manifest means the train is
+// ordered out of Toronto (TM399 showed on duty at Sarnia), so it never takes
+// one of Sarnia's A/B slots. Deadheads carry a running number and still count.
+test('trains with an odd third manifest digit are Toronto trains, not Sarnia ones', () => {
+  const dep = (symbol, trainNo, h, co) => ({ symbol, trainNo, originDay: '16', station: 'SARNIA', onDuty: at(2026, 10, 16, h, 0), crew: [{ craft: 'EN', turn: 'S101' }, { craft: 'CO', turn: co }] });
+  const r = runBoardCheck({
+    now: at(2026, 10, 16, 10, 0),
+    callBoard: [dep('TM39931', 'TM399', 5, 'MU01'), dep('Z14891', 'Z148', 6, 'SA09'), dep('M39491', 'M394', 7, 'SA01'), dep('E27861', 'E278', 8, 'SA08'), dep('M30241', 'M302', 9, 'SB03')],
+    chainGangHome: [{ craft: 'CO', turn: 'SR03', terminal: 0, pos: 1, restUntil: null, statusUntil: null }],
+    lineup: [
+      { order: at(2026, 10, 16, 12, 0), symbol: 'M38261', trainNo: 'M382', originDay: '16', status: 'PLN', deadhead: false },
+      { order: at(2026, 10, 16, 13, 0), symbol: 'M38361', trainNo: 'M383', originDay: '16', status: 'PLN', deadhead: false },
+      { order: at(2026, 10, 16, 14, 0), symbol: 'DHT031B', trainNo: 'DHT031B', originDay: '16', status: 'PLN', deadhead: true },
+    ],
+  });
+  assert.deepEqual(r.flags.filter((f) => f.rule === 'pool'), []);
+  // M382 is the 16th's 2nd B train; M383 is Toronto's and left out; the deadhead stays.
+  assert.deepEqual(r.predictions.map((p) => [p.symbol, p.pool]), [['M38261', 'B'], ['DHT031B', 'SR']]);
 });
