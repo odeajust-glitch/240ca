@@ -26,7 +26,7 @@ Open a new PowerShell window afterwards so both are on the PATH.
 cd C:\
 git clone https://github.com/odeajust-glitch/240ca.git BoardChecker-code
 cd C:\BoardChecker-code
-git checkout claude/auto-board-checker-plan-hdk1n5
+git checkout claude/vigilant-planck-zawrj4
 npm install
 npm install --no-save playwright
 npx playwright install chromium

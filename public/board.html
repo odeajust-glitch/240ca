@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Line-up Snapshots</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -60,6 +61,7 @@
   }
   .top h1 { margin: 0; font: 700 30px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
   .top .where { color: var(--soft); font-size: 13.5px; }
+  .top .updated { margin-left: auto; font-size: 12.5px; color: var(--soft); }
   .top .sample { margin-left: auto; font-size: 12px; color: var(--amber); background: var(--amber-tint); padding: 3px 8px; border-radius: 3px; }
 
   .wrap {
@@ -71,6 +73,9 @@
   /* Snapshot rail */
   .rail { position: sticky; top: 16px; align-self: start; }
   .rail h2, .sec-title { font: 600 13px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); margin: 0 0 10px; }
+  .daypick { display: grid; gap: 4px; margin-bottom: 12px; font-size: 12px; color: var(--soft); }
+  .daypick select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+  .rail .same { display: block; font-size: 11.5px; color: var(--soft); }
   .rail ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--rule); }
   .rail li { margin: 0; }
   .rail button {
@@ -174,8 +179,10 @@
     .wrap { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 12px; }
     .rail { position: static; }
     .rail h2 { display: none; }
+    .rail .same { display: none; }
     .rail ol { display: flex; gap: 8px; overflow-x: auto; border-left: 0; padding-bottom: 4px; }
     .rail .day { display: none; }
+    .daypick { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
     .rail .d { display: block; }
     .rail button { border: 1px solid var(--rule); border-radius: 4px; margin: 0; padding: 6px 12px; white-space: nowrap; background: var(--sheet); }
     .rail button[aria-current="true"] { border-color: var(--accent); }
@@ -197,11 +204,13 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <span class="sample">Sample data · names masked</span>
+  <span class="sample" id="sample" hidden>Sample data · names masked</span>
+  <span class="updated" id="updated" hidden></span>
 </div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
     <h2>Snapshots</h2>
+    <label class="daypick" for="day"><span>Day</span><select id="day"></select></label>
     <ol id="rail"></ol>
   </nav>
   <main id="view"><p class="empty">Loading snapshots…</p></main>
@@ -291,9 +300,9 @@ function sequence(s) {
     <div class="foot">Order time is on duty plus prep. First 3 trains after 0459 go to A, next 2 to B, the rest and deadheads to the Chain Gang.</div></section>`;
 }
 
-function changes(s, prev) {
+function changes(s) {
   if (!s.changes) return `<section class="sheet"><header><h2>Changes</h2></header><p class="empty">First snapshot. Nothing earlier to compare.</p></section>`;
-  const w = when(prev.taken);
+  const w = when(s.prevTaken);
   const head = `<header><h2>Changes</h2><span class="meta">since ${esc(w.day)} ${esc(w.time)}</span></header>`;
   if (!s.changes.length) return `<section class="sheet">${head}<p class="empty">No changes.</p></section>`;
   const items = s.changes.map((l) => {
@@ -322,53 +331,115 @@ function strip(s) {
   </div>`;
 }
 
-fetch('board-sample.json').then((r) => r.json()).then((data) => {
-  const list = data.snapshots;
-  let cur = list.length - 1;
+const getJSON = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+
+// Live site: data/index.json lists the days, data/<day>.json holds each day's
+// snapshots. Without it (the sample page) everything comes from board-sample.json.
+async function source() {
+  try {
+    const index = await getJSON('data/index.json');
+    const cache = new Map();
+    return {
+      live: true, index,
+      days: index.days.map((d) => d.day),
+      load: (day) => cache.get(day) || cache.set(day, getJSON(`data/${day}.json`).then((d) => d.snapshots)).get(day),
+    };
+  } catch {
+    const data = await getJSON('board-sample.json');
+    let prev = null;
+    const byDay = new Map();
+    for (const s of data.snapshots) {
+      const snap = { ...s, prevTaken: prev && prev.taken };
+      prev = s;
+      const day = s.taken.slice(0, 10);
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(snap);
+    }
+    return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [] };
+  }
+}
+
+source().then(async (src) => {
+  if (!src.days.length) {
+    document.getElementById('view').innerHTML = '<p class="empty">No snapshots yet. They appear here after the board checker\'s next check.</p>';
+    return;
+  }
+  document.getElementById('sample').hidden = src.live;
+  if (src.live && src.index.generatedAt) {
+    const u = document.getElementById('updated');
+    u.hidden = false;
+    u.textContent = 'Updated ' + new Date(src.index.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  }
+  const daySel = document.getElementById('day');
+  daySel.innerHTML = src.days.map((d) => `<option value="${d}">${esc(when(d + ' 0000').day)}</option>`).join('');
+
+  let list = [];
+  let day = null;
+  let cur = 0;
   let poolTab = 0;
 
-  // Rail: newest first, grouped by day.
-  let lastDay = null;
-  document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).reverse().map(([s, i]) => {
-    const w = when(s.taken);
-    const day = w.day !== lastDay ? `<li class="day">${esc(w.day)}</li>` : '';
-    lastDay = w.day;
-    return `${day}<li><button data-i="${i}"><span class="d">${esc(w.day)}</span><span class="t">${esc(w.time)}</span><span class="n">${s.lineup.length} trains</span></button></li>`;
-  }).join('');
-  document.getElementById('rail').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-i]');
-    if (b) show(+b.dataset.i);
-  });
+  async function openDay(d, pick) {
+    day = d;
+    daySel.value = d;
+    list = await src.load(d);
+    document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).reverse().map(([s, i]) => {
+      const w = when(s.taken);
+      const same = s.sameUntil ? `<span class="same">same until ${esc(when(s.sameUntil).time)}</span>` : '';
+      return `<li><button data-i="${i}"><span class="d">${esc(w.day)}</span><span class="t">${esc(w.time)}</span><span class="n">${s.lineup.length} trains</span>${same}</button></li>`;
+    }).join('');
+    const i = typeof pick === 'string' ? list.findIndex((s) => s.taken === pick) : pick;
+    show(i >= 0 && i < list.length ? i : list.length - 1);
+  }
+
+  // Earlier/Later run across days.
+  async function step(dir) {
+    if (list[cur + dir]) return show(cur + dir);
+    const di = src.days.indexOf(day) - dir; // days are newest first
+    if (di < 0 || di >= src.days.length) return;
+    const next = await src.load(src.days[di]);
+    openDay(src.days[di], dir < 0 ? next.length - 1 : 0);
+  }
 
   function show(i) {
     cur = i;
     const s = list[i];
     const w = when(s.taken);
+    const dayIdx = src.days.indexOf(day);
+    const atOldest = i === 0 && dayIdx === src.days.length - 1;
+    const atNewest = i === list.length - 1 && dayIdx === 0;
     document.querySelectorAll('#rail button').forEach((b) => b.setAttribute('aria-current', +b.dataset.i === i));
     try { history.replaceState(null, '', '#' + slug(s.taken)); } catch (e) { /* not allowed in some frames */ }
     const screens = ['Call board', ...s.screens.map((k) => SCREENS[k] || k)].map((x) => `<span class="chip">${esc(x)}</span>`).join('');
+    const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
     document.getElementById('view').innerHTML = `
       <div class="head">
         <div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div>
-          <div class="screens" style="margin-top:8px">${screens}</div></div>
-        <div class="steps"><button id="older" ${i === 0 ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${i === list.length - 1 ? 'disabled' : ''}>Later ▶</button></div>
+          <div class="screens" style="margin-top:8px">${screens}${same}</div></div>
+        <div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>
       </div>
       ${strip(s)}
       <div class="grid">
-        <div class="col">${lineup(s)}${changes(s, list[i - 1])}</div>
+        <div class="col">${lineup(s)}${changes(s)}</div>
         <div class="col">${flags(s)}${pools(s, poolTab)}${onDuty(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
-    document.getElementById('older').onclick = () => show(cur - 1);
-    document.getElementById('newer').onclick = () => show(cur + 1);
+    document.getElementById('older').onclick = () => step(-1);
+    document.getElementById('newer').onclick = () => step(1);
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur); }; });
   }
 
+  document.getElementById('rail').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-i]');
+    if (b) show(+b.dataset.i);
+  });
+  daySel.onchange = () => openDay(daySel.value);
+
   // A link like #2026-10-15-0815 opens that snapshot.
-  const fromHash = list.findIndex((s) => slug(s.taken) === location.hash.slice(1));
-  show(fromHash >= 0 ? fromHash : cur);
+  const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
+  if (m && src.days.includes(m[1])) openDay(m[1], `${m[1]} ${m[2]}`);
+  else openDay(src.days[0]);
 }).catch((err) => {
-  document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}). Check that board-sample.json sits next to this page.</p>`;
+  document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;
 });
 </script>
 </body>
