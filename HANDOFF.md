@@ -53,6 +53,11 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## ⚠ Branches (2026-10-16 night)
+The board-checker laptop ran branch `claude/vigilant-planck-zawrj4` (snapshot
+site work). `claude/auto-board-checker-plan-hdk1n5` now contains all of it
+plus S1/S3 (merged, 39 tests). Laptop should merge/switch to the latter.
+
 ## 2026-10-16: S1 / S3 engineer boards
 Owner: S1 turns go with A trains, S3 with B; they work like A/B (first in
 first out; rest/reset, hold, **, B0 → still takes the train, goes spare). S1
