@@ -176,6 +176,23 @@ async function toMainMenu(page) {
   throw new OffRoute("Couldn't get back to the CATS main menu with F3.");
 }
 
+// CATS sometimes shows messages right after signing on. Press Enter to clear
+// them, as the owner does by hand (2026-10-16): up to 5 times, stopping as
+// soon as the main menu shows, so nothing extra gets pressed.
+async function clearMessages(page, max = 5) {
+  for (let i = 0; i < max; i++) {
+    const s = await screenState(page);
+    if (!s || is.mainMenu(s) || is.signOn(s)) return s;
+    try {
+      await press(page, 'Enter');
+    } catch (err) {
+      if (err instanceof OffRoute) return null; // no Enter key, or no answer
+      throw err;
+    }
+  }
+  return screenState(page);
+}
+
 async function chooseFromMenus(page, option) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: '3' });
@@ -400,14 +417,31 @@ async function signOn(page) {
   }
   signOnFailures = 0;
   console.log(`[${stamp()}] Signed in to CATS.`);
-  await toMainMenu(page); // past any notice CATS shows after signing on
+  await clearMessages(page); // Enter past any messages after signing on
+  await toMainMenu(page); // F3 if something's still in the way
 }
 
 async function waitForMainMenu(page, prompt) {
   console.log(prompt);
+  let otherSince = null; // when a CATS screen that isn't the menu showed up
+  let rounds = 0;
   for (;;) {
     const s = await screenState(page);
     if (s && is.mainMenu(s)) return;
+    // Signed in (by hand or not) but stuck on a message: clear it with Enter
+    // once it's sat there a few seconds (at most twice per sign-in).
+    if (s && s.seq !== null && !is.signOn(s)) {
+      otherSince ??= Date.now();
+      if (Date.now() - otherSince > 3000 && rounds < 2) {
+        rounds++;
+        console.log(`[${stamp()}] Clearing CATS messages with Enter…`);
+        await clearMessages(page);
+        otherSince = null;
+        continue;
+      }
+    } else {
+      otherSince = null;
+    }
     if (s && is.signOn(s) && autoSignOn) {
       try {
         await signOn(page);

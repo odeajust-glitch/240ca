@@ -53,6 +53,12 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-16 night: Enter past CATS messages after sign-on
+Owner: CATS sometimes shows messages after signing on. `clearMessages()`
+presses Enter up to 5 times, stopping at the main menu: after auto sign-on,
+and in `waitForMainMenu` when a non-menu CATS screen sits 3 s (max 2 rounds,
+covers signing in by hand). Tested on the fake CATS with 2 message screens.
+
 ## ⚠ Branches (2026-10-16 night)
 The board-checker laptop ran branch `claude/vigilant-planck-zawrj4` (snapshot
 site work). `claude/auto-board-checker-plan-hdk1n5` now contains all of it
