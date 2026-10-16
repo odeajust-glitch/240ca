@@ -17,6 +17,9 @@ services:
       # Gates /api/stats and /stats.html. Unset means the endpoint 404s.
       - key: STATS_KEY
         sync: false
+      # Gates /api/board (board checks laptop → RailroadTracker). Unset = 404.
+      - key: BOARD_KEY
+        sync: false
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_MODEL_FAST
