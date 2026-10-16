@@ -220,7 +220,17 @@ async function runRoute(page) {
       await capture();
     }
   };
-  for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool]]) {
+  // 19/21 again with CC = EN for the engineer turns that go with A and B
+  // (S1, S3; owner 2026-10-16, for the snapshot website). Assumed to work
+  // like 27 until seen on real CATS; a failure only skips them.
+  const engPool = (option, name) => async () => {
+    expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
+    await fill(page, { '-1': 'EN' });
+    expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with EN`);
+    await capture();
+  };
+  for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool],
+    [19, 'S1 pool', engPool(19, 'S1 pool')], [21, 'S3 pool', engPool(21, 'S3 pool')]]) {
     try {
       await (read ? read() : pool(option, name));
     } catch (err) {

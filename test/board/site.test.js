@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { buildSite, deploySite } = require('../../lib/board/site');
+const { buildSite, deploySite, snapshotOf } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
 const BoardTrains = require('../../public/board-trains');
 
@@ -163,4 +163,18 @@ test('orders: an ordered time that changes is counted, and month ends resolve', 
   assert.strictEqual(r.offPlan, 165);
   assert.strictEqual(r.offOrder, 30);
   assert.strictEqual(r.day, '2026-11-01');
+});
+
+test('site: S1/S3 engineer pools show under the pools; no "not ours" aside', () => {
+  const fx = JSON.parse(fixture('2026-10-15b.json'));
+  // The A pool screen again as CATS would show it with CC EN (S1 turns).
+  const a = fx.screens[3].screenGrid.map((l) => l.replace('[CO]', '[EN]').replace(/10:CO \| 37:SA0/, '10:EN | 37:S10'));
+  const b = fx.screens[4].screenGrid.map((l) => l.replace('[CO]', '[EN]').replace(/10:CO \| 37:SB0/, '10:EN | 37:S30'));
+  const { shown } = snapshotOf({ ...fx, screens: [...fx.screens, { screenGrid: a }, { screenGrid: b }] });
+  const names = shown.pools.map((p) => p.name);
+  assert.deepStrictEqual(names, ['Chain Gang (SR) · conductors', 'A pool (SA)', 'B pool (SB)', 'S1 · engineers (A)', 'S3 · engineers (B)']);
+  assert.deepStrictEqual(shown.pools[3].turns.map((t) => t.turn).slice(0, 2), ['S107', 'S108']);
+  assert.strictEqual(shown.pools[1].turns[0].turn, 'SA07'); // A pool unchanged
+  assert.ok(shown.lineup.some((t) => t.rules === 'S5 (L502/L501)'));
+  assert.doesNotMatch(JSON.stringify(shown), /not ours/);
 });

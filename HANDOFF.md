@@ -45,6 +45,12 @@ run that branch):
   train for its story. Owner: compare as CATS shows them, no prep
   adjustment. Logic in `public/board-trains.js` (page + builder);
   `data/trains.json`. Needs real history to be useful (fixtures show it works).
+- Owner, same evening: website drops "not ours" from the L502 (S5) line
+  (`siteRules` in site.js; the laptop report keeps it). **S1/S3 engineer
+  pools** shown under Pools at Sarnia: board-auto.js now also reads 19 and 21
+  with CC `EN` (assumed to list S1/S3 turns like 27 lists SD; ⚠ not yet seen
+  on real CATS, failures only skip them); the pool parser accepts S1nn/S3nn.
+  Day-file `format` bumped to 2 so cached days are rebuilt.
 
 ## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"
 The owner runs board checks only while waiting in Sarnia, because the line-ups
