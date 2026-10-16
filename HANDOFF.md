@@ -30,8 +30,9 @@ prints just that answer (`--details` for the working). Route: Call Board, 23
   prompt now says departed trains drop off and to accept "used up" notes.
   Proposed, owner hasn't decided: remember each road day's Sarnia trains
   across checks from the snapshots, so departed trains still count.
-- ❓ Owner: CATS gave the 16th's 3rd train (M30241 14, 0830) to B (SB03) and
-  the next (E27861) to A. Out of sequence, or a rule we don't know?
+- Possible A/B swap on the 16th (M30241 14 SB03 before E27861 16 SA08) is
+  dropped: E27861's time was never captured. Owner (2026-10-16): don't reason
+  about times there's no snapshot for; only use what's in history\.
 - ❓ Owner: should crew warnings skip Toronto trains (RM39731 16, MU01)?
 - Owner is setting up a second laptop that will only run the board checker,
   and wants to move everything there soon (see docs/board-checker/NEW-LAPTOP.md).
