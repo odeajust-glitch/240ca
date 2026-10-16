@@ -8,10 +8,12 @@
 //   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
 //                                                     (beeps when your answer changes)
 //
-// You do the sign-in yourself (Microsoft, Authenticator, CATS password); the
-// script never sees or stores any of it. It only reads screens and presses
-// Enter/F3/F8, the same keys you would. Each check's masked screens are saved
-// to probe-out/auto-summary.json (no names) if you want to share one.
+// You do the Microsoft sign-in (Authenticator). The CATS sign-on is yours too,
+// unless CATS_EMPLOYEE_NO and CATS_PASSWORD are in .env: then the script fills
+// it, and when a check gets stuck it reloads CATS and signs back in. It only
+// reads screens and presses Enter/F3/F8, the same keys you would. Each check's
+// masked screens are saved to probe-out/auto-summary.json (no names) if you
+// want to share one.
 //
 // With BOARD_RELAY_URL and BOARD_KEY in .env, each check is also sent to the
 // 240ca server so the RailroadTracker app on your phone shows it.
@@ -276,13 +278,75 @@ function loadPlaywright() {
   }
 }
 
+// The CATS sign-on (employee number + CATS password, after Microsoft's) is
+// filled from .env when CATS_EMPLOYEE_NO and CATS_PASSWORD are set (owner's
+// decision, 2026-10-15). Microsoft and Authenticator stay with you. Neither
+// value is ever printed or saved anywhere else.
+const CATS_LOGIN = process.env.CATS_EMPLOYEE_NO && process.env.CATS_PASSWORD
+  ? { user: process.env.CATS_EMPLOYEE_NO, password: process.env.CATS_PASSWORD }
+  : null;
+// Off after one refused sign-on, so a wrong password can't lock the account.
+let autoSignOn = !!CATS_LOGIN;
+let signOnFailures = 0;
+
+async function signOn(page) {
+  const filled = await catsFrame(page).evaluate(([user, password]) => {
+    const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const pw = document.querySelector('input[type=password]');
+    // The employee number box is the empty one; the others come filled (D, N).
+    const box = [...document.querySelectorAll('input[type=text]')].filter(visible).find((el) => !el.value.trim());
+    if (!pw || !box) return false;
+    box.value = user;
+    pw.value = password;
+    return true;
+  }, [CATS_LOGIN.user, CATS_LOGIN.password]);
+  if (!filled) throw new OffRoute("Couldn't find the CATS sign-on boxes.");
+  const s = await press(page, 'Enter');
+  if (s && is.signOn(s)) {
+    autoSignOn = false;
+    console.log('\x07CATS refused the employee number/password in .env. Sign in by hand; automatic'
+      + ' sign-on is off until you restart the script, so it can\'t lock your account.');
+    return;
+  }
+  signOnFailures = 0;
+  console.log(`[${stamp()}] Signed in to CATS.`);
+  await toMainMenu(page); // past any notice CATS shows after signing on
+}
+
 async function waitForMainMenu(page, prompt) {
   console.log(prompt);
   for (;;) {
     const s = await screenState(page);
     if (s && is.mainMenu(s)) return;
+    if (s && is.signOn(s) && autoSignOn) {
+      try {
+        await signOn(page);
+      } catch (err) {
+        if (!(err instanceof NeedSignIn)) console.log(`  (automatic sign-on didn't finish: ${err.message})`);
+        if (++signOnFailures >= 3) {
+          autoSignOn = false;
+          console.log('\x07Automatic sign-on failed 3 times; sign in by hand.');
+        }
+        await sleep(5000);
+      }
+      continue;
+    }
     await sleep(1000);
   }
+}
+
+// Last resort when a check gets stuck: load CATS again from the start and
+// sign back in.
+async function reloadCats(page, url) {
+  console.log(`[${stamp()}] Reloading CATS to get unstuck…`);
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    console.log(`  (reload: ${err.message})`);
+  }
+  await waitForMainMenu(page, autoSignOn
+    ? 'Signing back in. If Microsoft asks, sign in there (Authenticator) and the script does the rest.'
+    : '\x07Sign in to CATS again and stop at the main menu.');
 }
 
 async function main() {
@@ -309,11 +373,16 @@ async function main() {
   const page = context.pages()[0] || (await context.newPage());
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-  const signIn = '\nSign in to CATS in the browser window (Microsoft, Authenticator, CATS sign-on).\n'
-    + 'Stop at the CATS main menu; the script takes over from there. Leave the window alone while it works.';
+  const signIn = CATS_LOGIN
+    ? '\nSign in to Microsoft in the browser window (Authenticator); the script fills the CATS sign-on.\n'
+      + 'Leave the window alone while it works.'
+    : '\nSign in to CATS in the browser window (Microsoft, Authenticator, CATS sign-on).\n'
+      + 'Stop at the CATS main menu; the script takes over from there. Leave the window alone while it works.';
   await waitForMainMenu(page, signIn);
 
+  let retried = false;
   for (;;) {
+    let retryNow = false;
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page);
@@ -325,15 +394,24 @@ async function main() {
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
+      retried = false;
     } catch (err) {
       if (err instanceof NeedSignIn) {
-        await waitForMainMenu(page, '\x07\nCATS signed you out. Sign in again and stop at the main menu.');
+        await waitForMainMenu(page, autoSignOn
+          ? `\n[${stamp()}] CATS signed you out; signing back in.`
+          : '\x07\nCATS signed you out. Sign in again and stop at the main menu.');
         continue;
       }
       console.log(`[${stamp()}] Couldn't finish this check: ${err.message}`);
-      if (err instanceof OffRoute) await saveStuckScreen(page);
+      await saveStuckScreen(page);
       if (!every) throw err;
+      // Reload, sign back in and check again straight away, once; if that
+      // fails too, wait for the next check.
+      await reloadCats(page, url);
+      retryNow = !retried;
+      retried = true;
     }
+    if (retryNow) continue;
     if (!every) break;
     console.log(`[${stamp()}] Next check in ${every} minutes. Keep this window and the browser open (Ctrl+C to stop).`);
     await sleep(every * 60000);

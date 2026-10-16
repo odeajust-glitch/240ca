@@ -52,7 +52,7 @@ Chain Gang turn stands. Spec: [docs/board-checker/BOARD-CHECK.md](docs/board-che
 status: [HANDOFF.md](HANDOFF.md).
 
 ```
-node scripts/board-auto.js --me SR03 [--every 20]   # sign in, it does the rest
+node scripts/board-auto.js --me SR03 [--every 20]   # sign in, it does the rest (CATS_EMPLOYEE_NO/CATS_PASSWORD in .env: it signs on to CATS itself)
 node scripts/board-check.js probe-out/summary.json --me SR03
 npm test
 ```

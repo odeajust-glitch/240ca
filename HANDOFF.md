@@ -14,6 +14,21 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-15 night: automatic CATS sign-on (owner's decision)
+Owner asked for the script to use their username/password and to reload and
+sign back in when stuck, after being reminded of the earlier decision against
+it (CN acceptable-use risk as a union rep, stored password). Built:
+- `CATS_EMPLOYEE_NO` / `CATS_PASSWORD` in `.env` (gitignored, laptop only)
+  fill the CATS sign-on (the empty text box + the password box), then Enter
+  and past any notice. Microsoft/Authenticator are still done by hand.
+- A refused sign-on (sign-on screen comes back) turns automatic sign-on off
+  until restart, so a wrong password can't lock the account; 3 other failures
+  in a row do the same. Credentials are never printed.
+- Any failed check: save the stuck screen, reload CATS, sign back in, and
+  check again straight away once; then back to the normal interval.
+- Tested on a fake sign-on page only (right and wrong login). Not yet on real
+  CATS: whether a reload lands on the CATS sign-on or on Microsoft is unknown.
+
 ## 2026-10-15 night: two fixes from the owner's live run
 - **B trains already out count.** The 19:45 check gave SB03/SB04 the 16th
   0100/0425 trains as the 15th's B trains, though SB01/SB02 were already out
