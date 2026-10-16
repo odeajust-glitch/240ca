@@ -47,9 +47,9 @@ run that branch):
   `data/trains.json`. Needs real history to be useful (fixtures show it works).
 - Owner, same evening: website drops "not ours" from the L502 (S5) line
   (`siteRules` in site.js; the laptop report keeps it). **S1/S3 engineer
-  pools** shown under Pools at Sarnia: board-auto.js now also reads 19 and 21
-  with CC `EN` (assumed to list S1/S3 turns like 27 lists SD; ⚠ not yet seen
-  on real CATS, failures only skip them); the pool parser accepts S1nn/S3nn.
+  pools** shown under Pools at Sarnia: board-auto.js now also reads **option
+  25 (S1) and 26 (S3) with CC `EN`** (owner); ⚠ layout assumed to match 23/27
+  until seen on real CATS, failures only skip them. Pool parser accepts S1nn/S3nn.
   Day-file `format` bumped to 2 so cached days are rebuilt.
 
 ## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"

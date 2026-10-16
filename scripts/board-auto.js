@@ -1,6 +1,6 @@
 // Does the board check by itself: you sign in to CATS once, then it walks
 // the route the owner taught (Call Board to the yard jobs, Chain Gang 23
-// with CO, A/B pools 19/21, SD pool 27, Train Line-up 41) and prints when you go to work,
+// with CO, A/B pools 19/21, SD pool 27, S1/S3 pools 25/26 with EN, Train Line-up 41) and prints when you go to work,
 // the Chain Gang board, the line-up with who's projected on each train, and
 // what changed since the last check.
 //
@@ -220,9 +220,8 @@ async function runRoute(page) {
       await capture();
     }
   };
-  // 19/21 again with CC = EN for the engineer turns that go with A and B
-  // (S1, S3; owner 2026-10-16, for the snapshot website). Assumed to work
-  // like 27 until seen on real CATS; a failure only skips them.
+  // 25 S1 and 26 S3: the engineer turns that go with A and B (owner,
+  // 2026-10-16: CC = EN), for the snapshot website. A failure only skips them.
   const engPool = (option, name) => async () => {
     expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
     await fill(page, { '-1': 'EN' });
@@ -230,7 +229,7 @@ async function runRoute(page) {
     await capture();
   };
   for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool],
-    [19, 'S1 pool', engPool(19, 'S1 pool')], [21, 'S3 pool', engPool(21, 'S3 pool')]]) {
+    [25, 'S1 pool', engPool(25, 'S1 pool')], [26, 'S3 pool', engPool(26, 'S3 pool')]]) {
     try {
       await (read ? read() : pool(option, name));
     } catch (err) {
