@@ -59,6 +59,31 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-16 night: Enter past CATS messages after sign-on
+Owner: CATS sometimes shows messages after signing on. `clearMessages()`
+presses Enter up to 5 times, stopping at the main menu: after auto sign-on,
+and in `waitForMainMenu` when a non-menu CATS screen sits 3 s (max 2 rounds,
+covers signing in by hand). Tested on the fake CATS with 2 message screens.
+
+## ⚠ Branches (2026-10-16 night)
+Two sessions worked in parallel: the laptop's on
+`claude/auto-board-checker-plan-hdk1n5` (S1/S3 boards in the engine, Enter
+past CATS messages) and the website one on `claude/vigilant-planck-zawrj4`
+(snapshot site, turn search, order summary). `claude/vigilant-planck-zawrj4`
+now has **both** merged (40 tests); the laptop runs that branch. The S1/S3
+route is the laptop session's (`config.poolOptions`, 25/26, CC EN).
+
+## 2026-10-16: S1 / S3 engineer boards
+Owner: S1 turns go with A trains, S3 with B; they work like A/B (first in
+first out; rest/reset, hold, **, B0 → still takes the train, goes spare). S1
+has one more turn than the A pool (no logic change: the board is read as
+shown). Built: turn regex accepts S1nn/S3nn; loader `s1Home`/`s3Home`;
+engine 3c pairs them with A/B line-up trains; view shows S1/S3 BOARDs and
+"A pool: SA07 + S104". Options: **S1 = 25, S3 = 26** (owner; in
+`config.poolOptions`, `--s1/--s3` override), read with CC `EN` like 27.
+Layout assumed = 23 ❓ confirm from the first real run.
+Tested on the fake CATS (as 25/26) + unit test. 23 tests.
+
 ## 2026-10-16 evening: running on the dedicated board-checker laptop
 - New laptop set up per docs/board-checker/NEW-LAPTOP-CLAUDE.md: Git + Node
   (v24) via winget, code at `C:\BoardChecker-code` (not OneDrive), 29 tests

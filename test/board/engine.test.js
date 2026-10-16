@@ -340,6 +340,36 @@ test('SD turns (option 27) go with the Chain Gang trains by the same rules', () 
   assert.match(text, /Chain Gang: SR04 \(goes spare → spareboard\) \+ SD11/);
 });
 
+test('S1 turns go with A trains and S3 with B, first in first out like A/B', () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  // Assumed laid out like 23 (option numbers not known yet): turns S101..,
+  // S301.., engineer rows. S102 on rest past the 16th A calls → goes spare.
+  const board = (pool, rows) => [
+    `37 | 46:POOL: | 100:( | 118:${pool} | 145:) | 181:TERM: | 235:( | 253:0 | 271:) | 550:CC: | 586:( | 604:[EN] | 631:)`,
+    '73 | 10:CC | 37:TURN | 82:T | 100:POS | 136:EMPLOYEE NAME | 343:ST | 379:RN | 415:RETN | 478:SC | 514:REST',
+    ...rows.map(([turn, pos, rest], i) => `${91 + 18 * i} | 10:EN | 37:${turn} | 82:0 | 100:${pos} | 136:AAAA${rest ? ` | 505:${rest} | 550:16` : ''}`),
+  ];
+  const s1 = board('S1', [['S104', '001'], ['S102', '002', '0600'], ['S110', '003'], ['S101', '004']]);
+  const s3 = board('S3', [['S303', '001'], ['S305', '002']]);
+  const input = loadSummary({ ...fx, screens: [...fx.screens, { screenGrid: s1 }, { screenGrid: s3 }] });
+  assert.deepEqual(input.s1Home.map((t) => t.turn), ['S104', 'S102', 'S110', 'S101']);
+  const r = runBoardCheck({ ...input, me: 'SR03' });
+  const eng = r.predictions.filter((p) => p.pool === 'A' || p.pool === 'B').map((p) => [p.symbol, p.pool, p.engineer, !!p.engineerSpare]);
+  assert.deepEqual(eng, [
+    ['A42431', 'A', 'S104', false],
+    ['X30241', 'B', 'S303', false],
+    ['M38261', 'B', 'S305', false],
+    ['M39491', 'A', 'S102', true], // called ~16th 0305, rest to 0600 → spare
+    ['Z14891', 'A', 'S110', false],
+    ['M30241', 'A', 'S101', false],
+  ]);
+  const { formatReport } = require('../../lib/board/report');
+  const text = formatReport(r, input.seen);
+  assert.match(text, /S1 BOARD/);
+  assert.match(text, /A pool: SA07 \+ S104/);
+  assert.match(text, /A pool: SA08 \+ S102 \(goes spare\)/);
+});
+
 // Owner, 2026-10-15: SB01/SB02 were already out on the 15th's B trains, but
 // the earlier A trains had left, so the check counted those B trains as A
 // slots and handed the 15th's next trains to SB03/SB04.

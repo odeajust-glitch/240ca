@@ -40,6 +40,7 @@ const { pushCheck } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
 const { at } = require('../lib/board/time');
+const config = require('../lib/board/config');
 
 const OUT_DIR = DATA_DIR;
 const LAST_FILE = path.join(OUT_DIR, 'last-check.json');
@@ -48,6 +49,14 @@ const START_URL = 'https://cats.cn.ca/';
 function arg(name) {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : undefined;
+}
+
+// A Train Service option number from the command line (e.g. --s1 25).
+function optionArg(name) {
+  const v = arg(name);
+  if (v === undefined) return null;
+  if (!/^\d{1,3}$/.test(v)) throw new Error(`${name} needs a Train Service option number, e.g. ${name} 25`);
+  return +v;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -167,6 +176,23 @@ async function toMainMenu(page) {
   throw new OffRoute("Couldn't get back to the CATS main menu with F3.");
 }
 
+// CATS sometimes shows messages right after signing on. Press Enter to clear
+// them, as the owner does by hand (2026-10-16): up to 5 times, stopping as
+// soon as the main menu shows, so nothing extra gets pressed.
+async function clearMessages(page, max = 5) {
+  for (let i = 0; i < max; i++) {
+    const s = await screenState(page);
+    if (!s || is.mainMenu(s) || is.signOn(s)) return s;
+    try {
+      await press(page, 'Enter');
+    } catch (err) {
+      if (err instanceof OffRoute) return null; // no Enter key, or no answer
+      throw err;
+    }
+  }
+  return screenState(page);
+}
+
 async function chooseFromMenus(page, option) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: '3' });
@@ -177,7 +203,7 @@ async function chooseFromMenus(page, option) {
 
 // --- One full check ----------------------------------------------------------
 
-async function runRoute(page) {
+async function runRoute(page, opts = {}) {
   const screens = [];
   const capture = async () => {
     const grid = (await describeFrame(catsFrame(page))).screenGrid;
@@ -209,27 +235,22 @@ async function runRoute(page) {
     await capture();
   };
   await pool(23, 'Chain Gang');
-  // 27: the SD (engineer) list that goes with the Chain Gang trains. Not
-  // recorded yet, so it's read as it first appears and again with CC = EN.
-  const sdPool = async () => {
-    const s = expect(await chooseFromMenus(page, 27), is.poolPosition, 'SD pool (27)');
+  // Engineer lists: 27 SD (with the Chain Gang), and S1 (with A) / S3 (with
+  // B), options 25/26 (config; --s1 N / --s3 N override). Read as they
+  // first appear and again with CC = EN.
+  const enginePool = (option, name) => async () => {
+    const s = expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
     await capture();
     if (/CC:/.test(s.text)) {
       await fill(page, { '-1': 'EN' });
-      expect(await press(page, 'Enter'), is.poolPosition, 'SD pool (27) with EN');
+      expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with EN`);
       await capture();
     }
   };
-  // 25 S1 and 26 S3: the engineer turns that go with A and B (owner,
-  // 2026-10-16: CC = EN), for the snapshot website. A failure only skips them.
-  const engPool = (option, name) => async () => {
-    expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
-    await fill(page, { '-1': 'EN' });
-    expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with EN`);
-    await capture();
-  };
-  for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool],
-    [25, 'S1 pool', engPool(25, 'S1 pool')], [26, 'S3 pool', engPool(26, 'S3 pool')]]) {
+  const extra = [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', enginePool(27, 'SD pool')]];
+  if (opts.s1) extra.push([opts.s1, 'S1 pool', enginePool(opts.s1, 'S1 pool')]);
+  if (opts.s3) extra.push([opts.s3, 'S3 pool', enginePool(opts.s3, 'S3 pool')]);
+  for (const [option, name, read] of extra) {
     try {
       await (read ? read() : pool(option, name));
     } catch (err) {
@@ -396,14 +417,31 @@ async function signOn(page) {
   }
   signOnFailures = 0;
   console.log(`[${stamp()}] Signed in to CATS.`);
-  await toMainMenu(page); // past any notice CATS shows after signing on
+  await clearMessages(page); // Enter past any messages after signing on
+  await toMainMenu(page); // F3 if something's still in the way
 }
 
 async function waitForMainMenu(page, prompt) {
   console.log(prompt);
+  let otherSince = null; // when a CATS screen that isn't the menu showed up
+  let rounds = 0;
   for (;;) {
     const s = await screenState(page);
     if (s && is.mainMenu(s)) return;
+    // Signed in (by hand or not) but stuck on a message: clear it with Enter
+    // once it's sat there a few seconds (at most twice per sign-in).
+    if (s && s.seq !== null && !is.signOn(s)) {
+      otherSince ??= Date.now();
+      if (Date.now() - otherSince > 3000 && rounds < 2) {
+        rounds++;
+        console.log(`[${stamp()}] Clearing CATS messages with Enter…`);
+        await clearMessages(page);
+        otherSince = null;
+        continue;
+      }
+    } else {
+      otherSince = null;
+    }
     if (s && is.signOn(s) && autoSignOn) {
       try {
         await signOn(page);
@@ -442,6 +480,7 @@ async function main() {
     process.exit(1);
   }
   const every = arg('--every') ? Math.max(5, +arg('--every')) : null;
+  const poolOpts = { s1: optionArg('--s1') ?? config.poolOptions.S1, s3: optionArg('--s3') ?? config.poolOptions.S3 };
   const url = arg('--url') || START_URL; // --url is for testing against a local copy
   let nowOverride;
   if (arg('--now')) {
@@ -471,7 +510,7 @@ async function main() {
     let retryNow = false;
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
-      const summary = await runRoute(page);
+      const summary = await runRoute(page, poolOpts);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
       const { text, detailed, first, changed, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
