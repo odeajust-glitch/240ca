@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-16 · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-16 (evening, new laptop) · Branch: `claude/auto-board-checker-plan-hdk1n5`
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
@@ -13,6 +13,20 @@ are unreliable. The tool's one job is telling them when they'll be called.
 Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
+
+## 2026-10-16 evening: running on the dedicated board-checker laptop
+- New laptop set up per docs/board-checker/NEW-LAPTOP-CLAUDE.md: Git + Node
+  (v24) via winget, code at `C:\BoardChecker-code` (not OneDrive), 29 tests
+  pass, `.env` in `C:\Users\odeaj\BoardChecker` (all four values set, Haiku).
+- Gotcha: `npx playwright install chromium` run from Claude's sandboxed shell
+  didn't land where the checker looks; running it in the owner's own terminal
+  tab fixed it (~320 MB, slow download).
+- Old laptop's checker stopped (owner). First check 16:04: auto sign-on
+  worked, AI CHECK "Looks right.", snapshot `history\2026-10-16\1605.txt/.json`.
+- Sleep when plugged in is already Never. Lid-close action not checked; owner
+  to set it to "Do nothing" when plugged in if the lid will be shut.
+- After a restart (Windows Update), start it again:
+  `cd C:\BoardChecker-code; node scripts/board-auto.js --me SR03 --every 5`.
 
 ## 2026-10-16 afternoon: data off OneDrive, snapshot history, new laptop next
 - Owner: get off OneDrive. board-auto.js now keeps everything in
