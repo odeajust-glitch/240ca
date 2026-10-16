@@ -14,6 +14,22 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-16: AI check of each report
+Owner asked for an AI to check the script's output, with the key changeable
+later. `lib/board/review.js` sends the `--details` report to Claude (Anthropic
+SDK) with a short summary of the rules; it answers "Looks right." or up to 3
+lines on what looks off. It never changes the answer (the rules decide).
+- Only when the check changed (or it's the first one), to keep cost down at
+  `--every 5`. The note prints under the report and rides along to the phone
+  at the end of `report`.
+- `.env` is re-read before each review: `ANTHROPIC_API_KEY`, `BOARD_AI_MODEL`
+  (default `claude-opus-5-5`), `BOARD_AI_REVIEW=off`. Errors print one line
+  and never stop a check. Opus/Sonnet 5.5 requests carry the server-side
+  refusal fallback (`fallbacks: "default"`).
+- Tested against a stub API server only; not yet with the owner's real key.
+- First live run 2026-10-16 09:54: auto sign-on worked with no Microsoft
+  prompt; checks every 5 min ran cleanly.
+
 ## 2026-10-15 night: automatic CATS sign-on (owner's decision)
 Owner asked for the script to use their username/password and to reload and
 sign back in when stuck, after being reminded of the earlier decision against

@@ -28,6 +28,7 @@ const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck } = require('../lib/board/relay');
+const { reviewCheck } = require('../lib/board/review');
 const { at } = require('../lib/board/time');
 
 const OUT_DIR = path.join(__dirname, '..', 'probe-out');
@@ -244,7 +245,23 @@ function answer(summary, me, nowOverride) {
   const text = formatReport(result, input.seen, { changes: { prev, cur } });
   fs.writeFileSync(LAST_FILE, JSON.stringify(cur, null, 2));
   const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
-  return { text, me: cur.me, changes: changeLines(prev, cur).filter((l) => l), myAnswerChanged };
+  // The working behind each train, for the AI review.
+  const detailed = formatReport(result, input.seen, { details: true });
+  return { text, detailed, first: !prev, me: cur.me, changes: changeLines(prev, cur).filter((l) => l), myAnswerChanged };
+}
+
+// Claude's look over the check (lib/board/review.js). Only when something
+// changed, so an unchanged board every 5 minutes doesn't cost a call each time.
+async function aiReview(detailed) {
+  const r = await reviewCheck(detailed);
+  if (r.skipped) return null;
+  if (r.error) {
+    console.log(`  (AI check skipped: ${r.error})`);
+    return null;
+  }
+  const note = `AI CHECK (${r.model}): ${r.note.includes('\n') ? `\n${r.note}` : r.note}`;
+  console.log(`\n${note}`);
+  return note;
 }
 
 // When a check gets stuck, keep the screen it got stuck on (masked, like
@@ -387,10 +404,12 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, detailed, first, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
+      const note = first || changes.length ? await aiReview(detailed) : null;
       if (relay) {
-        const check = { checkedAt: summary.probedAt, me: meLines, report: text, changes, myAnswerChanged };
+        const report = note ? `${text}\n\n${note}` : text;
+        const check = { checkedAt: summary.probedAt, me: meLines, report, changes, myAnswerChanged };
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
