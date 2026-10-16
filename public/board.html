@@ -2,232 +2,373 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Line-up Snapshots</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  /* Layout: a dispatcher's register. Snapshot rail on the left (chips on a phone),
+     the line-up as the main timetable, pools and the call board as compact side sheets. */
   :root {
-    --navy: #105292;
-    --blue: #1a66b0;
-    --gold: #ffb822;
-    --bg: #f4f6fa;
-    --panel: #ffffff;
-    --border: #dbe3ef;
-    --text: #1c2733;
-    --muted: #5c6b7e;
-    --warn: #b4540a;
-    --ok: #1d7a46;
+    --bg: #eceeea;
+    --sheet: #fbfbf9;
+    --ink: #1d2a2e;
+    --soft: #5d6b6f;
+    --rule: #d3d8d4;
+    --rule-soft: #e4e7e3;
+    --accent: #0f5c63;
+    --accent-ink: #ffffff;
+    --accent-tint: #dcebec;
+    --amber: #a8630a;
+    --amber-tint: #f6e7cf;
+    --go: #1f7344;
+    --go-tint: #dbeedf;
+    --stop: #a3352b;
+    --stop-tint: #f5dcd8;
+    --plan-tint: #e3e7e4;
+    --poolA: #2f5fa8;
+    --poolB: #7a4fa0;
+    --poolSR: #0f5c63;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
   }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #12191b; --sheet: #1a2326; --ink: #e2e9e8; --soft: #95a5a7; --rule: #2e3b3e; --rule-soft: #243033;
+    --accent: #5fb3ba; --accent-ink: #0d1517; --accent-tint: #1d3538;
+    --amber: #e3a34a; --amber-tint: #3a2c15; --go: #6cc68f; --go-tint: #1b3324; --stop: #ec8a7f; --stop-tint: #3d211e;
+    --plan-tint: #273235; --poolA: #86aee8; --poolB: #c3a0e3; --poolSR: #5fb3ba; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #12191b; --sheet: #1a2326; --ink: #e2e9e8; --soft: #95a5a7; --rule: #2e3b3e; --rule-soft: #243033;
+    --accent: #5fb3ba; --accent-ink: #0d1517; --accent-tint: #1d3538;
+    --amber: #e3a34a; --amber-tint: #3a2c15; --go: #6cc68f; --go-tint: #1b3324; --stop: #ec8a7f; --stop-tint: #3d211e;
+    --plan-tint: #273235; --poolA: #86aee8; --poolB: #c3a0e3; --poolSR: #5fb3ba; color-scheme: dark; }
+
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: 'DM Sans', -apple-system, Segoe UI, Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-  }
-  header {
-    padding: 20px 16px;
-    text-align: center;
-    background: var(--navy);
-    color: #fff;
-    border-bottom: 4px solid var(--gold);
-  }
-  header h1 { margin: 0; font-size: 22px; font-weight: 700; }
-  header .sub { color: #d7e6fb; font-size: 13px; margin-top: 4px; }
-  main { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
-  .mono { font-family: 'DM Mono', ui-monospace, Consolas, monospace; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--body); }
+  .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .banner {
-    font-size: 13px; color: var(--muted); background: #eef3fa; border: 1px dashed var(--border);
-    border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  .top {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding-block: 18px 14px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    border-bottom: 3px solid var(--ink);
   }
-  .picker { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
-  .picker label { font-size: 12.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.04em; }
-  .picker select, .picker button {
-    font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--panel); color: var(--text);
-  }
-  .picker select { flex: 1; min-width: 200px; }
-  .picker button { cursor: pointer; color: var(--navy); font-weight: 600; }
-  .picker button:disabled { color: #b5c0cf; cursor: default; }
+  .top h1 { margin: 0; font: 700 30px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
+  .top .where { color: var(--soft); font-size: 13.5px; }
+  .top .sample { margin-left: auto; font-size: 12px; color: var(--amber); background: var(--amber-tint); padding: 3px 8px; border-radius: 3px; }
 
-  .panel {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 16px; margin-bottom: 16px;
+  .wrap {
+    display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; max-width: 1280px; margin: 0 auto;
+    padding-block: 20px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .stamp { border-left: 5px solid var(--gold); }
-  .stamp .when { font-size: 22px; font-weight: 700; margin: 2px 0 4px; }
-  .stamp .meta { color: var(--muted); font-size: 13px; }
-  h2 {
-    font-size: 12.5px; font-weight: 700; color: var(--navy); text-transform: uppercase;
-    letter-spacing: 0.04em; margin: 0 0 10px;
-  }
-  h2 .count { color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
-  h3 { font-size: 14px; margin: 14px 0 6px; color: var(--text); }
-  h3:first-of-type { margin-top: 0; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 7px 8px; border-bottom: 1px solid #edf1f7; vertical-align: top; }
-  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
-  .ORD { background: #dff3e7; color: var(--ok); }
-  .PLN { background: #eef1f6; color: var(--muted); }
-  .warn { color: var(--warn); }
-  .muted { color: var(--muted); }
-  .small { font-size: 12.5px; }
+  /* Snapshot rail */
+  .rail { position: sticky; top: 16px; align-self: start; }
+  .rail h2, .sec-title { font: 600 13px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); margin: 0 0 10px; }
+  .rail ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--rule); }
+  .rail li { margin: 0; }
+  .rail button {
+    display: block; width: 100%; text-align: left; background: none; border: 0; cursor: pointer;
+    padding: 8px 10px 8px 14px; margin-left: -2px; border-left: 2px solid transparent; border-radius: 0 4px 4px 0;
+  }
+  .rail button:hover { background: var(--rule-soft); }
+  .rail button[aria-current="true"] { border-left-color: var(--accent); background: var(--accent-tint); }
+  .rail .d { display: none; font-size: 12px; color: var(--soft); }
+  .rail .t { display: block; font: 600 20px/1.1 var(--mono); }
+  .rail .n { display: block; font-size: 12px; color: var(--soft); }
+  .rail .day { font: 600 12px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 12px 0 4px 14px; }
+  .rail .day:first-child { padding-top: 2px; }
+
+  /* Header of the chosen snapshot + summary strip */
+  .head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .head .when { font: 700 40px/1 var(--display); letter-spacing: 0.01em; }
+  .head .when .num { font: 600 34px/1 var(--mono); margin-left: 6px; }
+  .head .screens { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 3px; background: var(--plan-tint); color: var(--soft); white-space: nowrap; }
+  .steps { margin-left: auto; display: flex; gap: 6px; }
+  .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
+  .steps button:disabled { opacity: 0.4; cursor: default; }
+
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
+  .stat { padding: 12px 14px; border-left: 1px solid var(--rule); }
+  .stat:first-child { border-left: 0; }
+  .stat .v { font: 600 28px/1 var(--mono); }
+  .stat .v small { font-size: 14px; color: var(--soft); font-weight: 500; }
+  .stat .l { font-size: 12.5px; color: var(--soft); margin-top: 4px; }
+  .stat.alert .v { color: var(--stop); }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .col { display: grid; gap: 22px; min-width: 0; }
+  .sheet { background: var(--sheet); border: 1px solid var(--rule); min-width: 0; }
+  .sheet > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid var(--rule); }
+  .sheet > header h2 { margin: 0; font: 700 19px/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+  .sheet > header .meta { font-size: 12.5px; color: var(--soft); }
+  .sheet .foot { padding: 10px 14px; font-size: 12.5px; color: var(--soft); border-top: 1px solid var(--rule-soft); }
+
+  /* Line-up timetable */
+  .daybar { font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); background: var(--bg); padding: 6px 14px; border-bottom: 1px solid var(--rule-soft); }
+  .train { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 4px 14px; padding: 11px 14px; border-bottom: 1px solid var(--rule-soft); }
+  .train:last-child { border-bottom: 0; }
+  .train .time { font: 600 18px/1.2 var(--mono); }
+  .train .sym { font: 600 16px/1.2 var(--mono); }
+  .train .sym .od { color: var(--soft); font-weight: 400; }
+  .train .sub { font-size: 12.5px; color: var(--soft); margin-top: 2px; }
+  .train .sub .mono { font-size: 12px; }
+  .train .right { text-align: right; display: grid; gap: 4px; justify-items: end; align-content: start; }
+  .st { font: 600 11px/1 var(--mono); letter-spacing: 0.06em; padding: 4px 6px; border-radius: 3px; }
+  .st.ORD { background: var(--go-tint); color: var(--go); }
+  .st.PLN { background: var(--plan-tint); color: var(--soft); }
+  .rule-say { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; }
+  .pool { font: 600 11.5px/1 var(--mono); padding: 4px 7px; border-radius: 3px; color: var(--accent-ink); background: var(--soft); }
+  .pool.A { background: var(--poolA); }
+  .pool.B { background: var(--poolB); }
+  .pool.SR { background: var(--poolSR); }
+  .spare { color: var(--amber); font-weight: 600; }
+  details.why summary { cursor: pointer; color: var(--accent); font-size: 12.5px; list-style: none; }
+  details.why summary::-webkit-details-marker { display: none; }
+  details.why summary::before { content: '+ '; }
+  details.why[open] summary::before { content: '− '; }
+  details.why p { margin: 4px 0 0; font-size: 13px; color: var(--soft); max-width: 62ch; }
+  .rule-say details { flex-basis: 100%; }
+
+  /* Compact lists */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
+  td { padding: 7px 14px; border-top: 1px solid var(--rule-soft); vertical-align: top; }
+  td.num, td .num { white-space: nowrap; }
   .scroll { overflow-x: auto; }
-  .pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 20px; }
-  .extra { margin-top: 10px; font-size: 13.5px; }
-  .extra b { color: var(--navy); }
+  .tabs { display: flex; gap: 2px; padding: 8px 14px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 8px 8px; cursor: pointer; font-size: 13.5px; color: var(--soft); }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .stat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--go); vertical-align: 1px; }
+  .stat-dot.wait { background: var(--soft); }
+  .stat-dot.out { background: var(--poolA); }
+  .stat-dot.spare { background: var(--amber); }
+  .crew { color: var(--soft); font-size: 12px; }
+  .away { padding: 10px 14px; font-size: 13px; border-top: 1px solid var(--rule-soft); display: grid; gap: 3px; }
+  .away b { font-weight: 600; }
+  .ok { color: var(--go); }
+  .bad { color: var(--stop); font-weight: 600; }
 
-  details summary { cursor: pointer; color: var(--blue); font-size: 13px; }
-  .reason { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  ul.changes { margin: 0; padding-left: 0; list-style: none; font-size: 13.5px; }
-  ul.changes li { padding: 3px 0; border-bottom: 1px dashed #edf1f7; }
-  ul.flags { margin: 0; padding-left: 18px; color: var(--warn); font-size: 14px; }
-  footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 24px; }
+  .changes { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 340px; overflow-y: auto; }
+  .changes li { display: grid; grid-template-columns: 18px minmax(0, 1fr); padding: 6px 14px; border-top: 1px solid var(--rule-soft); }
+  .changes li:first-child { border-top: 0; }
+  .changes .g { font: 600 14px/1.3 var(--mono); }
+  .changes .add .g { color: var(--go); }
+  .changes .del .g { color: var(--stop); }
+  .changes .mod .g { color: var(--amber); }
+  .flags { margin: 0; padding: 12px 14px 12px 32px; color: var(--stop); font-size: 13.5px; }
+  .empty { padding: 12px 14px; color: var(--soft); font-size: 13.5px; margin: 0; }
+  .note { font-size: 12px; color: var(--soft); margin: 22px 0 0; max-width: 80ch; }
 
-  @media (max-width: 600px) {
-    .hide-sm { display: none; }
-    table { font-size: 13px; }
-    td, th { padding: 6px 5px; }
+  @media (max-width: 1020px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
   }
-  @media print {
-    header, .picker, .banner, footer { display: none; }
-    body { background: #fff; }
-    .panel { break-inside: avoid; border-color: #999; }
-    details { display: block; }
+  @media (max-width: 760px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 12px; }
+    .rail { position: static; }
+    .rail h2 { display: none; }
+    .rail ol { display: flex; gap: 8px; overflow-x: auto; border-left: 0; padding-bottom: 4px; }
+    .rail .day { display: none; }
+    .rail .d { display: block; }
+    .rail button { border: 1px solid var(--rule); border-radius: 4px; margin: 0; padding: 6px 12px; white-space: nowrap; background: var(--sheet); }
+    .rail button[aria-current="true"] { border-color: var(--accent); }
+    .rail .t { font-size: 16px; }
+    .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat:nth-child(3) { border-left: 0; }
+    .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
+    .head .when { font-size: 30px; }
+    .head .when .num { font-size: 26px; }
+    .steps { margin-left: 0; }
+    .top .sample { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rail button, .tabs button { transition: background-color 0.12s, border-color 0.12s; }
   }
 </style>
 </head>
 <body>
-<header>
+<div class="top">
   <h1>Line-up Snapshots</h1>
-  <div class="sub">What CATS showed for Sarnia road, at the moment each check was taken</div>
-</header>
-<main>
-  <div class="banner">Sample data: three saved board checks, names masked. Not live CATS data.</div>
-  <div class="picker">
-    <label for="pick">Snapshot</label>
-    <button id="prev" aria-label="Earlier snapshot">◀ Earlier</button>
-    <select id="pick"></select>
-    <button id="next" aria-label="Later snapshot">Later ▶</button>
-  </div>
-  <div id="view"><p class="muted">Loading…</p></div>
-  <footer>Times are railway (Toronto) time, as CATS shows them. "Rules say" is the board checker's reading of the crew-calling rules, not CATS.</footer>
-</main>
+  <span class="where">Sarnia road · what CATS showed when each check ran</span>
+  <span class="sample">Sample data · names masked</span>
+</div>
+<div class="wrap">
+  <nav class="rail" aria-label="Snapshots">
+    <h2>Snapshots</h2>
+    <ol id="rail"></ol>
+  </nav>
+  <main id="view"><p class="empty">Loading snapshots…</p></main>
+</div>
 <script>
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const SCREENS = { chainGang: 'Chain Gang (23)', aPool: 'A pool (19)', bPool: 'B pool (21)', sdPool: 'SD (27)', lineup: 'Line-up (41)' };
+const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', lineup: 'Line-up 41' };
 
-// "2026-10-15 0815" → "Wed Oct 15, 2026 · 08:15"
-function longDate(taken) {
+// "2026-10-15 0815" → parts for display.
+function when(taken) {
   const [d, t] = taken.split(' ');
   const date = new Date(d + 'T12:00:00Z');
-  const day = date.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  return `${day} · ${t.slice(0, 2)}:${t.slice(2)}`;
+  const opt = (o) => date.toLocaleDateString('en-CA', { ...o, timeZone: 'UTC' });
+  return { day: opt({ weekday: 'short', month: 'short', day: 'numeric' }), long: opt({ weekday: 'long', month: 'long', day: 'numeric' }), time: `${t.slice(0, 2)}:${t.slice(2)}` };
 }
 const slug = (taken) => taken.replace(' ', '-');
+// "15th 1100" → ["15th", "1100"]
+const split = (s) => s.split(' ');
 
-function stamp(s) {
-  return `<section class="panel stamp">
-    <h2>Snapshot taken</h2>
-    <div class="when">${esc(longDate(s.taken))}</div>
-    <div class="meta">Screens captured: Call Board, ${s.screens.map((k) => esc(SCREENS[k] || k)).join(', ')}</div>
-  </section>`;
+function poolChip(rules) {
+  const m = /^(A|B) pool/.exec(rules) || (/^Chain Gang/.test(rules) ? [0, 'SR'] : /^S5/.test(rules) ? [0, 'S5'] : null);
+  return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
+}
+function ruleText(rules) {
+  return esc(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, ''))
+    .replace(/\(goes spare[^)]*\)/, (x) => `<span class="spare">${x}</span>`);
 }
 
 function lineup(s) {
   if (!s.lineup.length) return '';
-  const body = s.lineup.map((t) => `<tr>
-      <td class="mono">${esc(t.order)}</td>
-      <td><span class="tag ${t.status}">${esc(t.status)}</span></td>
-      <td class="mono"><b>${esc(t.train)}</b>${t.deadhead ? ' <span class="muted">DH</span>' : ''}</td>
-      <td class="mono small">${esc(t.engCrew)}<br>${esc(t.trnCrew)}</td>
-      <td class="small hide-sm">${esc(t.info)}</td>
-      <td><span class="${/spare/.test(t.rules) ? 'warn' : ''}">${esc(t.rules)}</span>
-        ${t.reason ? `<details><summary>why</summary><div class="reason">${t.call ? `Call ~${esc(t.call)}. ` : ''}${esc(t.reason)}</div></details>` : ''}</td></tr>`).join('');
-  return `<section class="panel"><h2>Train line-up (41) <span class="count">· ${s.lineup.length} trains</span></h2>
-    <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Crew codes<br>EN / TRN</th><th class="hide-sm">Info</th><th>Rules say</th></tr></thead>
-    <tbody>${body}</tbody></table></div></section>`;
+  let day = null;
+  const rows = s.lineup.map((t) => {
+    const [d, hhmm] = split(t.order);
+    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    day = d;
+    const [sym, od] = split(t.train);
+    return `${bar}<div class="train">
+      <div class="time">${esc(hhmm)}</div>
+      <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
+        <div class="sub">${esc(t.info)} · <span class="mono">${esc(t.engCrew)} / ${esc(t.trnCrew)}</span></div></div>
+      <div class="right"><span class="st ${t.status}">${esc(t.status)}</span>${t.call ? `<span class="sub mono">call ~${esc(split(t.call)[1])}</span>` : ''}</div>
+      <div class="rule-say">${poolChip(t.rules)}<span>${ruleText(t.rules)}</span>
+        ${t.reason ? `<details class="why"><summary>Why</summary><p>${esc(t.reason)}</p></details>` : ''}</div>
+    </div>`;
+  }).join('');
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  return `<section class="sheet"><header><h2>Train line-up · 41</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>
+    ${rows}<div class="foot">Crew codes are EN / TRN as CATS shows them. The coloured chip is the pool the crew-calling rules give the train.</div></section>`;
+}
+
+function dot(status) {
+  if (/out working/.test(status)) return 'out';
+  if (/spare|B0/.test(status)) return 'spare';
+  if (/rest|hold/.test(status)) return 'wait';
+  return '';
+}
+function pools(s, pi) {
+  if (!s.pools.length) return '';
+  const p = s.pools[pi] || s.pools[0];
+  const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
+  const rows = p.turns.map((t) => `<tr><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
+  const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
+    ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${esc(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${esc(s.away.join(', '))}</div>` : ''}</div>` : '';
+  return `<section class="sheet"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
+    <div class="tabs" role="tablist">${tabs}</div>
+    <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}</section>`;
 }
 
 function onDuty(s) {
   if (!s.onDuty.length) return '';
-  const body = s.onDuty.map((t) => `<tr><td class="mono">${esc(t.onDuty)}</td><td>${esc(t.station)}</td>
-      <td class="mono"><b>${esc(t.train)}</b></td><td class="mono small">${esc(t.crew)}</td></tr>`).join('');
-  return `<section class="panel"><h2>Call Board · trains on duty <span class="count">· ${s.onDuty.length}</span></h2>
-    <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train</th><th>Crew turns</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
-}
-
-function pools(s) {
-  if (!s.pools.length) return '';
-  const tables = s.pools.map((p) => `<div><h3>${esc(p.name)}</h3>
-    <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>
-    ${p.turns.map((t) => `<tr><td class="mono">${esc(t.pos)}</td><td class="mono"><b>${esc(t.turn)}</b></td>
-      <td class="${/spare/.test(t.status) ? 'warn' : ''}">${esc(t.status)}</td></tr>`).join('')}
-    </tbody></table></div>`).join('');
-  const extra = [
-    s.returning.length ? `<div><b>Chain Gang coming home:</b> ${esc(s.returning.join(', '))}</div>` : '',
-    s.away.length ? `<div><b>Chain Gang in Toronto:</b> ${esc(s.away.join(', '))}</div>` : '',
-  ].join('');
-  return `<section class="panel"><h2>Pool positions at Sarnia</h2><div class="pools">${tables}</div>
-    ${extra ? `<div class="extra">${extra}</div>` : ''}</section>`;
+  const rows = s.onDuty.map((t) => `<tr><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${esc(t.crew)}</div></td></tr>`).join('');
+  return `<section class="sheet"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
+    <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
 function sequence(s) {
   if (!s.sequence.length) return '';
-  const body = s.sequence.map((t) => {
+  const rows = s.sequence.map((t) => {
     const off = t.actual && t.actual !== t.expected && t.actual !== 'MU';
-    return `<tr><td class="mono">${esc(t.order)}</td><td class="mono"><b>${esc(t.train)}</b></td>
-      <td class="mono">${esc(t.turn || '–')}</td><td>${esc(t.expected)}</td>
-      <td>${off ? `<span class="warn">${esc(t.actual)} ≠ ${esc(t.expected)}</span>` : '<span class="muted">matches</span>'}</td></tr>`;
+    return `<tr><td class="num">${esc(t.order)}</td><td class="num"><b>${esc(t.train)}</b></td><td class="num">${esc(t.turn || '–')}</td>
+      <td>${off ? `<span class="bad">${esc(t.actual)}, should be ${esc(t.expected)}</span>` : `<span class="ok">${esc(t.expected)} ✓</span>`}</td></tr>`;
   }).join('');
-  return `<section class="panel"><h2>Sarnia departures vs. the calling sequence</h2>
-    <div class="scroll"><table><thead><tr><th>Order</th><th>Train</th><th>Called turn</th><th>Should be</th><th>Check</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="muted small">Order time = on-duty time + prep. First 3 Sarnia trains after 0459 go to A, next 2 to B, the rest and deadheads to the Chain Gang.</p></section>`;
+  return `<section class="sheet"><header><h2>Calling sequence</h2><span class="meta">Sarnia departures</span></header>
+    <div class="scroll"><table><thead><tr><th>Order</th><th>Train</th><th>Turn</th><th>Pool</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="foot">Order time is on duty plus prep. First 3 trains after 0459 go to A, next 2 to B, the rest and deadheads to the Chain Gang.</div></section>`;
 }
 
 function changes(s, prev) {
-  if (!s.changes) return `<section class="panel"><h2>Changes</h2><p class="muted">First snapshot saved; nothing earlier to compare with.</p></section>`;
-  const since = `since ${esc(longDate(prev.taken))}`;
-  if (!s.changes.length) return `<section class="panel"><h2>Changes ${since}</h2><p class="muted">None.</p></section>`;
-  return `<section class="panel"><h2>Changes ${since} <span class="count">· ${s.changes.length}</span></h2>
-    <details${s.changes.length <= 10 ? ' open' : ''}><summary>Show changes</summary>
-    <ul class="changes">${s.changes.map((l) => `<li class="mono">${esc(l)}</li>`).join('')}</ul></details></section>`;
+  if (!s.changes) return `<section class="sheet"><header><h2>Changes</h2></header><p class="empty">First snapshot. Nothing earlier to compare.</p></section>`;
+  const w = when(prev.taken);
+  const head = `<header><h2>Changes</h2><span class="meta">since ${esc(w.day)} ${esc(w.time)}</span></header>`;
+  if (!s.changes.length) return `<section class="sheet">${head}<p class="empty">No changes.</p></section>`;
+  const items = s.changes.map((l) => {
+    const g = l.charAt(0);
+    const cls = g === '+' ? 'add' : g === '-' ? 'del' : 'mod';
+    return `<li class="${cls}"><span class="g">${esc(g === '~' ? '→' : g === '-' ? '−' : g)}</span><span>${esc(l.slice(2))}</span></li>`;
+  }).join('');
+  return `<section class="sheet">${head}<ul class="changes">${items}</ul></section>`;
 }
 
 function flags(s) {
   if (!s.flags.length) return '';
-  return `<section class="panel"><h2>Possible problems (to judge)</h2>
+  return `<section class="sheet"><header><h2>To check</h2><span class="meta">possible problems</span></header>
     <ul class="flags">${s.flags.map((f) => `<li>${esc(f)}</li>`).join('')}</ul></section>`;
+}
+
+function strip(s) {
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  const ready = s.pools.reduce((n, p) => n + p.turns.filter((t) => t.status === 'available').length, 0);
+  const off = s.sequence.filter((t) => t.actual && t.actual !== t.expected && t.actual !== 'MU').length + s.flags.length;
+  return `<div class="strip">
+    <div class="stat"><div class="v">${s.lineup.length} <small>/ ${ord} ORD</small></div><div class="l">Trains on the line-up</div></div>
+    <div class="stat"><div class="v">${s.onDuty.length}</div><div class="l">On duty (call board)</div></div>
+    <div class="stat"><div class="v">${ready}</div><div class="l">Turns available at Sarnia</div></div>
+    <div class="stat ${off ? 'alert' : ''}"><div class="v">${off}</div><div class="l">Things to check</div></div>
+  </div>`;
 }
 
 fetch('board-sample.json').then((r) => r.json()).then((data) => {
   const list = data.snapshots;
-  const pick = document.getElementById('pick');
-  // Newest first in the list.
-  list.map((s, i) => [s, i]).reverse().forEach(([s, i]) => pick.add(new Option(longDate(s.taken), i)));
+  let cur = list.length - 1;
+  let poolTab = 0;
+
+  // Rail: newest first, grouped by day.
+  let lastDay = null;
+  document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).reverse().map(([s, i]) => {
+    const w = when(s.taken);
+    const day = w.day !== lastDay ? `<li class="day">${esc(w.day)}</li>` : '';
+    lastDay = w.day;
+    return `${day}<li><button data-i="${i}"><span class="d">${esc(w.day)}</span><span class="t">${esc(w.time)}</span><span class="n">${s.lineup.length} trains</span></button></li>`;
+  }).join('');
+  document.getElementById('rail').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-i]');
+    if (b) show(+b.dataset.i);
+  });
 
   function show(i) {
+    cur = i;
     const s = list[i];
-    pick.value = i;
-    document.getElementById('prev').disabled = i === 0;
-    document.getElementById('next').disabled = i === list.length - 1;
-    history.replaceState(null, '', '#' + slug(s.taken));
-    document.getElementById('view').innerHTML = stamp(s) + lineup(s) + onDuty(s) + pools(s) + sequence(s) + changes(s, list[i - 1]) + flags(s);
+    const w = when(s.taken);
+    document.querySelectorAll('#rail button').forEach((b) => b.setAttribute('aria-current', +b.dataset.i === i));
+    try { history.replaceState(null, '', '#' + slug(s.taken)); } catch (e) { /* not allowed in some frames */ }
+    const screens = ['Call board', ...s.screens.map((k) => SCREENS[k] || k)].map((x) => `<span class="chip">${esc(x)}</span>`).join('');
+    document.getElementById('view').innerHTML = `
+      <div class="head">
+        <div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div>
+          <div class="screens" style="margin-top:8px">${screens}</div></div>
+        <div class="steps"><button id="older" ${i === 0 ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${i === list.length - 1 ? 'disabled' : ''}>Later ▶</button></div>
+      </div>
+      ${strip(s)}
+      <div class="grid">
+        <div class="col">${lineup(s)}${changes(s, list[i - 1])}</div>
+        <div class="col">${flags(s)}${pools(s, poolTab)}${onDuty(s)}${sequence(s)}</div>
+      </div>
+      <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
+    document.getElementById('older').onclick = () => show(cur - 1);
+    document.getElementById('newer').onclick = () => show(cur + 1);
+    document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur); }; });
   }
-  pick.onchange = () => show(+pick.value);
-  document.getElementById('prev').onclick = () => show(+pick.value - 1);
-  document.getElementById('next').onclick = () => show(+pick.value + 1);
 
-  // A link like board.html#2026-10-15-0815 opens that snapshot.
+  // A link like #2026-10-15-0815 opens that snapshot.
   const fromHash = list.findIndex((s) => slug(s.taken) === location.hash.slice(1));
-  show(fromHash >= 0 ? fromHash : list.length - 1);
+  show(fromHash >= 0 ? fromHash : cur);
 }).catch((err) => {
-  document.getElementById('view').innerHTML = `<p class="warn">Couldn't load the snapshots: ${esc(err.message)}</p>`;
+  document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}). Check that board-sample.json sits next to this page.</p>`;
 });
 </script>
 </body>
