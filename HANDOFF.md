@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-15 · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-16 · Branch: `claude/auto-board-checker-plan-hdk1n5`
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
@@ -13,6 +13,28 @@ are unreliable. The tool's one job is telling them when they'll be called.
 Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
+
+## 2026-10-16 afternoon: data off OneDrive, snapshot history, new laptop next
+- Owner: get off OneDrive. board-auto.js now keeps everything in
+  `C:\Users\<you>\BoardChecker` (`lib/board/paths.js`; `BOARD_DATA_DIR`
+  overrides): `.env`, browser `profile`, `last-check.json`, `auto-summary.json`,
+  `stuck-screen.json`, `history\`. The owner's `.env` and profile were moved
+  there; `probe-out\` is now only for board-probe.js. A repo `.env` is still
+  read as a fallback. The code itself is still in OneDrive on this laptop.
+- Owner asked for snapshots: every check is saved as
+  `history\<YYYY-MM-DD>\<HHMM>.txt` (report as printed + AI note + working)
+  and `.json` (masked screens). `BOARD_HISTORY_DAYS` (default 90; 0 = keep all)
+  prunes old days. ~20 KB per check.
+- Haiku's notes 11:47–13:12 were all false alarms: E27861 16 (SA08, the 16th's
+  3rd A) left the Call Board, so only two A trains were visible. The review
+  prompt now says departed trains drop off and to accept "used up" notes.
+  Proposed, owner hasn't decided: remember each road day's Sarnia trains
+  across checks from the snapshots, so departed trains still count.
+- ❓ Owner: CATS gave the 16th's 3rd train (M30241 14, 0830) to B (SB03) and
+  the next (E27861) to A. Out of sequence, or a rule we don't know?
+- ❓ Owner: should crew warnings skip Toronto trains (RM39731 16, MU01)?
+- Owner is setting up a second laptop that will only run the board checker,
+  and wants to move everything there soon (see docs/board-checker/NEW-LAPTOP.md).
 
 ## 2026-10-16: AI check of each report
 Owner asked for an AI to check the script's output, with the key changeable

@@ -11,13 +11,18 @@
 // You do the Microsoft sign-in (Authenticator). The CATS sign-on is yours too,
 // unless CATS_EMPLOYEE_NO and CATS_PASSWORD are in .env: then the script fills
 // it, and when a check gets stuck it reloads CATS and signs back in. It only
-// reads screens and presses Enter/F3/F8, the same keys you would. Each check's
-// masked screens are saved to probe-out/auto-summary.json (no names) if you
-// want to share one.
+// reads screens and presses Enter/F3/F8, the same keys you would.
+//
+// Everything it keeps lives in the data folder (lib/board/paths.js, default
+// C:\Users\<you>\BoardChecker, off OneDrive): .env, the browser profile, and
+// history\<date>\<HHMM>.txt + .json, one snapshot per check (the report as
+// printed, and the masked screens behind it). BOARD_HISTORY_DAYS (default 90)
+// says how long snapshots are kept.
 //
 // With BOARD_RELAY_URL and BOARD_KEY in .env, each check is also sent to the
 // 240ca server so the RailroadTracker app on your phone shows it.
-require('dotenv').config({ quiet: true });
+const { DATA_DIR, ENV_FILES, PROFILE_DIR, HISTORY_DIR } = require('../lib/board/paths');
+require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
 const { describeFrame } = require('../lib/board/capture');
@@ -31,8 +36,7 @@ const { pushCheck } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { at } = require('../lib/board/time');
 
-const OUT_DIR = path.join(__dirname, '..', 'probe-out');
-const PROFILE_DIR = path.join(OUT_DIR, 'profile');
+const OUT_DIR = DATA_DIR;
 const LAST_FILE = path.join(OUT_DIR, 'last-check.json');
 const START_URL = 'https://cats.cn.ca/';
 
@@ -285,6 +289,34 @@ async function saveStuckScreen(page) {
   }
 }
 
+// One snapshot per check, so any past board can be looked at again:
+// history\<date>\<HHMM>.txt is the report as printed (plus the AI note and
+// the working behind each train), .json the masked CATS screens behind it.
+function saveSnapshot(summary, { text, detailed, note }) {
+  const at = new Date(summary.probedAt);
+  const day = at.toLocaleDateString('en-CA'); // YYYY-MM-DD, local
+  const hhmm = at.toLocaleTimeString('en-CA', { hour12: false, hour: '2-digit', minute: '2-digit' }).replace(':', '');
+  const dir = path.join(HISTORY_DIR, day);
+  fs.mkdirSync(dir, { recursive: true });
+  let base = hhmm;
+  for (let n = 2; fs.existsSync(path.join(dir, `${base}.txt`)); n++) base = `${hhmm}-${n}`;
+  const parts = [text, note, `\n--- Working ---\n${detailed}`].filter(Boolean);
+  fs.writeFileSync(path.join(dir, `${base}.txt`), `${parts.join('\n\n')}\n`);
+  fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify(summary, null, 2));
+}
+
+// Deletes day folders older than BOARD_HISTORY_DAYS (default 90; 0 keeps all).
+function pruneHistory() {
+  const days = process.env.BOARD_HISTORY_DAYS === undefined ? 90 : +process.env.BOARD_HISTORY_DAYS;
+  if (!(days > 0)) return;
+  const cutoff = new Date(Date.now() - days * 86400000).toLocaleDateString('en-CA');
+  let dirs = [];
+  try { dirs = fs.readdirSync(HISTORY_DIR); } catch { return; }
+  for (const d of dirs) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d < cutoff) fs.rmSync(path.join(HISTORY_DIR, d), { recursive: true, force: true });
+  }
+}
+
 // --- Main ----------------------------------------------------------------------
 
 function loadPlaywright() {
@@ -408,6 +440,12 @@ async function main() {
       const { text, detailed, first, changed, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
       const note = first || changed ? await aiReview(detailed) : null;
+      try {
+        saveSnapshot(summary, { text, detailed, note });
+        pruneHistory();
+      } catch (err) {
+        console.log(`  (snapshot not saved: ${err.message})`);
+      }
       if (relay) {
         const report = note ? `${text}\n\n${note}` : text;
         const check = { checkedAt: summary.probedAt, me: meLines, report, changes, myAnswerChanged };
