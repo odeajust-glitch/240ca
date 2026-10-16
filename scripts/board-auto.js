@@ -247,7 +247,8 @@ function answer(summary, me, nowOverride) {
   const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
   // The working behind each train, for the AI review.
   const detailed = formatReport(result, input.seen, { details: true });
-  return { text, detailed, first: !prev, me: cur.me, changes: changeLines(prev, cur).filter((l) => l), myAnswerChanged };
+  const lines = changeLines(prev, cur); // ['', heading, ...one line per change]
+  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, changes: lines.filter((l) => l), myAnswerChanged };
 }
 
 // Claude's look over the check (lib/board/review.js). Only when something
@@ -404,9 +405,9 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
-      const note = first || changes.length ? await aiReview(detailed) : null;
+      const note = first || changed ? await aiReview(detailed) : null;
       if (relay) {
         const report = note ? `${text}\n\n${note}` : text;
         const check = { checkedAt: summary.probedAt, me: meLines, report, changes, myAnswerChanged };
