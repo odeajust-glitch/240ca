@@ -26,7 +26,8 @@ lines on what looks off. It never changes the answer (the rules decide).
   (default `claude-opus-5-5`), `BOARD_AI_REVIEW=off`. Errors print one line
   and never stop a check. Opus/Sonnet 5.5 requests carry the server-side
   refusal fallback (`fallbacks: "default"`).
-- Tested against a stub API server only; not yet with the owner's real key.
+- Tested with the owner's key on Haiku (`BOARD_AI_MODEL=claude-haiku-5-5`, owner's choice): first answer misread line-up times and repeated the report's own history warnings; prompt fixed (2968b43), same check now "Looks right."
+- ⚠ Any `npm install <pkg>` removes Playwright (it's installed `--no-save`); reinstall with `npm install --no-save playwright`.
 - First live run 2026-10-16 09:54: auto sign-on worked with no Microsoft
   prompt; checks every 5 min ran cleanly.
 
