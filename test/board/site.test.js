@@ -4,6 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { buildSite, deploySite } = require('../../lib/board/site');
+const BoardTurns = require('../../public/board-turns');
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '../fixtures/board', name));
 
@@ -78,7 +79,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/index.html', '/robots.txt']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/turns.json', '/index.html', '/robots.txt']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
@@ -92,4 +93,30 @@ test('site: a refused token is reported, not thrown', async () => {
   assert.match(sent.message, /NETLIFY_AUTH_TOKEN/);
   const down = await deploySite({ dir: out, siteId: 's', token: 't', fetchImpl: async () => { throw new Error('offline'); } });
   assert.deepStrictEqual(down, { ok: false, message: 'offline' });
+});
+
+test('turns: where a turn shows up in one snapshot', () => {
+  const { hist, out } = makeHistory();
+  buildSite({ historyDir: hist, outDir: out, days: 0 });
+  const [, s] = JSON.parse(fs.readFileSync(path.join(out, 'data/2026-10-15.json'), 'utf8')).snapshots;
+  const f = BoardTurns.facts(s, 'sr04');
+  assert.deepStrictEqual(f.map((x) => x.kind), ['pool', 'lineup']);
+  assert.match(f[0].text, /^Chain Gang \(SR\) position 002: \*\* goes spare/);
+  assert.match(f[1].text, /E27861 15/);
+  assert.deepStrictEqual(BoardTurns.facts(s, 'SR02').map((x) => x.kind), ['pool', 'onDuty', 'sequence']);
+  assert.deepStrictEqual(BoardTurns.facts(s, 'SR01').map((x) => x.kind), ['away']);
+  assert.deepStrictEqual(BoardTurns.facts(s, 'SR0'), []); // no partial matches
+  assert.ok(BoardTurns.turnsIn(s).includes('SA07'));
+});
+
+test('turns: history records each change, across days', () => {
+  const { hist, out } = makeHistory();
+  buildSite({ historyDir: hist, outDir: out, days: 0 });
+  const { turns } = JSON.parse(fs.readFileSync(path.join(out, 'data/turns.json'), 'utf8'));
+  const sr03 = turns.SR03;
+  assert.strictEqual(sr03[0].taken, '2026-10-14 1617');
+  assert.ok(sr03.length >= 2);
+  // Consecutive entries always differ.
+  for (let i = 1; i < sr03.length; i++) assert.notStrictEqual(sr03[i].text, sr03[i - 1].text);
+  assert.ok(!('__last' in turns));
 });

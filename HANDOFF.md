@@ -29,6 +29,12 @@ run that branch):
   docs/board-checker/SNAPSHOT-SITE.md. Not yet run on the laptop.
 - Sandbox can't reach api.netlify.com (network policy), so deploy was tested
   with a fake fetch only.
+- **Find a turn** (owner, same evening): box above the snapshot list. Type a
+  turn (SR03, SA07…): rows with it are highlighted on every section, its pool
+  tab opens, and a panel shows where it is in this snapshot plus its history
+  (an entry each time what the board said about it changed; click one to jump
+  there). Logic in `public/board-turns.js`, shared by the page and the builder;
+  the builder writes `data/turns.json`. Last turn is remembered per browser.
 
 ## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"
 The owner runs board checks only while waiting in Sarnia, because the line-ups

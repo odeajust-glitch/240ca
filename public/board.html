@@ -75,6 +75,30 @@
   .rail h2, .sec-title { font: 600 13px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); margin: 0 0 10px; }
   .daypick { display: grid; gap: 4px; margin-bottom: 12px; font-size: 12px; color: var(--soft); }
   .daypick select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+  .turnpick { display: grid; gap: 4px; margin-bottom: 14px; font-size: 12px; color: var(--soft); }
+  .turnpick .row { display: flex; gap: 6px; }
+  .turnpick input { flex: 1 1 auto; width: 0; min-width: 0; font: 600 15px/1 var(--mono); text-transform: uppercase; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; }
+  .turnpick input::placeholder { font-weight: 400; text-transform: none; color: var(--soft); }
+  .rail .turnpick button { display: inline-block; width: auto; flex: none; margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 0 12px; cursor: pointer; color: var(--soft); white-space: nowrap; }
+  .hit, tr.hit td { background: var(--amber-tint); }
+  .train.hit { box-shadow: inset 4px 0 0 var(--amber); }
+  tr.hit td:first-child { box-shadow: inset 4px 0 0 var(--amber); }
+  mark.t { background: none; color: var(--amber); font-weight: 700; }
+  .turnpanel { margin-bottom: 22px; border-color: var(--amber); }
+  .turnpanel > header { background: var(--amber-tint); }
+  .turnpanel > header h2 .num { font-size: 22px; letter-spacing: 0; }
+  .turnpanel > header button { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+  .tp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .tp > div { min-width: 0; padding: 12px 14px; }
+  .tp > div + div { border-left: 1px solid var(--rule-soft); }
+  .tp h3 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .tp ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+  .tp li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 6px; }
+  .tp .kind { font: 600 11px/1.6 var(--mono); color: var(--soft); text-transform: uppercase; }
+  .hist { max-height: 320px; overflow-y: auto; }
+  .tp .hist li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; font-size: 13px; padding: 4px 6px; border-radius: 3px; }
+  .hist li.now { background: var(--accent-tint); }
+  .hist button { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; color: var(--accent); font: 500 12.5px/1.4 var(--mono); }
   .rail .same { display: block; font-size: 11.5px; color: var(--soft); }
   .rail ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--rule); }
   .rail li { margin: 0; }
@@ -172,6 +196,10 @@
   .empty { padding: 12px 14px; color: var(--soft); font-size: 13.5px; margin: 0; }
   .note { font-size: 12px; color: var(--soft); margin: 22px 0 0; max-width: 80ch; }
 
+  @media (max-width: 700px) {
+    .tp { grid-template-columns: minmax(0, 1fr); }
+    .tp > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
+  }
   @media (max-width: 1020px) {
     .grid { grid-template-columns: minmax(0, 1fr); }
   }
@@ -209,13 +237,20 @@
 </div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
+    <div class="turnpick">
+      <label for="turn">Find a turn</label>
+      <div class="row"><input id="turn" list="turnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6"><button id="turnclear" type="button" aria-label="Clear turn" hidden>✕</button></div>
+      <datalist id="turnlist"></datalist>
+    </div>
     <h2>Snapshots</h2>
     <label class="daypick" for="day"><span>Day</span><select id="day"></select></label>
     <ol id="rail"></ol>
   </nav>
   <main id="view"><p class="empty">Loading snapshots…</p></main>
 </div>
+<script src="board-turns.js"></script>
 <script>
+let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', lineup: 'Line-up 41' };
 
@@ -234,8 +269,13 @@ function poolChip(rules) {
   const m = /^(A|B) pool/.exec(rules) || (/^Chain Gang/.test(rules) ? [0, 'SR'] : /^S5/.test(rules) ? [0, 'S5'] : null);
   return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
 }
+// The focused turn, picked out in a line of text.
+function markTurn(text) {
+  const safe = esc(text);
+  return focus ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${focus})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
+}
 function ruleText(rules) {
-  return esc(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, ''))
+  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, ''))
     .replace(/\(goes spare[^)]*\)/, (x) => `<span class="spare">${x}</span>`);
 }
 
@@ -247,7 +287,8 @@ function lineup(s) {
     const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
     day = d;
     const [sym, od] = split(t.train);
-    return `${bar}<div class="train">
+    const hit = focus && BoardTurns.turnIn(t.rules, focus);
+    return `${bar}<div class="train${hit ? ' hit' : ''}">
       <div class="time">${esc(hhmm)}</div>
       <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
         <div class="sub">${esc(t.info)} · <span class="mono">${esc(t.engCrew)} / ${esc(t.trnCrew)}</span></div></div>
@@ -271,10 +312,10 @@ function pools(s, pi) {
   if (!s.pools.length) return '';
   const p = s.pools[pi] || s.pools[0];
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
-  const rows = p.turns.map((t) => `<tr><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
+  const rows = p.turns.map((t) => `<tr${t.turn === focus ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
-    ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${esc(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${esc(s.away.join(', '))}</div>` : ''}</div>` : '';
+    ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
   return `<section class="sheet"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
     <div class="tabs" role="tablist">${tabs}</div>
     <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}</section>`;
@@ -282,8 +323,8 @@ function pools(s, pi) {
 
 function onDuty(s) {
   if (!s.onDuty.length) return '';
-  const rows = s.onDuty.map((t) => `<tr><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${esc(t.crew)}</div></td></tr>`).join('');
+  const rows = s.onDuty.map((t) => `<tr${focus && BoardTurns.turnIn(t.crew, focus) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div></td></tr>`).join('');
   return `<section class="sheet"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
@@ -292,7 +333,7 @@ function sequence(s) {
   if (!s.sequence.length) return '';
   const rows = s.sequence.map((t) => {
     const off = t.actual && t.actual !== t.expected && t.actual !== 'MU';
-    return `<tr><td class="num">${esc(t.order)}</td><td class="num"><b>${esc(t.train)}</b></td><td class="num">${esc(t.turn || '–')}</td>
+    return `<tr${focus && t.turn === focus ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td class="num"><b>${esc(t.train)}</b></td><td class="num">${esc(t.turn || '–')}</td>
       <td>${off ? `<span class="bad">${esc(t.actual)}, should be ${esc(t.expected)}</span>` : `<span class="ok">${esc(t.expected)} ✓</span>`}</td></tr>`;
   }).join('');
   return `<section class="sheet"><header><h2>Calling sequence</h2><span class="meta">Sarnia departures</span></header>
@@ -335,6 +376,31 @@ const getJSON = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (!r.
 
 // Live site: data/index.json lists the days, data/<day>.json holds each day's
 // snapshots. Without it (the sample page) everything comes from board-sample.json.
+const once = (fn) => { let p = null; return () => p || (p = fn()); };
+
+// The turn panel: where the turn is in this snapshot, and its history (each
+// time what the board said about it changed). History fills in once loaded.
+const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called' };
+function turnPanel(s) {
+  const f = BoardTurns.facts(s, focus);
+  const here = f.length
+    ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
+    : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><button id="turnclose" type="button">Close</button></header>
+    <div class="tp"><div><h3>In this snapshot</h3>${here}</div>
+    <div><h3>History</h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div></section>`;
+}
+function turnHistory(entries, current) {
+  if (!entries || !entries.length) return '<p class="empty" style="padding:0">No history for this turn in the saved checks.</p>';
+  // The entry in force at the snapshot being viewed.
+  let nowIdx = -1;
+  entries.forEach((e, i) => { if (e.taken <= current) nowIdx = i; });
+  return `<ul>${entries.map((e, i) => [e, i]).reverse().map(([e, i]) => {
+    const w = when(e.taken);
+    return `<li class="${i === nowIdx ? 'now' : ''}"><button type="button" data-taken="${esc(e.taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button><span>${markTurn(e.text)}</span></li>`;
+  }).join('')}</ul>`;
+}
+
 async function source() {
   try {
     const index = await getJSON('data/index.json');
@@ -343,6 +409,7 @@ async function source() {
       live: true, index,
       days: index.days.map((d) => d.day),
       load: (day) => cache.get(day) || cache.set(day, getJSON(`data/${day}.json`).then((d) => d.snapshots)).get(day),
+      turns: once(() => getJSON('data/turns.json').then((d) => d.turns)),
     };
   } catch {
     const data = await getJSON('board-sample.json');
@@ -355,7 +422,8 @@ async function source() {
       if (!byDay.has(day)) byDay.set(day, []);
       byDay.get(day).push(snap);
     }
-    return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [] };
+    return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [],
+      turns: once(async () => BoardTurns.history(data.snapshots)) };
   }
 }
 
@@ -400,9 +468,39 @@ source().then(async (src) => {
     openDay(src.days[di], dir < 0 ? next.length - 1 : 0);
   }
 
-  function show(i) {
+  // Turn search: the box, the list of turns to pick from, and remembering
+  // the last turn looked for (this browser only).
+  const turnBox = document.getElementById('turn');
+  const turnClear = document.getElementById('turnclear');
+  function setFocus(t, keep) {
+    focus = String(t || '').trim().toUpperCase().replace(/\s+/g, '');
+    turnBox.value = focus;
+    turnClear.hidden = !focus;
+    try { focus ? localStorage.setItem('boardTurn', focus) : localStorage.removeItem('boardTurn'); } catch (e) { /* storage off */ }
+    if (!keep && list.length) show(cur);
+  }
+  turnBox.addEventListener('change', () => setFocus(turnBox.value));
+  turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFocus(turnBox.value); });
+  turnClear.onclick = () => setFocus('');
+  try { setFocus(localStorage.getItem('boardTurn') || '', true); } catch (e) { /* storage off */ }
+
+  async function jumpTo(taken) {
+    const d = taken.slice(0, 10);
+    if (d === day) {
+      const i = list.findIndex((s) => s.taken === taken);
+      if (i >= 0) return show(i);
+    }
+    if (src.days.includes(d)) openDay(d, taken);
+  }
+
+  function show(i, keepTab) {
     cur = i;
     const s = list[i];
+    document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
+    if (focus && !keepTab) {
+      const mine = s.pools.findIndex((q) => q.turns.some((t) => t.turn === focus));
+      if (mine >= 0) poolTab = mine;
+    }
     const w = when(s.taken);
     const dayIdx = src.days.indexOf(day);
     const atOldest = i === 0 && dayIdx === src.days.length - 1;
@@ -417,6 +515,7 @@ source().then(async (src) => {
           <div class="screens" style="margin-top:8px">${screens}${same}</div></div>
         <div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>
       </div>
+      ${focus ? turnPanel(s) : ''}
       ${strip(s)}
       <div class="grid">
         <div class="col">${lineup(s)}${changes(s)}</div>
@@ -425,7 +524,22 @@ source().then(async (src) => {
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
     document.getElementById('older').onclick = () => step(-1);
     document.getElementById('newer').onclick = () => step(1);
-    document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur); }; });
+    document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
+    if (focus) {
+      document.getElementById('turnclose').onclick = () => setFocus('');
+      const want = focus;
+      src.turns().then((all) => {
+        const box = document.getElementById('turnhist');
+        if (!box || want !== focus) return;
+        box.innerHTML = turnHistory(all[focus], s.taken);
+        box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
+        const now = box.querySelector('li.now');
+        if (now) now.scrollIntoView({ block: 'nearest' });
+      }).catch(() => {
+        const box = document.getElementById('turnhist');
+        if (box) box.innerHTML = '<p class="empty" style="padding:0">History isn\'t available right now.</p>';
+      });
+    }
   }
 
   document.getElementById('rail').addEventListener('click', (e) => {
