@@ -21,6 +21,10 @@
 //
 // With BOARD_RELAY_URL and BOARD_KEY in .env, each check is also sent to the
 // 240ca server so the RailroadTracker app on your phone shows it.
+//
+// With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
+// website (lib/board/site.js) is rebuilt from history\ and published after a
+// check that changed, at most every BOARD_SITE_EVERY minutes (default 30).
 const { DATA_DIR, ENV_FILES, PROFILE_DIR, HISTORY_DIR } = require('../lib/board/paths');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -34,6 +38,7 @@ const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
+const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
 const { at } = require('../lib/board/time');
 const config = require('../lib/board/config');
 
@@ -318,6 +323,28 @@ function saveSnapshot(summary, { text, detailed, note }) {
   fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify(summary, null, 2));
 }
 
+// The snapshot website. A changed check marks it due; it goes out once
+// BOARD_SITE_EVERY minutes have passed since the last publish, so a busy
+// board doesn't publish every 5 minutes. Settings are re-read each time, so
+// adding them to .env doesn't need a restart.
+const site = { due: false, lastAt: 0 };
+async function publishSite(changed) {
+  const { token, siteId, days, every } = siteSettings();
+  if (!token || !siteId) return;
+  if (changed) site.due = true;
+  if (!site.due || Date.now() - site.lastAt < every * 60000) return;
+  site.lastAt = Date.now();
+  try {
+    const dir = path.join(OUT_DIR, 'site');
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days });
+    const sent = await deploySite({ dir, siteId, token });
+    if (sent.ok) site.due = false;
+    console.log(sent.ok ? `[${stamp()}] Snapshot website updated.` : `[${stamp()}] Snapshot website not updated: ${sent.message}`);
+  } catch (err) {
+    console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`);
+  }
+}
+
 // Deletes day folders older than BOARD_HISTORY_DAYS (default 90; 0 keeps all).
 function pruneHistory() {
   const days = process.env.BOARD_HISTORY_DAYS === undefined ? 90 : +process.env.BOARD_HISTORY_DAYS;
@@ -466,6 +493,7 @@ async function main() {
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
+      await publishSite(first || changed);
       retried = false;
     } catch (err) {
       if (err instanceof NeedSignIn) {
