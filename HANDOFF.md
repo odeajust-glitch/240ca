@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-15 · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-16 (evening, new laptop) · Branch: `claude/auto-board-checker-plan-hdk1n5`
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
@@ -24,7 +24,91 @@ engine 3c pairs them with A/B line-up trains; view shows S1/S3 BOARDs and
 them only when given `--s1 N --s3 N` (CC `EN` like 27). Layout assumed = 23.
 Tested on the fake CATS (as 25/26) + unit test. 23 tests.
 
-## 2026-10-15 late: NEXT = get board-check results into the shift tracker app
+## 2026-10-16 evening: running on the dedicated board-checker laptop
+- New laptop set up per docs/board-checker/NEW-LAPTOP-CLAUDE.md: Git + Node
+  (v24) via winget, code at `C:\BoardChecker-code` (not OneDrive), 29 tests
+  pass, `.env` in `C:\Users\odeaj\BoardChecker` (all four values set, Haiku).
+- Gotcha: `npx playwright install chromium` run from Claude's sandboxed shell
+  didn't land where the checker looks; running it in the owner's own terminal
+  tab fixed it (~320 MB, slow download).
+- Old laptop's checker stopped (owner). First check 16:04: auto sign-on
+  worked, AI CHECK "Looks right.", snapshot `history\2026-10-16\1605.txt/.json`.
+- Sleep when plugged in is already Never. Lid-close action not checked; owner
+  to set it to "Do nothing" when plugged in if the lid will be shut.
+- After a restart (Windows Update), start it again:
+  `cd C:\BoardChecker-code; node scripts/board-auto.js --me SR03 --every 5`.
+
+## 2026-10-16 afternoon: data off OneDrive, snapshot history, new laptop next
+- Owner: get off OneDrive. board-auto.js now keeps everything in
+  `C:\Users\<you>\BoardChecker` (`lib/board/paths.js`; `BOARD_DATA_DIR`
+  overrides): `.env`, browser `profile`, `last-check.json`, `auto-summary.json`,
+  `stuck-screen.json`, `history\`. The owner's `.env` and profile were moved
+  there; `probe-out\` is now only for board-probe.js. A repo `.env` is still
+  read as a fallback. The code itself is still in OneDrive on this laptop.
+- Owner asked for snapshots: every check is saved as
+  `history\<YYYY-MM-DD>\<HHMM>.txt` (report as printed + AI note + working)
+  and `.json` (masked screens). `BOARD_HISTORY_DAYS` (default 90; 0 = keep all)
+  prunes old days. ~20 KB per check.
+- Haiku's notes 11:47–13:12 were all false alarms: E27861 16 (SA08, the 16th's
+  3rd A) left the Call Board, so only two A trains were visible. The review
+  prompt now says departed trains drop off and to accept "used up" notes.
+  Proposed, owner hasn't decided: remember each road day's Sarnia trains
+  across checks from the snapshots, so departed trains still count.
+- Possible A/B swap on the 16th (M30241 14 SB03 before E27861 16 SA08) is
+  dropped: E27861's time was never captured. Owner (2026-10-16): don't reason
+  about times there's no snapshot for; only use what's in history\.
+- ❓ Owner: should crew warnings skip Toronto trains (RM39731 16, MU01)?
+- Owner is setting up a second laptop that will only run the board checker,
+  and wants to move everything there soon (see docs/board-checker/NEW-LAPTOP.md).
+
+## 2026-10-16: AI check of each report
+Owner asked for an AI to check the script's output, with the key changeable
+later. `lib/board/review.js` sends the `--details` report to Claude (Anthropic
+SDK) with a short summary of the rules; it answers "Looks right." or up to 3
+lines on what looks off. It never changes the answer (the rules decide).
+- Only when the check changed (or it's the first one), to keep cost down at
+  `--every 5`. The note prints under the report and rides along to the phone
+  at the end of `report`.
+- `.env` is re-read before each review: `ANTHROPIC_API_KEY`, `BOARD_AI_MODEL`
+  (default `claude-opus-5-5`), `BOARD_AI_REVIEW=off`. Errors print one line
+  and never stop a check. Opus/Sonnet 5.5 requests carry the server-side
+  refusal fallback (`fallbacks: "default"`).
+- Tested with the owner's key on Haiku (`BOARD_AI_MODEL=claude-haiku-5-5`, owner's choice): first answer misread line-up times and repeated the report's own history warnings; prompt fixed (2968b43), same check now "Looks right."
+- ⚠ Any `npm install <pkg>` removes Playwright (it's installed `--no-save`); reinstall with `npm install --no-save playwright`.
+- First live run 2026-10-16 09:54: auto sign-on worked with no Microsoft
+  prompt; checks every 5 min ran cleanly.
+
+## 2026-10-15 night: automatic CATS sign-on (owner's decision)
+Owner asked for the script to use their username/password and to reload and
+sign back in when stuck, after being reminded of the earlier decision against
+it (CN acceptable-use risk as a union rep, stored password). Built:
+- `CATS_EMPLOYEE_NO` / `CATS_PASSWORD` in `.env` (gitignored, laptop only)
+  fill the CATS sign-on (the empty text box + the password box), then Enter
+  and past any notice. Microsoft/Authenticator are still done by hand.
+- A refused sign-on (sign-on screen comes back) turns automatic sign-on off
+  until restart, so a wrong password can't lock the account; 3 other failures
+  in a row do the same. Credentials are never printed.
+- Any failed check: save the stuck screen, reload CATS, sign back in, and
+  check again straight away once; then back to the normal interval.
+- Tested on a fake sign-on page only (right and wrong login). Not yet on real
+  CATS: whether a reload lands on the CATS sign-on or on Microsoft is unknown.
+
+## 2026-10-15 night: two fixes from the owner's live run
+- **B trains already out count.** The 19:45 check gave SB03/SB04 the 16th
+  0100/0425 trains as the 15th's B trains, though SB01/SB02 were already out
+  on them (owner). The 15th's earlier A trains had left, so the Sarnia Call
+  Board trains were numbered from A #1. Now the first B train seen on a road
+  day fills that day's A slots (like the existing SR rule). On that board SR03
+  moves from "not on the line-up" to DHT431B 16. 28 tests.
+- **"No F3 key on this screen"** (19:30–19:40): CATS sat on a screen with only
+  Enter. `toMainMenu` now presses Enter when there's no F3; an off-route check
+  saves the masked screen to `probe-out/stuck-screen.json`. Tested on a fake
+  frame only; the real screen hasn't been seen yet.
+- ⚠ The owner runs an **old copy** at `Desktop\240ca-claude-auto-board-checker-plan-hdk1n5`
+  (not git, 17:08, no relay). These fixes are only in this worktree; it needs
+  `npm install --no-save playwright` here, plus `.env`, to run from here.
+
+## 2026-10-15 late: board-check results → shift tracker app (built, not switched on)
 Owner wants the board checker's output (when I go, Chain Gang + SD boards,
 41 line-up with crews, changes) in their **shift tracker app** =
 private repo `odeajust-glitch/RailroadTracker` (Android: Kotlin, Compose, Room;
@@ -40,15 +124,36 @@ read its `HANDOFF-auto-board-checker.md` first). What's there already:
   treats its records as evidence.
 - Owner confirmed (2026-10-15): it's their app; the owner is Justin.
   (Its handoff calls him an engineer; here he's on SR03 Chain Gang conductor.)
-Plan options to put to the owner (not decided):
-1. Laptop pushes each check's snapshot (JSON from `lib/board/view.js`
-   snapshot + predictions) to a small relay (e.g. this repo's Render app,
-   key-gated), and the Android app polls it and shows a "Board" card/tab.
-2. Simpler: board-auto writes a file the phone picks up (shared folder /
-   email) and the app imports it as a lineup snapshot flagged "from auto
-   check" (keeps the evidence trail honest).
-3. Notifications when "when you go" changes.
-Don't commit to RailroadTracker without the owner's go-ahead.
+**Owner decided (2026-10-15 night):** (a) auto-check results stay **separate
+from the evidence log**: own Board tab, never `lineup_snapshots`; (b) delivery
+by a **relay on Render**.
+
+**Built (2026-10-15 night):**
+- `lib/board/relay.js` + `server.js`: `POST /api/board` (laptop) and
+  `GET /api/board/latest` (phone), `Authorization: Bearer <BOARD_KEY>`; 404
+  when the key is wrong or `BOARD_KEY` is unset (like `/api/stats`). Keeps only
+  the newest check, in `$ANALYTICS_DIR/board-latest.json` (persistent disk);
+  an older check arriving late doesn't replace a newer one. Payload:
+  `{checkedAt, me[], report, changes[], myAnswerChanged}`. 27 tests.
+- `scripts/board-auto.js` pushes each check when `.env` has
+  `BOARD_RELAY_URL` + `BOARD_KEY` ("Sent to your phone." / "Not sent…: why");
+  a failed push never stops the check.
+- RailroadTracker branch `board-relay` (not merged, not installed): Board tab,
+  WorkManager look every 15 min, notification when `myAnswerChanged`. See its
+  `HANDOFF-auto-board-checker.md` §8.
+- Tested end to end on the emulator against a local relay fed the 15th's two
+  fixtures: the tab shows the check; see §8 there for the notification test.
+- Note: `myAnswerChanged` is true whenever the "when you go" text changes,
+  including just the line-up's end time moving. Same as the laptop's beep.
+
+**Owner's steps to switch it on (not done yet):**
+1. Pick a long random key. On Render: service → Environment → add
+   `BOARD_KEY`. Merge/deploy this branch's server change (it's on this branch
+   only; Render deploys the branch its dashboard names, probably `main`).
+2. Laptop `.env`: `BOARD_RELAY_URL=https://<app>.onrender.com` and the same
+   `BOARD_KEY`.
+3. Phone: install the `board-relay` build (backup procedure in RailroadTracker's
+   handoff §6), Board tab → Set up → address + key, allow notifications.
 
 ## 2026-10-15 evening: `**` always goes spare; RETN = return
 Owner, looking at option 27 (SD08 `** ** 1016` at 16:53): the time is the
