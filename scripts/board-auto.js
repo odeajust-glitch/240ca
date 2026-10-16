@@ -143,7 +143,14 @@ async function toMainMenu(page) {
     if (s && is.signOn(s)) throw new NeedSignIn();
     if (s && is.mainMenu(s)) return s;
     if (!s) { await sleep(1000); continue; }
-    await press(page, 'F3');
+    // A CATS message screen (broadcast, timeout warning) can have no F3,
+    // only Enter to get past it, the same as you'd do by hand.
+    try {
+      await press(page, 'F3');
+    } catch (err) {
+      if (!/^No F3 key/.test(err.message)) throw err;
+      await press(page, 'Enter');
+    }
   }
   throw new OffRoute("Couldn't get back to the CATS main menu with F3.");
 }
@@ -238,6 +245,26 @@ function answer(summary, me, nowOverride) {
   return { text, me: cur.me, changes: changeLines(prev, cur).filter((l) => l), myAnswerChanged };
 }
 
+// When a check gets stuck, keep the screen it got stuck on (masked, like
+// auto-summary.json) so the route can be taught about it. Prints only the
+// keys that screen offers, never its text.
+async function saveStuckScreen(page) {
+  const frame = catsFrame(page);
+  if (!frame) return;
+  try {
+    const screen = await describeFrame(frame);
+    const file = path.join(OUT_DIR, 'stuck-screen.json');
+    fs.writeFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...screen }, null, 2));
+    const keys = screen.inputs.map((i) => i.name || '')
+      .filter((n) => /^acc_|^(default)?btn_Button$/.test(n))
+      .map((n) => (n.startsWith('acc_') ? n.slice(4) : 'Enter'));
+    console.log(`  Saved the screen it got stuck on to ${path.relative(process.cwd(), file)}`
+      + ` (keys on it: ${[...new Set(keys)].join(', ') || 'none'}).`);
+  } catch {
+    // mid-navigation; nothing to save
+  }
+}
+
 // --- Main ----------------------------------------------------------------------
 
 function loadPlaywright() {
@@ -304,6 +331,7 @@ async function main() {
         continue;
       }
       console.log(`[${stamp()}] Couldn't finish this check: ${err.message}`);
+      if (err instanceof OffRoute) await saveStuckScreen(page);
       if (!every) throw err;
     }
     if (!every) break;
