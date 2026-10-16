@@ -5,6 +5,7 @@
 // what changed since the last check.
 //
 //   node scripts/board-auto.js --me SR03              one check
+//   node scripts/board-auto.js --me SR03 --s1 NN --s3 NN   also read S1/S3
 //   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
 //                                                     (beeps when your answer changes)
 //
@@ -31,6 +32,14 @@ const START_URL = 'https://cats.cn.ca/';
 function arg(name) {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : undefined;
+}
+
+// A Train Service option number from the command line (e.g. --s1 25).
+function optionArg(name) {
+  const v = arg(name);
+  if (v === undefined) return null;
+  if (!/^\d{1,3}$/.test(v)) throw new Error(`${name} needs a Train Service option number, e.g. ${name} 25`);
+  return +v;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -153,7 +162,7 @@ async function chooseFromMenus(page, option) {
 
 // --- One full check ----------------------------------------------------------
 
-async function runRoute(page) {
+async function runRoute(page, opts = {}) {
   const screens = [];
   const capture = async () => {
     const grid = (await describeFrame(catsFrame(page))).screenGrid;
@@ -185,18 +194,22 @@ async function runRoute(page) {
     await capture();
   };
   await pool(23, 'Chain Gang');
-  // 27: the SD (engineer) list that goes with the Chain Gang trains. Not
-  // recorded yet, so it's read as it first appears and again with CC = EN.
-  const sdPool = async () => {
-    const s = expect(await chooseFromMenus(page, 27), is.poolPosition, 'SD pool (27)');
+  // Engineer lists: 27 SD (with the Chain Gang), and S1 (with A) / S3 (with
+  // B) when their option numbers are given (--s1 N --s3 N). Read as they
+  // first appear and again with CC = EN.
+  const enginePool = (option, name) => async () => {
+    const s = expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
     await capture();
     if (/CC:/.test(s.text)) {
       await fill(page, { '-1': 'EN' });
-      expect(await press(page, 'Enter'), is.poolPosition, 'SD pool (27) with EN');
+      expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with EN`);
       await capture();
     }
   };
-  for (const [option, name, read] of [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', sdPool]]) {
+  const extra = [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', enginePool(27, 'SD pool')]];
+  if (opts.s1) extra.push([opts.s1, 'S1 pool', enginePool(opts.s1, 'S1 pool')]);
+  if (opts.s3) extra.push([opts.s3, 'S3 pool', enginePool(opts.s3, 'S3 pool')]);
+  for (const [option, name, read] of extra) {
     try {
       await (read ? read() : pool(option, name));
     } catch (err) {
@@ -260,6 +273,7 @@ async function main() {
     process.exit(1);
   }
   const every = arg('--every') ? Math.max(5, +arg('--every')) : null;
+  const poolOpts = { s1: optionArg('--s1'), s3: optionArg('--s3') };
   const url = arg('--url') || START_URL; // --url is for testing against a local copy
   let nowOverride;
   if (arg('--now')) {
@@ -280,7 +294,7 @@ async function main() {
   for (;;) {
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
-      const summary = await runRoute(page);
+      const summary = await runRoute(page, poolOpts);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
       const { text, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);

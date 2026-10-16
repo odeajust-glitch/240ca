@@ -14,6 +14,16 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-16: S1 / S3 engineer boards
+Owner: S1 turns go with A trains, S3 with B; they work like A/B (first in
+first out; rest/reset, hold, **, B0 → still takes the train, goes spare). S1
+has one more turn than the A pool (no logic change: the board is read as
+shown). Built: turn regex accepts S1nn/S3nn; loader `s1Home`/`s3Home`;
+engine 3c pairs them with A/B line-up trains; view shows S1/S3 BOARDs and
+"A pool: SA07 + S104". **Option numbers unknown** ❓: the auto route reads
+them only when given `--s1 N --s3 N` (CC `EN` like 27). Layout assumed = 23.
+Tested on the fake CATS (as 25/26) + unit test. 23 tests.
+
 ## 2026-10-15 late: NEXT = get board-check results into the shift tracker app
 Owner wants the board checker's output (when I go, Chain Gang + SD boards,
 41 line-up with crews, changes) in their **shift tracker app** =
