@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const { buildSite, deploySite } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
+const BoardTrains = require('../../public/board-trains');
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '../fixtures/board', name));
 
@@ -79,7 +80,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/turns.json', '/index.html', '/robots.txt']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/index.html', '/robots.txt']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
@@ -119,4 +120,47 @@ test('turns: history records each change, across days', () => {
   // Consecutive entries always differ.
   for (let i = 1; i < sr03.length; i++) assert.notStrictEqual(sr03[i].text, sr03[i - 1].text);
   assert.ok(!('__last' in turns));
+});
+
+test('orders: each train followed from first sighting to on duty', () => {
+  const { hist, out } = makeHistory();
+  buildSite({ historyDir: hist, outDir: out, days: 0 });
+  const { trains } = JSON.parse(fs.readFileSync(path.join(out, 'data/trains.json'), 'utf8'));
+  const byId = Object.fromEntries(trains.map((r) => [r.id, r]));
+  // Seen PLN for 15th 0705 on the 14th, ORD for 0400 at 0143, on duty 0345.
+  const m = byId['M30241 13'];
+  assert.strictEqual(m.month, '2026-10');
+  assert.strictEqual(m.firstSeen, '2026-10-14 1617');
+  assert.strictEqual(m.firstPlan, '2026-10-15 0705');
+  assert.strictEqual(m.firstOrder, '2026-10-15 0400');
+  assert.strictEqual(m.onDuty, '2026-10-15 0345');
+  assert.strictEqual(m.offPlan, -200);
+  assert.strictEqual(m.offOrder, -15);
+  assert.strictEqual(m.day, '2026-10-15');
+  assert.deepStrictEqual(m.events.map((e) => e.kind), ['seen', 'ordered', 'onDuty']);
+  // Plan moves are kept; no on duty yet → no "off".
+  const x = byId['X30241 13'];
+  assert.strictEqual(x.planChanges, 2);
+  assert.strictEqual(x.offPlan, null);
+});
+
+test('orders: an ordered time that changes is counted, and month ends resolve', () => {
+  const T = BoardTrains;
+  const snap = (taken, status, order, onDuty) => ({ taken, lineup: onDuty ? [] : [{ train: 'Q12345 31', status, order }],
+    onDuty: onDuty ? [{ train: 'Q12345 31', onDuty, station: 'SARNIA', crew: 'CO SR04' }] : [] });
+  const st = T.track([
+    snap('2026-10-31 2210', 'PLN', '1st 0600'),
+    snap('2026-11-01 0350', 'ORD', '1st 0815'),
+    snap('2026-11-01 0620', 'ORD', '1st 0900'),
+    snap('2026-11-01 0850', null, null, '1st 0845'),
+  ]);
+  const [r] = T.summarize(st);
+  assert.strictEqual(r.month, '2026-10'); // origin day 31 → October, though ordered in November
+  assert.strictEqual(r.firstPlan, '2026-11-01 0600');
+  assert.strictEqual(r.firstOrder, '2026-11-01 0815');
+  assert.strictEqual(r.order, '2026-11-01 0900');
+  assert.strictEqual(r.orderChanges, 1);
+  assert.strictEqual(r.offPlan, 165);
+  assert.strictEqual(r.offOrder, 30);
+  assert.strictEqual(r.day, '2026-11-01');
 });

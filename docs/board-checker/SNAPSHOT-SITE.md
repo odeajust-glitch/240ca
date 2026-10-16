@@ -6,6 +6,11 @@ publishes it to Netlify (site **boardtestsa**, https://boardtestsa.netlify.app)
 by itself: after a check where something changed, at most every 30 minutes.
 Nothing about whose turn it is goes on the site; names are masked as always.
 
+The site has two views: **Snapshots** (every check, with "Find a turn" and
+its history) and **Order summary** (each line-up train from the first time
+it was seen to its on-duty time on the Call Board, with how far the first
+planned and ordered times were off). Both are built from the same history.
+
 The code is on the branch `claude/vigilant-planck-zawrj4` (it includes
 everything from `claude/auto-board-checker-plan-hdk1n5`).
 

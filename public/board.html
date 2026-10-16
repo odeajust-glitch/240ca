@@ -196,7 +196,41 @@
   .empty { padding: 12px 14px; color: var(--soft); font-size: 13.5px; margin: 0; }
   .note { font-size: 12px; color: var(--soft); margin: 22px 0 0; max-width: 80ch; }
 
+  .modes { display: flex; gap: 4px; margin-left: 12px; }
+  .modes button { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 5px 12px; cursor: pointer; font: 600 13px/1 var(--body); color: var(--soft); }
+  .modes button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  body.orders .rail { display: none; }
+  body.orders .wrap { grid-template-columns: minmax(0, 1fr); }
+  .ohead { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ohead .when { font: 700 40px/1 var(--display); }
+  .ohead .ctl { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .ohead label { display: grid; gap: 4px; font-size: 12px; color: var(--soft); }
+  .ohead select, .ohead input { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; }
+  .ohead input { font-family: var(--mono); text-transform: uppercase; width: 150px; }
+  .ohead input::placeholder { font-family: var(--body); text-transform: none; color: var(--soft); }
+  table.orders td, table.orders th { white-space: nowrap; }
+  table.orders tr.row { cursor: pointer; }
+  table.orders tr.row:hover td { background: var(--rule-soft); }
+  table.orders tr.open td { background: var(--accent-tint); }
+  table.orders tr.hit td { background: var(--amber-tint); }
+  .offv { font: 600 13px/1 var(--mono); }
+  .offv.ok { color: var(--go); }
+  .offv.late { color: var(--stop); }
+  .offv.early { color: var(--poolA); }
+  .offv.none { color: var(--soft); font-weight: 400; }
+  .story td { background: var(--sheet) !important; white-space: normal !important; padding: 4px 14px 14px 30px; }
+  .story ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; }
+  .story li { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; }
+  .story li .k { font-weight: 600; }
+  .story li.big .k { color: var(--accent); }
+  .story button { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font: 500 12.5px/1.5 var(--mono); text-align: left; }
+  .story .sum { margin-top: 10px; display: grid; gap: 3px; font-size: 13.5px; }
+  .chg { color: var(--amber); font-weight: 600; }
   @media (max-width: 700px) {
+    .ohead .when { font-size: 30px; }
+    .ohead .ctl { margin-left: 0; }
+    .modes { margin-left: 0; }
+    .story li { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .tp { grid-template-columns: minmax(0, 1fr); }
     .tp > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
   }
@@ -232,6 +266,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
+  <div class="modes" role="group" aria-label="View"><button id="modeSnap" type="button" aria-pressed="true">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
 </div>
@@ -249,6 +284,7 @@
   <main id="view"><p class="empty">Loading snapshots…</p></main>
 </div>
 <script src="board-turns.js"></script>
+<script src="board-trains.js"></script>
 <script>
 let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -401,6 +437,103 @@ function turnHistory(entries, current) {
   }).join('')}</ul>`;
 }
 
+// --- Order summary ---------------------------------------------------------
+
+// "2026-10-17 0815" → "17th 0815"
+function dt(stamp) {
+  if (!stamp) return '—';
+  const d = +stamp.slice(8, 10);
+  const suf = d >= 11 && d <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[d % 10] || 'th');
+  return `${d}${suf} ${stamp.slice(11)}`;
+}
+function dur(min) {
+  const a = Math.abs(min);
+  const h = Math.floor(a / 60);
+  const m = a % 60;
+  return h ? `${h} h ${String(m).padStart(2, '0')} m` : `${m} m`;
+}
+const ON_TIME = 15; // within this many minutes counts as on time
+function offCell(min) {
+  if (min == null) return '<span class="offv none">—</span>';
+  if (Math.abs(min) <= ON_TIME) return `<span class="offv ok">on time${min ? ` (${min > 0 ? '+' : '−'}${dur(min)})` : ''}</span>`;
+  return min > 0 ? `<span class="offv late">${dur(min)} late</span>` : `<span class="offv early">${dur(min)} early</span>`;
+}
+
+function story(r) {
+  const line = (e) => {
+    const time = `<button type="button" data-taken="${esc(e.taken)}" title="Open this snapshot">${esc(dt(e.taken))}</button>`;
+    const t = {
+      seen: () => `<span class="k">First on the line-up</span>, ${e.status} for ${esc(dt(e.at))}`,
+      planChange: () => `Plan moved ${esc(dt(e.from))} → <b>${esc(dt(e.at))}</b> (${BoardTrains.off(e.from, e.at) > 0 ? '+' : '−'}${dur(BoardTrains.off(e.from, e.at))})`,
+      ordered: () => `<span class="k">Ordered</span> for <b>${esc(dt(e.at))}</b>`,
+      orderChange: () => `<span class="k chg">Order changed</span> ${esc(dt(e.from))} → <b>${esc(dt(e.at))}</b> (${BoardTrains.off(e.from, e.at) > 0 ? '+' : '−'}${dur(BoardTrains.off(e.from, e.at))})`,
+      onDuty: () => `<span class="k">On duty</span> ${esc(dt(e.at))} (Call Board${e.crew ? `, ${esc(e.crew)}` : ''})`,
+      onDutyChange: () => `On-duty time corrected ${esc(dt(e.from))} → ${esc(dt(e.at))}`,
+      gone: () => 'Off the line-up without showing on the Call Board (cancelled, or on duty between checks)',
+      back: () => `Back on the line-up, ${e.status} for ${esc(dt(e.at))}`,
+    }[e.kind];
+    return `<li class="${/ordered|onDuty$|seen/.test(e.kind) ? 'big' : ''}">${time}<span>${t ? t() : esc(e.kind)}</span></li>`;
+  };
+  const sum = [];
+  if (r.onDuty && r.firstPlan) sum.push(`First plan ${esc(dt(r.firstPlan))} → on duty ${esc(dt(r.onDuty))}: ${offCell(r.offPlan)}`);
+  if (r.onDuty && r.firstOrder) sum.push(`First order ${esc(dt(r.firstOrder))} → on duty ${esc(dt(r.onDuty))}: ${offCell(r.offOrder)}`);
+  if (!r.firstPlan && r.firstOrder) sum.push('Already ordered the first time it was seen, so there is no plan to compare.');
+  if (r.onDuty && !r.firstOrder) sum.push('Never seen as ORD: it went from planned to on duty between two checks.');
+  if (r.onDuty && r.leadMin != null) sum.push(`First seen ${dur(r.leadMin)} before going on duty.`);
+  return `<tr class="story"><td colspan="8"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
+}
+
+function ordersView(all, day, openId, find) {
+  const days = [...new Set(all.map((r) => r.day))].sort().reverse();
+  if (!days.length) return '<p class="empty">No trains yet. They appear here once the board checker has saved a few checks.</p>';
+  if (!days.includes(day)) day = days[0];
+  // In time order: on duty, else the latest order or plan.
+  const due = (r) => r.onDuty || r.order || r.plan || r.firstSeen;
+  const rows = all.filter((r) => r.day === day).sort((a, b) => (due(a) < due(b) ? -1 : due(a) > due(b) ? 1 : 0));
+  const done = rows.filter((r) => r.onDuty);
+  const vsPlan = done.filter((r) => r.offPlan != null);
+  const avg = vsPlan.length ? Math.round(vsPlan.reduce((n, r) => n + Math.abs(r.offPlan), 0) / vsPlan.length) : null;
+  const onTime = vsPlan.filter((r) => Math.abs(r.offPlan) <= ON_TIME).length;
+  const late = vsPlan.filter((r) => r.offPlan > ON_TIME).length;
+  const early = vsPlan.filter((r) => r.offPlan < -ON_TIME).length;
+  const changed = rows.filter((r) => r.orderChanges > 0).length;
+  const w = when(day + ' 0000');
+  const q = find.trim().toUpperCase();
+  const body = rows.map((r) => {
+    const key = `${r.id} ${r.month}`;
+    const hit = q && r.id.replace(/\s+/g, '').includes(q.replace(/\s+/g, ''));
+    const tr = `<tr class="row${key === openId ? ' open' : ''}${hit ? ' hit' : ''}" data-key="${esc(key)}">
+      <td class="num"><b>${esc(r.id)}</b>${r.deadhead ? ' <span class="chip">DH</span>' : ''}</td>
+      <td class="num">${esc(dt(r.firstSeen))}</td>
+      <td class="num">${esc(dt(r.firstPlan))}</td>
+      <td class="num">${esc(dt(r.firstOrder))}</td>
+      <td class="num">${r.orderChanges ? `<span class="chg">${r.orderChanges} → ${esc(dt(r.order))}</span>` : (r.firstOrder ? '0' : '—')}</td>
+      <td class="num"><b>${r.onDuty ? esc(dt(r.onDuty)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
+      <td>${offCell(r.offPlan)}</td>
+      <td>${offCell(r.offOrder)}</td></tr>`;
+    return tr + (key === openId ? story(r) : '');
+  }).join('');
+  return `
+    <div class="ohead">
+      <div><div class="sec-title" style="margin-bottom:6px">Order summary</div><div class="when">${esc(w.long)}</div></div>
+      <div class="ctl">
+        <label for="oday">Day<select id="oday">${days.map((d) => `<option value="${d}"${d === day ? ' selected' : ''}>${esc(when(d + ' 0000').day)}</option>`).join('')}</select></label>
+        <label for="ofind">Find a train<input id="ofind" placeholder="e.g. M30241 15" value="${esc(find)}" autocomplete="off" spellcheck="false"></label>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
+      <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
+      <div class="stat"><div class="v">${onTime} <small>on time · ${late} late · ${early} early</small></div><div class="l">Against the first plan (±${ON_TIME} m)</div></div>
+      <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
+    </div>
+    <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
+      <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th></tr></thead>
+      <tbody>${body}</tbody></table></div>
+      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks.</div>
+    </section>`;
+}
+
 async function source() {
   try {
     const index = await getJSON('data/index.json');
@@ -410,6 +543,7 @@ async function source() {
       days: index.days.map((d) => d.day),
       load: (day) => cache.get(day) || cache.set(day, getJSON(`data/${day}.json`).then((d) => d.snapshots)).get(day),
       turns: once(() => getJSON('data/turns.json').then((d) => d.turns)),
+      trains: once(() => getJSON('data/trains.json').then((d) => d.trains)),
     };
   } catch {
     const data = await getJSON('board-sample.json');
@@ -423,7 +557,8 @@ async function source() {
       byDay.get(day).push(snap);
     }
     return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [],
-      turns: once(async () => BoardTurns.history(data.snapshots)) };
+      turns: once(async () => BoardTurns.history(data.snapshots)),
+      trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))) };
   }
 }
 
@@ -495,6 +630,7 @@ source().then(async (src) => {
 
   function show(i, keepTab) {
     cur = i;
+    if (document.body.classList.contains('orders')) return;
     const s = list[i];
     document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
     if (focus && !keepTab) {
@@ -542,16 +678,54 @@ source().then(async (src) => {
     }
   }
 
+  // Snapshots ⇄ Order summary.
+  const order = { day: null, open: null, find: '' };
+  const modeSnap = document.getElementById('modeSnap');
+  const modeOrders = document.getElementById('modeOrders');
+  function setMode(orders) {
+    document.body.classList.toggle('orders', orders);
+    modeSnap.setAttribute('aria-pressed', !orders);
+    modeOrders.setAttribute('aria-pressed', orders);
+    if (orders) renderOrders();
+    else if (list.length) show(cur);
+  }
+  async function renderOrders() {
+    const view = document.getElementById('view');
+    view.innerHTML = '<p class="empty">Loading the order summary…</p>';
+    let all;
+    try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The order summary isn\'t available right now.</p>'; return; }
+    if (!document.body.classList.contains('orders')) return;
+    // Searching a train opens the day it belongs to.
+    const q = order.find.trim().toUpperCase().replace(/\s+/g, '');
+    const match = q && all.find((r) => r.id.replace(/\s+/g, '') === q);
+    if (match) { order.day = match.day; order.open = `${match.id} ${match.month}`; }
+    if (!order.day) order.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
+    view.innerHTML = ordersView(all, order.day, order.open, order.find);
+    try { history.replaceState(null, '', '#orders'); } catch (e) { /* not allowed in some frames */ }
+    document.getElementById('oday').onchange = (e) => { order.day = e.target.value; order.open = null; order.find = ''; renderOrders(); };
+    const find = document.getElementById('ofind');
+    find.onkeydown = (e) => { if (e.key === 'Enter') { order.find = find.value; renderOrders(); } };
+    find.onchange = () => { order.find = find.value; renderOrders(); };
+    view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { order.open = order.open === tr.dataset.key ? null : tr.dataset.key; order.find = ''; renderOrders(); }; });
+    view.querySelectorAll('.story button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); setMode(false); jumpTo(b.dataset.taken); }; });
+    const open = view.querySelector('tr.open');
+    if (open && match) open.scrollIntoView({ block: 'center' });
+  }
+  modeSnap.onclick = () => setMode(false);
+  modeOrders.onclick = () => setMode(true);
+
   document.getElementById('rail').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
     if (b) show(+b.dataset.i);
   });
   daySel.onchange = () => openDay(daySel.value);
 
-  // A link like #2026-10-15-0815 opens that snapshot.
+  // A link like #2026-10-15-0815 opens that snapshot; #orders the order summary.
+  const wantOrders = location.hash === '#orders';
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) openDay(m[1], `${m[1]} ${m[2]}`);
-  else openDay(src.days[0]);
+  else await openDay(src.days[0]);
+  if (wantOrders) setMode(true);
 }).catch((err) => {
   document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;
 });

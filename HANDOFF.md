@@ -35,6 +35,16 @@ run that branch):
   (an entry each time what the board said about it changed; click one to jump
   there). Logic in `public/board-turns.js`, shared by the page and the builder;
   the builder writes `data/turns.json`. Last turn is remembered per browser.
+- **Order summary** (owner, same evening): "Order summary" button in the top
+  bar (`#orders`). Each Sarnia line-up train, keyed by its ID (symbol + origin
+  day, pinned to the nearest real date so it's unique per month), followed
+  from first sighting (PLN time) through plan changes, ORD (first ordered
+  time) and order changes, to its on-duty time on the Call Board (option 6).
+  Per day (the on-duty date): went on duty, average off first plan vs on
+  duty, on time/late/early (±15 m), order times changed after ordering; tap a
+  train for its story. Owner: compare as CATS shows them, no prep
+  adjustment. Logic in `public/board-trains.js` (page + builder);
+  `data/trains.json`. Needs real history to be useful (fixtures show it works).
 
 ## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"
 The owner runs board checks only while waiting in Sarnia, because the line-ups
