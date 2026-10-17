@@ -232,15 +232,15 @@ test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/y
   const T = BoardTrains;
   const base = { screens: ['lineup', 'macLineup', 'bunkhouse'], onDuty: [], bunkhouse: [], macLineup: [], lineup: [] };
   const snaps = [
-    // Sarnia: E27121 on duty 0300 with SD11/SR05. Toronto: two trains, no rested crew.
-    { ...base, taken: '2026-10-17 0100', lineup: [{ train: 'E27121 17', status: 'ORD', order: '17th 0315' }],
+    // Sarnia: E27861 on duty 0300 with SD11/SR05. Toronto: two trains, no rested crew.
+    { ...base, taken: '2026-10-17 0100', lineup: [{ train: 'E27861 17', status: 'ORD', order: '17th 0315' }],
       macLineup: [{ train: 'Q13931 17', status: 'PLN', order: '17th 1430' }, { train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
       bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1000', ready: false }] },
-    { ...base, taken: '2026-10-17 0310', onDuty: [{ train: 'E27121 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
+    { ...base, taken: '2026-10-17 0310', onDuty: [{ train: 'E27861 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
       macLineup: [{ train: 'Q13931 17', status: 'PLN', order: '17th 1430' }, { train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
       bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1000', ready: false }] },
     // SD11/SR05 tie up in Toronto: rest to 1754 → off duty 0754 (4 h 54 m on duty). Rested now, Q13931 gone.
-    { ...base, taken: '2026-10-17 1400', onDuty: [{ train: 'E27121 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
+    { ...base, taken: '2026-10-17 1400', onDuty: [{ train: 'E27861 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
       macLineup: [{ train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
       bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0754', ready: false }] },
     { ...base, taken: '2026-10-17 1800', macLineup: [],
@@ -249,7 +249,7 @@ test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/y
       bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0754', ready: true }] },
   ];
   const rows = Object.fromEntries(T.summarize(T.track(snaps)).map((r) => [r.id, r]));
-  const e = rows['E27121 17'];
+  const e = rows['E27861 17'];
   assert.strictEqual(e.offDuty, '2026-10-17 0754');
   assert.strictEqual(e.timeOnDuty, 4 * 60 + 54);
   // Q13931 left at 1400 when no crew was rested → Non-Sarnia Crew.
@@ -260,4 +260,29 @@ test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/y
   // Not flagged until 30 minutes have passed without a Call Board sighting.
   const early = Object.fromEntries(T.summarize(T.track(snaps.slice(0, 4))).map((r) => [r.id, r]));
   assert.strictEqual(early['Z14931 17'].flag, null);
+});
+
+test('orders: no Toronto off-duty time for L501/L502 or trains starting in Toronto', () => {
+  const T = BoardTrains;
+  const base = { screens: ['lineup', 'macLineup', 'bunkhouse'], lineup: [], macLineup: [], bunkhouse: [] };
+  const snaps = [
+    { ...base, taken: '2026-10-17 0100', lineup: [{ train: 'L50231 17', status: 'ORD', order: '17th 0400' }],
+      macLineup: [{ train: 'M30131 17', status: 'ORD', order: '17th 1045' }], onDuty: [] },
+    { ...base, taken: '2026-10-17 0400', onDuty: [{ train: 'L50231 17', onDuty: '17th 0345', station: 'SARNIA', crew: 'EN S501 · CO S502' }],
+      macLineup: [{ train: 'M30131 17', status: 'ORD', order: '17th 1045' }] },
+    // The L502 crew in the bunkhouse is never matched to it.
+    { ...base, taken: '2026-10-17 1500', onDuty: [{ train: 'M30131 17', onDuty: '17th 1030', station: 'TORONTO', crew: 'EN S304 · CO SB04' }],
+      bunkhouse: [{ pos: '001', en: 'S501', co: 'S502', rested: '17th 1900', offDuty: '17th 0900', ready: false }] },
+  ];
+  const rows = Object.fromEntries(T.summarize(T.track(snaps)).map((r) => [r.id, r]));
+  assert.strictEqual(rows['L50231 17'].noOffDuty, true);
+  assert.strictEqual(rows['L50231 17'].offDuty, null);
+  assert.strictEqual(rows['M30131 17'].noOffDuty, true);
+  assert.strictEqual(rows['L50231 17'].from, 'sarnia');
+  // Odd third digit = starts in Toronto, even on Sarnia's line-up; even = Sarnia's.
+  const st = T.track([{ ...base, taken: '2026-10-17 0100', onDuty: [],
+    lineup: [{ train: 'M39931 17', status: 'PLN', order: '17th 0900' }, { train: 'M30241 17', status: 'PLN', order: '17th 0900' }] }]);
+  const r2 = Object.fromEntries(T.summarize(st).map((r) => [r.id, r]));
+  assert.strictEqual(r2['M39931 17'].noOffDuty, true);
+  assert.strictEqual(r2['M30241 17'].noOffDuty, false);
 });

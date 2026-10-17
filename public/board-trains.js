@@ -48,6 +48,12 @@
   const SOURCES = [['sarnia', 'lineup'], ['mac', 'macLineup']];
   const wasRead = (s, field) => (s.screens ? s.screens.includes(field) : (s[field] || []).length > 0);
   const REST_MIN = 600; // bunkhouse rest is always 10 h after off duty (owner)
+  // No Toronto off-duty time for L501/L502 (S5) or trains that start in
+  // Toronto (owner, 2026-10-17).
+  // A train starts in Toronto when it's on Mac yard's line-up, or its
+  // manifest number's third digit is odd (M399, A425; same rule as engine.js).
+  const torontoStart = (id) => { const m = /^([A-Z]+)\d\d(\d)/.exec(id); return !!m && !/^DH/.test(m[1]) && +m[2] % 2 === 1; };
+  const noOffDuty = (r) => r.from === 'mac' || /^L50[12]/.test(r.id) || torontoStart(r.id);
   const crewHas = (crew, turn) => new RegExp(`(^|[^A-Z0-9])${turn}([^A-Z0-9]|$)`).test(crew || '');
 
   // Feeds snapshots (oldest first) into `state`; call it again with more
@@ -111,7 +117,7 @@
       for (const c of s.bunkhouse || []) {
         if (!c.rested || !c.en || !c.co) continue;
         const offAt = fromMin(toMin(resolve(c.rested, s.taken)) - REST_MIN);
-        const mine = Object.values(state.trains).filter((r) => r.from === 'sarnia' && r.onDuty && !r.offDuty
+        const mine = Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty
           && crewHas(r.crew, c.en) && crewHas(r.crew, c.co) && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
         const r = mine.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
         if (!r) continue;
@@ -152,7 +158,7 @@
     return Object.values(state.trains).map((r) => {
       const due = r.onDuty || r.order || r.plan;
       return { ...r, from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
-        leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), flag: flagOf(r, state.lastTaken) };
+        leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken) };
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }
 
