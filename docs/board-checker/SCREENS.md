@@ -261,3 +261,9 @@ ENG CRW TRN CRW`, ends with END OF FILE.
 - ORSTN = origin station; rows with other ORSTN (42368, 42397) are taken in
   order like the rest (owner): **all** these trains, in order.
 - What to look for and show: owner will say.
+- **Flags (owner, 2026-10-17)**, on the Order summary: a Mac yard train that
+  drops off this line-up and never shows up on the Call Board (option 6):
+  - no crews available in the bunkhouse at the time → **"Non-Sarnia Crew"**,
+    train ID in **red**;
+  - crews were available → **"Possible Non-Sarnia Crew or Train Cancelled"**,
+    train ID in **yellow**.
