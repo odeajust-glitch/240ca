@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const express = require('express');
-const { BoardRelay, boardRoutes, pushCheck, mineForPhone, validateCheck } = require('../../lib/board/relay');
+const { BoardRelay, boardRoutes, pushCheck, mineForPhone, validateCheck, hideBoardSite } = require('../../lib/board/relay');
 const { at } = require('../../lib/board/time');
 
 const KEY = 'test-key-123';
@@ -97,4 +97,19 @@ test('relay: "when you go" as fields for the phone', () => {
   assert.ok(validateCheck({ ...base, mine: { ...linedUp, onDutyAt: 'soon' } }).error);
   assert.ok(validateCheck({ ...base, mine: { turn: 'SR03', state: 'asleep' } }).error);
   assert.strictEqual(validateCheck({ ...base, mine: { ...linedUp, extra: 'x' } }).check.mine.extra, undefined);
+});
+
+test('relay: the line-up website stays off the agreement-search site', async () => {
+  const app = express();
+  app.use(hideBoardSite);
+  app.use(express.static(path.join(__dirname, '../../public')));
+  const server = app.listen(0);
+  const url = `http://127.0.0.1:${server.address().port}`;
+  try {
+    for (const p of ['/board.html', '/board-turns.js', '/board-trains.js', '/board-sample.json', '/Board.html', '/board%2Ehtml', '/x/../board.html', '/%2e%2e/public/board.html']) {
+      assert.strictEqual((await fetch(url + p)).status, 404, p);
+    }
+    assert.strictEqual((await fetch(`${url}/index.html`)).status, 200);
+    assert.strictEqual((await fetch(`${url}/`)).status, 200);
+  } finally { server.close(); }
 });

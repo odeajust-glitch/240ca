@@ -8,7 +8,7 @@ const { streamKimi, FAST_MODEL, SLOW_MODEL, NOT_FOUND_PATTERN } = require('./lib
 const { SOURCES, SOURCE_NAMES, ALL_SOURCE_IDS, DEFAULT_SOURCE_IDS, findConflict } = require('./lib/sources');
 const { rateLimit } = require('./lib/rate-limit');
 const { Analytics } = require('./lib/analytics');
-const { BoardRelay, boardRoutes } = require('./lib/board/relay');
+const { BoardRelay, boardRoutes, hideBoardSite } = require('./lib/board/relay');
 
 const PORT = process.env.PORT || 5174;
 const MAX_QUESTION_LENGTH = 500;
@@ -26,6 +26,7 @@ const app = express();
 // address for everyone and the rate limit would be shared globally.
 app.set('trust proxy', 1);
 app.use(express.json());
+app.use(hideBoardSite); // the line-up website is on Netlify only
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Cost protection for the paid Kimi calls behind /api/ask.
