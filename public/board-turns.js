@@ -57,22 +57,75 @@
     return [...set].filter((t) => /^[A-Z]{1,2}\d{2,3}$/.test(t)).sort();
   }
 
-  // History of every turn across snapshots (oldest first): an entry each time
-  // what the board says about the turn changes. `into` lets the builder carry
-  // it across days.
+  // "2026-10-15 0815" → minutes, to measure how long something lasted.
+  const minOf = (t) => { const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})$/.exec(t || ''); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) / 60000 : null; };
+  // A change that lasted less than this before the next one is left out of
+  // the history (owner, 2026-10-17), unless it's an order, rest or spare.
+  const KEEP_MIN = 30;
+
+  // Each turn's history across snapshots (oldest first), carried across days
+  // through `into` by the builder:
+  //   changes: what the board said, each time it changed
+  //   orders:  trains it was projected for, called on, went on duty on
+  //   rests:   each rest (or hold) period, with when it was first seen
+  //   spares:  each time it went spare (**, B0, or its train going spare)
   function history(snapshots, into = {}) {
     const last = into.__last || (into.__last = {});
+    const rec = (turn) => into[turn] || (into[turn] = { changes: [], orders: [], rests: [], spares: [] });
     for (const s of snapshots) {
       const seen = new Set(turnsIn(s));
       for (const turn of new Set([...seen, ...Object.keys(last)])) {
-        const text = seen.has(turn) ? summary(s, turn) : 'Not on any screen in this check';
-        if (last[turn] === text) continue;
+        const f = seen.has(turn) ? facts(s, turn) : [];
+        const text = f.length ? f.map((x) => x.text).join(' · ') : 'Not on any screen in this check';
         if (!seen.has(turn) && last[turn] === undefined) continue;
-        (into[turn] || (into[turn] = [])).push({ taken: s.taken, text });
-        last[turn] = text;
+        const r = rec(turn);
+        if (last[turn] !== text) {
+          r.changes.push({ taken: s.taken, text, key: f.some((x) => x.kind === 'onDuty' || x.kind === 'sequence' || /goes spare|rest until|hold turn/.test(x.text)) });
+          last[turn] = text;
+        }
+        for (const x of f) {
+          if (x.kind === 'lineup' || x.kind === 'homeTrain' && x.train || x.kind === 'onDuty' || x.kind === 'sequence') {
+            let o = r.orders.find((y) => y.train === x.train);
+            if (!o) r.orders.push(o = { train: x.train, first: s.taken });
+            o.last = s.taken;
+            if (x.kind === 'lineup') o.projected = x.text.replace(/^Projected for \S+ \S+ /, '');
+            if (x.kind === 'homeTrain') o.projected = x.text.replace(/^Predicted home on \S+ \S+ /, 'home from Toronto ');
+            if (x.kind === 'onDuty' && !o.onDuty) { o.onDuty = x.text.replace(/^On duty on \S+ \S+ /, ''); o.onDutySeen = s.taken; }
+            if (x.kind === 'sequence') o.called = x.text.replace(/^Called on \S+ \S+ /, '');
+          }
+          const rest = /(rest until|hold turn until) (\S+ \d{4})/.exec(x.text);
+          if (rest) {
+            const kind = rest[1] === 'rest until' ? 'Rest' : 'Hold turn';
+            if (!r.rests.some((y) => y.until === rest[2] && y.kind === kind)) r.rests.push({ kind, until: rest[2], seen: s.taken, where: x.kind === 'bunkhouse' ? 'Toronto bunkhouse' : (x.pool || '').replace(/ ·.*/, '') });
+          }
+          const spare = x.kind === 'pool' && /goes spare|B0/.test(x.status) ? x.status
+            : x.kind === 'lineup' && /goes spare/.test(x.text) ? `its train ${x.train} goes spare to the spareboard` : null;
+          if (spare) {
+            // Still going on from the last check: stretch it, don't repeat it.
+            const prev = r.spares.find((y) => y.text === spare && (y.last === r.lastTaken || y.last === s.taken));
+            if (prev) prev.last = s.taken;
+            else r.spares.push({ text: spare, seen: s.taken, last: s.taken });
+          }
+        }
+        r.lastTaken = s.taken;
       }
     }
     return into;
+  }
+
+  // The finished history for the page: short-lived changes (under KEEP_MIN
+  // before the next) dropped unless they're key; working fields removed.
+  function finish(into) {
+    const out = {};
+    for (const [turn, r] of Object.entries(into)) {
+      if (turn === '__last') continue;
+      const changes = r.changes.filter((c, i) => {
+        const next = r.changes[i + 1];
+        return !next || c.key || minOf(next.taken) - minOf(c.taken) >= KEEP_MIN;
+      }).map(({ taken, text }) => ({ taken, text }));
+      out[turn] = { changes, orders: r.orders, rests: r.rests, spares: r.spares };
+    }
+    return out;
   }
 
   function shortPool(name) {
@@ -82,7 +135,7 @@
     return s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
   }
 
-  const api = { facts, summary, turnsIn, history, turnIn };
+  const api = { facts, summary, turnsIn, history, finish, turnIn, KEEP_MIN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTurns = api;
 })(this);

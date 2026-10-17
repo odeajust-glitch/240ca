@@ -91,6 +91,9 @@
   .tp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
   .tp > div { min-width: 0; padding: 12px 14px; }
   .tp > div + div { border-left: 1px solid var(--rule-soft); }
+  .tp3 { grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule-soft); }
+  .tp3:empty { display: none; }
+  .tp h3 .muted { text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 400; }
   .tp h3 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
   .tp ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
   .tp li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 6px; }
@@ -239,6 +242,7 @@
     .story li { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .tp { grid-template-columns: minmax(0, 1fr); }
     .tp > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
+    .tp3 { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 1020px) {
     .grid { grid-template-columns: minmax(0, 1fr); }
@@ -464,18 +468,29 @@ function turnPanel(s) {
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
   return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><button id="turnclose" type="button">Close</button></header>
-    <div class="tp"><div><h3>In this snapshot</h3>${here}</div>
-    <div><h3>History</h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div></section>`;
+    <div class="tp"><div><h3>Current snapshot</h3>${here}</div>
+    <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
+    <div class="tp tp3" id="turnmore"></div></section>`;
 }
-function turnHistory(entries, current) {
-  if (!entries || !entries.length) return '<p class="empty" style="padding:0">No history for this turn in the saved checks.</p>';
-  // The entry in force at the snapshot being viewed.
+// A time that opens that snapshot.
+const stampBtn = (taken) => { const w = when(taken); return `<button type="button" data-taken="${esc(taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button>`; };
+// The turn's history (BoardTurns.finish): changes, then orders, rest and
+// spare, newest first. `current` marks the change in force at this snapshot.
+function turnHistory(rec, current) {
+  const none = (what) => `<p class="empty" style="padding:0">${what}</p>`;
+  if (!rec || !rec.changes.length) return { changes: none('No history for this turn in the saved checks.'), more: '' };
   let nowIdx = -1;
-  entries.forEach((e, i) => { if (e.taken <= current) nowIdx = i; });
-  return `<ul>${entries.map((e, i) => [e, i]).reverse().map(([e, i]) => {
-    const w = when(e.taken);
-    return `<li class="${i === nowIdx ? 'now' : ''}"><button type="button" data-taken="${esc(e.taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button><span>${markTurn(e.text)}</span></li>`;
-  }).join('')}</ul>`;
+  rec.changes.forEach((e, i) => { if (e.taken <= current) nowIdx = i; });
+  const changes = `<ul>${rec.changes.map((e, i) => [e, i]).reverse().map(([e, i]) =>
+    `<li class="${i === nowIdx ? 'now' : ''}">${stampBtn(e.taken)}<span>${markTurn(e.text)}</span></li>`).join('')}</ul>`;
+  const orders = rec.orders.length ? `<ul>${[...rec.orders].reverse().map((o) => `<li>${stampBtn(o.first)}<span><b class="num">${esc(o.train)}</b>${
+    o.projected ? `<br>Projected: ${markTurn(o.projected)}` : ''}${o.called ? `<br>Called: ${esc(o.called)}` : ''}${
+    o.onDuty ? `<br><b>On duty</b> ${esc(o.onDuty)}` : ''}</span></li>`).join('')}</ul>` : none('No trains for this turn in the saved checks.');
+  const rests = rec.rests.length ? `<ul>${[...rec.rests].reverse().map((r) => `<li>${stampBtn(r.seen)}<span>${esc(r.kind)} until <b>${esc(r.until)}</b>${r.where ? ` <span class="muted">(${esc(r.where)})</span>` : ''}</span></li>`).join('')}</ul>`
+    : none('No rest or hold turn in the saved checks.');
+  const spares = rec.spares.length ? `<ul>${[...rec.spares].reverse().map((x) => `<li>${stampBtn(x.seen)}<span class="spare">Goes spare</span><span style="grid-column:2">${markTurn(x.text)}${x.last !== x.seen ? ` <span class="muted">(until ${esc(when(x.last).time)}${x.last.slice(0, 10) !== x.seen.slice(0, 10) ? ` ${esc(when(x.last).day)}` : ''})</span>` : ''}</span></li>`).join('')}</ul>`
+    : none('Never went spare in the saved checks.');
+  return { changes, more: `<div><h3>Orders</h3><div class="hist">${orders}</div></div><div><h3>Rest</h3><div class="hist">${rests}</div></div><div><h3>Goes spare</h3><div class="hist">${spares}</div></div>` };
 }
 
 // --- Order summary ---------------------------------------------------------
@@ -624,7 +639,7 @@ async function source() {
       byDay.get(day).push(snap);
     }
     return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [],
-      turns: once(async () => BoardTurns.history(data.snapshots)),
+      turns: once(async () => BoardTurns.finish(BoardTurns.history(data.snapshots))),
       trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))) };
   }
 }
@@ -734,8 +749,11 @@ source().then(async (src) => {
       src.turns().then((all) => {
         const box = document.getElementById('turnhist');
         if (!box || want !== focus) return;
-        box.innerHTML = turnHistory(all[focus], s.taken);
-        box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
+        const h = turnHistory(all[focus], s.taken);
+        box.innerHTML = h.changes;
+        const more = document.getElementById('turnmore');
+        if (more) more.innerHTML = h.more;
+        document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
         const now = box.querySelector('li.now');
         if (now) now.scrollIntoView({ block: 'nearest' });
       }).catch(() => {

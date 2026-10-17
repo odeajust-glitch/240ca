@@ -50,7 +50,15 @@ on the owner's calendar):**
 - #2 reverted: Sarnia's 41 no longer clears POOL; owner says an S1 left there
   is harmless.
 - #18 pull request to `main` opened; #17 old preview/zip removed.
-- **Laptop not updated yet**: owner will `git pull` + restart when back.
+- Laptop updated and restarted 2026-10-17; Startup shortcut added. PR #2
+  merged into `main`; this branch restarted from `main` for follow-ups.
+- **Turn history** (owner, 2026-10-17): the Find a turn panel shows the
+  current snapshot, then changes that lasted 30 m or more (orders, on duty,
+  rest/hold and spare always kept), then three lists: **Orders** (trains
+  projected for / called / on duty), **Rest** (each rest or hold period),
+  **Goes spare** (**, B0, or its train going spare; one line per stretch).
+  `BoardTurns.history` + `finish` in public/board-turns.js; turns.json shape
+  is now `{changes, orders, rests, spares}` per turn.
 
 ## ▶ Start here (2026-10-17): where things stand
 **Only one Claude session at a time may change the board checker / website.**
