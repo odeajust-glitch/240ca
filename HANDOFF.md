@@ -55,7 +55,12 @@ from `origin/claude/vigilant-planck-zawrj4`.
   (sample data). Manual zip = index.html + board-turns.js + board-trains.js +
   board-sample.json.
 
-**Next:** the owner wants to add another feature (they'll describe it).
+**Next (2026-10-17):** the owner wants board-checker info pushed to their shift
+tracker app (RailroadTracker). Plan:
+[docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-TRACKER-PLAN.md).
+Most of the pipe was built 2026-10-15 but never switched on: the relay isn't on `main`
+(which Render deploys), and the app's `board-relay` branch isn't installed. Waiting on
+the owner's answers to the plan's "Questions for the owner" before building Phase 2+.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
