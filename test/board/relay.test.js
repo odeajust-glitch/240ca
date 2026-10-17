@@ -4,7 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const express = require('express');
-const { BoardRelay, boardRoutes, pushCheck } = require('../../lib/board/relay');
+const { BoardRelay, boardRoutes, pushCheck, mineForPhone, validateCheck } = require('../../lib/board/relay');
+const { at } = require('../../lib/board/time');
 
 const KEY = 'test-key-123';
 const check = (at, me = ['You go on M38261 15, call ~1345']) => ({
@@ -70,4 +71,30 @@ test('relay: bad bodies are refused', async () => {
 test('relay: push never throws when the server is down', async () => {
   const sent = await pushCheck({ url: 'http://127.0.0.1:9', key: KEY, check: check('2026-10-15T20:00:00Z') });
   assert.strictEqual(sent.ok, false);
+});
+
+test('relay: "when you go" as fields for the phone', () => {
+  const linedUp = mineForPhone({
+    turn: 'SR03', train: 'M30241 17', status: 'PLN', deadhead: false,
+    order: at(2026, 10, 17, 15, 45), onDuty: at(2026, 10, 17, 15, 30), call: at(2026, 10, 17, 13, 30),
+  });
+  assert.deepStrictEqual(linedUp, {
+    turn: 'SR03', state: 'linedUp', train: 'M30241 17', status: 'PLN', deadhead: false,
+    callAt: '2026-10-17T13:30', onDutyAt: '2026-10-17T15:30',
+  });
+  assert.deepStrictEqual(
+    mineForPhone({ turn: 'SR03', lineupEnd: 0, ahead: [{ turn: 'SR07' }, { turn: 'SR01', until: 5 }], myRestUntil: at(2026, 10, 17, 10, 15) }),
+    { turn: 'SR03', state: 'waiting', ahead: ['SR07', 'SR01'], myRestUntil: '2026-10-17T10:15' },
+  );
+  assert.deepStrictEqual(mineForPhone({ turn: 'SR03', comingHome: 'M38261 16', onDutyAway: 0 }), { turn: 'SR03', state: 'comingHome', train: 'M38261 16' });
+  assert.deepStrictEqual(mineForPhone({ turn: 'SR03', notFound: true }), { turn: 'SR03', state: 'notFound' });
+  assert.strictEqual(mineForPhone(null), null);
+
+  // Survives the server's checks unchanged; old laptops without it still pass.
+  const base = check('2026-10-17T12:00:00Z');
+  assert.deepStrictEqual(validateCheck({ ...base, mine: linedUp }).check.mine, linedUp);
+  assert.strictEqual(validateCheck(base).check.mine, null);
+  assert.ok(validateCheck({ ...base, mine: { ...linedUp, onDutyAt: 'soon' } }).error);
+  assert.ok(validateCheck({ ...base, mine: { turn: 'SR03', state: 'asleep' } }).error);
+  assert.strictEqual(validateCheck({ ...base, mine: { ...linedUp, extra: 'x' } }).check.mine.extra, undefined);
 });
