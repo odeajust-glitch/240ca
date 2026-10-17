@@ -1,11 +1,61 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-16 (evening, new laptop) · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-17 · Branch: **`claude/vigilant-planck-zawrj4`** (has
+everything; the board-checker laptop runs it)
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
+
+## ▶ Start here (2026-10-17): where things stand
+**Only one Claude session at a time may change the board checker / website.**
+On 2026-10-16 a laptop session (on `claude/auto-board-checker-plan-hdk1n5`)
+and a website session (on `claude/vigilant-planck-zawrj4`) both changed
+`scripts/board-auto.js`, `lib/board/screens.js` and `summary.js`; the
+laptop's `git pull` hit conflicts. Fixed by merging the laptop branch into
+`claude/vigilant-planck-zawrj4` (commit 8e8c340, 40 tests). Develop on that
+branch and push there; if your session was given a different branch, start it
+from `origin/claude/vigilant-planck-zawrj4`.
+
+**What exists now:**
+- **Board checker** on the dedicated laptop (`C:\BoardChecker-code`, data in
+  `C:\Users\<you>\BoardChecker`): `node scripts/board-auto.js --me SR03 --every 5`.
+  Route: Call Board (3→6), 23 Chain Gang (CO), 19 A / 21 B (CO), 27 SD,
+  **25 S1 / 26 S3 (CC EN, owner)**, 41 line-up. Every check saved to
+  `history\<date>\<HHMM>.json`.
+- **Line-up snapshot website** for the union rep, on Netlify site
+  **boardtestsa** (https://boardtestsa.netlify.app, id
+  51fe13b9-72f2-4d91-8f6c-9a4afa292a58, public). Page `public/board.html`
+  + `public/board-turns.js` + `public/board-trains.js`; built from history by
+  `lib/board/site.js` (`scripts/board-site.js [--deploy]`), published by
+  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=30 min) when
+  `NETLIFY_AUTH_TOKEN` + `NETLIFY_SITE_ID` are in `BoardChecker\.env`.
+  Two views:
+  - **Snapshots**: every check (day picker, Earlier/Later), line-up 41 with
+    pool chips + "why", pools in tabs (Chain Gang, A, B, SD, S1, S3), Call
+    Board on duty, calling sequence, changes, flags. **Find a turn**
+    (highlight + panel + history across all checks; `data/turns.json`).
+  - **Order summary** (`#orders`): each line-up train by ID (symbol + origin
+    day, unique per month) from first seen (PLN time) → plan changes → ORD →
+    order changes → on duty on the Call Board (option 6, the "actual").
+    Per day: on duty count, average off, on time/late/early (±15 m), order
+    changes. No prep adjustment (owner). `data/trains.json`.
+  - Website drops "not ours" on L502 (owner).
+- Laptop setup steps: `docs/board-checker/SNAPSHOT-SITE.md`.
+
+**Not confirmed yet (ask the owner / check the laptop):**
+- Did the laptop's `git merge --abort` + `git pull` go through cleanly, and is
+  the board checker running on `claude/vigilant-planck-zawrj4`?
+- Netlify token + site ID added to `.env` and `board-site.js --deploy` worked?
+  (This sandbox can't reach api.netlify.com; deploy was only tested with a fake.)
+  Until then the site shows the 3 sample checks the owner uploaded by hand.
+- Screens 25/26 read on real CATS (no "skipped S1/S3 pool" lines)?
+- Owner previews: private artifact https://claude.ai/artifact/9MMCotd26Ev1UesVsW5pJM
+  (sample data). Manual zip = index.html + board-turns.js + board-trains.js +
+  board-sample.json.
+
+**Next:** the owner wants to add another feature (they'll describe it).
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
