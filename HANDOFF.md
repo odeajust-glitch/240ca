@@ -65,9 +65,14 @@ more. Plan: [docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-
 - RailroadTracker `board-relay` (e0ed9f8): `BoardAlerts.kt` decides the 3 alerts against
   the app's last look; the Board tab leads with "On duty …". Its handoff §9 has the rules.
   Unit tests pass on a plain JVM; **not yet built with Gradle/Android SDK**.
-- **Still blocking (owner):** (1) the relay isn't on `main`, which Render probably deploys:
-  merge + `BOARD_KEY` on Render (the plan's "Blockers"); (2) laptop `.env`
-  `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up the phone, install `board-relay`.
+- **Merged to `main`** (https://github.com/odeajust-glitch/240ca/pull/1, 2026-10-17, owner's
+  OK), with the line-up website's files (`board.html`, `board-turns.js`,
+  `board-trains.js`, `board-sample.json`) hidden on the Render site: `hideBoardSite` in
+  `lib/board/relay.js` returns 404 for them (owner). Netlify still builds from them. 42 tests.
+  Keep developing on `claude/vigilant-planck-zawrj4` (fast-forwarded to `main`); PR again.
+- **Still to do (owner):** (1) set `BOARD_KEY` on Render and confirm Render deploys `main`;
+  (2) laptop `git pull`, then `.env` `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up
+  the phone, install RailroadTracker `board-relay`.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
