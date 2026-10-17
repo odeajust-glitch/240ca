@@ -215,8 +215,8 @@
   table.orders tr.hit td { background: var(--amber-tint); }
   .offv { font: 600 13px/1 var(--mono); }
   .offv.ok { color: var(--go); }
-  .offv.late { color: var(--stop); }
-  .offv.early { color: var(--poolA); }
+  .offv.warn { color: var(--amber); }
+  .offv.bad { color: var(--stop); }
   .offv.none { color: var(--soft); font-weight: 400; }
   .story td { background: var(--sheet) !important; white-space: normal !important; padding: 4px 14px 14px 30px; }
   .story ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; }
@@ -485,10 +485,16 @@ function dur(min) {
   return h ? `${h} h ${String(m).padStart(2, '0')} m` : `${m} m`;
 }
 const ON_TIME = 15; // within this many minutes counts as on time
+// Colour by how far off, early or late alike (owner, 2026-10-17): under
+// 30 m green, 30 m to 1 h 56 m yellow, more than that red.
+const OFF_YELLOW = 30;
+const OFF_RED = 116;
 function offCell(min) {
   if (min == null) return '<span class="offv none">—</span>';
-  if (Math.abs(min) <= ON_TIME) return `<span class="offv ok">on time${min ? ` (${min > 0 ? '+' : '−'}${dur(min)})` : ''}</span>`;
-  return min > 0 ? `<span class="offv late">${dur(min)} late</span>` : `<span class="offv early">${dur(min)} early</span>`;
+  const a = Math.abs(min);
+  const band = a > OFF_RED ? 'bad' : a >= OFF_YELLOW ? 'warn' : 'ok';
+  if (a <= ON_TIME) return `<span class="offv ok">on time${min ? ` (${min > 0 ? '+' : '−'}${dur(min)})` : ''}</span>`;
+  return `<span class="offv ${band}">${dur(min)} ${min > 0 ? 'late' : 'early'}</span>`;
 }
 
 function story(r) {
@@ -581,7 +587,7 @@ function ordersView(all, day, openId, find, from = 'all') {
     <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
       <tbody>${body}</tbody></table></div>
-      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off duty in Toronto = the crew's bunkhouse rest − 10 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
+      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 10 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
     </section>`;
 }
 
