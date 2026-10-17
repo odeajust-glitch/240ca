@@ -24,7 +24,7 @@
 //
 // With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
 // website (lib/board/site.js) is rebuilt from history\ and published after a
-// check that changed, at most every BOARD_SITE_EVERY minutes (default 30).
+// check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
 const { DATA_DIR, ENV_FILES, PROFILE_DIR, HISTORY_DIR } = require('../lib/board/paths');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');

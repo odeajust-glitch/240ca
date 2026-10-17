@@ -29,7 +29,7 @@ from `origin/claude/vigilant-planck-zawrj4`.
   51fe13b9-72f2-4d91-8f6c-9a4afa292a58, public). Page `public/board.html`
   + `public/board-turns.js` + `public/board-trains.js`; built from history by
   `lib/board/site.js` (`scripts/board-site.js [--deploy]`), published by
-  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=30 min) when
+  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=90 min, owner 2026-10-17) when
   `NETLIFY_AUTH_TOKEN` + `NETLIFY_SITE_ID` are in `BoardChecker\.env`.
   Two views:
   - **Snapshots**: every check (day picker, Earlier/Later), line-up 41 with
@@ -101,7 +101,7 @@ run that branch):
   collapse into "same until"; settled days are cached; `BOARD_SITE_DAYS`,
   default 30) and publishes with Netlify's file-digest API (only changed
   files upload). `board-auto.js` publishes after a changed check, at most
-  every `BOARD_SITE_EVERY` min (default 30), when `NETLIFY_AUTH_TOKEN` +
+  every `BOARD_SITE_EVERY` min (default 90), when `NETLIFY_AUTH_TOKEN` +
   `NETLIFY_SITE_ID` are in `.env`. Never stops a check. 34 tests.
 - Netlify site: **boardtestsa** (id 51fe13b9-72f2-4d91-8f6c-9a4afa292a58),
   public. Owner first uploaded by hand (Netlify Drop). Laptop steps:
