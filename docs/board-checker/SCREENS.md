@@ -257,5 +257,7 @@ ENG CRW TRN CRW`, ends with END OF FILE.
 - The trains crews in the Mac bunkhouse (option 28) will take home.
 - **Crews are paired with these trains in their option-28 POS order**: the
   first crew home gets the first train, and so on.
-- Some rows have ORSTN other than 41975 (42368, 42397).
+- **Type S1 in the POOL box** (owner).
+- ORSTN = origin station; rows with other ORSTN (42368, 42397) are taken in
+  order like the rest (owner): **all** these trains, in order.
 - What to look for and show: owner will say.
