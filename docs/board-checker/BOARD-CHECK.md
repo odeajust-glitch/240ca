@@ -62,8 +62,8 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      | Train | 1145 | 0945 | skipped | skipped | **called** |
      **Rest ending exactly at the call time = available** (owner, 2026-10-17:
      "rest until 0000, so they are available at 0000"; this replaces the
-     earlier "exactly equal = still on rest"). HT (hold turn) is unchanged:
-     held up to and including the call time.
+     earlier "exactly equal = still on rest"). HT (hold turn) works the same
+     way (owner, 2026-10-17): hold until 0000 = available at 0000.
      Short calls (min 1 h at home) are ignored until the owner says they matter.
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.

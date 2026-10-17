@@ -97,6 +97,20 @@ test('rest ending exactly at the call time is available', () => {
   assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 46) }), 'SR02');
 });
 
+test('a hold turn ending exactly at the call time is available too', () => {
+  const held = (until) => runBoardCheck({
+    now: NOW,
+    callBoard: [],
+    chainGangHome: [
+      { craft: 'CO', turn: 'SR01', terminal: 0, pos: 1, restUntil: null, rn: 'HT', statusUntil: until },
+      { craft: 'CO', turn: 'SR02', terminal: 0, pos: 2, restUntil: null, statusUntil: null },
+    ],
+    lineup: [{ order: at(2026, 10, 14, 12, 0), symbol: 'DHT999B', trainNo: 'DHT999', originDay: '14', status: 'ORD', deadhead: true }],
+  }, { aTurnsPerDay: 0, bTurnsPerDay: 0 }).predictions[0].turn;
+  assert.equal(held(at(2026, 10, 14, 10, 0)), 'SR01'); // DH called 1000, hold to 1000
+  assert.equal(held(at(2026, 10, 14, 10, 1)), 'SR02');
+});
+
 test('road day starts after 0459: a 0459 order counts toward the previous day', () => {
   const train = (h, m, day) => ({ order: at(2026, 10, 15, h, m), symbol: `M${day}0031`, trainNo: `M${day}00`, originDay: '15', status: 'PLN', deadhead: false });
   const r = runBoardCheck({
