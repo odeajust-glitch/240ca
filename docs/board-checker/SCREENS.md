@@ -214,3 +214,29 @@ screen, or the same screen with a different selection?)_
 ## Reading a call / runaround
 _(Owner: when someone is called, what changes on the screen? How would you spot
 a runaround by looking at the board?)_
+
+## Option 28: crews in the bunkhouse (owner, 2026-10-17)
+
+`3` → `28` (POOL MAINTENANCE INQUIRY, PSTS02E). Don't fill CC. Read the page,
+**F8** for the next; once a page has no crew, stop and **F3** back.
+
+```
+45 SA                    POOL MAINTENANCE INQUIRY               PSTS02E
+   POOL: ( S1 )   TERM: ( 1 ) (0=HOME, 1-5=AWAY, T=TURN)   CC: (  )
+CC TURN T POS  EMPLOYEE NAME   ST RN RETN  SC REST    USHR TURN INFO
+EN S304 1 001  xxxxx                                       45/SA/S3-1
+CO SB04 1 001  xxxxx                                       45/SA/SB-1
+B1
+EN SD11 1 002  xxxxx                          0754 17      45/SA/SD-1
+CO SR05 1 002  xxxxx                          0754 17      45/SA/SR-1
+B1
+```
+- Crews in the away-terminal (Toronto) bunkhouse, an EN + CO pair per POS.
+- **POS = the order they come home** (first out).
+- **REST = always 10 h after they went off duty**, so off duty = REST − 10 h.
+  With the train's on-duty time from the Call Board, that gives the total
+  time on duty for the trip. No REST shown = already rested.
+- **B1** (brakeman) lines: the position no longer exists in Sarnia; ignore.
+- The POOL box at the top (S1) is the *terminal* pool, not the S1 engineer
+  pool; ignore it on this page.
+- Second new check: not described yet.
