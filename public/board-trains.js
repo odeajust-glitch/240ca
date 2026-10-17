@@ -47,7 +47,7 @@
   // check (a skipped screen mustn't make its trains look gone).
   const SOURCES = [['sarnia', 'lineup'], ['mac', 'macLineup']];
   const wasRead = (s, field) => (s.screens ? s.screens.includes(field) : (s[field] || []).length > 0);
-  const REST_MIN = 600; // bunkhouse rest is always 10 h after off duty (owner)
+  const REST_MIN = 480; // bunkhouse rest is always 8 h after off duty (owner)
   // No Toronto off-duty time for L501/L502 (S5) or trains that start in
   // Toronto (owner, 2026-10-17).
   // A train starts in Toronto when it's on Mac yard's line-up, or its
@@ -112,7 +112,7 @@
         r.crew = t.crew;
         r.station = t.station;
       }
-      // A Sarnia crew in the Mac bunkhouse: off duty = REST − 10 h. Their
+      // A Sarnia crew in the Mac bunkhouse: off duty = REST − 8 h. Their
       // train is the latest one they went on duty on before that.
       for (const c of s.bunkhouse || []) {
         if (!c.rested || !c.en || !c.co) continue;

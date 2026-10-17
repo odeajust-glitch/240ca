@@ -376,7 +376,7 @@ function toronto(s) {
   const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
   return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 10 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 8 h.</div></section>`;
 }
 
 function dot(status) {
@@ -517,7 +517,7 @@ function story(r) {
       onDuty: () => `<span class="k">On duty</span> ${esc(dt(e.at))} (Call Board${e.crew ? `, ${esc(e.crew)}` : ''})`,
       onDutyChange: () => `On-duty time corrected ${esc(dt(e.from))} → ${esc(dt(e.at))}`,
       gone: () => 'Off the line-up without showing on the Call Board (cancelled, or on duty between checks)',
-      offDuty: () => `<span class="k">Off duty in Toronto</span> ${esc(dt(e.at))} (${esc(e.crew)} in the bunkhouse; rest − 10 h)`,
+      offDuty: () => `<span class="k">Off duty in Toronto</span> ${esc(dt(e.at))} (${esc(e.crew)} in the bunkhouse; rest − 8 h)`,
       back: () => `Back on the line-up, ${e.status} for ${esc(dt(e.at))}`,
     }[e.kind];
     return `<li class="${/ordered|onDuty$|seen/.test(e.kind) ? 'big' : ''}">${time}<span>${t ? t() : esc(e.kind)}</span></li>`;
@@ -597,7 +597,7 @@ function ordersView(all, day, openId, find, from = 'all') {
     <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
       <tbody>${body}</tbody></table></div>
-      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 10 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
+      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 8 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
     </section>`;
 }
 

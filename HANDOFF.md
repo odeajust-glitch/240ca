@@ -21,7 +21,7 @@ Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
 - **Website**: one **Toronto line-up · Mac yard** table with the predicted
   crew beside each train (bunkhouse order = train order; owner asked for one
   table); Find a turn knows the bunkhouse and the train home. Order summary:
-  Toronto trains (filter "Trains from"), **off duty in Toronto = REST − 10 h**
+  Toronto trains (filter "Trains from"), **off duty in Toronto = REST − 8 h** (owner corrected from 10 h)
   matched to the Sarnia train the crew went on duty on → **time on duty**;
   flags for Toronto trains gone from 41 and not on the Call Board 30 min
   later: **red "Non-Sarnia Crew"** if no rested crew was in the bunkhouse

@@ -217,14 +217,14 @@ test('Mac yard: bunkhouse crews pair with the Toronto line-up in order', () => {
   assert.ok(!shown.lineup.some((t) => t.train === 'M30131 15'));
   assert.deepStrictEqual(shown.bunkhouse.map((c) => [c.pos, c.en, c.co, c.offDuty, c.rested, c.ready]), [
     ['001', 'S304', 'SB04', '', '', true], // no REST: rested
-    ['002', 'SD11', 'SR05', '14th 2154', '15th 0754', true], // off duty = rest − 10 h
-    ['003', 'SD10', 'SR12', '15th 0429', '15th 1429', false],
+    ['002', 'SD11', 'SR05', '14th 2354', '15th 0754', true], // off duty = rest − 8 h
+    ['003', 'SD10', 'SR12', '15th 0629', '15th 1429', false],
   ]);
   assert.deepStrictEqual(shown.macLineup.map((t) => [t.train, t.crew]), [
     ['M30131 15', 'S304 + SB04'], ['Q13931 15', 'SD11 + SR05'], ['Z14931 15', 'SD10 + SR12'], ['M38331 15', ''],
   ]);
   const f = BoardTurns.facts(shown, 'SR05').map((x) => x.text);
-  assert.ok(f.some((t) => /Toronto bunkhouse, position 002 \(with SD11\), off duty 14th 2154, rested/.test(t)));
+  assert.ok(f.some((t) => /Toronto bunkhouse, position 002 \(with SD11\), off duty 14th 2354, rested/.test(t)));
   assert.ok(f.some((t) => /Predicted home on Q13931 15/.test(t)));
 });
 
@@ -235,23 +235,23 @@ test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/y
     // Sarnia: E27861 on duty 0300 with SD11/SR05. Toronto: two trains, no rested crew.
     { ...base, taken: '2026-10-17 0100', lineup: [{ train: 'E27861 17', status: 'ORD', order: '17th 0315' }],
       macLineup: [{ train: 'Q13931 17', status: 'PLN', order: '17th 1430' }, { train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
-      bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1000', ready: false }] },
+      bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1200', ready: false }] },
     { ...base, taken: '2026-10-17 0310', onDuty: [{ train: 'E27861 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
       macLineup: [{ train: 'Q13931 17', status: 'PLN', order: '17th 1430' }, { train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
-      bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1000', ready: false }] },
-    // SD11/SR05 tie up in Toronto: rest to 1754 → off duty 0754 (4 h 54 m on duty). Rested now, Q13931 gone.
+      bunkhouse: [{ pos: '001', en: 'S304', co: 'SB04', rested: '17th 2000', offDuty: '17th 1200', ready: false }] },
+    // SD11/SR05 tie up in Toronto: rest to 1754 → off duty 0954 (6 h 54 m on duty). Rested now, Q13931 gone.
     { ...base, taken: '2026-10-17 1400', onDuty: [{ train: 'E27861 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }],
       macLineup: [{ train: 'Z14931 17', status: 'PLN', order: '17th 1645' }],
-      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0754', ready: false }] },
+      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0954', ready: false }] },
     { ...base, taken: '2026-10-17 1800', macLineup: [],
-      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0754', ready: true }] },
+      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0954', ready: true }] },
     { ...base, taken: '2026-10-17 1840', macLineup: [],
-      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0754', ready: true }] },
+      bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', offDuty: '17th 0954', ready: true }] },
   ];
   const rows = Object.fromEntries(T.summarize(T.track(snaps)).map((r) => [r.id, r]));
   const e = rows['E27861 17'];
-  assert.strictEqual(e.offDuty, '2026-10-17 0754');
-  assert.strictEqual(e.timeOnDuty, 4 * 60 + 54);
+  assert.strictEqual(e.offDuty, '2026-10-17 0954');
+  assert.strictEqual(e.timeOnDuty, 6 * 60 + 54);
   // Q13931 left at 1400 when no crew was rested → Non-Sarnia Crew.
   assert.strictEqual(rows['Q13931 17'].from, 'mac');
   assert.strictEqual(rows['Q13931 17'].flag, 'nonSarnia');
@@ -272,7 +272,7 @@ test('orders: no Toronto off-duty time for L501/L502 or trains starting in Toron
       macLineup: [{ train: 'M30131 17', status: 'ORD', order: '17th 1045' }] },
     // The L502 crew in the bunkhouse is never matched to it.
     { ...base, taken: '2026-10-17 1500', onDuty: [{ train: 'M30131 17', onDuty: '17th 1030', station: 'TORONTO', crew: 'EN S304 · CO SB04' }],
-      bunkhouse: [{ pos: '001', en: 'S501', co: 'S502', rested: '17th 1900', offDuty: '17th 0900', ready: false }] },
+      bunkhouse: [{ pos: '001', en: 'S501', co: 'S502', rested: '17th 1900', offDuty: '17th 1100', ready: false }] },
   ];
   const rows = Object.fromEntries(T.summarize(T.track(snaps)).map((r) => [r.id, r]));
   assert.strictEqual(rows['L50231 17'].noOffDuty, true);

@@ -233,7 +233,8 @@ B1
 ```
 - Crews in the away-terminal (Toronto) bunkhouse, an EN + CO pair per POS.
 - **POS = the order they come home** (first out).
-- **REST = always 10 h after they went off duty**, so off duty = REST − 10 h.
+- **REST = always 8 h after they went off duty** (owner corrected 10 h → 8 h,
+  2026-10-17), so off duty = REST − 8 h.
   With the train's on-duty time from the Call Board, that gives the total
   time on duty for the trip. No REST shown = already rested.
 - **B1** (brakeman) lines: the position no longer exists in Sarnia; ignore.
