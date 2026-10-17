@@ -55,12 +55,19 @@ from `origin/claude/vigilant-planck-zawrj4`.
   (sample data). Manual zip = index.html + board-turns.js + board-trains.js +
   board-sample.json.
 
-**Next (2026-10-17):** the owner wants board-checker info pushed to their shift
-tracker app (RailroadTracker). Plan:
-[docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-TRACKER-PLAN.md).
-Most of the pipe was built 2026-10-15 but never switched on: the relay isn't on `main`
-(which Render deploys), and the app's `board-relay` branch isn't installed. Waiting on
-the owner's answers to the plan's "Questions for the owner" before building Phase 2+.
+**2026-10-17: alerts in the shift tracker (RailroadTracker), built, not switched on.**
+Owner: "let's make it so I see when I go to work for now", with alerts when my turn
+is lined up to work in Sarnia, when it's ordered, and when the time changes 30 min or
+more. Plan: [docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-TRACKER-PLAN.md).
+- 240ca (ca304d3): each relay push carries `mine` (state, train, PLN/ORD, call/on-duty
+  times, railway local) from `mineForPhone` in `lib/board/relay.js`; 41 tests.
+  **The laptop needs a `git pull`** to send it.
+- RailroadTracker `board-relay` (e0ed9f8): `BoardAlerts.kt` decides the 3 alerts against
+  the app's last look; the Board tab leads with "On duty …". Its handoff §9 has the rules.
+  Unit tests pass on a plain JVM; **not yet built with Gradle/Android SDK**.
+- **Still blocking (owner):** (1) the relay isn't on `main`, which Render probably deploys:
+  merge + `BOARD_KEY` on Render (the plan's "Blockers"); (2) laptop `.env`
+  `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up the phone, install `board-relay`.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the

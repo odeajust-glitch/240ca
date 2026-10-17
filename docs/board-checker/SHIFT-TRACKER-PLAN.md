@@ -1,6 +1,7 @@
 # Board checker → RailroadTracker (shift tracker) — Plan
 
-Status: **planning** (2026-10-17) · Owner: odeajust (Justin)
+Status: **Phase 2 alerts built (2026-10-17), not switched on**. Owner chose: show
+"when I go"; alert when lined up in Sarnia, when ordered, and when on-duty moves ≥ 30 min · Owner: odeajust (Justin)
 Repos: this one (`240ca`, branch `claude/vigilant-planck-zawrj4`) and
 `odeajust-glitch/RailroadTracker` (Android: Kotlin, Compose, Room).
 Read [HANDOFF.md](../../HANDOFF.md) first.
