@@ -429,3 +429,18 @@ test('trains with an odd third manifest digit are Toronto trains, not Sarnia one
   // M382 is the 16th's 2nd B train; M383 is Toronto's and left out; the deadhead stays.
   assert.deepEqual(r.predictions.map((p) => [p.symbol, p.pool]), [['M38261', 'B'], ['DHT031B', 'SR']]);
 });
+
+// Owner, 2026-10-17: X27861 16 (0405) went out on MU01 with the 16th's A
+// trains already gone from the Call Board; the site said A, it's Chain Gang.
+test('a train crewed off MU counts as Chain Gang, not an A/B slot', () => {
+  const dep = (symbol, h, m, co, en) => ({ symbol, trainNo: symbol.slice(0, 4), originDay: '16', station: 'SARNIA',
+    onDuty: at(2026, 10, 17, h, m), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const r = runBoardCheck({
+    now: at(2026, 10, 17, 8, 0),
+    callBoard: [dep('X27861', 3, 50, 'MU01', 'MU01')],
+    chainGangHome: [],
+    lineup: [],
+  });
+  assert.deepEqual(r.today.map((t) => [t.symbol, t.expected, t.actual]), [['X27861', 'SR', 'SR']]);
+  assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
+});

@@ -28,6 +28,9 @@ Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
   when it disappeared, **yellow "Possible Non-Sarnia Crew or Train
   Cancelled"** if there was (only rested crews count; owner).
 - Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
+- Owner: a train out of Sarnia on an **MU conductor counts as Chain Gang**
+  (X27861 16 on MU01 showed as A), unless the engineer is A/B (miscoding
+  flag) or it's L501/L502 (S5).
 - Owner: **no Toronto off-duty time for L501/L502 or trains that start in
   Toronto** (Mac yard line-up, or odd third manifest digit): shown "n/a".
 - Day-file format 3. 46 tests.
