@@ -57,10 +57,10 @@ test('today: 3 A then 2 B out of Sarnia, no pool mismatch', () => {
   assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
 });
 
-test('L502 conductor on MU01 is flagged (owner confirmed miscoding); MU02 with SR03 is allowed', () => {
+test('MU on L502 is fine (owner, 2026-10-17); MU02 with SR03 is allowed', () => {
   const r = check();
-  assert.deepEqual(r.flags.map((f) => f.rule), ['mu']);
-  assert.match(r.flags[0].text, /L50231/);
+  assert.deepEqual(r.flags.map((f) => f.rule), []);
+  assert.ok(r.notes.some((n) => /L50231.*MU is fine on L501\/L502/.test(n)));
   assert.ok(r.notes.some((n) => /E27121.*MU02.*Allowed/.test(n)));
 });
 
@@ -86,6 +86,29 @@ test('rest is checked against the call time (owner examples)', () => {
   assert.equal(oneTrain({ deadhead: true, order, restUntil: at(2026, 10, 14, 9, 59) }), 'SR01');
   assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 59) }), 'SR02');
   assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 44) }), 'SR01');
+});
+
+// Owner, 2026-10-17: rest until 0000 = available at 0000. DHT031B 17 at 0200
+// is called 0000, so SR08 (first out, rest to 0000) takes it.
+test('rest ending exactly at the call time is available', () => {
+  const order = at(2026, 10, 14, 12, 0);
+  assert.equal(oneTrain({ deadhead: true, order, restUntil: at(2026, 10, 14, 10, 0) }), 'SR01'); // DH called 1000
+  assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 45) }), 'SR01'); // train called 0945
+  assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 46) }), 'SR02');
+});
+
+test('a hold turn ending exactly at the call time is available too', () => {
+  const held = (until) => runBoardCheck({
+    now: NOW,
+    callBoard: [],
+    chainGangHome: [
+      { craft: 'CO', turn: 'SR01', terminal: 0, pos: 1, restUntil: null, rn: 'HT', statusUntil: until },
+      { craft: 'CO', turn: 'SR02', terminal: 0, pos: 2, restUntil: null, statusUntil: null },
+    ],
+    lineup: [{ order: at(2026, 10, 14, 12, 0), symbol: 'DHT999B', trainNo: 'DHT999', originDay: '14', status: 'ORD', deadhead: true }],
+  }, { aTurnsPerDay: 0, bTurnsPerDay: 0 }).predictions[0].turn;
+  assert.equal(held(at(2026, 10, 14, 10, 0)), 'SR01'); // DH called 1000, hold to 1000
+  assert.equal(held(at(2026, 10, 14, 10, 1)), 'SR02');
 });
 
 test('road day starts after 0459: a 0459 order counts toward the previous day', () => {
@@ -170,7 +193,7 @@ test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241',
     ['M38261', 'SR04', true], // SR05 on hold turn; SR04 still ** → goes spare
     ['M39671', 'SR09', false],
   ]);
-  assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
+  assert.deepEqual(r.flags.map((f) => f.rule), []); // L50131 on MU01: fine on L502 (owner, 2026-10-17)
   assert.deepEqual(r.me.ahead.map((a) => a.turn), ['SR05']);
 });
 
@@ -405,4 +428,19 @@ test('trains with an odd third manifest digit are Toronto trains, not Sarnia one
   assert.deepEqual(r.flags.filter((f) => f.rule === 'pool'), []);
   // M382 is the 16th's 2nd B train; M383 is Toronto's and left out; the deadhead stays.
   assert.deepEqual(r.predictions.map((p) => [p.symbol, p.pool]), [['M38261', 'B'], ['DHT031B', 'SR']]);
+});
+
+// Owner, 2026-10-17: X27861 16 (0405) went out on MU01 with the 16th's A
+// trains already gone from the Call Board; the site said A, it's Chain Gang.
+test('a train crewed off MU counts as Chain Gang, not an A/B slot', () => {
+  const dep = (symbol, h, m, co, en) => ({ symbol, trainNo: symbol.slice(0, 4), originDay: '16', station: 'SARNIA',
+    onDuty: at(2026, 10, 17, h, m), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const r = runBoardCheck({
+    now: at(2026, 10, 17, 8, 0),
+    callBoard: [dep('X27861', 3, 50, 'MU01', 'MU01')],
+    chainGangHome: [],
+    lineup: [],
+  });
+  assert.deepEqual(r.today.map((t) => [t.symbol, t.expected, t.actual]), [['X27861', 'SR', 'SR']]);
+  assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
 });

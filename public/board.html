@@ -215,8 +215,8 @@
   table.orders tr.hit td { background: var(--amber-tint); }
   .offv { font: 600 13px/1 var(--mono); }
   .offv.ok { color: var(--go); }
-  .offv.late { color: var(--stop); }
-  .offv.early { color: var(--poolA); }
+  .offv.warn { color: var(--amber); }
+  .offv.bad { color: var(--stop); }
   .offv.none { color: var(--soft); font-weight: 400; }
   .story td { background: var(--sheet) !important; white-space: normal !important; padding: 4px 14px 14px 30px; }
   .story ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; }
@@ -226,6 +226,12 @@
   .story button { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font: 500 12.5px/1.5 var(--mono); text-align: left; }
   .story .sum { margin-top: 10px; display: grid; gap: 3px; font-size: 13.5px; }
   .chg { color: var(--amber); font-weight: 600; }
+  .from { font: 600 10.5px/1 var(--mono); padding: 2px 5px; border-radius: 3px; background: var(--plan-tint); color: var(--soft); margin-left: 4px; }
+  .fl-red b.id { color: var(--stop); }
+  .fl-yellow b.id { color: var(--amber); background: var(--amber-tint); padding: 0 3px; border-radius: 2px; }
+  .flagtxt { display: block; font: 600 11.5px/1.3 var(--body); white-space: normal; margin-top: 2px; }
+  .fl-red .flagtxt { color: var(--stop); }
+  .fl-yellow .flagtxt { color: var(--amber); }
   @media (max-width: 700px) {
     .ohead .when { font-size: 30px; }
     .ohead .ctl { margin-left: 0; }
@@ -288,7 +294,7 @@
 <script>
 let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', lineup: 'Line-up 41' };
+const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41' };
 
 // "2026-10-15 0815" → parts for display.
 function when(taken) {
@@ -336,6 +342,41 @@ function lineup(s) {
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   return `<section class="sheet"><header><h2>Train line-up · 41</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>
     ${rows}<div class="foot">Crew codes are EN / TRN as CATS shows them. The coloured chip is the pool the crew-calling rules give the train.</div></section>`;
+}
+
+// Toronto (Mac yard): the westbound line-up with the bunkhouse crew predicted
+// for each train, first crew home on the first train (owner, 2026-10-17).
+function toronto(s) {
+  const trains = s.macLineup || [];
+  const crews = s.bunkhouse || [];
+  // Say so when a Toronto screen wasn't read, so an empty table isn't taken
+  // for "no trains" or "no crews".
+  const readB = (s.screens || []).includes('bunkhouse');
+  const readM = (s.screens || []).includes('macLineup');
+  if (!readB && !readM) {
+    return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2></header>
+      <p class="empty">The Toronto screens (bunkhouse 28 and the Mac yard line-up 41) weren't read in this check.</p></section>`;
+  }
+  const missing = !readB ? 'The bunkhouse (28) wasn\'t read in this check, so no crews are shown.'
+    : !readM ? 'The Mac yard line-up (41) wasn\'t read in this check, so no trains are shown.' : '';
+  const byPos = new Map(crews.map((c) => [c.pos, c]));
+  const crewCell = (c) => {
+    if (!c) return '<span class="muted">no crew in the bunkhouse yet</span>';
+    const when = c.ready ? '<span class="ok">rested</span>' : `rest until ${esc(c.rested)}`;
+    return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
+      <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}</div>`;
+  };
+  const rows = trains.map((t) => {
+    const c = byPos.get(t.crewPos);
+    const hit = focus && c && (c.en === focus || c.co === focus);
+    return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
+      <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${crewCell(c)}</td></tr>`;
+  }).join('');
+  const extra = crews.slice(trains.length);
+  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
+    <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 8 h.</div></section>`;
 }
 
 function dot(status) {
@@ -416,7 +457,7 @@ const once = (fn) => { let p = null; return () => p || (p = fn()); };
 
 // The turn panel: where the turn is in this snapshot, and its history (each
 // time what the board said about it changed). History fills in once loaded.
-const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called' };
+const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home' };
 function turnPanel(s) {
   const f = BoardTurns.facts(s, focus);
   const here = f.length
@@ -453,10 +494,16 @@ function dur(min) {
   return h ? `${h} h ${String(m).padStart(2, '0')} m` : `${m} m`;
 }
 const ON_TIME = 15; // within this many minutes counts as on time
+// Colour by how far off, early or late alike (owner, 2026-10-17): under
+// 30 m green, 30 m to 1 h 56 m yellow, more than that red.
+const OFF_YELLOW = 30;
+const OFF_RED = 116;
 function offCell(min) {
   if (min == null) return '<span class="offv none">—</span>';
-  if (Math.abs(min) <= ON_TIME) return `<span class="offv ok">on time${min ? ` (${min > 0 ? '+' : '−'}${dur(min)})` : ''}</span>`;
-  return min > 0 ? `<span class="offv late">${dur(min)} late</span>` : `<span class="offv early">${dur(min)} early</span>`;
+  const a = Math.abs(min);
+  const band = a > OFF_RED ? 'bad' : a >= OFF_YELLOW ? 'warn' : 'ok';
+  if (a <= ON_TIME) return `<span class="offv ok">on time${min ? ` (${min > 0 ? '+' : '−'}${dur(min)})` : ''}</span>`;
+  return `<span class="offv ${band}">${dur(min)} ${min > 0 ? 'late' : 'early'}</span>`;
 }
 
 function story(r) {
@@ -470,6 +517,7 @@ function story(r) {
       onDuty: () => `<span class="k">On duty</span> ${esc(dt(e.at))} (Call Board${e.crew ? `, ${esc(e.crew)}` : ''})`,
       onDutyChange: () => `On-duty time corrected ${esc(dt(e.from))} → ${esc(dt(e.at))}`,
       gone: () => 'Off the line-up without showing on the Call Board (cancelled, or on duty between checks)',
+      offDuty: () => `<span class="k">Off duty in Toronto</span> ${esc(dt(e.at))} (${esc(e.crew)} in the bunkhouse; rest − 8 h)`,
       back: () => `Back on the line-up, ${e.status} for ${esc(dt(e.at))}`,
     }[e.kind];
     return `<li class="${/ordered|onDuty$|seen/.test(e.kind) ? 'big' : ''}">${time}<span>${t ? t() : esc(e.kind)}</span></li>`;
@@ -480,10 +528,16 @@ function story(r) {
   if (!r.firstPlan && r.firstOrder) sum.push('Already ordered the first time it was seen, so there is no plan to compare.');
   if (r.onDuty && !r.firstOrder) sum.push('Never seen as ORD: it went from planned to on duty between two checks.');
   if (r.onDuty && r.leadMin != null) sum.push(`First seen ${dur(r.leadMin)} before going on duty.`);
-  return `<tr class="story"><td colspan="8"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
+  if (r.timeOnDuty != null) sum.push(`On duty ${esc(dt(r.onDuty))} → off duty in Toronto ${esc(dt(r.offDuty))}: <b>${dur(r.timeOnDuty)}</b> on duty.`);
+  if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? 'no rested Sarnia crew was in the bunkhouse' : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
+  return `<tr class="story"><td colspan="10"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
 }
 
-function ordersView(all, day, openId, find) {
+const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia Crew or Train Cancelled' };
+const FROM = { sarnia: 'Sarnia', mac: 'Toronto' };
+
+function ordersView(all, day, openId, find, from = 'all') {
+  if (from !== 'all') all = all.filter((r) => (r.from || 'sarnia') === from);
   const days = [...new Set(all.map((r) => r.day))].sort().reverse();
   if (!days.length) return '<p class="empty">No trains yet. They appear here once the board checker has saved a few checks.</p>';
   if (!days.includes(day)) day = days[0];
@@ -493,24 +547,30 @@ function ordersView(all, day, openId, find) {
   const done = rows.filter((r) => r.onDuty);
   const vsPlan = done.filter((r) => r.offPlan != null);
   const avg = vsPlan.length ? Math.round(vsPlan.reduce((n, r) => n + Math.abs(r.offPlan), 0) / vsPlan.length) : null;
-  const onTime = vsPlan.filter((r) => Math.abs(r.offPlan) <= ON_TIME).length;
-  const late = vsPlan.filter((r) => r.offPlan > ON_TIME).length;
-  const early = vsPlan.filter((r) => r.offPlan < -ON_TIME).length;
+  // Same bands as the colours in the table.
+  const green = vsPlan.filter((r) => Math.abs(r.offPlan) < OFF_YELLOW).length;
+  const yellow = vsPlan.filter((r) => Math.abs(r.offPlan) >= OFF_YELLOW && Math.abs(r.offPlan) <= OFF_RED).length;
+  const red = vsPlan.filter((r) => Math.abs(r.offPlan) > OFF_RED).length;
   const changed = rows.filter((r) => r.orderChanges > 0).length;
+  const tod = rows.filter((r) => r.timeOnDuty != null).map((r) => r.timeOnDuty);
+  const flagged = rows.filter((r) => r.flag);
   const w = when(day + ' 0000');
   const q = find.trim().toUpperCase();
   const body = rows.map((r) => {
     const key = `${r.id} ${r.month}`;
     const hit = q && r.id.replace(/\s+/g, '').includes(q.replace(/\s+/g, ''));
-    const tr = `<tr class="row${key === openId ? ' open' : ''}${hit ? ' hit' : ''}" data-key="${esc(key)}">
-      <td class="num"><b>${esc(r.id)}</b>${r.deadhead ? ' <span class="chip">DH</span>' : ''}</td>
+    const fl = r.flag ? (r.flag === 'nonSarnia' ? ' fl-red' : ' fl-yellow') : '';
+    const tr = `<tr class="row${key === openId ? ' open' : ''}${hit ? ' hit' : ''}${fl}" data-key="${esc(key)}">
+      <td class="num"><b class="id">${esc(r.id)}</b><span class="from">${FROM[r.from || 'sarnia']}</span>${r.deadhead ? ' <span class="chip">DH</span>' : ''}${r.flag ? `<span class="flagtxt">${esc(FLAG_TEXT[r.flag])}</span>` : ''}</td>
       <td class="num">${esc(dt(r.firstSeen))}</td>
       <td class="num">${esc(dt(r.firstPlan))}</td>
       <td class="num">${esc(dt(r.firstOrder))}</td>
       <td class="num">${r.orderChanges ? `<span class="chg">${r.orderChanges} → ${esc(dt(r.order))}</span>` : (r.firstOrder ? '0' : '—')}</td>
       <td class="num"><b>${r.onDuty ? esc(dt(r.onDuty)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
       <td>${offCell(r.offPlan)}</td>
-      <td>${offCell(r.offOrder)}</td></tr>`;
+      <td>${offCell(r.offOrder)}</td>
+      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.offDuty ? esc(dt(r.offDuty)) : '—'}</td>
+      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.timeOnDuty != null ? `<b>${esc(dur(r.timeOnDuty))}</b>` : '—'}</td></tr>`;
     return tr + (key === openId ? story(r) : '');
   }).join('');
   return `
@@ -518,19 +578,26 @@ function ordersView(all, day, openId, find) {
       <div><div class="sec-title" style="margin-bottom:6px">Order summary</div><div class="when">${esc(w.long)}</div></div>
       <div class="ctl">
         <label for="oday">Day<select id="oday">${days.map((d) => `<option value="${d}"${d === day ? ' selected' : ''}>${esc(when(d + ' 0000').day)}</option>`).join('')}</select></label>
+        <label for="ofrom">Trains from<select id="ofrom">${['all', 'sarnia', 'mac'].map((f) => `<option value="${f}"${f === from ? ' selected' : ''}>${f === 'all' ? 'Sarnia and Toronto' : FROM[f]}</option>`).join('')}</select></label>
         <label for="ofind">Find a train<input id="ofind" placeholder="e.g. M30241 15" value="${esc(find)}" autocomplete="off" spellcheck="false"></label>
       </div>
     </div>
     <div class="strip">
       <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
       <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
-      <div class="stat"><div class="v">${onTime} <small>on time · ${late} late · ${early} early</small></div><div class="l">Against the first plan (±${ON_TIME} m)</div></div>
+      <div class="stat"><div class="v"><span class="offv ok">${green}</span> <small>·</small> <span class="offv warn">${yellow}</span> <small>·</small> <span class="offv bad">${red}</span></div><div class="l">First plan vs on duty: under 30 m · 30 m–1 h 56 m · beyond</div></div>
       <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
     </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.round(tod.reduce((a, b) => a + b, 0) / tod.length))) : '—'}</div><div class="l">Average time on duty, Sarnia to Toronto</div></div>
+      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.max(...tod))) : '—'}</div><div class="l">Longest time on duty</div></div>
+      <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
+      <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
+    </div>
     <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
-      <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th></tr></thead>
+      <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
       <tbody>${body}</tbody></table></div>
-      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks.</div>
+      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 8 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
     </section>`;
 }
 
@@ -654,7 +721,7 @@ source().then(async (src) => {
       ${focus ? turnPanel(s) : ''}
       ${strip(s)}
       <div class="grid">
-        <div class="col">${lineup(s)}${changes(s)}</div>
+        <div class="col">${lineup(s)}${toronto(s)}${changes(s)}</div>
         <div class="col">${flags(s)}${pools(s, poolTab)}${onDuty(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
@@ -679,7 +746,7 @@ source().then(async (src) => {
   }
 
   // Snapshots ⇄ Order summary.
-  const order = { day: null, open: null, find: '' };
+  const order = { day: null, open: null, find: '', from: 'all' };
   const modeSnap = document.getElementById('modeSnap');
   const modeOrders = document.getElementById('modeOrders');
   function setMode(orders) {
@@ -698,11 +765,12 @@ source().then(async (src) => {
     // Searching a train opens the day it belongs to.
     const q = order.find.trim().toUpperCase().replace(/\s+/g, '');
     const match = q && all.find((r) => r.id.replace(/\s+/g, '') === q);
-    if (match) { order.day = match.day; order.open = `${match.id} ${match.month}`; }
+    if (match) { order.day = match.day; order.open = `${match.id} ${match.month}`; order.from = 'all'; }
     if (!order.day) order.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
-    view.innerHTML = ordersView(all, order.day, order.open, order.find);
+    view.innerHTML = ordersView(all, order.day, order.open, order.find, order.from);
     try { history.replaceState(null, '', '#orders'); } catch (e) { /* not allowed in some frames */ }
     document.getElementById('oday').onchange = (e) => { order.day = e.target.value; order.open = null; order.find = ''; renderOrders(); };
+    document.getElementById('ofrom').onchange = (e) => { order.from = e.target.value; order.open = null; renderOrders(); };
     const find = document.getElementById('ofind');
     find.onkeydown = (e) => { if (e.key === 'Enter') { order.find = find.value; renderOrders(); } };
     find.onchange = () => { order.find = find.value; renderOrders(); };

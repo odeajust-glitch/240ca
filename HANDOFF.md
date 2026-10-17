@@ -8,6 +8,50 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
+Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
+- **board-auto.js** reads, after Sarnia's 41: **28 bunkhouse** (no CC; F8 until
+  a page with no crew) and **41 for Mac yard** (fills 41975 / W / S1 / 24;
+  the POOL box is assumed to be text box 2). Screens are captured with
+  `label: 'bunkhouse' | 'mac'`; failures only skip them ("skipped Bunkhouse
+  28" / "skipped Mac yard line-up 41"). Sarnia's 41 now blanks the POOL box
+  (CATS may keep S1).
+- **summary.js**: `bunkhouse` (EN+CO per POS, restUntil) and `macLineup`,
+  kept out of Sarnia's pools/line-up.
+- **Website**: one **Toronto line-up · Mac yard** table with the predicted
+  crew beside each train (bunkhouse order = train order; owner asked for one
+  table); Find a turn knows the bunkhouse and the train home. Order summary:
+  Toronto trains (filter "Trains from"), **off duty in Toronto = REST − 8 h** (owner corrected from 10 h)
+  matched to the Sarnia train the crew went on duty on → **time on duty**;
+  flags for Toronto trains gone from 41 and not on the Call Board 30 min
+  later: **red "Non-Sarnia Crew"** if no rested crew was in the bunkhouse
+  when it disappeared, **yellow "Possible Non-Sarnia Crew or Train
+  Cancelled"** if there was (only rested crews count; owner).
+- Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
+- Owner: Order summary "off" colours, early or late alike: green < 30 m,
+  yellow 30 m – 1 h 56 m, red beyond (`offCell` in board.html).
+- Owner: a train out of Sarnia on an **MU conductor counts as Chain Gang**
+  (X27861 16 on MU01 showed as A), unless the engineer is A/B (miscoding
+  flag) or it's L501/L502 (S5).
+- Owner: **no Toronto off-duty time for L501/L502 or trains that start in
+  Toronto** (Mac yard line-up, or odd third manifest digit): shown "n/a".
+- Day-file format 3. 46 tests.
+
+**2026-10-17 review (owner picked 4, 9, 12, 15, 17, 18; the rest is in
+docs/board-checker/CHECKUP.md for 2026-10-22, Netlify usage 2026-10-24, both
+on the owner's calendar):**
+- #4 A Toronto-only change (bunkhouse / Mac yard line-up) now also updates
+  the website (`toronto` fingerprint in board-auto.js `answer()`).
+- #9 Order summary count uses the colour bands (green < 30 m, yellow to
+  1 h 56 m, red beyond) instead of ±15 m.
+- #12 Snapshots say when the Toronto screens weren't read.
+- #15 `scripts/start-board-checker.cmd` + NEW-LAPTOP.md step 8 (Startup
+  folder shortcut) to start at Windows sign-in.
+- #2 reverted: Sarnia's 41 no longer clears POOL; owner says an S1 left there
+  is harmless.
+- #18 pull request to `main` opened; #17 old preview/zip removed.
+- **Laptop not updated yet**: owner will `git pull` + restart when back.
+
 ## ▶ Start here (2026-10-17): where things stand
 **Only one Claude session at a time may change the board checker / website.**
 On 2026-10-16 a laptop session (on `claude/auto-board-checker-plan-hdk1n5`)
@@ -29,7 +73,7 @@ from `origin/claude/vigilant-planck-zawrj4`.
   51fe13b9-72f2-4d91-8f6c-9a4afa292a58, public). Page `public/board.html`
   + `public/board-turns.js` + `public/board-trains.js`; built from history by
   `lib/board/site.js` (`scripts/board-site.js [--deploy]`), published by
-  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=30 min) when
+  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=90 min, owner 2026-10-17) when
   `NETLIFY_AUTH_TOKEN` + `NETLIFY_SITE_ID` are in `BoardChecker\.env`.
   Two views:
   - **Snapshots**: every check (day picker, Earlier/Later), line-up 41 with
@@ -65,9 +109,26 @@ more. Plan: [docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-
 - RailroadTracker `board-relay` (e0ed9f8): `BoardAlerts.kt` decides the 3 alerts against
   the app's last look; the Board tab leads with "On duty …". Its handoff §9 has the rules.
   Unit tests pass on a plain JVM; **not yet built with Gradle/Android SDK**.
-- **Still blocking (owner):** (1) the relay isn't on `main`, which Render probably deploys:
-  merge + `BOARD_KEY` on Render (the plan's "Blockers"); (2) laptop `.env`
-  `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up the phone, install `board-relay`.
+- **Merged to `main`** (https://github.com/odeajust-glitch/240ca/pull/1, 2026-10-17, owner's
+  OK), with the line-up website's files (`board.html`, `board-turns.js`,
+  `board-trains.js`, `board-sample.json`) hidden on the Render site: `hideBoardSite` in
+  `lib/board/relay.js` returns 404 for them (owner). Netlify still builds from them. 42 tests.
+  Keep developing on `claude/vigilant-planck-zawrj4` (fast-forwarded to `main`); PR again.
+- **Still to do (owner):** (1) set `BOARD_KEY` on Render and confirm Render deploys `main`;
+  (2) laptop `git pull`, then `.env` `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up
+  the phone, install RailroadTracker `board-relay`.
+
+**2026-10-17:** the AI check flagged "DHT031B 17 (0200) went to spareboard,
+but SR08's rest ends 0000, exactly at its call time, so it should have taken
+it". The engine was right by the owner's rule (rest ending exactly at the call
+time = still on rest, BOARD-CHECK.md); the review prompt only said "past the
+call time", so it now states the rule. The AI note never changes the answer.
+**Owner then changed the rule (2026-10-17):** rest until 0000 = available at
+0000, and the same for HT (owner). Engine: `restsPast` / `heldPast` (ending
+> call) in engine.js. Review prompt, BOARD-CHECK.md and a test updated.
+⚠ Shadow check #1 (15th) had SR02 skipped with rest to 0100 vs an estimated
+0100 call for DHT211C; under the new rule the checker would have given it to
+SR02. Our call time is an estimate (on duty − 2 h), so watch for this.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
@@ -84,7 +145,7 @@ run that branch):
   collapse into "same until"; settled days are cached; `BOARD_SITE_DAYS`,
   default 30) and publishes with Netlify's file-digest API (only changed
   files upload). `board-auto.js` publishes after a changed check, at most
-  every `BOARD_SITE_EVERY` min (default 30), when `NETLIFY_AUTH_TOKEN` +
+  every `BOARD_SITE_EVERY` min (default 90), when `NETLIFY_AUTH_TOKEN` +
   `NETLIFY_SITE_ID` are in `.env`. Never stops a check. 34 tests.
 - Netlify site: **boardtestsa** (id 51fe13b9-72f2-4d91-8f6c-9a4afa292a58),
   public. Owner first uploaded by hand (Netlify Drop). Laptop steps:
