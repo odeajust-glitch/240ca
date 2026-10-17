@@ -60,8 +60,10 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
      |---|---|---|---|---|---|
      | Deadhead | 1200 | 1000 | skipped | **called** | called |
      | Train | 1145 | 0945 | skipped | skipped | **called** |
-     Rest exactly equal to the call time is treated as still on rest (owner's
-     examples use one minute before). The same goes for HT (hold turn).
+     **Rest ending exactly at the call time = available** (owner, 2026-10-17:
+     "rest until 0000, so they are available at 0000"; this replaces the
+     earlier "exactly equal = still on rest"). HT (hold turn) is unchanged:
+     held up to and including the call time.
      Short calls (min 1 h at home) are ignored until the owner says they matter.
    - Flags: an SR train given to someone *behind* a rested-up, available person
      is a possible runaround. A rested person losing their position is too.
@@ -252,7 +254,7 @@ including ones the 3/2 rule sends to B or SR. Treat it as a default, not a predi
 
 Conclusion: no rule broke. Every difference came from the line-up changing
 (a planned train dropped, a deadhead added, times moved). Also confirmed:
-rest ending exactly at the call time = still on rest.
+rest ending exactly at the call time = still on rest (superseded 2026-10-17: now available).
 Gaps found and fixed: deadheads on the Call Board weren't parsed; turns out
 working (POS 999, `B0` + train) were treated as at home; a snapshot after
 midnight can't see the day's A/B trains (now inferred from CATS sending a

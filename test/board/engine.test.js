@@ -88,6 +88,15 @@ test('rest is checked against the call time (owner examples)', () => {
   assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 44) }), 'SR01');
 });
 
+// Owner, 2026-10-17: rest until 0000 = available at 0000. DHT031B 17 at 0200
+// is called 0000, so SR08 (first out, rest to 0000) takes it.
+test('rest ending exactly at the call time is available', () => {
+  const order = at(2026, 10, 14, 12, 0);
+  assert.equal(oneTrain({ deadhead: true, order, restUntil: at(2026, 10, 14, 10, 0) }), 'SR01'); // DH called 1000
+  assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 45) }), 'SR01'); // train called 0945
+  assert.equal(oneTrain({ deadhead: false, order, restUntil: at(2026, 10, 14, 9, 46) }), 'SR02');
+});
+
 test('road day starts after 0459: a 0459 order counts toward the previous day', () => {
   const train = (h, m, day) => ({ order: at(2026, 10, 15, h, m), symbol: `M${day}0031`, trainNo: `M${day}00`, originDay: '15', status: 'PLN', deadhead: false });
   const r = runBoardCheck({

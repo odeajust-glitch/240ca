@@ -79,6 +79,12 @@ but SR08's rest ends 0000, exactly at its call time, so it should have taken
 it". The engine was right by the owner's rule (rest ending exactly at the call
 time = still on rest, BOARD-CHECK.md); the review prompt only said "past the
 call time", so it now states the rule. The AI note never changes the answer.
+**Owner then changed the rule (2026-10-17):** rest until 0000 = available at
+0000. Engine: `restsPast` (rest > call) in engine.js; HT still held through
+the call (`heldPast`, >=). Review prompt, BOARD-CHECK.md and a test updated.
+⚠ Shadow check #1 (15th) had SR02 skipped with rest to 0100 vs an estimated
+0100 call for DHT211C; under the new rule the checker would have given it to
+SR02. Our call time is an estimate (on duty − 2 h), so watch for this.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
