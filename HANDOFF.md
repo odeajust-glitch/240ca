@@ -13,7 +13,9 @@ Owner wants the board checker to read two more screens and the website to
 show them. Check 1 = **option 28, crews in the Toronto bunkhouse** (see
 docs/board-checker/SCREENS.md: no CC, F8 until a page with no crew, F3; POS =
 order home; off duty = REST − 10 h → time on duty per trip with the Call
-Board's on-duty time; ignore B1 and the POOL box). Check 2: not described yet.
+Board's on-duty time; ignore B1 and the POOL box). Check 2 = **41 for Mac
+yard** (STATION 41975, DIR W, POOL S1, 24 h): trains home; crews pair with
+them in option-28 POS order. Owner will list what to look for and show.
 Plan: read both every check (skipped on trouble), Bunkhouse box on
 Snapshots, Find a turn, off duty / time on duty in the Order summary.
 

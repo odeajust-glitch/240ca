@@ -240,3 +240,22 @@ B1
 - The POOL box at the top (S1) is the *terminal* pool, not the S1 engineer
   pool; ignore it on this page.
 - Second new check: not described yet.
+
+## Option 41 for Mac yard: trains home from the bunkhouse (owner, 2026-10-17)
+
+Same Train Line-up screen as Sarnia's 41 (TRAIN LINE UP FIELD INQUIRY,
+PSTS02H), filled in as **STATION 41975 (Mac yard, Toronto), DIR W, POOL S1,
+HOURS 24**. Same columns: `MMDD-HRMN Z STA TRAIN/ASGN ORSTN INFORMATION
+ENG CRW TRN CRW`, ends with END OF FILE.
+
+```
+1017-1045 E PLN M30131 17 41975 TOPC 300SAR  A EnCo  45SAS11 45SAS11
+1017-1430 E PLN Q13931 17 42368 TOPC 100SAR  A EnCo  45SAS11 45SAS11
+1017-1645 E PLN Z14931 17 42368 TOPC 149     A EnCo  45SAS11 45SAS11
+...
+```
+- The trains crews in the Mac bunkhouse (option 28) will take home.
+- **Crews are paired with these trains in their option-28 POS order**: the
+  first crew home gets the first train, and so on.
+- Some rows have ORSTN other than 41975 (42368, 42397).
+- What to look for and show: owner will say.
