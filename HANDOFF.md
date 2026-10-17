@@ -55,7 +55,24 @@ from `origin/claude/vigilant-planck-zawrj4`.
   (sample data). Manual zip = index.html + board-turns.js + board-trains.js +
   board-sample.json.
 
-**Next:** the owner wants to add another feature (they'll describe it).
+**2026-10-17: alerts in the shift tracker (RailroadTracker), built, not switched on.**
+Owner: "let's make it so I see when I go to work for now", with alerts when my turn
+is lined up to work in Sarnia, when it's ordered, and when the time changes 30 min or
+more. Plan: [docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-TRACKER-PLAN.md).
+- 240ca (ca304d3): each relay push carries `mine` (state, train, PLN/ORD, call/on-duty
+  times, railway local) from `mineForPhone` in `lib/board/relay.js`; 41 tests.
+  **The laptop needs a `git pull`** to send it.
+- RailroadTracker `board-relay` (e0ed9f8): `BoardAlerts.kt` decides the 3 alerts against
+  the app's last look; the Board tab leads with "On duty …". Its handoff §9 has the rules.
+  Unit tests pass on a plain JVM; **not yet built with Gradle/Android SDK**.
+- **Merged to `main`** (https://github.com/odeajust-glitch/240ca/pull/1, 2026-10-17, owner's
+  OK), with the line-up website's files (`board.html`, `board-turns.js`,
+  `board-trains.js`, `board-sample.json`) hidden on the Render site: `hideBoardSite` in
+  `lib/board/relay.js` returns 404 for them (owner). Netlify still builds from them. 42 tests.
+  Keep developing on `claude/vigilant-planck-zawrj4` (fast-forwarded to `main`); PR again.
+- **Still to do (owner):** (1) set `BOARD_KEY` on Render and confirm Render deploys `main`;
+  (2) laptop `git pull`, then `.env` `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up
+  the phone, install RailroadTracker `board-relay`.
 
 **2026-10-17:** the AI check flagged "DHT031B 17 (0200) went to spareboard,
 but SR08's rest ends 0000, exactly at its call time, so it should have taken

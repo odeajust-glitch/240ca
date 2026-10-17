@@ -36,7 +36,7 @@ const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
-const { pushCheck } = require('../lib/board/relay');
+const { pushCheck, mineForPhone } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
 const { at } = require('../lib/board/time');
@@ -287,7 +287,7 @@ function answer(summary, me, nowOverride) {
   // The working behind each train, for the AI review.
   const detailed = formatReport(result, input.seen, { details: true });
   const lines = changeLines(prev, cur); // ['', heading, ...one line per change]
-  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, changes: lines.filter((l) => l), myAnswerChanged };
+  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged };
 }
 
 // Claude's look over the check (lib/board/review.js). Only when something
@@ -512,7 +512,7 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page, poolOpts);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged } = answer(summary, me, nowOverride);
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
       const note = first || changed ? await aiReview(detailed) : null;
       try {
@@ -523,7 +523,7 @@ async function main() {
       }
       if (relay) {
         const report = note ? `${text}\n\n${note}` : text;
-        const check = { checkedAt: summary.probedAt, me: meLines, report, changes, myAnswerChanged };
+        const check = { checkedAt: summary.probedAt, me: meLines, mine, report, changes, myAnswerChanged };
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
