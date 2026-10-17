@@ -57,10 +57,10 @@ test('today: 3 A then 2 B out of Sarnia, no pool mismatch', () => {
   assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
 });
 
-test('L502 conductor on MU01 is flagged (owner confirmed miscoding); MU02 with SR03 is allowed', () => {
+test('MU on L502 is fine (owner, 2026-10-17); MU02 with SR03 is allowed', () => {
   const r = check();
-  assert.deepEqual(r.flags.map((f) => f.rule), ['mu']);
-  assert.match(r.flags[0].text, /L50231/);
+  assert.deepEqual(r.flags.map((f) => f.rule), []);
+  assert.ok(r.notes.some((n) => /L50231.*MU is fine on L501\/L502/.test(n)));
   assert.ok(r.notes.some((n) => /E27121.*MU02.*Allowed/.test(n)));
 });
 
@@ -193,7 +193,7 @@ test('2026-10-15 run: road day 14 A/B inferred as used; matches CATS on M30241',
     ['M38261', 'SR04', true], // SR05 on hold turn; SR04 still ** → goes spare
     ['M39671', 'SR09', false],
   ]);
-  assert.deepEqual(r.flags.map((f) => f.rule), ['mu']); // L50131 conductor on MU01 again
+  assert.deepEqual(r.flags.map((f) => f.rule), []); // L50131 on MU01: fine on L502 (owner, 2026-10-17)
   assert.deepEqual(r.me.ahead.map((a) => a.turn), ['SR05']);
 });
 

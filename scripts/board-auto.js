@@ -1,6 +1,7 @@
 // Does the board check by itself: you sign in to CATS once, then it walks
 // the route the owner taught (Call Board to the yard jobs, Chain Gang 23
-// with CO, A/B pools 19/21, SD pool 27, S1/S3 pools 25/26 with EN, Train Line-up 41) and prints when you go to work,
+// with CO, A/B pools 19/21, SD pool 27, S1/S3 pools 25/26 with EN, Train Line-up 41,
+// then Mac yard: bunkhouse 28 and line-up 41 for 41975 W) and prints when you go to work,
 // the Chain Gang board, the line-up with who's projected on each train, and
 // what changed since the last check.
 //
@@ -205,9 +206,11 @@ async function chooseFromMenus(page, option) {
 
 async function runRoute(page, opts = {}) {
   const screens = [];
-  const capture = async () => {
+  // `label` tells the loader which screens are Mac yard's (they look like
+  // Sarnia's 23 and 41).
+  const capture = async (label) => {
     const grid = (await describeFrame(catsFrame(page))).screenGrid;
-    screens.push({ step: screens.length + 1, at: new Date().toISOString(), screenGrid: grid });
+    screens.push({ step: screens.length + 1, at: new Date().toISOString(), screenGrid: grid, ...(label ? { label } : {}) });
     return grid;
   };
 
@@ -261,12 +264,45 @@ async function runRoute(page, opts = {}) {
 
   // Train Line-up: 41, Sarnia (47130), eastbound, 24 h ahead.
   expect(await chooseFromMenus(page, 41), is.lineup, 'Train Line-up (41)');
-  await fill(page, { 0: '47130', 1: 'E', '-1': '24' });
+  // POOL left blank on purpose: CATS may keep the S1 typed for Mac yard.
+  await fill(page, { 0: '47130', 1: 'E', 2: '', '-1': '24' });
   let s = expect(await press(page, 'Enter'), is.lineup, 'Train Line-up');
   for (let pageNo = 0; pageNo < 6; pageNo++) {
     await capture();
     if (/END OF FILE/.test(s.text)) break;
     s = expect(await press(page, 'F8'), is.lineup, 'next Line-up page');
+  }
+
+  // Mac yard (owner, 2026-10-17); trouble here only skips them.
+  // 28: crews in the bunkhouse, no CC. F8 until a page has no crew.
+  try {
+    let b = expect(await chooseFromMenus(page, 28), is.poolPosition, 'Bunkhouse (28)');
+    for (let pageNo = 0; pageNo < 10; pageNo++) {
+      const grid = await capture('bunkhouse');
+      let crews = 0;
+      try { crews = S.parseChainGang(parseGrid(grid), Date.now() / 60000).turns.length; } catch { /* no heading: no crews */ }
+      if (!crews) break;
+      const next = await press(page, 'F8');
+      if (!next || !is.poolPosition(next) || next.text === b.text) break; // no more pages
+      b = next;
+    }
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (skipped Bunkhouse 28: ${err.message})`);
+  }
+  // 41 for Mac yard: station 41975, westbound, pool S1, 24 h ahead.
+  try {
+    expect(await chooseFromMenus(page, 41), is.lineup, 'Mac yard line-up (41)');
+    await fill(page, { 0: '41975', 1: 'W', 2: 'S1', '-1': '24' });
+    let m = expect(await press(page, 'Enter'), is.lineup, 'Mac yard line-up');
+    for (let pageNo = 0; pageNo < 6; pageNo++) {
+      await capture('mac');
+      if (/END OF FILE/.test(m.text)) break;
+      m = expect(await press(page, 'F8'), is.lineup, 'next Mac yard line-up page');
+    }
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (skipped Mac yard line-up 41: ${err.message})`);
   }
 
   await toMainMenu(page); // leave CATS ready for the next check

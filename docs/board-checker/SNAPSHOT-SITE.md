@@ -10,6 +10,9 @@ The site has two views: **Snapshots** (every check, with "Find a turn" and
 its history) and **Order summary** (each line-up train from the first time
 it was seen to its on-duty time on the Call Board, with how far the first
 planned and ordered times were off). Both are built from the same history.
+Since 2026-10-17 they also cover Toronto: the Mac yard line-up with the
+predicted bunkhouse crews, time on duty Sarnia → Toronto, and the red/yellow
+Non-Sarnia Crew flags.
 
 The code is on the branch `claude/vigilant-planck-zawrj4` (it includes
 everything from `claude/auto-board-checker-plan-hdk1n5`).

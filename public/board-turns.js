@@ -25,6 +25,15 @@
     for (const t of s.onDuty || []) {
       if (turnIn(t.crew, turn)) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}` });
     }
+    // Toronto: in the Mac bunkhouse, and the train it's predicted to take home.
+    for (const c of s.bunkhouse || []) {
+      if (c.en !== turn && c.co !== turn) continue;
+      const mate = c.en === turn ? c.co : c.en;
+      out.push({ kind: 'bunkhouse', text: `In the Toronto bunkhouse, position ${c.pos}${mate ? ` (with ${mate})` : ''}${c.offDuty ? `, off duty ${c.offDuty}` : ''}, ${c.ready ? 'rested' : `rest until ${c.rested}`}` });
+      const t = (s.macLineup || []).find((x) => x.crewPos === c.pos);
+      out.push(t ? { kind: 'homeTrain', train: t.train, text: `Predicted home on ${t.train} (${t.status} ${t.order})` }
+        : { kind: 'homeTrain', text: 'No train on the Toronto line-up for it yet' });
+    }
     for (const t of s.sequence || []) {
       if (t.turn === turn) out.push({ kind: 'sequence', train: t.train, text: `Called on ${t.train} (order ${t.order}, ${t.actual && t.actual !== t.expected && t.actual !== 'MU' ? `should have been ${t.expected}` : 'matches the sequence'})` });
     }
@@ -43,6 +52,7 @@
     for (const p of s.pools || []) for (const t of p.turns) set.add(t.turn);
     for (const t of s.away || []) set.add(t);
     for (const r of s.returning || []) set.add(r.split(' ')[0]);
+    for (const c of s.bunkhouse || []) { if (c.en) set.add(c.en); if (c.co) set.add(c.co); }
     for (const t of s.onDuty || []) for (const m of (t.crew || '').matchAll(/\b([A-Z]{1,2}\d{2,3})\b/g)) set.add(m[1]);
     return [...set].filter((t) => /^[A-Z]{1,2}\d{2,3}$/.test(t)).sort();
   }

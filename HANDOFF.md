@@ -8,16 +8,27 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
-## ▶ In progress (2026-10-17): two more checks (planning)
-Owner wants the board checker to read two more screens and the website to
-show them. Check 1 = **option 28, crews in the Toronto bunkhouse** (see
-docs/board-checker/SCREENS.md: no CC, F8 until a page with no crew, F3; POS =
-order home; off duty = REST − 10 h → time on duty per trip with the Call
-Board's on-duty time; ignore B1 and the POOL box). Check 2 = **41 for Mac
-yard** (STATION 41975, DIR W, POOL S1, 24 h): trains home; crews pair with
-them in option-28 POS order. Owner will list what to look for and show.
-Plan: read both every check (skipped on trouble), Bunkhouse box on
-Snapshots, Find a turn, off duty / time on duty in the Order summary.
+## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
+Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
+- **board-auto.js** reads, after Sarnia's 41: **28 bunkhouse** (no CC; F8 until
+  a page with no crew) and **41 for Mac yard** (fills 41975 / W / S1 / 24;
+  the POOL box is assumed to be text box 2). Screens are captured with
+  `label: 'bunkhouse' | 'mac'`; failures only skip them ("skipped Bunkhouse
+  28" / "skipped Mac yard line-up 41"). Sarnia's 41 now blanks the POOL box
+  (CATS may keep S1).
+- **summary.js**: `bunkhouse` (EN+CO per POS, restUntil) and `macLineup`,
+  kept out of Sarnia's pools/line-up.
+- **Website**: one **Toronto line-up · Mac yard** table with the predicted
+  crew beside each train (bunkhouse order = train order; owner asked for one
+  table); Find a turn knows the bunkhouse and the train home. Order summary:
+  Toronto trains (filter "Trains from"), **off duty in Toronto = REST − 10 h**
+  matched to the Sarnia train the crew went on duty on → **time on duty**;
+  flags for Toronto trains gone from 41 and not on the Call Board 30 min
+  later: **red "Non-Sarnia Crew"** if no rested crew was in the bunkhouse
+  when it disappeared, **yellow "Possible Non-Sarnia Crew or Train
+  Cancelled"** if there was (only rested crews count; owner).
+- Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
+- Day-file format 3. 46 tests.
 
 ## ▶ Start here (2026-10-17): where things stand
 **Only one Claude session at a time may change the board checker / website.**
