@@ -57,6 +57,12 @@ from `origin/claude/vigilant-planck-zawrj4`.
 
 **Next:** the owner wants to add another feature (they'll describe it).
 
+**2026-10-17:** the AI check flagged "DHT031B 17 (0200) went to spareboard,
+but SR08's rest ends 0000, exactly at its call time, so it should have taken
+it". The engine was right by the owner's rule (rest ending exactly at the call
+time = still on rest, BOARD-CHECK.md); the review prompt only said "past the
+call time", so it now states the rule. The AI note never changes the answer.
+
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
 time each was taken, not specific to SR03. Built on branch
