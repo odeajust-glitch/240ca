@@ -29,8 +29,11 @@ cd C:\BoardChecker-code
 git checkout claude/vigilant-planck-zawrj4
 npm install
 npm install --no-save playwright
-npx playwright install chromium
 ```
+
+The checker uses Microsoft Edge, which Windows already has. Only if you set
+`BOARD_BROWSER=chromium` in `.env` do you also need
+`npx playwright install chromium`.
 
 Git will ask you to sign in to GitHub the first time.
 

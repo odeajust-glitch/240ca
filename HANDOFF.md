@@ -8,6 +8,15 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## 2026-10-17: board checker drives Microsoft Edge
+
+Owner asked for Edge instead of Chrome/Chromium. `lib/board/paths.js`
+`browser()` → Playwright `channel: 'msedge'` with its own sign-in folder
+`BoardChecker\profile-edge` (the old `profile` is left alone), so the first
+run after the switch needs one Microsoft/Authenticator sign-in.
+`BOARD_BROWSER=chromium` in `.env` goes back. `scripts/board-probe.js` still
+uses Chromium (dev tool only). Not yet run on the laptop.
+
 ## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
 Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
 - **board-auto.js** reads, after Sarnia's 41: **28 bunkhouse** (no CC; F8 until
