@@ -8,6 +8,15 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## ▶ In progress (2026-10-17): two more checks (planning)
+Owner wants the board checker to read two more screens and the website to
+show them. Check 1 = **option 28, crews in the Toronto bunkhouse** (see
+docs/board-checker/SCREENS.md: no CC, F8 until a page with no crew, F3; POS =
+order home; off duty = REST − 10 h → time on duty per trip with the Call
+Board's on-duty time; ignore B1 and the POOL box). Check 2: not described yet.
+Plan: read both every check (skipped on trouble), Bunkhouse box on
+Snapshots, Find a turn, off duty / time on duty in the Order summary.
+
 ## ▶ Start here (2026-10-17): where things stand
 **Only one Claude session at a time may change the board checker / website.**
 On 2026-10-16 a laptop session (on `claude/auto-board-checker-plan-hdk1n5`)
