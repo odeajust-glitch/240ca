@@ -44,6 +44,20 @@ npm start              # http://localhost:5174
 - `scripts/rebuild-croa-manifest.js` — rebuilds the manifest from PDFs already
   on disk.
 
+## Board checker (in progress)
+
+Reads the owner's CATS screens (captured locally with `scripts/board-probe.js`,
+names masked) and works out where each Sarnia road train should go and where a
+Chain Gang turn stands. Spec: [docs/board-checker/BOARD-CHECK.md](docs/board-checker/BOARD-CHECK.md);
+status: [HANDOFF.md](HANDOFF.md).
+
+```
+node scripts/board-auto.js --me SR03 [--every 20]   # sign in, it does the rest (settings in C:\Users\<you>\BoardChecker\.env: CATS_EMPLOYEE_NO/CATS_PASSWORD → it signs on to CATS itself; ANTHROPIC_API_KEY → Claude checks each changed report; every check is kept in BoardChecker\history)
+node scripts/board-check.js probe-out/summary.json --me SR03
+node scripts/board-site.js [--deploy]   # line-up snapshot website from BoardChecker\history (docs/board-checker/SNAPSHOT-SITE.md)
+npm test
+```
+
 ## Deployment
 
 Deployed to Render via [render.yaml](render.yaml) (all source PDFs are

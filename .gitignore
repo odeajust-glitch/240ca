@@ -4,3 +4,4 @@ server.log
 data/chunks_cache.json
 originals/
 analytics/
+probe-out/

@@ -1,0 +1,1015 @@
+{
+ "terminal": "Sarnia",
+ "snapshots": [
+  {
+   "taken": "2026-10-14 1617",
+   "label": "14th 1617",
+   "screens": [
+    "chainGang",
+    "lineup"
+   ],
+   "lineup": [
+    {
+     "order": "14th 2330",
+     "status": "ORD",
+     "train": "DHT141B 14",
+     "deadhead": true,
+     "info": "TOPC SD DT A1 B EnCo",
+     "engCrew": "45SASD0",
+     "trnCrew": "45SASR0",
+     "rules": "Chain Gang: SR01",
+     "call": "14th 2130",
+     "reason": "Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too. Called ~14th 2130."
+    },
+    {
+     "order": "15th 0015",
+     "status": "PLN",
+     "train": "E27861 14",
+     "deadhead": false,
+     "info": "TOPC 200MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR07",
+     "call": "14th 2200",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~14th 2200."
+    },
+    {
+     "order": "15th 0033",
+     "status": "PLN",
+     "train": "M39671 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR08",
+     "call": "14th 2218",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~14th 2218."
+    },
+    {
+     "order": "15th 0230",
+     "status": "ORD",
+     "train": "DHT211B 05",
+     "deadhead": true,
+     "info": "TOPC SD DT A1 B EnCo",
+     "engCrew": "45SASD0",
+     "trnCrew": "45SASR0",
+     "rules": "Chain Gang: SR06",
+     "call": "15th 0030",
+     "reason": "Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too. Called ~15th 0030. Skipped (keep their place): SR02 on rest until 15th 0100; SR05 on rest until 15th 0120."
+    },
+    {
+     "order": "15th 0400",
+     "status": "PLN",
+     "train": "L50231 15",
+     "deadhead": false,
+     "info": "TOPC 500GAR A EnCo",
+     "engCrew": "45SAS50",
+     "trnCrew": "45SAS50",
+     "rules": "S5 (L502/L501)",
+     "call": "15th 0145",
+     "reason": "L502/L501 is crewed by S5 and never counts."
+    },
+    {
+     "order": "15th 0545",
+     "status": "PLN",
+     "train": "Z14891 14",
+     "deadhead": false,
+     "info": "TOPC 100BIT A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0330",
+     "reason": "A train #1 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 0705",
+     "status": "PLN",
+     "train": "M30241 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0450",
+     "reason": "A train #2 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 0935",
+     "status": "PLN",
+     "train": "M39491 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0720",
+     "reason": "A train #3 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 0956",
+     "status": "PLN",
+     "train": "X30241 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool",
+     "call": "15th 0741",
+     "reason": "B train #1 of the road day starting 2026-10-15 (A used up)."
+    },
+    {
+     "order": "15th 1100",
+     "status": "PLN",
+     "train": "A42431 15",
+     "deadhead": false,
+     "info": "TOPC 400MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool",
+     "call": "15th 0845",
+     "reason": "B train #2 of the road day starting 2026-10-15 (A used up)."
+    },
+    {
+     "order": "15th 1310",
+     "status": "PLN",
+     "train": "E27861 15",
+     "deadhead": false,
+     "info": "TOPC 200MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR02",
+     "call": "15th 1055",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1055."
+    },
+    {
+     "order": "15th 1415",
+     "status": "PLN",
+     "train": "M39291 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR04 (goes spare → spareboard)",
+     "call": "15th 1200",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1200. Skipped (keep their place): SR05 on hold turn until 16th 0559. SR04 is marked ** → the turn goes out with a spareboard employee."
+    },
+    {
+     "order": "15th 1500",
+     "status": "PLN",
+     "train": "M38261 15",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR09 (goes spare → spareboard)",
+     "call": "15th 1245",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1245. Skipped (keep their place): SR05 on hold turn until 16th 0559. SR09 is marked ** → the turn goes out with a spareboard employee."
+    }
+   ],
+   "onDuty": [
+    {
+     "onDuty": "14th 0545",
+     "station": "SARNIA",
+     "train": "L50231 14",
+     "crew": "EN S502 · CO MU01"
+    },
+    {
+     "onDuty": "14th 0735",
+     "station": "SARNIA",
+     "train": "Z14891 13",
+     "crew": "EN S102 · ET MU01 · CO SA02"
+    },
+    {
+     "onDuty": "14th 0845",
+     "station": "SARNIA",
+     "train": "M30241 12",
+     "crew": "EN S103 · CO SA03"
+    },
+    {
+     "onDuty": "14th 0900",
+     "station": "TORONTO",
+     "train": "E27531 14",
+     "crew": "EN S101 · CO SA01"
+    },
+    {
+     "onDuty": "14th 0945",
+     "station": "SARNIA",
+     "train": "X38261 13",
+     "crew": "EN S104 · CO SA04"
+    },
+    {
+     "onDuty": "14th 0950",
+     "station": "SARNIA",
+     "train": "A42431 14",
+     "crew": "EN S305 · CO SB05"
+    },
+    {
+     "onDuty": "14th 1130",
+     "station": "TORONTO",
+     "train": "M39731 14",
+     "crew": "EN S303 · CO SB03"
+    },
+    {
+     "onDuty": "14th 1250",
+     "station": "TORONTO",
+     "train": "SQ13931 14",
+     "crew": "EN S304 · CO SB04"
+    },
+    {
+     "onDuty": "14th 1300",
+     "station": "SARNIA",
+     "train": "X39291 13",
+     "crew": "EN S306 · CO SB06"
+    },
+    {
+     "onDuty": "14th 1645",
+     "station": "TORONTO",
+     "train": "Z14931 14",
+     "crew": "EN SD10 · CO SR14"
+    },
+    {
+     "onDuty": "14th 1725",
+     "station": "TORONTO",
+     "train": "E27121 14",
+     "crew": "EN MU02 · CO SR03"
+    }
+   ],
+   "pools": [
+    {
+     "name": "Chain Gang (SR) · conductors",
+     "turns": [
+      {
+       "pos": "001",
+       "turn": "SR01",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "002",
+       "turn": "SR07",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "003",
+       "turn": "SR08",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "004",
+       "turn": "SR02",
+       "craft": "CO",
+       "status": "rest until 15th 0100"
+      },
+      {
+       "pos": "005",
+       "turn": "SR05",
+       "craft": "CO",
+       "status": "hold turn until 16th 0559; rest until 15th 0120"
+      },
+      {
+       "pos": "006",
+       "turn": "SR06",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "007",
+       "turn": "SR04",
+       "craft": "CO",
+       "status": "** goes spare, return 14th 1026"
+      },
+      {
+       "pos": "008",
+       "turn": "SR09",
+       "craft": "CO",
+       "status": "** goes spare, return 14th 1600"
+      }
+     ]
+    }
+   ],
+   "away": [
+    "SR12"
+   ],
+   "returning": [
+    "SR14 (Z14931 14)",
+    "SR03 (E27121 14)"
+   ],
+   "sequence": [
+    {
+     "order": "14th 0600",
+     "train": "L50231 14",
+     "turn": "MU01",
+     "expected": "S5",
+     "actual": "MU"
+    },
+    {
+     "order": "14th 0750",
+     "train": "Z14891 13",
+     "turn": "SA02",
+     "expected": "A",
+     "actual": "A"
+    },
+    {
+     "order": "14th 0900",
+     "train": "M30241 12",
+     "turn": "SA03",
+     "expected": "A",
+     "actual": "A"
+    },
+    {
+     "order": "14th 1000",
+     "train": "X38261 13",
+     "turn": "SA04",
+     "expected": "A",
+     "actual": "A"
+    },
+    {
+     "order": "14th 1005",
+     "train": "A42431 14",
+     "turn": "SB05",
+     "expected": "B",
+     "actual": "B"
+    },
+    {
+     "order": "14th 1315",
+     "train": "X39291 13",
+     "turn": "SB06",
+     "expected": "B",
+     "actual": "B"
+    }
+   ],
+   "flags": [
+    "L50231 14 (on duty SARNIA 14th 0545): CO on make-up turn MU01 with S502. MU is never right on L502 (S5); possible miscoding."
+   ],
+   "changes": null
+  },
+  {
+   "taken": "2026-10-15 0143",
+   "label": "15th 0143",
+   "screens": [
+    "chainGang",
+    "lineup"
+   ],
+   "lineup": [
+    {
+     "order": "15th 0400",
+     "status": "ORD",
+     "train": "M30241 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SASD0",
+     "trnCrew": "45SASR0",
+     "rules": "Chain Gang: SR02",
+     "call": "15th 0145",
+     "reason": "A and B used up for this road day → Chain Gang. CATS has it ordered for the Chain Gang too. Called ~15th 0145."
+    },
+    {
+     "order": "15th 0623",
+     "status": "PLN",
+     "train": "M39491 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0408",
+     "reason": "A train #1 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 0728",
+     "status": "PLN",
+     "train": "Z14891 14",
+     "deadhead": false,
+     "info": "TOPC 100BIT A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0513",
+     "reason": "A train #2 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 1100",
+     "status": "PLN",
+     "train": "A42431 15",
+     "deadhead": false,
+     "info": "TOPC 400MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool",
+     "call": "15th 0845",
+     "reason": "A train #3 of the road day starting 2026-10-15 (first 3 after 0459)."
+    },
+    {
+     "order": "15th 1310",
+     "status": "PLN",
+     "train": "E27861 15",
+     "deadhead": false,
+     "info": "TOPC 200MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool",
+     "call": "15th 1055",
+     "reason": "B train #1 of the road day starting 2026-10-15 (A used up)."
+    },
+    {
+     "order": "15th 1315",
+     "status": "PLN",
+     "train": "X30241 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool",
+     "call": "15th 1100",
+     "reason": "B train #2 of the road day starting 2026-10-15 (A used up)."
+    },
+    {
+     "order": "15th 1500",
+     "status": "PLN",
+     "train": "M38261 15",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR04 (goes spare → spareboard)",
+     "call": "15th 1245",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1245. Skipped (keep their place): SR05 on hold turn until 16th 0559. SR04 is marked ** → the turn goes out with a spareboard employee."
+    },
+    {
+     "order": "15th 2216",
+     "status": "PLN",
+     "train": "M39671 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR09",
+     "call": "15th 2001",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 2001. Skipped (keep their place): SR05 on hold turn until 16th 0559."
+    }
+   ],
+   "onDuty": [
+    {
+     "onDuty": "14th 1645",
+     "station": "TORONTO",
+     "train": "Z14931 14",
+     "crew": "EN SD10 · CO SR14"
+    },
+    {
+     "onDuty": "14th 2330",
+     "station": "SARNIA",
+     "train": "M39671 13",
+     "crew": "EN SD07 · CO SR07"
+    },
+    {
+     "onDuty": "15th 0045",
+     "station": "TORONTO",
+     "train": "M38331 14",
+     "crew": "EN SD12 · CO SR12"
+    },
+    {
+     "onDuty": "15th 0130",
+     "station": "TORONTO",
+     "train": "M39931 15",
+     "crew": "EN S102 · ET MU01 · CO SA02"
+    },
+    {
+     "onDuty": "15th 0145",
+     "station": "AAAAAA",
+     "train": "L50131 14",
+     "crew": "EN S502 · CO MU01"
+    },
+    {
+     "onDuty": "15th 0300",
+     "station": "SARNIA",
+     "train": "DHT211B 05",
+     "crew": "EN SD06 · CO SR08"
+    },
+    {
+     "onDuty": "15th 0300",
+     "station": "SARNIA",
+     "train": "DHT211C 05",
+     "crew": "EN SD13 · CO SR06"
+    },
+    {
+     "onDuty": "15th 0300",
+     "station": "SARNIA",
+     "train": "L50231 15",
+     "crew": "EN S501 · CO S501"
+    }
+   ],
+   "pools": [
+    {
+     "name": "Chain Gang (SR) · conductors",
+     "turns": [
+      {
+       "pos": "001",
+       "turn": "SR02",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "002",
+       "turn": "SR05",
+       "craft": "CO",
+       "status": "hold turn until 16th 0559"
+      },
+      {
+       "pos": "003",
+       "turn": "SR04",
+       "craft": "CO",
+       "status": "** goes spare, return 15th 1026"
+      },
+      {
+       "pos": "004",
+       "turn": "SR09",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "005",
+       "turn": "SR03",
+       "craft": "CO",
+       "status": "rest until 15th 1015"
+      },
+      {
+       "pos": "999",
+       "turn": "SR07",
+       "craft": "CO",
+       "status": "out working on M39671"
+      },
+      {
+       "pos": "999",
+       "turn": "SR08",
+       "craft": "CO",
+       "status": "out working on DHT211B"
+      },
+      {
+       "pos": "999",
+       "turn": "SR06",
+       "craft": "CO",
+       "status": "out working on DHT211C"
+      }
+     ]
+    }
+   ],
+   "away": [
+    "SR01"
+   ],
+   "returning": [
+    "SR14 (Z14931 14)",
+    "SR12 (M38331 14)"
+   ],
+   "sequence": [
+    {
+     "order": "14th 2345",
+     "train": "M39671 13",
+     "turn": "SR07",
+     "expected": "SR",
+     "actual": "SR"
+    },
+    {
+     "order": "15th 0300",
+     "train": "DHT211B 05",
+     "turn": "SR08",
+     "expected": "SR",
+     "actual": "SR"
+    },
+    {
+     "order": "15th 0300",
+     "train": "DHT211C 05",
+     "turn": "SR06",
+     "expected": "SR",
+     "actual": "SR"
+    },
+    {
+     "order": "15th 0315",
+     "train": "L50231 15",
+     "turn": "S501",
+     "expected": "S5",
+     "actual": "S5"
+    }
+   ],
+   "flags": [
+    "L50131 14 (on duty AAAAAA 15th 0145): CO on make-up turn MU01 with S502. MU is never right on L502 (S5); possible miscoding."
+   ],
+   "changes": [
+    "~ M30241 13 time 15th 0705 → 15th 0400",
+    "~ M30241 13 PLN → ORD",
+    "~ M30241 13 crew A pool → Chain Gang: SR02",
+    "~ M39491 14 time 15th 0935 → 15th 0623",
+    "~ Z14891 14 time 15th 0545 → 15th 0728",
+    "~ A42431 15 crew B pool → A pool",
+    "~ E27861 15 crew Chain Gang: SR02 → B pool",
+    "~ X30241 13 time 15th 0956 → 15th 1315",
+    "~ M38261 15 crew Chain Gang: SR09 (goes spare → spareboard) → Chain Gang: SR04 (goes spare → spareboard)",
+    "+ M39671 14 new on the line-up (PLN 15th 2216) → Chain Gang: SR09",
+    "- DHT141B 14 off the line-up (on duty, gone, or cancelled)",
+    "- E27861 14 off the line-up (on duty, gone, or cancelled)",
+    "- M39671 13 off the line-up (on duty, gone, or cancelled)",
+    "- DHT211B 05 off the line-up (on duty, gone, or cancelled)",
+    "- L50231 15 off the line-up (on duty, gone, or cancelled)",
+    "- M39291 14 off the line-up (on duty, gone, or cancelled)",
+    "~ SR02 position 004 → 001",
+    "~ SR02 rest until 15th 0100 → available",
+    "~ SR05 position 005 → 002",
+    "~ SR05 hold turn until 16th 0559; rest until 15th 0120 → hold turn until 16th 0559",
+    "~ SR04 position 007 → 003",
+    "~ SR04 ** goes spare, return 14th 1026 → ** goes spare, return 15th 1026",
+    "~ SR09 position 008 → 004",
+    "~ SR09 ** goes spare, return 14th 1600 → available",
+    "+ SR03 now on the Sarnia board at 005",
+    "~ SR07 position 002 → 999",
+    "~ SR07 available → out working on M39671",
+    "~ SR08 position 003 → 999",
+    "~ SR08 available → out working on DHT211B",
+    "~ SR06 position 006 → 999",
+    "~ SR06 available → out working on DHT211C",
+    "- SR01 off the Sarnia board"
+   ]
+  },
+  {
+   "taken": "2026-10-15 0815",
+   "label": "15th 0815",
+   "screens": [
+    "chainGang",
+    "aPool",
+    "bPool",
+    "lineup"
+   ],
+   "lineup": [
+    {
+     "order": "15th 1100",
+     "status": "PLN",
+     "train": "A42431 15",
+     "deadhead": false,
+     "info": "TOPC 400MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool: SA07",
+     "call": "15th 0845",
+     "reason": "A train #3 of the road day starting 2026-10-15 (first 3 after 0459). SA07 is first out."
+    },
+    {
+     "order": "15th 1335",
+     "status": "PLN",
+     "train": "X30241 13",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool: SB01",
+     "call": "15th 1120",
+     "reason": "B train #1 of the road day starting 2026-10-15 (A used up). SB01 is first out."
+    },
+    {
+     "order": "15th 1600",
+     "status": "PLN",
+     "train": "M38261 15",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "B pool: SB02 (goes spare → spareboard)",
+     "call": "15th 1345",
+     "reason": "B train #2 of the road day starting 2026-10-15 (A used up). SB02 is first out. It's on rest/hold past the call (~15th 1345) → goes spare to the spareboard."
+    },
+    {
+     "order": "15th 1610",
+     "status": "PLN",
+     "train": "E27861 15",
+     "deadhead": false,
+     "info": "TOPC 200MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR04 (goes spare → spareboard)",
+     "call": "15th 1355",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1355. Skipped (keep their place): SR05 on hold turn until 16th 0559. SR04 is marked ** → the turn goes out with a spareboard employee."
+    },
+    {
+     "order": "15th 2153",
+     "status": "PLN",
+     "train": "M39671 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "Chain Gang: SR09",
+     "call": "15th 1938",
+     "reason": "A and B used up for this road day → Chain Gang. Called ~15th 1938. Skipped (keep their place): SR05 on hold turn until 16th 0559."
+    },
+    {
+     "order": "16th 0400",
+     "status": "PLN",
+     "train": "L50231 16",
+     "deadhead": false,
+     "info": "TOPC 500GAR A EnCo",
+     "engCrew": "45SAS50",
+     "trnCrew": "45SAS50",
+     "rules": "S5 (L502/L501)",
+     "call": "16th 0145",
+     "reason": "L502/L501 is crewed by S5 and never counts."
+    },
+    {
+     "order": "16th 0520",
+     "status": "PLN",
+     "train": "M39491 15",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool: SA08",
+     "call": "16th 0305",
+     "reason": "A train #1 of the road day starting 2026-10-16 (first 3 after 0459). SA08 is first out."
+    },
+    {
+     "order": "16th 0545",
+     "status": "PLN",
+     "train": "Z14891 15",
+     "deadhead": false,
+     "info": "TOPC 100BIT A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool: SA09",
+     "call": "16th 0330",
+     "reason": "A train #2 of the road day starting 2026-10-16 (first 3 after 0459). SA09 is first out."
+    },
+    {
+     "order": "16th 0546",
+     "status": "PLN",
+     "train": "M30241 14",
+     "deadhead": false,
+     "info": "TOPC 300MAC A EnCo",
+     "engCrew": "45SAS10",
+     "trnCrew": "45SASA0",
+     "rules": "A pool: SA01",
+     "call": "16th 0331",
+     "reason": "A train #3 of the road day starting 2026-10-16 (first 3 after 0459). SA01 is first out."
+    }
+   ],
+   "onDuty": [
+    {
+     "onDuty": "14th 2330",
+     "station": "SARNIA",
+     "train": "M39671 13",
+     "crew": "EN SD07 · CO SR07"
+    },
+    {
+     "onDuty": "15th 0045",
+     "station": "TORONTO",
+     "train": "M38331 14",
+     "crew": "EN SD12 · CO SR12"
+    },
+    {
+     "onDuty": "15th 0130",
+     "station": "TORONTO",
+     "train": "M39931 15",
+     "crew": "EN S102 · ET MU01 · CO SA02"
+    },
+    {
+     "onDuty": "15th 0145",
+     "station": "AAAAAA",
+     "train": "L50131 14",
+     "crew": "EN S502 · CO MU01"
+    },
+    {
+     "onDuty": "15th 0300",
+     "station": "SARNIA",
+     "train": "L50231 15",
+     "crew": "EN S501 · CO S501"
+    },
+    {
+     "onDuty": "15th 0345",
+     "station": "SARNIA",
+     "train": "M30241 13",
+     "crew": "EN SD03 · CO SR02"
+    },
+    {
+     "onDuty": "15th 0515",
+     "station": "TORONTO",
+     "train": "E27531 15",
+     "crew": "EN S103 · CO SA03"
+    },
+    {
+     "onDuty": "15th 0615",
+     "station": "TORONTO",
+     "train": "A42531 15",
+     "crew": "EN S104 · CO SA04"
+    },
+    {
+     "onDuty": "15th 0615",
+     "station": "SARNIA",
+     "train": "M39491 14",
+     "crew": "EN S105 · CO SA05"
+    },
+    {
+     "onDuty": "15th 0745",
+     "station": "TORONTO",
+     "train": "M39731 15",
+     "crew": "EN S305 · CO SB05"
+    },
+    {
+     "onDuty": "15th 0945",
+     "station": "SARNIA",
+     "train": "Z14891 14",
+     "crew": "EN S106 · CO SA06"
+    }
+   ],
+   "pools": [
+    {
+     "name": "Chain Gang (SR) · conductors",
+     "turns": [
+      {
+       "pos": "001",
+       "turn": "SR05",
+       "craft": "CO",
+       "status": "hold turn until 16th 0559"
+      },
+      {
+       "pos": "002",
+       "turn": "SR04",
+       "craft": "CO",
+       "status": "** goes spare, return 15th 1026"
+      },
+      {
+       "pos": "003",
+       "turn": "SR09",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "004",
+       "turn": "SR03",
+       "craft": "CO",
+       "status": "rest until 15th 1015"
+      },
+      {
+       "pos": "005",
+       "turn": "SR14",
+       "craft": "CO",
+       "status": "B0: working another job, goes spare if called"
+      },
+      {
+       "pos": "999",
+       "turn": "SR07",
+       "craft": "CO",
+       "status": "out working on M39671"
+      },
+      {
+       "pos": "999",
+       "turn": "SR02",
+       "craft": "CO",
+       "status": "out working on M30241"
+      }
+     ]
+    },
+    {
+     "name": "A pool (SA)",
+     "turns": [
+      {
+       "pos": "001",
+       "turn": "SA07",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "002",
+       "turn": "SA08",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "003",
+       "turn": "SA09",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "004",
+       "turn": "SA01",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "999",
+       "turn": "SA05",
+       "craft": "CO",
+       "status": "out working on M39491"
+      },
+      {
+       "pos": "999",
+       "turn": "SA06",
+       "craft": "CO",
+       "status": "out working on Z14891"
+      }
+     ]
+    },
+    {
+     "name": "B pool (SB)",
+     "turns": [
+      {
+       "pos": "001",
+       "turn": "SB01",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "002",
+       "turn": "SB02",
+       "craft": "CO",
+       "status": "rest until 15th 2300"
+      },
+      {
+       "pos": "003",
+       "turn": "SB03",
+       "craft": "CO",
+       "status": "available"
+      },
+      {
+       "pos": "004",
+       "turn": "SB04",
+       "craft": "CO",
+       "status": "rest until 15th 1930"
+      }
+     ]
+    }
+   ],
+   "away": [
+    "SR01",
+    "SR06",
+    "SR08"
+   ],
+   "returning": [
+    "SR12 (M38331 14)"
+   ],
+   "sequence": [
+    {
+     "order": "14th 2345",
+     "train": "M39671 13",
+     "turn": "SR07",
+     "expected": "SR",
+     "actual": "SR"
+    },
+    {
+     "order": "15th 0315",
+     "train": "L50231 15",
+     "turn": "S501",
+     "expected": "S5",
+     "actual": "S5"
+    },
+    {
+     "order": "15th 0400",
+     "train": "M30241 13",
+     "turn": "SR02",
+     "expected": "SR",
+     "actual": "SR"
+    },
+    {
+     "order": "15th 0630",
+     "train": "M39491 14",
+     "turn": "SA05",
+     "expected": "A",
+     "actual": "A"
+    },
+    {
+     "order": "15th 1000",
+     "train": "Z14891 14",
+     "turn": "SA06",
+     "expected": "A",
+     "actual": "A"
+    }
+   ],
+   "flags": [
+    "L50131 14 (on duty AAAAAA 15th 0145): CO on make-up turn MU01 with S502. MU is never right on L502 (S5); possible miscoding."
+   ],
+   "changes": [
+    "~ A42431 15 crew A pool → A pool: SA07",
+    "~ X30241 13 time 15th 1315 → 15th 1335",
+    "~ X30241 13 crew B pool → B pool: SB01",
+    "~ M38261 15 time 15th 1500 → 15th 1600",
+    "~ M38261 15 crew Chain Gang: SR04 (goes spare → spareboard) → B pool: SB02 (goes spare → spareboard)",
+    "~ E27861 15 time 15th 1310 → 15th 1610",
+    "~ E27861 15 crew B pool → Chain Gang: SR04 (goes spare → spareboard)",
+    "~ M39671 14 time 15th 2216 → 15th 2153",
+    "+ L50231 16 new on the line-up (PLN 16th 0400) → S5 (L502/L501)",
+    "+ M39491 15 new on the line-up (PLN 16th 0520) → A pool: SA08",
+    "+ Z14891 15 new on the line-up (PLN 16th 0545) → A pool: SA09",
+    "+ M30241 14 new on the line-up (PLN 16th 0546) → A pool: SA01",
+    "- M30241 13 off the line-up (on duty, gone, or cancelled)",
+    "- M39491 14 off the line-up (on duty, gone, or cancelled)",
+    "- Z14891 14 off the line-up (on duty, gone, or cancelled)",
+    "~ SR05 position 002 → 001",
+    "~ SR04 position 003 → 002",
+    "~ SR09 position 004 → 003",
+    "~ SR03 position 005 → 004",
+    "+ SR14 now on the Sarnia board at 005",
+    "~ SR02 position 001 → 999",
+    "~ SR02 available → out working on M30241",
+    "- SR08 off the Sarnia board",
+    "- SR06 off the Sarnia board"
+   ]
+  }
+ ]
+}

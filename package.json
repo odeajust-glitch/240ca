@@ -8,13 +8,14 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pdf-parse": "^2.4.5",
