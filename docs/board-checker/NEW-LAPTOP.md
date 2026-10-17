@@ -84,3 +84,19 @@ the CATS sign-on and checks every 5 minutes. Leave the window alone.
 Stop the script there (Ctrl+C) so the two don't both sign in to CATS. Then
 delete `C:\Users\<you>\BoardChecker\.env` on the old laptop if it won't run the
 checker any more.
+
+## 8. Start it automatically when Windows signs in (owner, 2026-10-17)
+
+`scripts\start-board-checker.cmd` starts the board checker the same way as
+step 5. To have Windows run it at sign-in:
+
+1. Press **Windows key + R**, type `shell:startup`, press Enter. A folder opens.
+2. In another window open `C:\BoardChecker-code\scripts`.
+3. **Right-click** `start-board-checker.cmd` → **Show more options** →
+   **Create shortcut**, then drag the new shortcut into the Startup folder.
+
+After a restart a black window titled "Board checker" opens by itself and the
+browser follows. If Microsoft asks you to sign in (Authenticator), do that;
+the rest is automatic. To stop it, close that window or press Ctrl+C in it.
+Windows only signs in by itself if the laptop has no password or you've set
+it to; otherwise it starts as soon as you sign in.

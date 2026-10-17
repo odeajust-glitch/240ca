@@ -37,6 +37,21 @@ Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
   Toronto** (Mac yard line-up, or odd third manifest digit): shown "n/a".
 - Day-file format 3. 46 tests.
 
+**2026-10-17 review (owner picked 4, 9, 12, 15, 17, 18; the rest is in
+docs/board-checker/CHECKUP.md for 2026-10-22, Netlify usage 2026-10-24, both
+on the owner's calendar):**
+- #4 A Toronto-only change (bunkhouse / Mac yard line-up) now also updates
+  the website (`toronto` fingerprint in board-auto.js `answer()`).
+- #9 Order summary count uses the colour bands (green < 30 m, yellow to
+  1 h 56 m, red beyond) instead of ±15 m.
+- #12 Snapshots say when the Toronto screens weren't read.
+- #15 `scripts/start-board-checker.cmd` + NEW-LAPTOP.md step 8 (Startup
+  folder shortcut) to start at Windows sign-in.
+- #2 reverted: Sarnia's 41 no longer clears POOL; owner says an S1 left there
+  is harmless.
+- #18 pull request to `main` opened; #17 old preview/zip removed.
+- **Laptop not updated yet**: owner will `git pull` + restart when back.
+
 ## ▶ Start here (2026-10-17): where things stand
 **Only one Claude session at a time may change the board checker / website.**
 On 2026-10-16 a laptop session (on `claude/auto-board-checker-plan-hdk1n5`)

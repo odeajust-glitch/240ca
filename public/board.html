@@ -349,7 +349,16 @@ function lineup(s) {
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
-  if (!trains.length && !crews.length) return '';
+  // Say so when a Toronto screen wasn't read, so an empty table isn't taken
+  // for "no trains" or "no crews".
+  const readB = (s.screens || []).includes('bunkhouse');
+  const readM = (s.screens || []).includes('macLineup');
+  if (!readB && !readM) {
+    return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2></header>
+      <p class="empty">The Toronto screens (bunkhouse 28 and the Mac yard line-up 41) weren't read in this check.</p></section>`;
+  }
+  const missing = !readB ? 'The bunkhouse (28) wasn\'t read in this check, so no crews are shown.'
+    : !readM ? 'The Mac yard line-up (41) wasn\'t read in this check, so no trains are shown.' : '';
   const byPos = new Map(crews.map((c) => [c.pos, c]));
   const crewCell = (c) => {
     if (!c) return '<span class="muted">no crew in the bunkhouse yet</span>';
@@ -367,7 +376,7 @@ function toronto(s) {
   const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
   return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 10 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 10 h.</div></section>`;
 }
 
 function dot(status) {
@@ -538,9 +547,10 @@ function ordersView(all, day, openId, find, from = 'all') {
   const done = rows.filter((r) => r.onDuty);
   const vsPlan = done.filter((r) => r.offPlan != null);
   const avg = vsPlan.length ? Math.round(vsPlan.reduce((n, r) => n + Math.abs(r.offPlan), 0) / vsPlan.length) : null;
-  const onTime = vsPlan.filter((r) => Math.abs(r.offPlan) <= ON_TIME).length;
-  const late = vsPlan.filter((r) => r.offPlan > ON_TIME).length;
-  const early = vsPlan.filter((r) => r.offPlan < -ON_TIME).length;
+  // Same bands as the colours in the table.
+  const green = vsPlan.filter((r) => Math.abs(r.offPlan) < OFF_YELLOW).length;
+  const yellow = vsPlan.filter((r) => Math.abs(r.offPlan) >= OFF_YELLOW && Math.abs(r.offPlan) <= OFF_RED).length;
+  const red = vsPlan.filter((r) => Math.abs(r.offPlan) > OFF_RED).length;
   const changed = rows.filter((r) => r.orderChanges > 0).length;
   const tod = rows.filter((r) => r.timeOnDuty != null).map((r) => r.timeOnDuty);
   const flagged = rows.filter((r) => r.flag);
@@ -575,7 +585,7 @@ function ordersView(all, day, openId, find, from = 'all') {
     <div class="strip">
       <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
       <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
-      <div class="stat"><div class="v">${onTime} <small>on time · ${late} late · ${early} early</small></div><div class="l">Against the first plan (±${ON_TIME} m)</div></div>
+      <div class="stat"><div class="v"><span class="offv ok">${green}</span> <small>·</small> <span class="offv warn">${yellow}</span> <small>·</small> <span class="offv bad">${red}</span></div><div class="l">First plan vs on duty: under 30 m · 30 m–1 h 56 m · beyond</div></div>
       <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
     </div>
     <div class="strip">

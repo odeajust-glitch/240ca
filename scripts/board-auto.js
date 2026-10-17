@@ -264,8 +264,9 @@ async function runRoute(page, opts = {}) {
 
   // Train Line-up: 41, Sarnia (47130), eastbound, 24 h ahead.
   expect(await chooseFromMenus(page, 41), is.lineup, 'Train Line-up (41)');
-  // POOL left blank on purpose: CATS may keep the S1 typed for Mac yard.
-  await fill(page, { 0: '47130', 1: 'E', 2: '', '-1': '24' });
+  // POOL isn't touched: an S1 left there from Mac yard's line-up changes
+  // nothing on Sarnia's (owner, 2026-10-17).
+  await fill(page, { 0: '47130', 1: 'E', '-1': '24' });
   let s = expect(await press(page, 'Enter'), is.lineup, 'Train Line-up');
   for (let pageNo = 0; pageNo < 6; pageNo++) {
     await capture();
@@ -323,8 +324,12 @@ function answer(summary, me, nowOverride) {
   // The working behind each train, for the AI review.
   const detailed = formatReport(result, input.seen, { details: true });
   const lines = changeLines(prev, cur); // ['', heading, ...one line per change]
-  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged };
+  // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
+  // gets its own fingerprint: a change there also updates the website.
+  const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
+  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto };
 }
+let lastToronto = null;
 
 // Claude's look over the check (lib/board/review.js). Only when something
 // changed, so an unchanged board every 5 minutes doesn't cost a call each time.
@@ -548,7 +553,9 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page, poolOpts);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto } = answer(summary, me, nowOverride);
+      const torontoChanged = toronto !== lastToronto;
+      lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
       const note = first || changed ? await aiReview(detailed) : null;
       try {
@@ -563,7 +570,7 @@ async function main() {
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
-      await publishSite(first || changed);
+      await publishSite(first || changed || torontoChanged);
       retried = false;
     } catch (err) {
       if (err instanceof NeedSignIn) {
