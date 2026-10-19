@@ -421,11 +421,33 @@ async function signOn(page) {
   await toMainMenu(page); // F3 if something's still in the way
 }
 
+// When the Microsoft sign-in (about every 24 h) expires mid-session, CATS
+// sends the Microsoft login into its inner frame, and Microsoft refuses to
+// load there ("login.microsoftonline.com refused to connect"). Load CATS as
+// the whole page instead, so the login shows normally. True if it did.
+let catsUrl = START_URL;
+let lastLoginReload = 0;
+async function fixFramedLogin(page) {
+  const framed = page.frames().some((f) => f !== page.mainFrame()
+    && /login\.microsoftonline\.com|^chrome-error:/.test(f.url()));
+  if (!framed || Date.now() - lastLoginReload < 60000) return false;
+  lastLoginReload = Date.now();
+  console.log(`\x07[${stamp()}] Microsoft wants you to sign in again. Opening the sign-in page;`
+    + ' approve it in Authenticator and the script carries on.');
+  try {
+    await page.goto(catsUrl, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    console.log(`  (couldn't open it: ${err.message})`);
+  }
+  return true;
+}
+
 async function waitForMainMenu(page, prompt) {
   console.log(prompt);
   let otherSince = null; // when a CATS screen that isn't the menu showed up
   let rounds = 0;
   for (;;) {
+    if (await fixFramedLogin(page)) continue;
     const s = await screenState(page);
     if (s && is.mainMenu(s)) return;
     // Signed in (by hand or not) but stuck on a message: clear it with Enter
@@ -482,6 +504,7 @@ async function main() {
   const every = arg('--every') ? Math.max(5, +arg('--every')) : null;
   const poolOpts = { s1: optionArg('--s1') ?? config.poolOptions.S1, s3: optionArg('--s3') ?? config.poolOptions.S3 };
   const url = arg('--url') || START_URL; // --url is for testing against a local copy
+  catsUrl = url;
   let nowOverride;
   if (arg('--now')) {
     const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(arg('--now'));
@@ -534,6 +557,10 @@ async function main() {
         await waitForMainMenu(page, autoSignOn
           ? `\n[${stamp()}] CATS signed you out; signing back in.`
           : '\x07\nCATS signed you out. Sign in again and stop at the main menu.');
+        continue;
+      }
+      if (await fixFramedLogin(page)) {
+        await waitForMainMenu(page, 'Waiting for the Microsoft sign-in…');
         continue;
       }
       console.log(`[${stamp()}] Couldn't finish this check: ${err.message}`);

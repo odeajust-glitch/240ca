@@ -53,6 +53,14 @@ Don't add predictions, flags or questions beyond that. The default report
 prints just that answer (`--details` for the working). Route: Call Board, 23
 (CO), 41. Screens 19/21 are optional.
 
+## 2026-10-19: Microsoft re-sign-in blocked inside the CATS frame
+When the ~24 h Microsoft sign-in expires, CATS loads login.microsoftonline.com
+in `jacadaframe`; Microsoft refuses framing ("refused to connect", grey ⊘ in
+Edge). `fixFramedLogin()` spots a sub-frame on microsoftonline / chrome-error
+and `page.goto(catsUrl)` at top level (max once a minute), so the login shows
+full-page; owner approves in Authenticator. Called in `waitForMainMenu` and
+before giving up on a check. Tested on the fake CATS ('framed' variant).
+
 ## 2026-10-16 night: Enter past CATS messages after sign-on
 Owner: CATS sometimes shows messages after signing on. `clearMessages()`
 presses Enter up to 5 times, stopping at the main menu: after auto sign-on,
