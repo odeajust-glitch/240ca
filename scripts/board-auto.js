@@ -1,6 +1,7 @@
 // Does the board check by itself: you sign in to CATS once, then it walks
 // the route the owner taught (Call Board to the yard jobs, Chain Gang 23
-// with CO, A/B pools 19/21, SD pool 27, Train Line-up 41) and prints when you go to work,
+// with CO, A/B pools 19/21, SD pool 27, S1/S3 pools 25/26 with EN, Train Line-up 41,
+// then Mac yard: bunkhouse 28 and line-up 41 for 41975 W) and prints when you go to work,
 // the Chain Gang board, the line-up with who's projected on each train, and
 // what changed since the last check.
 //
@@ -24,8 +25,8 @@
 //
 // With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
 // website (lib/board/site.js) is rebuilt from history\ and published after a
-// check that changed, at most every BOARD_SITE_EVERY minutes (default 30).
-const { DATA_DIR, ENV_FILES, PROFILE_DIR, HISTORY_DIR } = require('../lib/board/paths');
+// check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, browser } = require('../lib/board/paths');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +37,7 @@ const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
-const { pushCheck } = require('../lib/board/relay');
+const { pushCheck, mineForPhone } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
 const { at } = require('../lib/board/time');
@@ -205,9 +206,11 @@ async function chooseFromMenus(page, option) {
 
 async function runRoute(page, opts = {}) {
   const screens = [];
-  const capture = async () => {
+  // `label` tells the loader which screens are Mac yard's (they look like
+  // Sarnia's 23 and 41).
+  const capture = async (label) => {
     const grid = (await describeFrame(catsFrame(page))).screenGrid;
-    screens.push({ step: screens.length + 1, at: new Date().toISOString(), screenGrid: grid });
+    screens.push({ step: screens.length + 1, at: new Date().toISOString(), screenGrid: grid, ...(label ? { label } : {}) });
     return grid;
   };
 
@@ -261,12 +264,46 @@ async function runRoute(page, opts = {}) {
 
   // Train Line-up: 41, Sarnia (47130), eastbound, 24 h ahead.
   expect(await chooseFromMenus(page, 41), is.lineup, 'Train Line-up (41)');
+  // POOL isn't touched: an S1 left there from Mac yard's line-up changes
+  // nothing on Sarnia's (owner, 2026-10-17).
   await fill(page, { 0: '47130', 1: 'E', '-1': '24' });
   let s = expect(await press(page, 'Enter'), is.lineup, 'Train Line-up');
   for (let pageNo = 0; pageNo < 6; pageNo++) {
     await capture();
     if (/END OF FILE/.test(s.text)) break;
     s = expect(await press(page, 'F8'), is.lineup, 'next Line-up page');
+  }
+
+  // Mac yard (owner, 2026-10-17); trouble here only skips them.
+  // 28: crews in the bunkhouse, no CC. F8 until a page has no crew.
+  try {
+    let b = expect(await chooseFromMenus(page, 28), is.poolPosition, 'Bunkhouse (28)');
+    for (let pageNo = 0; pageNo < 10; pageNo++) {
+      const grid = await capture('bunkhouse');
+      let crews = 0;
+      try { crews = S.parseChainGang(parseGrid(grid), Date.now() / 60000).turns.length; } catch { /* no heading: no crews */ }
+      if (!crews) break;
+      const next = await press(page, 'F8');
+      if (!next || !is.poolPosition(next) || next.text === b.text) break; // no more pages
+      b = next;
+    }
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (skipped Bunkhouse 28: ${err.message})`);
+  }
+  // 41 for Mac yard: station 41975, westbound, pool S1, 24 h ahead.
+  try {
+    expect(await chooseFromMenus(page, 41), is.lineup, 'Mac yard line-up (41)');
+    await fill(page, { 0: '41975', 1: 'W', 2: 'S1', '-1': '24' });
+    let m = expect(await press(page, 'Enter'), is.lineup, 'Mac yard line-up');
+    for (let pageNo = 0; pageNo < 6; pageNo++) {
+      await capture('mac');
+      if (/END OF FILE/.test(m.text)) break;
+      m = expect(await press(page, 'F8'), is.lineup, 'next Mac yard line-up page');
+    }
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (skipped Mac yard line-up 41: ${err.message})`);
   }
 
   await toMainMenu(page); // leave CATS ready for the next check
@@ -287,8 +324,12 @@ function answer(summary, me, nowOverride) {
   // The working behind each train, for the AI review.
   const detailed = formatReport(result, input.seen, { details: true });
   const lines = changeLines(prev, cur); // ['', heading, ...one line per change]
-  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, changes: lines.filter((l) => l), myAnswerChanged };
+  // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
+  // gets its own fingerprint: a change there also updates the website.
+  const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
+  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto };
 }
+let lastToronto = null;
 
 // Claude's look over the check (lib/board/review.js). Only when something
 // changed, so an unchanged board every 5 minutes doesn't cost a call each time.
@@ -546,7 +587,9 @@ async function main() {
 
   const { chromium } = loadPlaywright();
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const context = await chromium.launchPersistentContext(PROFILE_DIR, { headless: false });
+  const b = browser();
+  console.log(`Browser: ${b.name}`);
+  const context = await chromium.launchPersistentContext(b.profileDir, { headless: false, ...b.options });
   const page = context.pages()[0] || (await context.newPage());
   watchFramedLogin(page);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -565,7 +608,9 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const summary = await runRoute(page, poolOpts);
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, changes, myAnswerChanged } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto } = answer(summary, me, nowOverride);
+      const torontoChanged = toronto !== lastToronto;
+      lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
       const note = first || changed ? await aiReview(detailed) : null;
       try {
@@ -576,11 +621,11 @@ async function main() {
       }
       if (relay) {
         const report = note ? `${text}\n\n${note}` : text;
-        const check = { checkedAt: summary.probedAt, me: meLines, report, changes, myAnswerChanged };
+        const check = { checkedAt: summary.probedAt, me: meLines, mine, report, changes, myAnswerChanged };
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
-      await publishSite(first || changed);
+      await publishSite(first || changed || torontoChanged);
       retried = false;
     } catch (err) {
       if (err instanceof NeedSignIn) {

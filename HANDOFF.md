@@ -1,11 +1,151 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-16 (evening, new laptop) · Branch: `claude/auto-board-checker-plan-hdk1n5`
+Last updated: 2026-10-17 · Branch: **`claude/vigilant-planck-zawrj4`** (has
+everything; the board-checker laptop runs it)
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
+
+## 2026-10-17: board checker drives Microsoft Edge
+
+Owner asked for Edge instead of Chrome/Chromium. `lib/board/paths.js`
+`browser()` → Playwright `channel: 'msedge'` with its own sign-in folder
+`BoardChecker\profile-edge` (the old `profile` is left alone), so the first
+run after the switch needs one Microsoft/Authenticator sign-in.
+`BOARD_BROWSER=chromium` in `.env` goes back. `scripts/board-probe.js` still
+uses Chromium (dev tool only). Not yet run on the laptop.
+
+## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
+Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
+- **board-auto.js** reads, after Sarnia's 41: **28 bunkhouse** (no CC; F8 until
+  a page with no crew) and **41 for Mac yard** (fills 41975 / W / S1 / 24;
+  the POOL box is assumed to be text box 2). Screens are captured with
+  `label: 'bunkhouse' | 'mac'`; failures only skip them ("skipped Bunkhouse
+  28" / "skipped Mac yard line-up 41"). Sarnia's 41 now blanks the POOL box
+  (CATS may keep S1).
+- **summary.js**: `bunkhouse` (EN+CO per POS, restUntil) and `macLineup`,
+  kept out of Sarnia's pools/line-up.
+- **Website**: one **Toronto line-up · Mac yard** table with the predicted
+  crew beside each train (bunkhouse order = train order; owner asked for one
+  table); Find a turn knows the bunkhouse and the train home. Order summary:
+  Toronto trains (filter "Trains from"), **off duty in Toronto = REST − 8 h** (owner corrected from 10 h)
+  matched to the Sarnia train the crew went on duty on → **time on duty**;
+  flags for Toronto trains gone from 41 and not on the Call Board 30 min
+  later: **red "Non-Sarnia Crew"** if no rested crew was in the bunkhouse
+  when it disappeared, **yellow "Possible Non-Sarnia Crew or Train
+  Cancelled"** if there was (only rested crews count; owner).
+- Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
+- Owner: Order summary "off" colours, early or late alike: green < 30 m,
+  yellow 30 m – 1 h 56 m, red beyond (`offCell` in board.html).
+- Owner: a train out of Sarnia on an **MU conductor counts as Chain Gang**
+  (X27861 16 on MU01 showed as A), unless the engineer is A/B (miscoding
+  flag) or it's L501/L502 (S5).
+- Owner: **no Toronto off-duty time for L501/L502 or trains that start in
+  Toronto** (Mac yard line-up, or odd third manifest digit): shown "n/a".
+- Day-file format 3. 46 tests.
+
+**2026-10-17 review (owner picked 4, 9, 12, 15, 17, 18; the rest is in
+docs/board-checker/CHECKUP.md for 2026-10-22, Netlify usage 2026-10-24, both
+on the owner's calendar):**
+- #4 A Toronto-only change (bunkhouse / Mac yard line-up) now also updates
+  the website (`toronto` fingerprint in board-auto.js `answer()`).
+- #9 Order summary count uses the colour bands (green < 30 m, yellow to
+  1 h 56 m, red beyond) instead of ±15 m.
+- #12 Snapshots say when the Toronto screens weren't read.
+- #15 `scripts/start-board-checker.cmd` + NEW-LAPTOP.md step 8 (Startup
+  folder shortcut) to start at Windows sign-in.
+- #2 reverted: Sarnia's 41 no longer clears POOL; owner says an S1 left there
+  is harmless.
+- #18 pull request to `main` opened; #17 old preview/zip removed.
+- Laptop updated and restarted 2026-10-17; Startup shortcut added. PR #2
+  merged into `main`; this branch restarted from `main` for follow-ups.
+- **Turn history** (owner, 2026-10-17): the Find a turn panel shows the
+  current snapshot, then changes that lasted 30 m or more (orders, on duty,
+  rest/hold and spare always kept), then three lists: **Orders** (trains
+  projected for / called / on duty), **Rest** (each rest or hold period),
+  **Goes spare** (**, B0, or its train going spare; one line per stretch).
+  `BoardTurns.history` + `finish` in public/board-turns.js; turns.json shape
+  is now `{changes, orders, rests, spares}` per turn.
+
+## ▶ Start here (2026-10-17): where things stand
+**Only one Claude session at a time may change the board checker / website.**
+On 2026-10-16 a laptop session (on `claude/auto-board-checker-plan-hdk1n5`)
+and a website session (on `claude/vigilant-planck-zawrj4`) both changed
+`scripts/board-auto.js`, `lib/board/screens.js` and `summary.js`; the
+laptop's `git pull` hit conflicts. Fixed by merging the laptop branch into
+`claude/vigilant-planck-zawrj4` (commit 8e8c340, 40 tests). Develop on that
+branch and push there; if your session was given a different branch, start it
+from `origin/claude/vigilant-planck-zawrj4`.
+
+**What exists now:**
+- **Board checker** on the dedicated laptop (`C:\BoardChecker-code`, data in
+  `C:\Users\<you>\BoardChecker`): `node scripts/board-auto.js --me SR03 --every 5`.
+  Route: Call Board (3→6), 23 Chain Gang (CO), 19 A / 21 B (CO), 27 SD,
+  **25 S1 / 26 S3 (CC EN, owner)**, 41 line-up. Every check saved to
+  `history\<date>\<HHMM>.json`.
+- **Line-up snapshot website** for the union rep, on Netlify site
+  **boardtestsa** (https://boardtestsa.netlify.app, id
+  51fe13b9-72f2-4d91-8f6c-9a4afa292a58, public). Page `public/board.html`
+  + `public/board-turns.js` + `public/board-trains.js`; built from history by
+  `lib/board/site.js` (`scripts/board-site.js [--deploy]`), published by
+  board-auto.js after changed checks (≤ every `BOARD_SITE_EVERY`=90 min, owner 2026-10-17) when
+  `NETLIFY_AUTH_TOKEN` + `NETLIFY_SITE_ID` are in `BoardChecker\.env`.
+  Two views:
+  - **Snapshots**: every check (day picker, Earlier/Later), line-up 41 with
+    pool chips + "why", pools in tabs (Chain Gang, A, B, SD, S1, S3), Call
+    Board on duty, calling sequence, changes, flags. **Find a turn**
+    (highlight + panel + history across all checks; `data/turns.json`).
+  - **Order summary** (`#orders`): each line-up train by ID (symbol + origin
+    day, unique per month) from first seen (PLN time) → plan changes → ORD →
+    order changes → on duty on the Call Board (option 6, the "actual").
+    Per day: on duty count, average off, on time/late/early (±15 m), order
+    changes. No prep adjustment (owner). `data/trains.json`.
+  - Website drops "not ours" on L502 (owner).
+- Laptop setup steps: `docs/board-checker/SNAPSHOT-SITE.md`.
+
+**Not confirmed yet (ask the owner / check the laptop):**
+- Did the laptop's `git merge --abort` + `git pull` go through cleanly, and is
+  the board checker running on `claude/vigilant-planck-zawrj4`?
+- Netlify token + site ID added to `.env` and `board-site.js --deploy` worked?
+  (This sandbox can't reach api.netlify.com; deploy was only tested with a fake.)
+  Until then the site shows the 3 sample checks the owner uploaded by hand.
+- Screens 25/26 read on real CATS (no "skipped S1/S3 pool" lines)?
+- Owner previews: private artifact https://claude.ai/artifact/9MMCotd26Ev1UesVsW5pJM
+  (sample data). Manual zip = index.html + board-turns.js + board-trains.js +
+  board-sample.json.
+
+**2026-10-17: alerts in the shift tracker (RailroadTracker), built, not switched on.**
+Owner: "let's make it so I see when I go to work for now", with alerts when my turn
+is lined up to work in Sarnia, when it's ordered, and when the time changes 30 min or
+more. Plan: [docs/board-checker/SHIFT-TRACKER-PLAN.md](docs/board-checker/SHIFT-TRACKER-PLAN.md).
+- 240ca (ca304d3): each relay push carries `mine` (state, train, PLN/ORD, call/on-duty
+  times, railway local) from `mineForPhone` in `lib/board/relay.js`; 41 tests.
+  **The laptop needs a `git pull`** to send it.
+- RailroadTracker `board-relay` (e0ed9f8): `BoardAlerts.kt` decides the 3 alerts against
+  the app's last look; the Board tab leads with "On duty …". Its handoff §9 has the rules.
+  Unit tests pass on a plain JVM; **not yet built with Gradle/Android SDK**.
+- **Merged to `main`** (https://github.com/odeajust-glitch/240ca/pull/1, 2026-10-17, owner's
+  OK), with the line-up website's files (`board.html`, `board-turns.js`,
+  `board-trains.js`, `board-sample.json`) hidden on the Render site: `hideBoardSite` in
+  `lib/board/relay.js` returns 404 for them (owner). Netlify still builds from them. 42 tests.
+  Keep developing on `claude/vigilant-planck-zawrj4` (fast-forwarded to `main`); PR again.
+- **Still to do (owner):** (1) set `BOARD_KEY` on Render and confirm Render deploys `main`;
+  (2) laptop `git pull`, then `.env` `BOARD_RELAY_URL` + `BOARD_KEY`; (3) build, back up
+  the phone, install RailroadTracker `board-relay`.
+
+**2026-10-17:** the AI check flagged "DHT031B 17 (0200) went to spareboard,
+but SR08's rest ends 0000, exactly at its call time, so it should have taken
+it". The engine was right by the owner's rule (rest ending exactly at the call
+time = still on rest, BOARD-CHECK.md); the review prompt only said "past the
+call time", so it now states the rule. The AI note never changes the answer.
+**Owner then changed the rule (2026-10-17):** rest until 0000 = available at
+0000, and the same for HT (owner). Engine: `restsPast` / `heldPast` (ending
+> call) in engine.js. Review prompt, BOARD-CHECK.md and a test updated.
+⚠ Shadow check #1 (15th) had SR02 skipped with rest to 0100 vs an estimated
+0100 call for DHT211C; under the new rule the checker would have given it to
+SR02. Our call time is an estimate (on duty − 2 h), so watch for this.
 
 ## 2026-10-16 evening: line-up snapshot website (Netlify), publishes itself
 Owner wanted a page for a **union rep** showing the line-up snapshots at the
@@ -22,7 +162,7 @@ run that branch):
   collapse into "same until"; settled days are cached; `BOARD_SITE_DAYS`,
   default 30) and publishes with Netlify's file-digest API (only changed
   files upload). `board-auto.js` publishes after a changed check, at most
-  every `BOARD_SITE_EVERY` min (default 30), when `NETLIFY_AUTH_TOKEN` +
+  every `BOARD_SITE_EVERY` min (default 90), when `NETLIFY_AUTH_TOKEN` +
   `NETLIFY_SITE_ID` are in `.env`. Never stops a check. 34 tests.
 - Netlify site: **boardtestsa** (id 51fe13b9-72f2-4d91-8f6c-9a4afa292a58),
   public. Owner first uploaded by hand (Netlify Drop). Laptop steps:
@@ -45,6 +185,12 @@ run that branch):
   train for its story. Owner: compare as CATS shows them, no prep
   adjustment. Logic in `public/board-trains.js` (page + builder);
   `data/trains.json`. Needs real history to be useful (fixtures show it works).
+- Owner, same evening: website drops "not ours" from the L502 (S5) line
+  (`siteRules` in site.js; the laptop report keeps it). **S1/S3 engineer
+  pools** shown under Pools at Sarnia: board-auto.js now also reads **option
+  25 (S1) and 26 (S3) with CC `EN`** (owner); ⚠ layout assumed to match 23/27
+  until seen on real CATS, failures only skip them. Pool parser accepts S1nn/S3nn.
+  Day-file `format` bumped to 2 so cached days are rebuilt.
 
 ## ⚠ SCOPE (owner, 2026-10-15): ONLY "when do I go to work"
 The owner runs board checks only while waiting in Sarnia, because the line-ups
@@ -71,9 +217,12 @@ and in `waitForMainMenu` when a non-menu CATS screen sits 3 s (max 2 rounds,
 covers signing in by hand). Tested on the fake CATS with 2 message screens.
 
 ## ⚠ Branches (2026-10-16 night)
-The board-checker laptop ran branch `claude/vigilant-planck-zawrj4` (snapshot
-site work). `claude/auto-board-checker-plan-hdk1n5` now contains all of it
-plus S1/S3 (merged, 39 tests). Laptop should merge/switch to the latter.
+Two sessions worked in parallel: the laptop's on
+`claude/auto-board-checker-plan-hdk1n5` (S1/S3 boards in the engine, Enter
+past CATS messages) and the website one on `claude/vigilant-planck-zawrj4`
+(snapshot site, turn search, order summary). `claude/vigilant-planck-zawrj4`
+now has **both** merged (40 tests); the laptop runs that branch. The S1/S3
+route is the laptop session's (`config.poolOptions`, 25/26, CC EN).
 
 ## 2026-10-16: S1 / S3 engineer boards
 Owner: S1 turns go with A trains, S3 with B; they work like A/B (first in

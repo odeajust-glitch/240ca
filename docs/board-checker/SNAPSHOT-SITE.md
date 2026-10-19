@@ -3,13 +3,16 @@
 The board checker saves every check in `C:\Users\<you>\BoardChecker\history`.
 With the steps below it also turns those into the line-up snapshot website and
 publishes it to Netlify (site **boardtestsa**, https://boardtestsa.netlify.app)
-by itself: after a check where something changed, at most every 30 minutes.
+by itself: after a check where something changed, at most every 90 minutes.
 Nothing about whose turn it is goes on the site; names are masked as always.
 
 The site has two views: **Snapshots** (every check, with "Find a turn" and
 its history) and **Order summary** (each line-up train from the first time
 it was seen to its on-duty time on the Call Board, with how far the first
 planned and ordered times were off). Both are built from the same history.
+Since 2026-10-17 they also cover Toronto: the Mac yard line-up with the
+predicted bunkhouse crews, time on duty Sarnia → Toronto, and the red/yellow
+Non-Sarnia Crew flags.
 
 The code is on the branch `claude/vigilant-planck-zawrj4` (it includes
 everything from `claude/auto-board-checker-plan-hdk1n5`).
@@ -58,8 +61,8 @@ NETLIFY_SITE_ID=51fe13b9-72f2-4d91-8f6c-9a4afa292a58
 Save and close Notepad. (The site ID is boardtestsa's; it's on the site's
 **Site configuration** page in Netlify if you ever need it again.)
 
-Optional lines: `BOARD_SITE_EVERY=60` publishes at most once an hour instead
-of every 30 minutes; `BOARD_SITE_DAYS=14` keeps two weeks on the site instead
+Optional lines: `BOARD_SITE_EVERY=60` publishes at most once an hour instead of every 90 minutes;
+`BOARD_SITE_DAYS=14` keeps two weeks on the site instead
 of 30 days.
 
 ## 5. Publish once by hand to check it works
@@ -80,7 +83,7 @@ node scripts/board-auto.js --me SR03 --every 5
 ```
 
 After a check where something changed you'll see
-`Snapshot website updated.` (at most every 30 minutes). If publishing fails it
+`Snapshot website updated.` (at most every 90 minutes). If publishing fails it
 says `Snapshot website not updated: …` and the board check carries on.
 
 ## Good to know

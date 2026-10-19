@@ -65,7 +65,7 @@
      "info": "TOPC 500GAR A EnCo",
      "engCrew": "45SAS50",
      "trnCrew": "45SAS50",
-     "rules": "S5 (L502/L501, not ours)",
+     "rules": "S5 (L502/L501)",
      "call": "15th 0145",
      "reason": "L502/L501 is crewed by S5 and never counts."
     },
@@ -708,7 +708,7 @@
      "info": "TOPC 500GAR A EnCo",
      "engCrew": "45SAS50",
      "trnCrew": "45SAS50",
-     "rules": "S5 (L502/L501, not ours)",
+     "rules": "S5 (L502/L501)",
      "call": "16th 0145",
      "reason": "L502/L501 is crewed by S5 and never counts."
     },
@@ -993,7 +993,7 @@
     "~ E27861 15 time 15th 1310 → 15th 1610",
     "~ E27861 15 crew B pool → Chain Gang: SR04 (goes spare → spareboard)",
     "~ M39671 14 time 15th 2216 → 15th 2153",
-    "+ L50231 16 new on the line-up (PLN 16th 0400) → S5 (L502/L501, not ours)",
+    "+ L50231 16 new on the line-up (PLN 16th 0400) → S5 (L502/L501)",
     "+ M39491 15 new on the line-up (PLN 16th 0520) → A pool: SA08",
     "+ Z14891 15 new on the line-up (PLN 16th 0545) → A pool: SA09",
     "+ M30241 14 new on the line-up (PLN 16th 0546) → A pool: SA01",
