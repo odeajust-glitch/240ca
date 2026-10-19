@@ -425,21 +425,50 @@ async function signOn(page) {
 // sends the Microsoft login into its inner frame, and Microsoft refuses to
 // load there ("login.microsoftonline.com refused to connect"). Load CATS as
 // the whole page instead, so the login shows normally. True if it did.
+// Reloading CATS isn't enough (owner, 2026-10-19: same block again), so open
+// the exact Microsoft address the frame was sent to as the whole page; after
+// the sign-in, come back to CATS.
 let catsUrl = START_URL;
 let lastLoginReload = 0;
+let framedLoginUrl = null; // set by watchFramedLogin
+let returnToCats = false;
+
+function watchFramedLogin(page) {
+  page.on('request', (req) => {
+    if (req.frame() !== page.mainFrame() && /^https:\/\/login\.microsoftonline\.com\//.test(req.url())) {
+      framedLoginUrl = req.url();
+    }
+  });
+}
+
 async function fixFramedLogin(page) {
+  const onLogin = /login\.microsoftonline\.com/.test(page.url());
+  // Signed in on the full-page login and sent back: reload CATS proper.
+  if (returnToCats && !onLogin && !catsFrame(page)) {
+    returnToCats = false;
+    console.log(`[${stamp()}] Microsoft sign-in done; opening CATS again.`);
+    await goto(page, catsUrl);
+    return true;
+  }
   const framed = page.frames().some((f) => f !== page.mainFrame()
     && /login\.microsoftonline\.com|^chrome-error:/.test(f.url()));
-  if (!framed || Date.now() - lastLoginReload < 60000) return false;
+  if (!framed || onLogin || Date.now() - lastLoginReload < 60000) return false;
   lastLoginReload = Date.now();
   console.log(`\x07[${stamp()}] Microsoft wants you to sign in again. Opening the sign-in page;`
     + ' approve it in Authenticator and the script carries on.');
-  try {
-    await page.goto(catsUrl, { waitUntil: 'domcontentloaded' });
-  } catch (err) {
-    console.log(`  (couldn't open it: ${err.message})`);
-  }
+  returnToCats = !!framedLoginUrl && await goto(page, framedLoginUrl);
+  if (!returnToCats) await goto(page, catsUrl); // login wouldn't open: plain reload
   return true;
+}
+
+async function goto(page, url) {
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    return true;
+  } catch (err) {
+    console.log(`  (couldn't open ${url.split('?')[0]}: ${err.message.split('\n')[0]})`);
+    return false;
+  }
 }
 
 async function waitForMainMenu(page, prompt) {
@@ -519,6 +548,7 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const context = await chromium.launchPersistentContext(PROFILE_DIR, { headless: false });
   const page = context.pages()[0] || (await context.newPage());
+  watchFramedLogin(page);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   const signIn = CATS_LOGIN

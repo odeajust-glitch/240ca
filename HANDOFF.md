@@ -57,8 +57,11 @@ prints just that answer (`--details` for the working). Route: Call Board, 23
 When the ~24 h Microsoft sign-in expires, CATS loads login.microsoftonline.com
 in `jacadaframe`; Microsoft refuses framing ("refused to connect", grey ⊘ in
 Edge). `fixFramedLogin()` spots a sub-frame on microsoftonline / chrome-error
-and `page.goto(catsUrl)` at top level (max once a minute), so the login shows
-full-page; owner approves in Authenticator. Called in `waitForMainMenu` and
+and opens the exact Microsoft URL the frame was sent to (recorded from
+sub-frame requests) as the whole page (max once a minute; falls back to a
+CATS reload if it won't open). After sign-in, when the page is back on CATS
+without `jacadaframe`, it reloads CATS. (A plain CATS reload alone didn't fix
+it on the owner's laptop.) Return-after-sign-in path untested (needs real MS). Called in `waitForMainMenu` and
 before giving up on a check. Tested on the fake CATS ('framed' variant).
 
 ## 2026-10-16 night: Enter past CATS messages after sign-on
