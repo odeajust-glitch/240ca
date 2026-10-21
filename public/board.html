@@ -716,7 +716,7 @@ function prefill(r, names) {
   const p = people();
   const name = n.co || p.byTurn[r.co] || '';
   const known = p.byName[name.toUpperCase()] || {};
-  return { name, engineer: n.en || '', pin: known.pin || '', gender: known.gender || 'male', initials: known.initials || '', fromCats: !!n.co };
+  return { name, engineer: n.en || '', pin: known.pin || '', gender: known.gender || 'male', initials: known.initials || '', fromCats: !!n.co, turnOnly: !!n.turnOnly };
 }
 
 // names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
@@ -772,6 +772,7 @@ function grievanceForm(r, pre = {}) {
   const initials = pre.initials || (pre.name ? window.Grievance.extractInitials(pre.name) : '');
   return `<form class="gf" autocomplete="off" onsubmit="return false">
     <p class="gnote">Filled in from the board${pre.fromCats ? ', names from the Call Board' : ''}. Check every field, add anything missing, then generate. Nothing you type leaves this device.</p>
+    ${pre.turnOnly ? `<p class="gnote"><b>Names are the ones last seen on ${esc(r.co)}${r.en ? ` and ${esc(r.en)}` : ''}</b>, not read off this trip: if a spare worked it, change them.</p>` : ''}
     <div class="ggrid">
       <fieldset><legend>Conductor (${esc(r.co)})</legend>
         <label>Full name<input name="name" placeholder="John Doe" ${v(pre.name)}></label>

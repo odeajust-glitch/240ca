@@ -66,7 +66,10 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   undoes it); form fills name + engineer; the phone remembers PIN, Mr./Ms. and
   initials per name, and the last name used per turn (localStorage,
   `grievance-people`). CATS shows no PIN or gender.
-- Names start with checks after the laptop updates; older trips have none.
+- Names for a trip: that train's Call Board names; else the conductor's on
+  the train home; else (2026-10-21, owner saw none on older trips) the name
+  last seen on that turn, any train, within 14 days, marked `turnOnly` and
+  flagged in the form ("if a spare worked it, change them").
 - **Owner to do:** add `BOARD_NAMES_KEY=<long passphrase>` to
   `C:\Users\<you>\BoardChecker\.env`, share it only with reps. A short one can
   be guessed offline from the public file.
