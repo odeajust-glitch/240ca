@@ -49,8 +49,15 @@ test('names: only the 14h list goes out, locked; the browser code unlocks it', a
     { id: 'M30241 17', month: '2026-10', co: 'SA04', en: 'S104', heldMin: 600 }, // under 14 h: not sent
     { id: 'X1 17', month: '2026-10', co: 'SR05', heldMin: 900, back: { id: 'Z14931 17' } }, // conductor's name off the train home
   ];
-  const held = namesForHeld(rows, store, 840);
+  const held = namesForHeld(rows, store, 840, new Date('2026-10-18T06:00:00Z'));
   assert.deepEqual(held, { 'E27861 17 2026-10': { co: 'Mike de Man', en: 'Don Wilson' }, 'X1 17 2026-10': { co: 'Mike de Man', en: null } });
+
+  // A trip from before names were read: the name last seen on each turn,
+  // marked turnOnly; a turn not seen for 14 days gives nothing.
+  const old = namesForHeld([{ id: 'Q1 15', month: '2026-10', co: 'SR05', en: 'SD11', heldMin: 900 },
+    { id: 'Q2 15', month: '2026-10', co: 'SR01', heldMin: 900 }], store, 840, new Date('2026-10-18T06:00:00Z'));
+  assert.deepEqual(old, { 'Q1 15 2026-10': { co: 'Mike de Man', en: 'Don Wilson', turnOnly: true } });
+  assert.deepEqual(namesForHeld([{ id: 'Q1 15', month: '2026-10', co: 'SR05', heldMin: 900 }], store, 840, new Date('2026-11-05T06:00:00Z')), {});
 
   const locked = lockNames(held, 'correct horse battery staple');
   assert.doesNotMatch(JSON.stringify(locked), /Man|Wilson/);
