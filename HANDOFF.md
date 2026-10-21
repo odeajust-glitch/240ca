@@ -14,7 +14,7 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   `grievance-logo.png`) on the Agreement Search site, linked from its header.
   Port of div240.netlify.app (owner's drag-and-drop Netlify site, no repo):
   same letter wording, file # (`YYMMDD` of first on-duty + initials + A–K),
-  same .odt edits, filename `odea<YYMMDD of return>.odt`. JSZip served from
+  same .odt edits, filename `<conductor last name><YYMMDD of return>.odt` (was `odea…`). JSZip served from
   node_modules at `/vendor/jszip/`. Tests: `test/grievance.test.js`.
 - Letter: to N. Chambers (Superintendent – SOD), signed Eric Jung (owner).
 - Grievable at **14 h or more** away from home (as the original site), not
@@ -24,7 +24,7 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   preview now matches the .odt (original preview showed the wrong quote), the
   sample member's name/PIN removed from the shipped template.
 - Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
-  the original); `odea` filename prefix.
+  the original). Filename prefix settled: conductor's last name (owner).
 - **Board site "Article 18.6(b)" tab** (owner, 2026-10-21; first named "14h"), beside Order summary
   (`#14h`): Sarnia trains whose crew was held in Toronto ≥ 14 h. Held = off
   duty (bunkhouse REST − 8 h) → the CO turn's next Call Board on-duty at
@@ -36,6 +36,20 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   jszip.min.js (skipped with a note if missing, never breaks the build).
 - **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
   tab can't make letters.
+
+## 2026-10-21: "Current" tab is the landing (owner)
+- Board site opens on **Current** (`#current`): the newest snapshot, no
+  snapshot list (Find a turn stays), no Earlier/Later. Tabs: Current ·
+  Snapshots · Order summary · Article 18.6(b).
+- Every snapshot shows its age, ticking: newest = "Last checked … ago"
+  (from sameUntil or taken; green < 20 m, amber < 1 h, red beyond = checker
+  may be down); any other = "Taken … ago · Not the current board" + **Go to
+  current**. Page checks data/index.json every 2 min and offers "Update"
+  when a newer board is published. Old `#YYYY-MM-DD-HHMM` links open under
+  Snapshots.
+- Call Board station after "ON DUTY AT:" is no longer masked (L50131 showed
+  GARNET as AAAAAA); GARNET also added to BOARD_WORDS. Saved checks keep
+  AAAAAA; new ones are right.
 
 ## 2026-10-21: crew names in the Article 18.6(b) tab (owner chose both options)
 - **Laptop:** each Call Board page gets a second, *unmasked* read

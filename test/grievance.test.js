@@ -41,7 +41,10 @@ test('file number: first on-duty date, initials, letter', () => {
   assert.strictEqual(G.fileNumber(null, 'JD', 'A'), '——');
   assert.strictEqual(G.fileNumber(at('2026-01-05', '0800'), ' ', 'A'), '——');
   assert.strictEqual(G.extractInitials("Mike de Man"), 'MDM');
-  assert.strictEqual(G.odtFilename(at('2026-05-01', '0500')), 'odea260501.odt');
+  assert.strictEqual(G.odtFilename('Mike de Man', at('2026-05-01', '0500')), 'deman260501.odt');
+  assert.strictEqual(G.odtFilename("Kate O'Brien-Smith", at('2026-05-01', '0500')), 'obriensmith260501.odt');
+  assert.strictEqual(G.odtFilename('José Côté', at('2026-05-01', '0500')), 'cote260501.odt');
+  assert.strictEqual(G.odtFilename('', at('2026-05-01', '0500')), 'grievance260501.odt');
 });
 
 test('times: 0500, 5:00 and 05:00; bad times rejected', () => {

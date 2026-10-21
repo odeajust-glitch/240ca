@@ -508,7 +508,7 @@
       const bytes = await G.buildOdt(JSZip, await resp.arrayBuffer(), d, new Date());
       const blob = new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' });
       const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.nextOn) });
+      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.name, d.nextOn) });
       document.body.appendChild(a);
       a.click();
       a.remove();
