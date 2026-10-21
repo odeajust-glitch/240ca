@@ -444,3 +444,13 @@ test('a train crewed off MU counts as Chain Gang, not an A/B slot', () => {
   assert.deepEqual(r.today.map((t) => [t.symbol, t.expected, t.actual]), [['X27861', 'SR', 'SR']]);
   assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 0);
 });
+
+test('board checker drives Edge unless BOARD_BROWSER=chromium', () => {
+  const { browser } = require('../../lib/board/paths');
+  const edge = browser({});
+  assert.deepEqual(edge.options, { channel: 'msedge' });
+  assert.match(edge.profileDir, /profile-edge$/);
+  const chromium = browser({ BOARD_BROWSER: 'chromium' });
+  assert.deepEqual(chromium.options, {});
+  assert.match(chromium.profileDir, /profile$/);
+});

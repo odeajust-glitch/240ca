@@ -114,12 +114,33 @@ test('turns: history records each change, across days', () => {
   const { hist, out } = makeHistory();
   buildSite({ historyDir: hist, outDir: out, days: 0 });
   const { turns } = JSON.parse(fs.readFileSync(path.join(out, 'data/turns.json'), 'utf8'));
-  const sr03 = turns.SR03;
+  const sr03 = turns.SR03.changes;
   assert.strictEqual(sr03[0].taken, '2026-10-14 1617');
   assert.ok(sr03.length >= 2);
   // Consecutive entries always differ.
   for (let i = 1; i < sr03.length; i++) assert.notStrictEqual(sr03[i].text, sr03[i - 1].text);
   assert.ok(!('__last' in turns));
+  // SR03's rest to 15th 1015, first seen at 0143.
+  assert.deepStrictEqual(turns.SR03.rests.map((r) => [r.kind, r.until, r.seen]), [['Rest', '15th 1015', '2026-10-15 0143']]);
+  // SR04: ** goes spare, and its train goes spare too.
+  assert.ok(turns.SR04.spares.some((x) => /\*\* goes spare/.test(x.text)));
+  assert.ok(turns.SR04.spares.some((x) => /its train E27861 15 goes spare/.test(x.text)));
+  assert.ok(turns.SR04.orders.some((o) => o.train === 'E27861 15' && /Chain Gang: SR04/.test(o.projected)));
+});
+
+test('turns: a change that lasted under 30 minutes is left out unless it matters', () => {
+  const snap = (taken, status) => ({ taken, pools: [{ name: 'Chain Gang (SR) · conductors', turns: [{ pos: '003', turn: 'SR03', status }] }] });
+  const h = BoardTurns.finish(BoardTurns.history([
+    snap('2026-10-17 0800', 'available'),
+    snap('2026-10-17 0810', 'B0: working another job, goes spare if called'), // 10 min, but spare: kept
+    snap('2026-10-17 0815', 'available'),
+    snap('2026-10-17 0820', 'out working on M30241'), // 10 min: dropped
+    snap('2026-10-17 0830', 'available'),
+    snap('2026-10-17 1000', 'rest until 17th 1800'),
+  ]));
+  assert.deepStrictEqual(h.SR03.changes.map((c) => c.taken), ['2026-10-17 0810', '2026-10-17 0830', '2026-10-17 1000']);
+  assert.deepStrictEqual(h.SR03.spares.map((x) => [x.seen, x.last]), [['2026-10-17 0810', '2026-10-17 0810']]);
+  assert.deepStrictEqual(h.SR03.rests.map((r) => r.until), ['17th 1800']);
 });
 
 test('orders: each train followed from first sighting to on duty', () => {
