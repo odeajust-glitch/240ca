@@ -858,7 +858,7 @@ function wireGrievance(form, turn) {
       const bytes = await G.buildOdt(window.JSZip, await res.arrayBuffer(), d, new Date());
       remember(turn, d, val('initials'));
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' }));
-      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.nextOn) });
+      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.name, d.nextOn) });
       document.body.appendChild(a);
       a.click();
       a.remove();

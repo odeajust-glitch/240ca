@@ -14,7 +14,7 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   `grievance-logo.png`) on the Agreement Search site, linked from its header.
   Port of div240.netlify.app (owner's drag-and-drop Netlify site, no repo):
   same letter wording, file # (`YYMMDD` of first on-duty + initials + A–K),
-  same .odt edits, filename `odea<YYMMDD of return>.odt`. JSZip served from
+  same .odt edits, filename `<conductor last name><YYMMDD of return>.odt` (was `odea…`). JSZip served from
   node_modules at `/vendor/jszip/`. Tests: `test/grievance.test.js`.
 - Letter: to N. Chambers (Superintendent – SOD), signed Eric Jung (owner).
 - Grievable at **14 h or more** away from home (as the original site), not
@@ -24,7 +24,7 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   preview now matches the .odt (original preview showed the wrong quote), the
   sample member's name/PIN removed from the shipped template.
 - Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
-  the original); `odea` filename prefix.
+  the original). Filename prefix settled: conductor's last name (owner).
 - **Board site "Article 18.6(b)" tab** (owner, 2026-10-21; first named "14h"), beside Order summary
   (`#14h`): Sarnia trains whose crew was held in Toronto ≥ 14 h. Held = off
   duty (bunkhouse REST − 8 h) → the CO turn's next Call Board on-duty at

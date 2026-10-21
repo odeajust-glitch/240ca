@@ -184,7 +184,12 @@
     return outZip.generateAsync({ type: 'uint8array', mimeType: 'application/vnd.oasis.opendocument.text' });
   }
 
-  function odtFilename(nextOn) { return `odea${yymmdd(nextOn)}.odt`; }
+  // Conductor's last name + the return date (owner, 2026-10-21; was "odea"
+  // on the original site): "Mike de Man" → deman261018.odt.
+  function odtFilename(name, nextOn) {
+    const last = lastName(name || '').normalize('NFD').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+    return `${last || 'grievance'}${yymmdd(nextOn)}.odt`;
+  }
 
   const api = {
     extractInitials, parseParts, addDays, epoch, hoursBetween, letterDate, headerDate,
