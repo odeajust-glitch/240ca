@@ -102,6 +102,12 @@
       }
       // The Call Board: the actual on-duty time.
       for (const t of s.onDuty || []) {
+        // Every crew that goes on duty in Toronto, line-up train or not: the
+        // trip home for the 14-hour check.
+        if (/TORONTO/.test(t.station || '')) {
+          const at = resolve(t.onDuty, s.taken);
+          if (at) (state.toronto ||= {})[`${t.train} ${at}`] = { id: t.train, onDuty: at, crew: t.crew };
+        }
         const key = trainKey(t.train, s.taken);
         const r = state.trains[key];
         if (!r) continue; // never on a line-up in the saved checks
@@ -112,6 +118,8 @@
         r.crew = t.crew;
         r.station = t.station;
       }
+      // Conductors in the bunkhouse at the latest read, for "still held".
+      if (wasRead(s, 'bunkhouse')) state.inBunkhouse = (s.bunkhouse || []).map((c) => c.co).filter(Boolean);
       // A Sarnia crew in the Mac bunkhouse: off duty = REST − 8 h. Their
       // train is the latest one they went on duty on before that.
       for (const c of s.bunkhouse || []) {
@@ -154,15 +162,36 @@
     return r.avail === 0 ? 'nonSarnia' : 'possible';
   }
 
+  // 14-hour rule (Article 18.6(b)): from off duty in Toronto to the
+  // conductor's next on-duty time there (the trip home). No trip home yet and
+  // the conductor still in the bunkhouse: held so far, as of the last check.
+  const HELD_LIMIT = 14 * 60;
+  const HOME_WITHIN = 72 * 60; // a trip home later than this isn't the same stay
+  const turnOf = (crew, craft) => { const m = new RegExp(`(?:^|· )${craft} (\\S+)`).exec(crew || ''); return m ? m[1] : null; };
+  function heldOf(r, state) {
+    if (!r.offDuty || noOffDuty(r)) return {};
+    const co = turnOf(r.crew, 'CO');
+    if (!co) return {};
+    const back = Object.values(state.toronto || {})
+      .filter((t) => t.onDuty > r.offDuty && off(r.offDuty, t.onDuty) <= HOME_WITHIN && crewHas(t.crew, co))
+      .sort((a, b) => (a.onDuty < b.onDuty ? -1 : 1))[0] || null;
+    if (back) return { co, en: turnOf(r.crew, 'EN'), back, heldMin: off(r.offDuty, back.onDuty) };
+    if ((state.inBunkhouse || []).includes(co) && off(r.offDuty, state.lastTaken) <= HOME_WITHIN) {
+      return { co, en: turnOf(r.crew, 'EN'), back: null, heldMin: off(r.offDuty, state.lastTaken), stillHeld: true };
+    }
+    return { co, en: turnOf(r.crew, 'EN') };
+  }
+
   function summarize(state) {
     return Object.values(state.trains).map((r) => {
       const due = r.onDuty || r.order || r.plan;
       return { ...r, from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
-        leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken) };
+        leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken),
+        ...heldOf(r, state) };
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }
 
-  const api = { track, summarize, resolve, trainKey, toMin, off, FLAG_WAIT };
+  const api = { track, summarize, resolve, trainKey, toMin, off, FLAG_WAIT, HELD_LIMIT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTrains = api;
 })(this);

@@ -8,6 +8,35 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## ▶ Side project 2026-10-21: 14-hour rule grievance generator
+Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`).
+- `public/grievance.html` (+ `grievance.js`, `grievance_template.odt`,
+  `grievance-logo.png`) on the Agreement Search site, linked from its header.
+  Port of div240.netlify.app (owner's drag-and-drop Netlify site, no repo):
+  same letter wording, file # (`YYMMDD` of first on-duty + initials + A–K),
+  same .odt edits, filename `odea<YYMMDD of return>.odt`. JSZip served from
+  node_modules at `/vendor/jszip/`. Tests: `test/grievance.test.js`.
+- Letter: to N. Chambers (Superintendent – SOD), signed Eric Jung (owner).
+- Grievable at **14 h or more** away from home (as the original site), not
+  under 14.
+- Changes from the original: times counted in Eastern time (DST-safe on any
+  phone), auto next-day dates across midnight, "de Man" surnames kept whole,
+  preview now matches the .odt (original preview showed the wrong quote), the
+  sample member's name/PIN removed from the shipped template.
+- Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
+  the original); `odea` filename prefix.
+- **Board site "14h" tab** (owner, 2026-10-21), beside Order summary
+  (`#14h`): Sarnia trains whose crew was held in Toronto ≥ 14 h. Held = off
+  duty (bunkhouse REST − 8 h) → the CO turn's next Call Board on-duty at
+  TORONTO (`state.toronto` in board-trains.js, any train, within 72 h); no
+  trip home yet + CO still in the bunkhouse = "still held so far". Rows carry
+  `co`, `en`, `back`, `heldMin`, `stillHeld` in trains.json. Tap a crew → form
+  pre-filled with trains/times (editable), rep types name + PIN, .odt made in
+  the browser. site.js now ships grievance.js, grievance_template.odt and
+  jszip.min.js (skipped with a note if missing, never breaks the build).
+- **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
+  tab can't make letters.
+
 ## 2026-10-17: board checker drives Microsoft Edge
 
 Owner asked for Edge instead of Chrome/Chromium. `lib/board/paths.js`

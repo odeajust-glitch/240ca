@@ -80,7 +80,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/index.html', '/robots.txt']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/robots.txt']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
@@ -306,4 +306,34 @@ test('orders: no Toronto off-duty time for L501/L502 or trains starting in Toron
   const r2 = Object.fromEntries(T.summarize(st).map((r) => [r.id, r]));
   assert.strictEqual(r2['M39931 17'].noOffDuty, true);
   assert.strictEqual(r2['M30241 17'].noOffDuty, false);
+});
+
+test('14h: off duty in Toronto to the conductor\'s trip home; still held while in the bunkhouse', () => {
+  const T = BoardTrains;
+  const base = { screens: ['lineup', 'macLineup', 'bunkhouse'], onDuty: [], bunkhouse: [], macLineup: [], lineup: [] };
+  const out = [
+    { ...base, taken: '2026-10-17 0100', lineup: [{ train: 'E27861 17', status: 'ORD', order: '17th 0315' }] },
+    { ...base, taken: '2026-10-17 0310', onDuty: [{ train: 'E27861 17', onDuty: '17th 0300', station: 'SARNIA', crew: 'EN SD11 · CO SR05' }] },
+    // Off duty 0954 (rest to 1754).
+    { ...base, taken: '2026-10-17 1400', bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', ready: false }] },
+  ];
+  // Still in the bunkhouse at 18th 0100: held 15 h 06 m so far, no trip home.
+  const held = [...out, { ...base, taken: '2026-10-18 0100', bunkhouse: [{ pos: '001', en: 'SD11', co: 'SR05', rested: '17th 1754', ready: true }] }];
+  let e = T.summarize(T.track(held)).find((r) => r.id === 'E27861 17');
+  assert.deepStrictEqual([e.co, e.en, e.back, e.heldMin, e.stillHeld], ['SR05', 'SD11', null, 15 * 60 + 6, true]);
+
+  // Home on Z14931, not on any line-up, on duty 18th 0030 in Toronto: 14 h 36 m.
+  // The ET trainee and another crew's later train don't count.
+  const home = [...out,
+    { ...base, taken: '2026-10-18 0040', onDuty: [{ train: 'Z14931 17', onDuty: '18th 0030', station: 'TORONTO', crew: 'EN SD11 · ET MU01 · CO SR05' }] },
+    { ...base, taken: '2026-10-18 0300', onDuty: [{ train: 'Q13931 17', onDuty: '18th 0230', station: 'TORONTO', crew: 'EN SD12 · CO SR055' }] }];
+  e = T.summarize(T.track(home)).find((r) => r.id === 'E27861 17');
+  assert.deepStrictEqual(e.back, { id: 'Z14931 17', onDuty: '2026-10-18 0030', crew: 'EN SD11 · ET MU01 · CO SR05' });
+  assert.strictEqual(e.heldMin, 14 * 60 + 36);
+  assert.strictEqual(e.stillHeld, undefined);
+
+  // Left the bunkhouse with no trip home seen (e.g. a taxi): not listed.
+  const gone = [...out, { ...base, taken: '2026-10-18 0100', bunkhouse: [] }];
+  e = T.summarize(T.track(gone)).find((r) => r.id === 'E27861 17');
+  assert.strictEqual(e.heldMin, undefined);
 });
