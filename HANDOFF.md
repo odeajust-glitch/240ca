@@ -25,7 +25,7 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   sample member's name/PIN removed from the shipped template.
 - Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
   the original); `odea` filename prefix.
-- **Board site "14h" tab** (owner, 2026-10-21), beside Order summary
+- **Board site "Article 18.6(b)" tab** (owner, 2026-10-21; first named "14h"), beside Order summary
   (`#14h`): Sarnia trains whose crew was held in Toronto ≥ 14 h. Held = off
   duty (bunkhouse REST − 8 h) → the CO turn's next Call Board on-duty at
   TORONTO (`state.toronto` in board-trains.js, any train, within 72 h); no
