@@ -26,7 +26,8 @@
 // With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
 // website (lib/board/site.js) is rebuilt from history\ and published after a
 // check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, browser } = require('../lib/board/paths');
+const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -223,6 +224,15 @@ async function runRoute(page, opts = {}) {
   for (let pageNo = 0; pageNo < 15; pageNo++) {
     const grid = await capture();
     const parsed = S.parseCallBoardPage(parseGrid(grid));
+    // Crew names for the grievance letters: a second, unmasked read kept in
+    // memory; only train + turn + name go on, into names.json (never into
+    // `screens`, which is saved, reviewed and relayed).
+    if (opts.names) {
+      try {
+        const { nameGrid } = await describeFrame(catsFrame(page), { unmasked: true });
+        opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid)));
+      } catch { /* the letters can do without; the check can't wait on it */ }
+    }
     const m = /PAGE (\d+) OF (\d+)/.exec((await screenState(page)).text);
     if (parsed.reachedYard || (m && +m[1] >= +m[2])) break;
     expect(await press(page, 'F8'), is.callBoardList, 'next Call Board page');
@@ -387,14 +397,14 @@ function saveSnapshot(summary, { text, detailed, note }) {
 // adding them to .env doesn't need a restart.
 const site = { due: false, lastAt: 0 };
 async function publishSite(changed) {
-  const { token, siteId, days, every } = siteSettings();
+  const { token, siteId, days, every, namesKey } = siteSettings();
   if (!token || !siteId) return;
   if (changed) site.due = true;
   if (!site.due || Date.now() - site.lastAt < every * 60000) return;
   site.lastAt = Date.now();
   try {
     const dir = path.join(OUT_DIR, 'site');
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey } });
     const sent = await deploySite({ dir, siteId, token });
     if (sent.ok) site.due = false;
     console.log(sent.ok ? `[${stamp()}] Snapshot website updated.` : `[${stamp()}] Snapshot website not updated: ${sent.message}`);
@@ -606,7 +616,8 @@ async function main() {
     let retryNow = false;
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
-      const summary = await runRoute(page, poolOpts);
+      const names = [];
+      const summary = await runRoute(page, { ...poolOpts, names });
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
       const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
@@ -618,6 +629,11 @@ async function main() {
         pruneHistory();
       } catch (err) {
         console.log(`  (snapshot not saved: ${err.message})`);
+      }
+      try {
+        saveNames(NAMES_FILE, recordNames(loadNames(NAMES_FILE), names));
+      } catch (err) {
+        console.log(`  (crew names not saved: ${err.message})`);
       }
       if (relay) {
         const report = note ? `${text}\n\n${note}` : text;
