@@ -37,6 +37,19 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
 - **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
   tab can't make letters.
 
+## 2026-10-21: line-up trains whose crew is already known
+Owner's 0357 snapshot: DHT042B 21 (ORD 0500) said "Toronto train / not
+counted" while SR09 was at 999 out working on it. Two engine fixes
+(`runBoardCheck`, test in engine.test.js):
+- A line-up train also on the Call Board (the few minutes it shows on both,
+  per owner) now shows the crew CATS has on it ("On duty at …"), instead of
+  being dropped. Only real Toronto trains (odd third digit) say "not counted".
+- A turn at 999 "out working on" a line-up train that isn't on duty yet keeps
+  that train and is no longer skipped over: before, the next turn in the queue
+  was given it and every later Chain Gang prediction shifted by one. Matched
+  by symbol, never to a train the Call Board already has that turn on.
+Both take no turn from the queues (`known: true`). Needs a checker restart.
+
 ## 2026-10-17: board checker drives Microsoft Edge
 
 Owner asked for Edge instead of Chrome/Chromium. `lib/board/paths.js`
