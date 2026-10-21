@@ -37,6 +37,20 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
 - **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
   tab can't make letters.
 
+## 2026-10-21: "Current" tab is the landing (owner)
+- Board site opens on **Current** (`#current`): the newest snapshot, no
+  snapshot list (Find a turn stays), no Earlier/Later. Tabs: Current ·
+  Snapshots · Order summary · Article 18.6(b).
+- Every snapshot shows its age, ticking: newest = "Last checked … ago"
+  (from sameUntil or taken; green < 20 m, amber < 1 h, red beyond = checker
+  may be down); any other = "Taken … ago · Not the current board" + **Go to
+  current**. Page checks data/index.json every 2 min and offers "Update"
+  when a newer board is published. Old `#YYYY-MM-DD-HHMM` links open under
+  Snapshots.
+- Call Board station after "ON DUTY AT:" is no longer masked (L50131 showed
+  GARNET as AAAAAA); GARNET also added to BOARD_WORDS. Saved checks keep
+  AAAAAA; new ones are right.
+
 ## 2026-10-21: crew names in the Article 18.6(b) tab (owner chose both options)
 - **Laptop:** each Call Board page gets a second, *unmasked* read
   (`describeFrame(frame, { unmasked: true })`) kept in memory only;

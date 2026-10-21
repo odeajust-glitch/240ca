@@ -126,6 +126,16 @@
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
   .steps button:disabled { opacity: 0.4; cursor: default; }
+  /* How old a snapshot is, and the way back to the current one. */
+  .agebar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 14px; }
+  .agebar .age { font: 600 13.5px/1.2 var(--mono); padding: 4px 8px; border-radius: 3px; background: var(--go-tint); color: var(--go); }
+  .agebar.old .age { background: var(--amber-tint); color: var(--amber); }
+  .agebar.stale .age { background: var(--stop-tint); color: var(--stop); }
+  .agebar .sub { color: var(--soft); font-size: 13px; }
+  .tocurrent, .newer button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 7px 14px; min-height: 36px; font: 600 13.5px/1 var(--body); cursor: pointer; }
+  .newer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--accent); background: var(--accent-tint); font-size: 14px; }
+  /* Current: the newest snapshot only; the turn search stays, the list goes. */
+  body.current .rail h2, body.current .rail .daypick, body.current #rail { display: none; }
 
   .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
   .stat { padding: 12px 14px; border-left: 1px solid var(--rule); }
@@ -199,7 +209,7 @@
   .empty { padding: 12px 14px; color: var(--soft); font-size: 13.5px; margin: 0; }
   .note { font-size: 12px; color: var(--soft); margin: 22px 0 0; max-width: 80ch; }
 
-  .modes { display: flex; gap: 4px; margin-left: 12px; }
+  .modes { display: flex; gap: 4px; margin-left: 12px; flex-wrap: wrap; }
   .modes button { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 5px 12px; cursor: pointer; font: 600 13px/1 var(--body); color: var(--soft); }
   .modes button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
   body.orders .rail { display: none; }
@@ -305,7 +315,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeSnap" type="button" aria-pressed="true">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
 </div>
@@ -340,6 +350,31 @@ function when(taken) {
   return { day: opt({ weekday: 'short', month: 'short', day: 'numeric' }), long: opt({ weekday: 'long', month: 'long', day: 'numeric' }), time: `${t.slice(0, 2)}:${t.slice(2)}` };
 }
 const slug = (taken) => taken.replace(' ', '-');
+// Minutes since a "2026-10-21 0357" stamp (railway/Toronto time), whatever
+// zone the phone is in.
+const stampMin = (st) => Date.UTC(+st.slice(0, 4), +st.slice(5, 7) - 1, +st.slice(8, 10), +st.slice(11, 13), +st.slice(13, 15)) / 60000;
+function torontoNowMin() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    .formatToParts(new Date()).map((x) => [x.type, +x.value]));
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) / 60000;
+}
+function ageText(st) {
+  const m = Math.max(0, torontoNowMin() - stampMin(st));
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  if (m < 48 * 60) return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`;
+  return `${Math.floor(m / 1440)} days ago`;
+}
+// Keeps every age on the page ticking.
+function tickAges() {
+  document.querySelectorAll('[data-age]').forEach((el) => {
+    const m = torontoNowMin() - stampMin(el.dataset.age);
+    el.textContent = `${el.dataset.prefix || ''}${ageText(el.dataset.age)}`;
+    const bar = el.closest('.agebar');
+    if (bar && bar.dataset.live) { bar.classList.toggle('old', m >= 20 && m < 60); bar.classList.toggle('stale', m >= 60); }
+  });
+}
+setInterval(tickAges, 30000);
 // "15th 1100" → ["15th", "1100"]
 const split = (s) => s.split(' ');
 
@@ -884,6 +919,10 @@ source().then(async (src) => {
   let list = [];
   let day = null;
   let cur = 0;
+  // Which tab is showing: 'current' (the landing), 'snap', 'orders', 'held'.
+  let mode = 'current';
+  // Set when the site has published a newer board since this page loaded.
+  let newerBar = '';
   let poolTab = 0;
 
   async function openDay(d, pick) {
@@ -925,6 +964,7 @@ source().then(async (src) => {
   try { setFocus(localStorage.getItem('boardTurn') || '', true); } catch (e) { /* storage off */ }
 
   async function jumpTo(taken) {
+    if (mode === 'current') setMode('snap');
     const d = taken.slice(0, 10);
     if (d === day) {
       const i = list.findIndex((s) => s.taken === taken);
@@ -947,15 +987,24 @@ source().then(async (src) => {
     const atOldest = i === 0 && dayIdx === src.days.length - 1;
     const atNewest = i === list.length - 1 && dayIdx === 0;
     document.querySelectorAll('#rail button').forEach((b) => b.setAttribute('aria-current', +b.dataset.i === i));
-    try { history.replaceState(null, '', '#' + slug(s.taken)); } catch (e) { /* not allowed in some frames */ }
+    try { history.replaceState(null, '', mode === 'current' ? '#current' : '#' + slug(s.taken)); } catch (e) { /* not allowed in some frames */ }
+    // The newest snapshot is the current board until the next change; its
+    // age is from the last check that saw it. Any other one is history.
+    const latest = atNewest;
+    const lastSeen = s.sameUntil || s.taken;
+    const agebar = latest
+      ? `<div class="agebar" data-live="1"><span class="age" data-age="${esc(lastSeen)}" data-prefix="Last checked "></span>${s.sameUntil ? `<span class="sub">no change since ${esc(w.time)}</span>` : ''}${mode === 'current' ? '' : '<span class="sub">This is the current board.</span>'}</div>`
+      : `<div class="agebar old"><span class="age" data-age="${esc(s.taken)}" data-prefix="Taken "></span><span class="sub">Not the current board.</span><button type="button" class="tocurrent" id="tocurrent">Go to current</button></div>`;
     const screens = ['Call board', ...s.screens.map((k) => SCREENS[k] || k)].map((x) => `<span class="chip">${esc(x)}</span>`).join('');
     const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
     document.getElementById('view').innerHTML = `
       <div class="head">
         <div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div>
+          ${agebar}
           <div class="screens" style="margin-top:8px">${screens}${same}</div></div>
-        <div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>
+        ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
+      ${newerBar}
       ${focus ? turnPanel(s) : ''}
       ${strip(s)}
       <div class="grid">
@@ -963,8 +1012,15 @@ source().then(async (src) => {
         <div class="col">${flags(s)}${pools(s, poolTab)}${onDuty(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
-    document.getElementById('older').onclick = () => step(-1);
-    document.getElementById('newer').onclick = () => step(1);
+    tickAges();
+    if (mode !== 'current') {
+      document.getElementById('older').onclick = () => step(-1);
+      document.getElementById('newer').onclick = () => step(1);
+    }
+    const back = document.getElementById('tocurrent');
+    if (back) back.onclick = () => setMode('current');
+    const upd = document.getElementById('newerbtn');
+    if (upd) upd.onclick = () => { location.hash = '#current'; location.reload(); };
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
     if (focus) {
       document.getElementById('turnclose').onclick = () => setFocus('');
@@ -988,18 +1044,21 @@ source().then(async (src) => {
 
   // Snapshots ⇄ Order summary ⇄ 14h. setMode(true) is the order summary.
   const order = { day: null, open: null, find: '', from: 'all' };
+  const modeCurrent = document.getElementById('modeCurrent');
   const modeSnap = document.getElementById('modeSnap');
   const modeOrders = document.getElementById('modeOrders');
   const modeHeld = document.getElementById('modeHeld');
-  let mode = 'snap';
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode !== 'snap');
+    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held');
+    document.body.classList.toggle('current', mode === 'current');
+    modeCurrent.setAttribute('aria-pressed', mode === 'current');
     modeSnap.setAttribute('aria-pressed', mode === 'snap');
     modeOrders.setAttribute('aria-pressed', mode === 'orders');
     modeHeld.setAttribute('aria-pressed', mode === 'held');
     if (mode === 'orders') renderOrders();
     else if (mode === 'held') renderHeld();
+    else if (mode === 'current') { if (day === src.days[0] && list.length) show(list.length - 1); else openDay(src.days[0]); }
     else if (list.length) show(cur);
   }
   let heldOpen = null;
@@ -1076,6 +1135,7 @@ source().then(async (src) => {
     const open = view.querySelector('tr.open');
     if (open && match) open.scrollIntoView({ block: 'center' });
   }
+  modeCurrent.onclick = () => setMode('current');
   modeSnap.onclick = () => setMode(false);
   modeOrders.onclick = () => setMode(true);
   modeHeld.onclick = () => setMode('held');
@@ -1086,15 +1146,27 @@ source().then(async (src) => {
   });
   daySel.onchange = () => openDay(daySel.value);
 
-  // A link like #2026-10-15-0815 opens that snapshot; #orders the order
-  // summary; #14h the 14-hour list.
+  // The landing is Current. A link like #2026-10-15-0815 opens that
+  // snapshot; #orders the order summary; #14h the 14-hour list.
   const wantOrders = location.hash === '#orders';
   const wantHeld = location.hash === '#14h';
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
-  if (m && src.days.includes(m[1])) openDay(m[1], `${m[1]} ${m[2]}`);
-  else await openDay(src.days[0]);
+  if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
+
+  // A newer board published while this page is open: offer it (live site only).
+  if (src.live) {
+    setInterval(async () => {
+      try {
+        const idx = await getJSON('data/index.json');
+        if (!idx.latest || idx.latest === src.index.latest || newerBar) return;
+        newerBar = `<div class="newer">A newer board was published (${esc(when(idx.latest).time)}).<button type="button" id="newerbtn">Update</button></div>`;
+        if (mode === 'current' || mode === 'snap') show(cur);
+      } catch (e) { /* offline: try again next time */ }
+    }, 120000);
+  }
 }).catch((err) => {
   document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;
 });
