@@ -254,6 +254,14 @@
   .gform .gsum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; font-size: 13.5px; }
   .gform .gsum b { font-family: var(--mono); }
   .gform .gerr { color: var(--stop); font-weight: 600; }
+  .pname { display: block; font: 500 12px/1.3 var(--body); color: var(--soft); white-space: normal; margin-top: 2px; }
+  .unlock { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--rule); background: var(--sheet); font-size: 13.5px; }
+  .unlock label { font-size: 12.5px; color: var(--soft); }
+  .unlock .row2 { display: flex; gap: 8px; }
+  .unlock input { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; min-height: 40px; flex: 1; min-width: 0; max-width: 320px; }
+  .unlock button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 0 14px; min-height: 40px; font: 600 14px/1 var(--body); cursor: pointer; }
+  .unlock div > button, div.unlock button { justify-self: start; }
+  .unlock .uerr { color: var(--stop); font-weight: 600; font-size: 13px; }
   .gform button.gen { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 10px 16px; min-height: 44px; font: 600 14px/1 var(--body); cursor: pointer; }
   .gform button.gen:disabled { background: var(--rule); color: var(--soft); cursor: not-allowed; }
   @media (max-width: 700px) {
@@ -318,6 +326,7 @@
 <script src="board-trains.js"></script>
 <script src="jszip.min.js"></script>
 <script src="grievance.js"></script>
+<script src="board-names.js"></script>
 <script>
 let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -646,12 +655,43 @@ const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HE
   .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
 const heldKey = (r) => `${r.id} ${r.month}`;
 
-function heldView(all, openKey, lastTaken) {
+// What this device remembers for the letters (owner, 2026-10-21): the names
+// passcode, and each person's PIN and Mr./Ms. once a letter's been made.
+// Only ever in this browser; a private window just starts empty.
+const local = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* not kept */ } },
+  del(k) { try { localStorage.removeItem(k); } catch { /* nothing to drop */ } },
+};
+const PASS_KEY = 'board-names-pass';
+const PEOPLE_KEY = 'grievance-people'; // { byName: { "MIKE DE MAN": { pin, gender, initials } }, byTurn: { SR05: "Mike de Man" } }
+const people = () => ({ byName: {}, byTurn: {}, ...(local.get(PEOPLE_KEY) || {}) });
+function remember(turn, d, initials) {
+  if (!d.name) return;
+  const p = people();
+  p.byName[d.name.toUpperCase()] = { pin: d.pin, gender: d.gender, initials };
+  if (turn) p.byTurn[turn] = d.name;
+  local.set(PEOPLE_KEY, p);
+}
+// Filled-in form values for a row: names from CATS (unlocked) first, else
+// the name last used for that turn on this device; PIN and Mr./Ms. from what
+// this device remembers for that name.
+function prefill(r, names) {
+  const n = (names && names[heldKey(r)]) || {};
+  const p = people();
+  const name = n.co || p.byTurn[r.co] || '';
+  const known = p.byName[name.toUpperCase()] || {};
+  return { name, engineer: n.en || '', pin: known.pin || '', gender: known.gender || 'male', initials: known.initials || '', fromCats: !!n.co };
+}
+
+// names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
+function heldView(all, openKey, lastTaken, names, namesState) {
   const rows = heldRows(all);
   const body = rows.map((r) => {
     const key = heldKey(r);
+    const n = (names && names[key]) || {};
     const tr = `<tr class="row${key === openKey ? ' open' : ''}" data-key="${esc(key)}">
-      <td class="num"><b>${esc(r.co)}</b>${r.en ? ` <span class="crew">${esc(r.en)}</span>` : ''}</td>
+      <td class="num"><b>${esc(r.co)}</b>${r.en ? ` <span class="crew">${esc(r.en)}</span>` : ''}${n.co ? `<span class="pname">${esc(n.co)}${n.en ? ` · ${esc(n.en)}` : ''}</span>` : ''}</td>
       <td class="num"><b class="id">${esc(r.id)}</b> <span class="crew">${esc(dt(r.onDuty))}</span></td>
       <td class="num">≈ ${esc(dt(r.offDuty))}</td>
       <td class="num">${r.back ? `<b class="id">${esc(r.back.id)}</b>` : '<span class="muted">still in the bunkhouse</span>'}</td>
@@ -661,6 +701,11 @@ function heldView(all, openKey, lastTaken) {
   }).join('');
   // The form sits under the table, not in it, so it fits a phone screen.
   const open = rows.find((r) => heldKey(r) === openKey);
+  const unlock = namesState === 'locked'
+    ? `<form class="unlock" id="unlock" autocomplete="off"><label for="npass">Crew names are locked. Passcode</label><span class="row2"><input type="password" id="npass" autocomplete="current-password"><button type="submit">Unlock</button></span><span class="uerr" role="alert"></span></form>`
+    : namesState === 'unlocked'
+      ? `<div class="unlock">Crew names unlocked on this device. <button type="button" id="nforget">Forget the passcode</button></div>`
+      : '';
   const done = rows.filter((r) => !r.stillHeld).length;
   return `
     <div class="ohead">
@@ -672,11 +717,12 @@ function heldView(all, openKey, lastTaken) {
       <div class="stat"><div class="v">${all.filter((r) => r.heldMin != null).length}</div><div class="l">Toronto stays with a known off-duty time</div></div>
       <div class="stat"><div class="v">${rows.length ? esc(dur(Math.max(...rows.map((r) => r.heldMin)))) : '—'}</div><div class="l">Longest held</div></div>
     </div>
+    ${unlock}
     <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to write the grievance</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
       <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
-      ${open ? `<div class="gform"><h3>Grievance · ${esc(open.co)} on ${esc(open.id)}</h3>${grievanceForm(open)}</div>` : ''}
-      <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names and PINs aren't on the board; you type them, and the letter is made on this device.</div>
+      ${open ? `<div class="gform"><h3>Grievance · ${esc(open.co)} on ${esc(open.id)}</h3>${grievanceForm(open, prefill(open, names))}</div>` : ''}
+      <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode; PINs aren't on CATS, so you type each one once and this device remembers it with Mr./Ms. The letter is made on this device.</div>
     </section>`;
 }
 
@@ -684,18 +730,20 @@ function heldView(all, openKey, lastTaken) {
 const dateOf = (st) => (st ? st.slice(0, 10) : '');
 const timeOf = (st) => (st ? `${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
 
-function grievanceForm(r) {
+function grievanceForm(r, pre = {}) {
   if (!window.Grievance || !window.JSZip) return '<p class="gnote">The letter tools didn\'t load on this page, so grievances can\'t be written here right now.</p>';
   const v = (x) => `value="${esc(x || '')}"`;
+  const fem = pre.gender === 'female';
+  const initials = pre.initials || (pre.name ? window.Grievance.extractInitials(pre.name) : '');
   return `<form class="gf" autocomplete="off" onsubmit="return false">
-    <p class="gnote">Filled in from the board. Type the conductor's name and PIN, check the times, then generate. Nothing you type leaves this device.</p>
+    <p class="gnote">Filled in from the board${pre.fromCats ? ', names from the Call Board' : ''}. Check every field, add anything missing, then generate. Nothing you type leaves this device.</p>
     <div class="ggrid">
       <fieldset><legend>Conductor (${esc(r.co)})</legend>
-        <label>Full name<input name="name" placeholder="John Doe"></label>
-        <label>PIN<input name="pin" inputmode="numeric" placeholder="123456"></label>
-        <label>File initials<input name="initials" maxlength="5" placeholder="JD"></label>
-        <div class="seg" role="radiogroup" aria-label="Gender"><label><input type="radio" name="gender" value="male" checked> Mr. / His</label><label><input type="radio" name="gender" value="female"> Ms. / Her</label></div>
-        <label>Engineer${r.en ? ` (${esc(r.en)})` : ''}, optional<input name="engineer" placeholder="R. Smith"></label>
+        <label>Full name<input name="name" placeholder="John Doe" ${v(pre.name)}></label>
+        <label>PIN<input name="pin" inputmode="numeric" placeholder="123456" ${v(pre.pin)}></label>
+        <label>File initials<input name="initials" maxlength="5" placeholder="JD" ${v(initials)}></label>
+        <div class="seg" role="radiogroup" aria-label="Gender"><label><input type="radio" name="gender" value="male"${fem ? '' : ' checked'}> Mr. / His</label><label><input type="radio" name="gender" value="female"${fem ? ' checked' : ''}> Ms. / Her</label></div>
+        <label>Engineer${r.en ? ` (${esc(r.en)})` : ''}, optional<input name="engineer" placeholder="R. Smith" ${v(pre.engineer)}></label>
         <label>File letter<select name="letter">${'ABCDEFGHIJK'.split('').map((l) => `<option>${l}</option>`).join('')}</select></label>
       </fieldset>
       <fieldset><legend>Train to Toronto</legend>
@@ -714,7 +762,7 @@ function grievanceForm(r) {
 }
 
 // Reads the open form; keeps the held time, file # and button current.
-function wireGrievance(form) {
+function wireGrievance(form, turn) {
   const G = window.Grievance;
   const f = form.elements;
   const val = (n) => f[n].value.trim();
@@ -746,7 +794,16 @@ function wireGrievance(form) {
   }
   form.addEventListener('input', (e) => {
     const t = e.target;
-    if (t.name === 'name') f.initials.value = G.extractInitials(t.value);
+    if (t.name === 'name') {
+      f.initials.value = G.extractInitials(t.value);
+      // Someone this device has written for before: their PIN and Mr./Ms.
+      const known = people().byName[t.value.trim().toUpperCase()];
+      if (known) {
+        if (known.pin) f.pin.value = known.pin;
+        if (known.initials) f.initials.value = known.initials;
+        form.querySelector(`input[name="gender"][value="${known.gender === 'female' ? 'female' : 'male'}"]`).checked = true;
+      }
+    }
     if (/Time$/.test(t.name)) {
       let x = t.value.replace(/\D/g, '');
       if (x.length > 2) x = `${x.slice(0, 2)}:${x.slice(2, 4)}`;
@@ -764,6 +821,7 @@ function wireGrievance(form) {
       const res = await fetch('grievance_template.odt');
       if (!res.ok) throw new Error(`the letter template didn't load (HTTP ${res.status})`);
       const bytes = await G.buildOdt(window.JSZip, await res.arrayBuffer(), d, new Date());
+      remember(turn, d, val('initials'));
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' }));
       const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.nextOn) });
       document.body.appendChild(a);
@@ -790,6 +848,7 @@ async function source() {
       load: (day) => cache.get(day) || cache.set(day, getJSON(`data/${day}.json`).then((d) => d.snapshots)).get(day),
       turns: once(() => getJSON('data/turns.json').then((d) => d.turns)),
       trains: once(() => getJSON('data/trains.json').then((d) => d.trains)),
+      names: once(() => getJSON('data/names.json').catch(() => null)),
     };
   } catch {
     const data = await getJSON('board-sample.json');
@@ -804,7 +863,7 @@ async function source() {
     }
     return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [],
       turns: once(async () => BoardTurns.finish(BoardTurns.history(data.snapshots))),
-      trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))) };
+      trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))), names: async () => null };
   }
 }
 
@@ -944,17 +1003,55 @@ source().then(async (src) => {
     else if (list.length) show(cur);
   }
   let heldOpen = null;
+  // Crew names (data/names.json), unlocked with the passcode this device
+  // remembers. A passcode that no longer works (changed on the laptop) is
+  // dropped, so the box asks again.
+  let namesCache = null;
+  async function heldNames() {
+    const locked = await src.names();
+    if (!locked || !window.BoardNames || !window.crypto || !crypto.subtle) return { names: null, state: 'none' };
+    if (namesCache) return { names: namesCache, state: 'unlocked' };
+    const pass = local.get(PASS_KEY);
+    if (pass) {
+      namesCache = await BoardNames.unlockNames(locked, pass).catch(() => null);
+      if (!namesCache) local.del(PASS_KEY);
+    }
+    return namesCache ? { names: namesCache, state: 'unlocked' } : { names: null, state: 'locked' };
+  }
   async function renderHeld() {
     const view = document.getElementById('view');
     view.innerHTML = '<p class="empty">Loading…</p>';
     let all;
     try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The 14h list isn\'t available right now.</p>'; return; }
     if (mode !== 'held') return;
-    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null);
+    const { names, state } = await heldNames();
+    if (mode !== 'held') return;
+    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null, names, state);
+    const unlock = document.getElementById('unlock');
+    if (unlock) {
+      unlock.onsubmit = async (e) => {
+        e.preventDefault();
+        const pass = document.getElementById('npass').value;
+        const err = unlock.querySelector('.uerr');
+        err.textContent = 'Unlocking…';
+        const got = await BoardNames.unlockNames(await src.names(), pass).catch(() => null);
+        if (!got) { err.textContent = 'That passcode doesn\'t open the names.'; return; }
+        local.set(PASS_KEY, pass);
+        namesCache = got;
+        renderHeld();
+      };
+    }
+    const forget = document.getElementById('nforget');
+    if (forget) forget.onclick = () => { local.del(PASS_KEY); namesCache = null; renderHeld(); };
     try { history.replaceState(null, '', '#14h'); } catch (e) { /* not allowed in some frames */ }
     view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; renderHeld(); }; });
     const form = view.querySelector('form.gf');
-    if (form) { wireGrievance(form); form.closest('.gform').scrollIntoView({ block: 'start' }); form.elements.name.focus({ preventScroll: true }); }
+    if (form) {
+      const r = heldRows(all).find((x) => heldKey(x) === heldOpen);
+      wireGrievance(form, r && r.co);
+      form.closest('.gform').scrollIntoView({ block: 'start' });
+      if (!form.elements.name.value) form.elements.name.focus({ preventScroll: true });
+    }
   }
   async function renderOrders() {
     const view = document.getElementById('view');

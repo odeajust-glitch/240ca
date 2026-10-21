@@ -37,6 +37,26 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
 - **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
   tab can't make letters.
 
+## 2026-10-21: crew names in the Article 18.6(b) tab (owner chose both options)
+- **Laptop:** each Call Board page gets a second, *unmasked* read
+  (`describeFrame(frame, { unmasked: true })`) kept in memory only;
+  `parseCallBoardNames` keeps craft + turn + name ("Mike de Man") per train,
+  stored in `BoardChecker\names.json` (train|turn → name, 45 days,
+  lib/board/names.js). Never in history\, auto-summary, the AI review or the
+  relay; the masked `screens` are unchanged.
+- **Site:** only crews on the 14h list, conductor + engineer, locked with
+  **`BOARD_NAMES_KEY`** from the laptop's `.env` (AES-256-GCM, PBKDF2 250k) as
+  `data/names.json`. No key → no file. `public/board-names.js` unlocks in the
+  browser.
+- **Page:** passcode asked once and kept on that phone ("Forget the passcode"
+  undoes it); form fills name + engineer; the phone remembers PIN, Mr./Ms. and
+  initials per name, and the last name used per turn (localStorage,
+  `grievance-people`). CATS shows no PIN or gender.
+- Names start with checks after the laptop updates; older trips have none.
+- **Owner to do:** add `BOARD_NAMES_KEY=<long passphrase>` to
+  `C:\Users\<you>\BoardChecker\.env`, share it only with reps. A short one can
+  be guessed offline from the public file.
+
 ## 2026-10-21: line-up trains whose crew is already known
 Owner's 0357 snapshot: DHT042B 21 (ORD 0500) said "Toronto train / not
 counted" while SR09 was at 999 out working on it. Two engine fixes
