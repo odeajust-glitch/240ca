@@ -454,3 +454,34 @@ test('board checker drives Edge unless BOARD_BROWSER=chromium', () => {
   assert.deepEqual(chromium.options, {});
   assert.match(chromium.profileDir, /profile$/);
 });
+
+// Owner, 2026-10-21 0357: DHT042B 21 (ORD 0500) showed "Toronto train / not
+// counted" with SR09 at 999 out working on it.
+test('a line-up train already called or on duty shows its own crew and uses no turn', () => {
+  const home = [
+    { craft: 'CO', turn: 'SR14', terminal: 0, pos: 1, restUntil: null, statusUntil: null },
+    { craft: 'CO', turn: 'SR05', terminal: 0, pos: 2, restUntil: null, statusUntil: null },
+    { craft: 'CO', turn: 'SR09', terminal: 0, pos: 999, working: true, workingOn: 'DHT042B', restUntil: null, statusUntil: null },
+  ];
+  const sd = [
+    { craft: 'EN', turn: 'SD07', terminal: 0, pos: 1, restUntil: null, statusUntil: null },
+    { craft: 'EN', turn: 'SD04', terminal: 0, pos: 999, working: true, workingOn: 'DHT042B', restUntil: null, statusUntil: null },
+  ];
+  const lineup = [
+    { order: at(2026, 10, 21, 5, 0), symbol: 'DHT042B', trainNo: 'DHT042B', originDay: '21', status: 'ORD', deadhead: true, trnCrew: '45SASR0' },
+    { order: at(2026, 10, 21, 6, 0), symbol: 'DHT044B', trainNo: 'DHT044B', originDay: '21', status: 'PLN', deadhead: true },
+  ];
+  const onBoard = { symbol: 'DHT042B', trainNo: 'DHT042B', originDay: '21', station: 'SARNIA', onDuty: at(2026, 10, 21, 3, 50),
+    crew: [{ craft: 'EN', turn: 'SD04' }, { craft: 'CO', turn: 'SR09' }] };
+  const shape = (r) => r.predictions.map((p) => [p.symbol, p.pool, p.turn, p.engineer || null]);
+
+  // Called, not on duty yet: SR09/SD04 have it; the next deadhead gets SR14/SD07.
+  const called = runBoardCheck({ now: at(2026, 10, 21, 3, 30), callBoard: [], chainGangHome: home, sdHome: sd, lineup });
+  assert.deepEqual(shape(called), [['DHT042B', 'SR', 'SR09', 'SD04'], ['DHT044B', 'SR', 'SR14', 'SD07']]);
+  assert.match(called.predictions[0].reason, /SR09 is already called/);
+
+  // On duty on the Call Board: the crew CATS shows, still in line-up order.
+  const onDuty = runBoardCheck({ now: at(2026, 10, 21, 3, 57), callBoard: [onBoard], chainGangHome: home, sdHome: sd, lineup });
+  assert.deepEqual(shape(onDuty), [['DHT042B', 'SR', 'SR09', 'SD04'], ['DHT044B', 'SR', 'SR14', 'SD07']]);
+  assert.match(onDuty.predictions[0].reason, /On duty at .*0350/);
+});
