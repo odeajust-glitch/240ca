@@ -66,6 +66,9 @@ app.get('/docs/:file', (req, res) => {
 // hands PDFs to an external viewer that drops the #page= fragment, so
 // those users get a viewer we control instead.
 app.use('/pdfjs', express.static(path.join(__dirname, 'node_modules', 'pdfjs-dist', 'build')));
+// JSZip for the grievance generator (grievance.html), which builds the .odt
+// in the browser.
+app.use('/vendor/jszip', express.static(path.join(__dirname, 'node_modules', 'jszip', 'dist')));
 
 app.post('/api/ask', askLimiter, async (req, res) => {
   const { question, sources: requestedSources, dateFrom, dateTo, tier } = req.body;

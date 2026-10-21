@@ -8,6 +8,25 @@ everything; the board-checker laptop runs it)
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
 
+## ▶ Side project 2026-10-21: 14-hour rule grievance generator
+Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`).
+- `public/grievance.html` (+ `grievance.js`, `grievance_template.odt`,
+  `grievance-logo.png`) on the Agreement Search site, linked from its header.
+  Port of div240.netlify.app (owner's drag-and-drop Netlify site, no repo):
+  same letter wording, file # (`YYMMDD` of first on-duty + initials + A–K),
+  same .odt edits, filename `odea<YYMMDD of return>.odt`. JSZip served from
+  node_modules at `/vendor/jszip/`. Tests: `test/grievance.test.js`.
+- Letter: to N. Chambers (Superintendent – SOD), signed Eric Jung (owner).
+- Grievable at **14 h or more** away from home (as the original site), not
+  under 14.
+- Changes from the original: times counted in Eastern time (DST-safe on any
+  phone), auto next-day dates across midnight, "de Man" surnames kept whole,
+  preview now matches the .odt (original preview showed the wrong quote), the
+  sample member's name/PIN removed from the shipped template.
+- Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
+  the original); `odea` filename prefix; whether to pre-fill from the board
+  checker (it has turns/times but masks names and PINs, and doesn't see hotels).
+
 ## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
 Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
 - **board-auto.js** reads, after Sarnia's 41: **28 bunkhouse** (no CC; F8 until

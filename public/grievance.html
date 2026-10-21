@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grievance Generator · Div. 240</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #105292;
+    --blue: #1a66b0;
+    --gold: #ffb822;
+    --bg: #f4f6fa;
+    --panel: #ffffff;
+    --border: #dbe3ef;
+    --text: #1c2733;
+    --muted: #5c6b7e;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --green: #1e7d4f;
+    --green-light: #e6f4ec;
+    --paper: #fffdf8;
+    --ink: #1a1208;
+    --ink-mid: #5a4f3a;
+    --rule: #d8ccb4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'DM Sans', -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 22px 24px;
+    text-align: center;
+    background: var(--navy);
+    color: #fff;
+    border-bottom: 4px solid var(--gold);
+  }
+  header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+  header .sub { color: #d7e6fb; font-size: 13px; margin-top: 4px; }
+  header .sub a { color: #fff; }
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .panel-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-dt { display: grid; grid-template-columns: 1fr 92px; gap: 8px; }
+  label, .label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .note { font-weight: 400; }
+  input[type="text"], input[type="date"], select {
+    width: 100%;
+    font: inherit;
+    font-size: 16px; /* 16px keeps iOS from zooming in on focus */
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    min-height: 42px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--blue); outline-offset: -1px; border-color: var(--blue); }
+  input::placeholder { color: #9aa7b8; }
+  .choice { display: flex; gap: 8px; }
+  .choice label {
+    flex: 1;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 42px;
+    padding: 8px;
+    border: 1px solid var(--blue);
+    border-radius: 20px;
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .choice input { position: absolute; opacity: 0; pointer-events: none; }
+  .choice input:checked + label { background: var(--blue); color: #fff; }
+  .choice input:focus-visible + label { outline: 2px solid var(--gold); }
+  #hotel-row { display: none; margin-top: 10px; }
+  #hotel-row.show { display: block; }
+
+  .dur {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: #eef2f8;
+    border: 1px solid var(--border);
+  }
+  .dur .label { margin: 0; }
+  .dur-value { font-size: 30px; font-weight: 700; line-height: 1.1; color: var(--muted); }
+  .dur-rhs { text-align: right; }
+  .dur-verdict { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .dur-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .dur.violation { background: var(--red-light); border-color: #f0b9b2; }
+  .dur.violation .dur-value, .dur.violation .dur-verdict { color: var(--red); }
+  .dur.ok { background: var(--green-light); border-color: #b5dcc6; }
+  .dur.ok .dur-value, .dur.ok .dur-verdict { color: var(--green); }
+
+  .filenum {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+  }
+  .filenum .label { margin: 0; white-space: nowrap; }
+  .filenum-val { flex: 1; font-weight: 700; font-size: 16px; color: var(--navy); letter-spacing: 0.04em; overflow-wrap: anywhere; }
+  .filenum select { width: auto; min-width: 64px; }
+  .hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+  .err {
+    display: none;
+    background: var(--red-light);
+    border: 1px solid #f0b9b2;
+    color: var(--red);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .err.show { display: block; }
+
+  .btn-gen {
+    width: 100%;
+    min-height: 48px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-gen:hover:not(:disabled) { background: var(--blue); }
+  .btn-gen:disabled { background: #c5d0de; color: #6b7a8c; cursor: not-allowed; }
+  .btn-sub { text-align: center; font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .preview-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+  }
+  .letter {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--navy);
+    border-radius: 4px;
+    box-shadow: 0 4px 18px rgba(16, 82, 146, 0.08);
+    padding: 40px 48px 48px;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 15px;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+  }
+  .letter p { margin: 0 0 12px; }
+  .l-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .l-from { line-height: 1.35; }
+  .l-logo { text-align: center; flex-shrink: 0; width: 34%; max-width: 170px; }
+  .l-logo img { width: 100%; height: auto; display: block; }
+  .l-date { margin: 4px 0 18px; }
+  .l-to { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .l-chambers { font-weight: 600; font-size: 1.3em; }
+  .l-to .fileref { text-align: right; color: var(--ink-mid); }
+  .l-to .fileref strong { color: var(--ink); font-weight: 600; }
+  .l-address { line-height: 1.35; margin-bottom: 20px; }
+  .letter .just { text-align: justify; }
+  .letter .quote { margin-left: 28px; margin-right: 12px; }
+  .letter .q-bold { font-weight: 600; }
+  .letter .q-italic { font-style: italic; color: var(--ink-mid); }
+  .letter .empty { color: #b0a48e; font-style: italic; }
+  .l-sign { margin-top: 18px; }
+  .l-sign .sig-name { margin-top: 32px; }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; padding: 16px 16px 40px; }
+    header { padding: 18px 16px; }
+    header h1 { font-size: 19px; }
+    .letter { padding: 24px 18px 30px; font-size: 14.5px; }
+    .letter .quote { margin-left: 14px; margin-right: 0; }
+  }
+  @media (max-width: 420px) {
+    .row-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>14-Hour Rule Grievance Generator</h1>
+    <div class="sub">TCRC Division 240 &middot; Article 18.6(b), Agreement 4.16 &middot; <a href="/">Agreement search</a></div>
+  </header>
+
+  <main>
+    <div class="form-col">
+      <div class="panel">
+        <div class="panel-title">Conductor info</div>
+        <div class="row-2">
+          <div class="field">
+            <label for="f-name">Full name</label>
+            <input type="text" id="f-name" placeholder="John Doe" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="f-pin">PIN</label>
+            <input type="text" id="f-pin" placeholder="123456" inputmode="numeric" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Gender</span>
+          <div class="choice">
+            <input type="radio" id="gen-m" name="gender" value="male" checked>
+            <label for="gen-m">Male (Mr. / His)</label>
+            <input type="radio" id="gen-f" name="gender" value="female">
+            <label for="gen-f">Female (Ms. / Her)</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-initials">File initials <span class="note">· filled from the name, edit if needed</span></label>
+          <input type="text" id="f-initials" placeholder="JD" maxlength="5" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">First shift</div>
+        <div class="field">
+          <label for="f-prev-assign">Assignment ID</label>
+          <input type="text" id="f-prev-assign" placeholder="Q11051-05" autocomplete="off">
+        </div>
+        <div class="field">
+          <span class="label">On duty</span>
+          <div class="row-dt">
+            <input type="date" id="f-prev-on-date" aria-label="First shift on-duty date">
+            <input type="text" id="f-prev-on-time" placeholder="08:00" maxlength="5" inputmode="numeric" autocomplete="off" aria-label="First shift on-duty time">
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Off duty</span>
+          <div class="row-dt">
+            <input type="date" id="f-prev-off-date" aria-label="First shift off-duty date">
+            <input type="text" id="f-prev-off-time" placeholder="16:30" maxlength="5" inputmode="numeric" autocomplete="off" aria-label="First shift off-duty time">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Rest period</div>
+        <div class="field">
+          <span class="label">Location</span>
+          <div class="choice">
+            <input type="radio" id="loc-bunk" name="loc" value="bunkhouse" checked>
+            <label for="loc-bunk">Mac Yard Bunkhouse</label>
+            <input type="radio" id="loc-hotel" name="loc" value="hotel">
+            <label for="loc-hotel">Hotel</label>
+          </div>
+          <div id="hotel-row" class="field">
+            <label for="f-hotel">Hotel name</label>
+            <input type="text" id="f-hotel" placeholder="Hampton Inn, Sarnia" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Return shift</div>
+        <div class="field">
+          <label for="f-next-assign">Assignment ID</label>
+          <input type="text" id="f-next-assign" placeholder="Q11052-05" autocomplete="off">
+        </div>
+        <div class="field">
+          <span class="label">On duty</span>
+          <div class="row-dt">
+            <input type="date" id="f-next-on-date" aria-label="Return shift on-duty date">
+            <input type="text" id="f-next-on-time" placeholder="08:00" maxlength="5" inputmode="numeric" autocomplete="off" aria-label="Return shift on-duty time">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-engineer">Engineer <span class="note">· optional</span></label>
+          <input type="text" id="f-engineer" placeholder="R. Smith" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="dur" id="dur">
+          <div>
+            <span class="label">Rest duration</span>
+            <div class="dur-value" id="dur-val">——</div>
+          </div>
+          <div class="dur-rhs">
+            <div class="dur-verdict" id="dur-verdict">Enter times</div>
+            <div class="dur-hint">Grievable at 14h or more</div>
+          </div>
+        </div>
+
+        <div class="filenum">
+          <span class="label">Div. 240 File #</span>
+          <span class="filenum-val" id="filenum-display">——</span>
+          <select id="f-letter" aria-label="File letter">
+            <option>A</option><option>B</option><option>C</option><option>D</option>
+            <option>E</option><option>F</option><option>G</option><option>H</option>
+            <option>I</option><option>J</option><option>K</option>
+          </select>
+        </div>
+        <div class="hint">Change the letter only if you have more than one grievance on the same date.</div>
+
+        <div class="err" id="err-box" role="alert"></div>
+
+        <button class="btn-gen" id="btn-gen" disabled>Generate Grievance Document</button>
+        <div class="btn-sub">Downloads as .odt &middot; opens in LibreOffice, Google Docs &amp; Word &middot; nothing leaves your phone</div>
+      </div>
+    </div>
+
+    <div class="preview-col">
+      <div class="preview-title">Live letter preview</div>
+      <div class="letter">
+        <div class="l-top">
+          <div class="l-from">
+            Eric Jung<br>
+            Local Chairperson Road<br>
+            Division 240<br><br>
+            Tel: (778) 881-5503<br>
+            ericjung.240@gmail.com
+          </div>
+          <div class="l-logo">
+            <img src="/grievance-logo.png" alt="TCRC logo">
+            <div>TCRC-CTY Div. 240</div>
+          </div>
+        </div>
+        <div class="l-date" id="p-date"></div>
+        <div class="l-to">
+          <span class="l-chambers">N. Chambers</span>
+          <span class="fileref">Div. 240 File # <strong id="p-filenum">——</strong></span>
+        </div>
+        <div class="l-address">
+          Superintendent - SOD<br>
+          699 McGregor Side Road<br>
+          Sarnia, Ontario, N7T 7H5
+        </div>
+
+        <p>Dear Sir,</p>
+        <p class="just">Please accept this as a timely grievance as per article 84.2(b) of agreement 4.16. TCRC-CTY Division 240 protests the action of the company because we believe it violated the intent of Article 18 of Agreement 4.16 including any applicable CROA awards and/or jurisprudence.</p>
+        <p class="just empty" id="p-body">Fill in the form to see the letter body.</p>
+        <p class="just quote q-bold">If the Regulator increases to ten (10) the number of duty hours which an employee can work before being required to take mandatory rest, paragraph 18.6 hereof will be amended to read:</p>
+        <p class="just quote q-italic">Except as provided by paragraph 18.7, employees in freight service will not be held at other than the home terminal longer than 14 hours except that for an employee who books in excess of 3 hours rest pursuant to sub-paragraph 51.11 (b) hereof, the 14-hour period shall commence at the expiration of such rest.</p>
+        <p class="just empty" id="p-closing">Closing paragraph will appear here.</p>
+        <p class="just">Division 240 requests that Article 18 is adhered too as written in the 4.16 and that these types of violations cease immediately.</p>
+        <div class="l-sign">
+          Sincerely,
+          <div class="sig-name">Eric Jung</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script src="/vendor/jszip/jszip.min.js"></script>
+<script src="/grievance.js"></script>
+<script>
+(function () {
+  const G = window.Grievance;
+  const get = (id) => document.getElementById(id);
+  const fName = get('f-name'), fPin = get('f-pin'), fInitials = get('f-initials');
+  const fPrevAssign = get('f-prev-assign'), fNextAssign = get('f-next-assign');
+  const fPrevOnDate = get('f-prev-on-date'), fPrevOnTime = get('f-prev-on-time');
+  const fPrevOffDate = get('f-prev-off-date'), fPrevOffTime = get('f-prev-off-time');
+  const fNextOnDate = get('f-next-on-date'), fNextOnTime = get('f-next-on-time');
+  const fEngineer = get('f-engineer'), fHotel = get('f-hotel'), fLetter = get('f-letter');
+  const btnGen = get('btn-gen'), errBox = get('err-box');
+
+  const gender = () => document.querySelector('input[name="gender"]:checked').value;
+  const T = (dateEl, timeEl) => G.parseParts(dateEl.value, timeEl.value);
+
+  // Dates the rep hasn't set themselves follow the shift before: same day,
+  // or the next day when the time is earlier (the shift crossed midnight).
+  // Typing a date by hand stops that for that field.
+  function follow(dateEl, timeEl, prev) {
+    if (dateEl.dataset.manual === '1' || !prev) return;
+    const pd = `${prev.y}-${String(prev.mo).padStart(2, '0')}-${String(prev.d).padStart(2, '0')}`;
+    const t = G.parseParts(pd, timeEl.value);
+    dateEl.value = t && (t.h * 60 + t.mi) < (prev.h * 60 + prev.mi) ? G.addDays(pd, 1) : pd;
+  }
+
+  function readForm() {
+    const prevOn = T(fPrevOnDate, fPrevOnTime);
+    follow(fPrevOffDate, fPrevOffTime, prevOn);
+    const prevOff = T(fPrevOffDate, fPrevOffTime);
+    follow(fNextOnDate, fNextOnTime, prevOff);
+    const nextOn = T(fNextOnDate, fNextOnTime);
+    return {
+      name: fName.value.trim(),
+      pin: fPin.value.trim(),
+      gender: gender(),
+      prevAssign: fPrevAssign.value.trim().toUpperCase(),
+      nextAssign: fNextAssign.value.trim().toUpperCase(),
+      engineer: fEngineer.value.trim() || null,
+      prevOn, prevOff, nextOn,
+      fileNum: G.fileNumber(prevOn, fInitials.value, fLetter.value),
+    };
+  }
+
+  function problem(d) {
+    if (d.prevOn && d.prevOff && G.hoursBetween(d.prevOn, d.prevOff) <= 0)
+      return 'Off-duty is before the first shift went on duty. Check the dates.';
+    if (d.prevOff && d.nextOn && G.hoursBetween(d.prevOff, d.nextOn) <= 0)
+      return 'Return on-duty is before the off-duty time. Check the dates.';
+    return null;
+  }
+
+  function update() {
+    const d = readForm();
+    const err = problem(d);
+    errBox.textContent = err || '';
+    errBox.classList.toggle('show', !!err);
+
+    get('p-date').textContent = G.headerDate(new Date());
+    get('p-filenum').textContent = d.fileNum;
+    get('filenum-display').textContent = d.fileNum;
+
+    const hrs = !err && d.prevOff && d.nextOn ? G.hoursBetween(d.prevOff, d.nextOn) : null;
+    const dur = get('dur'), dv = get('dur-val'), dverdict = get('dur-verdict');
+    if (hrs !== null) {
+      dv.textContent = G.durationLabel(hrs);
+      if (G.grievable(hrs)) {
+        dur.className = 'dur violation';
+        dverdict.textContent = 'Violation · grievable';
+      } else {
+        dur.className = 'dur ok';
+        const short = 14 * 60 - Math.floor(hrs * 60 + 1e-6);
+        dverdict.textContent = `OK · ${G.durationLabel(short / 60)} under 14h`;
+      }
+    } else {
+      dur.className = 'dur';
+      dv.textContent = '——';
+      dverdict.textContent = 'Enter times';
+    }
+
+    const ready = d.name && d.pin && fInitials.value.trim() && d.prevAssign && d.prevOn &&
+      d.prevOff && d.nextAssign && d.nextOn && hrs !== null && G.grievable(hrs);
+    btnGen.disabled = !ready;
+
+    const bodyEl = get('p-body'), closingEl = get('p-closing');
+    if (!d.name || !d.prevOff || !d.nextOn || !d.prevAssign || !d.nextAssign || hrs === null) {
+      bodyEl.className = 'just empty';
+      bodyEl.textContent = 'Fill in the form to see the letter body.';
+      closingEl.className = 'just empty';
+      closingEl.textContent = 'Closing paragraph will appear here.';
+      return;
+    }
+    bodyEl.className = 'just';
+    bodyEl.textContent = G.bodyText({ ...d, pin: d.pin || '______' });
+    closingEl.className = 'just';
+    const [before, after] = G.closingText(d, '\u0000').split('\u0000');
+    const sup = document.createElement('sup');
+    sup.textContent = 'th';
+    closingEl.replaceChildren(before, sup, after);
+  }
+
+  async function generate() {
+    const d = readForm();
+    btnGen.disabled = true;
+    btnGen.textContent = 'Generating…';
+    errBox.classList.remove('show');
+    try {
+      const resp = await fetch('/grievance_template.odt');
+      if (!resp.ok) throw new Error(`Could not load the letter template (HTTP ${resp.status}).`);
+      const bytes = await G.buildOdt(JSZip, await resp.arrayBuffer(), d, new Date());
+      const blob = new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.nextOn) });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+    } catch (e) {
+      errBox.textContent = e.message;
+      errBox.classList.add('show');
+    } finally {
+      btnGen.textContent = 'Generate Grievance Document';
+      update();
+    }
+  }
+
+  fName.addEventListener('input', () => { fInitials.value = G.extractInitials(fName.value); update(); });
+  [fPin, fEngineer, fHotel, fLetter, fPrevOnDate].forEach((el) => el.addEventListener('input', update));
+  [fPrevOffDate, fNextOnDate].forEach((el) => el.addEventListener('input', () => {
+    el.dataset.manual = el.value ? '1' : '';
+    update();
+  }));
+  // Times: 0500 or 05:00, colon added after two digits.
+  [fPrevOnTime, fPrevOffTime, fNextOnTime].forEach((el) => el.addEventListener('input', () => {
+    let v = el.value.replace(/\D/g, '');
+    if (v.length > 2) v = v.slice(0, 2) + ':' + v.slice(2, 4);
+    el.value = v;
+    update();
+  }));
+  [fPrevAssign, fNextAssign, fInitials].forEach((el) => el.addEventListener('input', () => {
+    el.value = el.value.toUpperCase();
+    update();
+  }));
+  document.querySelectorAll('input[name="gender"]').forEach((r) => r.addEventListener('change', update));
+  document.querySelectorAll('input[name="loc"]').forEach((r) => r.addEventListener('change', () => {
+    get('hotel-row').classList.toggle('show', get('loc-hotel').checked);
+    update();
+  }));
+  btnGen.addEventListener('click', generate);
+  update();
+})();
+</script>
+</body>
+</html>
