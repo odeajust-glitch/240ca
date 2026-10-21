@@ -24,8 +24,18 @@ Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`
   preview now matches the .odt (original preview showed the wrong quote), the
   sample member's name/PIN removed from the shipped template.
 - Open (owner): rest location (bunkhouse/hotel) isn't in the letter (same as
-  the original); `odea` filename prefix; whether to pre-fill from the board
-  checker (it has turns/times but masks names and PINs, and doesn't see hotels).
+  the original); `odea` filename prefix.
+- **Board site "14h" tab** (owner, 2026-10-21), beside Order summary
+  (`#14h`): Sarnia trains whose crew was held in Toronto ≥ 14 h. Held = off
+  duty (bunkhouse REST − 8 h) → the CO turn's next Call Board on-duty at
+  TORONTO (`state.toronto` in board-trains.js, any train, within 72 h); no
+  trip home yet + CO still in the bunkhouse = "still held so far". Rows carry
+  `co`, `en`, `back`, `heldMin`, `stillHeld` in trains.json. Tap a crew → form
+  pre-filled with trains/times (editable), rep types name + PIN, .odt made in
+  the browser. site.js now ships grievance.js, grievance_template.odt and
+  jszip.min.js (skipped with a note if missing, never breaks the build).
+- **Laptop: after `git pull`, run `npm install`** (jszip is new), or the 14h
+  tab can't make letters.
 
 ## ▶ Built 2026-10-17: Mac yard (Toronto) checks — not yet run on real CATS
 Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).

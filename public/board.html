@@ -232,6 +232,27 @@
   .flagtxt { display: block; font: 600 11.5px/1.3 var(--body); white-space: normal; margin-top: 2px; }
   .fl-red .flagtxt { color: var(--stop); }
   .fl-yellow .flagtxt { color: var(--amber); }
+  /* 14h tab */
+  .held { font: 600 13px/1 var(--mono); color: var(--stop); }
+  .held.now { color: var(--amber); }
+  .gform { padding: 14px; border-top: 2px solid var(--accent); background: var(--accent-tint); }
+  .gform h3 { margin: 0 0 8px; font: 700 17px/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+  .gform .gnote { font-size: 12.5px; color: var(--soft); margin: 0 0 12px; max-width: 80ch; }
+  .gform .ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 14px; max-width: 980px; }
+  .gform fieldset { border: 0; margin: 0; padding: 0; display: contents; }
+  .gform legend { grid-column: 1 / -1; font: 700 15px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 6px; padding: 0; }
+  .gform label { display: grid; gap: 4px; font-size: 12px; color: var(--soft); }
+  .gform input, .gform select { font: inherit; font-size: 16px; color: var(--ink); background: var(--sheet); min-width: 0; border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; min-height: 40px; width: 100%; }
+  .gform .dt { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 6px; }
+  .gform .seg { display: flex; gap: 6px; }
+  .gform .seg input { width: auto; min-height: 0; margin: 0; accent-color: var(--accent); }
+  .gform .seg label { white-space: nowrap; flex: 1; justify-content: center;
+    display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 0 10px; min-height: 40px; cursor: pointer; }
+  .gform .gsum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; font-size: 13.5px; }
+  .gform .gsum b { font-family: var(--mono); }
+  .gform .gerr { color: var(--stop); font-weight: 600; }
+  .gform button.gen { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 10px 16px; min-height: 44px; font: 600 14px/1 var(--body); cursor: pointer; }
+  .gform button.gen:disabled { background: var(--rule); color: var(--soft); cursor: not-allowed; }
   @media (max-width: 700px) {
     .ohead .when { font-size: 30px; }
     .ohead .ctl { margin-left: 0; }
@@ -272,7 +293,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeSnap" type="button" aria-pressed="true">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeSnap" type="button" aria-pressed="true">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">14h</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
 </div>
@@ -291,6 +312,8 @@
 </div>
 <script src="board-turns.js"></script>
 <script src="board-trains.js"></script>
+<script src="jszip.min.js"></script>
+<script src="grievance.js"></script>
 <script>
 let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -601,6 +624,147 @@ function ordersView(all, day, openId, find, from = 'all') {
     </section>`;
 }
 
+// --- 14h: crews held in Toronto 14 hours or more (Article 18.6(b)) ----------
+
+const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
+const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
+  .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
+const heldKey = (r) => `${r.id} ${r.month}`;
+
+function heldView(all, openKey, lastTaken) {
+  const rows = heldRows(all);
+  const body = rows.map((r) => {
+    const key = heldKey(r);
+    const tr = `<tr class="row${key === openKey ? ' open' : ''}" data-key="${esc(key)}">
+      <td class="num"><b>${esc(r.co)}</b>${r.en ? ` <span class="crew">${esc(r.en)}</span>` : ''}</td>
+      <td class="num"><b class="id">${esc(r.id)}</b> <span class="crew">${esc(dt(r.onDuty))}</span></td>
+      <td class="num">≈ ${esc(dt(r.offDuty))}</td>
+      <td class="num">${r.back ? `<b class="id">${esc(r.back.id)}</b>` : '<span class="muted">still in the bunkhouse</span>'}</td>
+      <td class="num">${r.back ? esc(dt(r.back.onDuty)) : '—'}</td>
+      <td><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span></td></tr>`;
+    return tr;
+  }).join('');
+  // The form sits under the table, not in it, so it fits a phone screen.
+  const open = rows.find((r) => heldKey(r) === openKey);
+  const done = rows.filter((r) => !r.stillHeld).length;
+  return `
+    <div class="ohead">
+      <div><div class="sec-title" style="margin-bottom:6px">14-hour rule · Article 18.6(b)</div><div class="when">Held in Toronto 14 h+</div></div>
+    </div>
+    <div class="strip">
+      <div class="stat ${done ? 'alert' : ''}"><div class="v">${done}</div><div class="l">Trips home 14 h or more after going off duty</div></div>
+      <div class="stat"><div class="v">${rows.length - done}</div><div class="l">Still in the bunkhouse past 14 h${lastTaken ? ` (as of ${esc(dt(lastTaken))})` : ''}</div></div>
+      <div class="stat"><div class="v">${all.filter((r) => r.heldMin != null).length}</div><div class="l">Toronto stays with a known off-duty time</div></div>
+      <div class="stat"><div class="v">${rows.length ? esc(dur(Math.max(...rows.map((r) => r.heldMin)))) : '—'}</div><div class="l">Longest held</div></div>
+    </div>
+    <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to write the grievance</span></header>
+      <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
+      <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
+      ${open ? `<div class="gform"><h3>Grievance · ${esc(open.co)} on ${esc(open.id)}</h3>${grievanceForm(open)}</div>` : ''}
+      <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names and PINs aren't on the board; you type them, and the letter is made on this device.</div>
+    </section>`;
+}
+
+// "2026-10-17 0954" → ["2026-10-17", "09:54"]
+const dateOf = (st) => (st ? st.slice(0, 10) : '');
+const timeOf = (st) => (st ? `${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
+
+function grievanceForm(r) {
+  if (!window.Grievance || !window.JSZip) return '<p class="gnote">The letter tools didn\'t load on this page, so grievances can\'t be written here right now.</p>';
+  const v = (x) => `value="${esc(x || '')}"`;
+  return `<form class="gf" autocomplete="off" onsubmit="return false">
+    <p class="gnote">Filled in from the board. Type the conductor's name and PIN, check the times, then generate. Nothing you type leaves this device.</p>
+    <div class="ggrid">
+      <fieldset><legend>Conductor (${esc(r.co)})</legend>
+        <label>Full name<input name="name" placeholder="John Doe"></label>
+        <label>PIN<input name="pin" inputmode="numeric" placeholder="123456"></label>
+        <label>File initials<input name="initials" maxlength="5" placeholder="JD"></label>
+        <div class="seg" role="radiogroup" aria-label="Gender"><label><input type="radio" name="gender" value="male" checked> Mr. / His</label><label><input type="radio" name="gender" value="female"> Ms. / Her</label></div>
+        <label>Engineer${r.en ? ` (${esc(r.en)})` : ''}, optional<input name="engineer" placeholder="R. Smith"></label>
+        <label>File letter<select name="letter">${'ABCDEFGHIJK'.split('').map((l) => `<option>${l}</option>`).join('')}</select></label>
+      </fieldset>
+      <fieldset><legend>Train to Toronto</legend>
+        <label>Train<input name="prevAssign" ${v(r.id)}></label>
+        <label>On duty (Sarnia)<span class="dt"><input type="date" name="prevOnDate" ${v(dateOf(r.onDuty))}><input name="prevOnTime" inputmode="numeric" maxlength="5" ${v(timeOf(r.onDuty))}></span></label>
+        <label>Off duty (Toronto)<span class="dt"><input type="date" name="prevOffDate" ${v(dateOf(r.offDuty))}><input name="prevOffTime" inputmode="numeric" maxlength="5" ${v(timeOf(r.offDuty))}></span></label>
+      </fieldset>
+      <fieldset><legend>Train home</legend>
+        <label>Train<input name="nextAssign" ${v(r.back && r.back.id)} placeholder="M39931 01"></label>
+        <label>On duty (Toronto)<span class="dt"><input type="date" name="nextOnDate" ${v(r.back && dateOf(r.back.onDuty))}><input name="nextOnTime" inputmode="numeric" maxlength="5" placeholder="05:00" ${v(r.back && timeOf(r.back.onDuty))}></span></label>
+      </fieldset>
+    </div>
+    <div class="gsum"><span>Held <b class="g-held">—</b></span><span>File # <b class="g-file">——</b></span><span class="gerr" role="alert"></span>
+      <button type="button" class="gen" disabled>Generate grievance (.odt)</button></div>
+  </form>`;
+}
+
+// Reads the open form; keeps the held time, file # and button current.
+function wireGrievance(form) {
+  const G = window.Grievance;
+  const f = form.elements;
+  const val = (n) => f[n].value.trim();
+  const read = () => {
+    const prevOn = G.parseParts(val('prevOnDate'), val('prevOnTime'));
+    return {
+      name: val('name'), pin: val('pin'), gender: form.querySelector('input[name="gender"]:checked').value,
+      prevAssign: val('prevAssign').toUpperCase(), nextAssign: val('nextAssign').toUpperCase(),
+      engineer: val('engineer') || null, prevOn,
+      prevOff: G.parseParts(val('prevOffDate'), val('prevOffTime')),
+      nextOn: G.parseParts(val('nextOnDate'), val('nextOnTime')),
+      fileNum: G.fileNumber(prevOn, val('initials'), f.letter.value),
+    };
+  };
+  const btn = form.querySelector('button.gen');
+  const errEl = form.querySelector('.gerr');
+  function update() {
+    const d = read();
+    const hrs = d.prevOff && d.nextOn ? G.hoursBetween(d.prevOff, d.nextOn) : null;
+    let err = '';
+    if (d.prevOn && d.prevOff && G.hoursBetween(d.prevOn, d.prevOff) <= 0) err = 'Off duty is before on duty.';
+    else if (hrs != null && hrs <= 0) err = 'The trip home is before off duty.';
+    else if (hrs != null && !G.grievable(hrs)) err = 'Under 14 hours: no grievance.';
+    errEl.textContent = err;
+    form.querySelector('.g-held').textContent = hrs != null && hrs > 0 ? G.durationLabel(hrs) : '—';
+    form.querySelector('.g-file').textContent = d.fileNum;
+    btn.disabled = !(d.name && d.pin && val('initials') && d.prevAssign && d.nextAssign && d.prevOn && hrs != null && !err);
+    return d;
+  }
+  form.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.name === 'name') f.initials.value = G.extractInitials(t.value);
+    if (/Time$/.test(t.name)) {
+      let x = t.value.replace(/\D/g, '');
+      if (x.length > 2) x = `${x.slice(0, 2)}:${x.slice(2, 4)}`;
+      t.value = x;
+    }
+    if (/Assign$|^initials$/.test(t.name)) t.value = t.value.toUpperCase();
+    update();
+  });
+  form.addEventListener('change', update);
+  btn.onclick = async () => {
+    const d = update();
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    try {
+      const res = await fetch('grievance_template.odt');
+      if (!res.ok) throw new Error(`the letter template didn't load (HTTP ${res.status})`);
+      const bytes = await G.buildOdt(window.JSZip, await res.arrayBuffer(), d, new Date());
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' }));
+      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.nextOn) });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+    } catch (e) {
+      errEl.textContent = `Couldn't make the letter: ${e.message}.`;
+    } finally {
+      btn.textContent = 'Generate grievance (.odt)';
+      update();
+    }
+  };
+  update();
+}
+
 async function source() {
   try {
     const index = await getJSON('data/index.json');
@@ -745,23 +909,41 @@ source().then(async (src) => {
     }
   }
 
-  // Snapshots ⇄ Order summary.
+  // Snapshots ⇄ Order summary ⇄ 14h. setMode(true) is the order summary.
   const order = { day: null, open: null, find: '', from: 'all' };
   const modeSnap = document.getElementById('modeSnap');
   const modeOrders = document.getElementById('modeOrders');
-  function setMode(orders) {
-    document.body.classList.toggle('orders', orders);
-    modeSnap.setAttribute('aria-pressed', !orders);
-    modeOrders.setAttribute('aria-pressed', orders);
-    if (orders) renderOrders();
+  const modeHeld = document.getElementById('modeHeld');
+  let mode = 'snap';
+  function setMode(m) {
+    mode = m === true ? 'orders' : m === false ? 'snap' : m;
+    document.body.classList.toggle('orders', mode !== 'snap');
+    modeSnap.setAttribute('aria-pressed', mode === 'snap');
+    modeOrders.setAttribute('aria-pressed', mode === 'orders');
+    modeHeld.setAttribute('aria-pressed', mode === 'held');
+    if (mode === 'orders') renderOrders();
+    else if (mode === 'held') renderHeld();
     else if (list.length) show(cur);
+  }
+  let heldOpen = null;
+  async function renderHeld() {
+    const view = document.getElementById('view');
+    view.innerHTML = '<p class="empty">Loading…</p>';
+    let all;
+    try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The 14h list isn\'t available right now.</p>'; return; }
+    if (mode !== 'held') return;
+    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null);
+    try { history.replaceState(null, '', '#14h'); } catch (e) { /* not allowed in some frames */ }
+    view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; renderHeld(); }; });
+    const form = view.querySelector('form.gf');
+    if (form) { wireGrievance(form); form.closest('.gform').scrollIntoView({ block: 'start' }); form.elements.name.focus({ preventScroll: true }); }
   }
   async function renderOrders() {
     const view = document.getElementById('view');
     view.innerHTML = '<p class="empty">Loading the order summary…</p>';
     let all;
     try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The order summary isn\'t available right now.</p>'; return; }
-    if (!document.body.classList.contains('orders')) return;
+    if (mode !== 'orders') return;
     // Searching a train opens the day it belongs to.
     const q = order.find.trim().toUpperCase().replace(/\s+/g, '');
     const match = q && all.find((r) => r.id.replace(/\s+/g, '') === q);
@@ -781,6 +963,7 @@ source().then(async (src) => {
   }
   modeSnap.onclick = () => setMode(false);
   modeOrders.onclick = () => setMode(true);
+  modeHeld.onclick = () => setMode('held');
 
   document.getElementById('rail').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
@@ -788,12 +971,15 @@ source().then(async (src) => {
   });
   daySel.onchange = () => openDay(daySel.value);
 
-  // A link like #2026-10-15-0815 opens that snapshot; #orders the order summary.
+  // A link like #2026-10-15-0815 opens that snapshot; #orders the order
+  // summary; #14h the 14-hour list.
   const wantOrders = location.hash === '#orders';
+  const wantHeld = location.hash === '#14h';
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) openDay(m[1], `${m[1]} ${m[2]}`);
   else await openDay(src.days[0]);
   if (wantOrders) setMode(true);
+  else if (wantHeld) setMode('held');
 }).catch((err) => {
   document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;
 });
