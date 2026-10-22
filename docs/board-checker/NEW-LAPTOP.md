@@ -76,9 +76,8 @@ the CATS sign-on and checks every 5 minutes. Leave the window alone.
 **Fresh Microsoft sign-in (owner, 2026-10-22).** Microsoft asks again about
 every 24 h. To restart that before you leave, click the checker's window and
 press **R**: it signs out of Microsoft and asks again; approve it in
-Authenticator. It also does this by itself when your own train is ordered and
-your call is within 3 h (`BOARD_SIGNIN_BEFORE_CALL=180` to change), once per
-train. When Microsoft shows a number to match, it's printed in the window.
+Authenticator. It also does this by itself once your turn shows on duty on the
+Sarnia Call Board, once per train. When Microsoft shows a number to match, it's printed in the window.
 Optional `.env` lines:
 - `MS_PASSWORD=` your Microsoft (CN) password, if Microsoft asks for it, so
   you only need to approve on the phone. Tried once per sign-in; off after a

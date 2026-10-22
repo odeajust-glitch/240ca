@@ -29,8 +29,9 @@ every session**: state, decisions, what you tried, what's next.
   don't retry without the owner explicitly changing that. Built instead
   (owner chose both): **R in the checker window** = sign out of Microsoft
   (clear its + `.cn.ca` cookies) and reopen CATS for a fresh sign-in; and
-  **automatically when the owner's own train is ORD and the call is ≤ 3 h
-  away** (`lib/board/signin.js`, once per train, not within 3 h of the last).
+  **automatically once the owner's turn shows on duty on the Sarnia Call
+  Board** (owner changed it from "ORD + call ≤ 3 h": once working, not
+  before; `lib/board/signin.js`, once per train, not within 3 h of the last).
   The approval stays on the phone. The checker prints Microsoft's number to
   match, answers "Stay signed in?" Yes, fills `MS_PASSWORD` if set (once per
   sign-in, off after a refusal), optional ntfy alert (`BOARD_NTFY_TOPIC`),

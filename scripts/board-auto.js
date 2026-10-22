@@ -11,7 +11,7 @@
 //
 // Press R in this window for a fresh Microsoft sign-in after the current
 // check, so the ~24 h CN sign-in restarts before you leave; it also does one
-// by itself when your own train is ordered and the call is near
+// by itself when your turn shows on duty on the Sarnia Call Board
 // (lib/board/signin.js). You approve it in Authenticator either way.
 //
 // You do the Microsoft sign-in (Authenticator). The CATS sign-on is yours too,
@@ -350,7 +350,7 @@ function answer(summary, me, nowOverride) {
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
   return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
-    myCall: { me: result.me, now: result.now } };
+    callBoard: input.callBoard };
 }
 let lastToronto = null;
 
@@ -765,7 +765,7 @@ async function main() {
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, myCall } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
@@ -789,14 +789,13 @@ async function main() {
       }
       await publishSite(first || changed || torontoChanged);
       retried = false;
-      // Your own train ordered with the call near: sign in fresh now, so the
-      // ~24 h covers the trip (owner, 2026-10-22).
+      // You're on duty on the Sarnia Call Board: sign in fresh now, so the
+      // ~24 h covers the trip (owner, 2026-10-22: once working, not before).
       const signInState = SignIn.loadState(SIGNIN_FILE);
-      const beforeCall = +process.env.BOARD_SIGNIN_BEFORE_CALL || SignIn.BEFORE_CALL_MINUTES;
-      const due = SignIn.dueForCall(myCall.me, myCall.now, signInState, { beforeCall });
+      const due = SignIn.dueOnDuty(callBoard, me, signInState);
       if (due) {
-        SignIn.saveState(SIGNIN_FILE, { ...signInState, doneFor: myCall.me.train });
-        await freshSignIn(page, due);
+        SignIn.saveState(SIGNIN_FILE, { ...signInState, doneFor: due.train });
+        await freshSignIn(page, due.why);
       }
     } catch (err) {
       if (err instanceof NeedSignIn) {
