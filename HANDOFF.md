@@ -63,7 +63,7 @@ Deploy).
   from restarts.log), shown under "Updated". Worker `scheduled()` (cron
   */10, vars NTFY_TOPIC, DOWN_MINUTES=30) ntfy "down"/"back", note in
   `status/down.json` (never served; deployR2 never deletes `status/`).
-  ❓ Owner must add the variable + cron trigger (CLOUDFLARE.md §8).
+  ✅ Owner added the variable + cron trigger 2026-10-22 (wrangler.toml matches; keep_vars). Not yet seen firing.
 - #6 Prediction accuracy: line-up / Mac rows carry `pred` {co, en} (not
   `known` rows, not S5); BoardTrains keeps the last before on duty
   (`r.predicted`), `predHit` vs the Call Board crew; Order summary tiles
