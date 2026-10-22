@@ -132,7 +132,9 @@ every session**: state, decisions, what you tried, what's next.
   event `aheadRest` when a turn ahead at home, not resting last check, is now
   on rest (restUntil > now) or HT; `told[turn].ahead` = {turn: resting}.
   Pref `aheadRest` (default on); Worker re-paste needed again. ❓ Owner
-  didn't confirm "Chain Gang only" (assumed).
+  didn't confirm "Chain Gang only" (assumed). Plus `aheadBack` (owner asked):
+  a turn ahead that was resting last check no longer is ("back in line
+  ahead of you"), pref default on; Worker re-paste again.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

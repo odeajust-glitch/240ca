@@ -107,6 +107,12 @@ test('turn alerts: a Chain Gang turn ahead going on rest or hold', () => {
   ]);
   // A phone that switched it off doesn't get it.
   const shared = r.events;
+  // Coming off: SR12's rest is over by 1900; SR04 still held.
+  const later = turnStates({ now: at(2026, 10, 22, 19, 0), predictions: [] }, [], { chainGang: [row('SR04', 1, { rn: 'HT', statusUntil: at(2026, 10, 23, 2, 45) }), row('SR12', 2, { restUntil: at(2026, 10, 22, 18, 0) }), row('SR03', 3)] });
+  const back = turnEvents(r.told, later, { lineupRead: false });
+  assert.deepEqual(back.events.map((e) => [e.turn, e.kind, e.text]), [['SR03', 'aheadBack', 'SR03: SR12 ahead of you (pos 002) is off rest/hold and back in line ahead of you.']]);
+  assert.deepEqual(turnEvents(back.told, later, { lineupRead: false }).events, []); // said once
+  assert.deepEqual(phoneEvents(back.events, { turns: ['SR03'], prefs: { SR03: { aheadBack: false } } }, {}, {}, { lineupRead: false }).events, []);
   assert.deepEqual(phoneEvents(shared, { turns: ['SR03'], prefs: { SR03: { aheadRest: false } } }, {}, {}, { lineupRead: false }).events, []);
   assert.equal(phoneEvents(shared, { turns: ['SR03'] }, {}, {}, { lineupRead: false }).events.length, 1);
 });

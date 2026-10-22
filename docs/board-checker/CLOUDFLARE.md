@@ -108,7 +108,8 @@ and engineer turns). Free, no app, no message cap (web push).
 - **Choose what to get, per turn** (owner): under the button, tick **lined
   up**, **ordered**, **on duty**, (Chain Gang SR/SD turns) **someone ahead
   goes on rest** (a turn ahead at home goes on rest or a hold turn, so it's
-  skipped and you move up), and pick **call time moves …or more**
+  skipped and you move up), **someone ahead comes off rest** (back in line
+  ahead of you), and pick **call time moves …or more**
   (never, 15 min, 30 min, 1 h, 1½ h, 2 h, 3 h). Defaults: all on, 30 min.
   Changes save straight away. Time moves are measured from the call that
   phone was last told of, so slow drifts still add up.
