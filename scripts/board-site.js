@@ -25,6 +25,10 @@ async function main() {
   for (const s of built.skipped) console.log(`  Skipped ${s}`);
   if (!process.argv.includes('--deploy')) return;
 
+  if (settings.r2Missing.length) {
+    console.error(`Cloudflare settings incomplete in BoardChecker\\.env: ${settings.r2Missing.join(', ')} missing or empty. Not published.`);
+    process.exit(1);
+  }
   const sent = await publishSiteDir(outDir, settings);
   if (!sent) {
     console.error('To publish, put R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY (Cloudflare) in BoardChecker\\.env.');

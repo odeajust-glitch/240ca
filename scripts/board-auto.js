@@ -417,6 +417,12 @@ const site = { due: false, lastAt: 0 };
 async function publishSite(changed) {
   const settings = siteSettings();
   const { days, every, namesKey } = settings;
+  if (settings.r2Missing.length) {
+    if (!site.warned) console.log(`  (snapshot website: Cloudflare settings incomplete, ${settings.r2Missing.join(', ')} missing or empty in .env)`);
+    site.warned = true;
+    return;
+  }
+  site.warned = false;
   if (!settings.r2 && !(settings.token && settings.siteId)) return;
   if (changed) site.due = true;
   if (!site.due || Date.now() - site.lastAt < every * 60000) return;
