@@ -82,8 +82,16 @@ every session**: state, decisions, what you tried, what's next.
   are set (BOARD_SITE_EVERY default 15), else Netlify (90). Login = one-click
   Cloudflare Access on workers.dev (allowed emails, one-time code); laptop
   uploads straight to R2's S3 API so it never meets the login. Owner's
-  steps: docs/board-checker/CLOUDFLARE.md. Tested on fakes only (sandbox
-  can't reach Cloudflare). ❓ Owner to set up; then delete the Netlify site.
+  steps: docs/board-checker/CLOUDFLARE.md. **Live 2026-10-22:
+  https://board.sarniaboard.workers.dev** (account subdomain renamed from the
+  owner's name; Access app "board - Cloudflare Workers", policy = Emails,
+  One-time PIN login added; Preview URLs off). First deploy went to Netlify
+  because the R2 lines were missing; scripts now name missing R2 settings.
+  ❓ Netlify site boardtestsa to delete once the owner's happy.
+- ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
+  passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
+  the chat; told to change all of them. Never ask for .env contents; use the
+  `findstr` ok/MISSING check.
   Toronto screens 28 + 41 (Mac) read on all 668 checks since the 18th.
 - AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
   as 9 (it's M394, even) and recounted road day 21's A trains from the visible
