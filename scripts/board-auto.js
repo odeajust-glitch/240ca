@@ -409,9 +409,9 @@ function saveSnapshot(summary, { text, detailed, note }) {
   fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify(summary, null, 2));
 }
 
-// The snapshot website. A changed check marks it due; it goes out once
-// BOARD_SITE_EVERY minutes have passed since the last publish, so a busy
-// board doesn't publish every 5 minutes. Settings are re-read each time, so
+// The snapshot website. A changed check (any check, on Cloudflare) marks it
+// due; it goes out once BOARD_SITE_EVERY minutes have passed since the last
+// publish. Settings are re-read each time, so
 // adding them to .env doesn't need a restart.
 const site = { due: false, lastAt: 0 };
 async function publishSite(changed) {
@@ -424,7 +424,10 @@ async function publishSite(changed) {
   }
   site.warned = false;
   if (!settings.r2 && !(settings.token && settings.siteId)) return;
-  if (changed) site.due = true;
+  // On Cloudflare an upload is free, so every check goes out, changed or not:
+  // the page's "Last checked … ago" then stays fresh while the board sits
+  // unchanged (owner, 2026-10-22). Netlify charges per deploy: changes only.
+  if (changed || settings.r2) site.due = true;
   if (!site.due || Date.now() - site.lastAt < every * 60000) return;
   site.lastAt = Date.now();
   try {
