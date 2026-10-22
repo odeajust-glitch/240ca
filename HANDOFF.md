@@ -127,6 +127,12 @@ every session**: state, decisions, what you tried, what's next.
   time moves per phone from its last-told call (`turn-alerts-phones.json`,
   `phoneEvents`). "Lined up already ordered" → one alert per phone. The
   Worker changed again: re-paste it.
+  **"Someone ahead goes on rest"** (owner, same day): Chain Gang only (SR
+  CO list, SD list; A/B rest still takes the train, so no move-up). Shared
+  event `aheadRest` when a turn ahead at home, not resting last check, is now
+  on rest (restUntil > now) or HT; `told[turn].ahead` = {turn: resting}.
+  Pref `aheadRest` (default on); Worker re-paste needed again. ❓ Owner
+  didn't confirm "Chain Gang only" (assumed).
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

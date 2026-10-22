@@ -85,6 +85,32 @@ test('turn alerts: a turn moved to another train is lined up again', () => {
   ]);
 });
 
+// Owner, 2026-10-22: tell me when someone ahead of me on the Chain Gang
+// goes on rest (they're skipped for calls before it ends, so I move up).
+test('turn alerts: a Chain Gang turn ahead going on rest or hold', () => {
+  const now = at(2026, 10, 22, 10, 0);
+  const row = (turn, pos, o = {}) => ({ craft: 'CO', turn, pos, restUntil: null, statusUntil: null, rn: '', ...o });
+  const states = (gang) => turnStates({ now, predictions: [] }, [], { chainGang: gang });
+  const before = [row('SR04', 1), row('SR12', 2), row('SR03', 3), row('SR07', 4)];
+  let r = turnEvents({}, states(before), { lineupRead: false });
+  assert.deepEqual(r.events, []); // first look: just learns who's ahead
+  r = turnEvents(r.told, states([row('SR04', 1), row('SR12', 2, { restUntil: at(2026, 10, 22, 18, 0) }), row('SR03', 3), row('SR07', 4)]), { lineupRead: false });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
+    ['SR03', 'aheadRest', 'SR03: SR12 ahead of you (pos 002) went on rest until 22nd 1800; it\'s skipped for calls before then, so you move up.'],
+    ['SR07', 'aheadRest', 'SR07: SR12 ahead of you (pos 002) went on rest until 22nd 1800; it\'s skipped for calls before then, so you move up.'],
+  ]);
+  // Still resting next check: not said again. A hold turn is news too.
+  r = turnEvents(r.told, states([row('SR04', 1, { rn: 'HT', statusUntil: at(2026, 10, 23, 2, 45) }), row('SR12', 2, { restUntil: at(2026, 10, 22, 18, 0) }), row('SR03', 3)]), { lineupRead: false });
+  assert.deepEqual(r.events.map((e) => e.text), [
+    'SR12: SR04 ahead of you (pos 001) went on hold turn until 23rd 0245; it\'s skipped for calls before then, so you move up.',
+    'SR03: SR04 ahead of you (pos 001) went on hold turn until 23rd 0245; it\'s skipped for calls before then, so you move up.',
+  ]);
+  // A phone that switched it off doesn't get it.
+  const shared = r.events;
+  assert.deepEqual(phoneEvents(shared, { turns: ['SR03'], prefs: { SR03: { aheadRest: false } } }, {}, {}, { lineupRead: false }).events, []);
+  assert.equal(phoneEvents(shared, { turns: ['SR03'] }, {}, {}, { lineupRead: false }).events.length, 1);
+});
+
 // RFC 8291 appendix A: the worked example, byte for byte.
 test('web push encryption matches the RFC 8291 example', () => {
   const body = encrypt('When I grow up, I want to be a watermelon',
