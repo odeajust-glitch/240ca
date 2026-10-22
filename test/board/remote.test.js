@@ -27,6 +27,8 @@ test('ntfy poll: new, recent "signin" messages count; old or repeated ones don\'
 test('a failed ntfy poll never throws and keeps its place', async () => {
   const down = await pollSignIn({ topic: 't', since: 5, fetchImpl: async () => { throw new Error('offline'); } });
   assert.deepEqual(down, { asked: false, last: 5, error: 'offline' });
+  const dns = await pollSignIn({ topic: 't', since: 5, fetchImpl: async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } }); } });
+  assert.equal(dns.error, 'fetch failed (ENOTFOUND)');
   let url;
   const ok = await pollSignIn({ topic: 'my topic', since: 5.7, fetchImpl: async (u) => { url = u; return { ok: true, text: async () => '' }; } });
   assert.equal(url, 'https://ntfy.sh/my%20topic/json?poll=1&since=5');

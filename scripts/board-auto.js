@@ -685,7 +685,8 @@ function watchPhone() {
     const r = await Remote.pollSignIn({ topic, since });
     busy = false;
     since = r.last;
-    if (r.error && !failing) console.log(`  (can't read sign-in requests from the phone: ${r.error})`);
+    if (r.error && !failing) console.log(`  (can't read sign-in requests from the phone: ${r.error}; still trying every minute)`);
+    if (!r.error && failing) console.log(`[${stamp()}] Reading sign-in requests from the phone again.`);
     failing = !!r.error;
     if (!r.asked || signInAsked || signingIn) return;
     signInAsked = true;
