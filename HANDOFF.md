@@ -135,6 +135,9 @@ every session**: state, decisions, what you tried, what's next.
   didn't confirm "Chain Gang only" (assumed). Plus `aheadBack` (owner asked):
   a turn ahead that was resting last check no longer is ("back in line
   ahead of you"), pref default on; Worker re-paste again.
+  Owner: alerts work on Android; on iPhone only once the site was added to
+  the home screen and opened from that icon. The panel now shows numbered
+  iPhone steps (button "Alerts on iPhone: how") until it's opened that way.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

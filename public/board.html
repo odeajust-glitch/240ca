@@ -97,10 +97,14 @@
   .turnpanel > header button.alert-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .alertnote { padding: 8px 14px; font-size: 13px; color: var(--soft); border-bottom: 1px solid var(--rule-soft); }
   .alertnote.bad { color: var(--stop); }
+  .alertnote.howto { color: var(--ink); background: var(--accent-tint); }
+  .alertnote.howto ol { margin: 6px 0 2px; padding-left: 20px; }
+  .alertnote.howto li { margin: 3px 0; }
   .alertopts { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 8px 14px; font-size: 13px; border-bottom: 1px solid var(--rule-soft); }
   .alertopts .lbl { color: var(--soft); }
   .alertopts label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
   .alertopts select { font: inherit; padding: 2px 4px; }
+  .alertopts[hidden] { display: none; }
   .tp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
   .tp > div { min-width: 0; padding: 12px 14px; }
   .tp > div + div { border-left: 1px solid var(--rule-soft); }
@@ -1130,7 +1134,20 @@ source().then(async (src) => {
       const note = document.getElementById('alertnote');
       if (!btn || !note || turn !== focus) return;
       const opts = document.getElementById('alertopts');
-      const say = (text, bad) => { note.hidden = !text; note.textContent = text || ''; note.classList.toggle('bad', !!bad); };
+      const say = (text, bad) => { note.hidden = !text; note.textContent = text || ''; note.classList.toggle('bad', !!bad); note.classList.remove('howto'); };
+      // iPhones only allow web alerts for a site added to the home screen and
+      // opened from that icon (owner, 2026-10-22: that's what made it work).
+      const iphoneSteps = () => {
+        note.hidden = false;
+        note.classList.remove('bad');
+        note.classList.add('howto');
+        note.innerHTML = `<b>To get alerts on an iPhone</b> (iOS 16.4 or newer):<ol>
+          <li>Open this site in <b>Safari</b>.</li>
+          <li>Tap <b>Share</b> (the square with the arrow) → <b>Add to Home Screen</b> → <b>Add</b>.</li>
+          <li>Close Safari and open the site from the new <b>Line-up</b> icon on your home screen (it opens full screen, no address bar).</li>
+          <li>Find your turn, tap <b>🔔 Get alerts</b>, then <b>Allow</b>.</li></ol>
+          Alerts only work when the site is opened from that icon. If you tapped Don't Allow before: Settings → Notifications → Line-up → Allow Notifications.`;
+      };
       const TIMES = [[0, 'never'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [90, '1½ h'], [120, '2 h'], [180, '3 h']];
       const covers = (p) => {
         const chain = /^(SR|SD)/.test(turn);
@@ -1161,12 +1178,12 @@ source().then(async (src) => {
       const paint = () => {
         const st = Alerts.state(turn);
         btn.hidden = st === 'none';
-        btn.textContent = st === 'on' ? `🔕 Stop alerts` : `🔔 Get alerts`;
+        btn.textContent = st === 'on' ? '🔕 Stop alerts' : st === 'ios-home' ? '🔔 Alerts on iPhone: how' : '🔔 Get alerts';
         btn.classList.toggle('alert-on', st === 'on');
         const others = Alerts.turns().filter((t) => t !== turn);
         opts.hidden = st !== 'on' && st !== 'off';
         if (!opts.hidden && !opts.firstChild) drawOpts();
-        if (st === 'ios-home') say('On iPhone: tap Share → Add to Home Screen, open the site from that new icon, then tap Get alerts here.');
+        if (st === 'ios-home') iphoneSteps();
         else if (st === 'unsupported') say('This browser can\'t show alerts. On Android use Chrome; on iPhone add the site to the home screen first.');
         else if (st === 'on') say(`This phone gets ${turn} alerts for: ${covers(Alerts.prefs(turn))}.${others.length ? ` Also following ${others.join(', ')}.` : ''}`);
         else say(others.length ? `This phone gets alerts for ${others.join(', ')}.` : '');
