@@ -19,13 +19,13 @@ test('turn alerts: lined up, ordered, on duty are shared news; nothing on the fi
   assert.deepEqual(r.events, []); // first run only learns the board
   r = step({}, [pred()]);
   assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
-    ['SR03', 'lineup', 'SR03 lined up for M38261 22: call ~22nd 1245 (planned).'],
-    ['SD05', 'lineup', 'SD05 lined up for M38261 22: call ~22nd 1245 (planned).'],
+    ['SR03', 'lineup', 'SR03 lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.'],
+    ['SD05', 'lineup', 'SD05 lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.'],
   ]);
   let told = r.told;
   assert.deepEqual(step(told, [pred({ call: at(2026, 10, 22, 14, 0) })]).events, []); // time is per phone
   r = step(told, [pred({ status: 'ORD', spare: true })]);
-  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered for M38261 22: call ~22nd 1245. The turn goes spare (spareboard covers).', 'SD05 ordered for M38261 22: call ~22nd 1245.']);
+  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245. The turn goes spare (spareboard covers).', 'SD05 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245.']);
   told = r.told;
   // A check that didn't read the line-up changes nothing.
   r = step(told, [], [], { lineupRead: false });
@@ -44,7 +44,8 @@ test('turn alerts: lined up, ordered, on duty are shared news; nothing on the fi
 // Owner, 2026-10-22: each phone picks per turn what it wants, e.g. only when
 // it's ordered, or only when the time moves by a chosen amount.
 test('turn alerts: each phone gets only what it chose, with its own time threshold', () => {
-  const states = (o) => turnStates({ predictions: [pred(o)] }, []);
+  // A later call goes with a later order (call = order − 2 h 15).
+  const states = (o = {}) => turnStates({ predictions: [pred(o.call ? { order: o.call + 135, ...o } : o)] }, []);
   const orderOnly = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: true, onDuty: false, time: 0 } } };
   const hourMoves = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: false, onDuty: false, time: 60 } } };
   const everything = { turns: ['SR03'] }; // defaults: all on, 30 min
@@ -62,10 +63,10 @@ test('turn alerts: each phone gets only what it chose, with its own time thresho
   let r1 = run([], hourMoves, states({ call: at(2026, 10, 22, 13, 25) }), b.hourMoves);
   assert.deepEqual(r1.events, []);
   const r2 = run([], everything, states({ call: at(2026, 10, 22, 13, 25) }), b.everything);
-  assert.deepEqual(r2.events.map((e) => e.text), ['SR03: M38261 22 call ~22nd 1325, was ~22nd 1245.']);
+  assert.deepEqual(r2.events.map((e) => e.text), ['SR03 time change: M38261 22 planned for 22nd 1540, expected call 22nd 1325 (was 22nd 1500, call 22nd 1245).']);
   // Another 25 min: 65 min from what the hour phone was told → it hears now.
   r1 = run([], hourMoves, states({ call: at(2026, 10, 22, 13, 50) }), r1.base);
-  assert.deepEqual(r1.events.map((e) => e.text), ['SR03: M38261 22 call ~22nd 1350, was ~22nd 1245.']);
+  assert.deepEqual(r1.events.map((e) => e.text), ['SR03 time change: M38261 22 planned for 22nd 1605, expected call 22nd 1350 (was 22nd 1500, call 22nd 1245).']);
   // Ordered: the orders-only phone hears; the hour phone doesn't.
   shared = step(step({}, [pred()]).told, [pred({ status: 'ORD' })]).events;
   assert.deepEqual(run(shared, orderOnly, states({ status: 'ORD' }), b.orderOnly).events.map((e) => e.kind), ['ordered']);
@@ -80,8 +81,8 @@ test('turn alerts: a turn moved to another train is lined up again', () => {
   const told = step({}, [pred()]).told;
   const r = step(told, [pred({ symbol: 'DHT031B', originDay: '22', deadhead: true, turn: 'SR03', engineer: null }), pred({ turn: 'SR07' })]);
   assert.deepEqual(r.events.map((e) => e.text), [
-    'SR03 lined up for DHT031B 22 (deadhead): call ~22nd 1245 (planned).',
-    'SR07 lined up for M38261 22: call ~22nd 1245 (planned).',
+    'SR03 lined up: DHT031B 22 (deadhead) planned for 22nd 1500, expected call 22nd 1245.',
+    'SR07 lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.',
   ]);
 });
 

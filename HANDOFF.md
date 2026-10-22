@@ -148,6 +148,10 @@ every session**: state, decisions, what you tried, what's next.
   start-board-checker.cmd now runs it. Tested with a fake hanging child.
   ❓ What the hangs actually were is unknown: check restarts.log + the
   window's last lines when one happens.
+- Alert wording (owner, 2026-10-22, first real alert on Android worked):
+  "SR03 lined up: DHT030B 23 (deadhead) planned for 23rd 0300, expected call
+  23rd 0100." Same for ordered ("ordered for …") and time changes
+  ("SR03 time change: … (was 23rd 0300, call 23rd 0100)").
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
