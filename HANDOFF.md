@@ -56,6 +56,14 @@ every session**: state, decisions, what you tried, what's next.
   on-screen inputs count, email before password, fills target the element
   found (`data-board-fill`). Fake page now copies that. ❓ Number to match not
   seen yet on the real page.
+- **2026-10-22 ~23:00: phone sign-in worked end to end** after the fix
+  (email + password filled, Authenticator push arrived, approved). The try
+  before it filled both but the push never arrived and Microsoft's Recent
+  activity showed no attempt; finished with "Use a verification code". Cause
+  unknown; if it recurs, get a screenshot of the approve screen + Recent
+  activity. One poll error "fetch failed" seen once (cause now printed).
+  Still to watch: real "Microsoft's number" line; auto sign-in on duty; how
+  long a fresh sign-in lasts (the "since the last sign-in" line).
 - AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
   as 9 (it's M394, even) and recounted road day 21's A trains from the visible
   ones. Prompt now spells out manifest digits with examples and says the
