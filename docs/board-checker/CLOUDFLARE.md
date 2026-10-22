@@ -89,5 +89,8 @@ and lets you in (the sign-in lasts about a day per device). An email not on
 the list never gets a code. The Article 18.6(b) names still need the
 `BOARD_NAMES_KEY` passcode on top.
 
-When it works, the Netlify site (boardtestsa) can be deleted in Netlify, so
-the old public copy is gone.
+Old link (owner, 2026-10-22): boardtestsa.netlify.app redirects here. It
+holds one `_redirects` file, uploaded by hand (Netlify → Deploys → drag the
+folder), with the line `/*  https://board.sarniaboard.workers.dev/:splat  301!`.
+Keep that Netlify site, and keep NETLIFY_ lines out of .env so the checker
+never publishes over it.

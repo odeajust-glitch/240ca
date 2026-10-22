@@ -87,7 +87,12 @@ every session**: state, decisions, what you tried, what's next.
   owner's name; Access app "board - Cloudflare Workers", policy = Emails,
   One-time PIN login added; Preview URLs off). First deploy went to Netlify
   because the R2 lines were missing; scripts now name missing R2 settings.
-  ❓ Netlify site boardtestsa to delete once the owner's happy.
+  Owner then turned the email login **off** (site open to anyone with the
+  link; told to change BOARD_NAMES_KEY first; Access policy kept to turn
+  back on). **boardtestsa.netlify.app now redirects** to the Cloudflare site
+  (manual Netlify Drop of a `_redirects` file: `/* …workers.dev/:splat
+  301!`); keep that Netlify site for the redirect, and remove the NETLIFY_
+  lines from .env so nothing republishes over it.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
