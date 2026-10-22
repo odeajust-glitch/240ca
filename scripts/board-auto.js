@@ -538,12 +538,13 @@ async function goto(page, url) {
 // --- Microsoft sign-in ----------------------------------------------------------
 // The approval is always the owner's, on their phone. The script only shows
 // Microsoft's number to match, answers "Stay signed in?", and types the
-// Microsoft password when MS_PASSWORD is in .env (like the CATS password:
-// never printed, off after one refusal).
+// Microsoft email/password when MS_EMAIL / MS_PASSWORD are in .env (like
+// the CATS password: never printed, the password off after one refusal).
 const onMicrosoft = (page) => /^https:\/\/login\.(microsoftonline|live)\.com\//.test(page.url());
+const MS_EMAIL = (process.env.MS_EMAIL || '').trim() || null;
 const MS_PASSWORD = process.env.MS_PASSWORD || null;
 let autoMsPassword = !!MS_PASSWORD;
-const ms = { seenAt: null, number: null, passwordSent: false, kmsiAt: 0 };
+const ms = { seenAt: null, number: null, emailSent: false, passwordSent: false, kmsiAt: 0 };
 
 // Optional phone alert through ntfy.sh (BOARD_NTFY_TOPIC in .env, a topic
 // name only the owner knows), for when they're away from the laptop and
@@ -555,7 +556,7 @@ async function alertPhone(text) {
     const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
       method: 'POST', body: text, headers: { Title: 'Board checker', Priority: 'high' }, signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) console.log(`  (phone alert not sent: ntfy answered ${res.status})`);
+    console.log(res.ok ? `[${stamp()}] Phone alert sent (ntfy).` : `  (phone alert not sent: ntfy answered ${res.status})`);
   } catch (err) {
     console.log(`  (phone alert not sent: ${err.message})`);
   }
@@ -576,6 +577,7 @@ async function microsoftStep(page) {
     return {
       number: num ? num.textContent.trim() : null,
       password: !!q('input[type=password]'),
+      email: !!q('input[name=loginfmt], input[type=email]'),
       passwordError: !!q('#passwordError, #i0118Error'),
       kmsi: !!q('#KmsiCheckboxField, input[name=DontShowAgain]') || /stay signed in\?/i.test(document.body.innerText),
     };
@@ -589,6 +591,16 @@ async function microsoftStep(page) {
   if (seen.passwordError && autoMsPassword) {
     autoMsPassword = false;
     console.log('\x07Microsoft refused MS_PASSWORD from .env. Type it in the browser; the script won\'t try it again until restarted.');
+  }
+  if (seen.email && MS_EMAIL && !ms.emailSent && !seen.password) {
+    ms.emailSent = true;
+    try {
+      await page.fill('input[name=loginfmt], input[type=email]', MS_EMAIL);
+      await page.click('#idSIButton9, input[type=submit], button[type=submit]');
+      console.log(`[${stamp()}] Microsoft email filled from .env.`);
+    } catch (err) {
+      console.log(`  (couldn't fill the Microsoft email: ${err.message.split('\n')[0]})`);
+    }
   }
   if (seen.password && autoMsPassword && !ms.passwordSent) {
     ms.passwordSent = true; // once per sign-in, so a wrong one can't lock the account
@@ -614,7 +626,7 @@ function microsoftDone() {
   const since = SignIn.sinceLast(state);
   try { SignIn.saveState(SIGNIN_FILE, { ...state, lastAt: Date.now() }); } catch { /* only a note */ }
   console.log(`[${stamp()}] Microsoft sign-in done${since ? ` (the one before was ${since} ago)` : ''}.`);
-  Object.assign(ms, { seenAt: null, number: null, passwordSent: false, kmsiAt: 0 });
+  Object.assign(ms, { seenAt: null, number: null, emailSent: false, passwordSent: false, kmsiAt: 0 });
 }
 
 async function clearSignInCookies(context) {
@@ -744,6 +756,8 @@ async function main() {
   const page = context.pages()[0] || (await context.newPage());
   watchFramedLogin(page);
   listenForKeys();
+  console.log(`Microsoft sign-in: email ${MS_EMAIL ? 'from .env' : 'typed by you'}, password ${MS_PASSWORD ? 'from .env' : 'typed by you'};`
+    + ` phone alerts ${(process.env.BOARD_NTFY_TOPIC || '').trim() ? 'on (ntfy)' : 'off (no BOARD_NTFY_TOPIC in .env)'}. Press R for a fresh sign-in.`);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   const signIn = CATS_LOGIN

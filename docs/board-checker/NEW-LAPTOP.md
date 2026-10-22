@@ -79,14 +79,17 @@ press **R**: it signs out of Microsoft and asks again; approve it in
 Authenticator. It also does this by itself once your turn shows on duty on the
 Sarnia Call Board, once per train. When Microsoft shows a number to match, it's printed in the window.
 Optional `.env` lines:
-- `MS_PASSWORD=` your Microsoft (CN) password, if Microsoft asks for it, so
-  you only need to approve on the phone. Tried once per sign-in; off after a
+- `MS_EMAIL=` and `MS_PASSWORD=` your Microsoft (CN) email and password,
+  which Microsoft asks for after R (owner, 2026-10-22), so you only need to
+  approve on the phone. Tried once per sign-in; off after a
   refusal.
 - `BOARD_NTFY_TOPIC=` a long made-up name: install the **ntfy** app on your
   phone and subscribe to the same name, and the number to match (and "sign in
   now") pops up there. Anyone who knows the name can read those alerts, so
   make it hard to guess. Nothing else is ever sent there.
-The window says how long the last sign-in lasted (`BoardChecker\ms-signin.json`).
+At start-up the window says which of these it found. Test ntfy on its own:
+`curl -d test ntfy.sh/<your topic>` in a Command Prompt should pop up on the
+phone. The window says how long the last sign-in lasted (`BoardChecker\ms-signin.json`).
 
 ## 6. Keep it running
 

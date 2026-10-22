@@ -40,6 +40,11 @@ every session**: state, decisions, what you tried, what's next.
   `#idRichContext_DisplaySign`, `#passwordError`) unconfirmed on CN's real
   one. ❓ Does a fresh sign-in really restart CN's 24 h? Watch the "the one
   before was … ago" line. ❓ Is the Microsoft password the same as CATS's?
+- **Owner's first real test (2026-10-22): R works** on real CATS/Microsoft;
+  Microsoft asked for email + password (typed by hand). No ntfy alert came:
+  cause unknown (topic not set/mismatched, or ntfy blocked?). Added: `MS_EMAIL`
+  fill, a start-up line saying what was found in .env, and "Phone alert sent"
+  / "not sent: why" lines. ❓ Owner to report those lines.
 - Owner asked about moving the website off Netlify; nothing was in the docs.
   Owner has details to give.
 
