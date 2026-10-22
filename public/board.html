@@ -578,7 +578,7 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnshare" type="button">🔗 Share</button><button id="turnclose" type="button">Close</button></div></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnclose" type="button">Close</button></div></header>
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertopts" class="alertopts" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
@@ -1179,7 +1179,6 @@ source().then(async (src) => {
     if (focus) {
       document.getElementById('turnclose').onclick = () => setFocus('');
       wireAlerts(focus);
-      document.getElementById('turnshare').onclick = (e) => shareLink(`#turn=${encodeURIComponent(focus)}`, `Turn ${focus}`, e.currentTarget);
       // The answer is about now: only on the newest snapshot.
       if (atNewest) {
         const want = focus;

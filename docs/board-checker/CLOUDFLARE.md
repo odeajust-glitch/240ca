@@ -141,8 +141,7 @@ sign-in and today's automatic restarts.
 ## 9. Also on the site (owner, 2026-10-22)
 - **When does this turn go?** Find a turn → green box with the newest
   check's answer (Chain Gang position and who's ahead, or the train and call).
-- **Share** a turn (`#turn=SR07`) or a train (`#train=M38261-22`, from its
-  story in the Order summary).
+- **Share** a train (`#train=M38261-22`, from its story in the Order summary). The turn panel's Share button was removed (owner); a `#turn=SR07` link still opens that turn.
 - **Prediction accuracy** in the Order summary: predicted vs actual crew per
   train, and % right this day / last 7 days.
 - **Home-screen icon** ("240" over a rail; `scripts/make-icons.js`).
