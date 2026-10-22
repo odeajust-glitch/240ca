@@ -35,7 +35,7 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PUSH_KEYS_FILE, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Remote = require('../lib/board/remote');
@@ -460,24 +460,32 @@ async function sendTurnAlerts(states, lineupRead) {
   if (!settings.r2) return;
   const { events, told } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead });
   try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
-  if (!events.length) return;
   try {
+    // Every check: a phone's time alerts depend on its own last-told call.
     const subs = await listSubscriptions(settings.r2);
+    if (!subs.length) return;
+    const bases = TurnAlerts.loadTold(PHONES_FILE) || {};
+    const nextBases = {};
     const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
     const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
     let sent = 0;
     let dropped = 0;
     const errors = new Set();
+    const said = new Set();
     for (const s of subs) {
-      for (const e of events.filter((x) => (s.turns || []).includes(x.turn))) {
+      const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead });
+      nextBases[s.key] = mine.base;
+      for (const e of mine.events) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
-        if (r.ok) { sent++; continue; }
-        if (r.gone) { await deleteObject(settings.r2, s.key); dropped++; break; }
+        if (r.ok) { sent++; said.add(e.text); continue; }
+        if (r.gone) { await deleteObject(settings.r2, s.key); delete nextBases[s.key]; dropped++; break; }
         errors.add(r.message);
       }
     }
-    const what = events.map((e) => e.text).join(' | ');
-    console.log(`[${stamp()}] Turn alerts: ${sent} sent to ${subs.length} phone${subs.length === 1 ? '' : 's'}${dropped ? `, ${dropped} unsubscribed phone(s) dropped` : ''}${errors.size ? `, failed: ${[...errors].join('; ')}` : ''}. (${what})`);
+    try { TurnAlerts.saveTold(PHONES_FILE, nextBases); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
+    if (sent || dropped || errors.size) {
+      console.log(`[${stamp()}] Turn alerts: ${sent} sent${dropped ? `, ${dropped} unsubscribed phone(s) dropped` : ''}${errors.size ? `, failed: ${[...errors].join('; ')}` : ''}.${said.size ? ` (${[...said].join(' | ')})` : ''}`);
+    }
   } catch (err) {
     console.log(`[${stamp()}] Turn alerts not sent: ${err.message}`);
   }

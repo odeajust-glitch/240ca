@@ -105,6 +105,11 @@ and engineer turns). Free, no app, no message cap (web push).
 - **iPhone (iOS 16.4+):** Safari → Share → **Add to Home Screen**, open the
   site from that icon, then Get alerts and allow.
 - Stop with **🔕 Stop alerts** on the same turn.
+- **Choose what to get, per turn** (owner): under the button, tick **lined
+  up**, **ordered**, **on duty**, and pick **call time moves …or more**
+  (never, 15 min, 30 min, 1 h, 1½ h, 2 h, 3 h). Defaults: all on, 30 min.
+  Changes save straight away. Time moves are measured from the call that
+  phone was last told of, so slow drifts still add up.
 
 Setup once, after `git pull`: paste the new `cloudflare/board-worker.js` into
 the Worker again (Edit code → replace all → Deploy), then restart the checker.

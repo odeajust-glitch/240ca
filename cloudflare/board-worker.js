@@ -27,7 +27,8 @@ async function subKey(endpoint) {
   return `subs/${[...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('')}.json`;
 }
 
-// { subscription: { endpoint, keys: { p256dh, auth } }, turns: ["SR03"] }.
+// { subscription: { endpoint, keys: { p256dh, auth } }, turns: ["SR03"],
+//   prefs: { SR03: { lineup, ordered, onDuty: true/false, time: minutes (0 = off) } } }.
 // An empty turns list removes the subscription.
 async function subscribe(request, env) {
   const text = await request.text();
@@ -50,9 +51,20 @@ async function subscribe(request, env) {
   if (typeof keys.p256dh !== 'string' || typeof keys.auth !== 'string' || keys.p256dh.length > 200 || keys.auth.length > 100) {
     return json({ error: 'subscription keys missing' }, 400);
   }
-  await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, updated: new Date().toISOString() }),
+  // What this phone wants per turn (owner: e.g. only orders, or only time
+  // changes of an hour or more). Anything missing means the default.
+  const prefs = {};
+  for (const t of turns) {
+    const p = (body.prefs && typeof body.prefs === 'object' && body.prefs[t]) || {};
+    const time = Math.round(Number(p.time));
+    prefs[t] = {
+      lineup: p.lineup !== false, ordered: p.ordered !== false, onDuty: p.onDuty !== false,
+      time: Number.isFinite(time) && time >= 0 && time <= 24 * 60 ? time : 30,
+    };
+  }
+  await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, prefs, updated: new Date().toISOString() }),
     { httpMetadata: { contentType: 'application/json' } });
-  return json({ ok: true, turns });
+  return json({ ok: true, turns, prefs });
 }
 
 export default {

@@ -120,6 +120,13 @@ every session**: state, decisions, what you tried, what's next.
   `data/push.json` = public key. Sender `sub` = config.siteUrl
   (BOARD_SITE_URL). Browser-tested the button with stand-in push; real phones
   untested. ❓ Owner: re-paste the Worker, pull + restart, try on a phone.
+  **Per-phone choices (owner, same day):** each turn on each phone has
+  lined up / ordered / on duty on-off + call-move threshold (0 = never, 15,
+  30, 60, 90, 120, 180; default all on + 30), sent as `prefs` and checked by
+  the Worker. Shared news (lineup/ordered/onDuty) via `turn-alerts.json`;
+  time moves per phone from its last-told call (`turn-alerts-phones.json`,
+  `phoneEvents`). "Lined up already ordered" → one alert per phone. The
+  Worker changed again: re-paste it.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

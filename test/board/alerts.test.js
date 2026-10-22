@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { turnStates, turnEvents } = require('../../lib/board/alerts');
+const { turnStates, turnEvents, phoneEvents } = require('../../lib/board/alerts');
 const { encrypt, vapidHeader, sendPush, loadOrCreateKeys, pushEndpointOk } = require('../../lib/board/webpush');
 const { at } = require('../../lib/board/time');
 
@@ -14,24 +14,18 @@ const pred = (o) => ({ symbol: 'M38261', originDay: '22', order: at(2026, 10, 22
 const board = (o) => ({ symbol: 'M38261', originDay: '22', station: 'SARNIA', onDuty: at(2026, 10, 22, 14, 45), crew: [{ craft: 'EN', turn: 'SD05' }, { craft: 'CO', turn: 'SR03' }], ...o });
 const step = (prev, predictions, callBoard = [], opts) => turnEvents(prev, turnStates({ predictions }, callBoard), opts);
 
-test('turn alerts: lined up, ordered, call moved 30 min, on duty; nothing on the first run', () => {
+test('turn alerts: lined up, ordered, on duty are shared news; nothing on the first run', () => {
   let r = step(null, [pred()]);
   assert.deepEqual(r.events, []); // first run only learns the board
   r = step({}, [pred()]);
-  assert.deepEqual(r.events.map((e) => [e.turn, e.text]), [
-    ['SR03', 'SR03 lined up for M38261 22: call ~22nd 1245 (planned).'],
-    ['SD05', 'SD05 lined up for M38261 22: call ~22nd 1245 (planned).'],
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
+    ['SR03', 'lineup', 'SR03 lined up for M38261 22: call ~22nd 1245 (planned).'],
+    ['SD05', 'lineup', 'SD05 lined up for M38261 22: call ~22nd 1245 (planned).'],
   ]);
   let told = r.told;
-  // Same again, then a 20-minute drift twice: told once it adds up to 30+.
-  r = step(told, [pred({ call: at(2026, 10, 22, 13, 5) })]);
-  assert.deepEqual(r.events, []);
-  told = r.told;
-  r = step(told, [pred({ call: at(2026, 10, 22, 13, 25) })]);
-  assert.deepEqual(r.events.map((e) => e.text), ['SR03: M38261 22 call ~22nd 1325, was ~22nd 1245.', 'SD05: M38261 22 call ~22nd 1325, was ~22nd 1245.']);
-  told = r.told;
-  r = step(told, [pred({ call: at(2026, 10, 22, 13, 25), status: 'ORD', spare: true })]);
-  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered for M38261 22: call ~22nd 1325. The turn goes spare (spareboard covers).', 'SD05 ordered for M38261 22: call ~22nd 1325.']);
+  assert.deepEqual(step(told, [pred({ call: at(2026, 10, 22, 14, 0) })]).events, []); // time is per phone
+  r = step(told, [pred({ status: 'ORD', spare: true })]);
+  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered for M38261 22: call ~22nd 1245. The turn goes spare (spareboard covers).', 'SD05 ordered for M38261 22: call ~22nd 1245.']);
   told = r.told;
   // A check that didn't read the line-up changes nothing.
   r = step(told, [], [], { lineupRead: false });
@@ -45,6 +39,41 @@ test('turn alerts: lined up, ordered, call moved 30 min, on duty; nothing on the
   // The trip home: a new on-duty train at Toronto.
   r = step(told, [], [board({ symbol: 'E27121', originDay: '23', station: 'TORONTO', onDuty: at(2026, 10, 23, 9, 0) })]);
   assert.deepEqual(r.events.map((e) => e.text), ['SD05 on duty on E27121 23 at Toronto 23rd 0900.', 'SR03 on duty on E27121 23 at Toronto 23rd 0900.']);
+});
+
+// Owner, 2026-10-22: each phone picks per turn what it wants, e.g. only when
+// it's ordered, or only when the time moves by a chosen amount.
+test('turn alerts: each phone gets only what it chose, with its own time threshold', () => {
+  const states = (o) => turnStates({ predictions: [pred(o)] }, []);
+  const orderOnly = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: true, onDuty: false, time: 0 } } };
+  const hourMoves = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: false, onDuty: false, time: 60 } } };
+  const everything = { turns: ['SR03'] }; // defaults: all on, 30 min
+  const run = (shared, phone, st, base) => phoneEvents(shared, phone, st, base, {});
+
+  // Lined up at 1245: only "everything" hears; every phone notes the call.
+  let shared = step({}, [pred()]).events;
+  const b = {};
+  for (const [name, ph] of Object.entries({ orderOnly, hourMoves, everything })) {
+    const r = run(shared, ph, states(), undefined);
+    b[name] = r.base;
+    assert.deepEqual(r.events.map((e) => e.kind), name === 'everything' ? ['lineup'] : [], name);
+  }
+  // Call moves 40 min: "everything" (30) hears; the hour phone waits.
+  let r1 = run([], hourMoves, states({ call: at(2026, 10, 22, 13, 25) }), b.hourMoves);
+  assert.deepEqual(r1.events, []);
+  const r2 = run([], everything, states({ call: at(2026, 10, 22, 13, 25) }), b.everything);
+  assert.deepEqual(r2.events.map((e) => e.text), ['SR03: M38261 22 call ~22nd 1325, was ~22nd 1245.']);
+  // Another 25 min: 65 min from what the hour phone was told → it hears now.
+  r1 = run([], hourMoves, states({ call: at(2026, 10, 22, 13, 50) }), r1.base);
+  assert.deepEqual(r1.events.map((e) => e.text), ['SR03: M38261 22 call ~22nd 1350, was ~22nd 1245.']);
+  // Ordered: the orders-only phone hears; the hour phone doesn't.
+  shared = step(step({}, [pred()]).told, [pred({ status: 'ORD' })]).events;
+  assert.deepEqual(run(shared, orderOnly, states({ status: 'ORD' }), b.orderOnly).events.map((e) => e.kind), ['ordered']);
+  assert.deepEqual(run(shared, hourMoves, states({ status: 'ORD', call: at(2026, 10, 22, 13, 50) }), r1.base).events, []);
+  // Lined up already ordered: one alert each, never two.
+  shared = step({}, [pred({ status: 'ORD' })]).events;
+  assert.deepEqual(run(shared, orderOnly, states({ status: 'ORD' }), undefined).events.map((e) => e.kind), ['ordered']);
+  assert.deepEqual(run(shared, everything, states({ status: 'ORD' }), undefined).events.map((e) => e.kind), ['lineup']);
 });
 
 test('turn alerts: a turn moved to another train is lined up again', () => {
