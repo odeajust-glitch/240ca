@@ -26,7 +26,8 @@
 // With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
 // website (lib/board/site.js) is rebuilt from history\ and published after a
 // check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, browser } = require('../lib/board/paths');
+const RoadDays = require('../lib/board/roadday');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -324,7 +325,11 @@ async function runRoute(page, opts = {}) {
 // probe-out/last-check.json, so it carries over between runs).
 function answer(summary, me, nowOverride) {
   const input = loadSummary(summary, { now: nowOverride });
-  const result = runBoardCheck({ ...input, me });
+  // Trains earlier checks saw on duty still count toward their road day's
+  // A/B trains once they leave the Call Board. First run: built from history\.
+  const memory = RoadDays.remember(RoadDays.loadMemory(ROAD_DAYS_FILE) || RoadDays.seedFromHistory(HISTORY_DIR), input.callBoard, input.now);
+  try { RoadDays.saveMemory(ROAD_DAYS_FILE, memory); } catch (err) { console.log(`  (road-day trains not saved: ${err.message})`); }
+  const result = runBoardCheck({ ...input, departed: RoadDays.departed(memory, input.callBoard), seenSince: memory.since, me });
   const cur = snapshot(result, result.me ? describeMe(result.me) : []);
   let prev = null;
   try { prev = JSON.parse(fs.readFileSync(LAST_FILE, 'utf8')); } catch { /* first check */ }

@@ -485,3 +485,72 @@ test('a line-up train already called or on duty shows its own crew and uses no t
   assert.deepEqual(shape(onDuty), [['DHT042B', 'SR', 'SR09', 'SD04'], ['DHT044B', 'SR', 'SR14', 'SD07']]);
   assert.match(onDuty.predictions[0].reason, /On duty at .*0350/);
 });
+
+// CHECKUP #5 (owner, 2026-10-22): a road day's A trains leave the Call Board,
+// and the next check handed the 4th train to A again. Trains seen by earlier
+// checks are remembered (lib/board/roadday.js) and still count.
+test("a road day's trains are remembered after they leave the Call Board", () => {
+  const { remember, departed } = require('../../lib/board/roadday');
+  const dep = (symbol, h, co) => ({ symbol, trainNo: symbol.slice(0, 4), originDay: '22', station: 'SARNIA', onDuty: at(2026, 10, 22, h, 0),
+    crew: [{ craft: 'EN', turn: 'S101' }, { craft: 'CO', turn: co }] });
+  const toronto = { ...dep('E27121', 6, 'SR05'), station: 'TORONTO' };
+  const early = [dep('Z14891', 6, 'SA01'), dep('M30241', 8, 'SA02'), dep('M39491', 10, 'SA03'), toronto];
+  let memory = remember(null, early, at(2026, 10, 22, 10, 30));
+  assert.deepEqual(Object.keys(memory.trains).sort(), ['M30241/22', 'M39491/22', 'Z14891/22']); // Sarnia only
+
+  // 1630: only the 3rd A train is still on the Call Board.
+  const later = [early[2]];
+  memory = remember(memory, later, at(2026, 10, 22, 16, 30));
+  const gone = departed(memory, later);
+  assert.deepEqual(gone.map((t) => t.symbol).sort(), ['M30241', 'Z14891']);
+  const input = {
+    now: at(2026, 10, 22, 16, 30),
+    callBoard: later,
+    chainGangHome: [],
+    lineup: [{ order: at(2026, 10, 22, 18, 0), symbol: 'X30241', trainNo: 'X302', originDay: '22', status: 'PLN', deadhead: false }],
+  };
+  // Without the memory, X302 looks like the day's 2nd A train; with it, the 1st B.
+  assert.equal(runBoardCheck(input).predictions[0].pool, 'A');
+  const r = runBoardCheck({ ...input, departed: gone });
+  assert.equal(r.predictions[0].pool, 'B');
+  assert.match(r.notes.join('\n'), /Counted from earlier checks.*Z14891 22 \(A SA01\)/);
+  // Remembered trains aren't re-checked or shown as today's trains.
+  assert.deepEqual(r.today.map((t) => t.symbol), ['M39491']);
+
+  // Kept 36 h, then dropped.
+  memory = remember(memory, [], at(2026, 10, 23, 21, 0));
+  assert.deepEqual(Object.keys(memory.trains), ['M39491/22']);
+  memory = remember(memory, [], at(2026, 10, 23, 23, 0));
+  assert.deepEqual(memory.trains, {});
+});
+
+// The memory only vouches for a road day it watched from the start; checks
+// begun mid-day (or after hours off) still trust CATS's Chain Gang call.
+test('a road day the memory saw only part of still trusts CATS sending a train to the Chain Gang', () => {
+  const { remember, departed, GAP_MINUTES } = require('../../lib/board/roadday');
+  const dep = (symbol, h, co) => ({ symbol, trainNo: symbol.slice(0, 4), originDay: '22', station: 'SARNIA', onDuty: at(2026, 10, 22, h, 0),
+    crew: [{ craft: 'EN', turn: 'SD01' }, { craft: 'CO', turn: co }] });
+  const lineup = [{ order: at(2026, 10, 22, 20, 0), symbol: 'X30241', trainNo: 'X302', originDay: '22', status: 'PLN', deadhead: false }];
+  const run = (memory, board) => runBoardCheck({ now: memory.last, callBoard: board, departed: departed(memory, board), seenSince: memory.since,
+    chainGangHome: [{ craft: 'CO', turn: 'SR03', terminal: 0, pos: 1, restUntil: null, statusUntil: null }], lineup });
+
+  // Started at 0900: saw the 3rd A train, then an SR train. The 4th train is SR, no flag.
+  let m = remember(null, [dep('M39491', 9, 'SA03')], at(2026, 10, 22, 9, 30));
+  m = remember(m, [dep('E27861', 15, 'SR07')], at(2026, 10, 22, 15, 30));
+  assert.equal(m.since, at(2026, 10, 22, 9, 30));
+  let r = run(m, [dep('E27861', 15, 'SR07')]);
+  assert.deepEqual(r.predictions.map((p) => p.pool), ['SR']);
+  assert.deepEqual(r.flags.filter((f) => f.rule === 'pool'), []);
+
+  // Watching since 0400: the count stands, so SR07 on the day's 2nd train is flagged.
+  m = remember(null, [], at(2026, 10, 22, 4, 0));
+  for (const h of [6, 10]) m = remember(m, [], at(2026, 10, 22, h, 0));
+  m = remember(m, [dep('M39491', 9, 'SA03')], at(2026, 10, 22, 12, 0));
+  m = remember(m, [dep('E27861', 15, 'SR07')], at(2026, 10, 22, 15, 30));
+  r = run(m, [dep('E27861', 15, 'SR07')]);
+  assert.equal(r.flags.filter((f) => f.rule === 'pool').length, 1);
+
+  // A gap longer than GAP_MINUTES starts the watch over.
+  m = remember(m, [], m.last + GAP_MINUTES + 1);
+  assert.equal(m.since, m.last);
+});

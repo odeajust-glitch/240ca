@@ -16,7 +16,7 @@ the owner; nothing here has been changed yet.
 - [ ] Did the website update after Toronto-only changes (#4, done 10-17)?
 
 **Accuracy**
-- [ ] **#5 Remember each road day's trains across checks** (from history), so
+- [x] **#5 Remember each road day's trains across checks** (built 2026-10-22, lib/board/roadday.js) (from history), so
   A/B counts don't go wrong once a road day's trains leave the Call Board
   (the cause behind X27861 16 showing A). Biggest accuracy fix left.
 - [ ] **#6 Rest/hold "until 0000 = available at 0000"**: any case where a turn

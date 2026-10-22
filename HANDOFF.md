@@ -1,12 +1,35 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-17 · Branch: **`claude/vigilant-planck-zawrj4`** (has
+Last updated: 2026-10-22 · Branch: **`claude/vigilant-planck-zawrj4`** (has
 everything; the board-checker laptop runs it)
 
 **If you are a new Claude session:** read this file top to bottom, then
 [docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
 until the "Next action" below is unblocked. **Update this file at the end of
 every session**: state, decisions, what you tried, what's next.
+
+## 2026-10-22: road-day memory (CHECKUP #5, built) + Microsoft sign-in question
+- **Built:** `lib/board/roadday.js` keeps every Sarnia train seen on the Call
+  Board for 36 h in `BoardChecker\road-days.json` (turns only, no names). The
+  engine counts the ones gone from the Call Board (`departed`) toward their
+  road day's A/B trains; no flags or predictions for them, a working note
+  "Counted from earlier checks". First run after the update fills it from the
+  last two days of `history\`.
+- `since` = when unbroken checking began (a gap > 6 h restarts it). A road day
+  that started before `since` may be missing trains, so a train CATS sends to
+  the Chain Gang there still means A/B are used up (now also when only some of
+  them were seen, not just none). A road day watched from its start keeps
+  its count, so a too-early Chain Gang train is flagged.
+- Website builder does the same per snapshot (FORMAT 5, days rebuilt once).
+  67 tests. **Laptop: `git pull`, restart the checker.**
+- **Open (owner): automatic Microsoft sign-in.** Owner wants no phone needed
+  for the ~24 h Microsoft/Authenticator sign-in (at work, phone not handy).
+  CATS sign-on is already automatic. Only way with no phone at all: a TOTP
+  secret for the CN Microsoft account stored on the laptop, which puts both
+  factors on one machine (likely against CN's security policy; the 2026-10-13
+  risk sign-off didn't cover it). Not built; options put to the owner
+  2026-10-22. Also asked: moving the website off Netlify (nothing on it here
+  before; owner has details).
 
 ## ▶ Side project 2026-10-21: 14-hour rule grievance generator
 Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`).
