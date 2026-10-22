@@ -1,15 +1,15 @@
 // Builds the line-up snapshot website from the saved board checks and,
-// with --deploy, publishes it to Netlify. board-auto.js does this by itself
-// when NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID are in .env; run this to
+// with --deploy, publishes it (Cloudflare R2 when the R2_ settings are in
+// .env, else Netlify). board-auto.js does this by itself; run this to
 // publish by hand or to test the settings.
 //
 //   node scripts/board-site.js            build into BoardChecker\site
 //   node scripts/board-site.js --deploy   build and publish
 //
 // Reads history\ in the data folder (or --history DIR); never touches CATS.
-const { DATA_DIR, HISTORY_DIR } = require('../lib/board/paths');
+const { DATA_DIR, HISTORY_DIR, NAMES_FILE } = require('../lib/board/paths');
 const path = require('path');
-const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
+const { buildSite, publishSiteDir, siteSettings } = require('../lib/board/site');
 
 function arg(name) {
   const i = process.argv.indexOf(name);
@@ -18,22 +18,23 @@ function arg(name) {
 
 async function main() {
   const outDir = arg('--out') || path.join(DATA_DIR, 'site');
-  const { token, siteId, days } = siteSettings();
-  const built = buildSite({ historyDir: arg('--history') || HISTORY_DIR, outDir, days });
+  const settings = siteSettings();
+  const { days } = settings;
+  const built = buildSite({ historyDir: arg('--history') || HISTORY_DIR, outDir, days, names: { file: NAMES_FILE, key: settings.namesKey } });
   console.log(`Built ${built.snapshots} snapshots over ${built.days} days in ${outDir}${built.latest ? ` (latest ${built.latest})` : ''}.`);
   for (const s of built.skipped) console.log(`  Skipped ${s}`);
   if (!process.argv.includes('--deploy')) return;
 
-  if (!token || !siteId) {
-    console.error('To publish, put NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in BoardChecker\\.env.');
+  const sent = await publishSiteDir(outDir, settings);
+  if (!sent) {
+    console.error('To publish, put R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY (Cloudflare) in BoardChecker\\.env.');
     process.exit(1);
   }
-  const sent = await deploySite({ dir: outDir, siteId, token });
   if (!sent.ok) {
-    console.error(`Not published: ${sent.message}`);
+    console.error(`Not published (${sent.where}): ${sent.message}`);
     process.exit(1);
   }
-  console.log(`Published (${sent.uploaded} files uploaded)${sent.url ? `: ${sent.url}` : ''}.`);
+  console.log(`Published to ${sent.where} (${sent.uploaded} files uploaded${sent.removed ? `, ${sent.removed} removed` : ''})${sent.url ? `: ${sent.url}` : ''}.`);
 }
 
 main().catch((err) => {

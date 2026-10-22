@@ -29,9 +29,12 @@
 // With BOARD_RELAY_URL and BOARD_KEY in .env, each check is also sent to the
 // 240ca server so the RailroadTracker app on your phone shows it.
 //
-// With NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID in .env, the line-up snapshot
-// website (lib/board/site.js) is rebuilt from history\ and published after a
-// check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
+// With R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in
+// .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), or
+// else NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID, the line-up snapshot website
+// (lib/board/site.js) is rebuilt from history\ and published after a check
+// that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
+// Cloudflare, 90 on Netlify).
 const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
@@ -49,7 +52,7 @@ const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck, mineForPhone } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
-const { buildSite, deploySite, siteSettings } = require('../lib/board/site');
+const { buildSite, publishSiteDir, siteSettings } = require('../lib/board/site');
 const { at } = require('../lib/board/time');
 const config = require('../lib/board/config');
 
@@ -412,17 +415,18 @@ function saveSnapshot(summary, { text, detailed, note }) {
 // adding them to .env doesn't need a restart.
 const site = { due: false, lastAt: 0 };
 async function publishSite(changed) {
-  const { token, siteId, days, every, namesKey } = siteSettings();
-  if (!token || !siteId) return;
+  const settings = siteSettings();
+  const { days, every, namesKey } = settings;
+  if (!settings.r2 && !(settings.token && settings.siteId)) return;
   if (changed) site.due = true;
   if (!site.due || Date.now() - site.lastAt < every * 60000) return;
   site.lastAt = Date.now();
   try {
     const dir = path.join(OUT_DIR, 'site');
     buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey } });
-    const sent = await deploySite({ dir, siteId, token });
+    const sent = await publishSiteDir(dir, settings);
     if (sent.ok) site.due = false;
-    console.log(sent.ok ? `[${stamp()}] Snapshot website updated.` : `[${stamp()}] Snapshot website not updated: ${sent.message}`);
+    console.log(sent.ok ? `[${stamp()}] Snapshot website updated (${sent.where}).` : `[${stamp()}] Snapshot website not updated (${sent.where}): ${sent.message}`);
   } catch (err) {
     console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`);
   }

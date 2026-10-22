@@ -1,0 +1,9 @@
+# Optional: deploy the Worker with `npx wrangler deploy` from this folder
+# instead of pasting board-worker.js into the dashboard.
+name = "board"
+main = "board-worker.js"
+compatibility_date = "2026-10-01"
+
+[[r2_buckets]]
+binding = "SITE"
+bucket_name = "board-site"

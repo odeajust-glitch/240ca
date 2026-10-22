@@ -71,16 +71,19 @@ every session**: state, decisions, what you tried, what's next.
   = available), shows "skipped, on rest at the call" and the call time.
   FORMAT 6. #7 (flags) left as is: when a train leaves the line-up its call
   has normally passed, so "rested now" ≈ "rested by the call".
-- **Website off Netlify (owner, 2026-10-22):** Netlify free = 300 credits,
-  15 per deploy (~20 deploys/month); every 15 min ≈ 2,900/month, so it can't
-  work (today's ≤ 90 min already exceeds free). Owner first chose Cloudflare
-  (Worker serving an R2 bucket, one-click Cloudflare Access email login on
-  workers.dev; laptop uploads changed files to R2 via S3 API). Started:
-  `lib/board/r2.js` (SigV4 signing passes AWS's examples, `deployR2` mirror
-  upload) — **not wired in yet**. Owner then asked Cloudflare vs Render (the
-  240ca server: no new account, laptop already posts there, but no ready-made
-  email login and it's the public Agreement Search site). ❓ Owner deciding:
-  Cloudflare email login vs Render shared password; and which Render plan.
+- **Website moving to Cloudflare with email login (owner chose, 2026-10-22).**
+  Netlify free = 300 credits, 15 per deploy (~20/month); every 15 min ≈
+  2,900/month, so it can't. Built: `lib/board/r2.js` (SigV4 signing checked
+  against AWS's S3 examples; `deployR2` mirrors the site folder into the
+  bucket: changed files up by MD5 vs ETag, dropped ones deleted),
+  `cloudflare/board-worker.js` (read-only Worker serving the R2 binding
+  `SITE`, no-cache, ETag/304) + optional `wrangler.toml`; `siteSettings()`
+  picks R2 when R2_ACCOUNT_ID/R2_BUCKET/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY
+  are set (BOARD_SITE_EVERY default 15), else Netlify (90). Login = one-click
+  Cloudflare Access on workers.dev (allowed emails, one-time code); laptop
+  uploads straight to R2's S3 API so it never meets the login. Owner's
+  steps: docs/board-checker/CLOUDFLARE.md. Tested on fakes only (sandbox
+  can't reach Cloudflare). ❓ Owner to set up; then delete the Netlify site.
   Toronto screens 28 + 41 (Mac) read on all 668 checks since the 18th.
 - AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
   as 9 (it's M394, even) and recounted road day 21's A trains from the visible

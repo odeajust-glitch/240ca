@@ -33,7 +33,7 @@ the owner; nothing here has been changed yet.
 - [ ] **#11 Order table on a phone**: fewer columns, rest in the story?
 
 **Running it**
-- [ ] **#14 Site is public**: password (paid Netlify) or keep the link close?
+- [x] **#14 Site is public** (2026-10-22: moving to Cloudflare with an email login, CLOUDFLARE.md): password (paid Netlify) or keep the link close?
 - [ ] **#16 One chat at a time** changing the board checker / site.
 - [ ] **#3** (one update covers everything): nothing to do; drop.
 
