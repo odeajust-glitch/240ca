@@ -34,6 +34,12 @@
       out.push(t ? { kind: 'homeTrain', train: t.train, text: `Predicted home on ${t.train} (${t.status} ${t.order})` }
         : { kind: 'homeTrain', text: 'No train on the Toronto line-up for it yet' });
     }
+    // On the way to Toronto (estimate, owner 2026-10-22) and the train home it's guessed for.
+    for (const c of s.onTheWay || []) {
+      if (c.en !== turn && c.co !== turn) continue;
+      const t = (s.macLineup || []).find((x) => x.crewExpected && x.crew === c.crew);
+      out.push({ kind: 'homeTrain', text: `On the way to Toronto on ${c.train}: in Toronto ~${c.offDuty}, rested ~${c.rested} (estimate)${t ? `; predicted home on ${t.train} (${t.status} ${t.order})` : '; no Toronto train for it yet'}` });
+    }
     for (const t of s.sequence || []) {
       if (t.turn === turn) out.push({ kind: 'sequence', train: t.train, text: `Called on ${t.train} (order ${t.order}, ${t.actual && t.actual !== t.expected && t.actual !== 'MU' ? `should have been ${t.expected}` : 'matches the sequence'})` });
     }

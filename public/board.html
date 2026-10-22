@@ -456,7 +456,20 @@ function toronto(s) {
     return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
       <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
   };
+  // A crew not in the bunkhouse yet (owner, 2026-10-22): an estimate from
+  // when it went on duty in Sarnia (train ~8 h, deadhead ~3 h, then 8 h rest).
+  const expectedCell = (t) => {
+    const x = t.crewExpected;
+    const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
+    return `<b class="num">${markTurn(t.crew)}</b> <span class="chip">estimate</span>
+      <div class="crew">on the way: on duty Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
+  };
   const rows = trains.map((t) => {
+    if (t.crewExpected) {
+      const hit = focus && t.crew.split(' + ').includes(focus);
+      return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
+      <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${expectedCell(t)}</td></tr>`;
+    }
     const c = byPos.get(t.crewPos);
     const hit = focus && c && (c.en === focus || c.co === focus);
     return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
@@ -465,9 +478,12 @@ function toronto(s) {
   const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
   const extra = crews.filter((c) => !taken.has(c.pos));
   const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
+  const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
+  const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
   return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. A crew still on rest at a train's call (2 h before on duty) is skipped and keeps its place for the next train. Off duty = rest − 8 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A crew still on rest at a train's call (2 h before on duty) is skipped and keeps its place for the next train. Off duty = rest − 8 h.</div></section>`;
 }
 
 function dot(status) {

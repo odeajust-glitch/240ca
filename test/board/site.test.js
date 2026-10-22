@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { buildSite, deploySite, snapshotOf, torontoCrews } = require('../../lib/board/site');
+const { buildSite, deploySite, snapshotOf, torontoCrews, crewsOnTheWay } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
 const BoardTrains = require('../../public/board-trains');
 
@@ -115,7 +115,7 @@ test('turns: where a turn shows up in one snapshot', () => {
   assert.deepStrictEqual(f.map((x) => x.kind), ['pool', 'lineup']);
   assert.match(f[0].text, /^Chain Gang \(SR\) position 002: \*\* goes spare/);
   assert.match(f[1].text, /E27861 15/);
-  assert.deepStrictEqual(BoardTurns.facts(s, 'SR02').map((x) => x.kind), ['pool', 'onDuty', 'sequence']);
+  assert.deepStrictEqual(BoardTurns.facts(s, 'SR02').map((x) => x.kind), ['pool', 'onDuty', 'homeTrain', 'sequence']); // on its way to Toronto (estimate)
   assert.deepStrictEqual(BoardTurns.facts(s, 'SR01').map((x) => x.kind), ['away']);
   assert.deepStrictEqual(BoardTurns.facts(s, 'SR0'), []); // no partial matches
   assert.ok(BoardTurns.turnsIn(s).includes('SA07'));
@@ -253,7 +253,18 @@ test('Mac yard: bunkhouse crews pair with the Toronto line-up in order', () => {
     ['003', 'SD10', 'SR12', '15th 0629', '15th 1429', false],
   ]);
   assert.deepStrictEqual(shown.macLineup.map((t) => [t.train, t.crew]), [
-    ['M30131 15', 'S304 + SB04'], ['Q13931 15', 'SD11 + SR05'], ['Z14931 15', 'SD10 + SR12'], ['M38331 15', ''],
+    ['M30131 15', 'S304 + SB04'], ['Q13931 15', 'SD11 + SR05'], ['Z14931 15', 'SD10 + SR12'],
+    // Not in the bunkhouse yet (owner, 2026-10-22): SD07 + SR07 went on duty
+    // in Sarnia on M39671 13 at 14th 2330, so ~0730 in Toronto, rested ~1530,
+    // before M38331's 1615 call.
+    ['M38331 15', 'SD07 + SR07'],
+  ]);
+  assert.deepStrictEqual(shown.macLineup[3].crewExpected, { train: 'M39671 13', onDuty: '14th 2330', offDuty: '15th 0730', rested: '15th 1530', deadhead: false });
+  assert.strictEqual(shown.macLineup[0].crewExpected, null);
+  // Every Sarnia train on duty (not L502, not Toronto's) is on its way; deadheads ~3 h.
+  assert.deepStrictEqual(shown.onTheWay.map((c) => [c.crew, c.train, c.offDuty]), [
+    ['SD07 + SR07', 'M39671 13', '15th 0730'], ['SD03 + SR02', 'M30241 13', '15th 1145'],
+    ['S105 + SA05', 'M39491 14', '15th 1415'], ['S106 + SA06', 'Z14891 14', '15th 1745'],
   ]);
   const f = BoardTurns.facts(shown, 'SR05').map((x) => x.text);
   assert.ok(f.some((t) => /Toronto bunkhouse, position 002 \(with SD11\), off duty 14th 2354, rested/.test(t)));
@@ -276,6 +287,23 @@ test('Mac yard: a crew on rest at the call is skipped and keeps its place', () =
   assert.deepStrictEqual(torontoCrews([train(10), train(11), train(12)], crews), [1, 2, 0]);
   // Nobody rested by the call: no crew yet.
   assert.deepStrictEqual(torontoCrews([train(9)], [crews[0]]), [-1]);
+});
+
+// Owner, 2026-10-22: guess the crews still on their way: train ~8 h,
+// deadhead ~3 h to Toronto, then 8 h rest; behind the bunkhouse, first in first out.
+test('Mac yard: crews on their way are estimated from their Sarnia on-duty time', () => {
+  const { at } = require('../../lib/board/time');
+  const dep = (symbol, trainNo, station, h, co, en) => ({ symbol, trainNo, originDay: '22', station, onDuty: at(2026, 10, 22, h, 0), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const board = [
+    dep('M30241', 'M302', 'SARNIA', 10, 'SR04', 'SD02'), // train: Toronto ~1800
+    dep('DHT031B', 'DHT031B', 'SARNIA', 13, 'SR09', 'SD08'), // deadhead: ~1600, ahead of the train
+    dep('M39931', 'M399', 'SARNIA', 9, 'MU01', 'S102'), // a Toronto train: not ours
+    dep('L50231', 'L502', 'SARNIA', 9, 'S501', 'S502'), // L502: not to Toronto
+    dep('E27121', 'E271', 'TORONTO', 9, 'SR01', 'SD01'), // already coming home
+    dep('Z14891', 'Z148', 'SARNIA', 8, 'SA06', 'S106'), // already in the bunkhouse
+  ];
+  const got = crewsOnTheWay(board, [{ pos: 1, co: 'SA06', en: 'S106', restUntil: null }]);
+  assert.deepStrictEqual(got.map((c) => [c.co, c.offDuty - c.onDuty, c.restUntil - c.offDuty]), [['SR09', 180, 480], ['SR04', 480, 480]]);
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {

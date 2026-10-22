@@ -152,6 +152,16 @@ every session**: state, decisions, what you tried, what's next.
   "SR03 lined up: DHT030B 23 (deadhead) planned for 23rd 0300, expected call
   23rd 0100." Same for ordered ("ordered for …") and time changes
   ("SR03 time change: … (was 23rd 0300, call 23rd 0100)").
+- **Toronto line-up: crews on their way (owner, 2026-10-22).** After the
+  bunkhouse, the Mac yard table guesses the rest: each Sarnia train on duty
+  on the Call Board (not Toronto's odd-digit trains, not L502, crew not in
+  the bunkhouse) ties up in Toronto on-duty + 8 h (deadhead + 3 h;
+  `config.torontoTripMinutes`), rested 8 h later, queued by tie-up time
+  (`crewsOnTheWay` in site.js), then the same rest-at-call skipping. Shown
+  with an "estimate" chip; unplaced ones listed under the table; Find a turn
+  says "On the way to Toronto … predicted home on …". The 8/3 h are only for
+  this. Owner wrote "trains and Deadheads take around 3 hours and trains
+  take 8 hours": read as DH 3 h, train 8 h (❓ confirm). FORMAT 7.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
