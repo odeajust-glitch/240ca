@@ -21,7 +21,7 @@ every session**: state, decisions, what you tried, what's next.
   them were seen, not just none). A road day watched from its start keeps
   its count, so a too-early Chain Gang train is flagged.
 - Website builder does the same per snapshot (FORMAT 5, days rebuilt once).
-  67 tests. **Laptop: `git pull`, restart the checker.**
+  66 tests. **Laptop: `git pull`, restart the checker.**
 - **Open (owner): automatic Microsoft sign-in.** Owner wants no phone needed
   for the ~24 h Microsoft/Authenticator sign-in (at work, phone not handy).
   CATS sign-on is already automatic. Only way with no phone at all: a TOTP
