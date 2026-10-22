@@ -64,6 +64,13 @@ every session**: state, decisions, what you tried, what's next.
   activity. One poll error "fetch failed" seen once (cause now printed).
   Still to watch: real "Microsoft's number" line; auto sign-in on duty; how
   long a fresh sign-in lasts (the "since the last sign-in" line).
+- **Toronto pairing (owner, CHECKUP #8):** a crew or anyone on rest at the
+  call is skipped and the next available one takes the train; the skipped
+  crew keeps its place. Website's Mac yard table now does that
+  (`torontoCrews` in site.js, call = order − 2 h 15, rest ending at the call
+  = available), shows "skipped, on rest at the call" and the call time.
+  FORMAT 6. #7 (flags) left as is: when a train leaves the line-up its call
+  has normally passed, so "rested now" ≈ "rested by the call".
 - AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
   as 9 (it's M394, even) and recounted road day 21's A trains from the visible
   ones. Prompt now spells out manifest digits with examples and says the

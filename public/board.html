@@ -416,7 +416,8 @@ function lineup(s) {
 }
 
 // Toronto (Mac yard): the westbound line-up with the bunkhouse crew predicted
-// for each train, first crew home on the first train (owner, 2026-10-17).
+// for each train, first crew home on the first train (owner, 2026-10-17),
+// skipping crews still on rest at the call (owner, 2026-10-22).
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
@@ -431,23 +432,25 @@ function toronto(s) {
   const missing = !readB ? 'The bunkhouse (28) wasn\'t read in this check, so no crews are shown.'
     : !readM ? 'The Mac yard line-up (41) wasn\'t read in this check, so no trains are shown.' : '';
   const byPos = new Map(crews.map((c) => [c.pos, c]));
-  const crewCell = (c) => {
-    if (!c) return '<span class="muted">no crew in the bunkhouse yet</span>';
+  const crewCell = (c, t) => {
+    const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
+    if (!c) return `<span class="muted">${t.skipped && t.skipped.length ? 'no rested crew in the bunkhouse by the call' : 'no crew in the bunkhouse yet'}</span>${skip}`;
     const when = c.ready ? '<span class="ok">rested</span>' : `rest until ${esc(c.rested)}`;
     return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
-      <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}</div>`;
+      <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
   };
   const rows = trains.map((t) => {
     const c = byPos.get(t.crewPos);
     const hit = focus && c && (c.en === focus || c.co === focus);
     return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
-      <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${crewCell(c)}</td></tr>`;
+      <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${crewCell(c, t)}</td></tr>`;
   }).join('');
-  const extra = crews.slice(trains.length);
+  const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
+  const extra = crews.filter((c) => !taken.has(c.pos));
   const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
   return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. Off duty = rest − 8 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. A crew still on rest at a train's call (2 h before on duty) is skipped and keeps its place for the next train. Off duty = rest − 8 h.</div></section>`;
 }
 
 function dot(status) {

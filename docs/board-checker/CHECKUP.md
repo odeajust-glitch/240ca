@@ -24,7 +24,7 @@ the owner; nothing here has been changed yet.
   check #1, SR02 rest 0100 vs call ~0100, went the other way.)
 - [ ] **#7 Toronto flags**: should "available" mean rested by the train's
   call time rather than rested at the moment it left the line-up?
-- [ ] **#8 Toronto pairing**: when the next crew is still on rest at the
+- [x] **#8 Toronto pairing** (owner, 2026-10-22: a crew on rest at the call is skipped, next available takes it; built in site.js `torontoCrews`): when the next crew is still on rest at the
   train's call, does CATS skip them or does the train wait? Mark it?
 
 **Website**

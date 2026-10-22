@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { buildSite, deploySite, snapshotOf } = require('../../lib/board/site');
+const { buildSite, deploySite, snapshotOf, torontoCrews } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
 const BoardTrains = require('../../public/board-trains');
 
@@ -247,6 +247,24 @@ test('Mac yard: bunkhouse crews pair with the Toronto line-up in order', () => {
   const f = BoardTurns.facts(shown, 'SR05').map((x) => x.text);
   assert.ok(f.some((t) => /Toronto bunkhouse, position 002 \(with SD11\), off duty 14th 2354, rested/.test(t)));
   assert.ok(f.some((t) => /Predicted home on Q13931 15/.test(t)));
+});
+
+// Owner, 2026-10-22: a Toronto crew still on rest at a train's call is
+// skipped; the next rested crew takes the train, and the skipped one keeps
+// its place for the next train.
+test('Mac yard: a crew on rest at the call is skipped and keeps its place', () => {
+  const { at } = require('../../lib/board/time');
+  const train = (h) => ({ order: at(2026, 10, 15, h, 0), deadhead: false }); // call = order − 2 h 15
+  const crews = [
+    { pos: 1, restUntil: at(2026, 10, 15, 9, 0) },  // rested by 0900
+    { pos: 2, restUntil: null },                    // already rested
+    { pos: 3, restUntil: at(2026, 10, 15, 8, 45) }, // rest ends exactly at the 1100 train's call
+  ];
+  // 1000 train (call 0745): crew 1 on rest → crew 2; 1100 (call 0845): crew 1
+  // still resting → crew 3 (rest ends at the call = available); 1200 (call 0945): crew 1.
+  assert.deepStrictEqual(torontoCrews([train(10), train(11), train(12)], crews), [1, 2, 0]);
+  // Nobody rested by the call: no crew yet.
+  assert.deepStrictEqual(torontoCrews([train(9)], [crews[0]]), [-1]);
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {
