@@ -118,6 +118,29 @@ test('turn alerts: a Chain Gang turn ahead going on rest or hold', () => {
   assert.equal(phoneEvents(shared, { turns: ['SR03'] }, {}, {}, { lineupRead: false }).events.length, 1);
 });
 
+// Owner, 2026-10-22: the crew office's mandatory reset always shows until
+// 0559; tell that turn when it's put on one.
+test('turn alerts: a turn put on a mandatory reset (until 0559)', () => {
+  const now = at(2026, 10, 22, 10, 0);
+  const row = (turn, o = {}) => ({ craft: 'CO', turn, pos: 1, restUntil: null, statusUntil: null, rn: '', ...o });
+  const states = (pools) => turnStates({ now, predictions: [] }, [], pools);
+  let r = turnEvents({}, states({ chainGang: [row('SR03')], a: [row('SA05')] }), { lineupRead: false });
+  assert.deepEqual(r.events, []);
+  r = turnEvents(r.told, states({
+    chainGang: [row('SR03', { restUntil: at(2026, 10, 23, 5, 59) })],
+    a: [row('SA05', { rn: 'HT', statusUntil: at(2026, 10, 23, 5, 59) })],
+    s1: [row('S107', { craft: 'EN', restUntil: at(2026, 10, 22, 18, 0) })], // ordinary rest: not a reset
+  }), { lineupRead: false });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
+    ['SR03', 'reset', "SR03: you've been put on a mandatory reset until 23rd 0559."],
+    ['SA05', 'reset', "SA05: you've been put on a mandatory reset until 23rd 0559."],
+  ]);
+  // Same reset next check: said once. Switched off: not sent.
+  const again = turnEvents(r.told, states({ chainGang: [row('SR03', { restUntil: at(2026, 10, 23, 5, 59) })] }), { lineupRead: false });
+  assert.deepEqual(again.events, []);
+  assert.deepEqual(phoneEvents(r.events, { turns: ['SR03'], prefs: { SR03: { reset: false } } }, {}, {}, { lineupRead: false }).events, []);
+});
+
 // RFC 8291 appendix A: the worked example, byte for byte.
 test('web push encryption matches the RFC 8291 example', () => {
   const body = encrypt('When I grow up, I want to be a watermelon',

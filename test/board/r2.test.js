@@ -102,10 +102,10 @@ test('the Worker keeps turn-alert subscriptions and never serves them', async ()
   assert.deepEqual(JSON.parse(saved).turns, ['SR03', 'SD05']);
   // Each turn's choices, cleaned up; missing ones are the defaults.
   res = await post({ subscription, turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: true, onDuty: 'x', time: 60, evil: 1 } } });
-  assert.deepEqual((await res.json()).prefs, { SR03: { lineup: false, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, time: 60 } });
+  assert.deepEqual((await res.json()).prefs, { SR03: { lineup: false, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, time: 60 } });
   assert.deepEqual(JSON.parse([...store.values()][0]).prefs.SR03.time, 60);
   res = await post({ subscription, turns: ['SR03', 'SD05'] });
-  assert.deepEqual((await res.json()).prefs.SD05, { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, time: 30 });
+  assert.deepEqual((await res.json()).prefs.SD05, { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, time: 30 });
   // Never served, however it's asked for.
   for (const p of [`/${key}`, `/${key.replace('/', '%2F')}`, `//${key}`]) {
     assert.equal((await worker.fetch(new Request(`https://board.x.workers.dev${p}`), env)).status, 404, p);

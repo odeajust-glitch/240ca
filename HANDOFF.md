@@ -162,6 +162,12 @@ every session**: state, decisions, what you tried, what's next.
   says "On the way to Toronto … predicted home on …". The 8/3 h are only for
   this. Owner wrote "trains and Deadheads take around 3 hours and trains
   take 8 hours": read as DH 3 h, train 8 h (❓ confirm). FORMAT 7.
+- **Mandatory reset alert (owner, 2026-10-22):** the crew office's reset
+  always shows as rest or a hold turn until **0559**. A turn's own row (SR,
+  SD, SA, SB, S1, S3; working turns skipped) newly showing that → "SRxx:
+  you've been put on a mandatory reset until 23rd 0559." Kind `reset`, pref
+  default on (checkbox "put on a mandatory reset"); `told[turn].reset` keeps
+  it to once per reset. Worker re-paste needed (prefs).
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
