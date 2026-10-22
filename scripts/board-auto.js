@@ -9,6 +9,11 @@
 //   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
 //                                                     (beeps when your answer changes)
 //
+// Press R in this window for a fresh Microsoft sign-in after the current
+// check, so the ~24 h CN sign-in restarts before you leave; it also does one
+// by itself when your own train is ordered and the call is near
+// (lib/board/signin.js). You approve it in Authenticator either way.
+//
 // You do the Microsoft sign-in (Authenticator). The CATS sign-on is yours too,
 // unless CATS_EMPLOYEE_NO and CATS_PASSWORD are in .env: then the script fills
 // it, and when a check gets stuck it reloads CATS and signs back in. It only
@@ -28,6 +33,7 @@
 // check that changed, at most every BOARD_SITE_EVERY minutes (default 90, owner 2026-10-17).
 const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
+const SignIn = require('../lib/board/signin');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -47,6 +53,7 @@ const config = require('../lib/board/config');
 
 const OUT_DIR = DATA_DIR;
 const LAST_FILE = path.join(OUT_DIR, 'last-check.json');
+const SIGNIN_FILE = path.join(OUT_DIR, 'ms-signin.json');
 const START_URL = 'https://cats.cn.ca/';
 
 function arg(name) {
@@ -342,7 +349,8 @@ function answer(summary, me, nowOverride) {
   // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
-  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto };
+  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
+    myCall: { me: result.me, now: result.now } };
 }
 let lastToronto = null;
 
@@ -527,14 +535,142 @@ async function goto(page, url) {
   }
 }
 
+// --- Microsoft sign-in ----------------------------------------------------------
+// The approval is always the owner's, on their phone. The script only shows
+// Microsoft's number to match, answers "Stay signed in?", and types the
+// Microsoft password when MS_PASSWORD is in .env (like the CATS password:
+// never printed, off after one refusal).
+const onMicrosoft = (page) => /^https:\/\/login\.(microsoftonline|live)\.com\//.test(page.url());
+const MS_PASSWORD = process.env.MS_PASSWORD || null;
+let autoMsPassword = !!MS_PASSWORD;
+const ms = { seenAt: null, number: null, passwordSent: false, kmsiAt: 0 };
+
+// Optional phone alert through ntfy.sh (BOARD_NTFY_TOPIC in .env, a topic
+// name only the owner knows), for when they're away from the laptop and
+// Microsoft shows a number to match. Never carries anything but that.
+async function alertPhone(text) {
+  const topic = (process.env.BOARD_NTFY_TOPIC || '').trim();
+  if (!topic) return;
+  try {
+    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+      method: 'POST', body: text, headers: { Title: 'Board checker', Priority: 'high' }, signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) console.log(`  (phone alert not sent: ntfy answered ${res.status})`);
+  } catch (err) {
+    console.log(`  (phone alert not sent: ${err.message})`);
+  }
+}
+
+async function microsoftStep(page) {
+  if (!onMicrosoft(page)) return;
+  if (!ms.seenAt) {
+    ms.seenAt = Date.now();
+    const since = SignIn.sinceLast(SignIn.loadState(SIGNIN_FILE));
+    console.log(`\x07[${stamp()}] Microsoft is asking you to sign in${since ? ` (${since} since the last sign-in)` : ''}. Approve it in Authenticator.`);
+    await alertPhone('Microsoft sign-in for the board checker: approve it in Authenticator.');
+  }
+  const seen = await page.evaluate(() => {
+    const vis = (el) => !!el && el.getBoundingClientRect().width > 0;
+    const q = (sel) => [...document.querySelectorAll(sel)].find(vis) || null;
+    const num = q('#idRichContext_DisplaySign, #displaySign, [data-testid="displaySign"]');
+    return {
+      number: num ? num.textContent.trim() : null,
+      password: !!q('input[type=password]'),
+      passwordError: !!q('#passwordError, #i0118Error'),
+      kmsi: !!q('#KmsiCheckboxField, input[name=DontShowAgain]') || /stay signed in\?/i.test(document.body.innerText),
+    };
+  }).catch(() => null); // mid-navigation
+  if (!seen) return;
+  if (seen.number && seen.number !== ms.number) {
+    ms.number = seen.number;
+    console.log(`\n   >>> Microsoft's number: ${seen.number}  (enter it in Authenticator) <<<\n`);
+    await alertPhone(`Microsoft sign-in: enter ${seen.number} in Authenticator.`);
+  }
+  if (seen.passwordError && autoMsPassword) {
+    autoMsPassword = false;
+    console.log('\x07Microsoft refused MS_PASSWORD from .env. Type it in the browser; the script won\'t try it again until restarted.');
+  }
+  if (seen.password && autoMsPassword && !ms.passwordSent) {
+    ms.passwordSent = true; // once per sign-in, so a wrong one can't lock the account
+    try {
+      await page.fill('input[type=password]', MS_PASSWORD);
+      await page.click('#idSIButton9, input[type=submit], button[type=submit]');
+      console.log(`[${stamp()}] Microsoft password filled from .env.`);
+    } catch (err) {
+      console.log(`  (couldn't fill the Microsoft password: ${err.message.split('\n')[0]})`);
+    }
+  }
+  if (seen.kmsi && Date.now() - ms.kmsiAt > 10000) {
+    ms.kmsiAt = Date.now();
+    try { await page.click('#idSIButton9, input[type=submit][value=Yes], button:has-text("Yes")'); } catch { /* gone already */ }
+  }
+}
+
+// Back at the CATS main menu after a Microsoft sign-in: note when, so the
+// next "Microsoft is asking" can say how long it lasted.
+function microsoftDone() {
+  if (!ms.seenAt) return;
+  const state = SignIn.loadState(SIGNIN_FILE);
+  const since = SignIn.sinceLast(state);
+  try { SignIn.saveState(SIGNIN_FILE, { ...state, lastAt: Date.now() }); } catch { /* only a note */ }
+  console.log(`[${stamp()}] Microsoft sign-in done${since ? ` (the one before was ${since} ago)` : ''}.`);
+  Object.assign(ms, { seenAt: null, number: null, passwordSent: false, kmsiAt: 0 });
+}
+
+async function clearSignInCookies(context) {
+  try {
+    await context.clearCookies({ domain: /(^|\.)(microsoftonline\.com|microsoft\.com|live\.com|cn\.ca)$/ });
+  } catch {
+    await context.clearCookies(); // older Playwright: no filter; this browser is only for CATS
+  }
+}
+
+// Signs out of Microsoft (and CATS's Microsoft gateway) in the checker's
+// browser and opens CATS again, so Microsoft asks for a full sign-in and its
+// ~24 h starts over.
+async function freshSignIn(page, why) {
+  console.log(`\n[${stamp()}] Fresh Microsoft sign-in: ${why}.`);
+  await clearSignInCookies(page.context());
+  await goto(page, catsUrl);
+  await waitForMainMenu(page, 'Approve the Microsoft sign-in in Authenticator; the script carries on after that.');
+}
+
+// R in this window: a fresh sign-in after the current check. Ctrl+C still stops.
+let signInAsked = false;
+let wake = null;
+function listenForKeys() {
+  if (!process.stdin.isTTY) return;
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.on('data', (b) => {
+    const k = b.toString();
+    if (k === '\u0003') process.exit(130);
+    if (k === 'r' || k === 'R') {
+      signInAsked = true;
+      console.log(`\n[${stamp()}] R: fresh Microsoft sign-in ${wake ? 'now' : 'after this check'}.`);
+      if (wake) wake();
+    }
+  });
+}
+
+// The wait between checks; R cuts it short.
+function nap(ms) {
+  return new Promise((resolve) => {
+    const done = () => { clearTimeout(t); wake = null; resolve(); };
+    const t = setTimeout(done, ms);
+    wake = done;
+  });
+}
+
 async function waitForMainMenu(page, prompt) {
   console.log(prompt);
   let otherSince = null; // when a CATS screen that isn't the menu showed up
   let rounds = 0;
   for (;;) {
     if (await fixFramedLogin(page)) continue;
+    await microsoftStep(page);
     const s = await screenState(page);
-    if (s && is.mainMenu(s)) return;
+    if (s && is.mainMenu(s)) { microsoftDone(); return; }
     // Signed in (by hand or not) but stuck on a message: clear it with Enter
     // once it's sat there a few seconds (at most twice per sign-in).
     if (s && s.seq !== null && !is.signOn(s)) {
@@ -607,6 +743,7 @@ async function main() {
   const context = await chromium.launchPersistentContext(b.profileDir, { headless: false, ...b.options });
   const page = context.pages()[0] || (await context.newPage());
   watchFramedLogin(page);
+  listenForKeys();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   const signIn = CATS_LOGIN
@@ -619,12 +756,16 @@ async function main() {
   let retried = false;
   for (;;) {
     let retryNow = false;
+    if (signInAsked) {
+      signInAsked = false;
+      await freshSignIn(page, 'you pressed R');
+    }
     try {
       console.log(`\n[${stamp()}] Checking the board…`);
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, myCall } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
@@ -648,6 +789,15 @@ async function main() {
       }
       await publishSite(first || changed || torontoChanged);
       retried = false;
+      // Your own train ordered with the call near: sign in fresh now, so the
+      // ~24 h covers the trip (owner, 2026-10-22).
+      const signInState = SignIn.loadState(SIGNIN_FILE);
+      const beforeCall = +process.env.BOARD_SIGNIN_BEFORE_CALL || SignIn.BEFORE_CALL_MINUTES;
+      const due = SignIn.dueForCall(myCall.me, myCall.now, signInState, { beforeCall });
+      if (due) {
+        SignIn.saveState(SIGNIN_FILE, { ...signInState, doneFor: myCall.me.train });
+        await freshSignIn(page, due);
+      }
     } catch (err) {
       if (err instanceof NeedSignIn) {
         await waitForMainMenu(page, autoSignOn
@@ -670,13 +820,18 @@ async function main() {
     }
     if (retryNow) continue;
     if (!every) break;
-    console.log(`[${stamp()}] Next check in ${every} minutes. Keep this window and the browser open (Ctrl+C to stop).`);
-    await sleep(every * 60000);
+    console.log(`[${stamp()}] Next check in ${every} minutes. Keep this window and the browser open (R = fresh Microsoft sign-in, Ctrl+C to stop).`);
+    if (!signInAsked) await nap(every * 60000);
   }
   await context.close();
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}
+
+// For trying the Microsoft steps against a fake sign-in page.
+module.exports = { microsoftStep, microsoftDone, clearSignInCookies };

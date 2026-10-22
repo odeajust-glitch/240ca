@@ -73,6 +73,22 @@ node scripts/board-auto.js --me SR03 --every 5
 A browser opens: sign in to Microsoft (Authenticator) once; the script fills
 the CATS sign-on and checks every 5 minutes. Leave the window alone.
 
+**Fresh Microsoft sign-in (owner, 2026-10-22).** Microsoft asks again about
+every 24 h. To restart that before you leave, click the checker's window and
+press **R**: it signs out of Microsoft and asks again; approve it in
+Authenticator. It also does this by itself when your own train is ordered and
+your call is within 3 h (`BOARD_SIGNIN_BEFORE_CALL=180` to change), once per
+train. When Microsoft shows a number to match, it's printed in the window.
+Optional `.env` lines:
+- `MS_PASSWORD=` your Microsoft (CN) password, if Microsoft asks for it, so
+  you only need to approve on the phone. Tried once per sign-in; off after a
+  refusal.
+- `BOARD_NTFY_TOPIC=` a long made-up name: install the **ntfy** app on your
+  phone and subscribe to the same name, and the number to match (and "sign in
+  now") pops up there. Anyone who knows the name can read those alerts, so
+  make it hard to guess. Nothing else is ever sent there.
+The window says how long the last sign-in lasted (`BoardChecker\ms-signin.json`).
+
 ## 6. Keep it running
 
 - **Sleep stops it.** In Windows Settings → System → Power, set "When plugged

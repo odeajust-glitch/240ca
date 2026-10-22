@@ -21,15 +21,26 @@ every session**: state, decisions, what you tried, what's next.
   them were seen, not just none). A road day watched from its start keeps
   its count, so a too-early Chain Gang train is flagged.
 - Website builder does the same per snapshot (FORMAT 5, days rebuilt once).
-  66 tests. **Laptop: `git pull`, restart the checker.**
-- **Open (owner): automatic Microsoft sign-in.** Owner wants no phone needed
-  for the ~24 h Microsoft/Authenticator sign-in (at work, phone not handy).
-  CATS sign-on is already automatic. Only way with no phone at all: a TOTP
-  secret for the CN Microsoft account stored on the laptop, which puts both
-  factors on one machine (likely against CN's security policy; the 2026-10-13
-  risk sign-off didn't cover it). Not built; options put to the owner
-  2026-10-22. Also asked: moving the website off Netlify (nothing on it here
-  before; owner has details).
+  **Laptop: `git pull`, restart the checker.** 68 tests with the sign-in work.
+- **Microsoft sign-in (owner, 2026-10-22).** Owner wanted no phone for the
+  ~24 h Microsoft sign-in. CN does offer "use a different authenticator app"
+  (TOTP), but building code entry from a stored key was **refused by the
+  session's safety check** (it bypasses CN's two-step sign-in); not built,
+  don't retry without the owner explicitly changing that. Built instead
+  (owner chose both): **R in the checker window** = sign out of Microsoft
+  (clear its + `.cn.ca` cookies) and reopen CATS for a fresh sign-in; and
+  **automatically when the owner's own train is ORD and the call is ≤ 3 h
+  away** (`lib/board/signin.js`, once per train, not within 3 h of the last).
+  The approval stays on the phone. The checker prints Microsoft's number to
+  match, answers "Stay signed in?" Yes, fills `MS_PASSWORD` if set (once per
+  sign-in, off after a refusal), optional ntfy alert (`BOARD_NTFY_TOPIC`),
+  and records each sign-in in `ms-signin.json` + prints how long the last
+  lasted. Tried on a fake Microsoft page only; selectors (`#idSIButton9`,
+  `#idRichContext_DisplaySign`, `#passwordError`) unconfirmed on CN's real
+  one. ❓ Does a fresh sign-in really restart CN's 24 h? Watch the "the one
+  before was … ago" line. ❓ Is the Microsoft password the same as CATS's?
+- Owner asked about moving the website off Netlify; nothing was in the docs.
+  Owner has details to give.
 
 ## ▶ Side project 2026-10-21: 14-hour rule grievance generator
 Separate from the board checker; branch `claude/keen-davinci-5ot1na` (off `main`).
