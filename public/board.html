@@ -912,11 +912,13 @@ source().then(async (src) => {
     return;
   }
   document.getElementById('sample').hidden = src.live;
-  if (src.live && src.index.generatedAt) {
+  const showUpdated = (idx) => {
+    if (!src.live || !idx.generatedAt) return;
     const u = document.getElementById('updated');
     u.hidden = false;
-    u.textContent = 'Updated ' + new Date(src.index.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-  }
+    u.textContent = 'Updated ' + new Date(idx.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  };
+  showUpdated(src.index);
   const daySel = document.getElementById('day');
   daySel.innerHTML = src.days.map((d) => `<option value="${d}">${esc(when(d + ' 0000').day)}</option>`).join('');
 
@@ -1165,9 +1167,20 @@ source().then(async (src) => {
     setInterval(async () => {
       try {
         const idx = await getJSON('data/index.json');
-        if (!idx.latest || idx.latest === src.index.latest || newerBar) return;
-        newerBar = `<div class="newer">A newer board was published (${esc(when(idx.latest).time)}).<button type="button" id="newerbtn">Update</button></div>`;
-        if (mode === 'current' || mode === 'snap') show(cur);
+        if (!idx.latest || newerBar) return;
+        if (idx.latest !== src.index.latest) {
+          newerBar = `<div class="newer">A newer board was published (${esc(when(idx.latest).time)}).<button type="button" id="newerbtn">Update</button></div>`;
+          if (mode === 'current' || mode === 'snap') show(cur);
+          return;
+        }
+        // Same board, checked again since (owner, 2026-10-22): move "Last
+        // checked" on in place, no reload needed.
+        if (!idx.checked || idx.checked === src.index.checked) return;
+        src.index = idx;
+        showUpdated(idx);
+        const s = list.find((x) => x.taken === idx.latest);
+        if (s && idx.checked > s.taken) s.sameUntil = idx.checked;
+        if (mode === 'current' || mode === 'snap') show(cur, true);
       } catch (e) { /* offline: try again next time */ }
     }, 120000);
   }

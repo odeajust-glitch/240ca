@@ -98,6 +98,10 @@ every session**: state, decisions, what you tried, what's next.
   On Cloudflare every check now publishes (not only changed ones), so the
   Current tab's "Last checked … ago" stays green while the board is unchanged;
   an unchanged check uploads ~2 files (index + today's day file).
+  The open page only reacted to a *changed* board, so "Last checked" still
+  grew until reload (owner noticed). index.json now carries `checked` (newest
+  check read) and the page's 2-min poll moves the newest snapshot's
+  sameUntil + "Updated" in place. Browser-tested on a local build.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

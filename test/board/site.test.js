@@ -37,6 +37,8 @@ test('site: builds a day file per day, newest day first in the index', () => {
   const index = JSON.parse(fs.readFileSync(path.join(out, 'data/index.json'), 'utf8'));
   assert.deepStrictEqual(index.days, [{ day: '2026-10-15', count: 2 }, { day: '2026-10-14', count: 1 }]);
   assert.strictEqual(index.latest, '2026-10-15 0815');
+  // Newest check read, changed or not: the open page moves "Last checked" on.
+  assert.strictEqual(index.checked, '2026-10-15 0820'); // the unchanged 0820 check
   assert.ok(fs.existsSync(path.join(out, 'index.html')));
   assert.match(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8'), /Disallow: \//);
 });
