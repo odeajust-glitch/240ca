@@ -94,3 +94,22 @@ holds one `_redirects` file, uploaded by hand (Netlify → Deploys → drag the
 folder), with the line `/*  https://board.sarniaboard.workers.dev/:splat  301!`.
 Keep that Netlify site, and keep NETLIFY_ lines out of .env so the checker
 never publishes over it.
+
+## 7. Turn alerts on phones (owner, 2026-10-22)
+In **Find a turn**, a turn's panel has **🔔 Get alerts**: that phone then
+gets a notification when the turn is lined up for a train, the train is
+ordered, its call moves 30 min or more, or the turn goes on duty (conductor
+and engineer turns). Free, no app, no message cap (web push).
+
+- **Android (Chrome):** tap Get alerts, allow notifications.
+- **iPhone (iOS 16.4+):** Safari → Share → **Add to Home Screen**, open the
+  site from that icon, then Get alerts and allow.
+- Stop with **🔕 Stop alerts** on the same turn.
+
+Setup once, after `git pull`: paste the new `cloudflare/board-worker.js` into
+the Worker again (Edit code → replace all → Deploy), then restart the checker.
+The laptop makes its own push key the first time
+(`BoardChecker\push-keys.json`: keep it private, don't delete it, or every
+phone has to subscribe again). Subscriptions live in the bucket under
+`subs/`; the Worker never shows them and the site upload never deletes them.
+After a check with news, the window prints `Turn alerts: N sent …`.

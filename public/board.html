@@ -6,6 +6,11 @@
 <title>Line-up Snapshots</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f5c63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Line-up">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -88,6 +93,10 @@
   .turnpanel > header { background: var(--amber-tint); }
   .turnpanel > header h2 .num { font-size: 22px; letter-spacing: 0; }
   .turnpanel > header button { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+  .turnpanel > header .hbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .turnpanel > header button.alert-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .alertnote { padding: 8px 14px; font-size: 13px; color: var(--soft); border-bottom: 1px solid var(--rule-soft); }
+  .alertnote.bad { color: var(--stop); }
   .tp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
   .tp > div { min-width: 0; padding: 12px 14px; }
   .tp > div + div { border-left: 1px solid var(--rule-soft); }
@@ -537,7 +546,8 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><button id="turnclose" type="button">Close</button></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnclose" type="button">Close</button></div></header>
+    <div id="alertnote" class="alertnote" hidden></div>
     <div class="tp"><div><h3>Current snapshot</h3>${here}</div>
     <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <div class="tp tp3" id="turnmore"></div></section>`;
@@ -692,6 +702,51 @@ const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
 const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
   .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
 const heldKey = (r) => `${r.id} ${r.month}`;
+
+// Turn alerts (owner, 2026-10-22): "Get alerts" on a turn subscribes this
+// phone (web push, no app) and tells the site which turns it wants
+// (push/subscribe, kept by the Worker). The board checker sends an alert when
+// that turn is lined up, ordered, its call moves 30 min or more, or it goes
+// on duty. The turns chosen are kept on this phone too, to show the buttons.
+const Alerts = (() => {
+  const KEY = 'alertTurns';
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  let key = null; // the board checker's public key (data/push.json); none = alerts off
+  const ready = fetch('data/push.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((d) => { key = d && d.publicKey; }).catch(() => {});
+  const turns = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+  const keep = (list) => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* not kept */ } };
+  const bytes = (b64u) => Uint8Array.from(atob(b64u.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64u.length % 4)) % 4)), (c) => c.charCodeAt(0));
+  async function save(list) {
+    const reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(key) });
+    const res = await fetch('push/subscribe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subscription: sub.toJSON(), turns: list }) });
+    if (!res.ok) throw new Error(`the site answered ${res.status}`);
+    const out = await res.json();
+    keep(out.turns || []);
+    return out.turns || [];
+  }
+  return {
+    ready,
+    // 'on' | 'off' | 'unsupported' | 'ios-home' | 'none' (alerts not set up on this site)
+    state(turn) {
+      if (!key) return 'none';
+      if (ios && !standalone) return 'ios-home';
+      if (!supported) return 'unsupported';
+      return turns().includes(turn) ? 'on' : 'off';
+    },
+    turns,
+    async toggle(turn) {
+      // Ask first, straight from the tap: iPhones only allow it there.
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('alerts are blocked for this site; allow notifications for it in the phone\'s settings');
+      const now = turns();
+      return save(now.includes(turn) ? now.filter((t) => t !== turn) : [...now, turn]);
+    },
+  };
+})();
 
 // What this device remembers for the letters (owner, 2026-10-21): the names
 // passcode, and each person's PIN and Mr./Ms. once a letter's been made.
@@ -1030,6 +1085,7 @@ source().then(async (src) => {
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
     if (focus) {
       document.getElementById('turnclose').onclick = () => setFocus('');
+      wireAlerts(focus);
       const want = focus;
       src.turns().then((all) => {
         const box = document.getElementById('turnhist');
@@ -1046,6 +1102,42 @@ source().then(async (src) => {
         if (box) box.innerHTML = '<p class="empty" style="padding:0">History isn\'t available right now.</p>';
       });
     }
+  }
+
+  // The turn panel's alerts button and note.
+  function wireAlerts(turn) {
+    Alerts.ready.then(() => {
+      const btn = document.getElementById('turnalert');
+      const note = document.getElementById('alertnote');
+      if (!btn || !note || turn !== focus) return;
+      const say = (text, bad) => { note.hidden = !text; note.textContent = text || ''; note.classList.toggle('bad', !!bad); };
+      const paint = () => {
+        const st = Alerts.state(turn);
+        btn.hidden = st === 'none';
+        btn.textContent = st === 'on' ? `🔕 Stop alerts` : `🔔 Get alerts`;
+        btn.classList.toggle('alert-on', st === 'on');
+        const others = Alerts.turns().filter((t) => t !== turn);
+        if (st === 'ios-home') say('On iPhone: tap Share → Add to Home Screen, open the site from that new icon, then tap Get alerts here.');
+        else if (st === 'unsupported') say('This browser can\'t show alerts. On Android use Chrome; on iPhone add the site to the home screen first.');
+        else if (st === 'on') say(`Alerts on this phone for ${[turn, ...others].join(', ')}: lined up, ordered, call moved 30 m or more, on duty.`);
+        else say(others.length ? `This phone gets alerts for ${others.join(', ')}.` : '');
+      };
+      paint();
+      btn.onclick = async () => {
+        const st = Alerts.state(turn);
+        if (st === 'ios-home' || st === 'unsupported') return paint();
+        btn.disabled = true;
+        say('Setting up alerts…');
+        try {
+          await Alerts.toggle(turn);
+          paint();
+        } catch (e) {
+          say(`Couldn't change alerts: ${e.message}.`, true);
+        } finally {
+          btn.disabled = false;
+        }
+      };
+    });
   }
 
   // Snapshots ⇄ Order summary ⇄ 14h. setMode(true) is the order summary.

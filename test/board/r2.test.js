@@ -47,11 +47,12 @@ test('R2 publish uploads only changed files and removes ones the site dropped', 
   fs.mkdirSync(path.join(dir, 'data'));
   fs.writeFileSync(path.join(dir, 'index.html'), '<p>page</p>');
   fs.writeFileSync(path.join(dir, 'data', 'index.json'), '{"days":[]}');
-  const bucket = fakeBucket({ 'index.html': '<p>page</p>', 'data/2026-09-01.json': 'old' });
+  const bucket = fakeBucket({ 'index.html': '<p>page</p>', 'data/2026-09-01.json': 'old', 'subs/abc.json': '{"turns":["SR03"]}' });
   const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
   const sent = await deployR2({ dir, r2, fetchImpl: bucket.fetchImpl });
   assert.deepEqual(sent, { ok: true, uploaded: 1, removed: 1 });
-  assert.deepEqual([...bucket.objects.keys()].sort(), ['data/index.json', 'index.html']);
+  // Phones' alert subscriptions (subs/) are never touched by the site mirror.
+  assert.deepEqual([...bucket.objects.keys()].sort(), ['data/index.json', 'index.html', 'subs/abc.json']);
   assert.ok(bucket.calls.includes('PUT /board-site/data/index.json'));
   // Nothing changed: nothing goes up.
   assert.deepEqual(await deployR2({ dir, r2, fetchImpl: bucket.fetchImpl }), { ok: true, uploaded: 0, removed: 0 });
@@ -78,4 +79,37 @@ test('the Cloudflare Worker serves the bucket read-only', async () => {
   assert.equal(res.status, 304);
   assert.equal((await get('/nope.json')).status, 404);
   assert.equal((await get('/index.html', { method: 'PUT', body: 'x' })).status, 405);
+});
+
+test('the Worker keeps turn-alert subscriptions and never serves them', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map();
+  const env = { SITE: {
+    put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    head: async (k) => (store.has(k) ? { httpEtag: '"e"', writeHttpMetadata: () => {} } : null),
+    get: async (k) => (store.has(k) ? { body: store.get(k) } : null),
+  } };
+  const post = (body) => worker.fetch(new Request('https://board.x.workers.dev/push/subscribe', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body) }), env);
+  const subscription = { endpoint: 'https://fcm.googleapis.com/fcm/send/abc', keys: { p256dh: 'BPk', auth: 'au' } };
+
+  let res = await post({ subscription, turns: ['sr03', 'SD05', 'bad turn!', 'SR03'] });
+  assert.equal(res.status, 200);
+  assert.deepEqual((await res.json()).turns, ['SR03', 'SD05']);
+  assert.equal(store.size, 1);
+  const [key, saved] = [...store][0];
+  assert.match(key, /^subs\/[0-9a-f]{64}\.json$/);
+  assert.deepEqual(JSON.parse(saved).turns, ['SR03', 'SD05']);
+  // Never served, however it's asked for.
+  for (const p of [`/${key}`, `/${key.replace('/', '%2F')}`, `//${key}`]) {
+    assert.equal((await worker.fetch(new Request(`https://board.x.workers.dev${p}`), env)).status, 404, p);
+  }
+  // Not a push service, not JSON, or too big: refused.
+  assert.equal((await post({ subscription: { ...subscription, endpoint: 'https://evil.example/x' }, turns: ['SR03'] })).status, 400);
+  assert.equal((await post('nope')).status, 400);
+  assert.equal((await post({ subscription, turns: ['SR03'], pad: 'x'.repeat(9000) })).status, 413);
+  // No turns left: removed.
+  res = await post({ subscription, turns: [] });
+  assert.equal(res.status, 200);
+  assert.equal(store.size, 0);
 });

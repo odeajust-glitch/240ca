@@ -106,6 +106,20 @@ every session**: state, decisions, what you tried, what's next.
   BOARD_SITE_EVERY=5 apparently not read, default was 15). On Cloudflare the
   default is now 0 (every check), and a throttled check says when it's next.
   Confirmed by the owner: the site now updates after every check.
+- **Turn alerts by web push (owner chose over ntfy for no cap, 2026-10-22).**
+  Built: `lib/board/alerts.js` (per-turn states from predictions incl.
+  engineers + Call Board; events lined up / ordered / call moved ≥ 30 min vs
+  last *told* / on duty; first run learns only; no line-up read = no line-up
+  news; told in `turn-alerts.json`), `lib/board/webpush.js` (RFC 8291
+  aes128gcm, matches the RFC's example; RFC 8292 VAPID ES256; keys in
+  `push-keys.json`; posts only to Google/Apple/Mozilla/Microsoft push hosts;
+  404/410 → subscription deleted), Worker `POST /push/subscribe` (stores
+  `subs/<sha256>.json` in R2, host allowlist, ≤ 12 turns, 8 KB; `subs/` never
+  served; deployR2 never deletes it), page: 🔔 Get alerts in the turn panel,
+  `sw.js` + `manifest.webmanifest` (iPhone must Add to Home Screen),
+  `data/push.json` = public key. Sender `sub` = config.siteUrl
+  (BOARD_SITE_URL). Browser-tested the button with stand-in push; real phones
+  untested. ❓ Owner: re-paste the Worker, pull + restart, try on a phone.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

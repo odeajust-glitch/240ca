@@ -43,6 +43,15 @@ test('site: builds a day file per day, newest day first in the index', () => {
   assert.match(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8'), /Disallow: \//);
 });
 
+test('site: turn alerts ship the service worker always, the push key only when set up', () => {
+  const { hist, out } = makeHistory();
+  buildSite({ historyDir: hist, outDir: out, days: 0 });
+  assert.ok(fs.existsSync(path.join(out, 'sw.js')) && fs.existsSync(path.join(out, 'manifest.webmanifest')));
+  assert.ok(!fs.existsSync(path.join(out, 'data/push.json')));
+  buildSite({ historyDir: hist, outDir: out, days: 0, push: { publicKey: 'BPUB' } });
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(out, 'data/push.json'), 'utf8')), { publicKey: 'BPUB' });
+});
+
 test('site: an unchanged check stretches the one before; changes chain across days', () => {
   const { hist, out } = makeHistory();
   buildSite({ historyDir: hist, outDir: out, days: 0 });
@@ -82,7 +91,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/robots.txt']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);

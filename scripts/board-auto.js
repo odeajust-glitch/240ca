@@ -35,10 +35,13 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PUSH_KEYS_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Remote = require('../lib/board/remote');
+const TurnAlerts = require('../lib/board/alerts');
+const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
+const { listSubscriptions, deleteObject } = require('../lib/board/r2');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -355,7 +358,7 @@ function answer(summary, me, nowOverride) {
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
   return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
-    callBoard: input.callBoard };
+    callBoard: input.callBoard, alertStates: TurnAlerts.turnStates(result, input.callBoard), lineupRead: !!input.seen.lineup };
 }
 let lastToronto = null;
 
@@ -437,12 +440,46 @@ async function publishSite(changed) {
   site.lastAt = Date.now();
   try {
     const dir = path.join(OUT_DIR, 'site');
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey } });
+    // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
+    const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push });
     const sent = await publishSiteDir(dir, settings);
     if (sent.ok) site.due = false;
     console.log(sent.ok ? `[${stamp()}] Snapshot website updated (${sent.where}).` : `[${stamp()}] Snapshot website not updated (${sent.where}): ${sent.message}`);
   } catch (err) {
     console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`);
+  }
+}
+
+// Turn alerts (owner, 2026-10-22): what changed for each turn since the last
+// check (lib/board/alerts.js), pushed to the phones that chose that turn on
+// the site (subscriptions in the R2 bucket). Only with the site on
+// Cloudflare. Never stops a check; a phone that unsubscribed is dropped.
+async function sendTurnAlerts(states, lineupRead) {
+  const settings = siteSettings();
+  if (!settings.r2) return;
+  const { events, told } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead });
+  try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
+  if (!events.length) return;
+  try {
+    const subs = await listSubscriptions(settings.r2);
+    const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
+    const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
+    let sent = 0;
+    let dropped = 0;
+    const errors = new Set();
+    for (const s of subs) {
+      for (const e of events.filter((x) => (s.turns || []).includes(x.turn))) {
+        const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
+        if (r.ok) { sent++; continue; }
+        if (r.gone) { await deleteObject(settings.r2, s.key); dropped++; break; }
+        errors.add(r.message);
+      }
+    }
+    const what = events.map((e) => e.text).join(' | ');
+    console.log(`[${stamp()}] Turn alerts: ${sent} sent to ${subs.length} phone${subs.length === 1 ? '' : 's'}${dropped ? `, ${dropped} unsubscribed phone(s) dropped` : ''}${errors.size ? `, failed: ${[...errors].join('; ')}` : ''}. (${what})`);
+  } catch (err) {
+    console.log(`[${stamp()}] Turn alerts not sent: ${err.message}`);
   }
 }
 
@@ -849,7 +886,7 @@ async function main() {
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
@@ -872,6 +909,7 @@ async function main() {
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
       await publishSite(first || changed || torontoChanged);
+      await sendTurnAlerts(alertStates, lineupRead);
       retried = false;
       // You're on duty on the Sarnia Call Board: sign in fresh now, so the
       // ~24 h covers the trip (owner, 2026-10-22: once working, not before).

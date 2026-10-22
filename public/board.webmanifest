@@ -1,0 +1,9 @@
+{
+  "name": "Sarnia line-up",
+  "short_name": "Line-up",
+  "start_url": "./#current",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eceeea",
+  "theme_color": "#0f5c63"
+}
