@@ -49,6 +49,13 @@ every session**: state, decisions, what you tried, what's next.
   added (owner): checker polls ntfy topic `<BOARD_NTFY_TOPIC>-signin` every
   minute (`lib/board/remote.js`); a "signin" message ≤ 15 min old = R. Not yet
   tried on the laptop (sandbox can't reach ntfy.sh). 72 tests.
+- **Phone sign-in works on the laptop** (ntfy alert arrived, password filled).
+  Bug found on CN's real page: its email step carries an off-screen password
+  box (for password managers), so the password was typed there and the email
+  skipped ("Enter a valid email address"); nothing was sent. Fixed: only
+  on-screen inputs count, email before password, fills target the element
+  found (`data-board-fill`). Fake page now copies that. ❓ Number to match not
+  seen yet on the real page.
 - AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
   as 9 (it's M394, even) and recounted road day 21's A trains from the visible
   ones. Prompt now spells out manifest digits with examples and says the

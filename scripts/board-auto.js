@@ -572,14 +572,30 @@ async function microsoftStep(page) {
     console.log(`\x07[${stamp()}] Microsoft is asking you to sign in${since ? ` (${since} since the last sign-in)` : ''}. Approve it in Authenticator.`);
     await alertPhone('Microsoft sign-in for the board checker: approve it in Authenticator.');
   }
+  // Only boxes really on screen count: CN's email page also carries a password
+  // box moved off screen for password managers (owner, 2026-10-22: the
+  // password went there and the email was skipped). The ones to fill are
+  // marked data-board-fill so the fill can't land in a hidden twin.
   const seen = await page.evaluate(() => {
-    const vis = (el) => !!el && el.getBoundingClientRect().width > 0;
+    const vis = (el) => {
+      if (!el || el.getAttribute('aria-hidden') === 'true' || (el.tagName === 'INPUT' && el.tabIndex < 0)) return false;
+      const r = el.getBoundingClientRect();
+      const st = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < innerWidth && r.top < innerHeight
+        && st.visibility !== 'hidden' && st.opacity !== '0';
+    };
     const q = (sel) => [...document.querySelectorAll(sel)].find(vis) || null;
+    const mark = (el, name) => { if (el) el.setAttribute('data-board-fill', name); return !!el; };
+    document.querySelectorAll('[data-board-fill]').forEach((el) => el.removeAttribute('data-board-fill'));
     const num = q('#idRichContext_DisplaySign, #displaySign, [data-testid="displaySign"]');
+    const email = q('input[name=loginfmt], input[type=email]');
+    // Email first: on the email step a password box is never the one to fill.
+    const password = email ? null : q('input[type=password]');
+    mark(q('#idSIButton9, input[type=submit], button[type=submit]'), 'submit');
     return {
       number: num ? num.textContent.trim() : null,
-      password: !!q('input[type=password]'),
-      email: !!q('input[name=loginfmt], input[type=email]'),
+      password: mark(password, 'password'),
+      email: mark(email, 'email'),
       passwordError: !!q('#passwordError, #i0118Error'),
       kmsi: !!q('#KmsiCheckboxField, input[name=DontShowAgain]') || /stay signed in\?/i.test(document.body.innerText),
     };
@@ -594,11 +610,11 @@ async function microsoftStep(page) {
     autoMsPassword = false;
     console.log('\x07Microsoft refused MS_PASSWORD from .env. Type it in the browser; the script won\'t try it again until restarted.');
   }
-  if (seen.email && MS_EMAIL && !ms.emailSent && !seen.password) {
+  if (seen.email && MS_EMAIL && !ms.emailSent) {
     ms.emailSent = true;
     try {
-      await page.fill('input[name=loginfmt], input[type=email]', MS_EMAIL);
-      await page.click('#idSIButton9, input[type=submit], button[type=submit]');
+      await page.fill('[data-board-fill=email]', MS_EMAIL, { timeout: 5000 });
+      await page.click('[data-board-fill=submit]', { timeout: 5000 });
       console.log(`[${stamp()}] Microsoft email filled from .env.`);
     } catch (err) {
       console.log(`  (couldn't fill the Microsoft email: ${err.message.split('\n')[0]})`);
@@ -607,8 +623,8 @@ async function microsoftStep(page) {
   if (seen.password && autoMsPassword && !ms.passwordSent) {
     ms.passwordSent = true; // once per sign-in, so a wrong one can't lock the account
     try {
-      await page.fill('input[type=password]', MS_PASSWORD);
-      await page.click('#idSIButton9, input[type=submit], button[type=submit]');
+      await page.fill('[data-board-fill=password]', MS_PASSWORD, { timeout: 5000 });
+      await page.click('[data-board-fill=submit]', { timeout: 5000 });
       console.log(`[${stamp()}] Microsoft password filled from .env.`);
     } catch (err) {
       console.log(`  (couldn't fill the Microsoft password: ${err.message.split('\n')[0]})`);
