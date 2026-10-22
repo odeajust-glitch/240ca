@@ -105,6 +105,7 @@ every session**: state, decisions, what you tried, what's next.
   Owner's run 02:01/02:07: 2nd check printed no site line = throttled (their
   BOARD_SITE_EVERY=5 apparently not read, default was 15). On Cloudflare the
   default is now 0 (every check), and a throttled check says when it's next.
+  Confirmed by the owner: the site now updates after every check.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
