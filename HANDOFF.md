@@ -93,6 +93,8 @@ every session**: state, decisions, what you tried, what's next.
   (manual Netlify Drop of a `_redirects` file: `/* …workers.dev/:splat
   301!`); keep that Netlify site for the redirect, and remove the NETLIFY_
   lines from .env so nothing republishes over it.
+  Owner set `BOARD_SITE_EVERY=5` (2026-10-22): ~8,600 publishes/month ≈ 50k
+  R2 writes, far under the free 1M; Workers free 100k requests/day.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
