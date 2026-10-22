@@ -98,6 +98,15 @@ phone. The window says how long the last sign-in lasted (`BoardChecker\ms-signin
 
 ## 6. Keep it running
 
+**Watchdog (owner, 2026-10-22):** start it with
+`node scripts/board-watchdog.js --me SR03 --every 5` instead (the Startup
+shortcut's `start-board-checker.cmd` does). It runs the checker and, if a
+check hangs (15 min), no check starts when one should (every + 10 min), a
+sign-in sits for 45 min, or the checker quits, closes it and its Edge window
+and starts it again. Ctrl+C stops both. Each restart and why is in
+`BoardChecker\restarts.log`.
+
+
 - **Sleep stops it.** In Windows Settings → System → Power, set "When plugged
   in, put my device to sleep after" to **Never**, and keep the laptop plugged
   in. Closing the lid may sleep it too (Control Panel → Power Options →

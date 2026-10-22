@@ -35,11 +35,14 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Remote = require('../lib/board/remote');
 const TurnAlerts = require('../lib/board/alerts');
+// For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
+const { beat } = require('../lib/board/watchdog');
+const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, deleteObject } = require('../lib/board/r2');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
@@ -788,6 +791,7 @@ function nap(ms) {
 }
 
 async function waitForMainMenu(page, prompt) {
+  heartbeat('signin');
   console.log(prompt);
   let otherSince = null; // when a CATS screen that isn't the menu showed up
   let rounds = 0;
@@ -890,6 +894,7 @@ async function main() {
       await freshSignIn(page, 'you pressed R');
     }
     try {
+      heartbeat('checking');
       console.log(`\n[${stamp()}] Checking the board…`);
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
@@ -950,6 +955,7 @@ async function main() {
     if (retryNow) continue;
     if (!every) break;
     console.log(`[${stamp()}] Next check in ${every} minutes. Keep this window and the browser open (R = fresh Microsoft sign-in, Ctrl+C to stop).`);
+    heartbeat('idle');
     if (!signInAsked) await nap(every * 60000);
   }
   await context.close();

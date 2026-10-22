@@ -138,6 +138,16 @@ every session**: state, decisions, what you tried, what's next.
   Owner: alerts work on Android; on iPhone only once the site was added to
   the home screen and opened from that icon. The panel now shows numbered
   iPhone steps (button "Alerts on iPhone: how") until it's opened that way.
+- **Watchdog (owner, 2026-10-22):** checker hung a few times a day; owner
+  fixed it with Ctrl+C + restart. `scripts/board-watchdog.js` runs
+  board-auto.js (same args) and restarts it (taskkill /T so Edge closes too)
+  when `heartbeat.json` (written by board-auto: checking / idle / signin)
+  says stuck: checking 15 min, idle every+10, signin 45, starting 20
+  (`lib/board/watchdog.js`), or when it quits (code 130 = Ctrl+C = stop).
+  Backs off to 5 min after 5 restarts in 30 min. `restarts.log`.
+  start-board-checker.cmd now runs it. Tested with a fake hanging child.
+  ❓ What the hangs actually were is unknown: check restarts.log + the
+  window's last lines when one happens.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the
