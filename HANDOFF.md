@@ -102,6 +102,9 @@ every session**: state, decisions, what you tried, what's next.
   grew until reload (owner noticed). index.json now carries `checked` (newest
   check read) and the page's 2-min poll moves the newest snapshot's
   sameUntil + "Updated" in place. Browser-tested on a local build.
+  Owner's run 02:01/02:07: 2nd check printed no site line = throttled (their
+  BOARD_SITE_EVERY=5 apparently not read, default was 15). On Cloudflare the
+  default is now 0 (every check), and a throttled check says when it's next.
 - ⚠ 2026-10-22 the owner pasted the laptop `.env` (CATS + CN Microsoft
   passwords, Anthropic key, Netlify token, names passcode) and an R2 key into
   the chat; told to change all of them. Never ask for .env contents; use the

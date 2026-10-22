@@ -428,7 +428,12 @@ async function publishSite(changed) {
   // the page's "Last checked … ago" then stays fresh while the board sits
   // unchanged (owner, 2026-10-22). Netlify charges per deploy: changes only.
   if (changed || settings.r2) site.due = true;
-  if (!site.due || Date.now() - site.lastAt < every * 60000) return;
+  if (!site.due) return;
+  if (Date.now() - site.lastAt < every * 60000) {
+    const next = new Date(site.lastAt + every * 60000).toLocaleTimeString('en-CA', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    console.log(`[${stamp()}] Snapshot website: next update after ${next} (BOARD_SITE_EVERY=${every}).`);
+    return;
+  }
   site.lastAt = Date.now();
   try {
     const dir = path.join(OUT_DIR, 'site');

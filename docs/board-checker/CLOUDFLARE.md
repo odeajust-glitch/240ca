@@ -69,8 +69,8 @@ code expects; if you pick others, use yours in the `.env` too.
    R2_SECRET_ACCESS_KEY=
    ```
    Save. With these four, the site goes to Cloudflare instead of Netlify and
-   updates every 15 minutes when the board changed (`BOARD_SITE_EVERY=15`
-   to change it). The Netlify lines can stay; they're ignored.
+   updates after every check, changed or not (`BOARD_SITE_EVERY=N` for a
+   gap of N minutes). The Netlify lines can stay; they're ignored.
 3. Publish once by hand to test:
    ```
    node scripts/board-site.js --deploy
