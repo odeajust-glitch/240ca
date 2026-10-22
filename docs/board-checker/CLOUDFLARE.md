@@ -122,3 +122,26 @@ The laptop makes its own push key the first time
 phone has to subscribe again). Subscriptions live in the bucket under
 `subs/`; the Worker never shows them and the site upload never deletes them.
 After a check with news, the window prints `Turn alerts: N sent …`.
+
+## 8. "Board checker is down" alert (owner, 2026-10-22)
+The Worker looks every 10 minutes at when the site was last published (the
+laptop publishes after every check). No new check for 30 minutes → an ntfy
+alert "Board checker is down" to the owner's phone; "Board checker is back"
+when it resumes. Set up once in Cloudflare, after pasting the new Worker:
+1. Worker **board** → **Settings** → **Variables and Secrets** → **Add**:
+   name `NTFY_TOPIC`, value your ntfy alert topic (the same as
+   `BOARD_NTFY_TOPIC` on the laptop) → **Deploy**. Optional: `DOWN_MINUTES`
+   (default 30).
+2. Worker **board** → **Settings** → **Trigger events** (or **Triggers**) →
+   **Add** → **Cron Triggers** → every 10 minutes (`*/10 * * * *`) → Add.
+The page also shows the checker's health under "Updated": last Microsoft
+sign-in and today's automatic restarts.
+
+## 9. Also on the site (owner, 2026-10-22)
+- **When does this turn go?** Find a turn → green box with the newest
+  check's answer (Chain Gang position and who's ahead, or the train and call).
+- **Share** a turn (`#turn=SR07`) or a train (`#train=M38261-22`, from its
+  story in the Order summary).
+- **Prediction accuracy** in the Order summary: predicted vs actual crew per
+  train, and % right this day / last 7 days.
+- **Home-screen icon** ("240" over a rail; `scripts/make-icons.js`).

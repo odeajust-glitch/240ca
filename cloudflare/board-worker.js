@@ -1,7 +1,11 @@
 // The line-up snapshot website on Cloudflare (owner, 2026-10-22). Serves the
 // files the board checker uploads to the R2 bucket bound as SITE, and keeps
 // phones' turn-alert subscriptions there (POST /push/subscribe), which the
-// board checker reads to send the alerts. Subscriptions are never served. Cloudflare Access (Settings → Domains & Routes → workers.dev →
+// board checker reads to send the alerts. Subscriptions are never served.
+// On a schedule (Settings → Triggers → Cron, every 10 min) it checks the
+// board checker is still publishing and, if not for DOWN_MINUTES (default
+// 30), alerts the owner's phone through ntfy (variable NTFY_TOPIC); again
+// when it's back. Cloudflare Access (Settings → Domains & Routes → workers.dev →
 // Enable Cloudflare Access) asks each visitor for an allowed email and a
 // one-time code before a request reaches this code.
 //
@@ -67,7 +71,34 @@ async function subscribe(request, env) {
   return json({ ok: true, turns, prefs });
 }
 
+// The board checker is down when the site hasn't been published for a while
+// (it publishes after every check). status/down.json remembers that the
+// alert went out, so it's sent once, and "back" once.
+async function watchChecker(env) {
+  if (!env.NTFY_TOPIC) return;
+  const idx = await env.SITE.get('data/index.json');
+  if (!idx) return;
+  let at;
+  try { at = Date.parse((await idx.json()).generatedAt); } catch { return; }
+  const mins = Math.round((Date.now() - at) / 60000);
+  const limit = Number(env.DOWN_MINUTES) || 30;
+  const down = await env.SITE.head('status/down.json');
+  const when = new Date(at).toLocaleString('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', month: 'short', day: 'numeric' });
+  const say = (title, body) => fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body, headers: { Title: title, Priority: 'high' } });
+  if (mins >= limit && !down) {
+    await say('Board checker is down', `No board check since ${when} (${mins} min). The laptop may be off, stuck, or waiting for a Microsoft sign-in.`);
+    await env.SITE.put('status/down.json', JSON.stringify({ since: at, alerted: Date.now() }));
+  } else if (mins < limit && down) {
+    await say('Board checker is back', `Checking again (last check ${when}).`);
+    await env.SITE.delete('status/down.json');
+  }
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(watchChecker(env));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/push/subscribe') {
@@ -84,7 +115,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });

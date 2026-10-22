@@ -54,6 +54,29 @@ Deploy).
   someone ahead on/off rest (SR/SD only), call moves ≥ N min. Works on
   Android; iPhone only from the home-screen icon (on-screen steps).
 
+**Added 2026-10-22 evening (owner picked #1, #2, #6, #7, #8 of my ideas):**
+- #1 "When does this turn go?" on the site: `whenYouGo` (site.js) runs the
+  engine with `me` for each Chain Gang CO turn, returning turns and every
+  lined-up conductor; engineers get their train/call. Newest check only →
+  `data/whengo.json`; turn panel shows it on the newest snapshot.
+- #2 Checker health: `status` in index.json (last sign-in, restarts today
+  from restarts.log), shown under "Updated". Worker `scheduled()` (cron
+  */10, vars NTFY_TOPIC, DOWN_MINUTES=30) ntfy "down"/"back", note in
+  `status/down.json` (never served; deployR2 never deletes `status/`).
+  ❓ Owner must add the variable + cron trigger (CLOUDFLARE.md §8).
+- #6 Prediction accuracy: line-up / Mac rows carry `pred` {co, en} (not
+  `known` rows, not S5); BoardTrains keeps the last before on duty
+  (`r.predicted`), `predHit` vs the Call Board crew; Order summary tiles
+  (this day, 7 days) + story line. FORMAT 8 (rebuilds days once).
+- #7 Icon: `scripts/make-icons.js` → public/board-icon-{180,192,512}.png.
+- #8 Share links `#turn=SR07`, `#train=M38261-22` (navigator.share or copy).
+- **Saved for later (owner): #5 a possible-runaround log** — page listing
+  trains that went to a different pool/turn than the sequence (engine
+  `flags` rule 'pool'), each linked to its snapshot. Owner wants to expand
+  on it before building; earlier scope note said "only when do I go".
+- Not picked: #3 calendar export, #4 Article 18.6(b) rep alert, #9 weekly
+  summary.
+
 **Waiting on the owner / to watch:**
 - ❓ Did a fresh sign-in restart CN's 24 h? (window: "since the last sign-in")
 - ❓ Auto sign-in when SR03 goes on duty: seen working yet?

@@ -47,12 +47,12 @@ test('R2 publish uploads only changed files and removes ones the site dropped', 
   fs.mkdirSync(path.join(dir, 'data'));
   fs.writeFileSync(path.join(dir, 'index.html'), '<p>page</p>');
   fs.writeFileSync(path.join(dir, 'data', 'index.json'), '{"days":[]}');
-  const bucket = fakeBucket({ 'index.html': '<p>page</p>', 'data/2026-09-01.json': 'old', 'subs/abc.json': '{"turns":["SR03"]}' });
+  const bucket = fakeBucket({ 'index.html': '<p>page</p>', 'data/2026-09-01.json': 'old', 'subs/abc.json': '{"turns":["SR03"]}', 'status/down.json': '{}' });
   const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
   const sent = await deployR2({ dir, r2, fetchImpl: bucket.fetchImpl });
   assert.deepEqual(sent, { ok: true, uploaded: 1, removed: 1 });
   // Phones' alert subscriptions (subs/) are never touched by the site mirror.
-  assert.deepEqual([...bucket.objects.keys()].sort(), ['data/index.json', 'index.html', 'subs/abc.json']);
+  assert.deepEqual([...bucket.objects.keys()].sort(), ['data/index.json', 'index.html', 'status/down.json', 'subs/abc.json']);
   assert.ok(bucket.calls.includes('PUT /board-site/data/index.json'));
   // Nothing changed: nothing goes up.
   assert.deepEqual(await deployR2({ dir, r2, fetchImpl: bucket.fetchImpl }), { ok: true, uploaded: 0, removed: 0 });
@@ -118,4 +118,39 @@ test('the Worker keeps turn-alert subscriptions and never serves them', async ()
   res = await post({ subscription, turns: [] });
   assert.equal(res.status, 200);
   assert.equal(store.size, 0);
+});
+
+// Owner, 2026-10-22: alert my phone when the board checker stops checking.
+test('the Worker alerts once when the checker is down, and once when it is back', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map();
+  const obj = (k) => store.has(k) && { httpEtag: '"e"', writeHttpMetadata: () => {}, body: store.get(k), json: async () => JSON.parse(store.get(k)) };
+  const env = { NTFY_TOPIC: 'my-topic', SITE: {
+    get: async (k) => obj(k) || null, head: async (k) => obj(k) || null,
+    put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+  } };
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => { sent.push([url, opts.headers.Title, opts.body]); return { ok: true }; };
+  const run = async () => { let p; await worker.scheduled({}, env, { waitUntil: (x) => { p = x; } }); await p; };
+  try {
+    const published = (minsAgo) => store.set('data/index.json', JSON.stringify({ generatedAt: new Date(Date.now() - minsAgo * 60000).toISOString() }));
+    published(10); await run();
+    assert.deepEqual(sent, []); // fine
+    published(45); await run(); await run();
+    assert.equal(sent.length, 1); // down: said once
+    assert.equal(sent[0][0], 'https://ntfy.sh/my-topic');
+    assert.equal(sent[0][1], 'Board checker is down');
+    assert.match(sent[0][2], /No board check since .* \(45 min\)/);
+    published(2); await run();
+    assert.equal(sent.length, 2);
+    assert.equal(sent[1][1], 'Board checker is back');
+    assert.ok(!store.has('status/down.json'));
+    // The note is never served.
+    store.set('status/down.json', '{}');
+    assert.equal((await worker.fetch(new Request('https://b.x.workers.dev/status/down.json'), env)).status, 404);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

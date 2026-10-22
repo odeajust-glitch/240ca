@@ -445,7 +445,7 @@ async function publishSite(changed) {
     const dir = path.join(OUT_DIR, 'site');
     // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
     const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, status: checkerStatus() });
     const sent = await publishSiteDir(dir, settings);
     if (sent.ok) site.due = false;
     console.log(sent.ok ? `[${stamp()}] Snapshot website updated (${sent.where}).` : `[${stamp()}] Snapshot website not updated (${sent.where}): ${sent.message}`);
@@ -492,6 +492,18 @@ async function sendTurnAlerts(states, lineupRead) {
   } catch (err) {
     console.log(`[${stamp()}] Turn alerts not sent: ${err.message}`);
   }
+}
+
+// The board checker's health for the site (owner, 2026-10-22): when the last
+// Microsoft sign-in was, and how often the watchdog restarted it today.
+function checkerStatus() {
+  const today = new Date().toLocaleDateString('en-CA');
+  let restartsToday = 0;
+  try {
+    restartsToday = fs.readFileSync(path.join(OUT_DIR, 'restarts.log'), 'utf8').split('\n')
+      .filter((l) => l.startsWith(today) && /looks stuck|Restarting:/.test(l)).length;
+  } catch { /* no restarts yet */ }
+  return { lastSignInAt: SignIn.loadState(SIGNIN_FILE).lastAt || null, restartsToday };
 }
 
 // Deletes day folders older than BOARD_HISTORY_DAYS (default 90; 0 keeps all).

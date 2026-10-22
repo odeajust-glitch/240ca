@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Line-up">
+<link rel="apple-touch-icon" href="board-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -105,6 +107,12 @@
   .alertopts label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
   .alertopts select { font: inherit; padding: 2px 4px; }
   .alertopts[hidden] { display: none; }
+  .whengo { padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); background: var(--go-tint); }
+  .whengo[hidden] { display: none; }
+  .whengo h3 { margin: 0 0 4px; }
+  .whengo p { margin: 2px 0; }
+  .sharebtn { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+  .status-line { font-size: 12px; color: var(--soft); }
   .tp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
   .tp > div { min-width: 0; padding: 12px 14px; }
   .tp > div + div { border-left: 1px solid var(--rule-soft); }
@@ -570,7 +578,8 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnclose" type="button">Close</button></div></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnshare" type="button">🔗 Share</button><button id="turnclose" type="button">Close</button></div></header>
+    <div id="whengo" class="whengo" hidden></div>
     <div id="alertopts" class="alertopts" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
     <div class="tp"><div><h3>Current snapshot</h3>${here}</div>
@@ -649,6 +658,16 @@ function story(r) {
   if (r.onDuty && !r.firstOrder) sum.push('Never seen as ORD: it went from planned to on duty between two checks.');
   if (r.onDuty && r.leadMin != null) sum.push(`First seen ${dur(r.leadMin)} before going on duty.`);
   if (r.timeOnDuty != null) sum.push(`On duty ${esc(dt(r.onDuty))} → off duty in Toronto ${esc(dt(r.offDuty))}: <b>${dur(r.timeOnDuty)}</b> on duty.`);
+  // Predicted crew vs who went (owner, 2026-10-22).
+  if (r.predicted) {
+    const p = r.predicted;
+    const said = [p.en, p.co].filter(Boolean).join(' + ');
+    const h = r.predHit;
+    const mark = (ok) => (ok == null ? ' <span class="muted">(not predicted)</span>' : ok ? ' <span class="ok">✓</span>' : ' <span class="bad">✗</span>');
+    sum.push(h ? `Predicted crew (as of ${esc(dt(p.taken))}): <b>${esc(said)}</b>; went: <b>${esc([h.actual.en, h.actual.co].filter(Boolean).join(' + ') || '—')}</b>. Conductor${mark(h.co)} · engineer${mark(h.en)}`
+      : `Predicted crew (as of ${esc(dt(p.taken))}): <b>${esc(said)}</b>; not on duty yet.`);
+  }
+  sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
   if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? 'no rested Sarnia crew was in the bunkhouse' : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
   return `<tr class="story"><td colspan="10"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
 }
@@ -674,6 +693,12 @@ function ordersView(all, day, openId, find, from = 'all') {
   const changed = rows.filter((r) => r.orderChanges > 0).length;
   const tod = rows.filter((r) => r.timeOnDuty != null).map((r) => r.timeOnDuty);
   const flagged = rows.filter((r) => r.flag);
+  // How often the predicted crew was right (owner, 2026-10-22): this day and
+  // the 7 days up to it, conductors and engineers counted separately.
+  const score = (list, k) => { const s = list.map((r) => r.predHit && r.predHit[k]).filter((x) => x != null); return { hit: s.filter(Boolean).length, n: s.length }; };
+  const week = all.filter((r) => r.day <= day && r.day > new Date(Date.parse(day + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10));
+  const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}%` : '—');
+  const acc = { co: score(rows, 'co'), en: score(rows, 'en'), wco: score(week, 'co'), wen: score(week, 'en') };
   const w = when(day + ' 0000');
   const q = find.trim().toUpperCase();
   const body = rows.map((r) => {
@@ -714,6 +739,12 @@ function ordersView(all, day, openId, find, from = 'all') {
       <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
       <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
     </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${pct(acc.co)} <small>${acc.co.hit} / ${acc.co.n}</small></div><div class="l">Conductor predicted right (this day)</div></div>
+      <div class="stat"><div class="v">${pct(acc.en)} <small>${acc.en.hit} / ${acc.en.n}</small></div><div class="l">Engineer predicted right (this day)</div></div>
+      <div class="stat"><div class="v">${pct(acc.wco)} <small>${acc.wco.hit} / ${acc.wco.n}</small></div><div class="l">Conductor right, last 7 days</div></div>
+      <div class="stat"><div class="v">${pct(acc.wen)} <small>${acc.wen.hit} / ${acc.wen.n}</small></div><div class="l">Engineer right, last 7 days</div></div>
+    </div>
     <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
       <tbody>${body}</tbody></table></div>
@@ -727,6 +758,20 @@ const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
 const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
   .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
 const heldKey = (r) => `${r.id} ${r.month}`;
+
+// A link straight to a turn or a train (owner, 2026-10-22): #turn=SR07,
+// #train=M38261-22. The phone's share sheet when there is one, else copied.
+async function shareLink(hash, title, button) {
+  const url = `${location.origin}${location.pathname}${hash}`;
+  try {
+    if (navigator.share) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    if (button) { const was = button.textContent; button.textContent = '✓ Link copied'; setTimeout(() => { button.textContent = was; }, 2000); }
+  } catch (e) { /* cancelled */ }
+}
+
+// "When does this turn go?" from the newest check (data/whengo.json).
+const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 // Turn alerts (owner, 2026-10-22): "Get alerts" on a turn subscribes this
 // phone (web push, no app) and tells the site which turns it wants
@@ -1011,6 +1056,15 @@ source().then(async (src) => {
     const u = document.getElementById('updated');
     u.hidden = false;
     u.textContent = 'Updated ' + new Date(idx.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    // The board checker's own health (owner, 2026-10-22).
+    const st = idx.status;
+    let line = document.getElementById('checkerstatus');
+    if (st && !line) { line = document.createElement('div'); line.id = 'checkerstatus'; line.className = 'status-line'; u.after(line); }
+    if (st && line) {
+      const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
+      line.textContent = [st.lastSignInAt ? `Microsoft sign-in ${ago(st.lastSignInAt)}` : null,
+        st.restartsToday != null ? `${st.restartsToday} automatic restart${st.restartsToday === 1 ? '' : 's'} today` : null].filter(Boolean).join(' · ');
+    }
   };
   showUpdated(src.index);
   const daySel = document.getElementById('day');
@@ -1125,6 +1179,20 @@ source().then(async (src) => {
     if (focus) {
       document.getElementById('turnclose').onclick = () => setFocus('');
       wireAlerts(focus);
+      document.getElementById('turnshare').onclick = (e) => shareLink(`#turn=${encodeURIComponent(focus)}`, `Turn ${focus}`, e.currentTarget);
+      // The answer is about now: only on the newest snapshot.
+      if (atNewest) {
+        const want = focus;
+        whenGo().then((w) => {
+          const box = document.getElementById('whengo');
+          if (!box || want !== focus || !w) return;
+          const lines = w.turns && w.turns[want];
+          box.hidden = false;
+          box.innerHTML = `<h3>When ${esc(want)} goes <span class="muted">(as of ${esc(when(w.taken).time)})</span></h3>`
+            + (lines ? lines.map((l, i) => `<p>${i ? '' : '<b>'}${markTurn(l)}${i ? '' : '</b>'}</p>`).join('')
+              : '<p>Not lined up on a train and not in the Sarnia Chain Gang line right now (working, away, or off), or not a turn the board checker follows.</p>');
+        });
+      }
       const want = focus;
       src.turns().then((all) => {
         const box = document.getElementById('turnhist');
@@ -1313,6 +1381,7 @@ source().then(async (src) => {
     find.onchange = () => { order.find = find.value; renderOrders(); };
     view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { order.open = order.open === tr.dataset.key ? null : tr.dataset.key; order.find = ''; renderOrders(); }; });
     view.querySelectorAll('.story button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); setMode(false); jumpTo(b.dataset.taken); }; });
+    view.querySelectorAll('.story button[data-share]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); shareLink(`#train=${encodeURIComponent(b.dataset.share.replace(/\s+/g, '-'))}`, `Train ${b.dataset.share}`, b); }; });
     const open = view.querySelector('tr.open');
     if (open && match) open.scrollIntoView({ block: 'center' });
   }
@@ -1329,7 +1398,12 @@ source().then(async (src) => {
 
   // The landing is Current. A link like #2026-10-15-0815 opens that
   // snapshot; #orders the order summary; #14h the 14-hour list.
-  const wantOrders = location.hash === '#orders';
+  // Shared links: #turn=SR07 opens that turn on Current; #train=M38261-22
+  // opens that train in the Order summary.
+  const shared = /^#(turn|train)=(.+)$/.exec(location.hash);
+  if (shared && shared[1] === 'turn') setFocus(decodeURIComponent(shared[2]));
+  if (shared && shared[1] === 'train') order.find = decodeURIComponent(shared[2]).replace(/-/g, ' ');
+  const wantOrders = location.hash === '#orders' || (shared && shared[1] === 'train');
   const wantHeld = location.hash === '#14h';
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }

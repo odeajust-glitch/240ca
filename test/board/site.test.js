@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { buildSite, deploySite, snapshotOf, torontoCrews, crewsOnTheWay } = require('../../lib/board/site');
+const { buildSite, deploySite, snapshotOf, torontoCrews, crewsOnTheWay, whenYouGo } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
 const BoardTrains = require('../../public/board-trains');
 
@@ -91,7 +91,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
@@ -304,6 +304,35 @@ test('Mac yard: crews on their way are estimated from their Sarnia on-duty time'
   ];
   const got = crewsOnTheWay(board, [{ pos: 1, co: 'SA06', en: 'S106', restUntil: null }]);
   assert.deepStrictEqual(got.map((c) => [c.co, c.offDuty - c.onDuty, c.restUntil - c.offDuty]), [['SR09', 180, 480], ['SR04', 480, 480]]);
+});
+
+// Owner, 2026-10-22: the laptop's "when do I go" for any turn on the site.
+test('site: when do I go, for every turn the newest check can answer', () => {
+  const w = whenYouGo(JSON.parse(fixture('2026-10-15b.json')), null);
+  assert.equal(w.taken, '2026-10-15 0815');
+  assert.match(w.turns.SR03.join(' '), /^Not on the line-up yet .*Your own rest is up at 15th 1015/);
+  assert.deepStrictEqual(w.turns.SR04, ['E27861 15: called ~15th 1355, on duty 15th 1555 (planned, so times are estimates).']);
+  assert.match(w.turns.SA07[0], /^A42431 15: called ~15th 0845/); // an A turn lined up
+  assert.match(w.turns.SR12[0], /^On your way home on M38331 14 .*the site updates then\./);
+  assert.ok(!('SR01' in w.turns)); // away in Toronto, not coming home yet: nothing to say
+});
+
+// Owner, 2026-10-22: how often the predicted crew was right.
+test('orders: predicted crew is scored against who went on duty', () => {
+  const r = { onDuty: '2026-10-22 1445', crew: 'EN SD05 · CO SR07', predicted: { co: 'SR03', en: 'SD05', taken: '2026-10-22 1200' } };
+  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' } });
+  assert.equal(BoardTrains.predHit({ ...r, onDuty: null }), null);
+  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: 'x' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' } });
+  // Tracked from the line-up rows' predictions, the last one before on duty.
+  const st = BoardTrains.track([
+    { taken: '2026-10-22 1100', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'PLN', order: '22nd 1500', pred: { co: 'SR03', en: 'SD05' } }], onDuty: [] },
+    { taken: '2026-10-22 1300', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'ORD', order: '22nd 1500', pred: { co: 'SR07', en: 'SD05' } }], onDuty: [] },
+    { taken: '2026-10-22 1450', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'ORD', order: '22nd 1500', pred: null }],
+      onDuty: [{ train: 'M38261 22', station: 'SARNIA', onDuty: '22nd 1445', crew: 'EN SD05 · CO SR07' }] },
+  ]);
+  const row = BoardTrains.summarize(st).find((x) => x.id === 'M38261 22');
+  assert.deepStrictEqual(row.predicted, { co: 'SR07', en: 'SD05', taken: '2026-10-22 1300' });
+  assert.deepStrictEqual([row.predHit.co, row.predHit.en], [true, true]);
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {

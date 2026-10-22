@@ -81,6 +81,9 @@
             delete r.gone;
           }
           if (from === 'mac') r.avail = avail;
+          // The crew the site predicted, last seen before it went on duty
+          // (owner, 2026-10-22: how often the prediction was right).
+          if (t.pred && !r.onDuty) r.predicted = { ...t.pred, taken: s.taken };
           if (t.status === 'ORD') {
             if (!r.firstOrder) {
               r.firstOrder = r.order = at;
@@ -182,16 +185,27 @@
     return { co, en: turnOf(r.crew, 'EN') };
   }
 
+  // Predicted vs actual crew, once it's on duty: { co, en } each true/false
+  // (null when that one wasn't predicted or isn't shown on the Call Board).
+  const crewTurn = (crew, crafts) => { const m = new RegExp(`(?:^|· )(?:${crafts}) ([A-Z0-9]+)`).exec(crew || ''); return m ? m[1] : null; };
+  function predHit(r) {
+    if (!r.onDuty || !r.predicted || !r.crew) return null;
+    const actual = { co: crewTurn(r.crew, 'CO'), en: crewTurn(r.crew, 'EN|LE') };
+    const hit = (k) => (r.predicted[k] && actual[k] ? r.predicted[k] === actual[k] : null);
+    return { co: hit('co'), en: hit('en'), actual };
+  }
+
   function summarize(state) {
     return Object.values(state.trains).map((r) => {
       const due = r.onDuty || r.order || r.plan;
       return { ...r, from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
         leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken),
+        predHit: predHit(r),
         ...heldOf(r, state) };
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }
 
-  const api = { track, summarize, resolve, trainKey, toMin, off, FLAG_WAIT, HELD_LIMIT };
+  const api = { predHit, track, summarize, resolve, trainKey, toMin, off, FLAG_WAIT, HELD_LIMIT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTrains = api;
 })(this);
