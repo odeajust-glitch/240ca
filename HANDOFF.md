@@ -49,6 +49,11 @@ every session**: state, decisions, what you tried, what's next.
   added (owner): checker polls ntfy topic `<BOARD_NTFY_TOPIC>-signin` every
   minute (`lib/board/remote.js`); a "signin" message ≤ 15 min old = R. Not yet
   tried on the laptop (sandbox can't reach ntfy.sh). 72 tests.
+- AI review false alarms 2026-10-21 2229 (Haiku): read M39491's third digit
+  as 9 (it's M394, even) and recounted road day 21's A trains from the visible
+  ones. Prompt now spells out manifest digits with examples and says the
+  notes' road-day counts are final (incl. B out → A used up, remembered
+  trains). If Haiku keeps misreading, try `BOARD_AI_MODEL=claude-sonnet-5-5`.
 - Owner asked about moving the website off Netlify; nothing was in the docs.
   Owner has details to give.
 
