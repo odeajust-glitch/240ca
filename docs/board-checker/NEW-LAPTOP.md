@@ -87,6 +87,11 @@ Optional `.env` lines:
   phone and subscribe to the same name, and the number to match (and "sign in
   now") pops up there. Anyone who knows the name can read those alerts, so
   make it hard to guess. Nothing else is ever sent there.
+- **From your phone** (owner, 2026-10-22): in the ntfy app, subscribe to a
+  second topic named your `BOARD_NTFY_TOPIC` + `-signin`, and send it the
+  message `signin`. Within a minute the checker does what R does and alerts
+  you that it's starting. (`BOARD_NTFY_COMMAND_TOPIC=` picks another name.)
+  Requests over 15 minutes old are ignored.
 At start-up the window says which of these it found. Test ntfy on its own:
 `curl -d test ntfy.sh/<your topic>` in a Command Prompt should pop up on the
 phone. The window says how long the last sign-in lasted (`BoardChecker\ms-signin.json`).

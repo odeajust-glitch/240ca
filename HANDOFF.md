@@ -45,6 +45,10 @@ every session**: state, decisions, what you tried, what's next.
   cause unknown (topic not set/mismatched, or ntfy blocked?). Added: `MS_EMAIL`
   fill, a start-up line saying what was found in .env, and "Phone alert sent"
   / "not sent: why" lines. ❓ Owner to report those lines.
+- **ntfy curl test worked on the owner's phone.** Remote forced sign-in
+  added (owner): checker polls ntfy topic `<BOARD_NTFY_TOPIC>-signin` every
+  minute (`lib/board/remote.js`); a "signin" message ≤ 15 min old = R. Not yet
+  tried on the laptop (sandbox can't reach ntfy.sh). 72 tests.
 - Owner asked about moving the website off Netlify; nothing was in the docs.
   Owner has details to give.
 

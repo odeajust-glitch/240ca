@@ -9,8 +9,9 @@
 //   node scripts/board-auto.js --me SR03 --every 20   re-check every 20 min
 //                                                     (beeps when your answer changes)
 //
-// Press R in this window for a fresh Microsoft sign-in after the current
-// check, so the ~24 h CN sign-in restarts before you leave; it also does one
+// Press R in this window (or publish "signin" to the ntfy topic
+// <BOARD_NTFY_TOPIC>-signin from your phone) for a fresh Microsoft sign-in
+// after the current check, so the ~24 h CN sign-in restarts before you leave; it also does one
 // by itself when your turn shows on duty on the Sarnia Call Board
 // (lib/board/signin.js). You approve it in Authenticator either way.
 //
@@ -34,6 +35,7 @@
 const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, browser } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
+const Remote = require('../lib/board/remote');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -640,11 +642,42 @@ async function clearSignInCookies(context) {
 // Signs out of Microsoft (and CATS's Microsoft gateway) in the checker's
 // browser and opens CATS again, so Microsoft asks for a full sign-in and its
 // ~24 h starts over.
+let signingIn = false;
 async function freshSignIn(page, why) {
   console.log(`\n[${stamp()}] Fresh Microsoft sign-in: ${why}.`);
+  signingIn = true;
   await clearSignInCookies(page.context());
   await goto(page, catsUrl);
-  await waitForMainMenu(page, 'Approve the Microsoft sign-in in Authenticator; the script carries on after that.');
+  try {
+    await waitForMainMenu(page, 'Approve the Microsoft sign-in in Authenticator; the script carries on after that.');
+  } finally {
+    signingIn = false;
+  }
+}
+
+// The phone's way of pressing R (lib/board/remote.js): looks at the ntfy
+// command topic every minute. Requests during a sign-in are dropped.
+function watchPhone() {
+  const topic = Remote.commandTopic();
+  if (!topic) return null;
+  let since = Date.now() / 1000;
+  let busy = false;
+  let failing = false;
+  setInterval(async () => {
+    if (busy) return;
+    busy = true;
+    const r = await Remote.pollSignIn({ topic, since });
+    busy = false;
+    since = r.last;
+    if (r.error && !failing) console.log(`  (can't read sign-in requests from the phone: ${r.error})`);
+    failing = !!r.error;
+    if (!r.asked || signInAsked || signingIn) return;
+    signInAsked = true;
+    console.log(`\n[${stamp()}] Your phone asked for a fresh Microsoft sign-in ${wake ? 'now' : 'after this check'}.`);
+    alertPhone('Board checker: starting a fresh Microsoft sign-in. Approve it in Authenticator.');
+    if (wake) wake();
+  }, 60000).unref();
+  return topic;
 }
 
 // R in this window: a fresh sign-in after the current check. Ctrl+C still stops.
@@ -756,8 +789,10 @@ async function main() {
   const page = context.pages()[0] || (await context.newPage());
   watchFramedLogin(page);
   listenForKeys();
+  const commands = watchPhone();
   console.log(`Microsoft sign-in: email ${MS_EMAIL ? 'from .env' : 'typed by you'}, password ${MS_PASSWORD ? 'from .env' : 'typed by you'};`
-    + ` phone alerts ${(process.env.BOARD_NTFY_TOPIC || '').trim() ? 'on (ntfy)' : 'off (no BOARD_NTFY_TOPIC in .env)'}. Press R for a fresh sign-in.`);
+    + ` phone alerts ${(process.env.BOARD_NTFY_TOPIC || '').trim() ? 'on (ntfy)' : 'off (no BOARD_NTFY_TOPIC in .env)'}.`
+    + ` Press R for a fresh sign-in${commands ? `, or send "signin" to ntfy topic ${commands} from your phone` : ''}.`);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   const signIn = CATS_LOGIN
