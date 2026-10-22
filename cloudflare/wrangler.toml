@@ -1,9 +1,20 @@
 # Optional: deploy the Worker with `npx wrangler deploy` from this folder
-# instead of pasting board-worker.js into the dashboard.
+# instead of pasting board-worker.js into the dashboard. Kept in step with
+# the dashboard settings (docs/board-checker/CLOUDFLARE.md §3 and §8).
 name = "board"
 main = "board-worker.js"
 compatibility_date = "2026-10-01"
 
+# NTFY_TOPIC (and the optional DOWN_MINUTES, default 30) are set in the
+# dashboard: Worker → Settings → Variables and Secrets. They stay out of this
+# file because the ntfy topic works like a password (anyone who knows it can
+# read the alerts). keep_vars stops a wrangler deploy from deleting them.
+keep_vars = true
+
 [[r2_buckets]]
 binding = "SITE"
 bucket_name = "board-site"
+
+# "Board checker is down" alert: the Worker looks every 10 minutes (§8).
+[triggers]
+crons = ["*/10 * * * *"]
