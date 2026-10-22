@@ -1,12 +1,72 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-22 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything; the board-checker laptop runs it)
+Last updated: 2026-10-22 (evening) · Branch: **`claude/vigilant-planck-zawrj4`**
+(has everything; the board-checker laptop runs it) · 87 tests (`npm test`)
 
-**If you are a new Claude session:** read this file top to bottom, then
-[docs/board-checker/PLAN.md](docs/board-checker/PLAN.md). Don't start coding
-until the "Next action" below is unblocked. **Update this file at the end of
-every session**: state, decisions, what you tried, what's next.
+**If you are a new Claude session:** read the "Start here" section below,
+then the dated notes under it as needed (newest first). **Only one Claude
+session at a time may change the board checker / website.** Update this file
+at the end of every session: state, decisions, what you tried, what's next.
+
+## ▶ Start here (2026-10-22): where things stand
+
+**Owner:** Justin, CN conductor on **SR03** (Chain Gang), union rep, Sarnia.
+Non-technical, on Windows: give exact click-by-click / copy-paste steps, use
+Command Prompt syntax (`%USERPROFILE%`), not PowerShell's, unless they say so.
+
+**Running on the dedicated laptop** (code `C:\BoardChecker-code`, data
+`C:\Users\odeaj\BoardChecker`, settings in its `.env`):
+```
+cd C:\BoardChecker-code
+git pull
+node scripts/board-watchdog.js --me SR03 --every 5
+```
+The watchdog runs `board-auto.js` and restarts it (with its Edge window) if
+it hangs; `scripts/start-board-checker.cmd` (Startup folder) does the same.
+After pulling, restarting is needed; after a Worker change, the owner must
+re-paste `cloudflare/board-worker.js` into Cloudflare (board → Edit code →
+Deploy).
+
+**What it does now:**
+- Checks CATS every 5 min in Edge: Call Board, pools 23/19/21/27/25/26,
+  line-up 41, Toronto bunkhouse 28 + Mac yard line-up 41. Answers "when do I
+  go" (engine.js), remembers each road day's trains (`roadday.js`).
+- **Microsoft sign-in:** CATS sign-on, Microsoft email (`MS_EMAIL`) and
+  password (`MS_PASSWORD`) are filled from `.env`; the approval is always
+  the owner's phone (Authenticator). Fresh sign-in on **R** in the window,
+  on `signin` sent to ntfy topic `<BOARD_NTFY_TOPIC>-signin`, and when
+  SR03 shows on duty in Sarnia. ntfy alerts (`BOARD_NTFY_TOPIC`) for
+  sign-ins. Automating the second factor (TOTP) was **refused** by the
+  session's safety check: don't retry unless the owner explicitly changes it.
+- **Website: https://board.sarniaboard.workers.dev** (Cloudflare Worker +
+  R2 bucket `board-site`, free). Uploads after **every** check
+  (`R2_ACCOUNT_ID/R2_BUCKET/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY` in `.env`).
+  Email login (Cloudflare Access) is set up but **switched off** by the
+  owner: the site is open to anyone with the link. Old
+  boardtestsa.netlify.app **redirects** there (keep that Netlify site; keep
+  NETLIFY_ lines out of `.env`). Tabs: Current, Snapshots, Order summary,
+  Article 18.6(b) (grievance letters, names locked with `BOARD_NAMES_KEY`).
+- **Toronto (Mac yard) table** predicts crews per train: bunkhouse first,
+  then crews still on their way (estimate: on duty + 8 h train / 3 h
+  deadhead, then 8 h rest); crews on rest at a train's call are skipped.
+- **Turn alerts on phones** (web push, free): Find a turn → 🔔 Get alerts.
+  Per turn: lined up, ordered, on duty, mandatory reset (until 0559),
+  someone ahead on/off rest (SR/SD only), call moves ≥ N min. Works on
+  Android; iPhone only from the home-screen icon (on-screen steps).
+
+**Waiting on the owner / to watch:**
+- ❓ Did a fresh sign-in restart CN's 24 h? (window: "since the last sign-in")
+- ❓ Auto sign-in when SR03 goes on duty: seen working yet?
+- ❓ Why the checker hung: next `[watchdog …] looks stuck` line + lines above
+  it, and `BoardChecker\restarts.log`.
+- ❓ Confirm Toronto trip timings (read as train 8 h, deadhead 3 h).
+- ❓ AI review (Haiku): still false alarms after the prompt fix?
+- ⚠ The owner pasted `.env` (CATS + CN Microsoft passwords, Anthropic key,
+  Netlify token, names passcode) and an R2 key into the chat on 2026-10-22;
+  told to change all of them. **Never ask for `.env` contents**; use the
+  `findstr /B /C:"NAME=" …` ok/MISSING check.
+- Still open from CHECKUP.md: #6, #7, #10, #11. RailroadTracker relay not
+  switched on.
 
 ## 2026-10-22: road-day memory (CHECKUP #5, built) + Microsoft sign-in question
 - **Built:** `lib/board/roadday.js` keeps every Sarnia train seen on the Call
