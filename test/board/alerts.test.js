@@ -141,6 +141,28 @@ test('turn alerts: a turn put on a mandatory reset (until 0559)', () => {
   assert.deepEqual(phoneEvents(r.events, { turns: ['SR03'], prefs: { SR03: { reset: false } } }, {}, {}, { lineupRead: false }).events, []);
 });
 
+// Owner, 2026-10-22: tell me when my board position changes, and why
+// ("SR07 (train)").
+test('turn alerts: board position changes, with who left or came in ahead', () => {
+  const now = at(2026, 10, 22, 10, 0);
+  const row = (turn, pos, o = {}) => ({ craft: 'CO', turn, pos, restUntil: null, statusUntil: null, rn: '', ...o });
+  const states = (gang, callBoard = []) => turnStates({ now, predictions: [] }, callBoard, { chainGang: gang });
+  let r = turnEvents({}, states([row('SR07', 1), row('SR04', 2), row('SR03', 3)]), { lineupRead: false });
+  assert.deepEqual(r.events, []); // first look: just learns positions
+  // SR07 out working on M38261, SR04 on duty on the Call Board: SR03 moves up two.
+  const onBoard = { symbol: 'M39671', originDay: '21', station: 'SARNIA', onDuty: now, crew: [{ craft: 'CO', turn: 'SR04' }] };
+  r = turnEvents(r.told, states([row('SR07', 999, { working: true, workingOn: 'M38261' }), row('SR04', 999, { working: true }), row('SR03', 1)], [onBoard]), { lineupRead: false });
+  const pos = r.events.filter((e) => e.kind === 'position').map((e) => e.text);
+  assert.deepEqual(pos, ['SR03: now position 001 (was 003). Moved up: SR07 (M38261) and SR04 (M39671 21) went out.']);
+  // A returning turn placed ahead: moved down. Same position next check: nothing.
+  r = turnEvents(r.told, states([row('SR12', 1), row('SR03', 2)]), { lineupRead: false });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'position').map((e) => e.text), ['SR03: now position 002 (was 001). Moved down: SR12 placed ahead of you.']);
+  assert.deepEqual(turnEvents(r.told, states([row('SR12', 1), row('SR03', 2)]), { lineupRead: false }).events, []);
+  // Switched off: not sent.
+  const ev = [{ turn: 'SR03', kind: 'position', text: 'x' }];
+  assert.deepEqual(phoneEvents(ev, { turns: ['SR03'], prefs: { SR03: { position: false } } }, {}, {}, { lineupRead: false }).events, []);
+});
+
 // RFC 8291 appendix A: the worked example, byte for byte.
 test('web push encryption matches the RFC 8291 example', () => {
   const body = encrypt('When I grow up, I want to be a watermelon',

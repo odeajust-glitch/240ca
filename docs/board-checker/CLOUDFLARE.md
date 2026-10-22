@@ -107,7 +107,8 @@ and engineer turns). Free, no app, no message cap (web push).
 - Stop with **🔕 Stop alerts** on the same turn.
 - **Choose what to get, per turn** (owner): under the button, tick **lined
   up**, **ordered**, **on duty**, **put on a mandatory reset** (rest or a
-  hold turn until 0559, any board), (Chain Gang SR/SD turns) **someone ahead
+  hold turn until 0559, any board), **my board position changes** (with who
+  went out ahead of you and on what train, or who was placed ahead), (Chain Gang SR/SD turns) **someone ahead
   goes on rest** (a turn ahead at home goes on rest or a hold turn, so it's
   skipped and you move up), **someone ahead comes off rest** (back in line
   ahead of you), and pick **call time moves …or more**

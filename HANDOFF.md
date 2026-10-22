@@ -70,6 +70,12 @@ Deploy).
   (this day, 7 days) + story line. FORMAT 8 (rebuilds days once).
 - #7 Icon: `scripts/make-icons.js` → public/board-icon-{180,192,512}.png.
 - #8 Share links `#turn=SR07`, `#train=M38261-22` (navigator.share or copy).
+- **Board position alert (owner, same evening):** kind `position`, pref
+  default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
+  `posAhead`; when the position moves: "SR03: now position 001 (was 003).
+  Moved up: SR07 (M38261) and SR04 (M39671 21) went out." / "Moved down:
+  SR12 placed ahead of you." Reason train from Call Board on-duty, else the
+  pool row's "out working on", else line-up. Worker re-paste (prefs).
 - **Saved for later (owner): #5 a possible-runaround log** — page listing
   trains that went to a different pool/turn than the sequence (engine
   `flags` rule 'pool'), each linked to its snapshot. Owner wants to expand
