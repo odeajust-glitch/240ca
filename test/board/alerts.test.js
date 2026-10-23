@@ -198,3 +198,25 @@ test('VAPID: keys made once, header signed for the push service', async () => {
   assert.equal(evil.gone, true);
   assert.ok(pushEndpointOk('https://web.push.apple.com/QW') && !pushEndpointOk('http://fcm.googleapis.com/x'));
 });
+
+// Owner, 2026-10-23: "someone ahead" news only while the turn is on the
+// Chain Gang board at home in Sarnia. Away or on duty it hears nothing, and
+// coming back home it starts fresh rather than comparing with before it left.
+test('turn alerts: someone ahead only while on the Sarnia Chain Gang board', () => {
+  const now = at(2026, 10, 22, 10, 0);
+  const row = (turn, pos, o = {}) => ({ craft: 'CO', turn, pos, restUntil: null, statusUntil: null, rn: '', ...o });
+  const held = row('SR12', 2, { rn: 'HT', statusUntil: at(2026, 10, 23, 5, 59) });
+  const home = (gang, callBoard = []) => turnStates({ now, predictions: [] }, callBoard, { chainGang: gang });
+  let r = turnEvents({}, home([row('SR12', 2), row('SR03', 3)]), { lineupRead: false });
+  // SR03 goes away (lined up on a train home from Toronto): off the Sarnia board.
+  const away = turnStates({ now, predictions: [pred({ turn: 'SR03', engineer: null })] }, [], { chainGang: [held] });
+  r = turnEvents(r.told, away, { lineupRead: false });
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SR03' && e.kind !== 'lineup'), []);
+  // Back home with SR12 still held: no "went on hold" news, it's not new.
+  r = turnEvents(r.told, home([held, row('SR03', 3)]), { lineupRead: false });
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SR03'), []);
+  // On duty per the Call Board while the pool screen still lists the turn: quiet.
+  const onDuty = [board({ crew: [{ craft: 'CO', turn: 'SR03' }] })];
+  r = turnEvents(turnEvents({}, home([row('SR12', 2), row('SR03', 3)], onDuty), { lineupRead: false }).told, home([held, row('SR03', 3)], onDuty), { lineupRead: false });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'aheadRest'), []);
+});
