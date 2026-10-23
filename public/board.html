@@ -148,6 +148,8 @@
   .head .when .num { font: 600 34px/1 var(--mono); margin-left: 6px; }
   .head .screens { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip { font-size: 12px; padding: 2px 8px; border-radius: 3px; background: var(--plan-tint); color: var(--soft); white-space: nowrap; }
+  button.chip { border: 0; font-family: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .sheet.jumped { outline: 2px solid var(--soft); outline-offset: 2px; }
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
   .steps button:disabled { opacity: 0.4; cursor: default; }
@@ -365,6 +367,11 @@
 <script>
 let focus = ''; // the turn being looked for, e.g. "SR03"
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Tapping a screen chip jumps to where that screen shows (owner, 2026-10-23):
+// the section's id, and for a pool screen which pool tab to open.
+const JUMPS = { callBoard: { id: 'sec-callboard' }, chainGang: { id: 'sec-pools', pool: 'Chain Gang' }, aPool: { id: 'sec-pools', pool: 'A pool' },
+  bPool: { id: 'sec-pools', pool: 'B pool' }, sdPool: { id: 'sec-pools', pool: 'SD' }, s1Pool: { id: 'sec-pools', pool: 'S1' }, s3Pool: { id: 'sec-pools', pool: 'S3' },
+  lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' } };
 const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41' };
 
 // "2026-10-15 0815" → parts for display.
@@ -436,7 +443,7 @@ function lineup(s) {
     </div>`;
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
-  return `<section class="sheet"><header><h2>Train line-up · 41</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>
+  return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up · 41</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>
     ${rows}<div class="foot">Crew codes are EN / TRN as CATS shows them. The coloured chip is the pool the crew-calling rules give the train.</div></section>`;
 }
 
@@ -451,7 +458,7 @@ function toronto(s) {
   const readB = (s.screens || []).includes('bunkhouse');
   const readM = (s.screens || []).includes('macLineup');
   if (!readB && !readM) {
-    return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2></header>
+    return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2></header>
       <p class="empty">The Toronto screens (bunkhouse 28 and the Mac yard line-up 41) weren't read in this check.</p></section>`;
   }
   const missing = !readB ? 'The bunkhouse (28) wasn\'t read in this check, so no crews are shown.'
@@ -489,7 +496,7 @@ function toronto(s) {
   const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
   const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
-  return `<section class="sheet"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
+  return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
     ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A crew still on rest at a train's call (2 h before on duty) is skipped and keeps its place for the next train. Off duty = rest − 8 h.</div></section>`;
 }
@@ -508,7 +515,7 @@ function pools(s, pi) {
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
-  return `<section class="sheet"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
+  return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
     <div class="tabs" role="tablist">${tabs}</div>
     <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}</section>`;
 }
@@ -517,7 +524,7 @@ function onDuty(s) {
   if (!s.onDuty.length) return '';
   const rows = s.onDuty.map((t) => `<tr${focus && BoardTurns.turnIn(t.crew, focus) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
     <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div></td></tr>`).join('');
-  return `<section class="sheet"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
+  return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
@@ -1149,7 +1156,10 @@ source().then(async (src) => {
     const agebar = latest
       ? `<div class="agebar" data-live="1"><span class="age" data-age="${esc(lastSeen)}" data-prefix="Last checked "></span>${s.sameUntil ? `<span class="sub">no change since ${esc(w.time)}</span>` : ''}${mode === 'current' ? '' : '<span class="sub">This is the current board.</span>'}</div>`
       : `<div class="agebar old"><span class="age" data-age="${esc(s.taken)}" data-prefix="Taken "></span><span class="sub">Not the current board.</span><button type="button" class="tocurrent" id="tocurrent">Go to current</button></div>`;
-    const screens = ['Call board', ...s.screens.map((k) => SCREENS[k] || k)].map((x) => `<span class="chip">${esc(x)}</span>`).join('');
+    const screens = ['callBoard', ...s.screens].map((k) => {
+      const name = k === 'callBoard' ? 'Call board' : SCREENS[k] || k;
+      return JUMPS[k] ? `<button type="button" class="chip" data-jump="${esc(k)}">${esc(name)}</button>` : `<span class="chip">${esc(name)}</span>`;
+    }).join('');
     const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
     document.getElementById('view').innerHTML = `
       <div class="head">
@@ -1176,6 +1186,18 @@ source().then(async (src) => {
     const upd = document.getElementById('newerbtn');
     if (upd) upd.onclick = () => { location.hash = '#current'; location.reload(); };
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
+    document.querySelectorAll('[data-jump]').forEach((b) => { b.onclick = () => {
+      const j = JUMPS[b.dataset.jump];
+      if (j.pool) {
+        const i = s.pools.findIndex((q) => q.name.startsWith(j.pool));
+        if (i >= 0 && i !== poolTab) { poolTab = i; show(cur, true); }
+      }
+      const el = document.getElementById(j.id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('jumped');
+      setTimeout(() => el.classList.remove('jumped'), 1500);
+    }; });
     if (focus) {
       document.getElementById('turnclose').onclick = () => setFocus('');
       wireAlerts(focus);
