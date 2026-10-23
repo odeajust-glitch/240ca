@@ -114,7 +114,7 @@ and engineer turns). Free, no app, no message cap (web push).
   ahead of you), and pick **call time moves …or more**
   (never, 15 min, 30 min, 1 h, 1½ h, 2 h, 3 h). Defaults: all on, 30 min.
   The two "someone ahead" alerts come only while your turn is on the Chain
-  Gang board at home in Sarnia (not away, not on duty).
+  Gang or SD board at home in Sarnia (not away, not on duty).
   Changes save straight away. Time moves are measured from the call that
   phone was last told of, so slow drifts still add up.
 

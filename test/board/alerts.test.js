@@ -220,3 +220,25 @@ test('turn alerts: someone ahead only while on the Sarnia Chain Gang board', () 
   r = turnEvents(turnEvents({}, home([row('SR12', 2), row('SR03', 3)], onDuty), { lineupRead: false }).told, home([held, row('SR03', 3)], onDuty), { lineupRead: false });
   assert.deepEqual(r.events.filter((e) => e.kind === 'aheadRest'), []);
 });
+
+// Owner, 2026-10-23: the same for SD engineer turns on the Sarnia SD board.
+test('turn alerts: SD board, someone ahead only while home in Sarnia', () => {
+  const now = at(2026, 10, 22, 10, 0);
+  const row = (turn, pos, o = {}) => ({ craft: 'EN', turn, pos, restUntil: null, statusUntil: null, rn: '', ...o });
+  const held = row('SD12', 2, { rn: 'HT', statusUntil: at(2026, 10, 23, 5, 59) });
+  const home = (sd, callBoard = []) => turnStates({ now, predictions: [] }, callBoard, { sd });
+  const sd05 = (r) => r.events.filter((e) => e.turn === 'SD05' && e.kind !== 'lineup');
+  let r = turnEvents({}, home([row('SD12', 2), row('SD05', 3)]), { lineupRead: false });
+  // SD05 away, lined up on a train home from Toronto.
+  r = turnEvents(r.told, turnStates({ now, predictions: [pred({ turn: null, engineer: 'SD05' })] }, [], { sd: [held] }), { lineupRead: false });
+  assert.deepEqual(sd05(r), []);
+  r = turnEvents(r.told, home([held, row('SD05', 3)]), { lineupRead: false });
+  assert.deepEqual(sd05(r), []); // back home: SD12's hold isn't news
+  // On duty per the Call Board while the SD screen still lists it: quiet.
+  const onDuty = [board({ crew: [{ craft: 'EN', turn: 'SD05' }] })];
+  r = turnEvents(turnEvents({}, home([row('SD12', 2), row('SD05', 3)], onDuty), { lineupRead: false }).told, home([held, row('SD05', 3)], onDuty), { lineupRead: false });
+  assert.deepEqual(sd05(r).filter((e) => e.kind === 'aheadRest'), []);
+  // Home and on the board: SD12 going on hold is news for SD05.
+  r = turnEvents(turnEvents({}, home([row('SD12', 2), row('SD05', 3)]), { lineupRead: false }).told, home([held, row('SD05', 3)]), { lineupRead: false });
+  assert.deepEqual(sd05(r).map((e) => e.kind), ['aheadRest']);
+});
