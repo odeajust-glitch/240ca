@@ -70,6 +70,13 @@ Deploy).
   (this day, 7 days) + story line. FORMAT 8 (rebuilds days once).
 - #7 Icon: `scripts/make-icons.js` → public/board-icon-{180,192,512}.png.
 - #8 Share links `#turn=SR07`, `#train=M38261-22` (navigator.share or copy).
+- 2026-10-23 (owner): turn panel Share button removed (train share kept).
+  "Someone ahead" alerts only while the turn is on its Sarnia board (SR or SD),
+  not on duty; leaving the board forgets `ahead`/`pos`. Screen chips jump to
+  their sections. Rescue alerts (pref `rescue`): symbol /^R[A-Z]\d/ on the
+  Sarnia 41 → turns home on Sarnia boards; on the Mac 41 → bunkhouse crews.
+  Once per rescue id (`told[turn].rescues`). Worker must be re-pasted for the
+  `rescue` pref. Not yet seen on a real rescue.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

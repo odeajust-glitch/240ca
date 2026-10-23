@@ -790,7 +790,7 @@ const Alerts = (() => {
   const PREFS_KEY = 'alertPrefs';
   // What each turn's alerts cover on this phone (owner: e.g. only when it's
   // ordered, or only when the time moves by a chosen amount). time: minutes, 0 = never.
-  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, time: 30 };
+  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, time: 30 };
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -1256,7 +1256,7 @@ source().then(async (src) => {
       const TIMES = [[0, 'never'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [90, '1½ h'], [120, '2 h'], [180, '3 h']];
       const covers = (p) => {
         const chain = /^(SR|SD)/.test(turn);
-        const parts = [p.lineup && 'lined up', p.ordered && 'ordered', p.onDuty && 'on duty', p.reset && 'mandatory reset', p.position && 'board position changes', chain && p.aheadRest && 'someone ahead goes on rest', chain && p.aheadBack && 'someone ahead comes off rest', p.time > 0 && `call moves ${TIMES.find(([m]) => m === p.time)?.[1] || `${p.time} min`}+`].filter(Boolean);
+        const parts = [p.lineup && 'lined up', p.ordered && 'ordered', p.onDuty && 'on duty', p.reset && 'mandatory reset', p.position && 'board position changes', p.rescue && 'rescue trains', chain && p.aheadRest && 'someone ahead goes on rest', chain && p.aheadBack && 'someone ahead comes off rest', p.time > 0 && `call moves ${TIMES.find(([m]) => m === p.time)?.[1] || `${p.time} min`}+`].filter(Boolean);
         return parts.length ? parts.join(', ') : 'nothing (all off)';
       };
       const drawOpts = () => {
@@ -1267,6 +1267,7 @@ source().then(async (src) => {
           <label><input type="checkbox" data-k="onDuty" ${p.onDuty ? 'checked' : ''}> on duty</label>
           <label><input type="checkbox" data-k="reset" ${p.reset ? 'checked' : ''}> put on a mandatory reset</label>
           <label><input type="checkbox" data-k="position" ${p.position ? 'checked' : ''}> my board position changes</label>
+          <label><input type="checkbox" data-k="rescue" ${p.rescue ? 'checked' : ''}> a rescue train shows up where I'm waiting</label>
           ${/^(SR|SD)/.test(turn) ? `<label><input type="checkbox" data-k="aheadRest" ${p.aheadRest ? 'checked' : ''}> someone ahead goes on rest</label>
           <label><input type="checkbox" data-k="aheadBack" ${p.aheadBack ? 'checked' : ''}> someone ahead comes off rest</label>` : ''}
           <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>`;

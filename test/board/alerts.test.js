@@ -242,3 +242,32 @@ test('turn alerts: SD board, someone ahead only while home in Sarnia', () => {
   r = turnEvents(turnEvents({}, home([row('SD12', 2), row('SD05', 3)]), { lineupRead: false }).told, home([held, row('SD05', 3)]), { lineupRead: false });
   assert.deepEqual(sd05(r).map((e) => e.kind), ['aheadRest']);
 });
+
+// Owner, 2026-10-23: a rescue train (R + the stalled train's symbol) on the
+// Sarnia line-up (47130) is news for turns home on a Sarnia board; on the
+// Toronto line-up (41975), for crews waiting in the bunkhouse.
+test('turn alerts: rescue trains, Sarnia board vs bunkhouse', () => {
+  const now = at(2026, 10, 23, 10, 0);
+  const row = (turn, pos, o = {}) => ({ craft: 'CO', turn, pos, restUntil: null, statusUntil: null, rn: '', ...o });
+  const train = (symbol, o = {}) => ({ symbol, originDay: '23', status: 'PLN', order: at(2026, 10, 23, 14, 0), deadhead: false, ...o });
+  const gang = [row('SR03', 1), row('SR07', 2, { working: true, workingOn: 'M38261' })];
+  const bunk = [{ pos: 1, co: 'SR12', en: 'SD04' }];
+  const states = (lineup, macLineup) => turnStates({ now, predictions: [] }, [], { chainGang: gang, sd: [], lineup, macLineup, bunkhouse: bunk });
+  let r = turnEvents({}, states([train('M38261')], [train('M30131')]), { lineupRead: true });
+  // RM383 shows in Sarnia, RQ148 in Toronto.
+  r = turnEvents(r.told, states([train('M38261'), train('RM38321')], [train('M30131'), train('RQ14891', { status: 'ORD' })]), { lineupRead: true });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
+    ['SR03', 'rescue', 'SR03: rescue train RM38321 23 on the Sarnia line-up, planned for 23rd 1400, expected call 23rd 1145.'],
+    ['SR12', 'rescue', 'SR12: rescue train RQ14891 23 on the Toronto line-up, ordered for 23rd 1400, expected call 23rd 1145.'],
+    ['SD04', 'rescue', 'SD04: rescue train RQ14891 23 on the Toronto line-up, ordered for 23rd 1400, expected call 23rd 1145.'],
+  ]); // SR07 is out working: not told
+  // Still there next check: said once. A line-up not read: nothing, nothing forgotten.
+  r = turnEvents(r.told, states([train('M38261'), train('RM38321')], [train('RQ14891')]), { lineupRead: true });
+  assert.deepEqual(r.events, []);
+  r = turnEvents(r.told, states(null, null), { lineupRead: false });
+  assert.deepEqual(r.events, []);
+  r = turnEvents(r.told, states([train('RM38321')], [train('RQ14891')]), { lineupRead: true });
+  assert.deepEqual(r.events, []);
+  // A phone can switch it off.
+  assert.deepEqual(phoneEvents([{ turn: 'SR03', kind: 'rescue', text: 'x' }], { turns: ['SR03'], prefs: { SR03: { rescue: false } } }, {}, {}, { lineupRead: false }).events, []);
+});
