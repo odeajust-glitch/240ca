@@ -591,7 +591,7 @@ function vacancies(s) {
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
   const fill = (v) => (!v.fill ? ''
-    : `<div class="crew">Filled by ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<span class="spare">no one free</span>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${v.fill.skipped.length ? ` · skipped, on rest: ${esc(v.fill.skipped.join(' · '))}` : ''}</div>`);
+    : `<div class="crew">Filled by ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<span class="spare">no one free</span>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${v.fill.skipped.length ? ` · skipped, on rest: ${esc(v.fill.skipped.join(' · '))}` : ''}${v.fill.sd ? ` · <b class="num">${markTurn(v.fill.sd)}</b> (SD board) may be called` : ''}</div>`);
   const rows = s.vacancies.map((v) => `<tr${marked(v.turn) || (v.fill && marked(v.fill.turn)) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td>
     <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${fill(v)}</td>
     <td class="num">${markTurn(v.turn)}${v.spare ? ' <span class="spare">(spare)</span>' : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
@@ -659,7 +659,7 @@ const once = (fn) => { let p = null; return () => p || (p = fn()); };
 
 // The turn panel: where the turn is in this snapshot, and its history (each
 // time what the board said about it changed). History fills in once loaded.
-const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home', spareJob: 'Spare', spareFill: 'Spare call' };
+const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home', spareJob: 'Spare', spareFill: 'Spare call', mayCall: 'May call' };
 function turnPanel(s) {
   const f = BoardTurns.facts(s, focus);
   const here = f.length
@@ -937,7 +937,7 @@ const Alerts = (() => {
   const PREFS_KEY = 'alertPrefs';
   // What each turn's alerts cover on this phone (owner: e.g. only when it's
   // ordered, or only when the time moves by a chosen amount). time: minutes, 0 = never.
-  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, time: 30 };
+  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, time: 30 };
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -1302,6 +1302,7 @@ source().then(async (src) => {
         ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}
         ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
+        ${/^SD/.test(turn) ? box('mayCall', 'may be called for a job going spare (no engineer free on the slow board)') : ''}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label></div>
       <div id="dlgnote" class="alertnote" hidden></div>
       <div class="btns"><button type="button" class="ok" id="dlgok">OK</button><button type="button" id="dlgcancel">Cancel</button>${was ? '<button type="button" class="stop" id="dlgstop">Stop tracking</button>' : ''}</div></div>`;

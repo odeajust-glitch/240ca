@@ -305,3 +305,24 @@ test('turn alerts: spareboard turns', () => {
   r = turnEvents(r.told, states([sb('B147', 1, { restUntil: at(2026, 10, 25, 5, 59) }), sb('B119', 2)], []), { lineupRead: true });
   assert.ok(r.events.some((e) => e.turn === 'B147' && e.kind === 'reset'));
 });
+
+// Owner, 2026-10-25: a road job going spare needing an engineer, no one free
+// on the engineer slow board: the next SD turn may be called, told once.
+test('turn alerts: SD may be called when the engineer slow board is empty', () => {
+  const now = at(2026, 10, 24, 18, 0);
+  const sd = (turn, pos, o = {}) => ({ craft: 'EN', turn, pos, terminal: 0, working: false, restUntil: null, statusUntil: null, rn: '', ...o });
+  const job = { train: 'M30241', cc: 'EN', yard: false, status: 'PLANNED', at: at(2026, 10, 24, 22, 41), pool: 'SD', turn: 'SD07' };
+  const states = (enSlow, sdList, vacancies = [job]) => turnStates({ now, predictions: [{ engineer: 'SD01', order: at(2026, 10, 24, 20, 21) }] }, [],
+    { sd: sdList, spareboards: { coFast: null, coSlow: null, enFast: null, enSlow }, vacancies });
+  const sdList = [sd('SD01', 1), sd('SD02', 2, { restUntil: at(2026, 10, 25, 1, 0) }), sd('SD05', 3)];
+  // Engineer slow board empty (everyone on rest): SD01 lined up already, SD02 on rest → SD05.
+  const r = turnEvents({}, states([{ turn: 'EN17', pos: 1, restUntil: at(2026, 10, 25, 2, 0) }], sdList), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall').map((e) => e.text), [
+    'SD05: you may be called for M30241 (planned for 24th 2241, expected call 24th 2026): no engineer is free on the engineer slow board.',
+  ]);
+  assert.deepEqual(turnEvents(r.told, states([{ turn: 'EN17', pos: 1, restUntil: at(2026, 10, 25, 2, 0) }], sdList), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []);
+  // Someone free on the slow board: no SD alert.
+  assert.ok(!turnEvents({}, states([{ turn: 'EN17', pos: 1, restUntil: null }], sdList), { lineupRead: true }).events.some((e) => e.kind === 'mayCall'));
+  // A phone can switch it off.
+  assert.deepEqual(phoneEvents([{ turn: 'SD05', kind: 'mayCall', text: 'x' }], { turns: ['SD05'], prefs: { SD05: { mayCall: false } } }, {}, {}, { lineupRead: false }).events, []);
+});

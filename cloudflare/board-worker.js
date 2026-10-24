@@ -32,7 +32,7 @@ async function subKey(endpoint) {
 }
 
 // { subscription: { endpoint, keys: { p256dh, auth } }, turns: ["SR03"],
-//   prefs: { SR03: { lineup, ordered, onDuty, aheadRest, aheadBack, reset, position, rescue: true/false, time: minutes (0 = off) } } }.
+//   prefs: { SR03: { lineup, ordered, onDuty, aheadRest, aheadBack, reset, position, rescue, mayCall: true/false, time: minutes (0 = off) } } }.
 // An empty turns list removes the subscription.
 async function subscribe(request, env) {
   const text = await request.text();
@@ -62,7 +62,7 @@ async function subscribe(request, env) {
     const p = (body.prefs && typeof body.prefs === 'object' && body.prefs[t]) || {};
     const time = Math.round(Number(p.time));
     prefs[t] = {
-      lineup: p.lineup !== false, ordered: p.ordered !== false, onDuty: p.onDuty !== false, aheadRest: p.aheadRest !== false, aheadBack: p.aheadBack !== false, reset: p.reset !== false, position: p.position !== false, rescue: p.rescue !== false,
+      lineup: p.lineup !== false, ordered: p.ordered !== false, onDuty: p.onDuty !== false, aheadRest: p.aheadRest !== false, aheadBack: p.aheadBack !== false, reset: p.reset !== false, position: p.position !== false, rescue: p.rescue !== false, mayCall: p.mayCall !== false,
       time: Number.isFinite(time) && time >= 0 && time <= 24 * 60 ? time : 30,
     };
   }

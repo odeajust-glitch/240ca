@@ -119,6 +119,12 @@ Deploy).
   position, someone ahead on rest/back, reset, rescue, lined up/ordered/time
   for the job they're predicted to fill (jobs already on duty skipped), and
   on duty on yard jobs.
+- SD may be called (owner, 2026-10-25, pref mayCall): a road job going spare
+  needing an engineer with no one free on the engineer slow board → the next
+  SD turn (pos order; not working, resting/held past the call, or already
+  projected for a train) gets an alert, once per job (spares.js sdBackups).
+  Also on the site under the job and in the SD turn's history. Worker saves
+  the pref: owner must re-paste board-worker.js.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

@@ -40,6 +40,10 @@
       const detail = `${v.pool} ${v.cc}, ${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}, call ~${v.fill.call}, off the ${v.fill.board}`;
       out.push({ kind: 'spareFill', train: v.train, detail, text: `Projected to fill ${v.train} (${detail})` });
     }
+    // An SD turn that may be called for one (no engineer free on the slow board).
+    for (const v of s.vacancies || []) {
+      if (v.fill && v.fill.sd === turn) out.push({ kind: 'mayCall', train: v.train, text: `May be called for ${v.train} (${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}, call ~${v.fill.call}): no engineer free on the slow board` });
+    }
     // On the vacancy list (option 5): the job goes spare.
     for (const v of s.vacancies || []) {
       if (v.turn !== turn) continue;
@@ -83,7 +87,7 @@
     for (const t of s.onDuty || []) for (const b of t.backfill || []) set.add(b.turn);
     // Yard jobs and their crews, and the jobs going spare (owner, 2026-10-24).
     for (const j of s.yardJobs || []) { set.add(j.job); for (const m of (j.crew || '').matchAll(/\b([A-Z][A-Z0-9]{1,4}\d{2})\b/g)) set.add(m[1]); }
-    for (const v of s.vacancies || []) { set.add(v.turn); if (v.fill && v.fill.turn) set.add(v.fill.turn); }
+    for (const v of s.vacancies || []) { set.add(v.turn); if (v.fill && v.fill.turn) set.add(v.fill.turn); if (v.fill && v.fill.sd) set.add(v.fill.sd); }
     return [...set].filter((t) => /^[A-Z][A-Z0-9]{1,4}\d{2}$/.test(t || '')).sort();
   }
 
