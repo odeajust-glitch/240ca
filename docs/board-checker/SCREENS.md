@@ -32,22 +32,28 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
 ## Added 2026-10-24 (owner): spareboards, jobs going spare, 501/502, Garnet
 - **Call Board** now pages (F8) past the trains through the **yard jobs**
   until **CREWS IN TOWN POOL: S1/SA C+C RESTED/STATUS** (or the last page).
-  Yard jobs start with Y (YPRS02, YSTY01); their crew lines are kept
-  (craft + turn), on duty taken as **8 h**. ❓ The yard job line layout is
-  assumed: job id first, `ON DUTY AT: SARNIA`, then `YY/MM/DD HHMM` (or a
-  bare time after the job id).
+  Yard jobs start with Y. Owner's screenshot (page 5 of 31):
+  `YPRS60  REL#2 TU/WE OFF  ON DUTY AT: SARNIA  26/10/23 2245`, then crew
+  lines `FO  DESCHENES+  M  MATTHEW` with **no turn**. "CREWS IN TOWN" is a
+  line of its own, then `POOL: S1/SA C+C  RESTED/STATUS`. On duty taken as
+  **8 h**. To know whose turn is on a yard job, board-auto.js reads the yard
+  jobs and every board (pools, spareboards, 29) unmasked **in memory**,
+  matches surname + first initial, and saves only `yardCrew: [{ job, craft,
+  turn }]`. The name → turn list lives only in the running window (carried
+  between checks; a name on two turns is left unmatched).
 - **Spareboards** (`SPAREBOARD INQUIRY`, PSTS02D): conductor fast **3 → 13**,
   slow **3 → 9**; engineer fast **1 → 19**, slow **1 → 17**. F8 until
   `END OF SPAREBOARD`. Columns: name (never kept), TURN (B138), POS, ST, RN,
-  RETN, REST (time + day), MTPD, USHR, PD, STT, #S, #O. ❓ Menu 1 (engineer)
-  not seen yet: its choice box is taken to be the last box.
+  RETN, REST (time + day), MTPD, USHR, PD, STT, #S, #O. Menu 1 is ENGINE
+  SERVICE (DISTRICT 45 / SUB-DISTRICT SA / SELECTION, PSTS02): 017 ENG SLOW
+  BOARD- PSTN, 019 ENG FAST BOARD- PSTN.
 - **Jobs going spare**: **3 → 5**, Enter (TERMINAL LINEUP, PSTS27P,
   vacancies only Y). POS, CALL (MM/DD), TIME, TZ, STATUS, TRAIN/DESC,
   ORGSTN, PL, CC, ST (`* **`), RETN (MM/DD), DTTM, TURN (pool + turn:
   S1S103 → S103; yard: the job id), EMP (a name, never kept).
 - **501/502**: **3 → 29** (POOL MAINTENANCE INQUIRY, PSTS02E, POOL S5 TERM 0),
-  laid out like 23; turns include MU01. **Garnet**: **3 → 31**, ❓ assumed
-  the same layout.
+  laid out like 23; turns include MU01. **Garnet**: **3 → 31** (502/501 PL @
+  GARNET, POOL S5 TERM 1), same layout, ends `END OF POOL LISTING`.
 - Masking keeps letter+digit codes (YPRS02) and the new headings (PLANNED,
   RETN…); names are still masked.
 

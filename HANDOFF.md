@@ -91,7 +91,11 @@ Deploy).
   31 (Garnet). Labels co-fast/co-slow/en-fast/en-slow/terminal/s5/garnet;
   loadSummary → yardJobs, spareboards, vacancies, s5, garnet; site pools tabs
   + sections #sec-yard, #sec-vacancies; Turn History facts. FORMAT 9.
-  ❓ Not run on real CATS yet: engineer menu 1, Garnet layout, yard job line.
+  Owner screenshots then: menu 1 = ENGINE SERVICE (selection box 3rd),
+  Garnet = S5 TERM 1, yard crew lines have names not turns → matched to
+  turns in memory (knownPeople in board-auto.js), saved as summary.yardCrew.
+  ❓ Not run on real CATS yet. People working (not on a spareboard list)
+  may go unmatched; the TURN screens (014/010, 020/018) could fill that in.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

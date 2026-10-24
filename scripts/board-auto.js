@@ -214,10 +214,8 @@ async function clearMessages(page, max = 5) {
   return screenState(page);
 }
 
-// menu: the main-menu choice, 3 = Train Service (most screens), 1 = the
-// engineer menu (owner, 2026-10-24: engineer spareboards 1 → 19 / 17). The
-// engineer menu hasn't been seen yet: its choice box is taken to be the
-// last box, like Train Service's.
+// menu: the main-menu choice, 3 = Train Service (most screens), 1 = Engine
+// Service (owner, 2026-10-24: engineer spareboards 1 → 19 / 17).
 async function chooseFromMenus(page, option, menu = 3) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: String(menu) });
@@ -226,16 +224,34 @@ async function chooseFromMenus(page, option, menu = 3) {
     expect(m, is.trainService, 'Train Service menu');
     await fill(page, { 2: String(option) });
   } else {
-    expect(m, (x) => !is.mainMenu(x) && x.textInputs.length >= 1, `menu ${menu}`);
-    await fill(page, { '-1': String(option) });
+    // 1 = ENGINE SERVICE (owner's screenshot): 45 / SA / SELECTION, like 3.
+    expect(m, (x) => /ENGINE\s+SERVICE/.test(x.text) && x.textInputs.length >= 3, `menu ${menu}`);
+    await fill(page, { 2: String(option) });
   }
   return press(page, 'Enter');
 }
 
 // --- One full check ----------------------------------------------------------
 
+// Who's on which turn, by surname + first initial, from the boards read
+// unmasked (owner, 2026-10-24: a yard job's crew shows names, not turns).
+// Only in this window's memory, never saved; carried between checks so a
+// spareboard person called to a yard job can still be matched. A name seen
+// on two turns is left unmatched.
+const knownPeople = new Map(); // key → turn, or null when unsure
+function learnPeople(list) {
+  const now = new Map();
+  for (const { key, turn } of list) now.set(key, now.has(key) && now.get(key) !== turn ? null : turn);
+  for (const [key, turn] of now) knownPeople.set(key, turn);
+}
+
 async function runRoute(page, opts = {}) {
   const screens = [];
+  const yardNames = []; // yard job crews by name, matched to turns at the end
+  const unmaskedRows = async () => {
+    try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
+  };
+  const learn = async () => { const rows = await unmaskedRows(); if (rows) learnPeople(S.parseBoardNames(rows)); };
   // `label` tells the loader which screens are Mac yard's (they look like
   // Sarnia's 23 and 41).
   const capture = async (label) => {
@@ -264,6 +280,10 @@ async function runRoute(page, opts = {}) {
         opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid)));
       } catch { /* the letters can do without; the check can't wait on it */ }
     }
+    if (parsed.reachedYard) {
+      const rows = await unmaskedRows();
+      if (rows) yardNames.push(...S.parseYardCrewNames(rows));
+    }
     const shown = (await screenState(page)).text;
     const m = /PAGE (\d+) OF (\d+)/.exec(shown);
     if (parsed.crewsInTown || /CREWS\s*IN\s*TOWN/.test(shown) || (m && +m[1] >= +m[2])) break;
@@ -278,6 +298,7 @@ async function runRoute(page, opts = {}) {
     await fill(page, { '-1': 'CO' });
     expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with CO`);
     await capture();
+    await learn();
   };
   await pool(23, 'Chain Gang');
   // Engineer lists: 27 SD (with the Chain Gang), and S1 (with A) / S3 (with
@@ -291,6 +312,7 @@ async function runRoute(page, opts = {}) {
       expect(await press(page, 'Enter'), is.poolPosition, `${name} (${option}) with EN`);
       await capture();
     }
+    await learn();
   };
   const extra = [[19, 'A pool'], [21, 'B pool'], [27, 'SD pool', enginePool(27, 'SD pool')]];
   if (opts.s1) extra.push([opts.s1, 'S1 pool', enginePool(opts.s1, 'S1 pool')]);
@@ -363,6 +385,7 @@ async function runRoute(page, opts = {}) {
     expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
     for (let pageNo = 0; pageNo < 15; pageNo++) {
       await capture(label);
+      await learn();
       if (/END\s+OF\s+SPAREBOARD/.test(sb.text)) break;
       const next = await press(page, 'F8');
       if (!next || next.text === sb.text || !/SPAREBOARD/.test(next.text)) break;
@@ -391,6 +414,8 @@ async function runRoute(page, opts = {}) {
       let ps = expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
       for (let pageNo = 0; pageNo < 6; pageNo++) {
         await capture(label);
+        await learn();
+        if (/END\s+OF\s+POOL\s+LISTING/.test(ps.text)) break;
         const next = await press(page, 'F8').catch(() => null);
         if (!next || !is.poolPosition(next) || next.text === ps.text) break;
         ps = next;
@@ -399,7 +424,11 @@ async function runRoute(page, opts = {}) {
   }
 
   await toMainMenu(page); // leave CATS ready for the next check
-  return { probedAt: new Date().toISOString(), screens };
+  // Yard job crews matched to turns: job + craft + turn only, no names.
+  const yardCrew = yardNames.map((y) => ({ job: y.job, craft: y.craft, turn: knownPeople.get(y.key) || null }));
+  const matched = yardCrew.filter((y) => y.turn).length;
+  if (yardCrew.length) console.log(`  Yard jobs: ${matched} of ${yardCrew.length} crew matched to a turn.`);
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn) };
 }
 
 // The full view, plus what changed since the previous check (kept in

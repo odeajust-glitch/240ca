@@ -80,25 +80,42 @@ test('501/502 (29): any turn id, working and away turns', () => {
   assert.equal(S.parseChainGang(rows, now).turns.some((t) => t.turn === 'MU01'), false); // the old rule
 });
 
+// Owner's screenshot (page 5 of 31): yard jobs list names, no turns; the
+// crews in town come after them.
+const yardPage = [
+  '26/10/24-   351                        CN  RAIL                     PAGE  005  OF  031',
+  'TRAINS  ENROUTE',
+  'M38261 23  ON DUTY AT: SARNIA       26/10/24  0145',
+  '           CO  SMITH*+      J   JOHN       SR03',
+  '    YPRS60      REL#2  TU/WE  OFF       ON  DUTY  AT:  SARNIA           26/10/23  2245',
+  '          FO   DESCHENES+      M  MATTHEW',
+  '          S1   JOSEPH+         B  BRAEDEN',
+  '    YSBY04       1900  YDM  BLOCK  4     ON  DUTY  AT:  SARNIA           26/10/23  1900',
+  '          YA   ROBBINS*+       M  MARK',
+  'CREWS  IN  TOWN',
+  'POOL:  S1/SA  C+C                         RESTED/STATUS',
+  '        <<   NO  CREWS  IN  TOWN    >>',
+];
+
 test('Call Board: yard jobs after the trains, stop at the crews in town', () => {
-  const rows = grid([
-    'M38261 23  ON DUTY AT: SARNIA       26/10/24  0145',
-    '           CO  SMITH*+      J   JOHN       SR03',
-    'YPRS02 0640  S1/S1  ON DUTY AT: SARNIA    26/10/24  0640',
-    '           FO  BROWN*+      K   KATE       YPRS02',
-    '           S1  GREEN+       P   PAUL       B126',
-    'YSTY01 0700  ON DUTY AT: SARNIA',
-    '           FO  WHITE+       A   ANNE       B138',
-    'CREWS IN TOWN POOL: S1/SA C+C RESTED/STATUS',
-    'YZZZ01 0800  ON DUTY AT: SARNIA    26/10/24  0800',
-  ]);
-  const p = S.parseCallBoardPage(rows, now);
+  const p = S.parseCallBoardPage(grid(yardPage), now);
   assert.deepEqual(p.trains.map((t) => t.symbol), ['M38261']);
   assert.equal(p.crewsInTown, true);
-  assert.deepEqual(p.yard.map((j) => [j.job, j.station, fmt(j.onDuty), j.crew.map((c) => `${c.craft} ${c.turn}`).join(', ')]), [
-    ['YPRS02', 'SARNIA', '24th 0640', 'FO YPRS02, S1 B126'],
-    ['YSTY01', 'SARNIA', '24th 0700', 'FO B138'],
+  assert.deepEqual(p.yard.map((j) => [j.job, j.station, fmt(j.onDuty), j.crew.length]), [
+    ['YPRS60', 'SARNIA', '23rd 2245', 0], ['YSBY04', 'SARNIA', '23rd 1900', 0],
   ]);
+});
+
+test('yard crews matched to turns by name, in memory only', () => {
+  const yard = S.parseYardCrewNames(grid(yardPage, false));
+  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key}`), ['YPRS60 FO DESCHENES/M', 'YPRS60 S1 JOSEPH/B', 'YSBY04 YA ROBBINS/M']);
+  const people = S.parseBoardNames(grid([
+    '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST',
+    'DESCHENES+     M    MATT   B138  001',
+    'JACOBSEN+(N/NT)N   NEIL   B142  009',
+    'EN MU01  1 999  ROBBINS*+        M  MARK   B0                                      L50131  23',
+  ], false));
+  assert.deepEqual(people, [{ key: 'DESCHENES/M', turn: 'B138' }, { key: 'JACOBSEN/N', turn: 'B142' }, { key: 'ROBBINS/M', turn: 'MU01' }]);
 });
 
 test('masking: yard job ids and headings stay, names go', () => {
@@ -116,7 +133,7 @@ test('site snapshot and turn facts with the new screens', () => {
   const yardPage = base.screens.find((x) => x.screenGrid.some((l) => /ON \| \d+:DUTY/.test(l)));
   const head = yardPage.screenGrid.slice(0, 3); // the Call Board header (clock, title)
   const screens = [...base.screens,
-    { screenGrid: [...head, ...lines(['', '', '', 'YPRS02 0640  S1/S1  ON DUTY AT: SARNIA    26/10/15  0640', '           FO  BROWN*+      K   KATE       YPRS02', '           S1  GREEN+       P   PAUL       B126'])] },
+    { screenGrid: [...head, ...lines(['', '', '', 'YPRS02 0640  S1/S1  ON DUTY AT: SARNIA    26/10/15  0640', '           FO  BROWN*+      K   KATE', '           S1  GREEN+       P   PAUL'])] },
     { label: 'co-fast', screenGrid: lines(['45 SA       SPAREBOARD INQUIRY', '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST    MTPD  USHR   PD    STT  #S  #O',
       'CHOPRA+       K    KARA   B138  001                                                   00  00', 'DAYE+         B    BRYS   B126  002                   0600  16                         01  00']) },
     { label: 'terminal', screenGrid: lines(['           TERMINAL LINEUP', 'POS  CALL   TIME  TZ  STATUS     TRAIN/DESC   ORGSTN  PL  CC    ST     RETN   DTTM   TURN     EMP',
@@ -124,10 +141,11 @@ test('site snapshot and turn facts with the new screens', () => {
     { label: 's5', screenGrid: lines(['    POOL:  ( S5 )   TERM:  ( 0 )   CC:  (   )', 'CC TURN  T POS      EMPLOYEE     NAME      ST   RN   RETN    SC   REST     USHR  TURN  INFO',
       'EN S501  0 001  ARCHER*+         J  JEREM', 'CO S501  0 001  NOEL+            J  JORDA']) },
   ];
-  const { shown } = snapshotOf({ ...base, screens });
+  // board-auto.js matched the yard crew to turns by name (names not saved).
+  const { shown } = snapshotOf({ ...base, screens, yardCrew: [{ job: 'YPRS02', craft: 'FO', turn: 'B138' }, { job: 'YPRS02', craft: 'S1', turn: 'B126' }] });
   assert.deepEqual(shown.pools.map((p) => p.name).slice(-2), ['Conductor fast board', '501/502 (S5)']);
   assert.deepEqual(shown.pools.find((p) => p.name === 'Conductor fast board').turns.map((t) => `${t.pos} ${t.turn} ${t.status}`), ['001 B138 available', '002 B126 rest until 16th 0600']);
-  assert.deepEqual(shown.yardJobs, [{ job: 'YPRS02', station: 'SARNIA', onDuty: '15th 0640', off: '15th 1440', crew: 'FO YPRS02 · S1 B126' }]);
+  assert.deepEqual(shown.yardJobs, [{ job: 'YPRS02', station: 'SARNIA', onDuty: '15th 0640', off: '15th 1440', crew: 'FO B138 · S1 B126' }]);
   assert.equal(shown.vacancies[0].turn, 'YPRS02');
   assert.ok(['coFast', 'terminal', 's5Pool', 'yardJobs'].every((k) => shown.screens.includes(k)));
   assert.deepEqual(BoardTurns.facts(shown, 'B126').map((f) => f.text), [
