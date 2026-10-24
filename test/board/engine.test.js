@@ -554,3 +554,11 @@ test('a road day the memory saw only part of still trusts CATS sending a train t
   m = remember(m, [], m.last + GAP_MINUTES + 1);
   assert.equal(m.since, m.last);
 });
+
+// Owner, 2026-10-25: M39671 showed SR06 and no engineer; with no SD turn
+// callable, the engineer goes to the spareboard and says so.
+test('no SD engineer free: the train says so', () => {
+  const V = require('../../lib/board/view');
+  assert.equal(V.goesTo({ pool: 'SR', turn: 'SR06', engineerNone: 'SD' }), 'Chain Gang: SR06 + spareboard (no SD turn free)');
+  assert.equal(V.goesTo({ pool: 'SR', turn: 'SR06', engineer: 'SD01' }), 'Chain Gang: SR06 + SD01');
+});
