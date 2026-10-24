@@ -340,3 +340,16 @@ test('turn alerts: SR may be called when the conductor slow board is empty', () 
     'SR07: you may be called for M38261 (planned for 24th 2240, expected call 24th 2025): no conductor is free on the conductor slow board.',
   ]);
 });
+
+// Owner, 2026-10-25: a reminder a set time before the expected call (yard
+// jobs don't always show ordered): once, inside the window.
+test('turn alerts: reminder before the expected call', () => {
+  const states = { B119: { lineup: { train: 'YPRS60', status: 'PLN', order: at(2026, 10, 24, 22, 45), call: at(2026, 10, 24, 20, 45), spare: false, deadhead: false } } };
+  const phone = { turns: ['B119'], prefs: { B119: { before: 60 } } };
+  let r = phoneEvents([], phone, states, {}, { now: at(2026, 10, 24, 19, 30) }); // 75 min out: not yet
+  assert.deepEqual(r.events, []);
+  r = phoneEvents([], phone, states, r.base, { now: at(2026, 10, 24, 19, 50) });
+  assert.deepEqual(r.events.map((e) => e.text), ['B119: about 55 min to your expected call: YPRS60 planned for 24th 2245, expected call 24th 2045.']);
+  assert.deepEqual(phoneEvents([], phone, states, r.base, { now: at(2026, 10, 24, 20, 0) }).events, []); // once
+  assert.deepEqual(phoneEvents([], { turns: ['B119'] }, states, {}, { now: at(2026, 10, 24, 20, 0) }).events, []); // off by default
+});

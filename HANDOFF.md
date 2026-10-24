@@ -126,6 +126,10 @@ Deploy).
   projected for a train) gets an alert, once per job (spares.js sdBackups).
   Also on the site under the job and in the SD turn's history. Worker saves
   the pref: owner must re-paste board-worker.js.
+- Reminder before the call (owner, 2026-10-25, pref before: 90/60/45/30,
+  0 = off, default off): timeEvents sends "about N min to your expected
+  call" once per train when the call is within that time (now passed from
+  board-auto.js). Worker saves it: re-paste needed.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

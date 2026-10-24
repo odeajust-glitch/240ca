@@ -479,7 +479,7 @@ function answer(summary, me, nowOverride) {
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
   return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
-    callBoard: input.callBoard, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home,
+    callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
       spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs }), lineupRead: !!input.seen.lineup };
 }
@@ -578,7 +578,7 @@ async function publishSite(changed) {
 // check (lib/board/alerts.js), pushed to the phones that chose that turn on
 // the site (subscriptions in the R2 bucket). Only with the site on
 // Cloudflare. Never stops a check; a phone that unsubscribed is dropped.
-async function sendTurnAlerts(states, lineupRead) {
+async function sendTurnAlerts(states, lineupRead, now) {
   const settings = siteSettings();
   if (!settings.r2) return;
   const { events, told } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead });
@@ -596,7 +596,7 @@ async function sendTurnAlerts(states, lineupRead) {
     const errors = new Set();
     const said = new Set();
     for (const s of subs) {
-      const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead });
+      const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now });
       nextBases[s.key] = mine.base;
       for (const e of mine.events) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
@@ -1031,7 +1031,7 @@ async function main() {
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead } = answer(summary, me, nowOverride);
+      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
@@ -1054,7 +1054,7 @@ async function main() {
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
       await publishSite(first || changed || torontoChanged);
-      await sendTurnAlerts(alertStates, lineupRead);
+      await sendTurnAlerts(alertStates, lineupRead, alertNow);
       retried = false;
       // You're on duty on the Sarnia Call Board: sign in fresh now, so the
       // ~24 h covers the trip (owner, 2026-10-22: once working, not before).

@@ -32,7 +32,7 @@ async function subKey(endpoint) {
 }
 
 // { subscription: { endpoint, keys: { p256dh, auth } }, turns: ["SR03"],
-//   prefs: { SR03: { lineup, ordered, onDuty, aheadRest, aheadBack, reset, position, rescue, mayCall: true/false, time: minutes (0 = off) } } }.
+//   prefs: { SR03: { lineup, ordered, onDuty, aheadRest, aheadBack, reset, position, rescue, mayCall: true/false, time: minutes (0 = off), before: minutes before the call (0 = off) } } }.
 // An empty turns list removes the subscription.
 async function subscribe(request, env) {
   const text = await request.text();
@@ -64,6 +64,7 @@ async function subscribe(request, env) {
     prefs[t] = {
       lineup: p.lineup !== false, ordered: p.ordered !== false, onDuty: p.onDuty !== false, aheadRest: p.aheadRest !== false, aheadBack: p.aheadBack !== false, reset: p.reset !== false, position: p.position !== false, rescue: p.rescue !== false, mayCall: p.mayCall !== false,
       time: Number.isFinite(time) && time >= 0 && time <= 24 * 60 ? time : 30,
+      before: [30, 45, 60, 90].includes(Number(p.before)) ? Number(p.before) : 0,
     };
   }
   await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, prefs, updated: new Date().toISOString() }),
