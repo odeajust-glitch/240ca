@@ -409,8 +409,13 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // the section's id, and for a pool screen which pool tab to open.
 const JUMPS = { callBoard: { id: 'sec-callboard' }, chainGang: { id: 'sec-pools', pool: 'Chain Gang' }, aPool: { id: 'sec-pools', pool: 'A pool' },
   bPool: { id: 'sec-pools', pool: 'B pool' }, sdPool: { id: 'sec-pools', pool: 'SD' }, s1Pool: { id: 'sec-pools', pool: 'S1' }, s3Pool: { id: 'sec-pools', pool: 'S3' },
-  lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' } };
-const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41' };
+  lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' },
+  coFast: { id: 'sec-pools', pool: 'Conductor fast' }, coSlow: { id: 'sec-pools', pool: 'Conductor slow' }, enFast: { id: 'sec-pools', pool: 'Engineer fast' },
+  enSlow: { id: 'sec-pools', pool: 'Engineer slow' }, s5Pool: { id: 'sec-pools', pool: '501/502' }, garnet: { id: 'sec-pools', pool: 'Garnet' },
+  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' } };
+const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41',
+  coFast: 'Conductor fast 13', coSlow: 'Conductor slow 9', enFast: 'Engineer fast 19', enSlow: 'Engineer slow 17', terminal: 'Jobs going spare 5',
+  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs' };
 
 // "2026-10-15 0815" → parts for display.
 function when(taken) {
@@ -569,6 +574,26 @@ function onDuty(s) {
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
+// Yard jobs on duty (owner, 2026-10-24), taken as 8 h long.
+function yardJobs(s) {
+  if (!(s.yardJobs || []).length) return '';
+  const rows = s.yardJobs.map((j) => `<tr${marked(j.job) || markedIn(j.crew) ? ' class="hit"' : ''}><td class="num">${esc(j.onDuty || '—')}</td>
+    <td><b class="num">${markTurn(j.job)}</b><div class="crew mono">${markTurn(j.crew)}</div></td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
+  return `<section class="sheet" id="sec-yard"><header><h2>Yard jobs · on duty</h2><span class="meta">${s.yardJobs.length} jobs</span></header>
+    <div class="scroll"><table><thead><tr><th>On duty</th><th>Job · crew</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="foot">Off duty is a guess: 8 h after on duty.</div></section>`;
+}
+
+// The jobs going spare: the terminal line-up, vacancies only (option 5).
+function vacancies(s) {
+  if (!(s.vacancies || []).length) return '';
+  const rows = s.vacancies.map((v) => `<tr${marked(v.turn) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td>
+    <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div></td>
+    <td class="num">${markTurn(v.turn)}${v.spare ? ' <span class="spare">(spare)</span>' : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
+  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${s.vacancies.length} jobs</span></header>
+    <div class="scroll"><table><thead><tr><th>Time</th><th>Job</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+
 function sequence(s) {
   if (!s.sequence.length) return '';
   const rows = s.sequence.map((t) => {
@@ -620,7 +645,7 @@ const once = (fn) => { let p = null; return () => p || (p = fn()); };
 
 // The turn panel: where the turn is in this snapshot, and its history (each
 // time what the board said about it changed). History fills in once loaded.
-const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home' };
+const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home', spareJob: 'Spare' };
 function turnPanel(s) {
   const f = BoardTurns.facts(s, focus);
   const here = f.length
@@ -1373,7 +1398,7 @@ source().then(async (src) => {
       ${strip(s)}
       <div class="grid">
         <div class="col">${lineup(s)}${toronto(s)}${changes(s)}</div>
-        <div class="col">${flags(s)}${pools(s, poolTab)}${onDuty(s)}${sequence(s)}</div>
+        <div class="col">${flags(s)}${pools(s, poolTab)}${vacancies(s)}${onDuty(s)}${yardJobs(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
     tickAges();

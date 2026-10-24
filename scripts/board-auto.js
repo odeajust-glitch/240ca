@@ -214,11 +214,21 @@ async function clearMessages(page, max = 5) {
   return screenState(page);
 }
 
-async function chooseFromMenus(page, option) {
+// menu: the main-menu choice, 3 = Train Service (most screens), 1 = the
+// engineer menu (owner, 2026-10-24: engineer spareboards 1 → 19 / 17). The
+// engineer menu hasn't been seen yet: its choice box is taken to be the
+// last box, like Train Service's.
+async function chooseFromMenus(page, option, menu = 3) {
   await toMainMenu(page);
-  await fill(page, { 0: '45', 1: 'SA', 2: '3' });
-  expect(await press(page, 'Enter'), is.trainService, 'Train Service menu');
-  await fill(page, { 2: String(option) });
+  await fill(page, { 0: '45', 1: 'SA', 2: String(menu) });
+  const m = await press(page, 'Enter');
+  if (menu === 3) {
+    expect(m, is.trainService, 'Train Service menu');
+    await fill(page, { 2: String(option) });
+  } else {
+    expect(m, (x) => !is.mainMenu(x) && x.textInputs.length >= 1, `menu ${menu}`);
+    await fill(page, { '-1': String(option) });
+  }
   return press(page, 'Enter');
 }
 
@@ -234,13 +244,15 @@ async function runRoute(page, opts = {}) {
     return grid;
   };
 
-  // Call Board: 3 → 6 → Enter, then F8 until the yard jobs start.
+  // Call Board: 3 → 6 → Enter, then F8 through the trains and the yard jobs
+  // until the crews in town (owner, 2026-10-24: "CREWS IN TOWN POOL: S1/SA
+  // C+C RESTED/STATUS"), or the last page.
   let cb = await chooseFromMenus(page, 6);
   if (!is.callBoardList(cb || { text: '' })) {
     expect(cb, is.callBoardPrompt, 'Call Board prompt');
     expect(await press(page, 'Enter'), is.callBoardList, 'Call Board');
   }
-  for (let pageNo = 0; pageNo < 15; pageNo++) {
+  for (let pageNo = 0; pageNo < 45; pageNo++) {
     const grid = await capture();
     const parsed = S.parseCallBoardPage(parseGrid(grid));
     // Crew names for the grievance letters: a second, unmasked read kept in
@@ -252,8 +264,9 @@ async function runRoute(page, opts = {}) {
         opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid)));
       } catch { /* the letters can do without; the check can't wait on it */ }
     }
-    const m = /PAGE (\d+) OF (\d+)/.exec((await screenState(page)).text);
-    if (parsed.reachedYard || (m && +m[1] >= +m[2])) break;
+    const shown = (await screenState(page)).text;
+    const m = /PAGE (\d+) OF (\d+)/.exec(shown);
+    if (parsed.crewsInTown || /CREWS\s*IN\s*TOWN/.test(shown) || (m && +m[1] >= +m[2])) break;
     expect(await press(page, 'F8'), is.callBoardList, 'next Call Board page');
   }
 
@@ -333,6 +346,56 @@ async function runRoute(page, opts = {}) {
   } catch (err) {
     if (err instanceof NeedSignIn) throw err;
     console.log(`  (skipped Mac yard line-up 41: ${err.message})`);
+  }
+
+  // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and
+  // Garnet. Each is labelled for the loader; trouble with one only skips it.
+  const skip = async (name, fn) => {
+    try { await fn(); } catch (err) {
+      if (err instanceof NeedSignIn) throw err;
+      console.log(`  (skipped ${name}: ${err.message})`);
+    }
+  };
+  // Spareboards: F8 until "END OF SPAREBOARD".
+  const spareboard = (menu, option, label, name) => skip(`${name} ${menu} → ${option}`, async () => {
+    let sb = await chooseFromMenus(page, option, menu);
+    if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
+    expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
+    for (let pageNo = 0; pageNo < 15; pageNo++) {
+      await capture(label);
+      if (/END\s+OF\s+SPAREBOARD/.test(sb.text)) break;
+      const next = await press(page, 'F8');
+      if (!next || next.text === sb.text || !/SPAREBOARD/.test(next.text)) break;
+      sb = next;
+    }
+  });
+  await spareboard(3, 13, 'co-fast', 'Conductor fast board');
+  await spareboard(3, 9, 'co-slow', 'Conductor slow board');
+  await spareboard(1, 19, 'en-fast', 'Engineer fast board');
+  await spareboard(1, 17, 'en-slow', 'Engineer slow board');
+  // 5: the terminal line-up (vacancies only, as set), Enter, F8 to END OF FILE.
+  await skip('Jobs going spare 5', async () => {
+    expect(await chooseFromMenus(page, 5), (x) => /TERMINAL\s+LINEUP/.test(x.text), 'Terminal line-up (5)');
+    let t = expect(await press(page, 'Enter'), (x) => /TERMINAL\s+LINEUP/.test(x.text), 'Terminal line-up');
+    for (let pageNo = 0; pageNo < 10; pageNo++) {
+      await capture('terminal');
+      if (/END\s+OF\s+FILE/.test(t.text)) break;
+      const next = await press(page, 'F8');
+      if (!next || next.text === t.text || !/TERMINAL\s+LINEUP/.test(next.text)) break;
+      t = next;
+    }
+  });
+  // 29: 501/502, 31: crews in Garnet. Pool screens as they first show.
+  for (const [option, label, name] of [[29, 's5', '501/502'], [31, 'garnet', 'Garnet']]) {
+    await skip(`${name} ${option}`, async () => {
+      let ps = expect(await chooseFromMenus(page, option), is.poolPosition, `${name} (${option})`);
+      for (let pageNo = 0; pageNo < 6; pageNo++) {
+        await capture(label);
+        const next = await press(page, 'F8').catch(() => null);
+        if (!next || !is.poolPosition(next) || next.text === ps.text) break;
+        ps = next;
+      }
+    });
   }
 
   await toMainMenu(page); // leave CATS ready for the next check

@@ -85,6 +85,13 @@ Deploy).
   subscribes alerts (Alerts.set). Highlighting is `marks` (all tracked
   turns; Turn History's own turn on that tab). Turn panel no longer on the
   main page.
+- 2026-10-24 (owner): more screens (docs/board-checker/SCREENS.md "Added
+  2026-10-24"). Call Board paged to CREWS IN TOWN (yard jobs, 8 h);
+  spareboards 13/9 and engineer 1→19/17; 5 (jobs going spare); 29 (501/502),
+  31 (Garnet). Labels co-fast/co-slow/en-fast/en-slow/terminal/s5/garnet;
+  loadSummary → yardJobs, spareboards, vacancies, s5, garnet; site pools tabs
+  + sections #sec-yard, #sec-vacancies; Turn History facts. FORMAT 9.
+  ❓ Not run on real CATS yet: engineer menu 1, Garnet layout, yard job line.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

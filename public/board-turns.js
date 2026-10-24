@@ -25,6 +25,16 @@
     for (const t of s.onDuty || []) {
       if (turnIn(t.crew, turn)) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}` });
     }
+    // Yard jobs (owner, 2026-10-24), taken as 8 h: a crew on one, or the job itself.
+    for (const j of s.yardJobs || []) {
+      if (j.job !== turn && !turnIn(j.crew, turn)) continue;
+      out.push({ kind: 'onDuty', train: j.job, text: `On duty on ${j.job} yard at ${title(j.station)}, ${j.onDuty || 'time not shown'}${j.off ? ` (off ~${j.off}, 8 h assumed)` : ''}${j.job === turn && j.crew ? `: ${j.crew}` : ''}` });
+    }
+    // On the vacancy list (option 5): the job goes spare.
+    for (const v of s.vacancies || []) {
+      if (v.turn !== turn) continue;
+      out.push({ kind: 'spareJob', train: v.train, text: `Job ${v.train} (${v.pool} ${v.cc}, ${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}) is on the vacancy list: goes spare${v.returns ? `, returns ${v.returns}` : ''}` });
+    }
     // Toronto: in the Mac bunkhouse, and the train it's predicted to take home.
     for (const c of s.bunkhouse || []) {
       if (c.en !== turn && c.co !== turn) continue;
@@ -59,8 +69,11 @@
     for (const t of s.away || []) set.add(t);
     for (const r of s.returning || []) set.add(r.split(' ')[0]);
     for (const c of s.bunkhouse || []) { if (c.en) set.add(c.en); if (c.co) set.add(c.co); }
-    for (const t of s.onDuty || []) for (const m of (t.crew || '').matchAll(/\b([A-Z]{1,2}\d{2,3})\b/g)) set.add(m[1]);
-    return [...set].filter((t) => /^[A-Z]{1,2}\d{2,3}$/.test(t)).sort();
+    for (const t of s.onDuty || []) for (const m of (t.crew || '').matchAll(/\b([A-Z][A-Z0-9]{1,4}\d{2})\b/g)) set.add(m[1]);
+    // Yard jobs and their crews, and the jobs going spare (owner, 2026-10-24).
+    for (const j of s.yardJobs || []) { set.add(j.job); for (const m of (j.crew || '').matchAll(/\b([A-Z][A-Z0-9]{1,4}\d{2})\b/g)) set.add(m[1]); }
+    for (const v of s.vacancies || []) set.add(v.turn);
+    return [...set].filter((t) => /^[A-Z][A-Z0-9]{1,4}\d{2}$/.test(t || '')).sort();
   }
 
   // "2026-10-15 0815" → minutes, to measure how long something lasted.
@@ -86,7 +99,7 @@
         if (!seen.has(turn) && last[turn] === undefined) continue;
         const r = rec(turn);
         if (last[turn] !== text) {
-          r.changes.push({ taken: s.taken, text, key: f.some((x) => x.kind === 'onDuty' || x.kind === 'sequence' || /goes spare|rest until|hold turn/.test(x.text)) });
+          r.changes.push({ taken: s.taken, text, key: f.some((x) => x.kind === 'onDuty' || x.kind === 'sequence' || x.kind === 'spareJob' || /goes spare|rest until|hold turn/.test(x.text)) });
           last[turn] = text;
         }
         for (const x of f) {
@@ -105,7 +118,8 @@
             if (!r.rests.some((y) => y.until === rest[2] && y.kind === kind)) r.rests.push({ kind, until: rest[2], seen: s.taken, where: x.kind === 'bunkhouse' ? 'Toronto bunkhouse' : (x.pool || '').replace(/ ·.*/, '') });
           }
           const spare = x.kind === 'pool' && /goes spare|B0/.test(x.status) ? x.status
-            : x.kind === 'lineup' && /goes spare/.test(x.text) ? `its train ${x.train} goes spare to the spareboard` : null;
+            : x.kind === 'lineup' && /goes spare/.test(x.text) ? `its train ${x.train} goes spare to the spareboard`
+              : x.kind === 'spareJob' ? `job ${x.train} on the vacancy list` : null;
           if (spare) {
             // Still going on from the last check: stretch it, don't repeat it.
             const prev = r.spares.find((y) => y.text === spare && (y.last === r.lastTaken || y.last === s.taken));
