@@ -158,3 +158,17 @@ test('site snapshot and turn facts with the new screens', () => {
   assert.equal(h.YPRS02.spares.length, 1);
   assert.equal(h.B126.orders[0].train, 'YPRS02');
 });
+
+// Owner, 2026-10-24: a spare person filling in for someone absent shows on
+// the Call Board under that job's turn; found by name, kept as turns only.
+test('spare person filling in: job turn vs their own turn', () => {
+  const crew = S.parseTrainCrewNames(grid(yardPage, false));
+  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J' }]);
+  const BoardTurns = require('../../public/board-turns');
+  const s = { onDuty: [{ train: 'M38261 23', station: 'SARNIA', onDuty: '24th 0145', crew: 'CO SR03', backfill: [{ craft: 'CO', job: 'SR03', turn: 'B138' }] }] };
+  assert.deepEqual(BoardTurns.facts(s, 'B138').map((f) => f.text), ['On duty on M38261 23 at Sarnia, 24th 0145, working SR03 (CO)']);
+  assert.deepEqual(BoardTurns.facts(s, 'SR03').map((f) => f.text), ['On duty on M38261 23 at Sarnia, 24th 0145 (worked by B138)']);
+  assert.ok(BoardTurns.turnsIn(s).includes('B138'));
+  const h = BoardTurns.finish(BoardTurns.history([{ ...s, taken: '2026-10-24 0200' }]));
+  assert.equal(h.B138.orders[0].train, 'M38261 23');
+});

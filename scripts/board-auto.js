@@ -248,6 +248,7 @@ function learnPeople(list) {
 async function runRoute(page, opts = {}) {
   const screens = [];
   const yardNames = []; // yard job crews by name, matched to turns at the end
+  const trainNames = []; // train crews by name: who's working whose job
   const unmaskedRows = async () => {
     try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
   };
@@ -280,9 +281,9 @@ async function runRoute(page, opts = {}) {
         opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid)));
       } catch { /* the letters can do without; the check can't wait on it */ }
     }
-    if (parsed.reachedYard) {
+    {
       const rows = await unmaskedRows();
-      if (rows) yardNames.push(...S.parseYardCrewNames(rows));
+      if (rows) { yardNames.push(...S.parseYardCrewNames(rows)); trainNames.push(...S.parseTrainCrewNames(rows)); }
     }
     const shown = (await screenState(page)).text;
     const m = /PAGE (\d+) OF (\d+)/.exec(shown);
@@ -428,7 +429,12 @@ async function runRoute(page, opts = {}) {
   const yardCrew = yardNames.map((y) => ({ job: y.job, craft: y.craft, turn: knownPeople.get(y.key) || null }));
   const matched = yardCrew.filter((y) => y.turn).length;
   if (yardCrew.length) console.log(`  Yard jobs: ${matched} of ${yardCrew.length} crew matched to a turn.`);
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn) };
+  // A train crew member whose own turn (by name) isn't the job's turn: a
+  // spare person filling in (owner, 2026-10-24). Job + craft + turns only.
+  const backfill = trainNames.map((t) => ({ train: t.train, craft: t.craft, job: t.job, turn: knownPeople.get(t.key) || null }))
+    .filter((t) => t.turn && t.turn !== t.job);
+  if (backfill.length) console.log(`  Filling in: ${backfill.map((b) => `${b.turn} on ${b.job} (${b.train})`).join(', ')}.`);
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill };
 }
 
 // The full view, plus what changed since the previous check (kept in

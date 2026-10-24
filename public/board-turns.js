@@ -23,7 +23,11 @@
       if (turnIn(t.rules, turn)) out.push({ kind: 'lineup', train: t.train, order: t.order, text: `Projected for ${t.train} (${t.status} ${t.order}): ${t.rules}` });
     }
     for (const t of s.onDuty || []) {
-      if (turnIn(t.crew, turn)) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}` });
+      // A spare person filling in shows under the job's turn (owner, 2026-10-24).
+      const fill = (t.backfill || []).find((b) => b.turn === turn);
+      const by = (t.backfill || []).find((b) => b.job === turn);
+      if (fill) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}, working ${fill.job} (${fill.craft})` });
+      else if (turnIn(t.crew, turn)) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}${by ? ` (worked by ${by.turn})` : ''}` });
     }
     // Yard jobs (owner, 2026-10-24), taken as 8 h: a crew on one, or the job itself.
     for (const j of s.yardJobs || []) {
@@ -70,6 +74,7 @@
     for (const r of s.returning || []) set.add(r.split(' ')[0]);
     for (const c of s.bunkhouse || []) { if (c.en) set.add(c.en); if (c.co) set.add(c.co); }
     for (const t of s.onDuty || []) for (const m of (t.crew || '').matchAll(/\b([A-Z][A-Z0-9]{1,4}\d{2})\b/g)) set.add(m[1]);
+    for (const t of s.onDuty || []) for (const b of t.backfill || []) set.add(b.turn);
     // Yard jobs and their crews, and the jobs going spare (owner, 2026-10-24).
     for (const j of s.yardJobs || []) { set.add(j.job); for (const m of (j.crew || '').matchAll(/\b([A-Z][A-Z0-9]{1,4}\d{2})\b/g)) set.add(m[1]); }
     for (const v of s.vacancies || []) set.add(v.turn);

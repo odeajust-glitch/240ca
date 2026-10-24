@@ -568,8 +568,8 @@ function pools(s, pi) {
 
 function onDuty(s) {
   if (!s.onDuty.length) return '';
-  const rows = s.onDuty.map((t) => `<tr${markedIn(t.crew) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div></td></tr>`).join('');
+  const rows = s.onDuty.map((t) => `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }

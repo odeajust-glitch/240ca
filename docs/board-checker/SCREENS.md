@@ -41,6 +41,11 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   matches surname + first initial, and saves only `yardCrew: [{ job, craft,
   turn }]`. The name → turn list lives only in the running window (carried
   between checks; a name on two turns is left unmatched).
+  **Filling in** (owner): a spare person covering an absent person's job
+  shows on the Call Board under *that job's* turn (e.g. SR03), so train crews
+  are matched by name too; where the person's own turn (e.g. B138) differs,
+  `backfill: [{ train, craft, job, turn }]` is saved and B138's history shows
+  "working SR03", SR03's "worked by B138".
 - **Spareboards** (`SPAREBOARD INQUIRY`, PSTS02D): conductor fast **3 → 13**,
   slow **3 → 9**; engineer fast **1 → 19**, slow **1 → 17**. F8 until
   `END OF SPAREBOARD`. Columns: name (never kept), TURN (B138), POS, ST, RN,
