@@ -51,6 +51,7 @@ const fs = require('fs');
 const path = require('path');
 const { describeFrame } = require('../lib/board/capture');
 const { parseGrid } = require('../lib/board/grid');
+const People = require('../lib/board/people');
 const S = require('../lib/board/screens');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
@@ -252,7 +253,14 @@ async function runRoute(page, opts = {}) {
   const unmaskedRows = async () => {
     try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
   };
-  const learn = async () => { const rows = await unmaskedRows(); if (rows) learnPeople(S.parseBoardNames(rows)); };
+  const boardNames = []; // this check's people on boards, under their own turn
+  const learn = async () => {
+    const rows = await unmaskedRows();
+    if (!rows) return;
+    const found = S.parseBoardNames(rows);
+    learnPeople(found);
+    boardNames.push(...found);
+  };
   // `label` tells the loader which screens are Mac yard's (they look like
   // Sarnia's 23 and 41).
   const capture = async (label) => {
@@ -434,7 +442,19 @@ async function runRoute(page, opts = {}) {
   const backfill = trainNames.map((t) => ({ train: t.train, craft: t.craft, job: t.job, turn: knownPeople.get(t.key) || null }))
     .filter((t) => t.turn && t.turn !== t.job);
   if (backfill.length) console.log(`  Filling in: ${backfill.map((b) => `${b.turn} on ${b.job} (${b.train})`).join(', ')}.`);
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill };
+  // The hidden search (lib/board/people.js): who was on which turn this
+  // check, as a hash of the person's code + the turn. No names, no codes.
+  const seen = new Map();
+  const sight = (code, turn, own) => {
+    if (!code || !turn) return;
+    const h = People.personHash(code);
+    const k = `${h}/${turn}`;
+    seen.set(k, { h, turn, own: own || (seen.get(k) || {}).own || false });
+  };
+  for (const b of boardNames) sight(b.code, b.turn, true);
+  for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
+  for (const y of yardNames) sight(y.code, y.job, false);
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, people: [...seen.values()] };
 }
 
 // The full view, plus what changed since the previous check (kept in

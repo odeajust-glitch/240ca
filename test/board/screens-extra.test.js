@@ -108,14 +108,14 @@ test('Call Board: yard jobs after the trains, stop at the crews in town', () => 
 
 test('yard crews matched to turns by name, in memory only', () => {
   const yard = S.parseYardCrewNames(grid(yardPage, false));
-  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key}`), ['YPRS60 FO DESCHENES/M', 'YPRS60 S1 JOSEPH/B', 'YSBY04 YA ROBBINS/M']);
+  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key} ${y.code}`), ['YPRS60 FO DESCHENES/M MADE', 'YPRS60 S1 JOSEPH/B BRJO', 'YSBY04 YA ROBBINS/M MARO']);
   const people = S.parseBoardNames(grid([
     '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST',
     'DESCHENES+     M    MATT   B138  001',
     'JACOBSEN+(N/NT)N   NEIL   B142  009',
     'EN MU01  1 999  ROBBINS*+        M  MARK   B0                                      L50131  23',
   ], false));
-  assert.deepEqual(people, [{ key: 'DESCHENES/M', turn: 'B138' }, { key: 'JACOBSEN/N', turn: 'B142' }, { key: 'ROBBINS/M', turn: 'MU01' }]);
+  assert.deepEqual(people, [{ key: 'DESCHENES/M', turn: 'B138', code: 'MADE' }, { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA' }, { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO' }]);
 });
 
 test('masking: yard job ids and headings stay, names go', () => {
@@ -165,7 +165,7 @@ test('site snapshot and turn facts with the new screens', () => {
 // the Call Board under that job's turn; found by name, kept as turns only.
 test('spare person filling in: job turn vs their own turn', () => {
   const crew = S.parseTrainCrewNames(grid(yardPage, false));
-  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J' }]);
+  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J', code: 'JOSM' }]);
   const BoardTurns = require('../../public/board-turns');
   const s = { onDuty: [{ train: 'M38261 23', station: 'SARNIA', onDuty: '24th 0145', crew: 'CO SR03', backfill: [{ craft: 'CO', job: 'SR03', turn: 'B138' }] }] };
   assert.deepEqual(BoardTurns.facts(s, 'B138').map((f) => f.text), ['On duty on M38261 23 at Sarnia, 24th 0145, working SR03 (CO)']);
@@ -196,4 +196,25 @@ test('who fills the jobs going spare', () => {
     ['', 'Conductor slow board', '24th 1325', 'B201 (rest until 24th 1400)'], // still resting at the call: no one free
   ]);
   assert.equal(spareFills([v('YXXX01', 'YE', true, 7, 0)], {}).values().next().value, null); // board not read
+});
+
+// Owner, 2026-10-24: hidden search by a short code from a name (Justin
+// O'Dea → JUOD); only a hash of it is saved, with the turn.
+test('person codes and sightings', () => {
+  const { personCode, personHash, addSightings } = require('../../lib/board/people');
+  assert.equal(personCode("O'DEA", 'JUSTIN'), 'JUOD');
+  assert.equal(personCode('DE MAN', 'MIKE'), 'MIDE');
+  assert.equal(personCode('LI', 'J'), null); // first name cut to an initial: no code
+  assert.equal(personHash('juod'), personHash('JUOD'));
+  assert.equal(personHash('JUOD').length, 16);
+  const h = personHash('JUOD');
+  const into = {};
+  addSightings(into, [{ h, turn: 'B138', own: true }], '2026-10-24 0800');
+  addSightings(into, [{ h, turn: 'B138', own: true }, { h, turn: 'SR03' }], '2026-10-24 0805');
+  addSightings(into, [{ h, turn: 'B138', own: true }], '2026-10-24 1200'); // a gap: a new stretch
+  assert.deepEqual(into[h], [
+    { turn: 'B138', own: true, from: '2026-10-24 0800', to: '2026-10-24 0805' },
+    { turn: 'SR03', own: false, from: '2026-10-24 0805', to: '2026-10-24 0805' },
+    { turn: 'B138', own: true, from: '2026-10-24 1200', to: '2026-10-24 1200' },
+  ]);
 });

@@ -105,6 +105,15 @@ Deploy).
   assumed: yard = start − 2 h, road = order − 2 h 15 m (❓ confirm yard).
   Shown under each job ("Filled by … estimate") and in Turn History.
   Yardmaster jobs (CC YA) go to the yardmaster board: left off the site.
+- Hidden person search (owner, 2026-10-24): type a 4-letter code (first 2
+  of first name + first 2 of surname, letters only: Justin O'Dea → JUOD) in
+  Turn History or Find a turn. Never suggested, never shown as a name, not
+  kept in the URL or on the phone. Each check saves people: [{ h, turn, own }]
+  (h = sha256('240ca-person:' + code) first 16 hex, lib/board/people.js);
+  site builds data/people.json (hash → turn stretches, FORMAT 10); the page
+  hashes the typed code (crypto.subtle) and joins those turns' histories
+  (personHistory). Tracking a code tracks the person's current turn (not the
+  person; alerts don't follow them to a new turn yet).
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

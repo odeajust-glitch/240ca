@@ -666,6 +666,32 @@ function turnPanel(s) {
 }
 // A time that opens that snapshot.
 const stampBtn = (taken) => { const w = when(taken); return `<button type="button" data-taken="${esc(taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button>`; };
+// A person's history (hidden search): each turn's history, only while they
+// were on it, put together and marked with the turn.
+function personHistory(stretches, all) {
+  const within = (t, e) => t && t >= e.from && t <= e.to;
+  const rec = { changes: [], orders: [], rests: [], spares: [] };
+  for (const e of stretches) {
+    const r = all[e.turn];
+    if (!r) continue;
+    const tag = (x) => ({ ...x, turn: e.turn });
+    rec.changes.push(...r.changes.filter((c) => within(c.taken, e)).map(tag));
+    rec.orders.push(...r.orders.filter((o) => within(o.first, e) || within(o.last, e) || within(o.onDutySeen, e)).map(tag));
+    rec.rests.push(...r.rests.filter((x) => within(x.seen, e)).map(tag));
+    rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
+  }
+  const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
+  rec.changes.sort(by('taken'));
+  rec.orders.sort(by('first'));
+  rec.rests.sort(by('seen'));
+  rec.spares.sort(by('seen'));
+  rec.changes = rec.changes.map((c) => ({ ...c, text: `${c.turn}: ${c.text}` }));
+  rec.orders = rec.orders.filter((o, i, a) => a.findIndex((x) => x.train === o.train) === i).map((o) => ({ ...o, train: `${o.train} (${o.turn})` }));
+  rec.rests = rec.rests.map((x) => ({ ...x, where: [x.turn, x.where].filter(Boolean).join(', ') }));
+  rec.spares = rec.spares.map((x) => ({ ...x, text: `${x.turn}: ${x.text}` }));
+  return rec;
+}
+
 // Totals for the Turn History tab, from the turn's history record.
 function turnStats(rec) {
   if (!rec) return '';
@@ -861,6 +887,36 @@ async function shareLink(hash, title, button) {
 
 // "When does this turn go?" from the newest check (data/whengo.json).
 const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+
+// Hidden search by person (owner, 2026-10-24): a 4-letter code from a
+// name (Justin O'Dea → JUOD) instead of a turn. Never suggested, never
+// shown back as a name: the site only has hashes of codes with the turns
+// each person was seen on (data/people.json, lib/board/people.js). What's
+// typed is hashed here the same way and looked up.
+const isCode = (t) => /^[A-Z]{4}$/.test(t || '');
+const Person = (() => {
+  const SALT = '240ca-person:';
+  let data = null;
+  const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : { people: {} })).then((d) => d.people || {}).catch(() => ({})));
+  async function hash(code) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + code.toUpperCase()));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  }
+  return {
+    // The turns that person was seen on: [{ turn, own, from, to }], or null.
+    async find(code) {
+      if (!isCode(code) || !window.crypto || !crypto.subtle) return null;
+      const [all, h] = await Promise.all([load(), hash(code)]);
+      return all[h] && all[h].length ? all[h] : null;
+    },
+    // Where they were last seen: their own turn first.
+    current(list) {
+      const last = list.reduce((m, e) => (e.to > m ? e.to : m), '');
+      const now = list.filter((e) => e.to === last);
+      return now.find((e) => e.own) || now[0] || null;
+    },
+  };
+})();
 
 // Turn alerts (owner, 2026-10-22): "Get alerts" on a turn subscribes this
 // phone (web push, no app) and tells the site which turns it wants
@@ -1282,7 +1338,19 @@ source().then(async (src) => {
   const turnClear = document.getElementById('turnclear');
   // Enter, or a turn picked from the suggestions (not on leaving the box:
   // tapping OK would open it again).
-  turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openTrack(turnBox.value); } });
+  // A 4-letter code tracks that person's turn (hidden search).
+  async function openTrackAny(v) {
+    const t = clean(v);
+    if (!isCode(t)) return openTrack(t);
+    const list = await Person.find(t);
+    const cur = list && Person.current(list);
+    if (cur) return openTrack(cur.turn);
+    dlg.innerHTML = '<div class="dlg" role="dialog" aria-modal="true"><header><h2>Not found</h2></header><div class="alertnote">Nothing found for that in the saved checks. Type a turn, e.g. SR03.</div><div class="btns"><button type="button" class="ok" id="dlgcancel">OK</button></div></div>';
+    dlg.dataset.turn = '';
+    dlg.hidden = false;
+    document.getElementById('dlgcancel').onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
+  }
+  turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openTrackAny(turnBox.value); } });
   turnBox.addEventListener('input', (e) => {
     turnClear.hidden = !turnBox.value;
     if (!e.inputType || e.inputType === 'insertReplacementText') openTrack(turnBox.value);
@@ -1294,6 +1362,8 @@ source().then(async (src) => {
   // The turn on the Turn History tab (remembered on this phone).
   function setFocus(t) {
     focus = clean(t);
+    // A person search isn't remembered on the phone.
+    if (isCode(focus)) return;
     try { focus ? localStorage.setItem('boardTurn', focus) : localStorage.removeItem('boardTurn'); } catch (e) { /* storage off */ }
   }
   try { setFocus(localStorage.getItem('boardTurn') || ''); } catch (e) { /* storage off */ }
@@ -1310,8 +1380,9 @@ source().then(async (src) => {
     view.innerHTML = `<div class="thead"><div class="when">Turn History</div>
         <div class="turnpick"><label for="tturn">Look up a turn</label><div class="row"><input id="tturn" list="tturnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6" value="${esc(focus)}"><button id="tgo" type="button">Show</button></div>
           <datalist id="tturnlist">${options}</datalist><div class="tracked">${trackChips('Your tracked turns:')}</div></div></div>
-      ${focus ? turnPanel(s) : '<p class="empty">Type a turn (e.g. SR03) to see where it stands now, when it goes, and everything the saved checks show about it.</p>'}`;
-    try { history.replaceState(null, '', focus ? `#turn=${encodeURIComponent(focus)}` : '#turns'); } catch (e) { /* not allowed in some frames */ }
+      ${focus ? (isCode(focus) ? '<div id="person"><p class="empty">Looking that up…</p></div>' : turnPanel(s)) : '<p class="empty">Type a turn (e.g. SR03) to see where it stands now, when it goes, and everything the saved checks show about it.</p>'}`;
+    // A person search stays out of the address bar.
+    try { history.replaceState(null, '', focus && !isCode(focus) ? `#turn=${encodeURIComponent(focus)}` : '#turns'); } catch (e) { /* not allowed in some frames */ }
     const box = document.getElementById('tturn');
     const go = () => { setFocus(box.value); renderTurns(); };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
@@ -1319,6 +1390,7 @@ source().then(async (src) => {
     document.getElementById('tgo').onclick = go;
     view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { setFocus(b.dataset.track); renderTurns(); }; });
     if (!focus) return;
+    if (isCode(focus)) return showPerson(focus, s);
     const want = focus;
     document.getElementById('turnalert').onclick = () => openTrack(want);
     const note = document.getElementById('alertnote');
@@ -1351,6 +1423,45 @@ source().then(async (src) => {
     }).catch(() => {
       const hb = document.getElementById('turnhist');
       if (hb) hb.innerHTML = '<p class="empty" style="padding:0">History isn\'t available right now.</p>';
+    });
+  }
+
+  // The hidden search's answer: the turns this person was seen on, where
+  // they are now, and their history across those turns. No name anywhere.
+  async function showPerson(code, s) {
+    const box = document.getElementById('person');
+    const list = await Person.find(code);
+    if (!box || focus !== code) return;
+    if (!list) { box.innerHTML = '<p class="empty">Nothing found for that in the saved checks.</p>'; return; }
+    const all = await src.turns().catch(() => ({}));
+    if (focus !== code || !box.isConnected) return; // looked up again meanwhile
+    const cur = Person.current(list);
+    const live = cur && cur.to >= s.taken;
+    const span = (e) => `${esc(when(e.from).time)} ${esc(dt(e.from).split(' ')[0])}${e.to !== e.from ? ` – ${esc(when(e.to).time)} ${esc(dt(e.to).split(' ')[0])}` : ''}`;
+    const turns = [...list].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b> · ${e.own ? 'their turn' : 'working this job'} · ${span(e)}</span></li>`).join('');
+    const rec = personHistory(list, all);
+    const h = turnHistory(rec, s.taken);
+    const prev = focus;
+    focus = live ? cur.turn : '';
+    setMarks();
+    const here = live ? BoardTurns.facts(s, cur.turn) : [];
+    box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
+      <div id="whengo" class="whengo" hidden></div>
+      <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}</div>
+      <div id="tstats" class="tstats">${turnStats(rec)}</div>
+      <div class="tp"><div><h3>Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
+      <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
+      <div class="tp tp3">${h.more}</div></section>`;
+    focus = prev;
+    box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
+    if (!live) return;
+    box.querySelector('#turnalert').onclick = () => openTrack(cur.turn);
+    whenGo().then((w) => {
+      const b = box.querySelector('#whengo');
+      const lines = w && w.turns && w.turns[cur.turn];
+      if (!b || focus !== code || !lines) return;
+      b.hidden = false;
+      b.innerHTML = `<h3>When ${esc(cur.turn)} goes <span class="muted">(as of ${esc(when(w.taken).time)})</span></h3>` + lines.map((l, i) => `<p>${i ? '' : '<b>'}${esc(l)}${i ? '' : '</b>'}</p>`).join('');
     });
   }
 
