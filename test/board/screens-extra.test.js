@@ -172,3 +172,26 @@ test('spare person filling in: job turn vs their own turn', () => {
   const h = BoardTurns.finish(BoardTurns.history([{ ...s, taken: '2026-10-24 0200' }]));
   assert.equal(h.B138.orders[0].train, 'M38261 23');
 });
+
+// Owner, 2026-10-24: yard jobs off the fast board, road jobs off the slow
+// board, engineer jobs off the engineer boards, in board order; a spare on
+// rest at the call is skipped and keeps its place.
+test('who fills the jobs going spare', () => {
+  const { spareFills } = require('../../lib/board/site');
+  const v = (train, cc, yard, h, m) => ({ train, cc, yard, at: at(2026, 10, 24, h, m) });
+  const sb = (turn, pos, rest = null) => ({ turn, pos, restUntil: rest });
+  const jobs = [v('M39491', 'EN', false, 6, 15), v('YSTY01', 'YA', true, 6, 30), v('YPRS02', 'FO', true, 6, 45), v('M38261', 'CO', false, 15, 40)];
+  const boards = {
+    coFast: [sb('B138', 1, at(2026, 10, 24, 5, 0)), sb('B147', 2), sb('B119', 3)],
+    coSlow: [sb('B201', 1, at(2026, 10, 24, 14, 0))],
+    enSlow: [sb('E301', 1)],
+  };
+  const f = spareFills(jobs, boards);
+  assert.deepEqual(jobs.map((j) => { const x = f.get(j); return [x.turn, x.board, fmt(x.call), x.skipped.join()]; }), [
+    ['E301', 'Engineer slow board', '24th 0400', ''],
+    ['B147', 'Conductor fast board', '24th 0430', 'B138 (rest until 24th 0500)'],
+    ['B119', 'Conductor fast board', '24th 0445', 'B138 (rest until 24th 0500)'],
+    ['', 'Conductor slow board', '24th 1325', 'B201 (rest until 24th 1400)'], // still resting at the call: no one free
+  ]);
+  assert.equal(spareFills([v('YXXX01', 'YE', true, 7, 0)], {}).values().next().value, null); // board not read
+});

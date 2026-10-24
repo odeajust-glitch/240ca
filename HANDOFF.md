@@ -99,6 +99,11 @@ Deploy).
   Filling in (backfill, matched by name): saved as summary.backfill; Turn
   History shows "working SR03" / "worked by B138"; the on-duty alert goes to
   the person's own turn (turnStates pools.backfill), not the job's.
+  Who fills a job going spare (site.js spareFills, owner): yard → fast
+  board, road → slow board; CC EN/LE/ET → engineer boards, else conductor;
+  board order, earliest job first, on rest at the call = skipped. Calls
+  assumed: yard = start − 2 h, road = order − 2 h 15 m (❓ confirm yard).
+  Shown under each job ("Filled by … estimate") and in Turn History.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).
