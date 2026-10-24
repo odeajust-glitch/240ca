@@ -513,7 +513,9 @@ function toronto(s) {
   const byPos = new Map(crews.map((c) => [c.pos, c]));
   const crewCell = (c, t) => {
     const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
-    if (!c && t.south) return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew by the call; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}</div>`;
+    // Ordered out of the bunkhouse with no crew rested by the call: it doesn't
+    // go spare like in Sarnia; a Toronto South crew may get it (owner, 2026-10-25).
+    if (!c && t.status === 'ORD') return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew in the bunkhouse by the call${t.south ? `; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}` : ''}</div>`;
     if (!c) return `<span class="muted">${t.skipped && t.skipped.length ? 'no rested crew in the bunkhouse by the call' : 'no crew in the bunkhouse yet'}</span>${skip}`;
     // Planned and still on rest at the call (owner, 2026-10-25): when they're rested, in yellow.
     const when = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
