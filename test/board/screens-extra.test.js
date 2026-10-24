@@ -218,3 +218,18 @@ test('person codes and sightings', () => {
     { turn: 'B138', own: true, from: '2026-10-24 1200', to: '2026-10-24 1200' },
   ]);
 });
+
+// Owner, 2026-10-25: yesterday's YPRS60 on duty (23rd 2245) mustn't count
+// tonight's YPRS60 vacancies (24th 2245) as filled; in board order: YPRS60
+// FO, YPRS60 S1, then YBHS61.
+test('jobs going spare: the same job yesterday is not this one', () => {
+  const { spareFills, onDutyAlready } = require('../../lib/board/spares');
+  const v = (train, cc, h, m, d = 24) => ({ train, cc, yard: true, at: at(2026, 10, d, h, m) });
+  const jobs = [v('YPRS60', 'FO', 22, 45), v('YPRS60', 'S1', 22, 45), v('YBHS61', 'FO', 23, 0)];
+  const yard = [{ job: 'YPRS60', onDuty: at(2026, 10, 23, 22, 45) }];
+  assert.equal(onDutyAlready(jobs[0], yard, []), false);
+  assert.equal(onDutyAlready(v('YPRS60', 'FO', 22, 45, 23), yard, []), true);
+  const sb = (turn, pos) => ({ turn, pos, restUntil: null });
+  const f = spareFills(jobs.filter((j) => !onDutyAlready(j, yard, [])), { coFast: [sb('B119', 1), sb('B111', 2), sb('B134', 3)] });
+  assert.deepEqual(jobs.map((j) => f.get(j).turn), ['B119', 'B111', 'B134']);
+});
