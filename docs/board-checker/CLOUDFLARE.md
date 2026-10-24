@@ -115,7 +115,7 @@ and engineer turns). Free, no app, no message cap (web push).
   (never, 15 min, 30 min, 1 h, 1½ h, 2 h, 3 h). Defaults: all on, 30 min.
   The two "someone ahead" alerts come only while your turn is on the Chain
   Gang or SD board at home in Sarnia (not away, not on duty).
-- **A rescue train shows up where I'm waiting** (owner, 2026-10-23): a train
+- **Rescue train appears in the lineup** (owner, 2026-10-23): a train
   whose symbol is R + another train's (M383 → RM383). On the Sarnia line-up
   (47130) it alerts every followed turn at home on a Sarnia board; on the
   Toronto line-up (41975), the crews waiting in the bunkhouse. Once per rescue.

@@ -1203,7 +1203,7 @@ source().then(async (src) => {
       <header><h2>Track <span class="num">${esc(turn)}</span></h2></header>
       <div class="alertopts"><span class="lbl">Alert me when ${esc(turn)}:</span>
         ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}
-        ${box('position', 'changes board position')}${box('rescue', 'is waiting where a rescue train shows up')}
+        ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label></div>
       <div id="dlgnote" class="alertnote" hidden></div>
