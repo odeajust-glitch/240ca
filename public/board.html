@@ -164,7 +164,7 @@
   /* Current: the newest snapshot only; the turn search stays, the list goes. */
   body.current .rail h2, body.current .rail .daypick, body.current #rail { display: none; }
 
-  .strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
+  .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
   .stat { padding: 12px 14px; border-left: 1px solid var(--rule); }
   .stat:first-child { border-left: 0; }
   .stat .v { font: 600 28px/1 var(--mono); }
@@ -356,10 +356,8 @@
     .rail button { border: 1px solid var(--rule); border-radius: 4px; margin: 0; padding: 6px 12px; white-space: nowrap; background: var(--sheet); }
     .rail button[aria-current="true"] { border-color: var(--accent); }
     .rail .t { font-size: 16px; }
-    .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .stat:nth-child(odd) { border-left: 0; }
-    .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
-    .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .strip .stat { padding: 10px; }
+    .strip .stat .v { font-size: 22px; }
     .head .when { font-size: 30px; }
     .head .when .num { font-size: 26px; }
     .steps { margin-left: 0; }
@@ -644,13 +642,10 @@ function strip(s) {
     const free = [...turns.values()].filter((t) => t.status === 'available').length;
     return `${free} <small>/ ${turns.size}</small>`;
   };
-  const off = s.sequence.filter((t) => t.actual && t.actual !== t.expected && t.actual !== 'MU').length + s.flags.length;
   return `<div class="strip">
     <div class="stat"><div class="v">${s.lineup.length} <small>/ ${ord} ORD</small></div><div class="l">Trains on the line-up</div></div>
-    <div class="stat"><div class="v">${s.onDuty.length}</div><div class="l">On duty (call board)</div></div>
     <div class="stat"><div class="v">${spare('Conductor')}</div><div class="l">Conductors available (spareboard)</div></div>
     <div class="stat"><div class="v">${spare('Engineer')}</div><div class="l">Engineers available (spareboard)</div></div>
-    <div class="stat ${off ? 'alert' : ''}"><div class="v">${off}</div><div class="l">Things to check</div></div>
   </div>`;
 }
 
