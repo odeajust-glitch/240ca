@@ -233,3 +233,13 @@ test('jobs going spare: the same job yesterday is not this one', () => {
   const f = spareFills(jobs.filter((j) => !onDutyAlready(j, yard, [])), { coFast: [sb('B119', 1), sb('B111', 2), sb('B134', 3)] });
   assert.deepEqual(jobs.map((j) => f.get(j).turn), ['B119', 'B111', 'B134']);
 });
+
+// Owner, 2026-10-25: B0 on the slow board holds the spot while working, but
+// isn't called; the next one is.
+test('jobs going spare: a B0 turn keeps its spot but is passed over', () => {
+  const { spareFills } = require('../../lib/board/spares');
+  const job = { train: 'M38261', cc: 'CO', yard: false, at: at(2026, 10, 25, 15, 40) };
+  const f = spareFills([job], { coSlow: [{ turn: 'B201', pos: 1, st: 'B0', restUntil: null }, { turn: 'B202', pos: 2, restUntil: null }] }).get(job);
+  assert.equal(f.turn, 'B202');
+  assert.deepEqual(f.skipped, ['B201 (B0, working)']);
+});

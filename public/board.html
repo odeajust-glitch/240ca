@@ -591,13 +591,13 @@ function vacancies(s) {
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
   const fill = (v) => (!v.fill ? ''
-    : `<div class="crew">Filled by ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<span class="spare">no one free</span>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${v.fill.skipped.length ? ` · skipped, on rest: ${esc(v.fill.skipped.join(' · '))}` : ''}${v.fill.sd ? ` · <b class="num">${markTurn(v.fill.sd)}</b> (Chain Gang) may be called` : ''}</div>`);
+    : `<div class="crew">Filled by ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<span class="spare">no one free</span>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${v.fill.skipped.length ? ` · skipped: ${esc(v.fill.skipped.join(' · '))}` : ''}${v.fill.sd ? ` · <b class="num">${markTurn(v.fill.sd)}</b> (Chain Gang) may be called` : ''}</div>`);
   const rows = s.vacancies.map((v) => `<tr${marked(v.turn) || (v.fill && marked(v.fill.turn)) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td>
     <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${fill(v)}</td>
     <td class="num">${markTurn(v.turn)}${v.spare ? ' <span class="spare">(spare)</span>' : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${s.vacancies.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest at the call is skipped and keeps its place. Calls: 2 h before a yard job; order − 2 h 15 m on the road.</div></section>`;
+    <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job; order − 2 h 15 m on the road.</div></section>`;
 }
 
 function sequence(s) {
