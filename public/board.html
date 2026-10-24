@@ -466,8 +466,10 @@ function ruleText(rules) {
   // No Chain Gang turn free: still an SR train (owner, 2026-10-24), said as
   // "No Turn Available (spare)". A turn going spare is just "(spare)".
   return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'No Turn Available (goes spare)')
-    .replace(/spareboard \(no (SD|S1|S3) turn free\)/, 'No Turn Available (goes spare)'))
-    .replace(/\(goes spare[^)]*\)/g, '<span class="spare">(spare)</span>');
+    .replace(/spareboard \(no (SD|S1|S3) turn free\)/, 'ENGSPARE'))
+    .replace(/\(goes spare[^)]*\)/g, '<span class="spare">(spare)</span>')
+    // No engineer turn free: just "spare" (owner, 2026-10-25).
+    .replace('ENGSPARE', '<span class="spare">spare</span>');
 }
 
 function lineup(s) {
