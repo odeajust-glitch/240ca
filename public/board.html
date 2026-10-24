@@ -239,8 +239,39 @@
   .modes { display: flex; gap: 4px; margin-left: 12px; flex-wrap: wrap; }
   .modes button { background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 5px 12px; cursor: pointer; font: 600 13px/1 var(--body); color: var(--soft); }
   .modes button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-  body.orders .rail { display: none; }
-  body.orders .wrap { grid-template-columns: minmax(0, 1fr); }
+  body.orders .rail, body.turns .rail { display: none; }
+  body.orders .wrap, body.turns .wrap { grid-template-columns: minmax(0, 1fr); }
+  /* Tracked turns (owner, 2026-10-24): chips under Find a turn, and the
+     alerts box that opens when a turn is looked up on Current/Snapshots. */
+  .tracked { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tracked:empty { display: none; }
+  .tracked .lbl { width: 100%; font-size: 12px; color: var(--soft); }
+  .rail .tracked button, .thead .turnpick .tracked button { display: inline-flex; gap: 4px; align-items: center; width: auto; margin: 0; padding: 4px 9px; border: 1px solid var(--amber); border-left-width: 1px; border-radius: 4px; background: var(--amber-tint); color: var(--ink); font: 600 13px/1.2 var(--mono); cursor: pointer; }
+  .dlg-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px 16px; z-index: 50; overflow-y: auto; }
+  .dlg-back[hidden] { display: none; }
+  .dlg { background: var(--sheet); border: 1px solid var(--amber); width: 100%; max-width: 460px; }
+  .dlg > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid var(--rule); background: var(--amber-tint); }
+  .dlg > header h2 { margin: 0; font: 700 19px/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+  .dlg .alertopts { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .dlg .btns { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
+  .dlg .btns button { border: 1px solid var(--rule); background: none; color: var(--ink); border-radius: 4px; padding: 0 14px; min-height: 40px; font: 600 14px/1 var(--body); cursor: pointer; }
+  .dlg .btns button.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .dlg .btns button.stop { margin-left: auto; color: var(--stop); }
+  /* Turn History tab */
+  .thead { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .thead .when { font: 700 40px/1 var(--display); }
+  .thead .turnpick { margin: 0; min-width: 220px; }
+  .thead .turnpick button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 0 12px; cursor: pointer; color: var(--soft); }
+  .tstats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--rule-soft); }
+  .tstats .stat { border-left: 1px solid var(--rule-soft); }
+  .tstats .stat:first-child { border-left: 0; }
+  .tstats .stat .v { font-size: 22px; }
+  @media (max-width: 700px) {
+    .tstats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tstats .stat { border-top: 1px solid var(--rule-soft); }
+    .tstats .stat:nth-child(odd) { border-left: 0; }
+    .thead .when { font-size: 30px; }
+  }
   .ohead { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
   .ohead .when { font: 700 40px/1 var(--display); }
   .ohead .ctl { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
@@ -342,7 +373,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
 </div>
@@ -352,6 +383,7 @@
       <label for="turn">Find a turn</label>
       <div class="row"><input id="turn" list="turnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6"><button id="turnclear" type="button" aria-label="Clear turn" hidden>✕</button></div>
       <datalist id="turnlist"></datalist>
+      <div id="tracked" class="tracked"></div>
     </div>
     <h2>Snapshots</h2>
     <label class="daypick" for="day"><span>Day</span><select id="day"></select></label>
@@ -359,13 +391,19 @@
   </nav>
   <main id="view"><p class="empty">Loading snapshots…</p></main>
 </div>
+<div id="trackdlg" class="dlg-back" hidden></div>
 <script src="board-turns.js"></script>
 <script src="board-trains.js"></script>
 <script src="jszip.min.js"></script>
 <script src="grievance.js"></script>
 <script src="board-names.js"></script>
 <script>
-let focus = ''; // the turn being looked for, e.g. "SR03"
+let focus = ''; // the turn open on the Turn History tab, e.g. "SR03"
+// Turns picked out on the page: the tracked turns on Current and Snapshots,
+// the Turn History turn there (owner, 2026-10-24: track several at once).
+let marks = [];
+const marked = (turn) => !!turn && marks.includes(turn);
+const markedIn = (text) => marks.some((m) => BoardTurns.turnIn(text, m));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Tapping a screen chip jumps to where that screen shows (owner, 2026-10-23):
 // the section's id, and for a pool screen which pool tab to open.
@@ -414,10 +452,11 @@ function poolChip(rules) {
   const m = /^(A|B) pool/.exec(rules) || (/^(Chain Gang|spareboard \(no Chain Gang)/.test(rules) ? [0, 'SR'] : /^S5/.test(rules) ? [0, 'S5'] : null);
   return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
 }
-// The focused turn, picked out in a line of text.
+// The marked turns, picked out in a line of text.
 function markTurn(text) {
   const safe = esc(text);
-  return focus ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${focus})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
+  const ids = marks.filter((m) => /^[A-Z0-9]+$/.test(m));
+  return ids.length ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${ids.join('|')})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
 }
 function ruleText(rules) {
   // No Chain Gang turn free: still an SR train (owner, 2026-10-24), said as
@@ -434,7 +473,7 @@ function lineup(s) {
     const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
     day = d;
     const [sym, od] = split(t.train);
-    const hit = focus && BoardTurns.turnIn(t.rules, focus);
+    const hit = markedIn(t.rules);
     return `${bar}<div class="train${hit ? ' hit' : ''}">
       <div class="time">${esc(hhmm)}</div>
       <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
@@ -483,12 +522,12 @@ function toronto(s) {
   };
   const rows = trains.map((t) => {
     if (t.crewExpected) {
-      const hit = focus && t.crew.split(' + ').includes(focus);
+      const hit = t.crew.split(' + ').some(marked);
       return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
       <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${expectedCell(t)}</td></tr>`;
     }
     const c = byPos.get(t.crewPos);
-    const hit = focus && c && (c.en === focus || c.co === focus);
+    const hit = c && (marked(c.en) || marked(c.co));
     return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
       <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${crewCell(c, t)}</td></tr>`;
   }).join('');
@@ -513,7 +552,7 @@ function pools(s, pi) {
   if (!s.pools.length) return '';
   const p = s.pools[pi] || s.pools[0];
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
-  const rows = p.turns.map((t) => `<tr${t.turn === focus ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
+  const rows = p.turns.map((t) => `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
@@ -524,7 +563,7 @@ function pools(s, pi) {
 
 function onDuty(s) {
   if (!s.onDuty.length) return '';
-  const rows = s.onDuty.map((t) => `<tr${focus && BoardTurns.turnIn(t.crew, focus) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
+  const rows = s.onDuty.map((t) => `<tr${markedIn(t.crew) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
     <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div></td></tr>`).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
@@ -534,7 +573,7 @@ function sequence(s) {
   if (!s.sequence.length) return '';
   const rows = s.sequence.map((t) => {
     const off = t.actual && t.actual !== t.expected && t.actual !== 'MU';
-    return `<tr${focus && t.turn === focus ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td class="num"><b>${esc(t.train)}</b></td><td class="num">${esc(t.turn || '–')}</td>
+    return `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td class="num"><b>${esc(t.train)}</b></td><td class="num">${esc(t.turn || '–')}</td>
       <td>${off ? `<span class="bad">${esc(t.actual)}, should be ${esc(t.expected)}</span>` : `<span class="ok">${esc(t.expected)} ✓</span>`}</td></tr>`;
   }).join('');
   return `<section class="sheet"><header><h2>Calling sequence</h2><span class="meta">Sarnia departures</span></header>
@@ -587,16 +626,27 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button" hidden></button><button id="turnclose" type="button">Close</button></div></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div id="whengo" class="whengo" hidden></div>
-    <div id="alertopts" class="alertopts" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
-    <div class="tp"><div><h3>Current snapshot</h3>${here}</div>
+    <div id="tstats" class="tstats"></div>
+    <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
     <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <div class="tp tp3" id="turnmore"></div></section>`;
 }
 // A time that opens that snapshot.
 const stampBtn = (taken) => { const w = when(taken); return `<button type="button" data-taken="${esc(taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button>`; };
+// Totals for the Turn History tab, from the turn's history record.
+function turnStats(rec) {
+  if (!rec) return '';
+  const lastDuty = [...rec.orders].reverse().find((o) => o.onDuty);
+  const tile = (v, l) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  return tile(rec.orders.length, 'trains lined up or worked')
+    + tile(rec.orders.filter((o) => o.onDuty).length, 'went on duty')
+    + tile(lastDuty ? `<small>${esc(lastDuty.onDuty)}</small>` : '—', lastDuty ? `last on duty (${esc(lastDuty.train)})` : 'last on duty')
+    + tile(rec.rests.length, 'rest or hold turns')
+    + tile(rec.spares.length, 'times it went spare');
+}
 // The turn's history (BoardTurns.finish): changes, then orders, rest and
 // spare, newest first. `current` marks the change in force at this snapshot.
 function turnHistory(rec, current) {
@@ -831,12 +881,15 @@ const Alerts = (() => {
       keepPrefs(turn, { ...prefs(turn), ...p });
       if (turns().includes(turn)) await save(turns());
     },
-    async toggle(turn) {
+    // Keeps this turn's choices on the phone without sending them.
+    keepPrefs(turn, p) { keepPrefs(turn, { ...prefs(turn), ...p }); },
+    async set(turn, on) {
+      const now = turns();
+      if (!on) return now.includes(turn) ? save(now.filter((t) => t !== turn)) : now;
       // Ask first, straight from the tap: iPhones only allow it there.
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') throw new Error('alerts are blocked for this site; allow notifications for it in the phone\'s settings');
-      const now = turns();
-      return save(now.includes(turn) ? now.filter((t) => t !== turn) : [...now, turn]);
+      return save(now.includes(turn) ? now : [...now, turn]);
     },
   };
 })();
@@ -1110,24 +1163,169 @@ source().then(async (src) => {
     openDay(src.days[di], dir < 0 ? next.length - 1 : 0);
   }
 
-  // Turn search: the box, the list of turns to pick from, and remembering
-  // the last turn looked for (this browser only).
+  const clean = (t) => String(t || '').trim().toUpperCase().replace(/\s+/g, '');
+  // Tracked turns (owner, 2026-10-24): looked up with Find a turn on Current
+  // or Snapshots, picked out on the page, alerts as chosen. Kept on this
+  // phone; turns with alerts on are tracked too.
+  const TRACK_KEY = 'trackTurns';
+  const tracked = () => {
+    let mine = [];
+    try { mine = JSON.parse(localStorage.getItem(TRACK_KEY)) || []; } catch (e) { /* storage off */ }
+    return [...new Set([...mine, ...Alerts.turns()])];
+  };
+  const keepTracked = (l) => { try { localStorage.setItem(TRACK_KEY, JSON.stringify(l)); } catch (e) { /* not kept */ } };
+  const trackChips = (label) => {
+    const t = tracked();
+    return t.length ? `<span class="lbl">${label}</span>${t.map((x) => `<button type="button" data-track="${esc(x)}">${esc(x)}${Alerts.state(x) === 'on' ? ' 🔔' : ''}</button>`).join('')}` : '';
+  };
+  function paintTracked() {
+    const box = document.getElementById('tracked');
+    box.innerHTML = trackChips('Tracking (tap to change):');
+    box.querySelectorAll('[data-track]').forEach((b) => { b.onclick = () => openTrack(b.dataset.track); });
+  }
+  // Which turns the page picks out: Turn History's own turn there, the
+  // tracked ones everywhere else.
+  const setMarks = () => { marks = mode === 'turns' ? (focus ? [focus] : []) : tracked(); };
+
+  // The box under "Find a turn" on Current/Snapshots: the turn's alert
+  // choices, OK to track it (and get its alerts), Cancel, or stop tracking.
+  const dlg = document.getElementById('trackdlg');
+  const TIMES = [[0, 'never'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [90, '1½ h'], [120, '2 h'], [180, '3 h']];
+  function openTrack(turnIn) {
+    const turn = clean(turnIn);
+    if (!/^[A-Z0-9]{2,6}$/.test(turn) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
+    dlg.dataset.turn = turn;
+    const was = tracked().includes(turn);
+    const chain = /^(SR|SD)/.test(turn);
+    const p = Alerts.prefs(turn);
+    const box = (k, label) => `<label><input type="checkbox" data-k="${k}" ${p[k] ? 'checked' : ''}> ${label}</label>`;
+    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(turn)}">
+      <header><h2>Track <span class="num">${esc(turn)}</span></h2></header>
+      <div class="alertopts"><span class="lbl">Alert me when ${esc(turn)}:</span>
+        ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}
+        ${box('position', 'changes board position')}${box('rescue', 'is waiting where a rescue train shows up')}
+        ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
+        <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label></div>
+      <div id="dlgnote" class="alertnote" hidden></div>
+      <div class="btns"><button type="button" class="ok" id="dlgok">OK</button><button type="button" id="dlgcancel">Cancel</button>${was ? '<button type="button" class="stop" id="dlgstop">Stop tracking</button>' : ''}</div></div>`;
+    dlg.hidden = false;
+    const note = document.getElementById('dlgnote');
+    const say = (html, cls) => { note.hidden = !html; note.innerHTML = html || ''; note.className = `alertnote${cls ? ` ${cls}` : ''}`; };
+    const close = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
+    const done = () => { close(); paintTracked(); if (mode === 'current' || mode === 'snap') show(cur, true); };
+    Alerts.ready.then(() => {
+      const st = Alerts.state(turn);
+      if (st === 'ios-home') say(`<b>For alerts on an iPhone</b> (iOS 16.4 or newer), first: Safari → <b>Share</b> → <b>Add to Home Screen</b>, then open the site from that icon and track the turn there. Tapping OK here still picks ${esc(turn)} out on the page.`, 'howto');
+      else if (st === 'unsupported') say(`This browser can't show alerts (on Android use Chrome). OK still picks ${esc(turn)} out on the page.`);
+      else if (st === 'none') say(`Alerts aren't set up on this site. OK still picks ${esc(turn)} out on the page.`);
+    });
+    document.getElementById('dlgcancel').onclick = close;
+    dlg.onclick = (e) => { if (e.target === dlg) close(); };
+    document.getElementById('dlgok').onclick = async (e) => {
+      const change = {};
+      dlg.querySelectorAll('[data-k]').forEach((el) => { change[el.dataset.k] = el.type === 'checkbox' ? el.checked : +el.value; });
+      Alerts.keepPrefs(turn, change);
+      keepTracked([...new Set([...tracked(), turn])]);
+      if (Alerts.state(turn) !== 'on' && Alerts.state(turn) !== 'off') return done();
+      e.currentTarget.disabled = true;
+      say('Setting up alerts…');
+      try {
+        await Alerts.set(turn, true);
+        done();
+      } catch (err) {
+        say(`${esc(turn)} is tracked on this page, but alerts couldn't be set up: ${esc(err.message)}.`, 'bad');
+        e.currentTarget.disabled = false;
+        paintTracked();
+      }
+    };
+    const stop = document.getElementById('dlgstop');
+    if (stop) stop.onclick = async () => {
+      try {
+        if (Alerts.turns().includes(turn)) await Alerts.set(turn, false);
+        keepTracked(tracked().filter((t) => t !== turn));
+        done();
+      } catch (err) { say(`Couldn't stop the alerts: ${esc(err.message)}.`, 'bad'); }
+    };
+  }
+
   const turnBox = document.getElementById('turn');
   const turnClear = document.getElementById('turnclear');
-  function setFocus(t, keep) {
-    focus = String(t || '').trim().toUpperCase().replace(/\s+/g, '');
-    turnBox.value = focus;
-    turnClear.hidden = !focus;
+  // Enter, or a turn picked from the suggestions (not on leaving the box:
+  // tapping OK would open it again).
+  turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openTrack(turnBox.value); } });
+  turnBox.addEventListener('input', (e) => {
+    turnClear.hidden = !turnBox.value;
+    if (!e.inputType || e.inputType === 'insertReplacementText') openTrack(turnBox.value);
+  });
+  turnClear.onclick = () => { turnBox.value = ''; turnClear.hidden = true; };
+  Alerts.ready.then(paintTracked);
+  paintTracked();
+
+  // The turn on the Turn History tab (remembered on this phone).
+  function setFocus(t) {
+    focus = clean(t);
     try { focus ? localStorage.setItem('boardTurn', focus) : localStorage.removeItem('boardTurn'); } catch (e) { /* storage off */ }
-    if (!keep && list.length) show(cur);
   }
-  turnBox.addEventListener('change', () => setFocus(turnBox.value));
-  turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFocus(turnBox.value); });
-  turnClear.onclick = () => setFocus('');
-  try { setFocus(localStorage.getItem('boardTurn') || '', true); } catch (e) { /* storage off */ }
+  try { setFocus(localStorage.getItem('boardTurn') || ''); } catch (e) { /* storage off */ }
+
+  // Turn History tab (owner, 2026-10-24): one turn, from the newest check,
+  // with when it goes, totals and its history.
+  async function renderTurns() {
+    const view = document.getElementById('view');
+    setMarks();
+    const latestList = await src.load(src.days[0]);
+    if (mode !== 'turns') return;
+    const s = latestList[latestList.length - 1];
+    const options = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
+    view.innerHTML = `<div class="thead"><div class="when">Turn History</div>
+        <div class="turnpick"><label for="tturn">Look up a turn</label><div class="row"><input id="tturn" list="tturnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6" value="${esc(focus)}"><button id="tgo" type="button">Show</button></div>
+          <datalist id="tturnlist">${options}</datalist><div class="tracked">${trackChips('Your tracked turns:')}</div></div></div>
+      ${focus ? turnPanel(s) : '<p class="empty">Type a turn (e.g. SR03) to see where it stands now, when it goes, and everything the saved checks show about it.</p>'}`;
+    try { history.replaceState(null, '', focus ? `#turn=${encodeURIComponent(focus)}` : '#turns'); } catch (e) { /* not allowed in some frames */ }
+    const box = document.getElementById('tturn');
+    const go = () => { setFocus(box.value); renderTurns(); };
+    box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    box.onchange = go;
+    document.getElementById('tgo').onclick = go;
+    view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { setFocus(b.dataset.track); renderTurns(); }; });
+    if (!focus) return;
+    const want = focus;
+    document.getElementById('turnalert').onclick = () => openTrack(want);
+    const note = document.getElementById('alertnote');
+    Alerts.ready.then(() => {
+      if (want !== focus || !note) return;
+      const on = Alerts.state(want) === 'on';
+      const t = tracked().includes(want);
+      note.hidden = false;
+      note.textContent = on ? `This phone gets alerts for ${want}.` : t ? `${want} is tracked on this phone (picked out on the page, no alerts).` : `Not tracked on this phone. Tap "Track / alerts" to pick it out on the page and choose its alerts.`;
+    });
+    whenGo().then((w) => {
+      const b = document.getElementById('whengo');
+      if (!b || want !== focus || !w) return;
+      const lines = w.turns && w.turns[want];
+      b.hidden = false;
+      b.innerHTML = `<h3>When ${esc(want)} goes <span class="muted">(as of ${esc(when(w.taken).time)})</span></h3>`
+        + (lines ? lines.map((l, i) => `<p>${i ? '' : '<b>'}${markTurn(l)}${i ? '' : '</b>'}</p>`).join('')
+          : '<p>Not lined up on a train and not in the Sarnia Chain Gang line right now (working, away, or off), or not a turn the board checker follows.</p>');
+    });
+    src.turns().then((all) => {
+      const hb = document.getElementById('turnhist');
+      if (!hb || want !== focus) return;
+      const h = turnHistory(all[want], s.taken);
+      hb.innerHTML = h.changes;
+      const more = document.getElementById('turnmore');
+      if (more) more.innerHTML = h.more;
+      const stats = document.getElementById('tstats');
+      if (stats) stats.innerHTML = turnStats(all[want]);
+      document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
+    }).catch(() => {
+      const hb = document.getElementById('turnhist');
+      if (hb) hb.innerHTML = '<p class="empty" style="padding:0">History isn\'t available right now.</p>';
+    });
+  }
 
   async function jumpTo(taken) {
-    if (mode === 'current') setMode('snap');
+    if (mode !== 'snap') setMode('snap');
     const d = taken.slice(0, 10);
     if (d === day) {
       const i = list.findIndex((s) => s.taken === taken);
@@ -1138,11 +1336,12 @@ source().then(async (src) => {
 
   function show(i, keepTab) {
     cur = i;
-    if (document.body.classList.contains('orders')) return;
+    if (document.body.classList.contains('orders') || mode === 'turns') return;
     const s = list[i];
     document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
-    if (focus && !keepTab) {
-      const mine = s.pools.findIndex((q) => q.turns.some((t) => t.turn === focus));
+    setMarks();
+    if (marks.length && !keepTab) {
+      const mine = s.pools.findIndex((q) => q.turns.some((t) => marked(t.turn)));
       if (mine >= 0) poolTab = mine;
     }
     const w = when(s.taken);
@@ -1171,7 +1370,6 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${focus ? turnPanel(s) : ''}
       ${strip(s)}
       <div class="grid">
         <div class="col">${lineup(s)}${toronto(s)}${changes(s)}</div>
@@ -1200,138 +1398,28 @@ source().then(async (src) => {
       el.classList.add('jumped');
       setTimeout(() => el.classList.remove('jumped'), 1500);
     }; });
-    if (focus) {
-      document.getElementById('turnclose').onclick = () => setFocus('');
-      wireAlerts(focus);
-      // The answer is about now: only on the newest snapshot.
-      if (atNewest) {
-        const want = focus;
-        whenGo().then((w) => {
-          const box = document.getElementById('whengo');
-          if (!box || want !== focus || !w) return;
-          const lines = w.turns && w.turns[want];
-          box.hidden = false;
-          box.innerHTML = `<h3>When ${esc(want)} goes <span class="muted">(as of ${esc(when(w.taken).time)})</span></h3>`
-            + (lines ? lines.map((l, i) => `<p>${i ? '' : '<b>'}${markTurn(l)}${i ? '' : '</b>'}</p>`).join('')
-              : '<p>Not lined up on a train and not in the Sarnia Chain Gang line right now (working, away, or off), or not a turn the board checker follows.</p>');
-        });
-      }
-      const want = focus;
-      src.turns().then((all) => {
-        const box = document.getElementById('turnhist');
-        if (!box || want !== focus) return;
-        const h = turnHistory(all[focus], s.taken);
-        box.innerHTML = h.changes;
-        const more = document.getElementById('turnmore');
-        if (more) more.innerHTML = h.more;
-        document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
-        const now = box.querySelector('li.now');
-        if (now) now.scrollIntoView({ block: 'nearest' });
-      }).catch(() => {
-        const box = document.getElementById('turnhist');
-        if (box) box.innerHTML = '<p class="empty" style="padding:0">History isn\'t available right now.</p>';
-      });
-    }
-  }
-
-  // The turn panel's alerts button and note.
-  function wireAlerts(turn) {
-    Alerts.ready.then(() => {
-      const btn = document.getElementById('turnalert');
-      const note = document.getElementById('alertnote');
-      if (!btn || !note || turn !== focus) return;
-      const opts = document.getElementById('alertopts');
-      const say = (text, bad) => { note.hidden = !text; note.textContent = text || ''; note.classList.toggle('bad', !!bad); note.classList.remove('howto'); };
-      // iPhones only allow web alerts for a site added to the home screen and
-      // opened from that icon (owner, 2026-10-22: that's what made it work).
-      const iphoneSteps = () => {
-        note.hidden = false;
-        note.classList.remove('bad');
-        note.classList.add('howto');
-        note.innerHTML = `<b>To get alerts on an iPhone</b> (iOS 16.4 or newer):<ol>
-          <li>Open this site in <b>Safari</b>.</li>
-          <li>Tap <b>Share</b> (the square with the arrow) → <b>Add to Home Screen</b> → <b>Add</b>.</li>
-          <li>Close Safari and open the site from the new <b>Line-up</b> icon on your home screen (it opens full screen, no address bar).</li>
-          <li>Find your turn, tap <b>🔔 Get alerts</b>, then <b>Allow</b>.</li></ol>
-          Alerts only work when the site is opened from that icon. If you tapped Don't Allow before: Settings → Notifications → Line-up → Allow Notifications.`;
-      };
-      const TIMES = [[0, 'never'], [15, '15 min'], [30, '30 min'], [60, '1 h'], [90, '1½ h'], [120, '2 h'], [180, '3 h']];
-      const covers = (p) => {
-        const chain = /^(SR|SD)/.test(turn);
-        const parts = [p.lineup && 'lined up', p.ordered && 'ordered', p.onDuty && 'on duty', p.reset && 'mandatory reset', p.position && 'board position changes', p.rescue && 'rescue trains', chain && p.aheadRest && 'someone ahead goes on rest', chain && p.aheadBack && 'someone ahead comes off rest', p.time > 0 && `call moves ${TIMES.find(([m]) => m === p.time)?.[1] || `${p.time} min`}+`].filter(Boolean);
-        return parts.length ? parts.join(', ') : 'nothing (all off)';
-      };
-      const drawOpts = () => {
-        const p = Alerts.prefs(turn);
-        opts.innerHTML = `<span class="lbl">Alert me for ${esc(turn)}:</span>
-          <label><input type="checkbox" data-k="lineup" ${p.lineup ? 'checked' : ''}> lined up</label>
-          <label><input type="checkbox" data-k="ordered" ${p.ordered ? 'checked' : ''}> ordered</label>
-          <label><input type="checkbox" data-k="onDuty" ${p.onDuty ? 'checked' : ''}> on duty</label>
-          <label><input type="checkbox" data-k="reset" ${p.reset ? 'checked' : ''}> put on a mandatory reset</label>
-          <label><input type="checkbox" data-k="position" ${p.position ? 'checked' : ''}> my board position changes</label>
-          <label><input type="checkbox" data-k="rescue" ${p.rescue ? 'checked' : ''}> a rescue train shows up where I'm waiting</label>
-          ${/^(SR|SD)/.test(turn) ? `<label><input type="checkbox" data-k="aheadRest" ${p.aheadRest ? 'checked' : ''}> someone ahead goes on rest</label>
-          <label><input type="checkbox" data-k="aheadBack" ${p.aheadBack ? 'checked' : ''}> someone ahead comes off rest</label>` : ''}
-          <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>`;
-        opts.querySelectorAll('[data-k]').forEach((el) => {
-          el.onchange = async () => {
-            const change = { [el.dataset.k]: el.type === 'checkbox' ? el.checked : +el.value };
-            try {
-              await Alerts.setPrefs(turn, change);
-              paint();
-            } catch (e) {
-              say(`Couldn't save that: ${e.message}.`, true);
-            }
-          };
-        });
-      };
-      const paint = () => {
-        const st = Alerts.state(turn);
-        btn.hidden = st === 'none';
-        btn.textContent = st === 'on' ? '🔕 Stop alerts' : st === 'ios-home' ? '🔔 Alerts on iPhone: how' : '🔔 Get alerts';
-        btn.classList.toggle('alert-on', st === 'on');
-        const others = Alerts.turns().filter((t) => t !== turn);
-        opts.hidden = st !== 'on' && st !== 'off';
-        if (!opts.hidden && !opts.firstChild) drawOpts();
-        if (st === 'ios-home') iphoneSteps();
-        else if (st === 'unsupported') say('This browser can\'t show alerts. On Android use Chrome; on iPhone add the site to the home screen first.');
-        else if (st === 'on') say(`This phone gets ${turn} alerts for: ${covers(Alerts.prefs(turn))}.${others.length ? ` Also following ${others.join(', ')}.` : ''}`);
-        else say(others.length ? `This phone gets alerts for ${others.join(', ')}.` : '');
-      };
-      paint();
-      btn.onclick = async () => {
-        const st = Alerts.state(turn);
-        if (st === 'ios-home' || st === 'unsupported') return paint();
-        btn.disabled = true;
-        say('Setting up alerts…');
-        try {
-          await Alerts.toggle(turn);
-          paint();
-        } catch (e) {
-          say(`Couldn't change alerts: ${e.message}.`, true);
-        } finally {
-          btn.disabled = false;
-        }
-      };
-    });
   }
 
   // Snapshots ⇄ Order summary ⇄ 14h. setMode(true) is the order summary.
   const order = { day: null, open: null, find: '', from: 'all' };
   const modeCurrent = document.getElementById('modeCurrent');
   const modeSnap = document.getElementById('modeSnap');
+  const modeTurns = document.getElementById('modeTurns');
   const modeOrders = document.getElementById('modeOrders');
   const modeHeld = document.getElementById('modeHeld');
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'orders' || mode === 'held');
     document.body.classList.toggle('current', mode === 'current');
+    document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
+    modeTurns.setAttribute('aria-pressed', mode === 'turns');
     modeSnap.setAttribute('aria-pressed', mode === 'snap');
     modeOrders.setAttribute('aria-pressed', mode === 'orders');
     modeHeld.setAttribute('aria-pressed', mode === 'held');
     if (mode === 'orders') renderOrders();
     else if (mode === 'held') renderHeld();
+    else if (mode === 'turns') renderTurns();
     else if (mode === 'current') { if (day === src.days[0] && list.length) show(list.length - 1); else openDay(src.days[0]); }
     else if (list.length) show(cur);
   }
@@ -1412,6 +1500,7 @@ source().then(async (src) => {
   }
   modeCurrent.onclick = () => setMode('current');
   modeSnap.onclick = () => setMode(false);
+  modeTurns.onclick = () => setMode('turns');
   modeOrders.onclick = () => setMode(true);
   modeHeld.onclick = () => setMode('held');
 
@@ -1423,18 +1512,20 @@ source().then(async (src) => {
 
   // The landing is Current. A link like #2026-10-15-0815 opens that
   // snapshot; #orders the order summary; #14h the 14-hour list.
-  // Shared links: #turn=SR07 opens that turn on Current; #train=M38261-22
-  // opens that train in the Order summary.
+  // Shared links: #turn=SR07 opens that turn on Turn History (#turns the
+  // tab itself); #train=M38261-22 opens that train in the Order summary.
   const shared = /^#(turn|train)=(.+)$/.exec(location.hash);
   if (shared && shared[1] === 'turn') setFocus(decodeURIComponent(shared[2]));
   if (shared && shared[1] === 'train') order.find = decodeURIComponent(shared[2]).replace(/-/g, ' ');
   const wantOrders = location.hash === '#orders' || (shared && shared[1] === 'train');
   const wantHeld = location.hash === '#14h';
+  const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
-  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld) setMode('current'); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
+  else if (wantTurns) setMode('turns');
 
   // A newer board published while this page is open: offer it (live site only).
   if (src.live) {

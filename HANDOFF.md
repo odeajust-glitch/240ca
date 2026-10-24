@@ -77,6 +77,14 @@ Deploy).
   Sarnia 41 → turns home on Sarnia boards; on the Mac 41 → bunkhouse crews.
   Once per rescue id (`told[turn].rescues`). Worker must be re-pasted for the
   `rescue` pref. Not yet seen on a real rescue.
+- 2026-10-24 (owner): line-up shows the SR chip + "No Turn Available (goes
+  spare)" when no Chain Gang turn is free (page only). New **Turn History**
+  tab (mode 'turns', renderTurns: turnPanel + turnStats from the newest
+  check). Find a turn on Current/Snapshots now opens the track dialog
+  (openTrack): OK keeps prefs, adds to localStorage `trackTurns` and
+  subscribes alerts (Alerts.set). Highlighting is `marks` (all tracked
+  turns; Turn History's own turn on that tab). Turn panel no longer on the
+  main page.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

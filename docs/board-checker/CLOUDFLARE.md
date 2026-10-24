@@ -146,6 +146,14 @@ The page also shows the checker's health under "Updated": last Microsoft
 sign-in and today's automatic restarts.
 
 ## 9. Also on the site (owner, 2026-10-22)
+- **Tracking turns (owner, 2026-10-24).** On Current and Snapshots, type a
+  turn in **Find a turn**: a box opens with that turn's alert choices; **OK**
+  tracks it (picked out in orange on the page, alerts on this phone),
+  **Cancel** leaves it. Track as many turns as you like; tap a tracked turn's
+  chip to change its alerts or **Stop tracking**.
+- **Turn History tab** (between Current and Snapshots): look up any turn for
+  when it goes, where it stands now, totals (trains, on duty, last on duty,
+  rest, spare) and its full history. Links `#turn=SR07` open it here.
 - **When does this turn go?** Find a turn → green box with the newest
   check's answer (Chain Gang position and who's ahead, or the train and call).
 - **Share** a train (`#train=M38261-22`, from its story in the Order summary). The turn panel's Share button was removed (owner); a `#turn=SR07` link still opens that turn.
