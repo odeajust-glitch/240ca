@@ -135,6 +135,8 @@ Deploy).
   in yellow); ORD train → next crew rested by the call (skip, keep place);
   ORD with none rested → "possible Toronto South crew" and the crew first in
   line then gets a mayCall alert (once per train) + Turn History note.
+  Bunkhouse crews also get lined up / ordered / time / reminder alerts for
+  the train home they're predicted for (turnStates lineup.home = true).
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

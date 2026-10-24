@@ -256,18 +256,18 @@ test('turn alerts: rescue trains, Sarnia board vs bunkhouse', () => {
   let r = turnEvents({}, states([train('M38261')], [train('M30131')]), { lineupRead: true });
   // RM383 shows in Sarnia, RQ148 in Toronto.
   r = turnEvents(r.told, states([train('M38261'), train('RM38321')], [train('M30131'), train('RQ14891', { status: 'ORD' })]), { lineupRead: true });
-  assert.deepEqual(r.events.map((e) => [e.turn, e.kind, e.text]), [
+  assert.deepEqual(r.events.filter((e) => e.kind === 'rescue').map((e) => [e.turn, e.kind, e.text]), [
     ['SR03', 'rescue', 'SR03: rescue train RM38321 23 on the Sarnia line-up, planned for 23rd 1400, expected call 23rd 1145.'],
     ['SR12', 'rescue', 'SR12: rescue train RQ14891 23 on the Toronto line-up, ordered for 23rd 1400, expected call 23rd 1145.'],
     ['SD04', 'rescue', 'SD04: rescue train RQ14891 23 on the Toronto line-up, ordered for 23rd 1400, expected call 23rd 1145.'],
   ]); // SR07 is out working: not told
   // Still there next check: said once. A line-up not read: nothing, nothing forgotten.
   r = turnEvents(r.told, states([train('M38261'), train('RM38321')], [train('RQ14891')]), { lineupRead: true });
-  assert.deepEqual(r.events, []);
+  assert.deepEqual(r.events.filter((e) => e.kind === 'rescue'), []);
   r = turnEvents(r.told, states(null, null), { lineupRead: false });
-  assert.deepEqual(r.events, []);
+  assert.deepEqual(r.events.filter((e) => e.kind === 'rescue'), []);
   r = turnEvents(r.told, states([train('RM38321')], [train('RQ14891')]), { lineupRead: true });
-  assert.deepEqual(r.events, []);
+  assert.deepEqual(r.events.filter((e) => e.kind === 'rescue'), []);
   // A phone can switch it off.
   assert.deepEqual(phoneEvents([{ turn: 'SR03', kind: 'rescue', text: 'x' }], { turns: ['SR03'], prefs: { SR03: { rescue: false } } }, {}, {}, { lineupRead: false }).events, []);
 });
@@ -366,4 +366,20 @@ test('turn alerts: Toronto South may get an ordered train', () => {
   assert.match(r.events.find((e) => e.turn === 'SD13').text, /M38331 24 is ordered for 24th 1830 \(call 24th 1615\) and no crew in the bunkhouse is rested by then \(you're on rest until 24th 1644\): a Toronto South crew may get it\./);
   assert.deepEqual(turnEvents(r.told, st('ORD'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // once
   assert.deepEqual(turnEvents({}, st('PLN'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // planned: stays theirs
+});
+
+// Owner, 2026-10-25: crews in the Toronto bunkhouse hear about the train
+// home they're predicted for, like a Sarnia line-up.
+test('turn alerts: lined up home from Toronto', () => {
+  const now = at(2026, 10, 24, 14, 0);
+  const bunk = [{ pos: 3, en: 'SD13', co: 'SR02', restUntil: at(2026, 10, 24, 16, 44) }];
+  const train = (status) => ({ symbol: 'M39931', originDay: '25', status, order: at(2026, 10, 25, 2, 0), deadhead: false });
+  const st = (status) => turnStates({ now, predictions: [] }, [], { macLineup: [train(status)], bunkhouse: bunk });
+  let r = turnEvents({}, st('PLN'), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SR02').map((e) => e.text), ['SR02 lined up home from Toronto: M39931 25 planned for 25th 0200, expected call 24th 2345.']);
+  r = turnEvents(r.told, st('ORD'), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SR02').map((e) => e.kind), ['ordered']);
+  // And the reminder, on a phone that asked for it.
+  const p = phoneEvents([], { turns: ['SR02'], prefs: { SR02: { before: 60 } } }, st('ORD'), {}, { now: at(2026, 10, 24, 23, 0) });
+  assert.match(p.events[0].text, /^SR02: about 45 min to your expected call: M39931 25 ordered/);
 });
