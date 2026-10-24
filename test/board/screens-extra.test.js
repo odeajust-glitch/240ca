@@ -137,7 +137,8 @@ test('site snapshot and turn facts with the new screens', () => {
     { label: 'co-fast', screenGrid: lines(['45 SA       SPAREBOARD INQUIRY', '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST    MTPD  USHR   PD    STT  #S  #O',
       'CHOPRA+       K    KARA   B138  001                                                   00  00', 'DAYE+         B    BRYS   B126  002                   0600  16                         01  00']) },
     { label: 'terminal', screenGrid: lines(['           TERMINAL LINEUP', 'POS  CALL   TIME  TZ  STATUS     TRAIN/DESC   ORGSTN  PL  CC    ST     RETN   DTTM   TURN     EMP',
-      '001  10/15  0645  E   PLANNED    YPRS02       47130   YD  FO    * **   10/16  0001   YPRS02']) },
+      '001  10/15  0645  E   PLANNED    YPRS02       47130   YD  FO    * **   10/16  0001   YPRS02',
+      '002  10/15  0700  E   PLANNED    YSTY01       47130   YD  YA                         YSTY01']) },
     { label: 's5', screenGrid: lines(['    POOL:  ( S5 )   TERM:  ( 0 )   CC:  (   )', 'CC TURN  T POS      EMPLOYEE     NAME      ST   RN   RETN    SC   REST     USHR  TURN  INFO',
       'EN S501  0 001  ARCHER*+         J  JEREM', 'CO S501  0 001  NOEL+            J  JORDA']) },
   ];
@@ -147,6 +148,7 @@ test('site snapshot and turn facts with the new screens', () => {
   assert.deepEqual(shown.pools.find((p) => p.name === 'Conductor fast board').turns.map((t) => `${t.pos} ${t.turn} ${t.status}`), ['001 B138 available', '002 B126 rest until 16th 0600']);
   assert.deepEqual(shown.yardJobs, [{ job: 'YPRS02', station: 'SARNIA', onDuty: '15th 0640', off: '15th 1440', crew: 'FO B138 · S1 B126' }]);
   assert.equal(shown.vacancies[0].turn, 'YPRS02');
+  assert.ok(!shown.vacancies.some((v) => v.cc === 'YA')); // yardmaster jobs left off
   assert.ok(['coFast', 'terminal', 's5Pool', 'yardJobs'].every((k) => shown.screens.includes(k)));
   assert.deepEqual(BoardTurns.facts(shown, 'B126').map((f) => f.text), [
     'Conductor fast board position 002: rest until 16th 0600',

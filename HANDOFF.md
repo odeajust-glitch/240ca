@@ -104,6 +104,7 @@ Deploy).
   board order, earliest job first, on rest at the call = skipped. Calls
   assumed: yard = start − 2 h, road = order − 2 h 15 m (❓ confirm yard).
   Shown under each job ("Filled by … estimate") and in Turn History.
+  Yardmaster jobs (CC YA) go to the yardmaster board: left off the site.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).
