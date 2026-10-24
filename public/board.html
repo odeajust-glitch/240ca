@@ -463,13 +463,12 @@ function markTurn(text) {
   return ids.length ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${ids.join('|')})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
 }
 function ruleText(rules) {
-  // No Chain Gang turn free: still an SR train (owner, 2026-10-24), said as
-  // "No Turn Available (spare)". A turn going spare is just "(spare)".
-  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'No Turn Available (goes spare)')
+  // No turn free, conductor or engineer: still an SR train with its chip,
+  // said as just "spare" (owner, 2026-10-25). A turn going spare is "(spare)".
+  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'ENGSPARE')
     .replace(/spareboard \(no (SD|S1|S3) turn free\)/, 'ENGSPARE'))
     .replace(/\(goes spare[^)]*\)/g, '<span class="spare">(spare)</span>')
-    // No engineer turn free: just "spare" (owner, 2026-10-25).
-    .replace('ENGSPARE', '<span class="spare">spare</span>');
+    .replace(/ENGSPARE/g, '<span class="spare">spare</span>');
 }
 
 function lineup(s) {
