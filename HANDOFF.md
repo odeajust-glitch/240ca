@@ -114,6 +114,11 @@ Deploy).
   hashes the typed code (crypto.subtle) and joins those turns' histories
   (personHistory). Tracking a code tracks the person's current turn (not the
   person; alerts don't follow them to a new turn yet).
+- Spareboard alerts (owner, 2026-10-25): turnStates takes spareboards,
+  vacancies (+ spareFills, lib/board/spares.js) and yardJobs: spare turns get
+  position, someone ahead on rest/back, reset, rescue, lined up/ordered/time
+  for the job they're predicted to fill (jobs already on duty skipped), and
+  on duty on yard jobs.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

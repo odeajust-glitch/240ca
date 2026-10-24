@@ -286,3 +286,22 @@ test('turn alerts: on duty goes to the spare person filling in', () => {
   assert.equal(states(fill).SR03, undefined);
   assert.ok(turnEvents({}, states([])).events.some((e) => e.turn === 'SR03')); // no match: as before
 });
+
+// Owner, 2026-10-25: spareboard turns get the same alerts as the Chain Gang.
+test('turn alerts: spareboard turns', () => {
+  const now = at(2026, 10, 24, 3, 0);
+  const sb = (turn, pos, o = {}) => ({ turn, pos, terminal: 0, working: false, workingOn: null, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const job = (train, cc, yard, h, m, status = 'PLANNED') => ({ train, cc, yard, at: at(2026, 10, 24, h, m), status, pool: yard ? 'YD' : 'SD', turn: train });
+  const states = (coFast, vacancies, yardJobs = []) => turnStates({ now, predictions: [] }, [], { spareboards: { coFast, coSlow: null, enFast: null, enSlow: null }, vacancies, yardJobs });
+  const board1 = [sb('B138', 1), sb('B147', 2), sb('B119', 3)];
+  let r = turnEvents({}, states(board1, [job('YPRS02', 'FO', true, 6, 45)]), { lineupRead: true });
+  assert.deepEqual(r.events.map((e) => e.text), ['B138 lined up: YPRS02 planned for 24th 0645, expected call 24th 0445.']);
+  // B138 goes out on the yard job; B147 moves up, B119 hears B147 went on rest.
+  const yard = [{ job: 'YPRS02', station: 'SARNIA', onDuty: at(2026, 10, 24, 6, 45), crew: [{ craft: 'FO', turn: 'B138' }] }];
+  r = turnEvents(r.told, states([sb('B147', 1, { restUntil: at(2026, 10, 24, 12, 0) }), sb('B119', 2)], [job('YPRS02', 'FO', true, 6, 45, 'ORDERED')], yard), { lineupRead: true });
+  assert.deepEqual(r.events.map((e) => `${e.turn} ${e.kind}`).sort(), ['B119 aheadRest', 'B119 position', 'B138 onDuty', 'B147 position'].sort());
+  assert.ok(r.events.find((e) => e.turn === 'B138').text.startsWith('B138 on duty on YPRS02 at Sarnia'));
+  // A mandatory reset on the spareboard.
+  r = turnEvents(r.told, states([sb('B147', 1, { restUntil: at(2026, 10, 25, 5, 59) }), sb('B119', 2)], []), { lineupRead: true });
+  assert.ok(r.events.some((e) => e.turn === 'B147' && e.kind === 'reset'));
+});
