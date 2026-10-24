@@ -243,3 +243,17 @@ test('jobs going spare: a B0 turn keeps its spot but is passed over', () => {
   assert.equal(f.turn, 'B202');
   assert.deepEqual(f.skipped, ['B201 (B0, working)']);
 });
+
+// Owner, 2026-10-25: B132 on a hold turn until the 26th was lined up for
+// DHT031B; held turns are passed over, and a deadhead's call is 2 h before.
+test('jobs going spare: hold turns passed over; deadhead call', () => {
+  const { spareFills } = require('../../lib/board/spares');
+  const job = { train: 'DHT031B', cc: 'CO', yard: false, at: at(2026, 10, 25, 4, 30) };
+  const f = spareFills([job], { coSlow: [
+    { turn: 'B132', pos: 1, rn: 'HT', statusUntil: at(2026, 10, 26, 8, 40), restUntil: at(2026, 10, 24, 18, 40) },
+    { turn: 'B147', pos: 2, restUntil: null },
+  ] }).get(job);
+  assert.equal(f.turn, 'B147');
+  assert.deepEqual(f.skipped, ['B132 (hold turn until 26th 0840)']);
+  assert.equal(fmt(f.call), '25th 0230');
+});

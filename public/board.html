@@ -601,7 +601,7 @@ function vacancies(s) {
     <td class="num">${markTurn(v.turn)}${v.spare ? ' <span class="spare">(spare)</span>' : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${s.vacancies.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job; order − 2 h 15 m on the road.</div></section>`;
+    <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.</div></section>`;
 }
 
 function sequence(s) {
