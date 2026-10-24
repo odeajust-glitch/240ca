@@ -271,3 +271,18 @@ test('turn alerts: rescue trains, Sarnia board vs bunkhouse', () => {
   // A phone can switch it off.
   assert.deepEqual(phoneEvents([{ turn: 'SR03', kind: 'rescue', text: 'x' }], { turns: ['SR03'], prefs: { SR03: { rescue: false } } }, {}, {}, { lineupRead: false }).events, []);
 });
+
+// Owner, 2026-10-24: B138 filling in on SR03's job: the on-duty alert goes
+// to B138 (the person working), not SR03.
+test('turn alerts: on duty goes to the spare person filling in', () => {
+  const cb = [board({ crew: [{ craft: 'EN', turn: 'SD05' }, { craft: 'CO', turn: 'SR03' }] })];
+  const states = (backfill) => turnStates({ predictions: [] }, cb, { backfill });
+  const fill = [{ train: 'M38261 22', craft: 'CO', job: 'SR03', turn: 'B138' }];
+  const r = turnEvents({}, states(fill));
+  assert.deepEqual(r.events.map((e) => [e.turn, e.text]), [
+    ['SD05', 'SD05 on duty on M38261 22 at Sarnia 22nd 1445.'],
+    ['B138', 'B138 on duty on M38261 22 at Sarnia 22nd 1445, working SR03.'],
+  ]);
+  assert.equal(states(fill).SR03, undefined);
+  assert.ok(turnEvents({}, states([])).events.some((e) => e.turn === 'SR03')); // no match: as before
+});

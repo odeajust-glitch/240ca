@@ -96,6 +96,9 @@ Deploy).
   turns in memory (knownPeople in board-auto.js), saved as summary.yardCrew.
   ❓ Not run on real CATS yet. People working (not on a spareboard list)
   may go unmatched; the TURN screens (014/010, 020/018) could fill that in.
+  Filling in (backfill, matched by name): saved as summary.backfill; Turn
+  History shows "working SR03" / "worked by B138"; the on-duty alert goes to
+  the person's own turn (turnStates pools.backfill), not the job's.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).
