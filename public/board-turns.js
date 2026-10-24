@@ -55,7 +55,9 @@
       const mate = c.en === turn ? c.co : c.en;
       out.push({ kind: 'bunkhouse', text: `In the Toronto bunkhouse, position ${c.pos}${mate ? ` (with ${mate})` : ''}${c.offDuty ? `, off duty ${c.offDuty}` : ''}, ${c.ready ? 'rested' : `rest until ${c.rested}`}` });
       const t = (s.macLineup || []).find((x) => x.crewPos === c.pos);
-      out.push(t ? { kind: 'homeTrain', train: t.train, text: `Predicted home on ${t.train} (${t.status} ${t.order})` }
+      const south = (s.macLineup || []).find((x) => x.south && (x.south.en === turn || x.south.co === turn));
+      if (south) out.push({ kind: 'homeTrain', text: `First in line for ${south.train} (ORD ${south.order}) but on rest at its call: a Toronto South crew may get it` });
+      out.push(t ? { kind: 'homeTrain', train: t.train, text: `Predicted home on ${t.train} (${t.status} ${t.order})${t.restedLate ? `, rested ${t.restedLate}` : ''}` }
         : { kind: 'homeTrain', text: 'No train on the Toronto line-up for it yet' });
     }
     // On the way to Toronto (estimate, owner 2026-10-22) and the train home it's guessed for.

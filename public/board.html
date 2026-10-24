@@ -513,8 +513,10 @@ function toronto(s) {
   const byPos = new Map(crews.map((c) => [c.pos, c]));
   const crewCell = (c, t) => {
     const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
+    if (!c && t.south) return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew by the call; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}</div>`;
     if (!c) return `<span class="muted">${t.skipped && t.skipped.length ? 'no rested crew in the bunkhouse by the call' : 'no crew in the bunkhouse yet'}</span>${skip}`;
-    const when = c.ready ? '<span class="ok">rested</span>' : `rest until ${esc(c.rested)}`;
+    // Planned and still on rest at the call (owner, 2026-10-25): when they're rested, in yellow.
+    const when = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
     return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
       <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
   };
@@ -545,7 +547,7 @@ function toronto(s) {
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
   return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A crew still on rest at a train's call (2 h before on duty) is skipped and keeps its place for the next train. Off duty = rest − 8 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
 }
 
 function dot(status) {

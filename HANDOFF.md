@@ -130,6 +130,11 @@ Deploy).
   0 = off, default off): timeEvents sends "about N min to your expected
   call" once per train when the call is within that time (now passed from
   board-auto.js). Worker saves it: re-paste needed.
+- Toronto (owner, 2026-10-25, lib/board/toronto.js): PLN train → next crew
+  in bunkhouse order even if on rest at the call (site shows "rested <time>"
+  in yellow); ORD train → next crew rested by the call (skip, keep place);
+  ORD with none rested → "possible Toronto South crew" and the crew first in
+  line then gets a mayCall alert (once per train) + Turn History note.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

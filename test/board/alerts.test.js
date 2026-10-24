@@ -353,3 +353,17 @@ test('turn alerts: reminder before the expected call', () => {
   assert.deepEqual(phoneEvents([], phone, states, r.base, { now: at(2026, 10, 24, 20, 0) }).events, []); // once
   assert.deepEqual(phoneEvents([], { turns: ['B119'] }, states, {}, { now: at(2026, 10, 24, 20, 0) }).events, []); // off by default
 });
+
+// Owner, 2026-10-25: an ordered Mac yard train with no crew rested by the
+// call: the crew first in line (on rest) hears a Toronto South crew may get it.
+test('turn alerts: Toronto South may get an ordered train', () => {
+  const now = at(2026, 10, 24, 14, 0);
+  const train = { symbol: 'M38331', originDay: '24', status: 'ORD', order: at(2026, 10, 24, 18, 30), deadhead: false };
+  const bunk = [{ pos: 3, en: 'SD13', co: 'SR02', restUntil: at(2026, 10, 24, 16, 44) }];
+  const st = (status) => turnStates({ now, predictions: [] }, [], { macLineup: [{ ...train, status }], bunkhouse: bunk });
+  const r = turnEvents({}, st('ORD'), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall').map((e) => e.turn).sort(), ['SD13', 'SR02']);
+  assert.match(r.events.find((e) => e.turn === 'SD13').text, /M38331 24 is ordered for 24th 1830 \(call 24th 1615\) and no crew in the bunkhouse is rested by then \(you're on rest until 24th 1644\): a Toronto South crew may get it\./);
+  assert.deepEqual(turnEvents(r.told, st('ORD'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // once
+  assert.deepEqual(turnEvents({}, st('PLN'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // planned: stays theirs
+});

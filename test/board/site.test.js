@@ -276,7 +276,7 @@ test('Mac yard: bunkhouse crews pair with the Toronto line-up in order', () => {
 // its place for the next train.
 test('Mac yard: a crew on rest at the call is skipped and keeps its place', () => {
   const { at } = require('../../lib/board/time');
-  const train = (h) => ({ order: at(2026, 10, 15, h, 0), deadhead: false }); // call = order − 2 h 15
+  const train = (h, status = 'ORD') => ({ order: at(2026, 10, 15, h, 0), deadhead: false, status }); // call = order − 2 h 15
   const crews = [
     { pos: 1, restUntil: at(2026, 10, 15, 9, 0) },  // rested by 0900
     { pos: 2, restUntil: null },                    // already rested
@@ -287,6 +287,12 @@ test('Mac yard: a crew on rest at the call is skipped and keeps its place', () =
   assert.deepStrictEqual(torontoCrews([train(10), train(11), train(12)], crews), [1, 2, 0]);
   // Nobody rested by the call: no crew yet.
   assert.deepStrictEqual(torontoCrews([train(9)], [crews[0]]), [-1]);
+  // Owner, 2026-10-25: a planned train stays with the next crew in line,
+  // rested or not; an ordered one with no rested crew → Toronto South, and
+  // the first crew in line (on rest) is the one told.
+  assert.deepStrictEqual(torontoCrews([train(10, 'PLN'), train(11, 'PLN')], crews), [0, 1]);
+  const { torontoSouth } = require('../../lib/board/site');
+  assert.deepStrictEqual(torontoSouth([train(9), train(12)], [crews[0], crews[2]]), [0, -1]);
 });
 
 // Owner, 2026-10-22: guess the crews still on their way: train ~8 h,
