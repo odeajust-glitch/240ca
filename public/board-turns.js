@@ -40,9 +40,9 @@
       const detail = `${v.pool} ${v.cc}, ${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}, call ~${v.fill.call}, off the ${v.fill.board}`;
       out.push({ kind: 'spareFill', train: v.train, detail, text: `Projected to fill ${v.train} (${detail})` });
     }
-    // An SD turn that may be called for one (no engineer free on the slow board).
+    // An SD/SR turn that may be called for one (no one free on the slow board).
     for (const v of s.vacancies || []) {
-      if (v.fill && v.fill.sd === turn) out.push({ kind: 'mayCall', train: v.train, text: `May be called for ${v.train} (${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}, call ~${v.fill.call}): no engineer free on the slow board` });
+      if (v.fill && v.fill.sd === turn) out.push({ kind: 'mayCall', train: v.train, text: `May be called for ${v.train} (${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}, call ~${v.fill.call}): no one free on the ${/^SD/.test(turn) ? 'engineer' : 'conductor'} slow board` });
     }
     // On the vacancy list (option 5): the job goes spare.
     for (const v of s.vacancies || []) {

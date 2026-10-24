@@ -326,3 +326,17 @@ test('turn alerts: SD may be called when the engineer slow board is empty', () =
   // A phone can switch it off.
   assert.deepEqual(phoneEvents([{ turn: 'SD05', kind: 'mayCall', text: 'x' }], { turns: ['SD05'], prefs: { SD05: { mayCall: false } } }, {}, {}, { lineupRead: false }).events, []);
 });
+
+// Owner, 2026-10-25: the same for conductors: no one free on the conductor
+// slow board → the next SR turn may be called.
+test('turn alerts: SR may be called when the conductor slow board is empty', () => {
+  const now = at(2026, 10, 24, 18, 0);
+  const sr = (turn, pos, o = {}) => ({ craft: 'CO', turn, pos, terminal: 0, working: false, restUntil: null, statusUntil: null, rn: '', ...o });
+  const job = { train: 'M38261', cc: 'CO', yard: false, status: 'PLANNED', at: at(2026, 10, 24, 15 + 7, 40), pool: 'SR', turn: 'SR09' };
+  const st = turnStates({ now, predictions: [{ turn: 'SR03', order: at(2026, 10, 24, 20, 0) }] }, [],
+    { chainGang: [sr('SR03', 1), sr('SR07', 2)], spareboards: { coFast: null, coSlow: [], enFast: null, enSlow: null }, vacancies: [job] });
+  const r = turnEvents({}, st, { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall').map((e) => e.text), [
+    'SR07: you may be called for M38261 (planned for 24th 2240, expected call 24th 2025): no conductor is free on the conductor slow board.',
+  ]);
+});

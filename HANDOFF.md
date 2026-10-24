@@ -121,7 +121,8 @@ Deploy).
   on duty on yard jobs.
 - SD may be called (owner, 2026-10-25, pref mayCall): a road job going spare
   needing an engineer with no one free on the engineer slow board → the next
-  SD turn (pos order; not working, resting/held past the call, or already
+  SD turn (SR for a conductor job off the conductor slow board; pos order;
+  not working, resting/held past the call, or already
   projected for a train) gets an alert, once per job (spares.js sdBackups).
   Also on the site under the job and in the SD turn's history. Worker saves
   the pref: owner must re-paste board-worker.js.
