@@ -411,7 +411,7 @@ setInterval(tickAges, 30000);
 const split = (s) => s.split(' ');
 
 function poolChip(rules) {
-  const m = /^(A|B) pool/.exec(rules) || (/^Chain Gang/.test(rules) ? [0, 'SR'] : /^S5/.test(rules) ? [0, 'S5'] : null);
+  const m = /^(A|B) pool/.exec(rules) || (/^(Chain Gang|spareboard \(no Chain Gang)/.test(rules) ? [0, 'SR'] : /^S5/.test(rules) ? [0, 'S5'] : null);
   return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
 }
 // The focused turn, picked out in a line of text.
@@ -420,8 +420,10 @@ function markTurn(text) {
   return focus ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${focus})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
 }
 function ruleText(rules) {
-  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, ''))
-    .replace(/\(goes spare[^)]*\)/, (x) => `<span class="spare">${x}</span>`);
+  // No Chain Gang turn free: still an SR train (owner, 2026-10-24), said as
+  // "No Turn Available (goes spare)".
+  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'No Turn Available (goes spare)'))
+    .replace(/\(goes spare[^)]*\)/g, (x) => `<span class="spare">${x}</span>`);
 }
 
 function lineup(s) {
