@@ -35,7 +35,8 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE } = require('../lib/board/paths');
+const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Remote = require('../lib/board/remote');
@@ -466,6 +467,14 @@ function answer(summary, me, nowOverride) {
   const memory = RoadDays.remember(RoadDays.loadMemory(ROAD_DAYS_FILE) || RoadDays.seedFromHistory(HISTORY_DIR), input.callBoard, input.now);
   try { RoadDays.saveMemory(ROAD_DAYS_FILE, memory); } catch (err) { console.log(`  (road-day trains not saved: ${err.message})`); }
   const result = runBoardCheck({ ...input, departed: RoadDays.departed(memory, input.callBoard), seenSince: memory.since, me });
+  // Who's filling in on whose trip, until it's back (lib/board/fillins.js).
+  const home = (list) => (list || []).filter((t) => !t.working).map((t) => t.turn);
+  const fillIns = FillIns.updateFillIns(FillIns.loadFillIns(FILLINS_FILE), {
+    backfill: summary.backfill || [], callBoard: input.callBoard, now: input.now,
+    homeTurns: new Set([input.chainGangHome, input.aHome, input.bHome, input.sdHome, input.s1Home, input.s3Home].flatMap(home)),
+    spareTurns: new Set(Object.values(input.spareboards || {}).flatMap(home)),
+  });
+  try { FillIns.saveFillIns(FILLINS_FILE, fillIns); } catch (err) { console.log(`  (fill-ins not saved: ${err.message})`); }
   const cur = snapshot(result, result.me ? describeMe(result.me) : []);
   let prev = null;
   try { prev = JSON.parse(fs.readFileSync(LAST_FILE, 'utf8')); } catch { /* first check */ }
@@ -481,7 +490,7 @@ function answer(summary, me, nowOverride) {
   return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
     callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
-      spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs }), lineupRead: !!input.seen.lineup };
+      spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, fillIns }), lineupRead: !!input.seen.lineup };
 }
 let lastToronto = null;
 

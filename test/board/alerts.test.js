@@ -398,3 +398,40 @@ test('turn alerts: where you stand, once, for a newly followed turn', () => {
   // A phone known before this update: no burst for its existing turns.
   assert.deepEqual(phoneEvents([], { turns: ['SR03'] }, st, { SR03: { train: 'M38261 22', call: 0 } }, {}).events.filter((e) => e.kind === 'stand'), []);
 });
+
+// Owner, 2026-10-25: B119 fills in on SB04's job to Toronto. In the bunkhouse
+// (listed as SB04) the Toronto alerts go to B119; back home, both turns hear
+// they're back on the board in Sarnia.
+test('turn alerts: a spare filling in, through Toronto and back', () => {
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const sb = (turn, pos, o = {}) => ({ turn, pos, terminal: 0, working: false, workingOn: null, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const bpool = (o = {}) => ({ craft: 'CO', turn: 'SB04', pos: 4, terminal: 0, working: false, restUntil: null, statusUntil: null, rn: '', ...o });
+  const out = { symbol: 'M38261', originDay: '25', station: 'SARNIA', onDuty: at(2026, 10, 25, 14, 45), crew: [{ craft: 'CO', turn: 'SB04' }] };
+  const backfill = [{ train: 'M38261 25', craft: 'CO', job: 'SB04', turn: 'B119' }];
+  const now = at(2026, 10, 25, 15, 0);
+  // 1. Home: B119 on the slow board, SB04 on the B pool.
+  let r = turnEvents({}, turnStates({ now, predictions: [] }, [], { b: [bpool()], spareboards: { coSlow: [sb('B119', 3)] } }), { lineupRead: true });
+  // 2. B119 on duty under SB04; SB04 shows working.
+  let fills = updateFillIns({}, { backfill, callBoard: [out], now });
+  r = turnEvents(r.told, turnStates({ now, predictions: [] }, [out], { b: [bpool({ working: true, workingOn: 'M38261', pos: 999 })], spareboards: { coSlow: [] }, backfill, fillIns: fills }), { lineupRead: true });
+  assert.deepEqual(r.events.map((e) => e.turn), ['B119']); // on duty, working SB04
+  // 3. In the bunkhouse as SB04: the train home is B119's news, not SB04's.
+  const later = at(2026, 10, 25, 23, 0);
+  fills = updateFillIns(fills, { callBoard: [], now: later });
+  const home = { symbol: 'M39931', originDay: '26', status: 'PLN', order: at(2026, 10, 26, 6, 0), deadhead: false };
+  r = turnEvents(r.told, turnStates({ now: later, predictions: [] }, [], { macLineup: [home], bunkhouse: [{ pos: 1, en: 'S301', co: 'SB04', restUntil: null }], fillIns: fills }), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'lineup').map((e) => e.text).sort(), [
+    'B119 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0345.',
+    'S301 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0345.',
+  ]);
+  assert.ok(!r.events.some((e) => e.turn === 'SB04')); // SB04's holder isn't the one in Toronto
+  // 4. Back in Sarnia: both on their boards again.
+  const back = at(2026, 10, 26, 14, 0);
+  fills = updateFillIns(fills, { callBoard: [], now: back, homeTurns: new Set(['SB04']), spareTurns: new Set(['B119']) });
+  assert.deepEqual(fills, {});
+  r = turnEvents(r.told, turnStates({ now: back, predictions: [] }, [], { b: [bpool({ pos: 6 })], spareboards: { coSlow: [sb('B111', 1), sb('B119', 2)] } }), { lineupRead: true });
+  assert.deepEqual(r.events.filter((e) => /back on the board/.test(e.text)).map((e) => e.text).sort(), [
+    'B119 is back on the board in Sarnia: position 002 (1 ahead).',
+    'SB04 is back on the board in Sarnia: position 006 (first out).',
+  ]);
+});

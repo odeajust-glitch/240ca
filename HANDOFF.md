@@ -142,6 +142,13 @@ Deploy).
   alertsLog, BOARD_ALERTS_LOG overrides): time, turn, kind, phones, text.
 - "Where you stand" (owner, 2026-10-25): phoneEvents sends one 'stand'
   alert per newly followed turn per phone (base.__welcomed); always on.
+- Fill-ins carried to Toronto (owner, 2026-10-25, lib/board/fillins.js,
+  BoardChecker\fill-ins.json): a backfill (B119 on SB04's job) is kept until
+  the job turn is back on a Sarnia board or the spare on its spareboard (and
+  the train's off the Call Board), max 48 h; bunkhouse/Toronto alerts and
+  on duty for SB04 go to B119 meanwhile. "Back on the board in Sarnia"
+  (position pref): a turn seen out working (on duty / POS 999) that shows on
+  a Sarnia board again is told its position.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).
