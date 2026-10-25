@@ -151,10 +151,11 @@ Deploy).
   history; alerts set states['S501-CO'] for on duty; Worker accepts
   -EN/-CO: re-paste). MU turns are placeholders: not searchable or
   trackable (BoardTurns.PLACEHOLDER), still in people's history.
-- L502 (owner, 2026-10-25): always S502, CO and EN each like A/B (**, TV,
+- L502 (owner, 2026-10-25): the first crew up on 501/502 (option 29, home,
+  lowest POS; MU skipped), CO and EN each like A/B (**, TV,
   B0, hold/rest past the call, away or working → goes spare); they bring
-  L501 home from Garnet. engine.js uses input.s5; view.goesTo "S5: CO S502
-  (goes spare) + EN S502"; alerts set S502 and S502-CO/-EN lineups.
+  L501 home from Garnet. engine.js uses input.s5; view.goesTo "S5: S501
+  (goes spare) + S501"; alerts set S501 and S501-CO/-EN lineups.
 - Person stretches split when own/not-own changes (people.js), so a TV
   turn no longer stays "theirs" (JUOD showed S501 instead of SR03).
   Bunkhouse crews also get lined up / ordered / time / reminder alerts for
