@@ -482,7 +482,7 @@ function markTurn(text) {
 function ruleText(rules) {
   // No turn free, conductor or engineer: still an SR train with its chip,
   // said as just "spare" (owner, 2026-10-25). A turn going spare is "(spare)".
-  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'ENGSPARE')
+  return markTurn(rules.replace(/^(A|B) pool: /, '').replace(/^Chain Gang: /, '').replace(/^S5: /, '').replace(/^spareboard \(no Chain Gang turn free\)/, 'ENGSPARE')
     .replace(/spareboard \(no (SD|S1|S3) turn free\)/, 'ENGSPARE'))
     .replace(/\(goes spare[^)]*\)/g, '<span class="spare">(spare)</span>')
     .replace(/ENGSPARE/g, '<span class="spare">spare</span>');

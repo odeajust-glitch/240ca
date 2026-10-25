@@ -562,3 +562,21 @@ test('no SD engineer free: the train says so', () => {
   assert.equal(V.goesTo({ pool: 'SR', turn: 'SR06', engineerNone: 'SD' }), 'Chain Gang: SR06 + spareboard (no SD turn free)');
   assert.equal(V.goesTo({ pool: 'SR', turn: 'SR06', engineer: 'SD01' }), 'Chain Gang: SR06 + SD01');
 });
+
+// Owner, 2026-10-25: L502 out of Sarnia always goes to S502, conductor and
+// engineer each like A/B: one that can't be called goes spare.
+test('L502: S502 crew, each craft spare when it can\'t be called', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 10, 25, 14, 0);
+  const lineup = [{ symbol: 'L50225', trainNo: 'L502', originDay: '25', order: at(2026, 10, 25, 22, 0), status: 'PLN', deadhead: false, engCrew: '45SAS50', trnCrew: '45SAS50' }];
+  const s5 = (st) => [
+    { craft: 'EN', turn: 'S502', terminal: 0, pos: 2, working: false, st: '**', rn: '**', statusUntil: null, restUntil: null },
+    { craft: 'CO', turn: 'S502', terminal: 0, pos: 2, working: false, st, rn: null, statusUntil: null, restUntil: null },
+  ];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5: s5(null) });
+  const p = r.predictions.find((x) => x.symbol === 'L50225');
+  assert.deepEqual([p.pool, p.turn, p.spare, p.engineer, p.engineerSpare], ['S5', 'S502', false, 'S502', true]);
+  assert.equal(require('../../lib/board/view').goesTo(p), 'S5: CO S502 + EN S502 (goes spare)');
+  const both = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5: s5('TV') }).predictions.find((x) => x.symbol === 'L50225');
+  assert.equal(both.spare, true);
+});

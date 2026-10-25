@@ -328,3 +328,17 @@ test('Chain Gang names as on the screen', () => {
     ['SR08', 'WATTS/B', 'BRWA', true], ['SR03', "O'DEA/J", 'JUOD', true], ['SR05', 'GREYDANUS/G', 'GAGR', true], ['MU01', 'DE MAN/M', 'MIDE', false],
   ]);
 });
+
+// Owner, 2026-10-25: JUOD on S501 became a TV (not their own) while on SR03;
+// the latest stretches must say SR03 is theirs, not S501.
+test('person stretches: own turn or not starts a new stretch', () => {
+  const { addSightings } = require('../../lib/board/people');
+  const into = {};
+  addSightings(into, [{ h: 'x', turn: 'S501', own: true }], '2026-10-25 1000');
+  addSightings(into, [{ h: 'x', turn: 'S501', own: false }, { h: 'x', turn: 'SR03', own: true }], '2026-10-25 1005');
+  assert.deepEqual(into.x.map((e) => [e.turn, e.own, e.from, e.to]), [
+    ['S501', true, '2026-10-25 1000', '2026-10-25 1000'],
+    ['S501', false, '2026-10-25 1005', '2026-10-25 1005'],
+    ['SR03', true, '2026-10-25 1005', '2026-10-25 1005'],
+  ]);
+});
