@@ -285,14 +285,7 @@
   .work .det li span { min-width: 0; overflow-wrap: anywhere; }
   .work .det button[data-taken] { font-size: 11.5px; padding: 3px 4px; }
   .work .det h4 { margin: 0 0 6px; font-size: 12px; color: var(--soft); font-weight: 600; }
-  .tstats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--rule-soft); }
-  .tstats .stat { border-left: 1px solid var(--rule-soft); }
-  .tstats .stat:first-child { border-left: 0; }
-  .tstats .stat .v { font-size: 22px; }
   @media (max-width: 700px) {
-    .tstats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .tstats .stat { border-top: 1px solid var(--rule-soft); }
-    .tstats .stat:nth-child(odd) { border-left: 0; }
     .thead .when { font-size: 30px; }
   }
   .ohead { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -697,7 +690,6 @@ function turnPanel(s) {
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
     <div id="worklog" class="work"></div>
-    <div id="tstats" class="tstats"></div>
     <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
     <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <div class="tp tp3" id="turnmore"></div></section>`;
@@ -797,17 +789,6 @@ function wireWork(box, rec, turn) {
   });
 }
 
-// Totals for the Turn History tab, from the turn's history record.
-function turnStats(rec) {
-  if (!rec) return '';
-  const lastDuty = [...rec.orders].reverse().find((o) => o.onDuty);
-  const tile = (v, l) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  return tile(rec.orders.length, 'trains lined up or worked')
-    + tile(rec.orders.filter((o) => o.onDuty).length, 'went on duty')
-    + tile(lastDuty ? `<small>${esc(lastDuty.onDuty)}</small>` : '—', lastDuty ? `last on duty (${esc(lastDuty.train)})` : 'last on duty')
-    + tile(rec.rests.length, 'rest or hold turns')
-    + tile(rec.spares.length, 'times it went spare');
-}
 // The turn's history (BoardTurns.finish): changes, then orders, rest and
 // spare, newest first. `current` marks the change in force at this snapshot.
 function turnHistory(rec, current) {
@@ -1617,8 +1598,6 @@ source().then(async (src) => {
       hb.innerHTML = h.changes;
       const more = document.getElementById('turnmore');
       if (more) more.innerHTML = h.more;
-      const stats = document.getElementById('tstats');
-      if (stats) stats.innerHTML = turnStats(all[want]);
       const work = document.getElementById('worklog');
       if (work && all[want]) { work.innerHTML = workHistory(all[want], want); wireWork(work, all[want], want); }
       else if (work) work.innerHTML = workHistory(null, want);
@@ -1661,7 +1640,6 @@ source().then(async (src) => {
       <div id="whengo" class="whengo" hidden></div>
       <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}</div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
-      <div id="tstats" class="tstats">${turnStats(rec)}</div>
       <div class="tp"><div><h3>Home turn</h3>${homeList}<h3 style="margin-top:12px">Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
       <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
       <div class="tp tp3">${h.more}</div></section>`;
