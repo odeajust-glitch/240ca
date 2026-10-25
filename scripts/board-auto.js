@@ -649,6 +649,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
 
 // Every alert sent this check, one line each, added to "Board alerts.txt" on
 // the Desktop (owner, 2026-10-25): when, turn, kind, how many phones, text.
+// The checker's own ntfy alerts to the owner go in too (turn YOU, kind ntfy).
 let logSaid = false;
 function writeAlertsLog(log) {
   if (!log.size) return;
@@ -807,8 +808,10 @@ async function alertPhone(text) {
       method: 'POST', body: text, headers: { Title: 'Board checker', Priority: 'high' }, signal: AbortSignal.timeout(10000),
     });
     console.log(res.ok ? `[${stamp()}] Phone alert sent (ntfy).` : `  (phone alert not sent: ntfy answered ${res.status})`);
+    writeAlertsLog(new Map([[text, { turn: 'YOU', kind: 'ntfy', phones: res.ok ? 1 : 0, failed: res.ok ? 0 : 1 }]]));
   } catch (err) {
     console.log(`  (phone alert not sent: ${err.message})`);
+    writeAlertsLog(new Map([[text, { turn: 'YOU', kind: 'ntfy', phones: 0, failed: 1 }]]));
   }
 }
 
