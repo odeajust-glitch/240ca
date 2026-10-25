@@ -268,6 +268,22 @@
   .thead .when { font: 700 40px/1 var(--display); }
   .thead .turnpick { margin: 0; min-width: 220px; }
   .thead .turnpick button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 0 12px; cursor: pointer; color: var(--soft); }
+  /* Work history (owner, 2026-10-25): trains worked; tap one for its call history. */
+  .work { padding: 0 0 4px; border-bottom: 1px solid var(--rule-soft); }
+  .work h3 { margin: 12px 14px 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .work table { width: 100%; }
+  .work tr.wrow { cursor: pointer; }
+  .work tr.wrow:hover td { background: var(--rule-soft); }
+  .work tr.open td { background: var(--accent-tint); }
+  .work td.det { padding: 8px 14px 12px; background: var(--bg); }
+  .work .det ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13.5px; }
+  .work table { table-layout: fixed; }
+  .work td, .work th { overflow-wrap: anywhere; }
+  .work th:nth-child(1) { width: 30%; } .work th:nth-child(2) { width: 34%; }
+  .work .det li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; }
+  .work .det li span { min-width: 0; overflow-wrap: anywhere; }
+  .work .det button[data-taken] { font-size: 11.5px; padding: 3px 4px; }
+  .work .det h4 { margin: 0 0 6px; font-size: 12px; color: var(--soft); font-weight: 600; }
   .tstats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--rule-soft); }
   .tstats .stat { border-left: 1px solid var(--rule-soft); }
   .tstats .stat:first-child { border-left: 0; }
@@ -679,6 +695,7 @@ function turnPanel(s) {
   return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
+    <div id="worklog" class="work"></div>
     <div id="tstats" class="tstats"></div>
     <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
     <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
@@ -710,6 +727,63 @@ function personHistory(stretches, all) {
   rec.rests = rec.rests.map((x) => ({ ...x, where: [x.turn, x.where].filter(Boolean).join(', ') }));
   rec.spares = rec.spares.map((x) => ({ ...x, text: `${x.turn}: ${x.text}` }));
   return rec;
+}
+
+// Work history (owner, 2026-10-25): the trains and yard jobs this turn
+// actually worked (on duty on the Call Board; not ones someone else worked
+// for it), newest first: call (2 h before on duty), on duty, train, who they
+// worked with. Each opens the call history leading up to it: everything the
+// board said about the turn since the train before.
+const callBefore = (stamp, mins) => {
+  if (!stamp) return '';
+  const d = new Date(Date.UTC(+stamp.slice(0, 4), +stamp.slice(5, 7) - 1, +stamp.slice(8, 10), +stamp.slice(11, 13), +stamp.slice(13, 15)) - mins * 60000);
+  return d.toISOString().slice(0, 10) + ' ' + d.toISOString().slice(11, 13) + d.toISOString().slice(14, 16);
+};
+function worked(rec) {
+  return (rec ? rec.orders : []).filter((o) => o.onDuty && !o.workedBy)
+    .map((o) => ({ ...o, at: BoardTrains.resolve(o.onDutyAt, o.onDutySeen) || o.onDutySeen }))
+    .sort((a, b) => (a.at < b.at ? 1 : -1));
+}
+function workHistory(rec, turn) {
+  const rows = worked(rec);
+  if (!rows.length) return '<h3>Work history</h3><p class="empty" style="padding:0 14px 10px">No trains worked in the saved checks.</p>';
+  const partners = (o) => (o.crew || '').split(' · ').filter(Boolean).filter((c) => { const t = c.split(' ').pop(); return t !== turn && t !== o.job && t !== o.turn; });
+  const body = rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>
+    <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
+    <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>`).join('');
+  return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
+    <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+// What happened to the turn from the train before (exclusive) up to this one.
+function callHistory(rec, rows, i) {
+  const o = rows[i];
+  const prev = rows[i + 1] ? rows[i + 1].onDutySeen : '';
+  const inWin = (t) => t && t > prev && t <= o.onDutySeen;
+  const items = [
+    ...rec.changes.filter((c) => inWin(c.taken)).map((c) => ({ taken: c.taken, text: c.text })),
+    ...rec.rests.filter((r) => inWin(r.seen)).map((r) => ({ taken: r.seen, text: `${r.kind} until ${r.until}${r.where ? ` (${r.where})` : ''}` })),
+  ].sort((a, b) => (a.taken < b.taken ? -1 : a.taken > b.taken ? 1 : 0));
+  const head = [o.projected && `Projected: ${o.projected}`, o.called && `Called: ${o.called}`, `On duty ${o.onDuty}`].filter(Boolean);
+  return `<h4>${esc(o.train)}: ${head.map(esc).join(' · ')}</h4>${items.length
+    ? `<ul>${items.map((x) => `<li>${stampBtn(x.taken)}<span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
+    : '<p class="empty" style="padding:0">Nothing else recorded before it in the saved checks.</p>'}`;
+}
+function wireWork(box, rec, turn) {
+  const rows = worked(rec);
+  box.querySelectorAll('tr.wrow').forEach((tr) => {
+    tr.onclick = () => {
+      const open = tr.classList.contains('open');
+      box.querySelectorAll('tr.wrow.open').forEach((x) => x.classList.remove('open'));
+      box.querySelectorAll('tr.wdet').forEach((x) => x.remove());
+      if (open) return;
+      tr.classList.add('open');
+      const d = document.createElement('tr');
+      d.className = 'wdet';
+      d.innerHTML = `<td colspan="3" class="det">${callHistory(rec, rows, +tr.dataset.w)}</td>`;
+      tr.after(d);
+      d.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('jumpto', { detail: b.dataset.taken })); }; });
+    };
+  });
 }
 
 // Totals for the Turn History tab, from the turn's history record.
@@ -1534,6 +1608,9 @@ source().then(async (src) => {
       if (more) more.innerHTML = h.more;
       const stats = document.getElementById('tstats');
       if (stats) stats.innerHTML = turnStats(all[want]);
+      const work = document.getElementById('worklog');
+      if (work && all[want]) { work.innerHTML = workHistory(all[want], want); wireWork(work, all[want], want); }
+      else if (work) work.innerHTML = workHistory(null, want);
       document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     }).catch(() => {
       const hb = document.getElementById('turnhist');
@@ -1572,11 +1649,13 @@ source().then(async (src) => {
     box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
       <div id="whengo" class="whengo" hidden></div>
       <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}</div>
+      <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
       <div id="tstats" class="tstats">${turnStats(rec)}</div>
       <div class="tp"><div><h3>Home turn</h3>${homeList}<h3 style="margin-top:12px">Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
       <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
       <div class="tp tp3">${h.more}</div></section>`;
     focus = prev;
+    wireWork(box.querySelector('#worklog'), rec, cur.turn);
     box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     if (!live) return;
     box.querySelector('#turnalert').onclick = () => openTrack(cur.turn);
@@ -1589,6 +1668,7 @@ source().then(async (src) => {
     });
   }
 
+  window.addEventListener('jumpto', (e) => jumpTo(e.detail));
   async function jumpTo(taken) {
     if (mode !== 'snap') setMode('snap');
     const d = taken.slice(0, 10);

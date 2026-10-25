@@ -26,13 +26,15 @@
       // A spare person filling in shows under the job's turn (owner, 2026-10-24).
       const fill = (t.backfill || []).find((b) => b.turn === turn);
       const by = (t.backfill || []).find((b) => b.job === turn);
-      if (fill) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}, working ${fill.job} (${fill.craft})` });
-      else if (turnIn(t.crew, turn)) out.push({ kind: 'onDuty', train: t.train, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}${by ? ` (worked by ${by.turn})` : ''}` });
+      // crew / at / station / job: for the work history (owner, 2026-10-25).
+      const base = { kind: 'onDuty', train: t.train, crew: t.crew, at: t.onDuty, station: t.station };
+      if (fill) out.push({ ...base, job: fill.job, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}, working ${fill.job} (${fill.craft})` });
+      else if (turnIn(t.crew, turn)) out.push({ ...base, workedBy: by ? by.turn : '', text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}${by ? ` (worked by ${by.turn})` : ''}` });
     }
     // Yard jobs (owner, 2026-10-24), taken as 8 h: a crew on one, or the job itself.
     for (const j of s.yardJobs || []) {
       if (j.job !== turn && !turnIn(j.crew, turn)) continue;
-      out.push({ kind: 'onDuty', train: j.job, text: `On duty on ${j.job} yard at ${title(j.station)}, ${j.onDuty || 'time not shown'}${j.off ? ` (off ~${j.off}, 8 h assumed)` : ''}${j.job === turn && j.crew ? `: ${j.crew}` : ''}` });
+      out.push({ kind: 'onDuty', train: j.job, crew: j.crew, at: j.onDuty, station: j.station, yard: true, text: `On duty on ${j.job} yard at ${title(j.station)}, ${j.onDuty || 'time not shown'}${j.off ? ` (off ~${j.off}, 8 h assumed)` : ''}${j.job === turn && j.crew ? `: ${j.crew}` : ''}` });
     }
     // Predicted to fill a job going spare, off its spareboard (owner, 2026-10-24).
     for (const v of s.vacancies || []) {
@@ -127,7 +129,11 @@
             if (x.kind === 'lineup') o.projected = x.text.replace(/^Projected for \S+ \S+ /, '');
             if (x.kind === 'spareFill') o.projected = x.detail;
             if (x.kind === 'homeTrain') o.projected = x.text.replace(/^Predicted home on \S+ \S+ /, 'home from Toronto ');
-            if (x.kind === 'onDuty' && !o.onDuty) { o.onDuty = x.text.replace(/^On duty on \S+ \S+ /, ''); o.onDutySeen = s.taken; }
+            if (x.kind === 'onDuty' && !o.onDuty) {
+              o.onDuty = x.text.replace(/^On duty on \S+ \S+ /, '');
+              o.onDutySeen = s.taken;
+              Object.assign(o, { onDutyAt: x.at || '', station: x.station || '', crew: x.crew || '', job: x.job || '', workedBy: x.workedBy || '', yard: !!x.yard });
+            }
             if (x.kind === 'sequence') o.called = x.text.replace(/^Called on \S+ \S+ /, '');
           }
           const rest = /(rest until|hold turn until) (\S+ \d{4})/.exec(x.text);

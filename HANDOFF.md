@@ -139,6 +139,12 @@ Deploy).
   line-up and aren't on the Call Board 30 min later: flag 'deadhead'
   ("Deadhead never called", board-trains.js flagOf), tallied on the Order
   summary (this day, last 7 days, latest).
+- Turn History redesign, step 1 (owner, 2026-10-25): "Work history" first:
+  trains/yard jobs actually worked (orders with onDuty and not workedBy;
+  history now keeps crew, onDutyAt, station, job), call = on duty − 2 h,
+  worked with = the rest of the crew. Tap a row: call history = changes and
+  rests between the previous train worked and this one. Same in person search.
+  Rest of the panel unchanged for now; owner to say what's next.
   Bunkhouse crews also get lined up / ordered / time / reminder alerts for
   the train home they're predicted for (turnStates lineup.home = true).
 - Alerts log (owner, 2026-10-25): every alert sent is appended to
