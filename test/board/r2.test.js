@@ -109,6 +109,9 @@ test('the Worker keeps turn-alert subscriptions and never serves them', async ()
   // A followed person: '@' + a 16-hex hash (never a name); anything else isn't kept.
   res = await post({ subscription, turns: ['@0123456789ABCDEF', '@JUOD', 'SR03'] });
   assert.deepEqual((await res.json()).turns, ['@0123456789abcdef', 'SR03']);
+  // One number, two turns: S501-CO / S501-EN.
+  res = await post({ subscription, turns: ['s501-co', 'S501-EN', 'S501-XX'] });
+  assert.deepEqual((await res.json()).turns, ['S501-CO', 'S501-EN']);
   // Never served, however it's asked for.
   for (const p of [`/${key}`, `/${key.replace('/', '%2F')}`, `//${key}`]) {
     assert.equal((await worker.fetch(new Request(`https://board.x.workers.dev${p}`), env)).status, 404, p);

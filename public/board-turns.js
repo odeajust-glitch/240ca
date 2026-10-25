@@ -5,14 +5,31 @@
   // Turn ids as they appear in "Chain Gang: SR04 (goes spare…) + SD11" etc.
   const turnIn = (text, turn) => new RegExp(`(^|[^A-Z0-9])${turn}([^A-Z0-9]|$)`).test(text || '');
 
+  // One number, two turns (owner, 2026-10-25: S501 EN and S501 CO): asked
+  // as "S501-CO" / "S501-EN", only that craft's rows and trains.
+  const SHARED = /^S5\d{2}$/;
+  // MU turns are placeholders (owner, 2026-10-25): kept in people's history,
+  // never searched or tracked on their own.
+  const PLACEHOLDER = /^MU\d{2}/;
+  const splitCraft = (turn) => { const m = /^([A-Z0-9]+)-(EN|CO)$/.exec(turn); return m ? { base: m[1], craft: m[2] } : { base: turn, craft: '' }; };
+  const crewHasCraft = (crew, turn, craft) => new RegExp(`(^|· )(${craft === 'EN' ? 'EN|LE|ET' : 'CO'}) ${turn}( |$)`).test(crew || '');
+  function facts(s, turnIn) {
+    const turn0 = String(turnIn || '').trim().toUpperCase();
+    const { base, craft } = splitCraft(turn0);
+    const all = factsOf(s, base);
+    if (!craft) return all;
+    return all.filter((x) => (x.kind === 'pool' ? !x.craft || x.craft === craft || (craft === 'EN' && x.craft === 'LE')
+      : x.kind === 'onDuty' && x.crew ? crewHasCraft(x.crew, base, craft) : true));
+  }
+
   // Everything one snapshot says about a turn, in board order.
-  function facts(s, turn) {
+  function factsOf(s, turn) {
     turn = String(turn || '').trim().toUpperCase();
     const out = [];
     if (!turn) return out;
     for (const p of s.pools || []) {
       for (const t of p.turns) {
-        if (t.turn === turn) out.push({ kind: 'pool', pool: p.name, pos: t.pos, status: t.status, text: `${shortPool(p.name)} position ${t.pos}${t.craft ? ` (${t.craft})` : ''}: ${t.status}` });
+        if (t.turn === turn) out.push({ kind: 'pool', pool: p.name, pos: t.pos, status: t.status, craft: t.craft || '', text: `${shortPool(p.name)} position ${t.pos}${t.craft ? ` (${t.craft})` : ''}: ${t.status}` });
       }
     }
     if ((s.away || []).includes(turn)) out.push({ kind: 'away', text: 'In Toronto (away from Sarnia)' });
@@ -179,7 +196,7 @@
     return s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
   }
 
-  const api = { facts, summary, turnsIn, history, finish, turnIn, KEEP_MIN };
+  const api = { facts, summary, turnsIn, history, finish, turnIn, KEEP_MIN, SHARED, PLACEHOLDER, splitCraft, crewHasCraft };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTurns = api;
 })(this);

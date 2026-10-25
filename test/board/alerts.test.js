@@ -466,3 +466,12 @@ test('turn alerts: following a person across turns', () => {
   // Not seen yet: nothing for them, the rest of the phone's turns as usual.
   assert.deepEqual(expandPhone({ turns: ['@ffffffffffffffff', 'SR09'] }, people).turns, ['SR09']);
 });
+
+// Owner, 2026-10-25: S501 is two turns (EN and CO); a phone can follow one.
+test('turn alerts: S501-CO hears only the conductor going on duty', () => {
+  const cb = [{ symbol: 'L50231', originDay: '25', station: 'SARNIA', onDuty: at(2026, 10, 25, 3, 0), crew: [{ craft: 'EN', turn: 'S502' }, { craft: 'CO', turn: 'S501' }] }];
+  const st = turnStates({ predictions: [] }, cb);
+  assert.ok(st['S501-CO'].onDuty && !st['S501-EN']);
+  const r = turnEvents({}, st);
+  assert.deepEqual(r.events.filter((e) => /S501-/.test(e.turn)).map((e) => e.text), ['S501-CO on duty on L50231 25 at Sarnia 25th 0300.']);
+});

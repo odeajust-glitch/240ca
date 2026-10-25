@@ -21,9 +21,9 @@ const TYPES = {
 // Only real push services (Google, Apple, Mozilla, Microsoft).
 const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/,
   /^web\.push\.apple\.com$/, /\.notify\.windows\.com$/, /^push\.services\.mozilla\.com$/];
-// A turn (SR03), or a followed person: '@' + the hash of their code (owner,
-// 2026-10-25), never a name.
-const TURN = /^([A-Z0-9]{2,6}|@[0-9a-f]{16})$/;
+// A turn (SR03; S501-CO / S501-EN where one number is two turns), or a
+// followed person: '@' + the hash of their code (owner, 2026-10-25), never a name.
+const TURN = /^([A-Z0-9]{2,6}(-(EN|CO))?|@[0-9a-f]{16})$/;
 const MAX_TURNS = 12;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });

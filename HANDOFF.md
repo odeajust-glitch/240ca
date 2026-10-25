@@ -145,6 +145,12 @@ Deploy).
   worked with = the rest of the crew. Tap a row: call history = changes and
   rests between the previous train worked and this one. Same in person search.
   Rest of the panel unchanged for now; owner to say what's next.
+- One number, two turns (owner, 2026-10-25): S5xx (501/502) asks
+  "Conductor or Engineer?" in the tracker and Turn History → "S501-CO" /
+  "S501-EN" (BoardTurns.splitCraft/crewHasCraft filter facts and work
+  history; alerts set states['S501-CO'] for on duty; Worker accepts
+  -EN/-CO: re-paste). MU turns are placeholders: not searchable or
+  trackable (BoardTurns.PLACEHOLDER), still in people's history.
   Bunkhouse crews also get lined up / ordered / time / reminder alerts for
   the train home they're predicted for (turnStates lineup.home = true).
 - Alerts log (owner, 2026-10-25): every alert sent is appended to

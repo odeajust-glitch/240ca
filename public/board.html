@@ -732,13 +732,16 @@ const callBefore = (stamp, mins) => {
   const d = new Date(Date.UTC(+stamp.slice(0, 4), +stamp.slice(5, 7) - 1, +stamp.slice(8, 10), +stamp.slice(11, 13), +stamp.slice(13, 15)) - mins * 60000);
   return d.toISOString().slice(0, 10) + ' ' + d.toISOString().slice(11, 13) + d.toISOString().slice(14, 16);
 };
-function worked(rec) {
-  return (rec ? rec.orders : []).filter((o) => o.onDuty && !o.workedBy)
+function worked(rec, turn = '') {
+  // "S501-CO": only trains with that craft on that turn (owner, 2026-10-25).
+  const { base, craft } = BoardTurns.splitCraft(turn);
+  return (rec ? rec.orders : []).filter((o) => o.onDuty && !o.workedBy && (!craft || !o.crew || BoardTurns.crewHasCraft(o.crew, base, craft)))
     .map((o) => ({ ...o, at: BoardTrains.resolve(o.onDutyAt, o.onDutySeen) || o.onDutySeen }))
     .sort((a, b) => (a.at < b.at ? 1 : -1));
 }
-function workHistory(rec, turn) {
-  const rows = worked(rec);
+function workHistory(rec, turnIn) {
+  const rows = worked(rec, turnIn);
+  const turn = BoardTurns.splitCraft(turnIn).base;
   if (!rows.length) return '<h3>Work history</h3><p class="empty" style="padding:0 14px 10px">No trains worked in the saved checks.</p>';
   const partners = (o) => (o.crew || '').split(' · ').filter(Boolean).filter((c) => { const t = c.split(' ').pop(); return t !== turn && t !== o.job && t !== o.turn; });
   // Rest (or a hold turn) between two trains worked (owner, 2026-10-25): the
@@ -772,7 +775,7 @@ function callHistory(rec, rows, i) {
     : '<p class="empty" style="padding:0">Nothing else recorded before it in the saved checks.</p>'}`;
 }
 function wireWork(box, rec, turn) {
-  const rows = worked(rec);
+  const rows = worked(rec, turn);
   box.querySelectorAll('tr.wrow').forEach((tr) => {
     tr.onclick = () => {
       const open = tr.classList.contains('open');
@@ -1371,8 +1374,8 @@ source().then(async (src) => {
   const codes = () => { try { return JSON.parse(localStorage.getItem(CODES_KEY)) || {}; } catch (e) { return {}; } };
   const keepCode = (h, code) => { try { localStorage.setItem(CODES_KEY, JSON.stringify({ ...codes(), [h]: code })); } catch (e) { /* not kept */ } };
   const personNow = {};
-  const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : t);
-  const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t);
+  const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : BoardTurns.splitCraft(t).base);
+  const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t.replace(/-(EN|CO)$/, ' $1'));
   async function refreshPersons() {
     let changed = false;
     for (const t of tracked().filter(isPerson)) {
@@ -1430,7 +1433,7 @@ source().then(async (src) => {
   }
   // Which turns the page picks out: Turn History's own turn there, the
   // tracked ones everywhere else.
-  const setMarks = () => { marks = mode === 'turns' ? (focus ? [focus] : []) : tracked().map(nowTurn).filter(Boolean); };
+  const setMarks = () => { marks = mode === 'turns' ? (focus ? [BoardTurns.splitCraft(focus).base] : []) : tracked().map(nowTurn).filter(Boolean); };
 
   // The box under "Find a turn" on Current/Snapshots: the turn's alert
   // choices, OK to track it (and get its alerts), Cancel, or stop tracking.
@@ -1439,9 +1442,32 @@ source().then(async (src) => {
   // A reminder before the expected call (owner, 2026-10-25), e.g. for yard
   // jobs that never show ordered.
   const BEFORE = [[0, 'never'], [90, '90 min'], [60, '60 min'], [45, '45 min'], [30, '30 min']];
+  function noPlaceholder(turn) {
+    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>${esc(turn)}</h2></header>
+      <div class="alertnote">${esc(turn)} is a placeholder (make-up) turn, so it can't be searched or tracked. Look up the person's own turn, or their name code, instead.</div>
+      <div class="btns"><button type="button" class="ok" id="dlgcancel">OK</button></div></div>`;
+    dlg.dataset.turn = '';
+    dlg.hidden = false;
+    document.getElementById('dlgcancel').onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; };
+  }
+  // "Conductor or engineer?" for a turn number shared by two turns; then
+  // carries on with e.g. "S501-CO".
+  function askCraft(turn, then) {
+    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>${esc(turn)}</h2></header>
+      <div class="alertnote">${esc(turn)} is two turns with one number. Which one?</div>
+      <div class="btns"><button type="button" class="ok" data-craft="CO">Conductor</button><button type="button" class="ok" data-craft="EN">Engineer</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
+    dlg.dataset.turn = '';
+    dlg.hidden = false;
+    document.getElementById('dlgcancel').onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; };
+    dlg.querySelectorAll('[data-craft]').forEach((b) => { b.onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; then(`${turn}-${b.dataset.craft}`); }; });
+  }
   function openTrack(turnIn) {
     const turn = isPerson(turnIn) ? turnIn : clean(turnIn);
-    if (!(isPerson(turn) || /^[A-Z0-9]{2,6}$/.test(turn)) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
+    if (!(isPerson(turn) || /^[A-Z0-9]{2,6}(-(EN|CO))?$/.test(turn)) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
+    // MU turns are placeholders: not tracked (owner, 2026-10-25).
+    if (BoardTurns.PLACEHOLDER.test(turn)) return noPlaceholder(turn);
+    // One number, two turns (S501 EN / CO): ask which first (owner, 2026-10-25).
+    if (BoardTurns.SHARED.test(turn)) return askCraft(turn, openTrack);
     dlg.dataset.turn = turn;
     const was = tracked().includes(turn);
     // Boards that skip someone on rest: the Chain Gang (SR/SD) and the
@@ -1557,7 +1583,7 @@ source().then(async (src) => {
     const latestList = await src.load(src.days[0]);
     if (mode !== 'turns') return;
     const s = latestList[latestList.length - 1];
-    const options = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
+    const options = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     view.innerHTML = `<div class="thead"><div class="when">Turn History</div>
         <div class="turnpick"><label for="tturn">Look up a turn</label><div class="row"><input id="tturn" list="tturnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6" value="${esc(focus)}"><button id="tgo" type="button">Show</button></div>
           <datalist id="tturnlist">${options}</datalist><div class="tracked">${trackChips('Your tracked turns:')}</div></div></div>
@@ -1565,13 +1591,23 @@ source().then(async (src) => {
     // A person search stays out of the address bar.
     try { history.replaceState(null, '', focus && !isCode(focus) ? `#turn=${encodeURIComponent(focus)}` : '#turns'); } catch (e) { /* not allowed in some frames */ }
     const box = document.getElementById('tturn');
-    const go = () => { setFocus(box.value); renderTurns(); };
+    const go = () => {
+      const t = clean(box.value);
+      if (BoardTurns.PLACEHOLDER.test(t)) return noPlaceholder(t);
+      if (BoardTurns.SHARED.test(t)) return askCraft(t, (x) => { setFocus(x); renderTurns(); });
+      setFocus(t);
+      renderTurns();
+    };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
     box.onchange = go;
     document.getElementById('tgo').onclick = go;
     view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { const x = b.dataset.track; setFocus(isPerson(x) ? (codes()[x] || nowTurn(x)) : x); renderTurns(); }; });
     if (!focus) return;
     if (isCode(focus)) return showPerson(focus, s);
+    if (BoardTurns.PLACEHOLDER.test(focus)) {
+      document.querySelector('.turnpanel').outerHTML = `<p class="empty">${esc(focus)} is a placeholder (make-up) turn, so it isn't looked up on its own. Look up the person's own turn, or their name code.</p>`;
+      return;
+    }
     const want = focus;
     document.getElementById('turnalert').onclick = () => openTrack(want);
     const note = document.getElementById('alertnote');
@@ -1594,12 +1630,13 @@ source().then(async (src) => {
     src.turns().then((all) => {
       const hb = document.getElementById('turnhist');
       if (!hb || want !== focus) return;
-      const h = turnHistory(all[want], s.taken);
+      const hist = all[BoardTurns.splitCraft(want).base];
+      const h = turnHistory(hist, s.taken);
       hb.innerHTML = h.changes;
       const more = document.getElementById('turnmore');
       if (more) more.innerHTML = h.more;
       const work = document.getElementById('worklog');
-      if (work && all[want]) { work.innerHTML = workHistory(all[want], want); wireWork(work, all[want], want); }
+      if (work && hist) { work.innerHTML = workHistory(hist, want); wireWork(work, hist, want); }
       else if (work) work.innerHTML = workHistory(null, want);
       document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     }).catch(() => {
@@ -1672,7 +1709,7 @@ source().then(async (src) => {
     cur = i;
     if (document.body.classList.contains('orders') || mode === 'turns') return;
     const s = list[i];
-    document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).map((t) => `<option value="${t}"></option>`).join('');
+    document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     setMarks();
     if (marks.length && !keepTab) {
       const mine = s.pools.findIndex((q) => q.turns.some((t) => marked(t.turn)));
