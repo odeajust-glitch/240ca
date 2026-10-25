@@ -151,6 +151,12 @@ Deploy).
   on duty for SB04 go to B119 meanwhile. "Back on the board in Sarnia"
   (position pref): a turn seen out working (on duty / POS 999) that shows on
   a Sarnia board again is told its position.
+- Turn holders (owner, 2026-10-25, lib/board/holders.js, BoardChecker\
+  turn-holders.json, names hashed): own turn = on a Sarnia spareboard, or on
+  a pool list at home (T 0) and not working (temporary assignment beats the
+  spareboard in the same check); away/working pool rows, Call Board and
+  bunkhouse never count. Learned once per check at the end of the route.
+  Kept 90 days unseen. Used for yard crews, fill-ins, the bunkhouse check.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

@@ -35,7 +35,8 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE } = require('../lib/board/paths');
+const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
@@ -237,14 +238,16 @@ async function chooseFromMenus(page, option, menu = 3) {
 
 // Who's on which turn, by surname + first initial, from the boards read
 // unmasked (owner, 2026-10-24: a yard job's crew shows names, not turns).
-// Only in this window's memory, never saved; carried between checks so a
-// spareboard person called to a yard job can still be matched. A name seen
-// on two turns is left unmatched.
-const knownPeople = new Map(); // key → turn, or null when unsure
+// Saved across restarts with the names hashed, by the owner's rules on
+// what counts as someone's own turn (lib/board/holders.js). A name on two
+// turns of the same kind is left unmatched.
+let holders = null;
+const knownPeople = {
+  get: (key) => Holders.turnOf(holders || (holders = Holders.loadHolders(HOLDERS_FILE)), key),
+};
 function learnPeople(list) {
-  const now = new Map();
-  for (const { key, turn } of list) now.set(key, now.has(key) && now.get(key) !== turn ? null : turn);
-  for (const [key, turn] of now) knownPeople.set(key, turn);
+  holders = Holders.learn(holders || Holders.loadHolders(HOLDERS_FILE), list, Date.now());
+  try { Holders.saveHolders(HOLDERS_FILE, holders); } catch (err) { console.log(`  (turn holders not saved: ${err.message})`); }
 }
 
 async function runRoute(page, opts = {}) {
@@ -259,9 +262,7 @@ async function runRoute(page, opts = {}) {
   const learn = async () => {
     const rows = await unmaskedRows();
     if (!rows) return;
-    const found = S.parseBoardNames(rows);
-    learnPeople(found);
-    boardNames.push(...found);
+    boardNames.push(...S.parseBoardNames(rows)); // learned once, at the end
   };
   // `label` tells the loader which screens are Mac yard's (they look like
   // Sarnia's 23 and 41).
@@ -439,6 +440,9 @@ async function runRoute(page, opts = {}) {
   }
 
   await toMainMenu(page); // leave CATS ready for the next check
+  // Whose turn is whose, from every board this check, all at once so the
+  // rules decide (a Chain Gang assignment over a spareboard listing).
+  learnPeople(boardNames);
   // Yard job crews matched to turns: job + craft + turn only, no names.
   const yardCrew = yardNames.map((y) => ({ job: y.job, craft: y.craft, turn: knownPeople.get(y.key) || null }));
   const matched = yardCrew.filter((y) => y.turn).length;
@@ -461,7 +465,7 @@ async function runRoute(page, opts = {}) {
     const k = `${h}/${turn}`;
     seen.set(k, { h, turn, own: own || (seen.get(k) || {}).own || false });
   };
-  for (const b of boardNames) sight(b.code, b.turn, true);
+  for (const b of boardNames) sight(b.code, b.turn, !!b.own);
   for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
   for (const y of yardNames) sight(y.code, y.job, false);
   return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };

@@ -115,7 +115,11 @@ test('yard crews matched to turns by name, in memory only', () => {
     'JACOBSEN+(N/NT)N   NEIL   B142  009',
     'EN MU01  1 999  ROBBINS*+        M  MARK   B0                                      L50131  23',
   ], false));
-  assert.deepEqual(people, [{ key: 'DESCHENES/M', turn: 'B138', code: 'MADE' }, { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA' }, { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO' }]);
+  assert.deepEqual(people, [
+    { key: 'DESCHENES/M', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
+    { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
+    { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO', own: false, from: 'pool' }, // away and working: maybe covering a trip
+  ]);
 });
 
 test('masking: yard job ids and headings stay, names go', () => {
@@ -256,4 +260,25 @@ test('jobs going spare: hold turns passed over; deadhead call', () => {
   assert.equal(f.turn, 'B147');
   assert.deepEqual(f.skipped, ['B132 (hold turn until 26th 0840)']);
   assert.equal(fmt(f.call), '25th 0230');
+});
+
+// Owner, 2026-10-25: whose turn is whose, saved with hashed names. Spareboard
+// = own turn; a pool turn at home and not working = own turn (a temporary
+// assignment beats the spareboard); away or working never counts.
+test('turn holders: the rules, and no names in the file', () => {
+  const H = require('../../lib/board/holders');
+  const now = Date.UTC(2026, 9, 25);
+  let h = H.learn({}, [{ key: "O'DEA/J", turn: 'B119', own: true, from: 'spare' }], now);
+  assert.equal(H.turnOf(h, "O'DEA/J"), 'B119');
+  assert.ok(!JSON.stringify(h).includes('DEA'));
+  // Away or working on the Chain Gang (covering a trip): still B119.
+  h = H.learn(h, [{ key: "O'DEA/J", turn: 'SR03', own: false, from: 'pool' }], now + 1);
+  assert.equal(H.turnOf(h, "O'DEA/J"), 'B119');
+  // A temporary assignment: home on the Chain Gang, even if also on a spareboard list that check.
+  h = H.learn(h, [{ key: "O'DEA/J", turn: 'B119', own: true, from: 'spare' }, { key: "O'DEA/J", turn: 'SR03', own: true, from: 'pool' }], now + 2);
+  assert.equal(H.turnOf(h, "O'DEA/J"), 'SR03');
+  // Two different spareboard turns in one check: unsure.
+  assert.equal(H.turnOf(H.learn({}, [{ key: 'X/Y', turn: 'B1', own: true, from: 'spare' }, { key: 'X/Y', turn: 'B2', own: true, from: 'spare' }], now), 'X/Y'), null);
+  // Forgotten after 90 days unseen.
+  assert.equal(H.turnOf(H.learn(h, [], now + 91 * 864e5), "O'DEA/J"), null);
 });
