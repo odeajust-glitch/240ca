@@ -164,7 +164,8 @@ Deploy).
 - Turn holders (owner, 2026-10-25, lib/board/holders.js, BoardChecker\
   turn-holders.json, names hashed): own turn = on a Sarnia spareboard, or on
   a pool list at home (T 0) and not working (temporary assignment beats the
-  spareboard in the same check); away/working pool rows, Call Board and
+  spareboard in the same check); away/working pool rows, rows with TV
+  beside the name (turn going spare, person on another turn), Call Board and
   bunkhouse never count. Learned once per check at the end of the route.
   Kept 90 days unseen. Used for yard crews, fill-ins, the bunkhouse check.
 - Follow a person or a turn (owner, 2026-10-25): typing a code in Find a

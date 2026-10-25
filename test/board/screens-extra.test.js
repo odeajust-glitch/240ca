@@ -282,3 +282,15 @@ test('turn holders: the rules, and no names in the file', () => {
   // Forgotten after 90 days unseen.
   assert.equal(H.turnOf(H.learn(h, [], now + 91 * 864e5), "O'DEA/J"), null);
 });
+
+// Owner, 2026-10-25: TV beside a name on a pool list: that turn is going
+// spare and the person is on another one, so it isn't their own turn.
+test('turn holders: TV on a pool row is not their own turn', () => {
+  const people = S.parseBoardNames(grid([
+    "EN S501  0 001  O'DEA+          J  JUSTI  TV",
+    "CO SR03  0 004  O'DEA+          J  JUSTI",
+  ], false));
+  assert.deepEqual(people.map((p) => [p.turn, p.own]), [['S501', false], ['SR03', true]]);
+  const H = require('../../lib/board/holders');
+  assert.equal(H.turnOf(H.learn({}, people, 1), "O'DEA/J"), 'SR03');
+});
