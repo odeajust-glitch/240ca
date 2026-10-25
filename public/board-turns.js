@@ -12,7 +12,7 @@
     if (!turn) return out;
     for (const p of s.pools || []) {
       for (const t of p.turns) {
-        if (t.turn === turn) out.push({ kind: 'pool', pool: p.name, pos: t.pos, status: t.status, text: `${shortPool(p.name)} position ${t.pos}: ${t.status}` });
+        if (t.turn === turn) out.push({ kind: 'pool', pool: p.name, pos: t.pos, status: t.status, text: `${shortPool(p.name)} position ${t.pos}${t.craft ? ` (${t.craft})` : ''}: ${t.status}` });
       }
     }
     if ((s.away || []).includes(turn)) out.push({ kind: 'away', text: 'In Toronto (away from Sarnia)' });

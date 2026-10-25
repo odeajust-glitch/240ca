@@ -579,7 +579,7 @@ function pools(s, pi) {
   if (!s.pools.length) return '';
   const p = s.pools[pi] || s.pools[0];
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
-  const rows = p.turns.map((t) => `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b></td>
+  const rows = p.turns.map((t) => `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';

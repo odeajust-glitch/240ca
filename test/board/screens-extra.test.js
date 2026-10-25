@@ -149,6 +149,8 @@ test('site snapshot and turn facts with the new screens', () => {
   // board-auto.js matched the yard crew to turns by name (names not saved).
   const { shown } = snapshotOf({ ...base, screens, yardCrew: [{ job: 'YPRS02', craft: 'FO', turn: 'B138' }, { job: 'YPRS02', craft: 'S1', turn: 'B126' }] });
   assert.deepEqual(shown.pools.map((p) => p.name).slice(-2), ['Conductor fast board', '501/502 (S5)']);
+  // 501/502: the engineer and the conductor each get a row (owner, 2026-10-25).
+  assert.deepEqual(shown.pools.find((p) => p.name === '501/502 (S5)').turns.map((t) => `${t.turn} ${t.craft}`), ['S501 EN', 'S501 CO']);
   assert.deepEqual(shown.pools.find((p) => p.name === 'Conductor fast board').turns.map((t) => `${t.pos} ${t.turn} ${t.status}`), ['001 B138 available', '002 B126 rest until 16th 0600']);
   assert.deepEqual(shown.yardJobs, [{ job: 'YPRS02', station: 'SARNIA', onDuty: '15th 0640', off: '15th 1440', crew: 'FO B138 · S1 B126' }]);
   assert.equal(shown.vacancies[0].turn, 'YPRS02');
