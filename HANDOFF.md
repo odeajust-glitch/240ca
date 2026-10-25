@@ -140,6 +140,8 @@ Deploy).
 - Alerts log (owner, 2026-10-25): every alert sent is appended to
   "Board alerts.txt" on the Desktop (OneDrive Desktop first; paths.js
   alertsLog, BOARD_ALERTS_LOG overrides): time, turn, kind, phones, text.
+- "Where you stand" (owner, 2026-10-25): phoneEvents sends one 'stand'
+  alert per newly followed turn per phone (base.__welcomed); always on.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).

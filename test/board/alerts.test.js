@@ -49,7 +49,8 @@ test('turn alerts: each phone gets only what it chose, with its own time thresho
   const orderOnly = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: true, onDuty: false, time: 0 } } };
   const hourMoves = { turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: false, onDuty: false, time: 60 } } };
   const everything = { turns: ['SR03'] }; // defaults: all on, 30 min
-  const run = (shared, phone, st, base) => phoneEvents(shared, phone, st, base, {});
+  // ("Where you stand" for a new phone has its own test below.)
+  const run = (shared, phone, st, base) => { const r = phoneEvents(shared, phone, st, base, {}); return { ...r, events: r.events.filter((e) => e.kind !== 'stand') }; };
 
   // Lined up at 1245: only "everything" hears; every phone notes the call.
   let shared = step({}, [pred()]).events;
@@ -382,4 +383,18 @@ test('turn alerts: lined up home from Toronto', () => {
   // And the reminder, on a phone that asked for it.
   const p = phoneEvents([], { turns: ['SR02'], prefs: { SR02: { before: 60 } } }, st('ORD'), {}, { now: at(2026, 10, 24, 23, 0) });
   assert.match(p.events[0].text, /^SR02: about 45 min to your expected call: M39931 25 ordered/);
+});
+
+// Owner, 2026-10-25: a phone that starts following a turn gets one "where
+// you stand" (news told before it subscribed isn't sent again); phones from
+// before this get none for the turns they already had.
+test('turn alerts: where you stand, once, for a newly followed turn', () => {
+  const st = turnStates({ predictions: [pred()] }, []);
+  const r = phoneEvents([], { turns: ['SR03'] }, st, undefined, {});
+  assert.deepEqual(r.events.map((e) => e.text), ['SR03 tracked. Right now: lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.']);
+  assert.deepEqual(phoneEvents([], { turns: ['SR03'] }, st, r.base, {}).events, []); // once
+  const added = phoneEvents([], { turns: ['SR03', 'SR09'] }, st, r.base, {});
+  assert.deepEqual(added.events.map((e) => e.text), ['SR09 tracked. Not lined up for anything yet.']);
+  // A phone known before this update: no burst for its existing turns.
+  assert.deepEqual(phoneEvents([], { turns: ['SR03'] }, st, { SR03: { train: 'M38261 22', call: 0 } }, {}).events.filter((e) => e.kind === 'stand'), []);
 });
