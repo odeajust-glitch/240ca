@@ -435,3 +435,14 @@ test('turn alerts: a spare filling in, through Toronto and back', () => {
     'SB04 is back on the board in Sarnia: position 006 (first out).',
   ]);
 });
+
+// Owner, 2026-10-25: the bunkhouse read by name confirms a fill-in (or finds
+// one the trip out missed), and clears it when it's the turn's own holder.
+test('fill-ins: the bunkhouse by name', () => {
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const now = at(2026, 10, 25, 23, 0);
+  assert.deepEqual(updateFillIns({}, { bunk: [{ job: 'SB04', turn: 'B119' }], now }), { SB04: { turn: 'B119', train: null, at: now } });
+  const had = { SB04: { turn: 'B119', train: 'M38261 25', at: now - 60 } };
+  assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'B119' }], now }).SB04, { turn: 'B119', train: 'M38261 25', at: now });
+  assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'SB04' }], now }), {});
+});

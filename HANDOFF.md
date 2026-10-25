@@ -145,7 +145,9 @@ Deploy).
 - Fill-ins carried to Toronto (owner, 2026-10-25, lib/board/fillins.js,
   BoardChecker\fill-ins.json): a backfill (B119 on SB04's job) is kept until
   the job turn is back on a Sarnia board or the spare on its spareboard (and
-  the train's off the Call Board), max 48 h; bunkhouse/Toronto alerts and
+  the train's off the Call Board), max 48 h; the bunkhouse read by name
+  (summary.bunkFill) confirms/finds one, or clears it for the own holder;
+  bunkhouse/Toronto alerts and
   on duty for SB04 go to B119 meanwhile. "Back on the board in Sarnia"
   (position pref): a turn seen out working (on duty / POS 999) that shows on
   a Sarnia board again is told its position.

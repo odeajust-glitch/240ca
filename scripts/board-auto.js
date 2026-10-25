@@ -255,6 +255,7 @@ async function runRoute(page, opts = {}) {
     try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
   };
   const boardNames = []; // this check's people on boards, under their own turn
+  const bunkNames = []; // the bunkhouse, by name: checked against own turns at the end
   const learn = async () => {
     const rows = await unmaskedRows();
     if (!rows) return;
@@ -354,6 +355,10 @@ async function runRoute(page, opts = {}) {
     let b = expect(await chooseFromMenus(page, 28), is.poolPosition, 'Bunkhouse (28)');
     for (let pageNo = 0; pageNo < 10; pageNo++) {
       const grid = await capture('bunkhouse');
+      // Who's really in the bunkhouse under each turn (fill-ins): names in
+      // memory only, never learned from (a spare there shows under the job).
+      const rows = await unmaskedRows();
+      if (rows) bunkNames.push(...S.parseBoardNames(rows));
       let crews = 0;
       try { crews = S.parseChainGang(parseGrid(grid), Date.now() / 60000).turns.length; } catch { /* no heading: no crews */ }
       if (!crews) break;
@@ -443,6 +448,10 @@ async function runRoute(page, opts = {}) {
   const backfill = trainNames.map((t) => ({ train: t.train, craft: t.craft, job: t.job, turn: knownPeople.get(t.key) || null }))
     .filter((t) => t.turn && t.turn !== t.job);
   if (backfill.length) console.log(`  Filling in: ${backfill.map((b) => `${b.turn} on ${b.job} (${b.train})`).join(', ')}.`);
+  // In the bunkhouse under a turn: its own holder, or a spare filling in.
+  const bunkFill = bunkNames.map((b) => ({ job: b.turn, turn: knownPeople.get(b.key) || null })).filter((b) => b.turn);
+  const bunkSpares = bunkFill.filter((b) => b.turn !== b.job);
+  if (bunkSpares.length) console.log(`  In Toronto filling in: ${bunkSpares.map((b) => `${b.turn} as ${b.job}`).join(', ')}.`);
   // The hidden search (lib/board/people.js): who was on which turn this
   // check, as a hash of the person's code + the turn. No names, no codes.
   const seen = new Map();
@@ -455,7 +464,7 @@ async function runRoute(page, opts = {}) {
   for (const b of boardNames) sight(b.code, b.turn, true);
   for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
   for (const y of yardNames) sight(y.code, y.job, false);
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, people: [...seen.values()] };
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };
 }
 
 // The full view, plus what changed since the previous check (kept in
@@ -470,7 +479,7 @@ function answer(summary, me, nowOverride) {
   // Who's filling in on whose trip, until it's back (lib/board/fillins.js).
   const home = (list) => (list || []).filter((t) => !t.working).map((t) => t.turn);
   const fillIns = FillIns.updateFillIns(FillIns.loadFillIns(FILLINS_FILE), {
-    backfill: summary.backfill || [], callBoard: input.callBoard, now: input.now,
+    backfill: summary.backfill || [], bunk: summary.bunkFill || [], callBoard: input.callBoard, now: input.now,
     homeTurns: new Set([input.chainGangHome, input.aHome, input.bHome, input.sdHome, input.s1Home, input.s3Home].flatMap(home)),
     spareTurns: new Set(Object.values(input.spareboards || {}).flatMap(home)),
   });
