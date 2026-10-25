@@ -273,6 +273,7 @@
   .work h3 { margin: 12px 14px 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
   .work table { width: 100%; }
   .work tr.wrow { cursor: pointer; }
+  .work tr.wrest td { font-size: 12.5px; padding-top: 4px; padding-bottom: 4px; background: var(--bg); }
   .work tr.wrow:hover td { background: var(--rule-soft); }
   .work tr.open td { background: var(--accent-tint); }
   .work td.det { padding: 8px 14px 12px; background: var(--bg); }
@@ -748,9 +749,19 @@ function workHistory(rec, turn) {
   const rows = worked(rec);
   if (!rows.length) return '<h3>Work history</h3><p class="empty" style="padding:0 14px 10px">No trains worked in the saved checks.</p>';
   const partners = (o) => (o.crew || '').split(' · ').filter(Boolean).filter((c) => { const t = c.split(' ').pop(); return t !== turn && t !== o.job && t !== o.turn; });
-  const body = rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>
+  // Rest (or a hold turn) between two trains worked (owner, 2026-10-25): the
+  // rests first seen after the train before and up to this one, shown as a
+  // line between them.
+  // Newest first, so the rest before a train shows just below it; any rest
+  // since the latest train, at the top.
+  const restLine = (from, to, lbl) => {
+    const r = (rec.rests || []).filter((x) => x.seen > from && (!to || x.seen <= to));
+    return r.length ? `<tr class="wrest"><td colspan="3"><span class="muted">${lbl}</span> ${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>` : '';
+  };
+  const restBefore = (i) => restLine(rows[i + 1] ? rows[i + 1].onDutySeen : '', rows[i].onDutySeen, 'Rest before it:');
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>
     <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
-    <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>`).join('');
+    <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
   return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
     <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
