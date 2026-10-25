@@ -294,3 +294,21 @@ test('turn holders: TV on a pool row is not their own turn', () => {
   const H = require('../../lib/board/holders');
   assert.equal(H.turnOf(H.learn({}, people, 1), "O'DEA/J"), 'SR03');
 });
+
+// Owner's screenshot (29, 2026-10-25): TV in ST with RETN 0559 26 on S501;
+// NITZ+ CHRISTOP with no initial still matched.
+test('501/502 as on the screen: TV going spare, a name with no initial', () => {
+  const lines = [
+    '    POOL:  ( S5 )   TERM:  ( 0 )   CC:  (   )',
+    'CC TURN  T POS      EMPLOYEE     NAME      ST   RN   RETN    SC   REST     USHR  TURN  INFO',
+    'EN S501  0 001  STUBBS*+         C  CHAD',
+    "CO S501  0 001  O'DEA+           J  JUSTI  TV        0559 26",
+    'CO S502  0 002  NITZ+            CHRISTOP  **   **   1026',
+  ];
+  const t = S.parseChainGang(grid(lines), now, { anyTurn: true }).turns.find((x) => x.craft === 'CO' && x.turn === 'S501');
+  assert.equal(t.st, 'TV');
+  assert.equal(fmt(t.statusUntil), '26th 0559');
+  assert.equal(require('../../lib/board/view').gangStatus(t, now), 'TV: holder on another turn, goes spare, return 26th 0559');
+  const people = S.parseBoardNames(grid(lines, false));
+  assert.deepEqual(people.map((p) => [p.turn, p.key, p.own]), [['S501', 'STUBBS/C', true], ['S501', "O'DEA/J", false], ['S502', 'NITZ/C', true]]);
+});
