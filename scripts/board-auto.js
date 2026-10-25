@@ -35,7 +35,7 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog } = require('../lib/board/paths');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Remote = require('../lib/board/remote');
@@ -595,22 +595,44 @@ async function sendTurnAlerts(states, lineupRead, now) {
     let dropped = 0;
     const errors = new Set();
     const said = new Set();
+    const log = new Map(); // text → { turn, kind, phones, failed }
     for (const s of subs) {
       const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now });
       nextBases[s.key] = mine.base;
       for (const e of mine.events) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
+        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0 };
+        log.set(e.text, l);
+        if (r.ok) l.phones++; else l.failed++;
         if (r.ok) { sent++; said.add(e.text); continue; }
         if (r.gone) { await deleteObject(settings.r2, s.key); delete nextBases[s.key]; dropped++; break; }
         errors.add(r.message);
       }
     }
     try { TurnAlerts.saveTold(PHONES_FILE, nextBases); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
+    writeAlertsLog(log);
     if (sent || dropped || errors.size) {
       console.log(`[${stamp()}] Turn alerts: ${sent} sent${dropped ? `, ${dropped} unsubscribed phone(s) dropped` : ''}${errors.size ? `, failed: ${[...errors].join('; ')}` : ''}.${said.size ? ` (${[...said].join(' | ')})` : ''}`);
     }
   } catch (err) {
     console.log(`[${stamp()}] Turn alerts not sent: ${err.message}`);
+  }
+}
+
+// Every alert sent this check, one line each, added to "Board alerts.txt" on
+// the Desktop (owner, 2026-10-25): when, turn, kind, how many phones, text.
+let logSaid = false;
+function writeAlertsLog(log) {
+  if (!log.size) return;
+  const file = alertsLog();
+  const now = new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(',', '');
+  const lines = [...log].map(([text, l]) => `${now}  ${l.turn.padEnd(6)}  ${String(l.kind).padEnd(9)}  ${l.phones} phone${l.phones === 1 ? '' : 's'}${l.failed ? `, ${l.failed} failed` : ''}  ${text}`);
+  try {
+    if (!fs.existsSync(file)) fs.writeFileSync(file, 'When              Turn    Alert      Sent to   Message\r\n');
+    fs.appendFileSync(file, lines.join('\r\n') + '\r\n');
+    if (!logSaid) { console.log(`  Turn alerts are logged in ${file}`); logSaid = true; }
+  } catch (err) {
+    console.log(`  (turn alerts: couldn't write ${file}: ${err.message})`);
   }
 }
 

@@ -18,3 +18,14 @@ test('watchdog: busy is fine, stuck is caught, a sign-in gets longer', () => {
   assert.equal(stuckReason(null, t0 + 10 * min, opts), null);
   assert.equal(stuckReason({ at: t0 - 99 * min, state: 'idle' }, t0 + 20 * min, opts), 'it hasn\'t finished starting for 20 min');
 });
+
+// Owner, 2026-10-25: the alerts log goes on the Desktop (OneDrive's if any).
+test('alerts log: Desktop, OneDrive first, or an override', () => {
+  const path = require('path');
+  const os = require('os');
+  const { alertsLog } = require('../../lib/board/paths');
+  const home = os.homedir();
+  assert.equal(alertsLog({ BOARD_ALERTS_LOG: 'X:\\a.txt' }), 'X:\\a.txt');
+  assert.equal(alertsLog({}, (d) => d === path.join(home, 'Desktop')), path.join(home, 'Desktop', 'Board alerts.txt'));
+  assert.equal(alertsLog({ OneDrive: 'C:\\OD' }, (d) => d === path.join('C:\\OD', 'Desktop') || d === path.join(home, 'Desktop')), path.join('C:\\OD', 'Desktop', 'Board alerts.txt'));
+});
