@@ -468,6 +468,8 @@ async function runRoute(page, opts = {}) {
   for (const b of boardNames) sight(b.code, b.turn, !!b.own);
   for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
   for (const y of yardNames) sight(y.code, y.job, false);
+  // In the Toronto bunkhouse under a turn (their own or one they're covering).
+  for (const b of bunkNames) sight(b.code, b.turn, knownPeople.get(b.key) === b.turn);
   return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };
 }
 

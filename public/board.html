@@ -1496,6 +1496,15 @@ source().then(async (src) => {
     const live = cur && cur.to >= s.taken;
     const span = (e) => `${esc(when(e.from).time)} ${esc(dt(e.from).split(' ')[0])}${e.to !== e.from ? ` – ${esc(when(e.to).time)} ${esc(dt(e.to).split(' ')[0])}` : ''}`;
     const turns = [...list].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b> · ${e.own ? 'their turn' : 'working this job'} · ${span(e)}</span></li>`).join('');
+    // Their home turn over time (owner, 2026-10-25): their own turns only,
+    // one line per change, e.g. B119 (conductor spareboard) → SR03.
+    const homes = [];
+    for (const e of [...list].filter((x) => x.own).sort((a, b) => (a.from < b.from ? -1 : 1))) {
+      const last = homes[homes.length - 1];
+      if (last && last.turn === e.turn) { if (e.to > last.to) last.to = e.to; } else homes.push({ ...e });
+    }
+    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e, i) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${i === 0 ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
+      : '<p class="empty" style="padding:0">Not seen on a turn of their own yet.</p>';
     const rec = personHistory(list, all);
     const h = turnHistory(rec, s.taken);
     const prev = focus;
@@ -1506,7 +1515,7 @@ source().then(async (src) => {
       <div id="whengo" class="whengo" hidden></div>
       <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}</div>
       <div id="tstats" class="tstats">${turnStats(rec)}</div>
-      <div class="tp"><div><h3>Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
+      <div class="tp"><div><h3>Home turn</h3>${homeList}<h3 style="margin-top:12px">Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
       <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
       <div class="tp tp3">${h.more}</div></section>`;
     focus = prev;
