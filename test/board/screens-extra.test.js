@@ -308,7 +308,21 @@ test('501/502 as on the screen: TV going spare, a name with no initial', () => {
   const t = S.parseChainGang(grid(lines), now, { anyTurn: true }).turns.find((x) => x.craft === 'CO' && x.turn === 'S501');
   assert.equal(t.st, 'TV');
   assert.equal(fmt(t.statusUntil), '26th 0559');
-  assert.equal(require('../../lib/board/view').gangStatus(t, now), 'TV: holder on another turn, goes spare, return 26th 0559');
+  assert.equal(require('../../lib/board/view').gangStatus(t, now), 'TV (temporary vacancy): goes spare, holder back 26th 0559');
   const people = S.parseBoardNames(grid(lines, false));
   assert.deepEqual(people.map((p) => [p.turn, p.key, p.own]), [['S501', 'STUBBS/C', true], ['S501', "O'DEA/J", false], ['S502', 'NITZ/C', true]]);
+});
+
+// Owner's Chain Gang screenshot (2026-10-25): names with (NET), with no
+// initial, and a two-word surname; JUOD at home on SR03 with ** HT is still SR03.
+test('Chain Gang names as on the screen', () => {
+  const people = S.parseBoardNames(grid([
+    'CO SR08  0 001  WATTS*+ (NET) B   BRAND   **   HT 1910 26   1910 25',
+    "CO SR03  0 004  O'DEA+          J  JUSTI   **   HT 0559 26",
+    'CO SR05  0 009  GREYDANUS*+(NET)   GARRE   **   ** 0600 26',
+    'CO MU01  1 002  DE MAN+         M  MICHA                    1804 25',
+  ], false));
+  assert.deepEqual(people.map((p) => [p.turn, p.key, p.code, p.own]), [
+    ['SR08', 'WATTS/B', 'BRWA', true], ['SR03', "O'DEA/J", 'JUOD', true], ['SR05', 'GREYDANUS/G', 'GAGR', true], ['MU01', 'DE MAN/M', 'MIDE', false],
+  ]);
 });
