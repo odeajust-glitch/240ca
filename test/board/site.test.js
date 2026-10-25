@@ -429,3 +429,20 @@ test('14h: off duty in Toronto to the conductor\'s trip home; still held while i
   e = T.summarize(T.track(gone)).find((r) => r.id === 'E27861 17');
   assert.strictEqual(e.heldMin, undefined);
 });
+
+// Owner, 2026-10-25: a deadhead never goes to a Toronto South crew, and a
+// deadhead that leaves a line-up without reaching the Call Board is counted.
+test('deadheads: no Toronto South flag; flagged when never called', () => {
+  const { at } = require('../../lib/board/time');
+  const { torontoSouth } = require('../../lib/board/site');
+  const t = (deadhead) => ({ order: at(2026, 10, 25, 9, 0), deadhead, status: 'ORD' });
+  const crews = [{ pos: 1, restUntil: at(2026, 10, 25, 12, 0) }];
+  assert.deepStrictEqual(torontoSouth([t(false)], crews), [0]);
+  assert.deepStrictEqual(torontoSouth([t(true)], crews), [-1]);
+  const BoardTrains = require('../../public/board-trains');
+  const snap = (taken, lineup) => ({ taken, screens: ['lineup', 'macLineup'], lineup, onDuty: [], macLineup: [], bunkhouse: [] });
+  const dh = { order: '25th 0900', status: 'PLN', train: 'DHT031B 25', deadhead: true, rules: '' };
+  const state = BoardTrains.track([snap('2026-10-25 0600', [dh]), snap('2026-10-25 0700', []), snap('2026-10-25 0800', [])]);
+  const row = BoardTrains.summarize(state).find((r) => r.deadhead);
+  assert.equal(row.flag, 'deadhead');
+});

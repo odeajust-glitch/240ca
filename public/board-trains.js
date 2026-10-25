@@ -160,8 +160,12 @@
   // within FLAG_WAIT (owner, 2026-10-17): no rested crew in the bunkhouse →
   // a non-Sarnia crew took it; rested crews there → maybe that, or cancelled.
   const FLAG_WAIT = 30;
+  // A deadhead (either line-up) that leaves it and never reaches the Call
+  // Board is its own flag, counted on the Order summary (owner, 2026-10-25).
   function flagOf(r, lastTaken) {
-    if (r.from !== 'mac' || !r.gone || r.onDuty || off(r.gone, lastTaken) < FLAG_WAIT) return null;
+    if (!r.gone || r.onDuty || off(r.gone, lastTaken) < FLAG_WAIT) return null;
+    if (r.deadhead) return 'deadhead';
+    if (r.from !== 'mac') return null;
     return r.avail === 0 ? 'nonSarnia' : 'possible';
   }
 

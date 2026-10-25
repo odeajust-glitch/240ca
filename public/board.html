@@ -164,7 +164,8 @@
   /* Current: the newest snapshot only; the turn search stays, the list goes. */
   body.current .rail h2, body.current .rail .daypick, body.current #rail { display: none; }
 
-  .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
+  .strip.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stat { padding: 12px 14px; border-left: 1px solid var(--rule); }
   .stat:first-child { border-left: 0; }
   .stat .v { font: 600 28px/1 var(--mono); }
@@ -361,6 +362,7 @@
     .rail button { border: 1px solid var(--rule); border-radius: 4px; margin: 0; padding: 6px 12px; white-space: nowrap; background: var(--sheet); }
     .rail button[aria-current="true"] { border-color: var(--accent); }
     .rail .t { font-size: 16px; }
+    .strip:not(.three) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .strip .stat { padding: 10px; }
     .strip .stat .v { font-size: 22px; }
     .head .when { font-size: 30px; }
@@ -520,7 +522,7 @@ function toronto(s) {
     const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
     // Ordered out of the bunkhouse with no crew rested by the call: it doesn't
     // go spare like in Sarnia; a Toronto South crew may get it (owner, 2026-10-25).
-    if (!c && t.status === 'ORD') return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew in the bunkhouse by the call${t.south ? `; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}` : ''}</div>`;
+    if (!c && t.status === 'ORD' && !t.deadhead) return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew in the bunkhouse by the call${t.south ? `; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}` : ''}</div>`;
     if (!c) return `<span class="muted">${t.skipped && t.skipped.length ? 'no rested crew in the bunkhouse by the call' : 'no crew in the bunkhouse yet'}</span>${skip}`;
     // Planned and still on rest at the call (owner, 2026-10-25): when they're rested, in yellow.
     const when = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
@@ -653,7 +655,7 @@ function strip(s) {
     const free = [...turns.values()].filter((t) => t.status === 'available').length;
     return `${free} <small>/ ${turns.size}</small>`;
   };
-  return `<div class="strip">
+  return `<div class="strip three">
     <div class="stat"><div class="v">${s.lineup.length} <small>/ ${ord} ORD</small></div><div class="l">Trains on the line-up</div></div>
     <div class="stat"><div class="v">${spare('Conductor')}</div><div class="l">Conductors available (spareboard)</div></div>
     <div class="stat"><div class="v">${spare('Engineer')}</div><div class="l">Engineers available (spareboard)</div></div>
@@ -801,11 +803,12 @@ function story(r) {
       : `Predicted crew (as of ${esc(dt(p.taken))}): <b>${esc(said)}</b>; not on duty yet.`);
   }
   sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
-  if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? 'no rested Sarnia crew was in the bunkhouse' : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
+  if (r.flag === 'deadhead') sum.push(`<span class="chg">${esc(FLAG_TEXT.deadhead)}</span>: left the ${r.from === 'mac' ? 'Toronto' : 'Sarnia'} line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later.`);
+  else if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? 'no rested Sarnia crew was in the bunkhouse' : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
   return `<tr class="story"><td colspan="10"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
 }
 
-const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia Crew or Train Cancelled' };
+const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia Crew or Train Cancelled', deadhead: 'Deadhead never called' };
 const FROM = { sarnia: 'Sarnia', mac: 'Toronto' };
 
 function ordersView(all, day, openId, find, from = 'all') {
@@ -832,6 +835,8 @@ function ordersView(all, day, openId, find, from = 'all') {
   const week = all.filter((r) => r.day <= day && r.day > new Date(Date.parse(day + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10));
   const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}%` : '—');
   const acc = { co: score(rows, 'co'), en: score(rows, 'en'), wco: score(week, 'co'), wen: score(week, 'en') };
+  // Deadheads on a line-up that never reached the Call Board (owner, 2026-10-25).
+  const dhGone = (list) => list.filter((r) => r.flag === 'deadhead');
   const w = when(day + ' 0000');
   const q = find.trim().toUpperCase();
   const body = rows.map((r) => {
@@ -871,6 +876,12 @@ function ordersView(all, day, openId, find, from = 'all') {
       <div class="stat"><div class="v">${tod.length ? esc(dur(Math.max(...tod))) : '—'}</div><div class="l">Longest time on duty</div></div>
       <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
       <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${dhGone(rows).length}</div><div class="l">Deadheads never called (this day)</div></div>
+      <div class="stat"><div class="v">${dhGone(week).length}</div><div class="l">Deadheads never called, last 7 days</div></div>
+      <div class="stat"><div class="v">${rows.filter((r) => r.deadhead).length}</div><div class="l">Deadheads on the line-ups (this day)</div></div>
+      <div class="stat"><div class="v"><small>${dhGone(week).length ? esc(dhGone(week).slice(0, 4).map((r) => r.id).join(', ')) : '—'}</small></div><div class="l">Latest never called</div></div>
     </div>
     <div class="strip">
       <div class="stat"><div class="v">${pct(acc.co)} <small>${acc.co.hit} / ${acc.co.n}</small></div><div class="l">Conductor predicted right (this day)</div></div>

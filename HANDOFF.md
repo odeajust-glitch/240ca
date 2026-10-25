@@ -135,6 +135,10 @@ Deploy).
   in yellow); ORD train → next crew rested by the call (skip, keep place);
   ORD with none rested → "possible Toronto South crew" and the crew first in
   line then gets a mayCall alert (once per train) + Turn History note.
+  Never for a deadhead (owner, 2026-10-25). Deadheads that leave either
+  line-up and aren't on the Call Board 30 min later: flag 'deadhead'
+  ("Deadhead never called", board-trains.js flagOf), tallied on the Order
+  summary (this day, last 7 days, latest).
   Bunkhouse crews also get lined up / ordered / time / reminder alerts for
   the train home they're predicted for (turnStates lineup.home = true).
 - Alerts log (owner, 2026-10-25): every alert sent is appended to
