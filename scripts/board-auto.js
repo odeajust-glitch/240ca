@@ -35,7 +35,7 @@
 // (lib/board/site.js) is rebuilt from history\ and published after a check
 // that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
 // Cloudflare, 90 on Netlify).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE } = require('../lib/board/paths');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
@@ -602,10 +602,13 @@ async function publishSite(changed) {
 // check (lib/board/alerts.js), pushed to the phones that chose that turn on
 // the site (subscriptions in the R2 bucket). Only with the site on
 // Cloudflare. Never stops a check; a phone that unsubscribed is dropped.
-async function sendTurnAlerts(states, lineupRead, now) {
+async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
   const settings = siteSettings();
   if (!settings.r2) return;
   const { events, told } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead });
+  // Followed people: their own turn now (owner, 2026-10-25).
+  const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
+  try { TurnAlerts.saveTold(PERSON_TURNS_FILE, personTurns); } catch (err) { console.log(`  (followed people not saved: ${err.message})`); }
   try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
   try {
     // Every check: a phone's time alerts depend on its own last-told call.
@@ -620,7 +623,8 @@ async function sendTurnAlerts(states, lineupRead, now) {
     const errors = new Set();
     const said = new Set();
     const log = new Map(); // text → { turn, kind, phones, failed }
-    for (const s of subs) {
+    for (const sub0 of subs) {
+      const s = TurnAlerts.expandPhone(sub0, personTurns);
       const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now });
       nextBases[s.key] = mine.base;
       for (const e of mine.events) {
@@ -1100,7 +1104,7 @@ async function main() {
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
       await publishSite(first || changed || torontoChanged);
-      await sendTurnAlerts(alertStates, lineupRead, alertNow);
+      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
       retried = false;
       // You're on duty on the Sarnia Call Board: sign in fresh now, so the
       // ~24 h covers the trip (owner, 2026-10-22: once working, not before).

@@ -21,7 +21,9 @@ const TYPES = {
 // Only real push services (Google, Apple, Mozilla, Microsoft).
 const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/,
   /^web\.push\.apple\.com$/, /\.notify\.windows\.com$/, /^push\.services\.mozilla\.com$/];
-const TURN = /^[A-Z0-9]{2,6}$/;
+// A turn (SR03), or a followed person: '@' + the hash of their code (owner,
+// 2026-10-25), never a name.
+const TURN = /^([A-Z0-9]{2,6}|@[0-9a-f]{16})$/;
 const MAX_TURNS = 12;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
@@ -46,7 +48,7 @@ async function subscribe(request, env) {
     return json({ error: 'not a push subscription' }, 400);
   }
   const key = await subKey(sub.endpoint);
-  const turns = [...new Set((Array.isArray(body.turns) ? body.turns : []).map((t) => String(t).toUpperCase()))].filter((t) => TURN.test(t)).slice(0, MAX_TURNS);
+  const turns = [...new Set((Array.isArray(body.turns) ? body.turns : []).map((t) => (String(t).startsWith('@') ? String(t).toLowerCase() : String(t).toUpperCase())))].filter((t) => TURN.test(t)).slice(0, MAX_TURNS);
   if (!turns.length) {
     await env.SITE.delete(key);
     return json({ ok: true, turns: [] });

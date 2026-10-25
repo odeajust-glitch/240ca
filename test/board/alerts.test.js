@@ -446,3 +446,23 @@ test('fill-ins: the bunkhouse by name', () => {
   assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'B119' }], now }).SB04, { turn: 'B119', train: 'M38261 25', at: now });
   assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'SB04' }], now }), {});
 });
+
+// Owner, 2026-10-25: alerts can follow a person instead of a turn: the phone
+// keeps '@<hash>', and each check that becomes their own turn now.
+test('turn alerts: following a person across turns', () => {
+  const { expandPhone, updatePersonTurns } = require('../../lib/board/alerts');
+  const h = 'abcdef0123456789';
+  let people = updatePersonTurns({}, [{ h, turn: 'B119', own: true }, { h, turn: 'SB04', own: false }], 1);
+  assert.deepEqual(people[h].turn, 'B119'); // covering SB04 for a trip doesn't count
+  const phone = { key: 'k', turns: [`@${h}`, 'SR09'], prefs: { [`@${h}`]: { lineup: false, time: 60 }, SR09: { time: 15 } } };
+  assert.deepEqual(expandPhone(phone, people).turns, ['B119', 'SR09']);
+  assert.deepEqual(expandPhone(phone, people).prefs.B119, { lineup: false, time: 60 });
+  // A temporary assignment onto the Chain Gang: alerts move to SR03, with a "where you stand".
+  const st = turnStates({ predictions: [pred({ turn: 'SR03' })] }, []);
+  const first = phoneEvents([], expandPhone(phone, people), st, undefined, {});
+  people = updatePersonTurns(people, [{ h, turn: 'SR03', own: true }], 2);
+  const moved = phoneEvents([], expandPhone(phone, people), st, first.base, {});
+  assert.deepEqual(moved.events.map((e) => e.text), ['SR03 tracked. Right now: lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.']);
+  // Not seen yet: nothing for them, the rest of the phone's turns as usual.
+  assert.deepEqual(expandPhone({ turns: ['@ffffffffffffffff', 'SR09'] }, people).turns, ['SR09']);
+});

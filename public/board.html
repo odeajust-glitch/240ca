@@ -927,6 +927,13 @@ const Person = (() => {
       const [all, h] = await Promise.all([load(), hash(code)]);
       return all[h] && all[h].length ? all[h] : null;
     },
+    hash,
+    // A followed person ('@' + hash) → the turns they were seen on, or null.
+    async byHash(h) {
+      const all = await load();
+      const list = all[String(h).replace(/^@/, '')];
+      return list && list.length ? list : null;
+    },
     // Where they were last seen: their own turn first.
     current(list) {
       const last = list.reduce((m, e) => (e.to > m ? e.to : m), '');
@@ -1278,9 +1285,30 @@ source().then(async (src) => {
     return [...new Set([...mine, ...Alerts.turns()])];
   };
   const keepTracked = (l) => { try { localStorage.setItem(TRACK_KEY, JSON.stringify(l)); } catch (e) { /* not kept */ } };
-  const trackChips = (label) => {
+  // Following a person (owner, 2026-10-25: "alerts follow the person, or the
+  // turn, whatever they choose"): kept as '@' + the hash of their code; the
+  // code itself (e.g. JUOD, never a name) only on this phone, for the label.
+  // personNow: the turn each followed person is on now (data/people.json).
+  const isPerson = (t) => /^@[0-9a-f]{16}$/.test(t || '');
+  const CODES_KEY = 'personCodes';
+  const codes = () => { try { return JSON.parse(localStorage.getItem(CODES_KEY)) || {}; } catch (e) { return {}; } };
+  const keepCode = (h, code) => { try { localStorage.setItem(CODES_KEY, JSON.stringify({ ...codes(), [h]: code })); } catch (e) { /* not kept */ } };
+  const personNow = {};
+  const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : t);
+  const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t);
+  async function refreshPersons() {
+    let changed = false;
+    for (const t of tracked().filter(isPerson)) {
+      const list = await Person.byHash(t);
+      const cur = list && Person.current(list);
+      const turn = cur ? cur.turn : '';
+      if (personNow[t] !== turn) { personNow[t] = turn; changed = true; }
+    }
+    return changed;
+  }
+  const trackChips = (lbl) => {
     const t = tracked();
-    return t.length ? `<span class="lbl">${label}</span>${t.map((x) => `<button type="button" data-track="${esc(x)}">${esc(x)}${Alerts.state(x) === 'on' ? ' 🔔' : ''}</button>`).join('')}` : '';
+    return t.length ? `<span class="lbl">${lbl}</span>${t.map((x) => `<button type="button" data-track="${esc(x)}">${esc(label(x))}${Alerts.state(x) === 'on' ? ' 🔔' : ''}</button>`).join('')}` : '';
   };
   // Under the chips (owner, 2026-10-24): each tracked turn in a line or two,
   // from the snapshot showing: where it stands and what it's lined up for,
@@ -1290,13 +1318,15 @@ source().then(async (src) => {
   function trackSummary(s) {
     const t = tracked();
     if (!s || !t.length) return '';
-    const rows = t.map((turn) => {
+    const rows = t.map((entry) => {
+      const turn = nowTurn(entry);
+      if (!turn) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Not seen on a turn in the saved checks yet.</div></li>`;
       const f = BoardTurns.facts(s, turn);
       const where = f.filter((x) => !LINED.has(x.kind)).map((x) => x.text);
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
       const lines = [...where.map((text) => ({ kind: 'status', text })), ...lined];
-      return `<li data-sum="${esc(turn)}"><b class="num">${esc(turn)}</b> <span class="go"></span>${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
+      return `<li data-sum="${esc(turn)}"><b class="num">${esc(isPerson(entry) ? label(entry) : turn)}</b> <span class="go"></span>${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
   }
@@ -1305,6 +1335,8 @@ source().then(async (src) => {
     const box = document.getElementById('tracked');
     box.innerHTML = trackChips('Tracking (tap to change):') + trackSummary(s);
     box.querySelectorAll('[data-track]').forEach((b) => { b.onclick = () => openTrack(b.dataset.track); });
+    // Followed people: find their turn now, then draw again if it changed.
+    if (tracked().some(isPerson)) refreshPersons().then((ch) => { if (ch && summaryFor === s) { paintTracked(s); setMarks(); if (mode === 'current' || mode === 'snap') show(cur, true); } });
     // The newest check's "when it goes", for the current board only.
     if (!s || !src.live || s.taken !== src.index.latest) return;
     whenGo().then((w) => {
@@ -1321,7 +1353,7 @@ source().then(async (src) => {
   }
   // Which turns the page picks out: Turn History's own turn there, the
   // tracked ones everywhere else.
-  const setMarks = () => { marks = mode === 'turns' ? (focus ? [focus] : []) : tracked(); };
+  const setMarks = () => { marks = mode === 'turns' ? (focus ? [focus] : []) : tracked().map(nowTurn).filter(Boolean); };
 
   // The box under "Find a turn" on Current/Snapshots: the turn's alert
   // choices, OK to track it (and get its alerts), Cancel, or stop tracking.
@@ -1331,22 +1363,23 @@ source().then(async (src) => {
   // jobs that never show ordered.
   const BEFORE = [[0, 'never'], [90, '90 min'], [60, '60 min'], [45, '45 min'], [30, '30 min']];
   function openTrack(turnIn) {
-    const turn = clean(turnIn);
-    if (!/^[A-Z0-9]{2,6}$/.test(turn) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
+    const turn = isPerson(turnIn) ? turnIn : clean(turnIn);
+    if (!(isPerson(turn) || /^[A-Z0-9]{2,6}$/.test(turn)) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
     dlg.dataset.turn = turn;
     const was = tracked().includes(turn);
     // Boards that skip someone on rest: the Chain Gang (SR/SD) and the
-    // spareboards (owner, 2026-10-25); not A/B, S1/S3 or 501/502.
-    const chain = !/^(SA|SB|S1|S3|S5|MU)/.test(turn);
+    // spareboards (owner, 2026-10-25); not A/B, S1/S3 or 501/502. A person
+    // gets every option (their turn can be any kind).
+    const chain = isPerson(turn) || !/^(SA|SB|S1|S3|S5|MU)/.test(turn);
     const p = Alerts.prefs(turn);
     const box = (k, label) => `<label><input type="checkbox" data-k="${k}" ${p[k] ? 'checked' : ''}> ${label}</label>`;
-    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(turn)}">
-      <header><h2>Track <span class="num">${esc(turn)}</span></h2></header>
-      <div class="alertopts"><span class="lbl">Alert me when ${esc(turn)}:</span>
+    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(label(turn))}">
+      <header><h2>Track <span class="num">${esc(label(turn))}</span></h2></header>
+      <div class="alertopts"><span class="lbl">Alert me when ${esc(label(turn))}:</span>
         ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}
         ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
-        ${/^(SD|SR)/.test(turn) ? box('mayCall', 'may be called for a job going spare (no one free on the slow board)') : ''}
+        ${/^(SD|SR)/.test(turn) || isPerson(turn) ? box('mayCall', 'may be called for a job going spare (no one free on the slow board)') : ''}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>
         <label>remind me <select data-k="before">${BEFORE.map(([m, l]) => `<option value="${m}" ${m === p.before ? 'selected' : ''}>${l}</option>`).join('')}</select> before the expected call</label></div>
       <div id="dlgnote" class="alertnote" hidden></div>
@@ -1358,9 +1391,9 @@ source().then(async (src) => {
     const done = () => { close(); paintTracked(); if (mode === 'current' || mode === 'snap') show(cur, true); };
     Alerts.ready.then(() => {
       const st = Alerts.state(turn);
-      if (st === 'ios-home') say(`<b>For alerts on an iPhone</b> (iOS 16.4 or newer), first: Safari → <b>Share</b> → <b>Add to Home Screen</b>, then open the site from that icon and track the turn there. Tapping OK here still picks ${esc(turn)} out on the page.`, 'howto');
-      else if (st === 'unsupported') say(`This browser can't show alerts (on Android use Chrome). OK still picks ${esc(turn)} out on the page.`);
-      else if (st === 'none') say(`Alerts aren't set up on this site. OK still picks ${esc(turn)} out on the page.`);
+      if (st === 'ios-home') say(`<b>For alerts on an iPhone</b> (iOS 16.4 or newer), first: Safari → <b>Share</b> → <b>Add to Home Screen</b>, then open the site from that icon and track the turn there. Tapping OK here still picks ${esc(label(turn))} out on the page.`, 'howto');
+      else if (st === 'unsupported') say(`This browser can't show alerts (on Android use Chrome). OK still picks ${esc(label(turn))} out on the page.`);
+      else if (st === 'none') say(`Alerts aren't set up on this site. OK still picks ${esc(label(turn))} out on the page.`);
     });
     document.getElementById('dlgcancel').onclick = close;
     dlg.onclick = (e) => { if (e.target === dlg) close(); };
@@ -1376,7 +1409,7 @@ source().then(async (src) => {
         await Alerts.set(turn, true);
         done();
       } catch (err) {
-        say(`${esc(turn)} is tracked on this page, but alerts couldn't be set up: ${esc(err.message)}.`, 'bad');
+        say(`${esc(label(turn))} is tracked on this page, but alerts couldn't be set up: ${esc(err.message)}.`, 'bad');
         e.currentTarget.disabled = false;
         paintTracked();
       }
@@ -1401,7 +1434,21 @@ source().then(async (src) => {
     if (!isCode(t)) return openTrack(t);
     const list = await Person.find(t);
     const cur = list && Person.current(list);
-    if (cur) return openTrack(cur.turn);
+    if (cur) {
+      // Follow the person (alerts move with their home turn) or just the turn they're on now.
+      const h = `@${await Person.hash(t)}`;
+      dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
+        <div class="alertnote">${esc(t)} is on <b>${esc(cur.turn)}</b> now. Follow:</div>
+        <div class="btns"><button type="button" class="ok" id="dlgperson">👤 ${esc(t)} (alerts move with their turn)</button>
+          <button type="button" id="dlgturn">Turn ${esc(cur.turn)} only</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
+      dlg.dataset.turn = '';
+      dlg.hidden = false;
+      const shut = () => { dlg.hidden = true; dlg.innerHTML = ''; };
+      document.getElementById('dlgcancel').onclick = () => { shut(); turnBox.value = ''; turnClear.hidden = true; };
+      document.getElementById('dlgturn').onclick = () => { shut(); openTrack(cur.turn); };
+      document.getElementById('dlgperson').onclick = () => { shut(); keepCode(h, t); personNow[h] = cur.turn; openTrack(h); };
+      return;
+    }
     dlg.innerHTML = '<div class="dlg" role="dialog" aria-modal="true"><header><h2>Not found</h2></header><div class="alertnote">Nothing found for that in the saved checks. Type a turn, e.g. SR03.</div><div class="btns"><button type="button" class="ok" id="dlgcancel">OK</button></div></div>';
     dlg.dataset.turn = '';
     dlg.hidden = false;
@@ -1445,7 +1492,7 @@ source().then(async (src) => {
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
     box.onchange = go;
     document.getElementById('tgo').onclick = go;
-    view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { setFocus(b.dataset.track); renderTurns(); }; });
+    view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { const x = b.dataset.track; setFocus(isPerson(x) ? (codes()[x] || nowTurn(x)) : x); renderTurns(); }; });
     if (!focus) return;
     if (isCode(focus)) return showPerson(focus, s);
     const want = focus;

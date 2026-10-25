@@ -157,6 +157,13 @@ Deploy).
   spareboard in the same check); away/working pool rows, Call Board and
   bunkhouse never count. Learned once per check at the end of the route.
   Kept 90 days unseen. Used for yard crews, fill-ins, the bunkhouse check.
+- Follow a person or a turn (owner, 2026-10-25): typing a code in Find a
+  turn offers "👤 JUOD" (alerts move with their own turn) or "Turn X only".
+  Phone keeps '@'+personHash (and the code, for its own label; never a
+  name). Worker accepts '@[0-9a-f]{16}' (re-paste needed). Checker keeps
+  person-turns.json (hash → own turn from summary.people, own only) and
+  expandPhone() turns '@h' into that turn with the entry's prefs; a change
+  of turn brings a "where you stand" for the new one.
 - **Board position alert (owner, same evening):** kind `position`, pref
   default on, every board (SR/SA/SB CO lists, SD/S1/S3). `told[turn].pos` +
   `posAhead`; when the position moves: "SR03: now position 001 (was 003).
