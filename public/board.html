@@ -390,6 +390,9 @@
   .ctable td { padding: 2px 0; border-bottom: 1px dotted var(--rule-soft); }
   .ctip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--sheet); font: 600 13px/1.3 var(--body); padding: 5px 8px; border-radius: 4px; max-width: 260px; }
   .ctip[hidden] { display: none; }
+  .stat .v .offv { font: inherit; padding: 0; background: none; }
+  .moves { margin: 4px 0 0; padding-left: 16px; font: 12.5px/1.5 var(--mono); }
+  table.orders td details summary { cursor: pointer; }
   @media (max-width: 700px) {
     .ohead .when { font-size: 30px; }
     .ohead .ctl { margin-left: 0; }
@@ -968,9 +971,11 @@ function anaTiles(st, kind) {
       ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${pctOf(st.pred.en)}%` : ''}`)}</div>`;
 }
 // A "most often" list; `q` makes each name a button that searches it.
+// All deadheads are one line, "DH" (owner, 2026-10-26).
+const numLabel = (n) => (n === 'DH' ? 'Deadheads (all)' : n);
 function anaList(title, rows, q) {
   if (!rows.length) return `<div><h3>${esc(title)}</h3><p class="empty" style="padding:0">None yet.</p></div>`;
-  return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q && !BoardTurns.PLACEHOLDER.test(name) ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
+  return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q && !BoardTurns.PLACEHOLDER.test(name) ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(q === 'train' ? numLabel(name) : name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
 }
 function anaWeek(st) {
   return `<div><h3>Days of the week</h3><ul class="alist">${st.weekdays.map(([day, n]) => `<li><span>${day}</span><b>${n}</b></li>`).join('')}</ul></div>`;
@@ -1037,7 +1042,7 @@ function analyticsView(runs, kind, title, note, extra = {}) {
   const span = st.first ? `${esc(dt(st.first))} to ${esc(dt(st.last))}` : '';
   const lists = kind === 'train'
     ? [anaList('Conductors, most often', st.conductors, 'turn'), anaList('Engineers, most often', st.engineers, 'turn'), anaList('Pools that took it', st.pools), anaWeek(st)]
-    : [anaList('Trains worked most', st.numbers.filter(([n]) => /^(DH[A-Z]*)?\d{3}$/.test(n)), 'train'), anaList('Worked with most', st.partners, 'turn'), anaWeek(st)];
+    : [anaList('Trains worked most', st.numbers.filter(([n]) => /^(DH|\d{3})$/.test(n)), 'train'), anaList('Worked with most', st.partners, 'turn'), anaWeek(st)];
   // A2: time between trains (turn or person); went spare and runarounds (turn).
   const b = extra.between;
   const more = kind === 'train'
@@ -1045,24 +1050,24 @@ function analyticsView(runs, kind, title, note, extra = {}) {
     : `<div class="strip${extra.spares == null ? ' two' : ''}">${anaTile(durOr(b.avg), `Average time between trains${b.n ? ` (${b.n})` : ''}, on duty to next on duty`)}${anaTile(durOr(b.min), 'Shortest time between trains')}${
       extra.spares == null ? '' : anaTile(extra.spares, 'Times it went spare (B0, ** or its train going spare)') + anaTile(extra.took, 'Trains it took out of sequence')}</div>`;
   return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
-    ${anaTiles(st, kind)}${more}${anaCharts(runs)}
+    ${anaTiles(st, kind)}${more}${extra.sleep ? sleepSection(extra.sleep) : ''}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${lists.join('')}</div></section>
     ${anaTable(runs, kind)}`;
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['runarounds', 'Runarounds'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Runarounds'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { trains: anaTrains, turns: anaTurns, runarounds: anaRunarounds, spare: anaSpare, pred: anaPred }[o.sec] || anaTrains;
+  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, pred: anaPred }[o.sec] || anaTrains;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
   const groups = BoardAnalytics.byNumber(runs);
-  const num = (n) => `<button type="button" class="qbtn" data-q="${esc(n)}" data-kind="train">${esc(n)}</button>`;
+  const num = (n) => `<button type="button" class="qbtn" data-q="${esc(n)}" data-kind="train">${esc(numLabel(n))}</button>`;
   // A8: least reliable trains (2 or more with a plan to compare).
   const worst = groups.filter((g) => g.planN >= 2).sort((a, b) => b.planAvg - a.planAvg).slice(0, 20);
   const a8 = worst.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>Ran</th><th>Compared</th><th>Average off</th><th>Worst</th><th>Late · early</th></tr></thead><tbody>${worst.map((g) => `<tr class="nolink">
@@ -1119,6 +1124,51 @@ function anaSpare({ spareJobs }) {
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${anaList('Filled by, most often', st.filledBy, 'turn')}${anaList('Jobs by pool', st.byPool)}</div></section>
     <section class="sheet"><header><h2>Latest</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
+// Sleep tracker (owner, 2026-10-26): once the expected call is 8 h away
+// they go to sleep; then the call can move. How far the real call (on duty
+// − 2 h) landed from the one they slept on: within 30 min green, within an
+// hour yellow, more red.
+function sleepCell(off) {
+  const band = BoardAnalytics.sleepBand(off);
+  if (!off) return '<span class="offv ok">on time</span>';
+  return `<span class="offv ${band}">${esc(dur(off))} ${off < 0 ? 'earlier' : 'later'}</span>`;
+}
+const SLEEP_NOTE = 'They go to sleep once the expected call is 8 h away (the check where it first showed 8 h or less). The real call is on duty − 2 h. Within 30 min of the call they slept on is green, within an hour yellow, more than that red.';
+function sleepTiles(st) {
+  const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
+  return `<div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Green: called within 30 min of what they slept on')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, 'Yellow: 30 min to 1 h off')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'Red: more than 1 h off', st.bad > 0)}${anaTile(durOr(st.avg), 'Average off, either way')}</div>
+    <div class="strip">${anaTile(st.earlier, 'Called earlier than they slept on (over 30 min)', st.earlier > 0)}${anaTile(st.later, 'Called later than they slept on (over 30 min)')}${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Times the expected call moved after they went to sleep (average)')}${anaTile(st.short, 'Short notice: lined up under 8 h before the call')}</div>`;
+}
+// Each call, newest first, with every move of the expected call after they went to sleep.
+function sleepTable(list, showTurn) {
+  if (!list.length) return '<p class="empty">No calls tracked in the dates picked yet. A call counts once the turn was on a line-up (or expected to fill a job going spare) before it went on duty.</p>';
+  const rows = [...list].reverse().slice(0, 200).map((z) => {
+    const moves = (z.shifts || []).map((x) => `<li>${esc(dt(x.taken))}: call ${esc(dt(x.call))}${x.train !== z.expectedTrain ? ` (${esc(x.train)})` : ''}</li>`).join('');
+    const start = z.noWindow ? '<span class="muted">never 8 h out before the call</span>'
+      : `${esc(dt(z.sleepAt))}${z.short ? ` <span class="chip">short notice ${esc(dur(z.notice))}</span>` : ''}`;
+    return `<tr class="nolink">${showTurn ? `<td class="num"><button type="button" class="qbtn" data-q="${esc(z.turn)}" data-kind="turn">${esc(z.turn)}</button></td>` : ''}
+      <td class="num">${start}</td>
+      <td class="num"><b>${esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
+      <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
+      <td class="num"><b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div></td>
+      <td>${sleepCell(z.off)}</td></tr>`;
+  }).join('');
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Went to sleep (check)</th><th>Call they slept on</th><th>Then the call moved</th><th>Actual call</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+const sleepSection = (list) => `<section class="sheet"><header><h2>Sleep tracker</h2><span class="meta">${plural(list.length, 'call')}</span></header>
+    <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
+function anaSleepAll({ sleep }) {
+  const st = BoardAnalytics.sleepStats(sleep);
+  const turns = BoardAnalytics.sleepByTurn(sleep).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn));
+  const table = turns.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Turn</th><th>Calls</th><th>Green</th><th>Yellow</th><th>Red</th><th>Average off</th><th>Earlier · later</th><th>Short notice</th></tr></thead><tbody>${turns.map((t) => `<tr class="nolink">
+      <td class="num"><button type="button" class="qbtn" data-q="${esc(t.turn)}" data-kind="turn">${esc(t.turn)}</button></td><td class="num"><b>${t.n}</b></td>
+      <td class="num"><span class="offv ok">${t.ok}</span></td><td class="num"><span class="offv warn">${t.warn}</span></td><td class="num"><span class="offv bad">${t.bad}</span></td>
+      <td class="num">${durOr(t.avg)}</td><td class="num">${t.earlier} · ${t.later}</td><td class="num">${t.short}</td></tr>`).join('')}</tbody></table></div>` : '';
+  return `<p class="anote">${SLEEP_NOTE}</p>${sleepTiles(st)}
+    ${table ? `<section class="sheet"><header><h2>By turn</h2><span class="meta">most red first · tap a turn for its calls</span></header>${table}</section>` : ''}
+    <section class="sheet"><header><h2>Latest calls</h2><span class="meta">newest first</span></header>${sleepTable(sleep, true)}</section>`;
+}
+
 // A9: how often the predicted crew was right, day by day, and how early.
 function anaPred({ runs }) {
   const days = BoardAnalytics.accuracyByDay(runs);
@@ -1132,6 +1182,110 @@ function anaPred({ runs }) {
     ${days.length ? `<section class="sheet"><header><h2>Day by day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${series('co', 'Conductor')}${series('en', 'Engineer')}</div></section>` : '<p class="empty">No predictions scored in the dates picked yet.</p>'}`;
 }
 
+function ordersView(all, day, openId, find, from = 'all') {
+  if (from !== 'all') all = all.filter((r) => (r.from || 'sarnia') === from);
+  const days = [...new Set(all.map((r) => r.day))].sort().reverse();
+  if (!days.length) return '<p class="empty">No trains yet. They appear here once the board checker has saved a few checks.</p>';
+  if (!days.includes(day)) day = days[0];
+  // In time order: on duty, else the latest order or plan.
+  const due = (r) => r.onDuty || r.order || r.plan || r.firstSeen;
+  const rows = all.filter((r) => r.day === day).sort((a, b) => (due(a) < due(b) ? -1 : due(a) > due(b) ? 1 : 0));
+  const done = rows.filter((r) => r.onDuty);
+  const vsPlan = done.filter((r) => r.offPlan != null);
+  const avg = vsPlan.length ? Math.round(vsPlan.reduce((n, r) => n + Math.abs(r.offPlan), 0) / vsPlan.length) : null;
+  // Same bands as the colours in the table.
+  const green = vsPlan.filter((r) => Math.abs(r.offPlan) < OFF_YELLOW).length;
+  const yellow = vsPlan.filter((r) => Math.abs(r.offPlan) >= OFF_YELLOW && Math.abs(r.offPlan) <= OFF_RED).length;
+  const red = vsPlan.filter((r) => Math.abs(r.offPlan) > OFF_RED).length;
+  const changed = rows.filter((r) => r.orderChanges > 0).length;
+  const tod = rows.filter((r) => r.timeOnDuty != null).map((r) => r.timeOnDuty);
+  const flagged = rows.filter((r) => r.flag);
+  // How often the predicted crew was right (owner, 2026-10-22): this day and
+  // the 7 days up to it, conductors and engineers counted separately.
+  const score = (list, k) => { const s = list.map((r) => r.predHit && r.predHit[k]).filter((x) => x != null); return { hit: s.filter(Boolean).length, n: s.length }; };
+  const week = all.filter((r) => r.day <= day && r.day > new Date(Date.parse(day + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10));
+  const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}%` : '—');
+  const acc = { co: score(rows, 'co'), en: score(rows, 'en'), wco: score(week, 'co'), wen: score(week, 'en') };
+  // Deadheads on a line-up that never reached the Call Board (owner, 2026-10-25).
+  const dhGone = (list) => list.filter((r) => r.flag === 'deadhead');
+  const w = when(day + ' 0000');
+  const q = find.trim().toUpperCase();
+  const body = rows.map((r) => {
+    const key = `${r.id} ${r.month}`;
+    const hit = q && r.id.replace(/\s+/g, '').includes(q.replace(/\s+/g, ''));
+    const fl = r.flag ? (r.flag === 'nonSarnia' ? ' fl-red' : ' fl-yellow') : '';
+    const tr = `<tr class="row${key === openId ? ' open' : ''}${hit ? ' hit' : ''}${fl}" data-key="${esc(key)}">
+      <td class="num"><b class="id">${esc(r.id)}</b><span class="from">${FROM[r.from || 'sarnia']}</span>${r.deadhead ? ' <span class="chip">DH</span>' : ''}${r.flag ? `<span class="flagtxt">${esc(FLAG_TEXT[r.flag])}</span>` : ''}</td>
+      <td class="num">${esc(dt(r.firstSeen))}</td>
+      <td class="num">${esc(dt(r.firstPlan))}</td>
+      <td class="num">${esc(dt(r.firstOrder))}</td>
+      <td class="num">${r.orderChanges ? `<span class="chg">${r.orderChanges} → ${esc(dt(r.order))}</span>` : (r.firstOrder ? '0' : '—')}</td>
+      <td class="num"><b>${r.onDuty ? esc(dt(r.onDuty)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
+      <td>${offCell(r.offPlan)}</td>
+      <td>${offCell(r.offOrder)}</td>
+      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.offDuty ? esc(dt(r.offDuty)) : '—'}</td>
+      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.timeOnDuty != null ? `<b>${esc(dur(r.timeOnDuty))}</b>` : '—'}</td></tr>`;
+    return tr + (key === openId ? story(r) : '');
+  }).join('');
+  return `
+    <div class="ohead">
+      <div><div class="sec-title" style="margin-bottom:6px">Order summary</div><div class="when">${esc(w.long)}</div></div>
+      <div class="ctl">
+        <label for="oday">Day<select id="oday">${days.map((d) => `<option value="${d}"${d === day ? ' selected' : ''}>${esc(when(d + ' 0000').day)}</option>`).join('')}</select></label>
+        <label for="ofrom">Trains from<select id="ofrom">${['all', 'sarnia', 'mac'].map((f) => `<option value="${f}"${f === from ? ' selected' : ''}>${f === 'all' ? 'Sarnia and Toronto' : FROM[f]}</option>`).join('')}</select></label>
+        <label for="ofind">Find a train<input id="ofind" placeholder="e.g. M30241 15" value="${esc(find)}" autocomplete="off" spellcheck="false"></label>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
+      <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
+      <div class="stat"><div class="v"><span class="offv ok">${green}</span> <small>·</small> <span class="offv warn">${yellow}</span> <small>·</small> <span class="offv bad">${red}</span></div><div class="l">First plan vs on duty: under 30 m · 30 m–1 h 56 m · beyond</div></div>
+      <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.round(tod.reduce((a, b) => a + b, 0) / tod.length))) : '—'}</div><div class="l">Average time on duty, Sarnia to Toronto</div></div>
+      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.max(...tod))) : '—'}</div><div class="l">Longest time on duty</div></div>
+      <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
+      <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${dhGone(rows).length}</div><div class="l">Deadheads never called (this day)</div></div>
+      <div class="stat"><div class="v">${dhGone(week).length}</div><div class="l">Deadheads never called, last 7 days</div></div>
+      <div class="stat"><div class="v">${rows.filter((r) => r.deadhead).length}</div><div class="l">Deadheads on the line-ups (this day)</div></div>
+      <div class="stat"><div class="v"><small>${dhGone(week).length ? esc(dhGone(week).slice(0, 4).map((r) => r.id).join(', ')) : '—'}</small></div><div class="l">Latest never called</div></div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="v">${pct(acc.co)} <small>${acc.co.hit} / ${acc.co.n}</small></div><div class="l">Conductor predicted right (this day)</div></div>
+      <div class="stat"><div class="v">${pct(acc.en)} <small>${acc.en.hit} / ${acc.en.n}</small></div><div class="l">Engineer predicted right (this day)</div></div>
+      <div class="stat"><div class="v">${pct(acc.wco)} <small>${acc.wco.hit} / ${acc.wco.n}</small></div><div class="l">Conductor right, last 7 days</div></div>
+      <div class="stat"><div class="v">${pct(acc.wen)} <small>${acc.wen.hit} / ${acc.wen.n}</small></div><div class="l">Engineer right, last 7 days</div></div>
+    </div>
+    <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
+      <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
+      <tbody>${body}</tbody></table></div>
+      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 8 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
+    </section>`;
+}
+
+// --- 14h: crews held in Toronto 14 hours or more (Article 18.6(b)) ----------
+
+const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
+const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
+  .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
+const heldKey = (r) => `${r.id} ${r.month}`;
+
+// A link straight to a turn or a train (owner, 2026-10-22): #turn=SR07,
+// #train=M38261-22. The phone's share sheet when there is one, else copied.
+async function shareLink(hash, title, button) {
+  const url = `${location.origin}${location.pathname}${hash}`;
+  try {
+    if (navigator.share) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    if (button) { const was = button.textContent; button.textContent = '✓ Link copied'; setTimeout(() => { button.textContent = was; }, 2000); }
+  } catch (e) { /* cancelled */ }
+}
+
+// "When does this turn go?" from the newest check (data/whengo.json).
 const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 // Hidden search by person (owner, 2026-10-24): a 4-letter code from a
@@ -2033,7 +2187,7 @@ source().then(async (src) => {
   // kept on the phone.
   const ana = { q: '', kind: 'auto', range: 'all', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [] };
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -2072,13 +2226,14 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = found || { runarounds: [], spareJobs: [] };
+    found = { runarounds: [], spareJobs: [], sleep: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day.
     const all = [...live, ...arch.trains];
     const range = anaDates();
     const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
     const runarounds = [...arch.runarounds, ...found.runarounds].filter((r) => inDates(r.taken));
     const spareJobs = [...arch.spareJobs, ...found.spareJobs].filter((j) => inDates(j.first));
+    const sleep = [...arch.sleep, ...found.sleep].filter((z) => inDates(z.onDuty));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
     const workOf = (turn) => {
@@ -2102,12 +2257,12 @@ source().then(async (src) => {
         turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), all, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs });
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
       anaCsv = { name: `train-${q.replace(/\s+/g, '-')}`, runs };
-      body = analyticsView(runs, 'train', /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '',
+      body = analyticsView(runs, 'train', q === 'DH' ? 'All deadheads' : /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '',
         { runarounds: runarounds.filter((r) => BoardAnalytics.trainMatches(r.train, q)).length });
     } else if (kind === 'turn') {
       const { base } = BoardTurns.splitCraft(q);
@@ -2116,7 +2271,7 @@ source().then(async (src) => {
         const runs = inRange(workRuns(workOf(q), all, base), range);
         anaCsv = { name: `turn-${q}`, runs };
         body = analyticsView(runs, 'turn', `Turn ${q}`, turnsAll[base] || arch.work[base] ? '' : 'no history for this turn in the saved checks',
-          { between: between(runs), spares: countIn(base, 'spares'), took: took(base) });
+          { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: sleep.filter((z) => z.turn === base) });
       }
     } else {
       // A person: the live stretches (people.json) and the archive's.
@@ -2130,7 +2285,9 @@ source().then(async (src) => {
         const oldWork = old.flatMap((e) => (arch.work[e.turn] || []).filter((o) => (o.seen || o.at) >= e.from && (o.seen || o.at) <= e.to).map((o) => ({ ...o, turn: e.turn })));
         const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), all), range);
         anaCsv = { name: 'person', runs };
-        body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches).turn)}`, { between: between(runs), spares: null });
+        // Their calls: on a turn while they were on it.
+        const mine = sleep.filter((z) => stretches.some((e) => e.turn === z.turn && z.firstSeen <= e.to && z.seen >= e.from));
+        body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches).turn)}`, { between: between(runs), spares: null, sleep: mine });
       }
     }
     const dates = ana.range === 'custom'

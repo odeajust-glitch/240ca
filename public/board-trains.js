@@ -223,7 +223,7 @@
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }
 
-  const api = { predHit, track, summarize, resolve, trainKey, toMin, off, FLAG_WAIT, HELD_LIMIT };
+  const api = { predHit, track, summarize, resolve, trainKey, toMin, fromMin, off, FLAG_WAIT, HELD_LIMIT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTrains = api;
 })(this);

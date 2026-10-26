@@ -448,3 +448,14 @@ test('deadheads: no Toronto South flag; flagged when never called', () => {
   const row = BoardTrains.summarize(state).find((r) => r.deadhead);
   assert.equal(row.flag, 'deadhead');
 });
+
+// 2026-10-26: a rewrite of the Analytics code once dropped the Order
+// summary's and Article 18.6(b)'s functions, so those tabs never loaded.
+test('site page: every function the page calls at the top level is still there', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../../public/board.html'), 'utf8');
+  const defined = new Set([...html.matchAll(/^(?:async )?function ([A-Za-z0-9_]+)|^const ([A-Za-z0-9_]+) =/gm)].map((m) => m[1] || m[2]));
+  for (const name of ['ordersView', 'heldView', 'heldRows', 'heldKey', 'HELD_LIMIT', 'shareLink', 'story', 'offCell', 'turnPanel', 'workHistory', 'personHistory',
+    'analyticsView', 'analyticsOverview', 'anaTrains', 'anaTurns', 'anaSleepAll', 'anaRunarounds', 'anaSpare', 'anaPred', 'colChart', 'source', 'whenGo']) {
+    assert.ok(defined.has(name), `${name} is missing from board.html`);
+  }
+});

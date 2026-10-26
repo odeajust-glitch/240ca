@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 140 tests (`npm test`)
+2026-10-26) · 143 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -248,6 +248,20 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   series, accent colour, one tooltip `.ctip`, table under each), CSV.
   ❓ Not seen on real checks yet: spare-job matching (job turn = backfill
   `job`) and runarounds depend on what CATS shows.
+- Sleep tracker (owner, same session): insights.js `sleepCheck`, per turn:
+  first check with the expected call ≤ 8 h away = asleep on that call;
+  later changes (incl. another train) = `shifts`; on duty → call = on duty
+  − 2 h, `off` = call − expected; green ≤ 30, yellow ≤ 60, red beyond
+  (BoardAnalytics.sleepBand). Line-up rows now carry `crew` (predicted or
+  known) → FORMAT 11 (day files rebuild once). Person: calls on their
+  turns while they were on them. ❓ Not seen on real checks yet.
+- All deadheads count as one number "DH" in Analytics (numberOf).
+- ⚠ The Analytics rewrite had dropped ordersView/heldRows/heldKey/
+  HELD_LIMIT/shareLink (Order summary + 18.6(b) stuck on Loading); put back,
+  and site.test.js now checks those functions exist. When splicing
+  board.html, check `comm` of top-level names before and after.
+- Fable review of Analytics was started (read-only); go through its
+  findings with the owner (TODO item 7).
 - Next: back to TODO items 1–5 (runaround log first, owner to describe).
 
 **Waiting on the owner / to watch:**

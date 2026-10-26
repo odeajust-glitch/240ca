@@ -77,7 +77,9 @@ test('analytics: a turn\'s work history joined to the trains it worked', () => {
   assert.strictEqual(st.yard, 1);
   assert.deepStrictEqual(st.partners, [['SD07', 2], ['B201', 1]]);
   assert.deepStrictEqual(st.numbers.slice(0, 2), [['148', 2], ['Y123', 1]]);
-  assert.strictEqual(A.numberOf('DHT211B 05'), 'DHT211');
+  assert.strictEqual(A.numberOf('DHT211B 05'), 'DH');
+  assert.strictEqual(A.kindOf('dh', []), 'train');
+  assert.ok(A.trainMatches('DHT042C 11', 'DH'));
 });
 
 // Owner picked A1–A5 and A8–A13 (2026-10-26).
@@ -99,7 +101,7 @@ test('analytics: train numbers ranked by plan, never ran, deadheads never called
   ].map(A.runOf);
   const g = Object.fromEntries(A.byNumber(runs).map((x) => [x.number, x]));
   assert.deepStrictEqual([g['148'].seen, g['148'].ran, g['148'].neverRan, g['148'].planAvg, g['148'].planWorst, g['148'].late, g['148'].early], [3, 2, 1, 90, -120, 1, 1]);
-  assert.deepStrictEqual([g.DHT211.deadheads, g.DHT211.dhNeverCalled], [1, 1]);
+  assert.deepStrictEqual([g.DH.deadheads, g.DH.dhNeverCalled], [1, 1]);
 });
 
 test('analytics: a turn side by side, prediction by day and how early', () => {

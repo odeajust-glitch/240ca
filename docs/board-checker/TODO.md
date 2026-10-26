@@ -18,6 +18,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 6. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
+7. **Fable review of Analytics**: findings to go through with the owner
+   (review running 2026-10-26).
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7).
 
@@ -51,4 +54,17 @@ per week per person (A7).
     as data/archive.json (only what's older than the site's first day).
     `BOARD_ARCHIVE_DAYS` changes the year. It starts filling from the first
     build with this code, so on day one it only has what the site already has.
+- 2026-10-26: **Sleep tracker** (Analytics → Sleep, and on every turn and
+  name code search). They go to sleep once the expected call is 8 h away;
+  every move of the call after that is kept (another train counts too); the
+  real call is on duty − 2 h. Within 30 min of the call they slept on green,
+  within 1 h yellow, more red. "Short notice" = lined up under 8 h before.
+  `lib/board/insights.js` sleepCheck (line-up crews, Mac yard crews, spare
+  turns expected for jobs going spare; Call Board crews and fill-ins, yard
+  crews) → data/analytics.json `sleep`, archived too.
+- 2026-10-26: **All deadheads grouped as one ("DH")** in Analytics: lists,
+  least reliable, never ran; search `DH` for all of them.
+- 2026-10-26: **Fixed: Order summary and Article 18.6(b) stuck loading**
+  after the Analytics update (code dropped by mistake, put back; a test now
+  checks the page's functions are all there).
 

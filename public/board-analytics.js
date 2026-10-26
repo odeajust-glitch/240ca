@@ -30,7 +30,7 @@
   function kindOf(q, knownTurns = [], trains = []) {
     q = clean(q);
     if (!q) return null;
-    if (/^\d+$/.test(q) || / /.test(q)) return 'train';
+    if (/^\d+$/.test(q) || / /.test(q) || q === 'DH') return 'train';
     const base = q.replace(/-(EN|CO)$/, '');
     if (knownTurns.includes(base)) return 'turn';
     if (/^[A-Z]{4}$/.test(q)) return 'code';
@@ -39,8 +39,9 @@
   }
 
   // "M14831 26" → "148": the train number the way crews say it (any
-  // letter). Deadheads keep theirs: "DHT211B 05" → "DHT211".
-  const numberOf = (id) => { const m = /^([A-Z]+)(\d{3})/.exec(String(id)); return m ? (/^DH/.test(m[1]) ? m[1] : '') + m[2] : String(id).split(' ')[0]; };
+  // letter). Every deadhead counts as one, "DH" (owner, 2026-10-26: simpler
+  // to follow than each DHT211B, DHT042C…).
+  const numberOf = (id) => { if (/^DH/.test(String(id))) return 'DH'; const m = /^([A-Z]+)(\d{3})/.exec(String(id)); return m ? m[2] : String(id).split(' ')[0]; };
   // "SR03" → "SR", "B119" → "B", "S102" → "S1".
   const poolOf = (turn) => { const m = /^(S[RABD135]|MU|[A-Z]+)/.exec(turn || ''); return m ? m[1] : ''; };
   const POOLS = { SR: 'Chain Gang (SR)', SA: 'A pool (SA)', SB: 'B pool (SB)', SD: 'SD', S1: 'S1', S3: 'S3', S5: '501/502', MU: 'make-up (MU)', B: 'spareboard (B)' };
@@ -260,6 +261,33 @@
     };
   }
 
+  // Sleep tracker (owner, 2026-10-26): they go to sleep once the expected
+  // call is 8 h away; how far the real call landed from it. Within 30 min
+  // either way green, within an hour yellow, more red.
+  const SLEEP_GREEN = 30;
+  const SLEEP_YELLOW = 60;
+  const sleepBand = (off) => (Math.abs(off) <= SLEEP_GREEN ? 'ok' : Math.abs(off) <= SLEEP_YELLOW ? 'warn' : 'bad');
+  function sleepStats(list) {
+    const offs = list.map((z) => z.off);
+    const bands = { ok: 0, warn: 0, bad: 0 };
+    for (const o of offs) bands[sleepBand(o)]++;
+    return {
+      n: list.length, ...bands,
+      earlier: offs.filter((o) => o < -SLEEP_GREEN).length,
+      later: offs.filter((o) => o > SLEEP_GREEN).length,
+      avg: avg(offs.map(Math.abs)),
+      shifts: avg(list.map((z) => (z.shifts || []).length)),
+      short: list.filter((z) => z.short || z.noWindow).length,
+    };
+  }
+  // Each turn's line for "Sleep" with nothing searched, worst first.
+  function sleepByTurn(list) {
+    const by = new Map();
+    for (const z of list) { if (!by.has(z.turn)) by.set(z.turn, []); by.get(z.turn).push(z); }
+    return [...by.entries()].map(([turn, l]) => ({ turn, ...sleepStats(l) }))
+      .sort((a, b) => b.bad / b.n - a.bad / a.n || b.n - a.n || (a.turn < b.turn ? -1 : 1));
+  }
+
   // A10: any list of runs as a spreadsheet (CSV), newest first.
   function csv(runs) {
     const cols = [['On duty', (r) => r.at || ''], ['Train', (r) => r.id], ['Number', (r) => r.number], ['From', (r) => (r.from === 'mac' ? 'Toronto' : 'Sarnia')],
@@ -274,7 +302,8 @@
   }
 
   const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, workRuns, timeOfDay, stats, WEEKDAYS,
-    inRange, byHour, byWeek, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS };
+    inRange, byHour, byWeek, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
+    sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);
