@@ -507,6 +507,8 @@ Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
 - Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
 - Owner, 2026-10-26: Jobs going spare shows **the line-up's 501/502 turn** (first
   crew up on 29) for an S5 vacancy, with "CATS lists S502" under it when CATS differs.
+- Owner, 2026-10-26: **MU crews in the Toronto bunkhouse (28) count** for the
+  Mac line-up (they were dropped: `parseChainGang` without `anyTurn`). B1 rows still left out.
 - Owner, 2026-10-26: **a whole make-up crew (MU with MU) is fine** (M39931,
   Z14931 out of Toronto): a note, not a flag. MU with an A/B turn is still flagged.
 - Owner: Order summary "off" colours, early or late alike: green < 30 m,

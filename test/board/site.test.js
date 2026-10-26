@@ -226,7 +226,7 @@ function macScreens() {
     `${y + 36} | 10:B1`,
   ];
   const bunk = [...head, ...crew(91, '001', 'S304', 'SB04', null), ...crew(163, '002', 'SD11', 'SR05', '0754'),
-    ...crew(235, '003', 'SD10', 'SR12', '1429')];
+    ...crew(235, '003', 'MU04', 'MU01', '1429')]; // a make-up crew counts too (owner, 2026-10-26)
   const mac = [
     '1 | 226:TRAIN LINE UP FIELD INQUIRY | 649:PSTS02H',
     '37 | 10:STATION | 82:( | 100:[41975] | 154:) | 181:DIR | 217:( | 235:[W] | 253:) | 280:POOL | 325:( | 343:[S1] | 370:) | 397:HOURS IN FUTURE | 541:( | 559:[24] | 586:) | 604:DEFAULT=16',
@@ -250,10 +250,10 @@ test('Mac yard: bunkhouse crews pair with the Toronto line-up in order', () => {
   assert.deepStrictEqual(shown.bunkhouse.map((c) => [c.pos, c.en, c.co, c.offDuty, c.rested, c.ready]), [
     ['001', 'S304', 'SB04', '', '', true], // no REST: rested
     ['002', 'SD11', 'SR05', '14th 2354', '15th 0754', true], // off duty = rest − 8 h
-    ['003', 'SD10', 'SR12', '15th 0629', '15th 1429', false],
+    ['003', 'MU04', 'MU01', '15th 0629', '15th 1429', false],
   ]);
   assert.deepStrictEqual(shown.macLineup.map((t) => [t.train, t.crew]), [
-    ['M30131 15', 'S304 + SB04'], ['Q13931 15', 'SD11 + SR05'], ['Z14931 15', 'SD10 + SR12'],
+    ['M30131 15', 'S304 + SB04'], ['Q13931 15', 'SD11 + SR05'], ['Z14931 15', 'MU04 + MU01'],
     // Not in the bunkhouse yet (owner, 2026-10-22): SD07 + SR07 went on duty
     // in Sarnia on M39671 13 at 14th 2330, so ~0730 in Toronto, rested ~1530,
     // before M38331's 1615 call.
