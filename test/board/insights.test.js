@@ -126,6 +126,7 @@ test('analytics: sleep scored green / yellow / red', () => {
   assert.deepStrictEqual(list.map((z) => A.sleepBand(z.off)), ['ok', 'warn', 'bad', 'ok']);
   const st = A.sleepStats(list);
   assert.deepStrictEqual([st.n, st.ok, st.warn, st.bad, st.earlier, st.later, st.short, st.avg], [4, 2, 1, 1, 1, 1, 1, 38]);
+  assert.deepStrictEqual([st.earlierAvg, st.earlierAll, st.laterAvg, st.laterAll], [53, 2, 45, 1]);
   assert.deepStrictEqual(A.sleepByTurn(list).map((t) => [t.turn, t.n, t.bad]), [['SR03', 3, 1], ['SR05', 1, 0]]);
 });
 

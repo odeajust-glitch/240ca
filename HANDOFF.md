@@ -256,6 +256,16 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Sleep wording (owner): "Average gap between the call they slept on and
+  the real call", columns "Average gap" / "Gap", plus average gap when
+  called earlier and when called later.
+- ❓ Owner's real data shows very big gaps (SD10 14 h, SD07 7 h 30 m).
+  Likely cause (reproduced in code): a turn taken off every line-up after it
+  "went to sleep" keeps that call until it works another train, up to 24 h
+  later (insights.js DROP_AFTER), so one wait counts as one huge miss.
+  Asked the owner how to count it; not changed yet. This cloud session
+  can't reach board.sarniaboard.workers.dev (network policy) to check the
+  real calls.
 - ⚠ The Analytics rewrite had dropped ordersView/heldRows/heldKey/
   HELD_LIMIT/shareLink (Order summary + 18.6(b) stuck on Loading); put back,
   and site.test.js now checks those functions exist. When splicing

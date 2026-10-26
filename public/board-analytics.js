@@ -322,6 +322,9 @@
       earlier: offs.filter((o) => o < -SLEEP_GREEN).length,
       later: offs.filter((o) => o > SLEEP_GREEN).length,
       avg: avg(offs.map(Math.abs)),
+      // Split (owner, 2026-10-26): early cuts into rest, late means waiting.
+      earlierAvg: avg(offs.filter((o) => o < 0).map(Math.abs)), earlierAll: offs.filter((o) => o < 0).length,
+      laterAvg: avg(offs.filter((o) => o > 0)), laterAll: offs.filter((o) => o > 0).length,
       shifts: avg(list.map((z) => (z.shifts || []).length)),
       short: list.filter((z) => z.short || z.noWindow).length,
     };
