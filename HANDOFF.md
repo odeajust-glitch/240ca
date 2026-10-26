@@ -28,14 +28,11 @@ After pulling, restarting is needed; after a Worker change, the owner must
 re-paste `cloudflare/board-worker.js` into Cloudflare (board → Edit code →
 Deploy).
 
-**⚠ To check (owner, 2026-10-26): which 501/502 turn really works L502?**
-For L50231 26 (0400) the line-up said the first crew up on option 29, but
-option 5 (Jobs going spare) put both CO and EN vacancies on **S502**. The
-owner isn't sure which is right. Once L502 goes on duty, look at the Call
-Board crew (Turn History / the snapshot's on-duty list) to see which turn
-was actually called, then adjust: either keep the engine.js L502 rule
-(first crew up) or switch to CATS's option-5 turn (and drop the `s5Turn`
-mapping in site.js vacancies, which shows "CATS lists S502" under it).
+**✅ Settled (owner, 2026-10-26): L502 = the first crew up on option 29.**
+L50231 26 went to S502 while 29 had S501 first, but that was the 6-month
+board change (bids moving people), so 29 was out of step. Owner: trust 29
+going forward. engine.js rule unchanged; the "CATS lists S502" line under
+an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
 
 **What it does now:**
 - Checks CATS every 5 min in Edge: Call Board, pools 23/19/21/27/25/26,
@@ -216,8 +213,7 @@ mapping in site.js vacancies, which shows "CATS lists S502" under it).
   note, not a flag; MU with an A/B turn still flagged (engine.js).
 - Jobs going spare: an S5 vacancy shows the line-up's 501/502 turn (first
   crew up on 29) with "CATS lists S502" under it when CATS differs
-  (site.js `s5Turn`, `cats`). ⚠ Open: which turn really works L502 — see
-  the ⚠ note above; check the Call Board crew for L50231 26 and adjust.
+  (site.js `s5Turn`, `cats`). L502 rule settled: first crew up on 29.
 - Toronto bunkhouse (28) now keeps MU crews (`anyTurn`, EN/LE/CO rows
   only), so they hold their place in the Mac line-up.
 - Earlier the same stretch (2026-10-25/26): every vacancy row shows
