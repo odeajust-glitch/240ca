@@ -51,8 +51,9 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   `END OF SPAREBOARD`. Columns: name (never kept), TURN (B138), POS, ST, RN,
   RETN, REST (time + day), MTPD, USHR, PD, STT, #S, #O. Menu 1 is ENGINE
   SERVICE (DISTRICT 45 / SUB-DISTRICT SA / SELECTION, PSTS02): 017 ENG SLOW
-  BOARD- PSTN, 019 ENG FAST BOARD- PSTN. The engineer boards (fast and
-  slow) have a **time box in the top right** (owner, 2026-10-26): the
+  BOARD- PSTN, 019 ENG FAST BOARD- PSTN. All four boards (engineer and
+  conductor, fast and slow) have a **time box in the top right** (owner,
+  2026-10-26): the
   checker types the check's time less 10 min (check at 1800 → 1750), Enter,
   then reads the pages. The box is found as the text box furthest right in
   the top third of the screen. ❓ Its label isn't recorded yet.

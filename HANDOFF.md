@@ -256,8 +256,8 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
-- Engineer fast (1 → 19) and slow (1 → 17) boards (owner, 2026-10-26):
-  the checker types the check's time less 10 min into the time box in the
+- Spareboards, engineer fast (1 → 19) / slow (1 → 17) and, same day,
+  conductor fast (3 → 13) / slow (3 → 9) (owner, 2026-10-26): the checker types the check's time less 10 min into the time box in the
   top right (board-auto.js fillTopRight, time.js hhmmBefore), Enter, then
   reads. The window logs "Engineer fast board: time 1750 entered" (or "no
   time box found"). ❓ Not seen on real CATS yet: confirm it picks the

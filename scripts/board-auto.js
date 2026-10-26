@@ -411,8 +411,9 @@ async function runRoute(page, opts = {}) {
     }
   };
   // Spareboards: F8 until "END OF SPAREBOARD".
-  // timeBox: the engineer boards' time box gets the check's time less 10 min
-  // (owner, 2026-10-26), then Enter, before reading.
+  // timeBox: the spareboards' time box (engineer and conductor, fast and
+  // slow) gets the check's time less 10 min (owner, 2026-10-26), then Enter,
+  // before reading.
   const spareboard = (menu, option, label, name, timeBox = false) => skip(`${name} ${menu} → ${option}`, async () => {
     let sb = await chooseFromMenus(page, option, menu);
     if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
@@ -434,8 +435,8 @@ async function runRoute(page, opts = {}) {
       sb = next;
     }
   });
-  await spareboard(3, 13, 'co-fast', 'Conductor fast board');
-  await spareboard(3, 9, 'co-slow', 'Conductor slow board');
+  await spareboard(3, 13, 'co-fast', 'Conductor fast board', true);
+  await spareboard(3, 9, 'co-slow', 'Conductor slow board', true);
   await spareboard(1, 19, 'en-fast', 'Engineer fast board', true);
   await spareboard(1, 17, 'en-slow', 'Engineer slow board', true);
   // 5: the terminal line-up (vacancies only, as set), Enter, F8 to END OF FILE.
