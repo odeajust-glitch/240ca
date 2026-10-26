@@ -1,14 +1,15 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-22 (evening) · Branch: **`claude/vigilant-planck-zawrj4`**
-(has everything; the board-checker laptop runs it) · 87 tests (`npm test`)
+Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
+(has everything; the board-checker laptop runs it, pulled + restarted
+2026-10-26) · 128 tests (`npm test`)
 
 **If you are a new Claude session:** read the "Start here" section below,
 then the dated notes under it as needed (newest first). **Only one Claude
 session at a time may change the board checker / website.** Update this file
 at the end of every session: state, decisions, what you tried, what's next.
 
-## ▶ Start here (2026-10-22): where things stand
+## ▶ Start here (updated 2026-10-26): where things stand
 
 **Owner:** Justin, CN conductor on **SR03** (Chain Gang), union rep, Sarnia.
 Non-technical, on Windows: give exact click-by-click / copy-paste steps, use
@@ -53,8 +54,8 @@ mapping in site.js vacancies, which shows "CATS lists S502" under it).
   Email login (Cloudflare Access) is set up but **switched off** by the
   owner: the site is open to anyone with the link. Old
   boardtestsa.netlify.app **redirects** there (keep that Netlify site; keep
-  NETLIFY_ lines out of `.env`). Tabs: Current, Snapshots, Order summary,
-  Article 18.6(b) (grievance letters, names locked with `BOARD_NAMES_KEY`).
+  NETLIFY_ lines out of `.env`). Tabs: Current, Turn History, Snapshots,
+  Order summary, Article 18.6(b) (grievance letters, names locked with `BOARD_NAMES_KEY`).
 - **Toronto (Mac yard) table** predicts crews per train: bunkhouse first,
   then crews still on their way (estimate: on duty + 8 h train / 3 h
   deadhead, then 8 h rest); crews on rest at a train's call are skipped.
@@ -209,6 +210,21 @@ mapping in site.js vacancies, which shows "CATS lists S502" under it).
   on it before building; earlier scope note said "only when do I go".
 - Not picked: #3 calendar export, #4 Article 18.6(b) rep alert, #9 weekly
   summary.
+
+**Session 2026-10-26 (all pushed; owner pulled + restarted):**
+- MU with MU (a whole make-up crew, e.g. M39931, Z14931 out of Toronto) is a
+  note, not a flag; MU with an A/B turn still flagged (engine.js).
+- Jobs going spare: an S5 vacancy shows the line-up's 501/502 turn (first
+  crew up on 29) with "CATS lists S502" under it when CATS differs
+  (site.js `s5Turn`, `cats`). ⚠ Open: which turn really works L502 — see
+  the ⚠ note above; check the Call Board crew for L50231 26 and adjust.
+- Toronto bunkhouse (28) now keeps MU crews (`anyTurn`, EN/LE/CO rows
+  only), so they hold their place in the Mac line-up.
+- Earlier the same stretch (2026-10-25/26): every vacancy row shows
+  "(spare)", S5 rows get an EN/CO chip, B0s in "skipped" are counted
+  ("N on B0 (working)", board.html `skippedText`).
+- Owner's next step: **more features in a new session** (none named yet).
+  Turn History redesign step 2 is also still open (owner said more may follow).
 
 **Waiting on the owner / to watch:**
 - ❓ Did a fresh sign-in restart CN's 24 h? (window: "since the last sign-in")
