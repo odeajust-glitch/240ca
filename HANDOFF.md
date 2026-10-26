@@ -496,6 +496,8 @@ Owner's spec in docs/board-checker/SCREENS.md (option 28, and 41 for 41975).
   when it disappeared, **yellow "Possible Non-Sarnia Crew or Train
   Cancelled"** if there was (only rested crews count; owner).
 - Owner, same day: **MU on L501/L502 is fine** (no flag; note instead).
+- Owner, 2026-10-26: **a whole make-up crew (MU with MU) is fine** (M39931,
+  Z14931 out of Toronto): a note, not a flag. MU with an A/B turn is still flagged.
 - Owner: Order summary "off" colours, early or late alike: green < 30 m,
   yellow 30 m – 1 h 56 m, red beyond (`offCell` in board.html).
 - Owner: a train out of Sarnia on an **MU conductor counts as Chain Gang**

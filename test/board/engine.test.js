@@ -140,11 +140,14 @@ test('wrong engineer/conductor pairing and MU on an A train are flagged', () => 
   const crewTrain = (symbol, en, co) => ({ symbol, trainNo: symbol.slice(0, -2), originDay: '14', station: 'TORONTO', onDuty: NOW, crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
   const r = runBoardCheck({
     now: NOW,
-    callBoard: [crewTrain('A42431', 'S305', 'SA01'), crewTrain('M30241', 'MU01', 'SA03'), crewTrain('E27121', 'SD01', 'SR03')],
+    callBoard: [crewTrain('A42431', 'S305', 'SA01'), crewTrain('M30241', 'MU01', 'SA03'), crewTrain('E27121', 'SD01', 'SR03'),
+      crewTrain('M39931', 'MU04', 'MU01'), crewTrain('Z14931', 'MU02', 'MU02')],
     chainGangHome: [],
     lineup: [],
   });
+  // MU with MU is a make-up crew: fine (owner, 2026-10-26).
   assert.deepEqual(r.flags.map((f) => [f.rule, f.text.slice(0, 6)]), [['pairing', 'A42431'], ['mu', 'M30241']]);
+  assert.ok(r.notes.some((n) => /M39931.*make-up crew is fine/.test(n)));
 });
 
 test('a 4th A train out of Sarnia on the same road day is flagged', () => {
