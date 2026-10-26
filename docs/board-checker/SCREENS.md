@@ -56,7 +56,12 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   2026-10-26): the
   checker types the check's time less 10 min (check at 1800 → 1750), Enter,
   then reads the pages. The box is found as the text box furthest right in
-  the top third of the screen. ❓ Its label isn't recorded yet.
+  the top third of the screen. Owner's screenshots (ENG SLOW BOARD, 18:21):
+  it's **VIEW TIME( ____ )** after the board name; with VIEW TIME 1811 the
+  board listed 5 (EN01, EN10, EN07, EN04 REST 0716 27 in red, EN08 ** HT
+  1456 27), empty it listed 3: a view time shows the board as it was then,
+  including people who have left it since. ❓ What the extra rows mean for
+  "who fills a job going spare" (they may already be called).
 - **Jobs going spare**: **3 → 5**, Enter (TERMINAL LINEUP, PSTS27P,
   vacancies only Y). POS, CALL (MM/DD), TIME, TZ, STATUS, TRAIN/DESC,
   ORGSTN, PL, CC, ST (`* **`), RETN (MM/DD), DTTM, TURN (pool + turn:
