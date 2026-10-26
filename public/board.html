@@ -623,7 +623,7 @@ function vacancies(s) {
   }
   const rows = s.vacancies.map((v) => `<tr${marked(v.turn) || (v.fill && marked(v.fill.turn)) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td>
     <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${fill(v)}</td>
-    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} <span class="spare">(spare)</span>${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
+    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} <span class="spare">(spare)</span>${v.cats ? `<div class="crew">CATS lists ${esc(v.cats)}</div>` : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${s.vacancies.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.</div></section>`;
