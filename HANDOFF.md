@@ -259,9 +259,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
 - ⚙ Settings (owner, 2026-10-26): gear top right of the page; page style
   Light / Dark / Retro (like CATS), kept on the phone (localStorage
   `boardTheme`; none picked = follows the phone). Retro = :root
-  [data-theme="retro"] tokens, green/cyan on black, all IBM Plex Mono,
-  square corners. ❓ Colours are a guess at CATS's mainframe look; owner
-  to send a CATS screenshot to match it.
+  [data-theme="retro"]: CATS's own colours from the owner's screenshot of
+  its main menu (#f1f1f1 screen, navy #000080 labels, maroon #800000
+  headings/menu text, black data, yellow #ffff00 highlight, white inputs
+  with black edges), Courier New (Courier Prime web font where missing),
+  square corners. Labelled just "Retro" (owner).
 - Fixed (owner, 2026-10-26): a followed person (👤 JUOD) sometimes showed
   "Not seen on a turn in the saved checks yet" on a fresh load. Race:
   paintTracked runs before people.json arrives and the redraw was skipped

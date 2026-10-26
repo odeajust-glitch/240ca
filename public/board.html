@@ -15,12 +15,12 @@
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <script>
   // Page style picked in ⚙ Settings (owner, 2026-10-26): light, dark or
-  // retro (like CATS's mainframe screens). Not picked: follows the phone.
+  // retro (CATS's own colours). Not picked: follows the phone.
   try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
   /* Layout: a dispatcher's register. Snapshot rail on the left (chips on a phone),
      the line-up as the main timetable, pools and the call board as compact side sheets. */
@@ -58,18 +58,23 @@
     --accent: #5fb3ba; --accent-ink: #0d1517; --accent-tint: #1d3538;
     --amber: #e3a34a; --amber-tint: #3a2c15; --go: #6cc68f; --go-tint: #1b3324; --stop: #ec8a7f; --stop-tint: #3d211e;
     --plan-tint: #273235; --poolA: #86aee8; --poolB: #c3a0e3; --poolSR: #5fb3ba; color-scheme: dark; }
-  /* Retro (owner, 2026-10-26): CATS's mainframe screens, green and cyan on
-     black, everything in the terminal's fixed-width letters, square corners. */
+  /* Retro (owner, 2026-10-26): CATS's own colours, from the owner's
+     screenshot of its main menu: light grey screen, navy labels, maroon
+     menu text, black data, yellow highlight, white boxes with black edges;
+     fixed-width letters, square corners. */
   :root[data-theme="retro"] {
-    --bg: #000000; --sheet: #050a06; --ink: #3dff7a; --soft: #3fd0dc; --rule: #1d6b33; --rule-soft: #123d1f;
-    --accent: #45e0ea; --accent-ink: #000000; --accent-tint: #0b2e31;
-    --amber: #ffe14d; --amber-tint: #2e2905; --go: #3dff7a; --go-tint: #0c2c15; --stop: #ff5a5a; --stop-tint: #3a0d0d;
-    --plan-tint: #0e1a10; --poolA: #6fa8ff; --poolB: #ff7ad9; --poolSR: #45e0ea;
-    --display: 'IBM Plex Mono', ui-monospace, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
-    color-scheme: dark; }
-  :root[data-theme="retro"] * { border-radius: 0 !important; }
-  :root[data-theme="retro"] body { text-shadow: 0 0 1px currentColor; }
-  :root[data-theme="retro"] .top h1, :root[data-theme="retro"] h2 { letter-spacing: 0.04em; }
+    --bg: #f1f1f1; --sheet: #f1f1f1; --ink: #000000; --soft: #000080; --rule: #000080; --rule-soft: #b8b8d8;
+    --accent: #000080; --accent-ink: #ffffff; --accent-tint: #ffff00;
+    --amber: #806000; --amber-tint: #ffff00; --go: #006400; --go-tint: #e2f1e2; --stop: #b00000; --stop-tint: #f6dede;
+    --plan-tint: #e4e4ee; --poolA: #000080; --poolB: #800080; --poolSR: #800000;
+    /* CATS's font is Courier New; phones without it (Android) get Courier Prime, drawn to match. */
+    --display: 'Courier New', 'Courier Prime', Courier, monospace; --body: 'Courier New', 'Courier Prime', Courier, monospace;
+    --mono: 'Courier New', 'Courier Prime', Courier, monospace;
+    color-scheme: light; }
+  :root[data-theme="retro"] * { border-radius: 0 !important; box-shadow: none !important; }
+  :root[data-theme="retro"] .top h1, :root[data-theme="retro"] h2, :root[data-theme="retro"] h3 { color: #800000; letter-spacing: 0.02em; }
+  :root[data-theme="retro"] input, :root[data-theme="retro"] select { background: #ffffff !important; border: 1px solid #000000 !important; color: #000000; }
+  :root[data-theme="retro"] .sheet, :root[data-theme="retro"] .strip { background: #f1f1f1; }
 
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--body); }
@@ -478,7 +483,7 @@
     <div class="styles">
       <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
-      <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#000;color:#3dff7a;border-color:#1d6b33">Aa</span>Retro (like CATS)</button>
+      <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
     </div>
     <p class="note" id="stynote"></p>
   </div>
@@ -510,7 +515,7 @@
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#000000' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
