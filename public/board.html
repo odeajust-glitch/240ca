@@ -13,6 +13,11 @@
 <meta name="apple-mobile-web-app-title" content="Line-up">
 <link rel="apple-touch-icon" href="board-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
+<script>
+  // Page style picked in ⚙ Settings (owner, 2026-10-26): light, dark or
+  // retro (like CATS's mainframe screens). Not picked: follows the phone.
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -53,6 +58,18 @@
     --accent: #5fb3ba; --accent-ink: #0d1517; --accent-tint: #1d3538;
     --amber: #e3a34a; --amber-tint: #3a2c15; --go: #6cc68f; --go-tint: #1b3324; --stop: #ec8a7f; --stop-tint: #3d211e;
     --plan-tint: #273235; --poolA: #86aee8; --poolB: #c3a0e3; --poolSR: #5fb3ba; color-scheme: dark; }
+  /* Retro (owner, 2026-10-26): CATS's mainframe screens, green and cyan on
+     black, everything in the terminal's fixed-width letters, square corners. */
+  :root[data-theme="retro"] {
+    --bg: #000000; --sheet: #050a06; --ink: #3dff7a; --soft: #3fd0dc; --rule: #1d6b33; --rule-soft: #123d1f;
+    --accent: #45e0ea; --accent-ink: #000000; --accent-tint: #0b2e31;
+    --amber: #ffe14d; --amber-tint: #2e2905; --go: #3dff7a; --go-tint: #0c2c15; --stop: #ff5a5a; --stop-tint: #3a0d0d;
+    --plan-tint: #0e1a10; --poolA: #6fa8ff; --poolB: #ff7ad9; --poolSR: #45e0ea;
+    --display: 'IBM Plex Mono', ui-monospace, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+    color-scheme: dark; }
+  :root[data-theme="retro"] * { border-radius: 0 !important; }
+  :root[data-theme="retro"] body { text-shadow: 0 0 1px currentColor; }
+  :root[data-theme="retro"] .top h1, :root[data-theme="retro"] h2 { letter-spacing: 0.04em; }
 
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--body); }
@@ -69,6 +86,22 @@
   .top h1 { margin: 0; font: 700 30px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
   .top .where { color: var(--soft); font-size: 13.5px; }
   .top .updated { margin-left: auto; font-size: 12.5px; color: var(--soft); }
+  /* ⚙ Settings (owner, 2026-10-26) */
+  .top { position: relative; padding-right: max(64px, calc(env(safe-area-inset-right, 0px) + 48px)); }
+  .gear { position: absolute; top: 12px; right: max(12px, env(safe-area-inset-right, 0px)); width: 40px; height: 40px; display: grid; place-items: center;
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; color: var(--ink); }
+  .gear svg { width: 22px; height: 22px; }
+  .settings { position: absolute; top: 58px; right: max(12px, env(safe-area-inset-right, 0px)); z-index: 40; width: min(300px, calc(100vw - 24px));
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); }
+  .settings[hidden] { display: none; }
+  .settings h2 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .settings .styles { display: grid; gap: 6px; }
+  .settings button.sty { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; min-height: 44px;
+    background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .settings button.sty[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 600; }
+  .settings .sw { width: 34px; height: 24px; border-radius: 4px; border: 1px solid var(--rule); flex: none; display: grid; place-items: center; font: 600 11px/1 'IBM Plex Mono', monospace; }
+  .settings .note { font-size: 12px; color: var(--soft); margin: 10px 0 0; }
+  .settings .note button { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 12px; }
   .top .sample { margin-left: auto; font-size: 12px; color: var(--amber); background: var(--amber-tint); padding: 3px 8px; border-radius: 3px; }
 
   .wrap {
@@ -439,6 +472,16 @@
   <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
+  <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <div class="settings" id="settings" role="dialog" aria-label="Settings" hidden>
+    <h2>Page style</h2>
+    <div class="styles">
+      <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
+      <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
+      <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#000;color:#3dff7a;border-color:#1d6b33">Aa</span>Retro (like CATS)</button>
+    </div>
+    <p class="note" id="stynote"></p>
+  </div>
 </div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
@@ -462,6 +505,30 @@
 <script src="grievance.js"></script>
 <script src="board-names.js"></script>
 <script>
+// ⚙ Settings (owner, 2026-10-26): the page style, kept on this phone.
+(() => {
+  const gear = document.getElementById('gear');
+  const box = document.getElementById('settings');
+  const note = document.getElementById('stynote');
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#000000' };
+  const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
+  function apply(t) {
+    if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    const now = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', COLORS[now]);
+    box.querySelectorAll('button.sty').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
+    note.innerHTML = t ? 'Kept on this phone. <button type="button" id="styauto">Follow the phone\'s setting instead</button>' : 'Following the phone\'s light or dark setting. Pick one to keep it.';
+    const auto = document.getElementById('styauto');
+    if (auto) auto.onclick = () => { try { localStorage.removeItem('boardTheme'); } catch (e) { /* storage off */ } apply(''); };
+  }
+  box.querySelectorAll('button.sty').forEach((b) => { b.onclick = () => { try { localStorage.setItem('boardTheme', b.dataset.theme); } catch (e) { /* storage off */ } apply(b.dataset.theme); }; });
+  const open = (yes) => { box.hidden = !yes; gear.setAttribute('aria-expanded', yes); };
+  gear.onclick = (e) => { e.stopPropagation(); open(box.hidden); };
+  document.addEventListener('click', (e) => { if (!box.hidden && !box.contains(e.target) && e.target !== gear) open(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) { open(false); gear.focus(); } });
+  apply(picked());
+})();
+
 let focus = ''; // the turn open on the Turn History tab, e.g. "SR03"
 // Turns picked out on the page: the tracked turns on Current and Snapshots,
 // the Turn History turn there (owner, 2026-10-24: track several at once).

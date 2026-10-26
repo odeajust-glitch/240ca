@@ -256,6 +256,12 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- ⚙ Settings (owner, 2026-10-26): gear top right of the page; page style
+  Light / Dark / Retro (like CATS), kept on the phone (localStorage
+  `boardTheme`; none picked = follows the phone). Retro = :root
+  [data-theme="retro"] tokens, green/cyan on black, all IBM Plex Mono,
+  square corners. ❓ Colours are a guess at CATS's mainframe look; owner
+  to send a CATS screenshot to match it.
 - Fixed (owner, 2026-10-26): a followed person (👤 JUOD) sometimes showed
   "Not seen on a turn in the saved checks yet" on a fresh load. Race:
   paintTracked runs before people.json arrives and the redraw was skipped
