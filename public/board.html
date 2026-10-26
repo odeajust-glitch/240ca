@@ -348,6 +348,17 @@
   .unlock .uerr { color: var(--stop); font-weight: 600; font-size: 13px; }
   .gform button.gen { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 10px 16px; min-height: 44px; font: 600 14px/1 var(--body); cursor: pointer; }
   .gform button.gen:disabled { background: var(--rule); color: var(--soft); cursor: not-allowed; }
+  /* Analytics tab (owner, 2026-10-26) */
+  .agrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .agrid > div { min-width: 0; padding: 12px 14px; border-top: 1px solid var(--rule-soft); }
+  .agrid h3 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .alist { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; }
+  .alist li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--rule-soft); padding-bottom: 3px; }
+  .alist li b { font-family: var(--mono); }
+  .alist button { background: none; border: 0; padding: 0; font: 600 14px/1.3 var(--mono); color: var(--accent); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
+  .anote b { color: var(--ink); }
+  table.orders tr.nolink { cursor: default; }
   @media (max-width: 700px) {
     .ohead .when { font-size: 30px; }
     .ohead .ctl { margin-left: 0; }
@@ -389,7 +400,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
 </div>
@@ -410,6 +421,7 @@
 <div id="trackdlg" class="dlg-back" hidden></div>
 <script src="board-turns.js"></script>
 <script src="board-trains.js"></script>
+<script src="board-analytics.js"></script>
 <script src="jszip.min.js"></script>
 <script src="grievance.js"></script>
 <script src="board-names.js"></script>
@@ -887,6 +899,85 @@ function story(r) {
 
 const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia Crew or Train Cancelled', deadhead: 'Deadhead never called' };
 const FROM = { sarnia: 'Sarnia', mac: 'Toronto' };
+
+// --- Analytics (owner, 2026-10-26) -----------------------------------------
+// Numbers across the saved checks for a train number (148 = every x148xx),
+// a turn or a person's name code, from BoardAnalytics.stats.
+function anaTiles(st, kind) {
+  const tile = (v, l, alert) => `<div class="stat${alert ? ' alert' : ''}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}% <small>${x.hit} / ${x.n}</small>` : '—');
+  const t = st.time;
+  const d = (m) => (m == null ? '—' : esc(dur(m)));
+  const first = kind === 'train'
+    ? tile(`${st.ran} <small>/ ${st.seen}</small>`, 'Went on duty (of trains seen)')
+    : tile(`${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`, 'Trains worked');
+  const last = kind === 'train'
+    ? tile(st.neverRan, 'Left the line-up, never on the Call Board', st.neverRan > 0)
+    : tile(st.deadheads, 'Deadheads');
+  return `<div class="strip">${first}
+      ${tile(t ? `${t.from}–${t.to}` : '—', 'Usually on duty (middle half of the times)')}
+      ${tile(t ? `${t.earliest}–${t.latest}` : '—', 'Earliest – latest on duty')}
+      ${last}</div>
+    <div class="strip">
+      ${tile(d(st.timeOnDuty.avg), `Average time on duty, Sarnia to Toronto${st.timeOnDuty.n ? ` (${st.timeOnDuty.n})` : ''}`)}
+      ${tile(d(st.timeOnDuty.max), 'Longest time on duty')}
+      ${tile(d(st.held.avg), `Average off duty in Toronto before the trip home${st.held.n ? ` (${st.held.n})` : ''}`)}
+      ${tile(st.held.over14, 'Held 14 h or more in Toronto', st.held.over14 > 0)}</div>
+    <div class="strip">
+      ${tile(d(st.offPlan.avg), `Average off, first plan vs on duty${st.offPlan.n ? ` (${st.offPlan.late} late, ${st.offPlan.early} early)` : ''}`)}
+      ${tile(d(st.offOrder.avg), 'Average off, first order vs on duty')}
+      ${tile(st.orderChanged, 'Order time changed after ordering')}
+      ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${Math.round((100 * st.pred.en.hit) / st.pred.en.n)}%` : ''}`)}</div>`;
+}
+// A "most often" list; `q` makes each name a button that searches it.
+function anaList(title, rows, q) {
+  if (!rows.length) return `<div><h3>${esc(title)}</h3><p class="empty" style="padding:0">None yet.</p></div>`;
+  return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
+}
+function anaWeek(st) {
+  return `<div><h3>Days of the week</h3><ul class="alist">${st.weekdays.map(([day, n]) => `<li><span>${day}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+}
+// Every run, newest first; a line-up train opens in the Order summary.
+function anaTable(runs, kind) {
+  const LIMIT = 300;
+  const rows = runs.slice(0, LIMIT).map((r) => {
+    const fl = r.flag ? `<span class="flagtxt">${esc(FLAG_TEXT[r.flag] || r.flag)}</span>` : '';
+    const held = r.heldMin != null ? `${r.heldMin >= BoardTrains.HELD_LIMIT ? '<span class="bad">' : '<span>'}${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span>` : '—';
+    const crew = kind === 'train' ? r.crew : (r.partners || []).join(' · ');
+    return `<tr class="row${r.key ? '' : ' nolink'}"${r.key ? ` data-key="${esc(r.key)}" data-day="${esc(r.day)}"` : ''}>
+      <td class="num"><b>${r.at ? esc(dt(r.at)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
+      <td class="num"><b class="id">${esc(r.id)}</b>${r.yard ? ' <span class="chip">yard</span>' : ''}${r.deadhead ? ' <span class="chip">DH</span>' : ''}${r.from === 'mac' ? ' <span class="from">Toronto</span>' : ''}${r.as ? `<div class="crew">${esc(r.as)}</div>` : ''}${r.turn && kind === 'code' ? `<div class="crew">on ${esc(r.turn)}</div>` : ''}${fl}</td>
+      <td class="num">${crew ? esc(crew) : '—'}</td>
+      <td>${offCell(r.offPlan)}</td>
+      <td class="num">${r.timeOnDuty != null ? esc(dur(r.timeOnDuty)) : '—'}</td>
+      <td class="num">${held}</td></tr>`;
+  }).join('');
+  return `<section class="sheet"><header><h2>${kind === 'train' ? 'Every train' : 'Every train worked'}</h2><span class="meta">${runs.length > LIMIT ? `newest ${LIMIT} of ${runs.length} · ` : ''}tap a line-up train for its full story</span></header>
+    <div class="scroll"><table class="orders"><thead><tr><th>On duty</th><th>Train</th><th>${kind === 'train' ? 'Crew' : 'Worked with'}</th><th>First plan vs on duty</th><th>Time on duty</th><th>Off duty in Toronto</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></section>`;
+}
+// The whole answer for one search. kind: 'train' | 'turn' | 'code'.
+function analyticsView(runs, kind, title, note) {
+  const st = BoardAnalytics.stats(runs);
+  if (!runs.length) return `<p class="anote">${note || ''}</p><p class="empty">Nothing found for that in the saved checks.</p>`;
+  const span = st.first ? `${esc(dt(st.first))} to ${esc(dt(st.last))}` : '';
+  const lists = kind === 'train'
+    ? [anaList('Conductors, most often', st.conductors, 'turn'), anaList('Engineers, most often', st.engineers, 'turn'), anaList('Pools that took it', st.pools), anaWeek(st)]
+    : [anaList('Trains worked most', st.numbers.filter(([n]) => /^(DH[A-Z]*)?\d{3}$/.test(n)), 'train'), anaList('Worked with most', st.partners, 'turn'), anaWeek(st)];
+  return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
+    ${anaTiles(st, kind)}
+    <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${lists.join('')}</div></section>
+    ${anaTable(runs, kind)}`;
+}
+// Nothing searched yet: every line-up train the site keeps.
+function analyticsOverview(all) {
+  const runs = all.map(BoardAnalytics.runOf);
+  const st = BoardAnalytics.stats(runs);
+  return `<p class="anote"><b>All line-up trains</b> the site keeps${st.first ? ` · on duty ${esc(dt(st.first))} to ${esc(dt(st.last))}` : ''}. Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code.</p>
+    ${anaTiles(st, 'train')}
+    <section class="sheet"><header><h2>Breakdown</h2><span class="meta">tap a train number or turn to look it up</span></header><div class="agrid">
+      ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}</div></section>`;
+}
 
 function ordersView(all, day, openId, find, from = 'all') {
   if (from !== 'all') all = all.filter((r) => (r.from || 'sarnia') === from);
@@ -1787,9 +1878,10 @@ source().then(async (src) => {
   const modeTurns = document.getElementById('modeTurns');
   const modeOrders = document.getElementById('modeOrders');
   const modeHeld = document.getElementById('modeHeld');
+  const modeAna = document.getElementById('modeAna');
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held');
+    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -1797,8 +1889,10 @@ source().then(async (src) => {
     modeSnap.setAttribute('aria-pressed', mode === 'snap');
     modeOrders.setAttribute('aria-pressed', mode === 'orders');
     modeHeld.setAttribute('aria-pressed', mode === 'held');
+    modeAna.setAttribute('aria-pressed', mode === 'analytics');
     if (mode === 'orders') renderOrders();
     else if (mode === 'held') renderHeld();
+    else if (mode === 'analytics') renderAnalytics();
     else if (mode === 'turns') renderTurns();
     else if (mode === 'current') { if (day === src.days[0] && list.length) show(list.length - 1); else openDay(src.days[0]); }
     else if (list.length) show(cur);
@@ -1876,13 +1970,66 @@ source().then(async (src) => {
     view.querySelectorAll('.story button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); setMode(false); jumpTo(b.dataset.taken); }; });
     view.querySelectorAll('.story button[data-share]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); shareLink(`#train=${encodeURIComponent(b.dataset.share.replace(/\s+/g, '-'))}`, `Train ${b.dataset.share}`, b); }; });
     const open = view.querySelector('tr.open');
-    if (open && match) open.scrollIntoView({ block: 'center' });
+    if (open && (match || order.jump)) open.scrollIntoView({ block: 'center' });
+    order.jump = false;
+  }
+
+  // Analytics tab (owner, 2026-10-26): a train number, turn or name code.
+  // A name code is never put in the address bar or kept on the phone.
+  const ana = { q: '', kind: 'auto' };
+  async function renderAnalytics() {
+    const view = document.getElementById('view');
+    view.innerHTML = '<p class="empty">Loading…</p>';
+    let all;
+    let turnsAll;
+    try { [all, turnsAll] = await Promise.all([src.trains(), src.turns().catch(() => ({}))]); } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
+    if (mode !== 'analytics') return;
+    const q = ana.q.trim().toUpperCase().replace(/\s+/g, ' ');
+    const kind = ana.kind !== 'auto' ? ana.kind : BoardAnalytics.kindOf(q, Object.keys(turnsAll), all);
+    let body;
+    if (!q) body = analyticsOverview(all);
+    else if (kind === 'train') {
+      const runs = BoardAnalytics.trainRuns(all, q);
+      const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
+      body = analyticsView(runs, 'train', /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '');
+    } else if (kind === 'turn') {
+      const { base } = BoardTurns.splitCraft(q);
+      body = BoardTurns.PLACEHOLDER.test(base) ? `<p class="empty">${esc(base)} is a placeholder (make-up) turn, so it isn't looked up on its own.</p>`
+        : analyticsView(BoardAnalytics.workRuns(worked(turnsAll[base], q), all, base), 'turn', `Turn ${q}`, turnsAll[base] ? '' : 'no history for this turn in the saved checks');
+    } else {
+      const list = /^[A-Z]{4}$/.test(q) ? await Person.find(q) : null;
+      if (mode !== 'analytics') return;
+      const cur = list && Person.current(list);
+      body = !list ? '<p class="empty">Nothing found for that name code in the saved checks.</p>'
+        : analyticsView(BoardAnalytics.workRuns(worked(personHistory(list, turnsAll), ''), all), 'code', 'Person search', `last seen on ${esc(cur.turn)}`);
+    }
+    view.innerHTML = `<div class="ohead">
+        <div><div class="sec-title" style="margin-bottom:6px">Analytics</div><div class="when">${src.days.length} day${src.days.length === 1 ? '' : 's'} of checks</div></div>
+        <div class="ctl">
+          <label for="aq">Search<input id="aq" placeholder="148, SR03, name code" value="${esc(ana.q)}" autocomplete="off" spellcheck="false" maxlength="12"></label>
+          <label for="akind">Look for<select id="akind">${[['auto', 'Work it out'], ['train', 'Train number'], ['turn', 'Turn'], ['code', 'Name code']].map(([k, l]) => `<option value="${k}"${k === ana.kind ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          ${q ? '<label>&nbsp;<button type="button" id="aclear" class="sharebtn" style="padding:7px 10px">Clear</button></label>' : ''}
+        </div>
+      </div>${body}`;
+    try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    const box = document.getElementById('aq');
+    const go = () => { ana.q = box.value; renderAnalytics(); };
+    box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    box.onchange = go;
+    document.getElementById('akind').onchange = (e) => { ana.kind = e.target.value; ana.q = box.value; renderAnalytics(); };
+    const clear = document.getElementById('aclear');
+    if (clear) clear.onclick = () => { ana.q = ''; ana.kind = 'auto'; renderAnalytics(); };
+    view.querySelectorAll('button[data-q]').forEach((b) => { b.onclick = () => { ana.q = b.dataset.q; ana.kind = b.dataset.kind; renderAnalytics(); window.scrollTo(0, 0); }; });
+    view.querySelectorAll('tr.row[data-key]').forEach((tr) => {
+      tr.onclick = () => { Object.assign(order, { day: tr.dataset.day, open: tr.dataset.key, find: '', from: 'all', jump: true }); setMode(true); };
+    });
   }
   modeCurrent.onclick = () => setMode('current');
   modeSnap.onclick = () => setMode(false);
   modeTurns.onclick = () => setMode('turns');
   modeOrders.onclick = () => setMode(true);
   modeHeld.onclick = () => setMode('held');
+  modeAna.onclick = () => setMode('analytics');
 
   document.getElementById('rail').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
@@ -1899,13 +2046,15 @@ source().then(async (src) => {
   if (shared && shared[1] === 'train') order.find = decodeURIComponent(shared[2]).replace(/-/g, ' ');
   const wantOrders = location.hash === '#orders' || (shared && shared[1] === 'train');
   const wantHeld = location.hash === '#14h';
+  const wantAna = location.hash === '#analytics';
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
-  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns) setMode('current'); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
   else if (wantTurns) setMode('turns');
+  else if (wantAna) setMode('analytics');
 
   // A newer board published while this page is open: offer it (live site only).
   if (src.live) {

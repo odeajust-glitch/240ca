@@ -91,7 +91,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/people.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-analytics.js', '/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/people.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);

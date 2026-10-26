@@ -2,7 +2,10 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 128 tests (`npm test`)
+2026-10-26) · 133 tests (`npm test`)
+
+**Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
+Add every new ask there; move it to "Done" when finished.
 
 **If you are a new Claude session:** read the "Start here" section below,
 then the dated notes under it as needed (newest first). **Only one Claude
@@ -221,6 +224,19 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   ("N on B0 (working)", board.html `skippedText`).
 - Owner's next step: **more features in a new session** (none named yet).
   Turn History redesign step 2 is also still open (owner said more may follow).
+
+**Session 2026-10-26, later (pushed; owner to pull + restart):**
+- New **Analytics** tab (`#analytics`, mode 'analytics', body class
+  `orders` so the rail hides). Search a train number (`148` = every
+  x148xx xx, any letter; BoardAnalytics.trainMatches), a turn (Turn
+  History's work history joined to trains.json) or a name code (Person.find
+  → personHistory → worked). Tiles, breakdown lists, every run (line-up
+  trains open in the Order summary, `order.jump`). Nothing searched = all
+  line-up trains. Only covers what the site keeps (30 days by default).
+  `public/board-analytics.js` (copied by site.js, hidden by relay.js).
+  No Worker change.
+- Owner wants ideas for what else goes in Analytics: listed as A1–A13 in
+  TODO.md, owner to pick. Then back to TODO items 1–5.
 
 **Waiting on the owner / to watch:**
 - ❓ Did a fresh sign-in restart CN's 24 h? (window: "since the last sign-in")
