@@ -391,6 +391,8 @@
   .ctip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--sheet); font: 600 13px/1.3 var(--body); padding: 5px 8px; border-radius: 4px; max-width: 260px; }
   .ctip[hidden] { display: none; }
   .stat .v .offv { font: inherit; padding: 0; background: none; }
+  table.orders .stick { position: sticky; left: 0; z-index: 1; background: var(--sheet); }
+  @media (max-width: 700px) { table.orders .hide-sm { display: none; } }
   .moves { margin: 4px 0 0; padding-left: 16px; font: 12.5px/1.5 var(--mono); }
   table.orders td details summary { cursor: pointer; }
   @media (max-width: 700px) {
@@ -953,7 +955,8 @@ function anaTiles(st, kind) {
     ? tile(`${st.ran} <small>/ ${st.seen}</small>`, 'Went on duty (of trains seen)')
     : tile(`${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`, 'Trains worked');
   const last = kind === 'train'
-    ? tile(st.neverRan, 'Left the line-up, never on the Call Board', st.neverRan > 0)
+    ? tile(`${st.cancelled}${st.nonSarnia || st.possibleNonSarnia ? ` <small>+ ${st.nonSarnia + st.possibleNonSarnia} Toronto crew</small>` : ''}`,
+      `Never ran: cancelled or on duty between checks${st.nonSarnia || st.possibleNonSarnia ? `; ${st.nonSarnia} went to a non-Sarnia crew${st.possibleNonSarnia ? `, ${st.possibleNonSarnia} possibly` : ''}` : ''}`, st.cancelled > 0)
     : tile(st.deadheads, 'Deadheads');
   return `<div class="strip">${first}
       ${tile(t ? `${t.from}–${t.to}` : '—', 'Usually on duty (middle half of the times)')}
@@ -976,6 +979,10 @@ const numLabel = (n) => (n === 'DH' ? 'Deadheads (all)' : n);
 function anaList(title, rows, q) {
   if (!rows.length) return `<div><h3>${esc(title)}</h3><p class="empty" style="padding:0">None yet.</p></div>`;
   return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q && !BoardTurns.PLACEHOLDER.test(name) ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(q === 'train' ? numLabel(name) : name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
+}
+// The flags on these trains (F1), as the Order summary names them.
+function anaFlags(st) {
+  return anaList('Flags', st.flags.map(([f, n]) => [FLAG_TEXT[f] || f, n]));
 }
 function anaWeek(st) {
   return `<div><h3>Days of the week</h3><ul class="alist">${st.weekdays.map(([day, n]) => `<li><span>${day}</span><b>${n}</b></li>`).join('')}</ul></div>`;
@@ -1010,9 +1017,15 @@ function hourChart(runs) {
 }
 function weekChart(runs) {
   const w = BoardAnalytics.byWeek(runs);
-  return colChart('On duty per week', w.map((x) => ({ label: weekLabel(x.week), value: x.n, tip: `Week of ${weekLabel(x.week)}: ${plural(x.n, 'train')}` })), { every: Math.max(1, Math.ceil(w.length / 6)), note: '(weeks start Sunday)' });
+  return colChart('Trains on duty per week', w.map((x) => ({ label: weekLabel(x.week), value: x.n, tip: `Week of ${weekLabel(x.week)}: ${plural(x.n, 'train')}` })), { every: Math.max(1, Math.ceil(w.length / 6)), note: '(weeks start Sunday)' });
 }
-const anaCharts = (runs) => `<section class="sheet"><header><h2>When</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${hourChart(runs)}${weekChart(runs)}</div></section>`;
+// F6: held 14 h+ in Toronto, week by week (over the same weeks).
+function heldWeekChart(runs) {
+  if (!runs.some((r) => r.heldMin >= BoardTrains.HELD_LIMIT)) return '';
+  const w = BoardAnalytics.byWeek(runs, (r) => (r.heldMin >= BoardTrains.HELD_LIMIT ? 1 : 0));
+  return colChart('Held 14 h or more in Toronto, per week', w.map((x) => ({ label: weekLabel(x.week), value: x.n, tip: `Week of ${weekLabel(x.week)}: held 14 h+ ${x.n} time${x.n === 1 ? '' : 's'}` })), { every: Math.max(1, Math.ceil(w.length / 6)) });
+}
+const anaCharts = (runs) => `<section class="sheet"><header><h2>When</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${hourChart(runs)}${weekChart(runs)}${heldWeekChart(runs)}</div></section>`;
 
 // Every run, newest first; a line-up train opens in the Order summary.
 function anaTable(runs, kind) {
@@ -1041,12 +1054,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
   const st = BoardAnalytics.stats(runs);
   const span = st.first ? `${esc(dt(st.first))} to ${esc(dt(st.last))}` : '';
   const lists = kind === 'train'
-    ? [anaList('Conductors, most often', st.conductors, 'turn'), anaList('Engineers, most often', st.engineers, 'turn'), anaList('Pools that took it', st.pools), anaWeek(st)]
+    ? [anaList('Conductors, most often', st.conductors, 'turn'), anaList('Engineers, most often', st.engineers, 'turn'), anaList('Pools that took it', st.pools), anaWeek(st), anaFlags(st)]
     : [anaList('Trains worked most', st.numbers.filter(([n]) => /^(DH|\d{3})$/.test(n)), 'train'), anaList('Worked with most', st.partners, 'turn'), anaWeek(st)];
   // A2: time between trains (turn or person); went spare and runarounds (turn).
   const b = extra.between;
   const more = kind === 'train'
-    ? (extra.runarounds ? `<p class="anote">${plural(extra.runarounds, 'run')} went to a different pool than the calling sequence said (see Runarounds with nothing searched).</p>` : '')
+    ? (extra.shownWrong ? `<p class="anote">${plural(extra.shownWrong, 'run')} showed out of sequence; ${extra.runarounds} still wrong when ${extra.runarounds === 1 ? 'it' : 'they'} went (runarounds). See "Out of sequence" with nothing searched.</p>` : '')
     : `<div class="strip${extra.spares == null ? ' two' : ''}">${anaTile(durOr(b.avg), `Average time between trains${b.n ? ` (${b.n})` : ''}, on duty to next on duty`)}${anaTile(durOr(b.min), 'Shortest time between trains')}${
       extra.spares == null ? '' : anaTile(extra.spares, 'Times it went spare (B0, ** or its train going spare)') + anaTile(extra.took, 'Trains it took out of sequence')}</div>`;
   return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
@@ -1056,7 +1069,7 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Runarounds'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
@@ -1074,40 +1087,64 @@ function anaTrains({ runs }) {
       <td class="num">${num(g.number)}</td><td class="num">${g.ran}</td><td class="num">${g.planN}</td><td class="num">${durOr(g.planAvg)}</td><td>${offCell(g.planWorst)}</td><td class="num">${g.late} · ${g.early}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">Not enough trains with a plan to compare yet.</p>';
   // A13: never ran (cancelled or on duty between checks), deadheads never called.
-  const never = groups.filter((g) => g.neverRan || g.dhNeverCalled).sort((a, b) => (b.neverRan + b.dhNeverCalled) - (a.neverRan + a.dhNeverCalled) || b.seen - a.seen).slice(0, 25);
-  const a13 = never.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>Seen</th><th>Ran</th><th>Never ran</th><th>Deadheads</th><th>Deadheads never called</th></tr></thead><tbody>${never.map((g) => `<tr class="nolink">
-      <td class="num">${num(g.number)}</td><td class="num">${g.seen}</td><td class="num">${g.ran}</td><td class="num"><b>${g.neverRan}</b></td><td class="num">${g.deadheads}</td><td class="num">${g.dhNeverCalled}</td></tr>`).join('')}</tbody></table></div>`
+  const never = groups.filter((g) => g.neverRan).sort((a, b) => b.neverRan - a.neverRan || b.seen - a.seen).slice(0, 25);
+  const a13 = never.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Seen</th><th>Ran</th><th>Cancelled or between checks</th><th>Non-Sarnia crew</th><th>Possibly non-Sarnia</th><th>Deadheads never called</th></tr></thead><tbody>${never.map((g) => `<tr class="nolink">
+      <td class="num stick">${num(g.number)}</td><td class="num">${g.seen}</td><td class="num">${g.ran}</td><td class="num"><b>${g.cancelled}</b></td><td class="num">${g.nonSarnia ? `<span class="bad">${g.nonSarnia}</span>` : 0}</td><td class="num">${g.possible}</td><td class="num">${g.dhNeverCalled}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">Every train seen went on duty.</p>';
   return `<p class="anote"><b>All line-up trains</b>${st.first ? ` · on duty ${esc(dt(st.first))} to ${esc(dt(st.last))}` : ''}</p>
     ${anaTiles(st, 'train')}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2><span class="meta">tap a train number or turn to look it up</span></header><div class="agrid">
-      ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}</div></section>
+      ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}${anaFlags(st)}</div></section>
     <section class="sheet"><header><h2>Least reliable trains</h2><span class="meta">first plan vs on duty, average either way</span></header>${a8}</section>
-    <section class="sheet"><header><h2>Never ran, by train number</h2><span class="meta">left the line-up without showing on the Call Board (cancelled, or on duty between checks)</span></header>${a13}</section>`;
+    <section class="sheet"><header><h2>Never ran, by train number</h2><span class="meta">left the line-up without showing on the Call Board ${BoardTrains.FLAG_WAIT} min later</span></header>
+    <p class="anote" style="margin:10px 14px">Cancelled or on duty between checks: a Sarnia train, or a Toronto train while rested Sarnia crews waited. Non-Sarnia crew: a Toronto train that left with no rested Sarnia crew in the bunkhouse. Deadheads are their own column.</p>${a13}</section>`;
 }
 // A3: every turn in a pool, side by side.
 function anaTurns({ turnRows, pool }) {
   const pick = `<label class="poolpick">Pool <select id="apool">${ANA_POOLS.map(([k, l]) => `<option value="${k}"${k === pool ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
   const rows = [...(turnRows || [])].sort((a, b) => b.trains + b.yard - (a.trains + a.yard) || (a.turn < b.turn ? -1 : 1));
-  const body = rows.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Turn</th><th>Trains</th><th>Yard jobs</th><th>Time on duty to Toronto (total)</th><th>Average trip</th><th>Held 14 h+</th><th>Average between trains</th><th>Went spare</th><th>Rest / hold</th><th>Took out of sequence</th></tr></thead><tbody>${rows.map((r) => `<tr class="nolink">
-      <td class="num"><button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button></td><td class="num"><b>${r.trains}</b></td><td class="num">${r.yard}</td><td class="num">${r.todTotal ? esc(dur(r.todTotal)) : '—'}</td><td class="num">${durOr(r.todAvg)}</td>
+  const body = rows.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Turn</th><th>Trains</th><th class="hide-sm">Yard jobs</th><th class="hide-sm">Time on duty to Toronto (total)</th><th>Average trip</th><th>Held 14 h+</th><th>Average between trains</th><th>Went spare</th><th>Rest / hold</th><th>Took out of sequence</th></tr></thead><tbody>${rows.map((r) => `<tr class="nolink">
+      <td class="num stick"><button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button></td><td class="num"><b>${r.trains}</b></td><td class="num hide-sm">${r.yard}</td><td class="num hide-sm">${r.todTotal ? esc(dur(r.todTotal)) : '—'}</td><td class="num">${durOr(r.todAvg)}</td>
       <td class="num">${r.held14 ? `<span class="bad">${r.held14}</span>` : 0}</td><td class="num">${durOr(r.between)}</td><td class="num">${r.spares}</td><td class="num">${r.rests}</td><td class="num">${r.tookOutOfTurn}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No turns from that pool in the saved checks.</p>';
   return `<section class="sheet"><header><h2>Turns side by side</h2>${pick}</header>
     <p class="anote" style="margin:10px 14px">Trains and yard jobs each turn worked in the dates picked. Time on duty is Sarnia to Toronto only (from the bunkhouse rest), so trips home and yard jobs aren't in it. Tap a turn for its own page.</p>${body}</section>`;
 }
-// A4: trains that went to another pool than the calling sequence said.
+// A4 + owner 2026-10-26 ("ordered for A but the sequence says B": track
+// the times it's showing wrong, then the actual crew on the train): every
+// train shown out of sequence, each stretch of checks it showed wrong, the
+// crew the Call Board shows went, and whether it was still wrong at the end
+// (a runaround) or put right (fixed).
+const poolName = (p) => esc(BoardAnalytics.SEQ_POOLS[p] || p || '—');
+function seqResult(r) {
+  if (r.fixed) return `<span class="offv ok">Fixed</span><div class="crew">then ${poolName(r.final && r.final.actual)}, as the sequence said</div>`;
+  if (!r.onDuty) return '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>';
+  return '<span class="offv bad">Runaround</span>';
+}
 function anaRunarounds({ runarounds }) {
   const st = BoardAnalytics.runaroundStats(runarounds);
-  const latest = [...runarounds].reverse().slice(0, 40);
-  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Seen</th><th>Train</th><th>Sequence said</th><th>Went to</th><th>Turn</th></tr></thead><tbody>${latest.map((r) => `<tr class="nolink">
-      <td class="num">${stampBtn(r.taken)}</td><td class="num"><b>${esc(r.train)}</b></td><td>${esc(BoardAnalytics.SEQ_POOLS[r.expected] || r.expected)}</td><td>${esc(BoardAnalytics.SEQ_POOLS[r.actual] || r.actual)}</td>
-      <td class="num">${r.turn ? `<button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : '—'}</td></tr>`).join('')}</tbody></table></div>`
+  const latest = [...runarounds].reverse().slice(0, 60);
+  const shown = (r) => {
+    const sts = r.stretches || [];
+    if (!sts.length) return stampBtn(r.taken);
+    const first = sts[0];
+    const last = sts[sts.length - 1];
+    const range = `${stampBtn(first.from)}${last.to !== first.from ? ` – ${stampBtn(last.to)}` : ''}`;
+    const detail = sts.length > 1 ? `<details><summary>${plural(sts.length, 'stretch', 'stretches')}</summary><ul class="moves">${sts.map((x) => `<li>${esc(dt(x.from))}${x.to !== x.from ? `–${esc(dt(x.to).split(' ')[1] || '')}` : ''}: ${esc(x.turn || '')} ${poolName(x.actual)}, sequence ${poolName(x.expected)} (${plural(x.checks, 'check')})</li>`).join('')}</ul></details>` : '';
+    return `${range}<div class="crew">${plural(r.wrongChecks || sts.reduce((n, x) => n + x.checks, 0), 'check')}</div>${detail}`;
+  };
+  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Showed wrong</th><th>Showed it for</th><th>Sequence said</th><th>Crew that went</th><th>Result</th></tr></thead><tbody>${latest.map((r) => `<tr class="nolink">
+      <td class="num stick"><b>${esc(r.train)}</b>${r.order ? `<div class="crew">ord ${esc(r.order)}</div>` : ''}</td>
+      <td class="num">${shown(r)}</td>
+      <td>${poolName(r.actual)}${r.turn ? ` <button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : ''}</td>
+      <td>${poolName(r.expected)}</td>
+      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">not on duty yet</span>'}</td>
+      <td>${seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No trains out of sequence in the dates picked.</p>';
-  return `<p class="anote">A train counts when the Call Board shows it went to a different pool than the calling sequence says (the same check as "To check"). Tap a time to open that snapshot.</p>
-    <div class="strip">${anaTile(st.n, 'Trains out of sequence', st.n > 0)}${anaTile(st.shouldHave[0] ? esc(st.shouldHave[0][0]) : '—', 'Pool that lost the most')}${anaTile(st.wentTo[0] ? esc(st.wentTo[0][0]) : '—', 'Pool that got the most')}${anaTile(st.tookIt[0] ? esc(st.tookIt[0][0]) : '—', 'Turn that took the most')}</div>
-    <section class="sheet"><header><h2>By pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
-    <section class="sheet"><header><h2>Latest</h2><span class="meta">newest first</span></header>${list}</section>`;
+  return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. <b>Runaround</b>: still out of sequence the last time it showed. <b>Fixed</b>: put right before it went. Tap a time to open that snapshot.</p>
+    <div class="strip">${anaTile(st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Runarounds (still wrong at the end)', st.n > 0)}${anaTile(st.fixed, 'Fixed before they went')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
+    <section class="sheet"><header><h2>Runarounds by pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
+    <section class="sheet"><header><h2>Every train shown out of sequence</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // A5: jobs going spare and who filled them.
 function anaSpare({ spareJobs }) {
@@ -2187,7 +2224,8 @@ source().then(async (src) => {
   // Analytics tab (owner, 2026-10-26): a train number, turn or name code,
   // within the dates picked. A name code is never put in the address bar or
   // kept on the phone.
-  const ana = { q: '', kind: 'auto', range: 'all', from: '', to: '', sec: 'trains', pool: 'SR' };
+  // Opens on the last 90 days, so only those archive months load (F7).
+  const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
   const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [] };
   function anaDates() {
@@ -2196,6 +2234,23 @@ source().then(async (src) => {
     return { from: new Date((torontoNowMin() - (+ana.range - 1) * 1440) * 60000).toISOString().slice(0, 10) };
   }
   let anaCsv = null; // what the Spreadsheet button saves: { name, runs }
+  // The archive, a month per file (F7): only the months the dates need
+  // (from the month before, for things that started then), each fetched once.
+  const archMonths = new Map();
+  async function loadArchive(range) {
+    const idx = await src.archive();
+    if (!idx) return null;
+    if (!idx.months) return idx; // a build from before the split: one file
+    const first = range.from ? new Date(Date.parse(range.from.slice(0, 7) + '-01T12:00:00Z') - 2 * 864e5).toISOString().slice(0, 7) : '';
+    const want = idx.months.filter((m) => (!first || m >= first) && (!range.to || m <= range.to.slice(0, 7)));
+    const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
+    const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
+    for (const p of parts.filter(Boolean)) {
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
+    }
+    return out;
+  }
   // One tooltip for every chart column (hover, tap or keyboard focus).
   const tip = document.createElement('div');
   tip.className = 'ctip';
@@ -2231,7 +2286,7 @@ source().then(async (src) => {
     let found;
     let arch;
     try {
-      [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), src.archive()]);
+      [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), loadArchive(anaDates())]);
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
@@ -2254,7 +2309,7 @@ source().then(async (src) => {
       return unique([...worked(turnsAll[base], turn), ...old]);
     };
     const countIn = (turn, k) => joinOld(k, arch[k][turn] || [], (turnsAll[turn] || {})[k] || []).filter((x) => inDates(x.seen)).length;
-    const took = (turn) => runarounds.filter((r) => r.turn === turn).length;
+    const took = (turn) => runarounds.filter((r) => r.turn === turn && !r.fixed).length;
     const { inRange, runOf, trainRuns, workRuns, between, turnRow, poolOf, kindOf } = BoardAnalytics;
 
     const q = ana.q.trim().toUpperCase().replace(/\s+/g, ' ');
@@ -2275,15 +2330,17 @@ source().then(async (src) => {
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
       anaCsv = { name: `train-${q.replace(/\s+/g, '-')}`, runs };
       body = analyticsView(runs, 'train', q === 'DH' ? 'All deadheads' : /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '',
-        { runarounds: runarounds.filter((r) => BoardAnalytics.trainMatches(r.train, q)).length });
+        { runarounds: runarounds.filter((r) => BoardAnalytics.trainMatches(r.train, q) && !r.fixed).length, shownWrong: runarounds.filter((r) => BoardAnalytics.trainMatches(r.train, q)).length });
     } else if (kind === 'turn') {
       const { base } = BoardTurns.splitCraft(q);
       if (BoardTurns.PLACEHOLDER.test(base)) body = `<p class="empty">${esc(base)} is a placeholder (make-up) turn, so it isn't looked up on its own.</p>`;
+      // 501/502 is two turns with one number (F2): conductor or engineer, like Turn History.
+      else if (BoardTurns.SHARED.test(q)) body = `<p class="anote"><b>${esc(q)}</b> is two turns with one number. Which one?</p><p>${['CO', 'EN'].map((c) => `<button type="button" class="qbtn" style="margin-right:18px;font-size:16px" data-q="${esc(q)}-${c}" data-kind="turn">${esc(q)} ${c === 'CO' ? 'conductor' : 'engineer'}</button>`).join('')}</p>`;
       else {
         const runs = inRange(workRuns(workOf(q), byId, base), range);
         anaCsv = { name: `turn-${q}`, runs };
         body = analyticsView(runs, 'turn', `Turn ${q}`, turnsAll[base] || arch.work[base] ? '' : 'no history for this turn in the saved checks',
-          { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: sleep.filter((z) => z.turn === base) });
+          { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: sleep.filter((z) => z.turn === q || (z.turn === base && !BoardTurns.SHARED.test(base))) });
       }
     } else {
       // A person: the live stretches (people.json) and the archive's.
@@ -2298,7 +2355,7 @@ source().then(async (src) => {
         const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), byId), range);
         anaCsv = { name: 'person', runs };
         // Their calls: on a turn while they were on it.
-        const mine = sleep.filter((z) => stretches.some((e) => e.turn === z.turn && z.firstSeen <= e.to && z.seen >= e.from));
+        const mine = sleep.filter((z) => stretches.some((e) => e.turn === BoardTurns.splitCraft(z.turn).base && z.firstSeen <= e.to && z.seen >= e.from));
         body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches).turn)}`, { between: between(runs), spares: null, sleep: mine });
       }
     }

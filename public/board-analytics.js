@@ -136,6 +136,10 @@
       ran: ran.length,
       yard: ran.length - trains.length,
       neverRan: runs.filter((r) => r.gone).length,
+      // F1: why it never showed on the Call Board (BoardTrains flagOf).
+      cancelled: runs.filter((r) => r.gone && !['nonSarnia', 'possible', 'deadhead'].includes(r.flag)).length,
+      nonSarnia: runs.filter((r) => r.flag === 'nonSarnia').length,
+      possibleNonSarnia: runs.filter((r) => r.flag === 'possible').length,
       waiting: runs.filter((r) => !r.ran && !r.gone).length,
       first: dates[0] || null,
       last: dates[dates.length - 1] || null,
@@ -176,14 +180,15 @@
     return h;
   }
   // A1: trains on duty per week (weeks start Sunday, like CATS days), every
-  // week from the first to the last, empty ones included.
-  function byWeek(runs) {
+  // week from the first to the last, empty ones included. count: what each
+  // run adds (F6: e.g. 1 when held 14 h+), over the same weeks.
+  function byWeek(runs, count = () => 1) {
     const day = (st) => Date.UTC(+st.slice(0, 4), +st.slice(5, 7) - 1, +st.slice(8, 10)) / 864e5;
     const ran = runs.filter((r) => r.ran && r.at);
     if (!ran.length) return [];
     const weekOf = (d) => d - new Date(d * 864e5).getUTCDay();
     const counts = new Map();
-    for (const r of ran) { const w = weekOf(day(r.at)); counts.set(w, (counts.get(w) || 0) + 1); }
+    for (const r of ran) { const w = weekOf(day(r.at)); counts.set(w, (counts.get(w) || 0) + count(r)); }
     const ws = [...counts.keys()];
     const out = [];
     for (let w = Math.min(...ws); w <= Math.max(...ws); w += 7) out.push({ week: new Date(w * 864e5).toISOString().slice(0, 10), n: counts.get(w) || 0 });
@@ -212,10 +217,14 @@
     const groups = new Map();
     for (const r of runs) {
       if (r.yard) continue;
-      const g = groups.get(r.number) || { number: r.number, seen: 0, ran: 0, neverRan: 0, deadheads: 0, dhNeverCalled: 0, plan: [] };
+      const g = groups.get(r.number) || { number: r.number, seen: 0, ran: 0, neverRan: 0, cancelled: 0, nonSarnia: 0, possible: 0, deadheads: 0, dhNeverCalled: 0, plan: [] };
       g.seen++;
       if (r.ran) g.ran++;
       if (r.gone) g.neverRan++;
+      // F1: a Toronto train gone with no rested Sarnia crew went to a non-Sarnia crew.
+      if (r.flag === 'nonSarnia') g.nonSarnia++;
+      else if (r.flag === 'possible') g.possible++;
+      else if (r.gone && r.flag !== 'deadhead') g.cancelled++;
       if (r.deadhead) g.deadheads++;
       if (r.flag === 'deadhead') g.dhNeverCalled++;
       if (r.offPlan != null) g.plan.push(r.offPlan);
@@ -252,13 +261,32 @@
   // A4: trains that went out of sequence (data/analytics.json runarounds),
   // by the pool the sequence said and the turn that took it.
   const SEQ_POOLS = { SR: 'Chain Gang (SR)', A: 'A pool', B: 'B pool', S5: '501/502' };
+  // Each train shown out of sequence counts; a runaround is one still out of
+  // sequence the last time it showed (fixed ones were put right).
   function runaroundStats(list) {
+    const runs = list.filter((r) => !r.fixed);
+    const span = (r) => (r.stretches || []).reduce((n, x) => n + Math.max(0, T.toMin(x.to) - T.toMin(x.from)), 0);
     return {
-      n: list.length,
-      shouldHave: top(list.map((r) => SEQ_POOLS[r.expected] || r.expected), 9),
-      wentTo: top(list.map((r) => SEQ_POOLS[r.actual] || r.actual), 9),
-      tookIt: top(list.map((r) => r.turn), 10),
+      shown: list.length,
+      n: runs.length,
+      fixed: list.length - runs.length,
+      wrongFor: avg(list.filter((r) => r.stretches).map(span)),
+      shouldHave: top(runs.map((r) => SEQ_POOLS[r.expected] || r.expected), 9),
+      wentTo: top(runs.map((r) => SEQ_POOLS[r.actual] || r.actual), 9),
+      tookIt: top(runs.map((r) => r.turn), 10),
     };
+  }
+
+  // Every day from the first to the last in a Map(day → n), empty ones as 0 (F3).
+  function everyDay(m) {
+    const days = [...m.keys()].sort();
+    if (!days.length) return [];
+    const out = [];
+    for (let d = Date.parse(days[0] + 'T12:00:00Z'); d <= Date.parse(days[days.length - 1] + 'T12:00:00Z'); d += 864e5) {
+      const day = new Date(d).toISOString().slice(0, 10);
+      out.push({ day, n: m.get(day) || 0 });
+    }
+    return out;
   }
 
   // A5: jobs going spare (data/analytics.json spareJobs): per day, who
@@ -270,7 +298,8 @@
     const checked = filled.filter((j) => j.predicted);
     return {
       n: jobs.length,
-      perDay: [...perDay.entries()].sort().map(([day, n]) => ({ day, n })),
+      perDay: everyDay(perDay),
+      daysWithAny: perDay.size,
       filled: filled.length,
       filledBy: top(filled.map((j) => j.filledBy), 10),
       byPool: top(jobs.map((j) => `${j.pool} ${j.cc}`.trim()), 9),
@@ -320,6 +349,23 @@
   };
   // older + newer as one list, each thing once.
   function joinOld(kind, older = [], newer = []) {
+    if (kind === 'runarounds') {
+      // The archive's copy saw it start; later checks (the site's) add their
+      // stretches, the end state and the crew that went.
+      const out = older.map((x) => ({ ...x }));
+      const by = new Map(out.map((x) => [IDS.runarounds(x), x]));
+      for (const n of newer) {
+        const o = by.get(IDS.runarounds(n));
+        if (!o) { out.push(n); continue; }
+        if ((n.last || '') <= (o.last || '')) continue;
+        const more = (n.stretches || []).filter((x) => x.from > (o.lastWrong || o.taken));
+        Object.assign(o, { last: n.last, fixed: n.fixed, final: n.final, stretches: [...(o.stretches || []), ...more] });
+        o.wrongChecks = o.stretches.reduce((t, x) => t + x.checks, 0);
+        if (more.length) Object.assign(o, { expected: n.expected, actual: n.actual, turn: n.turn, lastWrong: n.lastWrong });
+        if (n.onDuty && !o.onDuty) Object.assign(o, { onDuty: n.onDuty, crew: n.crew, station: n.station });
+      }
+      return out;
+    }
     if (kind === 'spares' || kind === 'spareJobs') {
       // Stretches: the same one if the newer starts while (or just after) the older ran.
       const idOf = kind === 'spares' ? (x) => x.text || '' : (x) => `${x.train}|${x.turn}`;
@@ -342,11 +388,13 @@
   }
 
   // A10: any list of runs as a spreadsheet (CSV), newest first.
+  // F5: "2026-10-20 0500" → "2026-10-20 05:00", which spreadsheets read as a date.
+  const xlTime = (st) => (st ? st.replace(/ (\d{2})(\d{2})$/, ' $1:$2') : '');
   function csv(runs) {
-    const cols = [['On duty', (r) => r.at || ''], ['Train', (r) => r.id], ['Number', (r) => r.number], ['From', (r) => (r.from === 'mac' ? 'Toronto' : 'Sarnia')],
+    const cols = [['On duty', (r) => xlTime(r.at)], ['Train', (r) => r.id], ['Number', (r) => r.number], ['From', (r) => (r.from === 'mac' ? 'Toronto' : 'Sarnia')],
       ['Yard', (r) => (r.yard ? 'yes' : '')], ['Deadhead', (r) => (r.deadhead ? 'yes' : '')], ['Never ran', (r) => (r.gone ? 'yes' : '')],
       ['Turn', (r) => r.turn || ''], ['Working', (r) => (r.as || '').replace(/^working /, '')], ['Crew', (r) => r.crew], ['Worked with', (r) => (r.partners || []).join(' ')],
-      ['First plan', (r) => r.firstPlan || ''], ['First order', (r) => r.firstOrder || ''], ['Plan off (min)', (r) => r.offPlan ?? ''], ['Order off (min)', (r) => r.offOrder ?? ''],
+      ['First plan', (r) => xlTime(r.firstPlan)], ['First order', (r) => xlTime(r.firstOrder)], ['Plan off (min)', (r) => r.offPlan ?? ''], ['Order off (min)', (r) => r.offOrder ?? ''],
       ['Order changes', (r) => r.orderChanges || 0], ['Time on duty (min)', (r) => r.timeOnDuty ?? ''], ['Off duty in Toronto (min)', (r) => r.heldMin ?? ''],
       ['Flag', (r) => r.flag || ''], ['Conductor predicted right', (r) => (r.predHit && r.predHit.co != null ? (r.predHit.co ? 'yes' : 'no') : '')],
       ['Engineer predicted right', (r) => (r.predHit && r.predHit.en != null ? (r.predHit.en ? 'yes' : 'no') : '')]];
@@ -355,7 +403,7 @@
   }
 
   const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
-    inRange, byHour, byWeek, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
+    inRange, byHour, byWeek, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
     sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;

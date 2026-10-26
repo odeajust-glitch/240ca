@@ -18,21 +18,6 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 6. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
-7. **Fable review suggestions** (2026-10-26, owner to pick; bugs it found
-   are fixed, see "Done"):
-   - F1. "Never ran" split into cancelled vs taken by a non-Sarnia crew
-     (Toronto trains that ran with a Toronto crew are listed as never ran
-     now), and show the flags already counted.
-   - F2. 501/502 search asks conductor or engineer, like Turn History (now
-     mixed, so "shortest time between trains" can look tiny).
-   - F3. "Jobs going spare per day" chart shows empty days as 0.
-   - F4. Phone: Turns side by side keeps the Turn column in view and hides
-     two columns on small screens.
-   - F5. Spreadsheet times written as 2026-10-20 05:00 so Excel sorts them.
-   - F6. Per-turn trends over weeks: calls per week, held 14 h+ per week.
-   - F7. Load the year archive in parts so the tab opens faster on mobile
-     data once it holds months.
-
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7).
 
@@ -88,4 +73,17 @@ per week per person (A7).
   index); "right since" now says when it's "at least" (right from the first
   sighting); predLog kept out of trains.json; Analytics never stays on
   "Loading…" if something fails.
+- 2026-10-26: **Fable review suggestions F1–F7** (owner: all): never ran
+  split into cancelled / non-Sarnia crew / possibly, flags list (F1);
+  501/502 asks conductor or engineer, sleep kept apart as S501-CO/-EN (F2);
+  spare jobs per day shows empty days (F3); phone: Turn column stays,
+  two columns hidden (F4); spreadsheet times as 2026-10-20 05:00 (F5); held
+  14 h+ per week chart (F6); archive one file per month, Analytics opens on
+  the last 90 days so only those months load (F7).
+- 2026-10-26: **Out-of-sequence tracker** (Analytics → Out of sequence,
+  owner: "M38261 26 is ordered for A but the sequence says B … track the
+  times it's showing wrong, then the actual crew"): every train shown out of
+  sequence, each stretch of checks it showed wrong, the Call Board crew that
+  went, and Runaround (still wrong at the end) or Fixed. Line-up "ordered
+  for" mismatches are saved per check now (`sequenceAhead`, FORMAT 12).
 

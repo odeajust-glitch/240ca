@@ -93,6 +93,7 @@ test('analytics: dates, hours, weeks and time between trains', () => {
   assert.deepStrictEqual([h[5], h[23], h.reduce((a, b) => a + b, 0)], [2, 1, 3]);
   // Weeks start Sunday; an empty week in between still shows.
   assert.deepStrictEqual(A.byWeek(runs), [{ week: '2026-10-18', n: 2 }, { week: '2026-10-25', n: 1 }]);
+  assert.deepStrictEqual(A.byWeek(runs, (r) => (r.id === 'Q14821 31' ? 1 : 0)), [{ week: '2026-10-18', n: 0 }, { week: '2026-10-25', n: 1 }]);
   assert.deepStrictEqual(A.between(runs), { n: 2, avg: (2910 + 14010) / 2, min: 2910 });
 });
 
@@ -104,6 +105,9 @@ test('analytics: train numbers ranked by plan, never ran, deadheads never called
   const g = Object.fromEntries(A.byNumber(runs).map((x) => [x.number, x]));
   assert.deepStrictEqual([g['148'].seen, g['148'].ran, g['148'].neverRan, g['148'].planAvg, g['148'].planWorst, g['148'].late, g['148'].early], [3, 2, 1, 90, -120, 1, 1]);
   assert.deepStrictEqual([g.DH.deadheads, g.DH.dhNeverCalled], [1, 1]);
+  // F1: cancelled vs a non-Sarnia crew.
+  const t = Object.fromEntries(A.byNumber([row('M39431 20', null, { gone: 'x', from: 'mac', flag: 'nonSarnia' }), row('M39431 21', null, { gone: 'x' })].map(A.runOf)).map((x) => [x.number, x]));
+  assert.deepStrictEqual([t['394'].neverRan, t['394'].nonSarnia, t['394'].cancelled], [2, 1, 1]);
 });
 
 test('analytics: a turn side by side, prediction by day and how early', () => {
@@ -118,19 +122,21 @@ test('analytics: a turn side by side, prediction by day and how early', () => {
 });
 
 test('analytics: runarounds and jobs going spare', () => {
-  const ra = A.runaroundStats([{ train: 'M1 01', expected: 'SR', actual: 'A', turn: 'SA04' }, { train: 'M2 02', expected: 'SR', actual: 'B', turn: 'SB01' }]);
-  assert.deepStrictEqual([ra.n, ra.shouldHave, ra.tookIt.length], [2, [['Chain Gang (SR)', 2]], 2]);
+  const ra = A.runaroundStats([{ train: 'M1 01', expected: 'SR', actual: 'A', turn: 'SA04' }, { train: 'M2 02', expected: 'SR', actual: 'B', turn: 'SB01' },
+    { train: 'M3 03', expected: 'B', actual: 'A', turn: 'SA02', fixed: true, stretches: [{ from: '2026-10-03 0100', to: '2026-10-03 0200', checks: 13 }] }]);
+  assert.deepStrictEqual([ra.shown, ra.n, ra.fixed, ra.shouldHave, ra.tookIt.length, ra.wrongFor], [3, 2, 1, [['Chain Gang (SR)', 2]], 2, 60]);
   const sp = A.spareJobStats([
     { train: 'Y1', pool: 'SR', cc: 'CO', first: '2026-10-20 0800', predicted: 'B119', filledBy: 'B119' },
     { train: 'Y2', pool: 'SR', cc: 'CO', first: '2026-10-20 0900', predicted: 'B120', filledBy: 'B121' },
     { train: 'Y3', pool: 'SA', cc: 'EN', first: '2026-10-21 0900' },
   ]);
   assert.deepStrictEqual([sp.n, sp.filled, sp.predicted, sp.perDay], [3, 2, { hit: 1, n: 2 }, [{ day: '2026-10-20', n: 2 }, { day: '2026-10-21', n: 1 }]]);
+  assert.deepStrictEqual(A.everyDay(new Map([['2026-10-30', 1], ['2026-11-02', 2]])).map((d) => d.n), [1, 0, 0, 2]);
 });
 
 test('analytics: spreadsheet quotes commas and quotes', () => {
   const out = A.csv([A.runOf(row('M14831 20', '2026-10-20 0500', { crew: 'EN SD07 · CO "SR03", x' }))]);
   const [head, line] = out.trim().split('\r\n');
   assert.match(head, /^On duty,Train,Number,/);
-  assert.match(line, /^2026-10-20 0500,M14831 20,148,Sarnia,.*"EN SD07 · CO ""SR03"", x"/);
+  assert.match(line, /^2026-10-20 05:00,M14831 20,148,Sarnia,.*"EN SD07 · CO ""SR03"", x"/);
 });

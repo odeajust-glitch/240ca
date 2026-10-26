@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 144 tests (`npm test`)
+2026-10-26) · 145 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -263,7 +263,16 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
 - Fable review of Analytics (read-only agent) found 7 bugs; all fixed the
   same session (TODO "Done"). Archive is now v2 (lists, one identity per
   kind, `startOf` < site's first day = from the archive; load() converts
-  v1). Its suggestions F1–F7 are TODO item 7, owner to pick.
+  v1). Its suggestions F1–F7: owner said all, built (TODO "Done").
+- F7: data/archive.json is now an index { since, months }, parts in
+  data/archive-YYYY-MM.json (Archive.byMonth); page loadArchive(range)
+  fetches the months needed; Analytics opens on "Last 90 days".
+- Out-of-sequence tracker (owner): insights.js runarounds keep every
+  record with `stretches` [{from,to,checks,expected,actual,turn}],
+  `fixed` (last sighting right), Call Board `crew`/`onDuty`. engine.js
+  returns `ahead` (ordered line-up trains with CATS's pool), saved as
+  snapshot `sequenceAhead` → FORMAT 12. joinOld('runarounds') adds the
+  site's later stretches to the archive's copy.
 - Next: back to TODO items 1–5 (runaround log first, owner to describe).
 
 **Waiting on the owner / to watch:**

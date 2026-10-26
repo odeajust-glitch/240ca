@@ -13,7 +13,7 @@ test('insights: runarounds once per train, jobs going spare and who filled them'
   const st = Insights.collect([
     snap('2026-10-20 0600', { sequence: [{ order: '20th 0700', train: 'M38261 20', expected: 'SR', actual: 'A', turn: 'SA04' }, { train: 'M1 20', expected: 'SR', actual: 'MU' }], vacancies: [job] }),
     snap('2026-10-20 0700', { sequence: [{ order: '20th 0700', train: 'M38261 20', expected: 'SR', actual: 'A', turn: 'SA04' }], vacancies: [job] }),
-    snap('2026-10-20 0800', { onDuty: [{ train: 'Y123', backfill: [{ craft: 'CO', job: 'SR04', turn: 'B120' }] }] }),
+    snap('2026-10-20 0800', { onDuty: [{ train: 'Y123', backfill: [{ craft: 'CO', job: 'SR04', turn: 'B120' }] }, { train: 'M38261 20', onDuty: '20th 0745', crew: 'EN S104 · CO SA04', station: 'SARNIA' }] }),
     // Listed again two days later: a new vacancy.
     snap('2026-10-22 0600', { vacancies: [job] }),
     // A blip: out of sequence once, then counted right.
@@ -23,7 +23,13 @@ test('insights: runarounds once per train, jobs going spare and who filled them'
     snap('2026-10-23 0400', { vacancies: [job] }),
   ]);
   const f = Insights.finish(st);
-  assert.deepStrictEqual(f.runarounds.map((r) => [r.train, r.expected, r.actual, r.turn, r.taken]), [['M38261 20', 'SR', 'A', 'SA04', '2026-10-20 0600']]);
+  // Shown wrong twice in a row, then on duty: a runaround, with the crew that went.
+  // The blip on M2 22 is kept but marked fixed.
+  assert.deepStrictEqual(f.runarounds.map((r) => [r.train, r.expected, r.actual, r.turn, r.taken, r.fixed, r.wrongChecks]),
+    [['M38261 20', 'SR', 'A', 'SA04', '2026-10-20 0600', false, 2], ['M2 22', 'SR', 'A', 'SA01', '2026-10-22 0700', true, 1]]);
+  assert.deepStrictEqual(f.runarounds[0].stretches, [{ from: '2026-10-20 0600', to: '2026-10-20 0700', checks: 2, expected: 'SR', actual: 'A', turn: 'SA04' }]);
+  assert.deepStrictEqual([f.runarounds[0].onDuty, f.runarounds[0].crew], ['2026-10-20 0745', 'EN S104 · CO SA04']);
+  assert.deepStrictEqual(f.runarounds[1].final, { expected: 'SR', actual: 'SR', turn: 'SR01' });
   assert.strictEqual(f.spareJobs.length, 3);
   assert.deepStrictEqual([f.spareJobs[0].predicted, f.spareJobs[0].filledBy, f.spareJobs[0].last], ['B119', 'B120', '2026-10-20 0700']);
   assert.strictEqual(f.spareJobs[1].filledBy, undefined);
@@ -48,6 +54,10 @@ test('archive: keeps what falls off the site, publishes only the older part', ()
   assert.deepStrictEqual(site.work.SR03.map((o) => [o.train, o.at]), [['M1 01', '2026-10-01 0500']]);
   assert.deepStrictEqual([site.spares.SR03.map((x) => x.seen), site.people.h1.length, site.runarounds.length], [['2026-10-01 0500'], 1, 1]);
   assert.ok(a.trains.some((r) => r.id === 'M9 05'));
+  // F7: published a month per file.
+  const { index, parts } = Archive.byMonth(site);
+  assert.deepStrictEqual(index, { since: '2026-10-31', months: ['2026-10'] });
+  assert.deepStrictEqual([parts['2026-10'].trains.length, parts['2026-10'].work.SR03.length, parts['2026-10'].people.h1.length], [1, 1, 1]);
   // Older than the keep time: gone.
   a = Archive.update(a, { trains: [], turns: {}, people: {}, insights: none }, '2027-10-31', { now: new Date('2027-12-01T12:00:00Z') });
   assert.deepStrictEqual(a.trains, []);
@@ -97,10 +107,12 @@ test('insights: sleep tracker, the call they slept on vs the real call', () => {
     snap('2026-10-20 1100', { onDuty: [{ train: 'M2 20', onDuty: '20th 1245', crew: 'EN SD07 · CO SR03' },
       { train: 'Y1', onDuty: '20th 1205', crew: 'CO SR04', backfill: [{ job: 'SR04', turn: 'B119' }] }] }),
     snap('2026-10-20 1105', { onDuty: [{ train: 'M2 20', onDuty: '20th 1245', crew: 'EN SD07 · CO SR03' }] }), // seen again: not twice
-    snap('2026-10-20 1500', { onDuty: [{ train: 'M5 20', onDuty: '20th 1500', crew: 'CO SR05' }] }),
+    snap('2026-10-20 1500', { onDuty: [{ train: 'M5 20', onDuty: '20th 1500', crew: 'CO SR05' }], lineup: [row('L50220 20', '20th 1700', 'S501', 'S501')] }),
+    snap('2026-10-20 1900', { onDuty: [{ train: 'L50220 20', onDuty: '20th 1900', crew: 'EN S501 · CO S501' }] }),
   ]);
   const z = Object.fromEntries(Insights.finish(st).sleep.map((x) => [x.turn, x]));
-  assert.deepStrictEqual(Object.keys(z).sort(), ['B119', 'SD07', 'SR03', 'SR05']);
+  // 501/502: conductor and engineer kept apart.
+  assert.deepStrictEqual(Object.keys(z).sort(), ['B119', 'S501-CO', 'S501-EN', 'SD07', 'SR03', 'SR05']);
   assert.deepStrictEqual([z.SR03.sleepAt, z.SR03.expected, z.SR03.call, z.SR03.off, z.SR03.train, z.SR03.short], ['2026-10-20 0400', '2026-10-20 1200', '2026-10-20 1045', -75, 'M2 20', false]);
   assert.deepStrictEqual(z.SR03.shifts.map((x) => [x.call, x.train]), [['2026-10-20 1100', 'M1 20'], ['2026-10-20 1030', 'M2 20']]);
   assert.deepStrictEqual([z.SR05.short, z.SR05.notice, z.SR05.off], [true, 420, 0]);
@@ -115,4 +127,17 @@ test('analytics: sleep scored green / yellow / red', () => {
   const st = A.sleepStats(list);
   assert.deepStrictEqual([st.n, st.ok, st.warn, st.bad, st.earlier, st.later, st.short, st.avg], [4, 2, 1, 1, 1, 1, 1, 38]);
   assert.deepStrictEqual(A.sleepByTurn(list).map((t) => [t.turn, t.n, t.bad]), [['SR03', 3, 1], ['SR05', 1, 0]]);
+});
+
+// Owner, 2026-10-26: "M38261 26 (ORD 26th 1700) is ordered for A but the
+// sequence says B": every check it shows that, then the crew that went.
+test('insights: a line-up train ordered for the wrong pool, then the crew that went', () => {
+  const ahead = (taken) => ({ taken, sequenceAhead: [{ order: '26th 1700', train: 'M38261 26', expected: 'B', actual: 'A', turn: 'SA04' }] });
+  const st = Insights.collect([ahead('2026-10-26 1300'), ahead('2026-10-26 1305'), ahead('2026-10-26 1310'),
+    { taken: '2026-10-26 1500', onDuty: [{ train: 'M38261 26', onDuty: '26th 1445', crew: 'EN S104 · CO SA04', station: 'SARNIA' }],
+      sequence: [{ order: '26th 1700', train: 'M38261 26', expected: 'B', actual: 'A', turn: 'SA04' }] }]);
+  const [r] = Insights.finish(st).runarounds;
+  // Four checks in a row showed it wrong (one stretch), and it went that way.
+  assert.deepStrictEqual([r.train, r.wrongChecks, r.stretches.length, r.stretches[0].from, r.stretches[0].to, r.fixed, r.crew, r.onDuty],
+    ['M38261 26', 4, 1, '2026-10-26 1300', '2026-10-26 1500', false, 'EN S104 · CO SA04', '2026-10-26 1445']);
 });
