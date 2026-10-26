@@ -326,9 +326,9 @@ test('site: when do I go, for every turn the newest check can answer', () => {
 // Owner, 2026-10-22: how often the predicted crew was right.
 test('orders: predicted crew is scored against who went on duty', () => {
   const r = { onDuty: '2026-10-22 1445', crew: 'EN SD05 · CO SR07', predicted: { co: 'SR03', en: 'SD05', taken: '2026-10-22 1200' } };
-  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' }, coLead: null, enLead: 165 });
+  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' }, coLead: null, enLead: 165, coFromStart: false, enFromStart: true });
   assert.equal(BoardTrains.predHit({ ...r, onDuty: null }), null);
-  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: '2026-10-22 1400' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' }, coLead: 45, enLead: null });
+  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: '2026-10-22 1400' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' }, coLead: 45, enLead: null, coFromStart: true, enFromStart: false });
   // Tracked from the line-up rows' predictions, the last one before on duty.
   const st = BoardTrains.track([
     { taken: '2026-10-22 1100', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'PLN', order: '22nd 1500', pred: { co: 'SR03', en: 'SD05' } }], onDuty: [] },
@@ -340,7 +340,8 @@ test('orders: predicted crew is scored against who went on duty', () => {
   assert.deepStrictEqual(row.predicted, { co: 'SR07', en: 'SD05', taken: '2026-10-22 1300' });
   assert.deepStrictEqual([row.predHit.co, row.predHit.en], [true, true]);
   // Right since (owner, 2026-10-26): SR07 from 1300, SD05 from the first check.
-  assert.deepStrictEqual([row.predHit.coLead, row.predHit.enLead], [105, 225]);
+  assert.deepStrictEqual([row.predHit.coLead, row.predHit.enLead, row.predHit.coFromStart, row.predHit.enFromStart], [105, 225, false, true]);
+  assert.strictEqual(row.predLog, undefined); // kept out of trains.json
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {

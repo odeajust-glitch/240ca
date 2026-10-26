@@ -59,19 +59,30 @@
     };
   }
 
-  // Every train matching the search, newest first.
+  // Every train matching the search, newest first (the site's trains and the
+  // archive's arrive in different orders).
+  const dueOf = (r) => r.at || r.day || '';
+  const newestFirst = (runs) => runs.sort((a, b) => (dueOf(a) < dueOf(b) ? 1 : dueOf(a) > dueOf(b) ? -1 : 0));
   function trainRuns(trains, q) {
-    return trains.filter((r) => trainMatches(r.id, q)).map(runOf);
+    return newestFirst(trains.filter((r) => trainMatches(r.id, q)).map(runOf));
+  }
+  // Train id → its rows, built once for workRuns (a year of trains, every turn).
+  function indexTrains(trains) {
+    const m = new Map();
+    for (const r of trains) { if (!m.has(r.id)) m.set(r.id, []); m.get(r.id).push(r); }
+    return m;
   }
 
   // Trains (and yard jobs) a turn or person worked, from Turn History's work
   // history ({ train, at, yard, station, crew, job, turn }), each joined to
   // its trains.json row when there is one (plan, order, time on duty, held).
-  // self: the turn searched (for "worked with").
+  // self: the turn searched (for "worked with"). trains: a list, or
+  // indexTrains() of it when called for many turns.
   function workRuns(work, trains, self = '') {
+    const byId = trains instanceof Map ? trains : indexTrains(trains);
     return work.map((o) => {
       const id = String(o.train).replace(/ \([A-Z0-9-]+\)$/, '');
-      const near = o.at && trains.find((r) => r.id === id && r.onDuty && Math.abs(T.toMin(r.onDuty) - T.toMin(o.at)) <= 24 * 60);
+      const near = o.at && (byId.get(id) || []).find((r) => r.onDuty && Math.abs(T.toMin(r.onDuty) - T.toMin(o.at)) <= 24 * 60);
       const base = near ? runOf(near) : {
         id, number: o.yard ? id : numberOf(id), key: null, day: (o.at || '').slice(0, 10), from: 'sarnia', deadhead: /^DH/.test(id), yard: !!o.yard,
         at: o.at || null, ran: true, gone: false, station: o.station || '', crew: o.crew || '', co: crewTurn(o.crew, 'CO'), en: crewTurn(o.crew, 'EN|LE'),
@@ -227,9 +238,15 @@
     }
     return [...days.values()].sort((a, b) => (a.day < b.day ? -1 : 1));
   }
+  // fromStart: right from the first time the train was seen, so the site
+  // may have known even earlier (the average is then at least that).
   function predLead(runs) {
-    const lead = (k) => runs.map((r) => r.predHit && r.predHit[k + 'Lead']).filter((x) => x != null && x >= 0);
-    return { co: { n: lead('co').length, avg: avg(lead('co')) }, en: { n: lead('en').length, avg: avg(lead('en')) } };
+    const one = (k) => {
+      const hits = runs.filter((r) => r.predHit && r.predHit[k + 'Lead'] != null);
+      const lead = hits.map((r) => Math.max(0, r.predHit[k + 'Lead']));
+      return { n: lead.length, avg: avg(lead), fromStart: hits.filter((r) => r.predHit[k + 'FromStart']).length };
+    };
+    return { co: one('co'), en: one('en') };
   }
 
   // A4: trains that went out of sequence (data/analytics.json runarounds),
@@ -288,6 +305,42 @@
       .sort((a, b) => b.bad / b.n - a.bad / a.n || b.n - a.n || (a.turn < b.turn ? -1 : 1));
   }
 
+  // The archive (data/archive.json) and the site's own data meet at the
+  // site's first day: something that started before it (a rest, a train
+  // first seen the night before) is in both. Each kind has one identity and
+  // the older copy wins, since it saw the start (Fable review, 2026-10-26).
+  const SPARE_GAP = 60; // a goes-spare stretch picked up again within this: the same one
+  const JOB_GAP = 3 * 60; // as lib/board/insights.js SAME_JOB_MIN
+  const IDS = {
+    trains: (r) => `${r.id} ${r.month}`,
+    work: (o) => `${String(o.train).replace(/ \([A-Z0-9-]+\)$/, '')}|${o.at}`,
+    rests: (x) => `${x.kind}|${x.until}|${x.until ? '' : x.seen}`,
+    runarounds: (r) => T.trainKey(r.train, r.taken),
+    sleep: (z) => `${z.turn}|${z.train}|${z.onDuty}`,
+  };
+  // older + newer as one list, each thing once.
+  function joinOld(kind, older = [], newer = []) {
+    if (kind === 'spares' || kind === 'spareJobs') {
+      // Stretches: the same one if the newer starts while (or just after) the older ran.
+      const idOf = kind === 'spares' ? (x) => x.text || '' : (x) => `${x.train}|${x.turn}`;
+      const startOf = kind === 'spares' ? (x) => x.seen : (x) => x.first;
+      const gap = kind === 'spares' ? SPARE_GAP : JOB_GAP;
+      const out = older.map((x) => ({ ...x }));
+      const by = new Map();
+      for (const x of out) { if (!by.has(idOf(x))) by.set(idOf(x), []); by.get(idOf(x)).push(x); }
+      for (const n of newer) {
+        const o = (by.get(idOf(n)) || []).find((x) => T.toMin(startOf(n)) >= T.toMin(startOf(x)) && T.toMin(startOf(n)) <= T.toMin(x.last || startOf(x)) + gap);
+        if (!o) { out.push(n); continue; }
+        if ((n.last || '') > (o.last || '')) o.last = n.last;
+        if (kind === 'spareJobs' && !o.filledBy && n.filledBy) Object.assign(o, { filledBy: n.filledBy, filledOn: n.filledOn, filledSeen: n.filledSeen });
+      }
+      return out;
+    }
+    const id = IDS[kind];
+    const seen = new Set(older.map(id));
+    return [...older, ...newer.filter((x) => !seen.has(id(x)))];
+  }
+
   // A10: any list of runs as a spreadsheet (CSV), newest first.
   function csv(runs) {
     const cols = [['On duty', (r) => r.at || ''], ['Train', (r) => r.id], ['Number', (r) => r.number], ['From', (r) => (r.from === 'mac' ? 'Toronto' : 'Sarnia')],
@@ -301,9 +354,9 @@
     return [cols.map((c) => c[0]), ...runs.map((r) => cols.map((c) => c[1](r)))].map((row) => row.map(cell).join(',')).join('\r\n') + '\r\n';
   }
 
-  const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, workRuns, timeOfDay, stats, WEEKDAYS,
+  const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
-    sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW };
+    sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);

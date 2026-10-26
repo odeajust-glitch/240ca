@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 143 tests (`npm test`)
+2026-10-26) · 144 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -260,8 +260,10 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   HELD_LIMIT/shareLink (Order summary + 18.6(b) stuck on Loading); put back,
   and site.test.js now checks those functions exist. When splicing
   board.html, check `comm` of top-level names before and after.
-- Fable review of Analytics was started (read-only); go through its
-  findings with the owner (TODO item 7).
+- Fable review of Analytics (read-only agent) found 7 bugs; all fixed the
+  same session (TODO "Done"). Archive is now v2 (lists, one identity per
+  kind, `startOf` < site's first day = from the archive; load() converts
+  v1). Its suggestions F1–F7 are TODO item 7, owner to pick.
 - Next: back to TODO items 1–5 (runaround log first, owner to describe).
 
 **Waiting on the owner / to watch:**

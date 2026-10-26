@@ -18,8 +18,20 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 6. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
-7. **Fable review of Analytics**: findings to go through with the owner
-   (review running 2026-10-26).
+7. **Fable review suggestions** (2026-10-26, owner to pick; bugs it found
+   are fixed, see "Done"):
+   - F1. "Never ran" split into cancelled vs taken by a non-Sarnia crew
+     (Toronto trains that ran with a Toronto crew are listed as never ran
+     now), and show the flags already counted.
+   - F2. 501/502 search asks conductor or engineer, like Turn History (now
+     mixed, so "shortest time between trains" can look tiny).
+   - F3. "Jobs going spare per day" chart shows empty days as 0.
+   - F4. Phone: Turns side by side keeps the Turn column in view and hides
+     two columns on small screens.
+   - F5. Spreadsheet times written as 2026-10-20 05:00 so Excel sorts them.
+   - F6. Per-turn trends over weeks: calls per week, held 14 h+ per week.
+   - F7. Load the year archive in parts so the tab opens faster on mobile
+     data once it holds months.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7).
@@ -67,4 +79,13 @@ per week per person (A7).
 - 2026-10-26: **Fixed: Order summary and Article 18.6(b) stuck loading**
   after the Analytics update (code dropped by mistake, put back; a test now
   checks the page's functions are all there).
+- 2026-10-26: **Fixed from the Fable review**: archive counted things twice
+  when they ran over the site's first day (rests, goes spare, runarounds,
+  spare jobs; now one identity each, older copy wins: archive v2,
+  BoardAnalytics.joinOld); train list/CSV out of order with archived trains;
+  a job going spare every morning counted once; a one-check sequence blip
+  kept as a runaround; Turns side by side slow with a year of data (train
+  index); "right since" now says when it's "at least" (right from the first
+  sighting); predLog kept out of trains.json; Analytics never stays on
+  "Loading…" if something fails.
 

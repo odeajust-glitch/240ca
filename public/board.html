@@ -1170,6 +1170,8 @@ function anaSleepAll({ sleep }) {
 }
 
 // A9: how often the predicted crew was right, day by day, and how early.
+// Right from the first sighting: the site may have known sooner, so it's "at least".
+const leadNote = (x) => (x.n ? ` (${x.n}${x.fromStart ? `; ${x.fromStart} right from the first time the train showed, so at least that` : ''})` : '');
 function anaPred({ runs }) {
   const days = BoardAnalytics.accuracyByDay(runs);
   const lead = BoardAnalytics.predLead(runs);
@@ -1178,7 +1180,7 @@ function anaPred({ runs }) {
     tip: `${weekLabel(d.day)}: ${pctOf(d[k])}% (${d[k].hit} of ${d[k].n})` })), { max: 100, unit: '%', every: Math.max(1, Math.ceil(days.length / 6)) });
   const pct = (x) => (x.n ? `${pctOf(x)}% <small>${x.hit} / ${x.n}</small>` : '—');
   return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
-    <div class="strip">${anaTile(pct(st.pred.co), 'Conductor predicted right')}${anaTile(pct(st.pred.en), 'Engineer predicted right')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${lead.co.n ? ` (${lead.co.n})` : ''}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${lead.en.n ? ` (${lead.en.n})` : ''}`)}</div>
+    <div class="strip">${anaTile(pct(st.pred.co), 'Conductor predicted right')}${anaTile(pct(st.pred.en), 'Engineer predicted right')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${leadNote(lead.co)}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${leadNote(lead.en)}`)}</div>
     ${days.length ? `<section class="sheet"><header><h2>Day by day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${series('co', 'Conductor')}${series('en', 'Engineer')}</div></section>` : '<p class="empty">No predictions scored in the dates picked yet.</p>'}`;
 }
 
@@ -2215,6 +2217,13 @@ source().then(async (src) => {
   window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
 
   async function renderAnalytics() {
+    try { await drawAnalytics(); } catch (e) {
+      // Never leave the tab on "Loading…" (owner, 2026-10-26).
+      document.getElementById('view').innerHTML = `<p class="empty">Analytics hit a problem (${esc(e.message)}). Try another search or the Clear button.</p>`;
+      console.error(e);
+    }
+  }
+  async function drawAnalytics() {
     const view = document.getElementById('view');
     if (!view.querySelector('.ohead.ana')) view.innerHTML = '<p class="empty">Loading…</p>';
     let live;
@@ -2227,13 +2236,16 @@ source().then(async (src) => {
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
     found = { runarounds: [], spareJobs: [], sleep: [], ...(found || {}) };
-    // What the site has now, plus the archive from before its first day.
-    const all = [...live, ...arch.trains];
+    // What the site has now, plus the archive from before its first day;
+    // anything in both once (BoardAnalytics.joinOld, the archive's copy).
+    const { joinOld } = BoardAnalytics;
+    const all = joinOld('trains', arch.trains, live);
+    const byId = BoardAnalytics.indexTrains(all);
     const range = anaDates();
     const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
-    const runarounds = [...arch.runarounds, ...found.runarounds].filter((r) => inDates(r.taken));
-    const spareJobs = [...arch.spareJobs, ...found.spareJobs].filter((j) => inDates(j.first));
-    const sleep = [...arch.sleep, ...found.sleep].filter((z) => inDates(z.onDuty));
+    const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
+    const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
+    const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
     const workOf = (turn) => {
@@ -2241,7 +2253,7 @@ source().then(async (src) => {
       const old = (arch.work[base] || []).filter((o) => !craft || !o.crew || BoardTurns.crewHasCraft(o.crew, base, craft));
       return unique([...worked(turnsAll[base], turn), ...old]);
     };
-    const countIn = (turn, k) => [...((turnsAll[turn] || {})[k] || []).map((x) => x.seen), ...(arch[k][turn] || [])].filter(inDates).length;
+    const countIn = (turn, k) => joinOld(k, arch[k][turn] || [], (turnsAll[turn] || {})[k] || []).filter((x) => inDates(x.seen)).length;
     const took = (turn) => runarounds.filter((r) => r.turn === turn).length;
     const { inRange, runOf, trainRuns, workRuns, between, turnRow, poolOf, kindOf } = BoardAnalytics;
 
@@ -2250,11 +2262,11 @@ source().then(async (src) => {
     let body;
     anaCsv = null;
     if (!q) {
-      const runs = inRange(all.map(runOf), range);
+      const runs = BoardAnalytics.newestFirst(inRange(all.map(runOf), range));
       let turnRows = null;
       if (ana.sec === 'turns') {
         const turns = [...new Set([...Object.keys(turnsAll), ...Object.keys(arch.work)])].filter((t) => poolOf(t) === ana.pool && !BoardTurns.PLACEHOLDER.test(t));
-        turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), all, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
+        turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), byId, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
       body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep });
@@ -2268,7 +2280,7 @@ source().then(async (src) => {
       const { base } = BoardTurns.splitCraft(q);
       if (BoardTurns.PLACEHOLDER.test(base)) body = `<p class="empty">${esc(base)} is a placeholder (make-up) turn, so it isn't looked up on its own.</p>`;
       else {
-        const runs = inRange(workRuns(workOf(q), all, base), range);
+        const runs = inRange(workRuns(workOf(q), byId, base), range);
         anaCsv = { name: `turn-${q}`, runs };
         body = analyticsView(runs, 'turn', `Turn ${q}`, turnsAll[base] || arch.work[base] ? '' : 'no history for this turn in the saved checks',
           { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: sleep.filter((z) => z.turn === base) });
@@ -2283,7 +2295,7 @@ source().then(async (src) => {
       if (!stretches.length) body = '<p class="empty">Nothing found for that name code in the saved checks.</p>';
       else {
         const oldWork = old.flatMap((e) => (arch.work[e.turn] || []).filter((o) => (o.seen || o.at) >= e.from && (o.seen || o.at) <= e.to).map((o) => ({ ...o, turn: e.turn })));
-        const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), all), range);
+        const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), byId), range);
         anaCsv = { name: 'person', runs };
         // Their calls: on a turn while they were on it.
         const mine = sleep.filter((z) => stretches.some((e) => e.turn === z.turn && z.firstSeen <= e.to && z.seen >= e.from));

@@ -16,35 +16,72 @@ test('insights: runarounds once per train, jobs going spare and who filled them'
     snap('2026-10-20 0800', { onDuty: [{ train: 'Y123', backfill: [{ craft: 'CO', job: 'SR04', turn: 'B120' }] }] }),
     // Listed again two days later: a new vacancy.
     snap('2026-10-22 0600', { vacancies: [job] }),
+    // A blip: out of sequence once, then counted right.
+    snap('2026-10-22 0700', { sequence: [{ train: 'M2 22', expected: 'SR', actual: 'A', turn: 'SA01' }] }),
+    snap('2026-10-22 0705', { sequence: [{ train: 'M2 22', expected: 'SR', actual: 'SR', turn: 'SR01' }] }),
+    // The same job the next morning (22 h later) is another one.
+    snap('2026-10-23 0400', { vacancies: [job] }),
   ]);
   const f = Insights.finish(st);
   assert.deepStrictEqual(f.runarounds.map((r) => [r.train, r.expected, r.actual, r.turn, r.taken]), [['M38261 20', 'SR', 'A', 'SA04', '2026-10-20 0600']]);
-  assert.strictEqual(f.spareJobs.length, 2);
+  assert.strictEqual(f.spareJobs.length, 3);
   assert.deepStrictEqual([f.spareJobs[0].predicted, f.spareJobs[0].filledBy, f.spareJobs[0].last], ['B119', 'B120', '2026-10-20 0700']);
   assert.strictEqual(f.spareJobs[1].filledBy, undefined);
 });
 
 test('archive: keeps what falls off the site, publishes only the older part', () => {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'arch-')), 'a.json');
-  const train = (id, onDuty) => ({ id, month: '2026-10', day: onDuty.slice(0, 10), onDuty, crew: 'CO SR03', events: [{}] });
-  const turns = (at) => ({ SR03: { orders: [{ train: 'M1 01', onDuty: 'x', onDutyAt: at.slice(8, 10) + 'th ' + at.slice(11), onDutySeen: at }], spares: [{ seen: at }], rests: [] } });
+  const train = (id, onDuty) => ({ id, month: '2026-10', day: onDuty.slice(0, 10), firstSeen: onDuty, onDuty, crew: 'CO SR03', events: [{}] });
+  const turns = (at) => ({ SR03: { orders: [{ train: 'M1 01', onDuty: 'x', onDutyAt: at.slice(8, 10) + 'th ' + at.slice(11), onDutySeen: at }], spares: [{ seen: at, last: at, text: 'B0' }], rests: [] } });
+  const none = { runarounds: [], spareJobs: [], sleep: [] };
   // First build: the site runs from the 1st.
   let a = Archive.update(Archive.load(file), { trains: [train('M1 01', '2026-10-01 0500')], turns: turns('2026-10-01 0500'),
-    people: { h1: [{ turn: 'SR03', own: true, from: '2026-10-01 0400', to: '2026-10-01 0600' }] }, insights: { runarounds: [{ train: 'M1 01', taken: '2026-10-01 0500' }], spareJobs: [] } },
+    people: { h1: [{ turn: 'SR03', own: true, from: '2026-10-01 0400', to: '2026-10-01 0600' }] }, insights: { ...none, runarounds: [{ train: 'M1 01', taken: '2026-10-01 0500' }] } },
   '2026-10-01', { now: new Date('2026-10-02T12:00:00Z') });
   Archive.save(file, a);
   assert.deepStrictEqual(Archive.forSite(a, '2026-10-01').trains, []);
   // A month on, the 1st has fallen off the site: it comes from the archive.
-  a = Archive.update(Archive.load(file), { trains: [train('M9 05', '2026-11-05 0500')], turns: {}, people: {}, insights: { runarounds: [], spareJobs: [] } },
+  a = Archive.update(Archive.load(file), { trains: [train('M9 05', '2026-11-05 0500')], turns: {}, people: {}, insights: none },
     '2026-10-31', { now: new Date('2026-11-05T12:00:00Z') });
   const site = Archive.forSite(a, '2026-10-31');
   assert.deepStrictEqual(site.trains.map((r) => [r.id, r.events]), [['M1 01', undefined]]);
   assert.deepStrictEqual(site.work.SR03.map((o) => [o.train, o.at]), [['M1 01', '2026-10-01 0500']]);
-  assert.deepStrictEqual([site.spares.SR03, site.people.h1.length, site.runarounds.length], [['2026-10-01 0500'], 1, 1]);
-  assert.ok(Object.keys(a.trains).includes('M9 05 2026-10'));
+  assert.deepStrictEqual([site.spares.SR03.map((x) => x.seen), site.people.h1.length, site.runarounds.length], [['2026-10-01 0500'], 1, 1]);
+  assert.ok(a.trains.some((r) => r.id === 'M9 05'));
   // Older than the keep time: gone.
-  a = Archive.update(a, { trains: [], turns: {}, people: {}, insights: { runarounds: [], spareJobs: [] } }, '2027-10-31', { now: new Date('2027-12-01T12:00:00Z') });
-  assert.deepStrictEqual(Object.keys(a.trains), []);
+  a = Archive.update(a, { trains: [], turns: {}, people: {}, insights: none }, '2027-10-31', { now: new Date('2027-12-01T12:00:00Z') });
+  assert.deepStrictEqual(a.trains, []);
+});
+
+// Fable review (2026-10-26): something running over the site's first day
+// is in the archive and rebuilt by the site; it counts once.
+test('archive: a rest, a goes-spare, a runaround and a spare job over the first day count once', () => {
+  const A = require('../../public/board-analytics');
+  const none = { runarounds: [], spareJobs: [], sleep: [] };
+  const rest = { kind: 'Rest', until: '2nd 0600' };
+  // Built on the 1st: seen from the evening of the 1st.
+  let a = Archive.update(Archive.load('/nonexistent'), {
+    trains: [{ id: 'M1 01', month: '2026-10', firstSeen: '2026-10-01 2100', onDuty: '2026-10-02 0100', events: [{}] }],
+    turns: { SR03: { orders: [], spares: [{ seen: '2026-10-01 2200', last: '2026-10-01 2355', text: 'B0' }], rests: [{ ...rest, seen: '2026-10-01 2200' }] } },
+    people: {}, insights: { ...none, runarounds: [{ train: 'M38261 01', taken: '2026-10-01 2100' }], spareJobs: [{ train: 'Y1', turn: 'SR04', first: '2026-10-01 2200', last: '2026-10-01 2355' }] },
+  }, '2026-09-02', { now: new Date('2026-10-02T12:00:00Z') });
+  // The next build starts on the 2nd: the same things, picked up at 0000.
+  const live = {
+    trains: [{ id: 'M1 01', month: '2026-10', firstSeen: '2026-10-02 0000', onDuty: '2026-10-02 0100', events: [{}] }],
+    turns: { SR03: { orders: [], spares: [{ seen: '2026-10-02 0000', last: '2026-10-02 0200', text: 'B0' }], rests: [{ ...rest, seen: '2026-10-02 0000' }] } },
+    people: {}, insights: { ...none, runarounds: [{ train: 'M38261 01', taken: '2026-10-02 0000' }], spareJobs: [{ train: 'Y1', turn: 'SR04', first: '2026-10-02 0000', last: '2026-10-02 0100', filledBy: 'B119' }] },
+  };
+  a = Archive.update(a, live, '2026-10-02', { now: new Date('2026-10-03T12:00:00Z') });
+  assert.deepStrictEqual([a.trains.length, a.spares.SR03.length, a.rests.SR03.length, a.runarounds.length, a.spareJobs.length], [1, 1, 1, 1, 1]);
+  assert.strictEqual(a.trains[0].firstSeen, '2026-10-01 2100'); // the copy that saw the start
+  assert.strictEqual(a.spareJobs[0].filledBy, 'B119'); // learned later, kept
+  // The page joins the published part to its own data the same way.
+  const site = Archive.forSite(a, '2026-10-02');
+  assert.strictEqual(A.joinOld('rests', site.rests.SR03, live.turns.SR03.rests).length, 1);
+  assert.strictEqual(A.joinOld('spares', site.spares.SR03, live.turns.SR03.spares).length, 1);
+  assert.strictEqual(A.joinOld('runarounds', site.runarounds, live.insights.runarounds).length, 1);
+  assert.strictEqual(A.joinOld('trains', site.trains, live.trains).length, 1);
+  assert.strictEqual(A.joinOld('spareJobs', site.spareJobs, live.insights.spareJobs).length, 1);
 });
 
 // Sleep tracker (owner, 2026-10-26).

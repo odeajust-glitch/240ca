@@ -210,15 +210,15 @@
       return i < log.length ? log[i].taken : r.predicted.taken;
     };
     const lead = (k) => (since(k) ? off(since(k), r.onDuty) : null);
-    return { co: hit('co'), en: hit('en'), actual, coLead: lead('co'), enLead: lead('en') };
+    const fromStart = (k) => !!since(k) && (!(r.predLog || []).length || since(k) === r.predLog[0].taken);
+    return { co: hit('co'), en: hit('en'), actual, coLead: lead('co'), enLead: lead('en'), coFromStart: fromStart('co'), enFromStart: fromStart('en') };
   }
 
   function summarize(state) {
-    return Object.values(state.trains).map((r) => {
+    return Object.values(state.trains).map(({ predLog, ...r }) => {
       const due = r.onDuty || r.order || r.plan;
-      return { ...r, from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
+      return { ...r, predHit: predHit({ ...r, predLog }), from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
         leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken),
-        predHit: predHit(r),
         ...heldOf(r, state) };
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }

@@ -44,6 +44,8 @@ test('analytics: stats for every 148', () => {
   ];
   const runs = A.trainRuns(trains, '148');
   assert.strictEqual(runs.length, 3);
+  // Newest first whatever order they came in (site rows, then the archive's oldest first).
+  assert.deepStrictEqual(A.trainRuns([trains[0], trains[1], trains[2]].reverse().concat([row('M14831 01', '2026-10-01 0500')]), '148').map((r) => r.id), ['Q14821 21', 'M14831 20', 'M14831 22', 'M14831 01']);
   const st = A.stats(runs);
   assert.strictEqual(st.seen, 3);
   assert.strictEqual(st.ran, 2);
@@ -112,7 +114,7 @@ test('analytics: a turn side by side, prediction by day and how early', () => {
     { turn: 'SR03', trains: 2, yard: 0, todTotal: 1040, todAvg: 520, held14: 1, between: 2880, spares: 2, rests: 0, tookOutOfTurn: 1 });
   const all = trains.map(A.runOf);
   assert.deepStrictEqual(A.accuracyByDay(all).map((d) => [d.day, d.co.hit, d.en.hit]), [['2026-10-20', 1, 0], ['2026-10-22', 1, 1]]);
-  assert.deepStrictEqual(A.predLead(all), { co: { n: 2, avg: 90 }, en: { n: 1, avg: 30 } });
+  assert.deepStrictEqual(A.predLead(all), { co: { n: 2, avg: 90, fromStart: 0 }, en: { n: 1, avg: 30, fromStart: 0 } });
 });
 
 test('analytics: runarounds and jobs going spare', () => {
