@@ -1031,7 +1031,8 @@ async function reloadCats(page, url) {
 }
 
 async function main() {
-  const me = arg('--me');
+  // Turns are matched exactly; "sr03" means SR03 (owner, 2026-10-26).
+  const me = (arg('--me') || '').trim().toUpperCase();
   if (!me) {
     console.error('Usage: node scripts/board-auto.js --me SR03 [--every MINUTES]');
     process.exit(1);
