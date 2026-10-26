@@ -49,7 +49,8 @@
   // One train from trains.json as a row.
   function runOf(r) {
     return {
-      id: r.id, number: numberOf(r.id), key: `${r.id} ${r.month}`, day: r.day, from: r.from || 'sarnia', deadhead: !!r.deadhead, yard: false,
+      // Archived trains (data/archive.json) have no story to open.
+      id: r.id, number: numberOf(r.id), key: r.events ? `${r.id} ${r.month}` : null, day: r.day, from: r.from || 'sarnia', deadhead: !!r.deadhead, yard: false,
       at: r.onDuty || null, ran: !!r.onDuty, gone: !!r.gone && !r.onDuty, station: r.station || '', crew: r.crew || '',
       co: crewTurn(r.crew, 'CO'), en: crewTurn(r.crew, 'EN|LE'),
       firstPlan: r.firstPlan || null, firstOrder: r.firstOrder || null, offPlan: r.offPlan, offOrder: r.offOrder, orderChanges: r.orderChanges || 0,
@@ -144,7 +145,136 @@
     };
   }
 
-  const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, workRuns, timeOfDay, stats, WEEKDAYS };
+  // --- More (owner picked A1–A5, A8–A13 on 2026-10-26) ----------------------
+
+  // A11: runs on duty (or, not run, due) within { from, to } days, inclusive.
+  // An empty end is open.
+  function inRange(runs, range = {}) {
+    if (!range.from && !range.to) return runs;
+    return runs.filter((r) => {
+      const d = (r.at || r.day || '').slice(0, 10);
+      return d && (!range.from || d >= range.from) && (!range.to || d <= range.to);
+    });
+  }
+
+  // A1: trains on duty in each hour of the day (0–23).
+  function byHour(runs) {
+    const h = Array(24).fill(0);
+    for (const r of runs) if (r.ran && r.at) h[+r.at.slice(11, 13)]++;
+    return h;
+  }
+  // A1: trains on duty per week (weeks start Sunday, like CATS days), every
+  // week from the first to the last, empty ones included.
+  function byWeek(runs) {
+    const day = (st) => Date.UTC(+st.slice(0, 4), +st.slice(5, 7) - 1, +st.slice(8, 10)) / 864e5;
+    const ran = runs.filter((r) => r.ran && r.at);
+    if (!ran.length) return [];
+    const weekOf = (d) => d - new Date(d * 864e5).getUTCDay();
+    const counts = new Map();
+    for (const r of ran) { const w = weekOf(day(r.at)); counts.set(w, (counts.get(w) || 0) + 1); }
+    const ws = [...counts.keys()];
+    const out = [];
+    for (let w = Math.min(...ws); w <= Math.max(...ws); w += 7) out.push({ week: new Date(w * 864e5).toISOString().slice(0, 10), n: counts.get(w) || 0 });
+    return out;
+  }
+
+  // A2: time from one train (or yard job) on duty to the next.
+  function between(runs) {
+    const at = runs.filter((r) => r.ran && r.at).map((r) => T.toMin(r.at)).sort((a, b) => a - b);
+    const gaps = at.slice(1).map((m, i) => m - at[i]).filter((g) => g > 0);
+    return { n: gaps.length, avg: avg(gaps), min: gaps.length ? Math.min(...gaps) : null };
+  }
+
+  // A3: one turn's line in "turns side by side".
+  // extra: { spares, rests, tookOutOfTurn } counts in the same dates.
+  function turnRow(turn, runs, extra = {}) {
+    const st = stats(runs);
+    const b = between(runs);
+    return { turn, trains: st.ran - st.yard, yard: st.yard, todTotal: runs.reduce((n, r) => n + (r.timeOnDuty || 0), 0), todAvg: st.timeOnDuty.avg,
+      held14: st.held.over14, between: b.avg, spares: extra.spares || 0, rests: extra.rests || 0, tookOutOfTurn: extra.tookOutOfTurn || 0 };
+  }
+
+  // A8 + A13: line-up trains by number: how reliable the plan was, how
+  // many never ran, deadheads never called.
+  function byNumber(runs) {
+    const groups = new Map();
+    for (const r of runs) {
+      if (r.yard) continue;
+      const g = groups.get(r.number) || { number: r.number, seen: 0, ran: 0, neverRan: 0, deadheads: 0, dhNeverCalled: 0, plan: [] };
+      g.seen++;
+      if (r.ran) g.ran++;
+      if (r.gone) g.neverRan++;
+      if (r.deadhead) g.deadheads++;
+      if (r.flag === 'deadhead') g.dhNeverCalled++;
+      if (r.offPlan != null) g.plan.push(r.offPlan);
+      groups.set(r.number, g);
+    }
+    return [...groups.values()].map(({ plan, ...g }) => ({ ...g, planN: plan.length, planAvg: avg(plan.map(Math.abs)),
+      planWorst: plan.length ? plan.reduce((w, x) => (Math.abs(x) > Math.abs(w) ? x : w), 0) : null,
+      late: plan.filter((x) => x > 15).length, early: plan.filter((x) => x < -15).length }));
+  }
+
+  // A9: prediction right, day by day, and how early the right crew showed.
+  function accuracyByDay(runs) {
+    const days = new Map();
+    for (const r of runs) {
+      if (!r.ran || !r.predHit || !r.at) continue;
+      const d = r.at.slice(0, 10);
+      const x = days.get(d) || { day: d, co: { hit: 0, n: 0 }, en: { hit: 0, n: 0 } };
+      for (const k of ['co', 'en']) if (r.predHit[k] != null) { x[k].n++; if (r.predHit[k]) x[k].hit++; }
+      days.set(d, x);
+    }
+    return [...days.values()].sort((a, b) => (a.day < b.day ? -1 : 1));
+  }
+  function predLead(runs) {
+    const lead = (k) => runs.map((r) => r.predHit && r.predHit[k + 'Lead']).filter((x) => x != null && x >= 0);
+    return { co: { n: lead('co').length, avg: avg(lead('co')) }, en: { n: lead('en').length, avg: avg(lead('en')) } };
+  }
+
+  // A4: trains that went out of sequence (data/analytics.json runarounds),
+  // by the pool the sequence said and the turn that took it.
+  const SEQ_POOLS = { SR: 'Chain Gang (SR)', A: 'A pool', B: 'B pool', S5: '501/502' };
+  function runaroundStats(list) {
+    return {
+      n: list.length,
+      shouldHave: top(list.map((r) => SEQ_POOLS[r.expected] || r.expected), 9),
+      wentTo: top(list.map((r) => SEQ_POOLS[r.actual] || r.actual), 9),
+      tookIt: top(list.map((r) => r.turn), 10),
+    };
+  }
+
+  // A5: jobs going spare (data/analytics.json spareJobs): per day, who
+  // filled them, and how often the expected spare turn was the one.
+  function spareJobStats(jobs) {
+    const perDay = new Map();
+    for (const j of jobs) perDay.set(j.first.slice(0, 10), (perDay.get(j.first.slice(0, 10)) || 0) + 1);
+    const filled = jobs.filter((j) => j.filledBy);
+    const checked = filled.filter((j) => j.predicted);
+    return {
+      n: jobs.length,
+      perDay: [...perDay.entries()].sort().map(([day, n]) => ({ day, n })),
+      filled: filled.length,
+      filledBy: top(filled.map((j) => j.filledBy), 10),
+      byPool: top(jobs.map((j) => `${j.pool} ${j.cc}`.trim()), 9),
+      predicted: { hit: checked.filter((j) => j.predicted === j.filledBy).length, n: checked.length },
+    };
+  }
+
+  // A10: any list of runs as a spreadsheet (CSV), newest first.
+  function csv(runs) {
+    const cols = [['On duty', (r) => r.at || ''], ['Train', (r) => r.id], ['Number', (r) => r.number], ['From', (r) => (r.from === 'mac' ? 'Toronto' : 'Sarnia')],
+      ['Yard', (r) => (r.yard ? 'yes' : '')], ['Deadhead', (r) => (r.deadhead ? 'yes' : '')], ['Never ran', (r) => (r.gone ? 'yes' : '')],
+      ['Turn', (r) => r.turn || ''], ['Working', (r) => (r.as || '').replace(/^working /, '')], ['Crew', (r) => r.crew], ['Worked with', (r) => (r.partners || []).join(' ')],
+      ['First plan', (r) => r.firstPlan || ''], ['First order', (r) => r.firstOrder || ''], ['Plan off (min)', (r) => r.offPlan ?? ''], ['Order off (min)', (r) => r.offOrder ?? ''],
+      ['Order changes', (r) => r.orderChanges || 0], ['Time on duty (min)', (r) => r.timeOnDuty ?? ''], ['Off duty in Toronto (min)', (r) => r.heldMin ?? ''],
+      ['Flag', (r) => r.flag || ''], ['Conductor predicted right', (r) => (r.predHit && r.predHit.co != null ? (r.predHit.co ? 'yes' : 'no') : '')],
+      ['Engineer predicted right', (r) => (r.predHit && r.predHit.en != null ? (r.predHit.en ? 'yes' : 'no') : '')]];
+    const cell = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    return [cols.map((c) => c[0]), ...runs.map((r) => cols.map((c) => c[1](r)))].map((row) => row.map(cell).join(',')).join('\r\n') + '\r\n';
+  }
+
+  const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, workRuns, timeOfDay, stats, WEEKDAYS,
+    inRange, byHour, byWeek, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);

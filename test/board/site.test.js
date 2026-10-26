@@ -91,7 +91,7 @@ test('site: deploy sends every file digest and uploads only what Netlify asks fo
   const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
   assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
   const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-analytics.js', '/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/index.json', '/data/people.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
+  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-analytics.js', '/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/analytics.json', '/data/archive.json', '/data/index.json', '/data/people.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
   assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
   assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
   assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
@@ -326,9 +326,9 @@ test('site: when do I go, for every turn the newest check can answer', () => {
 // Owner, 2026-10-22: how often the predicted crew was right.
 test('orders: predicted crew is scored against who went on duty', () => {
   const r = { onDuty: '2026-10-22 1445', crew: 'EN SD05 · CO SR07', predicted: { co: 'SR03', en: 'SD05', taken: '2026-10-22 1200' } };
-  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' } });
+  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' }, coLead: null, enLead: 165 });
   assert.equal(BoardTrains.predHit({ ...r, onDuty: null }), null);
-  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: 'x' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' } });
+  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: '2026-10-22 1400' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' }, coLead: 45, enLead: null });
   // Tracked from the line-up rows' predictions, the last one before on duty.
   const st = BoardTrains.track([
     { taken: '2026-10-22 1100', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'PLN', order: '22nd 1500', pred: { co: 'SR03', en: 'SD05' } }], onDuty: [] },
@@ -339,6 +339,8 @@ test('orders: predicted crew is scored against who went on duty', () => {
   const row = BoardTrains.summarize(st).find((x) => x.id === 'M38261 22');
   assert.deepStrictEqual(row.predicted, { co: 'SR07', en: 'SD05', taken: '2026-10-22 1300' });
   assert.deepStrictEqual([row.predHit.co, row.predHit.en], [true, true]);
+  // Right since (owner, 2026-10-26): SR07 from 1300, SD05 from the first check.
+  assert.deepStrictEqual([row.predHit.coLead, row.predHit.enLead], [105, 225]);
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {

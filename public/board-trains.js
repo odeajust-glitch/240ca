@@ -83,7 +83,12 @@
           if (from === 'mac') r.avail = avail;
           // The crew the site predicted, last seen before it went on duty
           // (owner, 2026-10-22: how often the prediction was right).
-          if (t.pred && !r.onDuty) r.predicted = { ...t.pred, taken: s.taken };
+          if (t.pred && !r.onDuty) {
+            r.predicted = { ...t.pred, taken: s.taken };
+            // Each change of prediction, to see how early it was right (owner, 2026-10-26).
+            const last = (r.predLog ||= [])[r.predLog.length - 1];
+            if (!last || last.co !== t.pred.co || last.en !== t.pred.en) r.predLog.push({ taken: s.taken, co: t.pred.co, en: t.pred.en });
+          }
           if (t.status === 'ORD') {
             if (!r.firstOrder) {
               r.firstOrder = r.order = at;
@@ -196,7 +201,16 @@
     if (!r.onDuty || !r.predicted || !r.crew) return null;
     const actual = { co: crewTurn(r.crew, 'CO'), en: crewTurn(r.crew, 'EN|LE') };
     const hit = (k) => (r.predicted[k] && actual[k] ? r.predicted[k] === actual[k] : null);
-    return { co: hit('co'), en: hit('en'), actual };
+    // Right since: the first check of the last unbroken run of right predictions.
+    const since = (k) => {
+      if (!hit(k)) return null;
+      const log = r.predLog || [];
+      let i = log.length;
+      while (i > 0 && log[i - 1][k] === actual[k]) i--;
+      return i < log.length ? log[i].taken : r.predicted.taken;
+    };
+    const lead = (k) => (since(k) ? off(since(k), r.onDuty) : null);
+    return { co: hit('co'), en: hit('en'), actual, coLead: lead('co'), enLead: lead('en') };
   }
 
   function summarize(state) {

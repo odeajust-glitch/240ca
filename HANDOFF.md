@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 133 tests (`npm test`)
+2026-10-26) · 140 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -235,8 +235,20 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   line-up trains. Only covers what the site keeps (30 days by default).
   `public/board-analytics.js` (copied by site.js, hidden by relay.js).
   No Worker change.
-- Owner wants ideas for what else goes in Analytics: listed as A1–A13 in
-  TODO.md, owner to pick. Then back to TODO items 1–5.
+- Owner picked A1–A5 and A8–A13 (not A6 pay period, A7 hours per week);
+  all built, same session. New: `lib/board/insights.js` (runarounds from
+  each snapshot's `sequence`, jobs going spare from `vacancies` + who
+  filled them from `onDuty[].backfill`) → data/analytics.json;
+  `lib/board/archive.js` (BoardChecker\analytics-archive.json, kept
+  BOARD_ARCHIVE_DAYS=365; site gets data/archive.json = only the part older
+  than its first day, page adds it); BoardTrains keeps `predLog` and
+  predHit gives `coLead`/`enLead` (how long before on duty the prediction
+  was right and stayed right). Page: dates, sections (Trains, Turns side by
+  side, Runarounds, Jobs going spare, Predictions), column charts (one
+  series, accent colour, one tooltip `.ctip`, table under each), CSV.
+  ❓ Not seen on real checks yet: spare-job matching (job turn = backfill
+  `job`) and runarounds depend on what CATS shows.
+- Next: back to TODO items 1–5 (runaround log first, owner to describe).
 
 **Waiting on the owner / to watch:**
 - ❓ Did a fresh sign-in restart CN's 24 h? (window: "since the last sign-in")

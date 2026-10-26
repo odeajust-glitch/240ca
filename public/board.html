@@ -359,6 +359,37 @@
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
   .anote b { color: var(--ink); }
   table.orders tr.nolink { cursor: default; }
+  table.orders tr.nolink:hover td { background: none; }
+  .agrid.wide { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .strip.two { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .secpick { margin-bottom: 14px; }
+  .secpick .tabs { border-bottom: 0; padding-bottom: 6px; }
+  .poolpick { font-size: 12px; color: var(--soft); display: flex; gap: 6px; align-items: center; }
+  .poolpick select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 4px 6px; }
+  .qbtn { background: none; border: 0; padding: 0; font: 600 14px/1.3 var(--mono); color: var(--accent); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .abtns { display: flex; gap: 8px; align-items: flex-end; }
+  .abtns button { background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 10px; font: inherit; font-size: 13.5px; cursor: pointer; min-height: 36px; }
+  .ohead input[type="date"] { width: auto; text-transform: none; font-family: var(--body); }
+  /* Charts: one series, the accent colour, columns 24 px at most with a 4 px
+     rounded top, a 2 px gap, hairline grid; one tooltip (.ctip). */
+  .chart h3 .muted { text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 400; }
+  .cplot { position: relative; height: 140px; margin: 6px 0 0 30px; border-bottom: 1px solid var(--rule); }
+  .cgl { position: absolute; left: 0; right: 0; border-top: 1px solid var(--rule-soft); }
+  .cgl span { position: absolute; right: calc(100% + 6px); top: -7px; font: 11px/1 var(--mono); color: var(--soft); }
+  .cbars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+  .cbar { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: default; }
+  .cbar i { display: block; width: 100%; max-width: 24px; background: var(--accent); border-radius: 4px 4px 0 0; }
+  .cbar:hover i, .cbar:focus-visible i { opacity: 0.7; }
+  .cbar:focus { outline: none; }
+  .cbar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cx { display: flex; gap: 2px; margin-left: 30px; font: 11px/1.6 var(--mono); color: var(--soft); }
+  .cx span { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: visible; }
+  .ctable { margin-top: 6px; font-size: 13px; }
+  .ctable summary { cursor: pointer; color: var(--soft); font-size: 12.5px; }
+  .ctable table { margin-top: 4px; border-collapse: collapse; }
+  .ctable td { padding: 2px 0; border-bottom: 1px dotted var(--rule-soft); }
+  .ctip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--sheet); font: 600 13px/1.3 var(--body); padding: 5px 8px; border-radius: 4px; max-width: 260px; }
+  .ctip[hidden] { display: none; }
   @media (max-width: 700px) {
     .ohead .when { font-size: 30px; }
     .ohead .ctl { margin-left: 0; }
@@ -901,13 +932,20 @@ const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia
 const FROM = { sarnia: 'Sarnia', mac: 'Toronto' };
 
 // --- Analytics (owner, 2026-10-26) -----------------------------------------
-// Numbers across the saved checks for a train number (148 = every x148xx),
-// a turn or a person's name code, from BoardAnalytics.stats.
+// Numbers across the saved checks (and, from data/archive.json, from before
+// the site's first day) for a train number (148 = every x148xx), a turn or a
+// person's name code, from BoardAnalytics. The owner then picked: charts,
+// time between trains, turns side by side, runarounds, jobs going spare,
+// least reliable trains, never ran, prediction accuracy over time, a
+// spreadsheet download and dates.
+const pctOf = (x) => (x.n ? Math.round((100 * x.hit) / x.n) : null);
+const anaTile = (v, l, alert) => `<div class="stat${alert ? ' alert' : ''}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+const durOr = (m) => (m == null ? '—' : esc(dur(m)));
 function anaTiles(st, kind) {
-  const tile = (v, l, alert) => `<div class="stat${alert ? ' alert' : ''}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}% <small>${x.hit} / ${x.n}</small>` : '—');
+  const tile = anaTile;
+  const pct = (x) => (x.n ? `${pctOf(x)}% <small>${x.hit} / ${x.n}</small>` : '—');
   const t = st.time;
-  const d = (m) => (m == null ? '—' : esc(dur(m)));
+  const d = durOr;
   const first = kind === 'train'
     ? tile(`${st.ran} <small>/ ${st.seen}</small>`, 'Went on duty (of trains seen)')
     : tile(`${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`, 'Trains worked');
@@ -927,16 +965,50 @@ function anaTiles(st, kind) {
       ${tile(d(st.offPlan.avg), `Average off, first plan vs on duty${st.offPlan.n ? ` (${st.offPlan.late} late, ${st.offPlan.early} early)` : ''}`)}
       ${tile(d(st.offOrder.avg), 'Average off, first order vs on duty')}
       ${tile(st.orderChanged, 'Order time changed after ordering')}
-      ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${Math.round((100 * st.pred.en.hit) / st.pred.en.n)}%` : ''}`)}</div>`;
+      ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${pctOf(st.pred.en)}%` : ''}`)}</div>`;
 }
 // A "most often" list; `q` makes each name a button that searches it.
 function anaList(title, rows, q) {
   if (!rows.length) return `<div><h3>${esc(title)}</h3><p class="empty" style="padding:0">None yet.</p></div>`;
-  return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
+  return `<div><h3>${esc(title)}</h3><ul class="alist">${rows.map(([name, n]) => `<li>${q && !BoardTurns.PLACEHOLDER.test(name) ? `<button type="button" data-q="${esc(name)}" data-kind="${q}">${esc(name)}</button>` : `<span>${esc(name)}</span>`}<b>${n}</b></li>`).join('')}</ul></div>`;
 }
 function anaWeek(st) {
   return `<div><h3>Days of the week</h3><ul class="alist">${st.weekdays.map(([day, n]) => `<li><span>${day}</span><b>${n}</b></li>`).join('')}</ul></div>`;
 }
+
+// A column chart: one series in the accent colour, a hairline grid, each
+// column tappable for its value (one tooltip, wired in renderAnalytics) and
+// the same numbers as a table underneath. items: [{ label, value, tip }].
+// every: label every Nth column. max: a fixed top (100 for percentages).
+function niceMax(v) {
+  if (v <= 1) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  return [1, 2, 5, 10].map((m) => m * p).find((m) => m >= v);
+}
+function colChart(title, items, { max = null, every = 1, unit = '', note = '' } = {}) {
+  if (!items.length) return '';
+  const top = max || niceMax(Math.max(...items.map((x) => x.value)));
+  const ticks = [top, top / 2].filter((v) => Number.isInteger(v));
+  const grid = ticks.map((v) => `<div class="cgl" style="bottom:${(100 * v) / top}%"><span>${v}${unit}</span></div>`).join('');
+  const bars = items.map((x) => `<div class="cbar" tabindex="0" role="img" data-tip="${esc(x.tip)}" aria-label="${esc(x.tip)}"><i style="height:${(100 * x.value) / top}%"></i></div>`).join('');
+  const labels = items.map((x, i) => `<span>${i % every === 0 ? esc(x.label) : ''}</span>`).join('');
+  return `<div class="chart"><h3>${esc(title)}${note ? ` <span class="muted">${esc(note)}</span>` : ''}</h3>
+    <div class="cplot">${grid}<div class="cbars">${bars}</div></div><div class="cx">${labels}</div>
+    <details class="ctable"><summary>Show as a table</summary><table><tbody>${items.map((x) => `<tr><td>${esc(x.tip)}</td></tr>`).join('')}</tbody></table></details></div>`;
+}
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+const weekLabel = (day) => when(day + ' 0000').day.replace(/^\w+, /, '');
+function hourChart(runs) {
+  const h = BoardAnalytics.byHour(runs);
+  const p2 = (n) => String(n).padStart(2, '0');
+  return colChart('On duty by hour of day', h.map((n, i) => ({ label: p2(i), value: n, tip: `${p2(i)}00–${p2(i)}59: ${plural(n, 'train')}` })), { every: 3 });
+}
+function weekChart(runs) {
+  const w = BoardAnalytics.byWeek(runs);
+  return colChart('On duty per week', w.map((x) => ({ label: weekLabel(x.week), value: x.n, tip: `Week of ${weekLabel(x.week)}: ${plural(x.n, 'train')}` })), { every: Math.max(1, Math.ceil(w.length / 6)), note: '(weeks start Sunday)' });
+}
+const anaCharts = (runs) => `<section class="sheet"><header><h2>When</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${hourChart(runs)}${weekChart(runs)}</div></section>`;
+
 // Every run, newest first; a line-up train opens in the Order summary.
 function anaTable(runs, kind) {
   const LIMIT = 300;
@@ -945,7 +1017,7 @@ function anaTable(runs, kind) {
     const held = r.heldMin != null ? `${r.heldMin >= BoardTrains.HELD_LIMIT ? '<span class="bad">' : '<span>'}${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span>` : '—';
     const crew = kind === 'train' ? r.crew : (r.partners || []).join(' · ');
     return `<tr class="row${r.key ? '' : ' nolink'}"${r.key ? ` data-key="${esc(r.key)}" data-day="${esc(r.day)}"` : ''}>
-      <td class="num"><b>${r.at ? esc(dt(r.at)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
+      <td class="num"><b>${r.at ? esc(dt(r.at)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b>${r.at ? `<div class="crew">${esc(when(r.at).day.replace(/^\w+, /, ''))}</div>` : ''}</td>
       <td class="num"><b class="id">${esc(r.id)}</b>${r.yard ? ' <span class="chip">yard</span>' : ''}${r.deadhead ? ' <span class="chip">DH</span>' : ''}${r.from === 'mac' ? ' <span class="from">Toronto</span>' : ''}${r.as ? `<div class="crew">${esc(r.as)}</div>` : ''}${r.turn && kind === 'code' ? `<div class="crew">on ${esc(r.turn)}</div>` : ''}${fl}</td>
       <td class="num">${crew ? esc(crew) : '—'}</td>
       <td>${offCell(r.offPlan)}</td>
@@ -957,132 +1029,109 @@ function anaTable(runs, kind) {
     <tbody>${rows}</tbody></table></div></section>`;
 }
 // The whole answer for one search. kind: 'train' | 'turn' | 'code'.
-function analyticsView(runs, kind, title, note) {
+// extra: { between, spares, took } for a turn (spares/took left out for a person);
+// { runarounds } for a train number.
+function analyticsView(runs, kind, title, note, extra = {}) {
+  if (!runs.length) return `<p class="anote"><b>${esc(title)}</b>${note ? ` · ${note}` : ''}</p><p class="empty">Nothing found for that in the saved checks and dates picked.</p>`;
   const st = BoardAnalytics.stats(runs);
-  if (!runs.length) return `<p class="anote">${note || ''}</p><p class="empty">Nothing found for that in the saved checks.</p>`;
   const span = st.first ? `${esc(dt(st.first))} to ${esc(dt(st.last))}` : '';
   const lists = kind === 'train'
     ? [anaList('Conductors, most often', st.conductors, 'turn'), anaList('Engineers, most often', st.engineers, 'turn'), anaList('Pools that took it', st.pools), anaWeek(st)]
     : [anaList('Trains worked most', st.numbers.filter(([n]) => /^(DH[A-Z]*)?\d{3}$/.test(n)), 'train'), anaList('Worked with most', st.partners, 'turn'), anaWeek(st)];
+  // A2: time between trains (turn or person); went spare and runarounds (turn).
+  const b = extra.between;
+  const more = kind === 'train'
+    ? (extra.runarounds ? `<p class="anote">${plural(extra.runarounds, 'run')} went to a different pool than the calling sequence said (see Runarounds with nothing searched).</p>` : '')
+    : `<div class="strip${extra.spares == null ? ' two' : ''}">${anaTile(durOr(b.avg), `Average time between trains${b.n ? ` (${b.n})` : ''}, on duty to next on duty`)}${anaTile(durOr(b.min), 'Shortest time between trains')}${
+      extra.spares == null ? '' : anaTile(extra.spares, 'Times it went spare (B0, ** or its train going spare)') + anaTile(extra.took, 'Trains it took out of sequence')}</div>`;
   return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
-    ${anaTiles(st, kind)}
+    ${anaTiles(st, kind)}${more}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${lists.join('')}</div></section>
     ${anaTable(runs, kind)}`;
 }
-// Nothing searched yet: every line-up train the site keeps.
-function analyticsOverview(all) {
-  const runs = all.map(BoardAnalytics.runOf);
+
+// Nothing searched: everything, in sections.
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['runarounds', 'Runarounds'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
+const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
+function analyticsOverview(o) {
+  const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
+  const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
+  const body = { trains: anaTrains, turns: anaTurns, runarounds: anaRunarounds, spare: anaSpare, pred: anaPred }[o.sec] || anaTrains;
+  return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
+}
+function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
-  return `<p class="anote"><b>All line-up trains</b> the site keeps${st.first ? ` · on duty ${esc(dt(st.first))} to ${esc(dt(st.last))}` : ''}. Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code.</p>
-    ${anaTiles(st, 'train')}
+  const groups = BoardAnalytics.byNumber(runs);
+  const num = (n) => `<button type="button" class="qbtn" data-q="${esc(n)}" data-kind="train">${esc(n)}</button>`;
+  // A8: least reliable trains (2 or more with a plan to compare).
+  const worst = groups.filter((g) => g.planN >= 2).sort((a, b) => b.planAvg - a.planAvg).slice(0, 20);
+  const a8 = worst.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>Ran</th><th>Compared</th><th>Average off</th><th>Worst</th><th>Late · early</th></tr></thead><tbody>${worst.map((g) => `<tr class="nolink">
+      <td class="num">${num(g.number)}</td><td class="num">${g.ran}</td><td class="num">${g.planN}</td><td class="num">${durOr(g.planAvg)}</td><td>${offCell(g.planWorst)}</td><td class="num">${g.late} · ${g.early}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">Not enough trains with a plan to compare yet.</p>';
+  // A13: never ran (cancelled or on duty between checks), deadheads never called.
+  const never = groups.filter((g) => g.neverRan || g.dhNeverCalled).sort((a, b) => (b.neverRan + b.dhNeverCalled) - (a.neverRan + a.dhNeverCalled) || b.seen - a.seen).slice(0, 25);
+  const a13 = never.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>Seen</th><th>Ran</th><th>Never ran</th><th>Deadheads</th><th>Deadheads never called</th></tr></thead><tbody>${never.map((g) => `<tr class="nolink">
+      <td class="num">${num(g.number)}</td><td class="num">${g.seen}</td><td class="num">${g.ran}</td><td class="num"><b>${g.neverRan}</b></td><td class="num">${g.deadheads}</td><td class="num">${g.dhNeverCalled}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">Every train seen went on duty.</p>';
+  return `<p class="anote"><b>All line-up trains</b>${st.first ? ` · on duty ${esc(dt(st.first))} to ${esc(dt(st.last))}` : ''}</p>
+    ${anaTiles(st, 'train')}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2><span class="meta">tap a train number or turn to look it up</span></header><div class="agrid">
-      ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}</div></section>`;
+      ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}</div></section>
+    <section class="sheet"><header><h2>Least reliable trains</h2><span class="meta">first plan vs on duty, average either way</span></header>${a8}</section>
+    <section class="sheet"><header><h2>Never ran, by train number</h2><span class="meta">left the line-up without showing on the Call Board (cancelled, or on duty between checks)</span></header>${a13}</section>`;
+}
+// A3: every turn in a pool, side by side.
+function anaTurns({ turnRows, pool }) {
+  const pick = `<label class="poolpick">Pool <select id="apool">${ANA_POOLS.map(([k, l]) => `<option value="${k}"${k === pool ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
+  const rows = [...(turnRows || [])].sort((a, b) => b.trains + b.yard - (a.trains + a.yard) || (a.turn < b.turn ? -1 : 1));
+  const body = rows.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Turn</th><th>Trains</th><th>Yard jobs</th><th>Time on duty to Toronto (total)</th><th>Average trip</th><th>Held 14 h+</th><th>Average between trains</th><th>Went spare</th><th>Rest / hold</th><th>Took out of sequence</th></tr></thead><tbody>${rows.map((r) => `<tr class="nolink">
+      <td class="num"><button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button></td><td class="num"><b>${r.trains}</b></td><td class="num">${r.yard}</td><td class="num">${r.todTotal ? esc(dur(r.todTotal)) : '—'}</td><td class="num">${durOr(r.todAvg)}</td>
+      <td class="num">${r.held14 ? `<span class="bad">${r.held14}</span>` : 0}</td><td class="num">${durOr(r.between)}</td><td class="num">${r.spares}</td><td class="num">${r.rests}</td><td class="num">${r.tookOutOfTurn}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">No turns from that pool in the saved checks.</p>';
+  return `<section class="sheet"><header><h2>Turns side by side</h2>${pick}</header>
+    <p class="anote" style="margin:10px 14px">Trains and yard jobs each turn worked in the dates picked. Time on duty is Sarnia to Toronto only (from the bunkhouse rest), so trips home and yard jobs aren't in it. Tap a turn for its own page.</p>${body}</section>`;
+}
+// A4: trains that went to another pool than the calling sequence said.
+function anaRunarounds({ runarounds }) {
+  const st = BoardAnalytics.runaroundStats(runarounds);
+  const latest = [...runarounds].reverse().slice(0, 40);
+  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th>Seen</th><th>Train</th><th>Sequence said</th><th>Went to</th><th>Turn</th></tr></thead><tbody>${latest.map((r) => `<tr class="nolink">
+      <td class="num">${stampBtn(r.taken)}</td><td class="num"><b>${esc(r.train)}</b></td><td>${esc(BoardAnalytics.SEQ_POOLS[r.expected] || r.expected)}</td><td>${esc(BoardAnalytics.SEQ_POOLS[r.actual] || r.actual)}</td>
+      <td class="num">${r.turn ? `<button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : '—'}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">No trains out of sequence in the dates picked.</p>';
+  return `<p class="anote">A train counts when the Call Board shows it went to a different pool than the calling sequence says (the same check as "To check"). Tap a time to open that snapshot.</p>
+    <div class="strip">${anaTile(st.n, 'Trains out of sequence', st.n > 0)}${anaTile(st.shouldHave[0] ? esc(st.shouldHave[0][0]) : '—', 'Pool that lost the most')}${anaTile(st.wentTo[0] ? esc(st.wentTo[0][0]) : '—', 'Pool that got the most')}${anaTile(st.tookIt[0] ? esc(st.tookIt[0][0]) : '—', 'Turn that took the most')}</div>
+    <section class="sheet"><header><h2>By pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
+    <section class="sheet"><header><h2>Latest</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// A5: jobs going spare and who filled them.
+function anaSpare({ spareJobs }) {
+  const st = BoardAnalytics.spareJobStats(spareJobs);
+  const chart = colChart('Jobs going spare per day', st.perDay.map((x) => ({ label: weekLabel(x.day), value: x.n, tip: `${weekLabel(x.day)}: ${plural(x.n, 'job')}` })), { every: Math.max(1, Math.ceil(st.perDay.length / 6)) });
+  const latest = [...spareJobs].reverse().slice(0, 40);
+  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th>First listed</th><th>Job</th><th>Pool</th><th>Turn</th><th>Expected to fill</th><th>Filled by</th></tr></thead><tbody>${latest.map((j) => `<tr class="nolink">
+      <td class="num">${stampBtn(j.first)}</td><td class="num"><b>${esc(j.train)}</b>${j.yard ? ' <span class="chip">yard</span>' : ''}</td><td>${esc(`${j.pool || ''} ${j.cc || ''}`.trim())}</td><td class="num">${esc(j.turn || '')}</td>
+      <td class="num">${esc(j.predicted || '—')}</td><td class="num">${j.filledBy ? `<b>${esc(j.filledBy)}</b>${j.predicted ? (j.predicted === j.filledBy ? ' <span class="ok">✓</span>' : ' <span class="bad">✗</span>') : ''}` : '<span class="muted">not seen</span>'}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">No jobs going spare in the dates picked.</p>';
+  return `<p class="anote">Jobs on the vacancy list (option 5, yardmaster jobs left out). "Filled by" is the spare person seen on the Call Board working that job's turn; jobs filled where the board checker couldn't match a name show "not seen".</p>
+    <div class="strip">${anaTile(st.n, 'Jobs going spare')}${anaTile(st.perDay.length ? (st.n / st.perDay.length).toFixed(1) : '—', 'Average per day (days with any)')}${anaTile(`${st.filled} <small>/ ${st.n}</small>`, 'Seen filled')}${anaTile(st.predicted.n ? `${pctOf(st.predicted)}% <small>${st.predicted.hit} / ${st.predicted.n}</small>` : '—', 'Expected spare turn was the one')}</div>
+    <section class="sheet"><header><h2>Per day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${chart}</div></section>
+    <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${anaList('Filled by, most often', st.filledBy, 'turn')}${anaList('Jobs by pool', st.byPool)}</div></section>
+    <section class="sheet"><header><h2>Latest</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// A9: how often the predicted crew was right, day by day, and how early.
+function anaPred({ runs }) {
+  const days = BoardAnalytics.accuracyByDay(runs);
+  const lead = BoardAnalytics.predLead(runs);
+  const st = BoardAnalytics.stats(runs);
+  const series = (k, who) => colChart(`${who} predicted right, per day`, days.filter((d) => d[k].n).map((d) => ({ label: weekLabel(d.day), value: pctOf(d[k]),
+    tip: `${weekLabel(d.day)}: ${pctOf(d[k])}% (${d[k].hit} of ${d[k].n})` })), { max: 100, unit: '%', every: Math.max(1, Math.ceil(days.length / 6)) });
+  const pct = (x) => (x.n ? `${pctOf(x)}% <small>${x.hit} / ${x.n}</small>` : '—');
+  return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
+    <div class="strip">${anaTile(pct(st.pred.co), 'Conductor predicted right')}${anaTile(pct(st.pred.en), 'Engineer predicted right')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${lead.co.n ? ` (${lead.co.n})` : ''}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${lead.en.n ? ` (${lead.en.n})` : ''}`)}</div>
+    ${days.length ? `<section class="sheet"><header><h2>Day by day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${series('co', 'Conductor')}${series('en', 'Engineer')}</div></section>` : '<p class="empty">No predictions scored in the dates picked yet.</p>'}`;
 }
 
-function ordersView(all, day, openId, find, from = 'all') {
-  if (from !== 'all') all = all.filter((r) => (r.from || 'sarnia') === from);
-  const days = [...new Set(all.map((r) => r.day))].sort().reverse();
-  if (!days.length) return '<p class="empty">No trains yet. They appear here once the board checker has saved a few checks.</p>';
-  if (!days.includes(day)) day = days[0];
-  // In time order: on duty, else the latest order or plan.
-  const due = (r) => r.onDuty || r.order || r.plan || r.firstSeen;
-  const rows = all.filter((r) => r.day === day).sort((a, b) => (due(a) < due(b) ? -1 : due(a) > due(b) ? 1 : 0));
-  const done = rows.filter((r) => r.onDuty);
-  const vsPlan = done.filter((r) => r.offPlan != null);
-  const avg = vsPlan.length ? Math.round(vsPlan.reduce((n, r) => n + Math.abs(r.offPlan), 0) / vsPlan.length) : null;
-  // Same bands as the colours in the table.
-  const green = vsPlan.filter((r) => Math.abs(r.offPlan) < OFF_YELLOW).length;
-  const yellow = vsPlan.filter((r) => Math.abs(r.offPlan) >= OFF_YELLOW && Math.abs(r.offPlan) <= OFF_RED).length;
-  const red = vsPlan.filter((r) => Math.abs(r.offPlan) > OFF_RED).length;
-  const changed = rows.filter((r) => r.orderChanges > 0).length;
-  const tod = rows.filter((r) => r.timeOnDuty != null).map((r) => r.timeOnDuty);
-  const flagged = rows.filter((r) => r.flag);
-  // How often the predicted crew was right (owner, 2026-10-22): this day and
-  // the 7 days up to it, conductors and engineers counted separately.
-  const score = (list, k) => { const s = list.map((r) => r.predHit && r.predHit[k]).filter((x) => x != null); return { hit: s.filter(Boolean).length, n: s.length }; };
-  const week = all.filter((r) => r.day <= day && r.day > new Date(Date.parse(day + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10));
-  const pct = (x) => (x.n ? `${Math.round((100 * x.hit) / x.n)}%` : '—');
-  const acc = { co: score(rows, 'co'), en: score(rows, 'en'), wco: score(week, 'co'), wen: score(week, 'en') };
-  // Deadheads on a line-up that never reached the Call Board (owner, 2026-10-25).
-  const dhGone = (list) => list.filter((r) => r.flag === 'deadhead');
-  const w = when(day + ' 0000');
-  const q = find.trim().toUpperCase();
-  const body = rows.map((r) => {
-    const key = `${r.id} ${r.month}`;
-    const hit = q && r.id.replace(/\s+/g, '').includes(q.replace(/\s+/g, ''));
-    const fl = r.flag ? (r.flag === 'nonSarnia' ? ' fl-red' : ' fl-yellow') : '';
-    const tr = `<tr class="row${key === openId ? ' open' : ''}${hit ? ' hit' : ''}${fl}" data-key="${esc(key)}">
-      <td class="num"><b class="id">${esc(r.id)}</b><span class="from">${FROM[r.from || 'sarnia']}</span>${r.deadhead ? ' <span class="chip">DH</span>' : ''}${r.flag ? `<span class="flagtxt">${esc(FLAG_TEXT[r.flag])}</span>` : ''}</td>
-      <td class="num">${esc(dt(r.firstSeen))}</td>
-      <td class="num">${esc(dt(r.firstPlan))}</td>
-      <td class="num">${esc(dt(r.firstOrder))}</td>
-      <td class="num">${r.orderChanges ? `<span class="chg">${r.orderChanges} → ${esc(dt(r.order))}</span>` : (r.firstOrder ? '0' : '—')}</td>
-      <td class="num"><b>${r.onDuty ? esc(dt(r.onDuty)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
-      <td>${offCell(r.offPlan)}</td>
-      <td>${offCell(r.offOrder)}</td>
-      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.offDuty ? esc(dt(r.offDuty)) : '—'}</td>
-      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.timeOnDuty != null ? `<b>${esc(dur(r.timeOnDuty))}</b>` : '—'}</td></tr>`;
-    return tr + (key === openId ? story(r) : '');
-  }).join('');
-  return `
-    <div class="ohead">
-      <div><div class="sec-title" style="margin-bottom:6px">Order summary</div><div class="when">${esc(w.long)}</div></div>
-      <div class="ctl">
-        <label for="oday">Day<select id="oday">${days.map((d) => `<option value="${d}"${d === day ? ' selected' : ''}>${esc(when(d + ' 0000').day)}</option>`).join('')}</select></label>
-        <label for="ofrom">Trains from<select id="ofrom">${['all', 'sarnia', 'mac'].map((f) => `<option value="${f}"${f === from ? ' selected' : ''}>${f === 'all' ? 'Sarnia and Toronto' : FROM[f]}</option>`).join('')}</select></label>
-        <label for="ofind">Find a train<input id="ofind" placeholder="e.g. M30241 15" value="${esc(find)}" autocomplete="off" spellcheck="false"></label>
-      </div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
-      <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
-      <div class="stat"><div class="v"><span class="offv ok">${green}</span> <small>·</small> <span class="offv warn">${yellow}</span> <small>·</small> <span class="offv bad">${red}</span></div><div class="l">First plan vs on duty: under 30 m · 30 m–1 h 56 m · beyond</div></div>
-      <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.round(tod.reduce((a, b) => a + b, 0) / tod.length))) : '—'}</div><div class="l">Average time on duty, Sarnia to Toronto</div></div>
-      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.max(...tod))) : '—'}</div><div class="l">Longest time on duty</div></div>
-      <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
-      <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${dhGone(rows).length}</div><div class="l">Deadheads never called (this day)</div></div>
-      <div class="stat"><div class="v">${dhGone(week).length}</div><div class="l">Deadheads never called, last 7 days</div></div>
-      <div class="stat"><div class="v">${rows.filter((r) => r.deadhead).length}</div><div class="l">Deadheads on the line-ups (this day)</div></div>
-      <div class="stat"><div class="v"><small>${dhGone(week).length ? esc(dhGone(week).slice(0, 4).map((r) => r.id).join(', ')) : '—'}</small></div><div class="l">Latest never called</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${pct(acc.co)} <small>${acc.co.hit} / ${acc.co.n}</small></div><div class="l">Conductor predicted right (this day)</div></div>
-      <div class="stat"><div class="v">${pct(acc.en)} <small>${acc.en.hit} / ${acc.en.n}</small></div><div class="l">Engineer predicted right (this day)</div></div>
-      <div class="stat"><div class="v">${pct(acc.wco)} <small>${acc.wco.hit} / ${acc.wco.n}</small></div><div class="l">Conductor right, last 7 days</div></div>
-      <div class="stat"><div class="v">${pct(acc.wen)} <small>${acc.wen.hit} / ${acc.wen.n}</small></div><div class="l">Engineer right, last 7 days</div></div>
-    </div>
-    <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
-      <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
-      <tbody>${body}</tbody></table></div>
-      <div class="foot">A train belongs to the day it went on duty (or is due). "Off" compares the first planned or first ordered time on the line-up (41) with the on-duty time on the Call Board (6), as CATS shows them. First seen, ordered and changes are as of the check that saw them, so they're as exact as the time between checks. Off from plan / order colours, early or late alike: green under 30 m, <span class="chg">yellow</span> 30 m to 1 h 56 m, <span class="bad">red</span> beyond. Off duty in Toronto = the crew's bunkhouse rest − 8 h; n/a for L501/L502 and trains that start in Toronto. Toronto trains that leave the line-up and aren't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later are flagged: <span class="bad">red</span> when no rested Sarnia crew was in the bunkhouse, <span class="chg">yellow</span> when one was.</div>
-    </section>`;
-}
-
-// --- 14h: crews held in Toronto 14 hours or more (Article 18.6(b)) ----------
-
-const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
-const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
-  .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
-const heldKey = (r) => `${r.id} ${r.month}`;
-
-// A link straight to a turn or a train (owner, 2026-10-22): #turn=SR07,
-// #train=M38261-22. The phone's share sheet when there is one, else copied.
-async function shareLink(hash, title, button) {
-  const url = `${location.origin}${location.pathname}${hash}`;
-  try {
-    if (navigator.share) { await navigator.share({ title, url }); return; }
-    await navigator.clipboard.writeText(url);
-    if (button) { const was = button.textContent; button.textContent = '✓ Link copied'; setTimeout(() => { button.textContent = was; }, 2000); }
-  } catch (e) { /* cancelled */ }
-}
-
-// "When does this turn go?" from the newest check (data/whengo.json).
 const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 // Hidden search by person (owner, 2026-10-24): a 4-letter code from a
@@ -1379,6 +1428,10 @@ async function source() {
       turns: once(() => getJSON('data/turns.json').then((d) => d.turns)),
       trains: once(() => getJSON('data/trains.json').then((d) => d.trains)),
       names: once(() => getJSON('data/names.json').catch(() => null)),
+      // Analytics (owner, 2026-10-26): runarounds and jobs going spare, and
+      // the long-term archive. Either may be missing on an older build.
+      analytics: once(() => getJSON('data/analytics.json').catch(() => null)),
+      archive: once(() => getJSON('data/archive.json').catch(() => null)),
     };
   } catch {
     const data = await getJSON('board-sample.json');
@@ -1393,7 +1446,8 @@ async function source() {
     }
     return { live: false, days: [...byDay.keys()].reverse(), load: async (day) => byDay.get(day) || [],
       turns: once(async () => BoardTurns.finish(BoardTurns.history(data.snapshots))),
-      trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))), names: async () => null };
+      trains: once(async () => BoardTrains.summarize(BoardTrains.track(data.snapshots))), names: async () => null,
+      analytics: async () => null, archive: async () => null };
   }
 }
 
@@ -1974,41 +2028,121 @@ source().then(async (src) => {
     order.jump = false;
   }
 
-  // Analytics tab (owner, 2026-10-26): a train number, turn or name code.
-  // A name code is never put in the address bar or kept on the phone.
-  const ana = { q: '', kind: 'auto' };
+  // Analytics tab (owner, 2026-10-26): a train number, turn or name code,
+  // within the dates picked. A name code is never put in the address bar or
+  // kept on the phone.
+  const ana = { q: '', kind: 'auto', range: 'all', from: '', to: '', sec: 'trains', pool: 'SR' };
+  const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [] };
+  function anaDates() {
+    if (ana.range === 'all') return {};
+    if (ana.range === 'custom') return { from: ana.from, to: ana.to };
+    return { from: new Date((torontoNowMin() - (+ana.range - 1) * 1440) * 60000).toISOString().slice(0, 10) };
+  }
+  let anaCsv = null; // what the Spreadsheet button saves: { name, runs }
+  // One tooltip for every chart column (hover, tap or keyboard focus).
+  const tip = document.createElement('div');
+  tip.className = 'ctip';
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  const showTip = (el) => {
+    tip.textContent = el.dataset.tip;
+    tip.hidden = false;
+    const r = el.getBoundingClientRect();
+    const w = tip.offsetWidth;
+    tip.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2))}px`;
+    tip.style.top = `${Math.max(8, r.top - tip.offsetHeight - 6)}px`;
+  };
+  const view0 = document.getElementById('view');
+  view0.addEventListener('pointerover', (e) => { const b = e.target.closest('.cbar[data-tip]'); if (b) showTip(b); });
+  view0.addEventListener('pointerout', (e) => { if (e.target.closest('.cbar[data-tip]')) tip.hidden = true; });
+  view0.addEventListener('focusin', (e) => { const b = e.target.closest('.cbar[data-tip]'); if (b) showTip(b); });
+  view0.addEventListener('focusout', () => { tip.hidden = true; });
+  window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
+
   async function renderAnalytics() {
     const view = document.getElementById('view');
-    view.innerHTML = '<p class="empty">Loading…</p>';
-    let all;
+    if (!view.querySelector('.ohead.ana')) view.innerHTML = '<p class="empty">Loading…</p>';
+    let live;
     let turnsAll;
-    try { [all, turnsAll] = await Promise.all([src.trains(), src.turns().catch(() => ({}))]); } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
+    let found;
+    let arch;
+    try {
+      [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), src.archive()]);
+    } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
+    arch = { ...NO_ARCHIVE, ...(arch || {}) };
+    found = found || { runarounds: [], spareJobs: [] };
+    // What the site has now, plus the archive from before its first day.
+    const all = [...live, ...arch.trains];
+    const range = anaDates();
+    const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
+    const runarounds = [...arch.runarounds, ...found.runarounds].filter((r) => inDates(r.taken));
+    const spareJobs = [...arch.spareJobs, ...found.spareJobs].filter((j) => inDates(j.first));
+    const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
+    // The trains a turn worked: Turn History's work history and the archive's.
+    const workOf = (turn) => {
+      const { base, craft } = BoardTurns.splitCraft(turn);
+      const old = (arch.work[base] || []).filter((o) => !craft || !o.crew || BoardTurns.crewHasCraft(o.crew, base, craft));
+      return unique([...worked(turnsAll[base], turn), ...old]);
+    };
+    const countIn = (turn, k) => [...((turnsAll[turn] || {})[k] || []).map((x) => x.seen), ...(arch[k][turn] || [])].filter(inDates).length;
+    const took = (turn) => runarounds.filter((r) => r.turn === turn).length;
+    const { inRange, runOf, trainRuns, workRuns, between, turnRow, poolOf, kindOf } = BoardAnalytics;
+
     const q = ana.q.trim().toUpperCase().replace(/\s+/g, ' ');
-    const kind = ana.kind !== 'auto' ? ana.kind : BoardAnalytics.kindOf(q, Object.keys(turnsAll), all);
+    const kind = ana.kind !== 'auto' ? ana.kind : kindOf(q, [...Object.keys(turnsAll), ...Object.keys(arch.work)], all);
     let body;
-    if (!q) body = analyticsOverview(all);
-    else if (kind === 'train') {
-      const runs = BoardAnalytics.trainRuns(all, q);
+    anaCsv = null;
+    if (!q) {
+      const runs = inRange(all.map(runOf), range);
+      let turnRows = null;
+      if (ana.sec === 'turns') {
+        const turns = [...new Set([...Object.keys(turnsAll), ...Object.keys(arch.work)])].filter((t) => poolOf(t) === ana.pool && !BoardTurns.PLACEHOLDER.test(t));
+        turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), all, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
+      }
+      anaCsv = { name: 'all-trains', runs };
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs });
+    } else if (kind === 'train') {
+      const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
-      body = analyticsView(runs, 'train', /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '');
+      anaCsv = { name: `train-${q.replace(/\s+/g, '-')}`, runs };
+      body = analyticsView(runs, 'train', /^\d+$/.test(q) ? `Every ${q}` : `Train ${q}`, ids.length > 1 ? `${ids.length} symbols: ${esc(ids.slice(0, 8).join(', '))}${ids.length > 8 ? ', …' : ''}` : '',
+        { runarounds: runarounds.filter((r) => BoardAnalytics.trainMatches(r.train, q)).length });
     } else if (kind === 'turn') {
       const { base } = BoardTurns.splitCraft(q);
-      body = BoardTurns.PLACEHOLDER.test(base) ? `<p class="empty">${esc(base)} is a placeholder (make-up) turn, so it isn't looked up on its own.</p>`
-        : analyticsView(BoardAnalytics.workRuns(worked(turnsAll[base], q), all, base), 'turn', `Turn ${q}`, turnsAll[base] ? '' : 'no history for this turn in the saved checks');
+      if (BoardTurns.PLACEHOLDER.test(base)) body = `<p class="empty">${esc(base)} is a placeholder (make-up) turn, so it isn't looked up on its own.</p>`;
+      else {
+        const runs = inRange(workRuns(workOf(q), all, base), range);
+        anaCsv = { name: `turn-${q}`, runs };
+        body = analyticsView(runs, 'turn', `Turn ${q}`, turnsAll[base] || arch.work[base] ? '' : 'no history for this turn in the saved checks',
+          { between: between(runs), spares: countIn(base, 'spares'), took: took(base) });
+      }
     } else {
-      const list = /^[A-Z]{4}$/.test(q) ? await Person.find(q) : null;
+      // A person: the live stretches (people.json) and the archive's.
+      const ok = /^[A-Z]{4}$/.test(q) && window.crypto && crypto.subtle;
+      const [list, h] = ok ? await Promise.all([Person.find(q), Person.hash(q)]) : [null, null];
       if (mode !== 'analytics') return;
-      const cur = list && Person.current(list);
-      body = !list ? '<p class="empty">Nothing found for that name code in the saved checks.</p>'
-        : analyticsView(BoardAnalytics.workRuns(worked(personHistory(list, turnsAll), ''), all), 'code', 'Person search', `last seen on ${esc(cur.turn)}`);
+      const old = (h && arch.people[h]) || [];
+      const stretches = [...(list || []), ...old];
+      if (!stretches.length) body = '<p class="empty">Nothing found for that name code in the saved checks.</p>';
+      else {
+        const oldWork = old.flatMap((e) => (arch.work[e.turn] || []).filter((o) => (o.seen || o.at) >= e.from && (o.seen || o.at) <= e.to).map((o) => ({ ...o, turn: e.turn })));
+        const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), all), range);
+        anaCsv = { name: 'person', runs };
+        body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches).turn)}`, { between: between(runs), spares: null });
+      }
     }
-    view.innerHTML = `<div class="ohead">
-        <div><div class="sec-title" style="margin-bottom:6px">Analytics</div><div class="when">${src.days.length} day${src.days.length === 1 ? '' : 's'} of checks</div></div>
+    const dates = ana.range === 'custom'
+      ? `<label for="afrom">From<input type="date" id="afrom" value="${esc(ana.from)}"></label><label for="ato">To<input type="date" id="ato" value="${esc(ana.to)}"></label>` : '';
+    view.innerHTML = `<div class="ohead ana">
+        <div><div class="sec-title" style="margin-bottom:6px">Analytics</div><div class="when">${esc((RANGES.find((r) => r[0] === ana.range) || RANGES[5])[1].replace('…', ''))}</div></div>
         <div class="ctl">
           <label for="aq">Search<input id="aq" placeholder="148, SR03, name code" value="${esc(ana.q)}" autocomplete="off" spellcheck="false" maxlength="12"></label>
           <label for="akind">Look for<select id="akind">${[['auto', 'Work it out'], ['train', 'Train number'], ['turn', 'Turn'], ['code', 'Name code']].map(([k, l]) => `<option value="${k}"${k === ana.kind ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-          ${q ? '<label>&nbsp;<button type="button" id="aclear" class="sharebtn" style="padding:7px 10px">Clear</button></label>' : ''}
+          <label for="arange">Dates<select id="arange">${RANGES.map(([k, l]) => `<option value="${k}"${k === ana.range ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          ${dates}
+          <div class="abtns">${q ? '<button type="button" id="aclear">Clear search</button>' : ''}${anaCsv && anaCsv.runs.length ? '<button type="button" id="acsv">⬇ Spreadsheet</button>' : ''}</div>
         </div>
       </div>${body}`;
     try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
@@ -2017,9 +2151,31 @@ source().then(async (src) => {
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
     box.onchange = go;
     document.getElementById('akind').onchange = (e) => { ana.kind = e.target.value; ana.q = box.value; renderAnalytics(); };
+    document.getElementById('arange').onchange = (e) => { ana.range = e.target.value; renderAnalytics(); };
+    const af = document.getElementById('afrom');
+    if (af) {
+      af.onchange = () => { ana.from = af.value; renderAnalytics(); };
+      document.getElementById('ato').onchange = (e) => { ana.to = e.target.value; renderAnalytics(); };
+    }
     const clear = document.getElementById('aclear');
     if (clear) clear.onclick = () => { ana.q = ''; ana.kind = 'auto'; renderAnalytics(); };
+    const csvBtn = document.getElementById('acsv');
+    if (csvBtn) {
+      csvBtn.onclick = () => {
+        const blob = new Blob(['﻿' + BoardAnalytics.csv(anaCsv.runs)], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `analytics-${anaCsv.name}-${new Date(torontoNowMin() * 60000).toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      };
+    }
+    view.querySelectorAll('button[data-sec]').forEach((b) => { b.onclick = () => { ana.sec = b.dataset.sec; renderAnalytics(); }; });
+    const pool = document.getElementById('apool');
+    if (pool) pool.onchange = () => { ana.pool = pool.value; renderAnalytics(); };
     view.querySelectorAll('button[data-q]').forEach((b) => { b.onclick = () => { ana.q = b.dataset.q; ana.kind = b.dataset.kind; renderAnalytics(); window.scrollTo(0, 0); }; });
+    view.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     view.querySelectorAll('tr.row[data-key]').forEach((tr) => {
       tr.onclick = () => { Object.assign(order, { day: tr.dataset.day, open: tr.dataset.key, find: '', from: 'all', jump: true }); setMode(true); };
     });

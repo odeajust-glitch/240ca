@@ -15,33 +15,11 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 4. **Article 18.6(b) rep alert (#4)** (not picked on 2026-10-22, still on
    the list).
 5. **Weekly summary (#9)** (not picked on 2026-10-22, still on the list).
-6. **Analytics tab, what goes in it next.** Owner to pick from the ideas
-   below (first version done, see "Done").
+6. **Analytics: anything more?** The owner's picks are built (see "Done");
+   say what to change once it has run on real checks for a while.
 
-### Analytics ideas (for the owner to pick)
-
-- A1. Charts: on-duty times by hour of day for a search (e.g. when 148
-  usually goes), and trains per week as a trend line.
-- A2. Time between trains worked for a turn or person (on duty to the next
-  on duty), average and shortest.
-- A3. Turns side by side: trains and hours on duty per Chain Gang turn over
-  a period (who's getting the work).
-- A4. Runarounds per turn (ties in with item 1).
-- A5. Spare stats: how often each turn went spare / B0 / rest; jobs going
-  spare per day and who filled them.
-- A6. Pay period view (2 weeks): trains, yard jobs and hours on duty per
-  turn or person, to check against pay.
-- A7. Hours on duty per week per person (rest and hours-of-service check).
-- A8. Least reliable trains: train numbers ranked by how far the first plan
-  was off from on duty.
-- A9. Prediction accuracy over time, and how early the right crew was
-  predicted.
-- A10. Download any search as a spreadsheet (CSV).
-- A11. Pick a date range (last 7 days, 30 days, custom).
-- A12. Keep more than 30 days: Analytics only sees what the site keeps
-  (`BOARD_SITE_DAYS`, 30 by default). A small long-term train archive would
-  let it look back months.
-- A13. Deadheads and cancellations by train number.
+Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
+per week per person (A7).
 
 ## Done
 
@@ -56,3 +34,21 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
   With nothing searched: all line-up trains. Code: `public/board-analytics.js`
   (tests `test/board/analytics.test.js`), page `public/board.html`
   (`renderAnalytics`, `analyticsView`).
+- 2026-10-26: **Analytics, the owner's picks** (A1–A5, A8–A13):
+  - Dates for everything: last 7/14/30/90 days, last year, everything kept,
+    or picked dates (A11).
+  - Charts: on duty by hour of day and per week, for any search and for
+    all trains (A1). Tap a column for its number; "Show as a table" under each.
+  - Turn or person: average and shortest time between trains (A2); a turn
+    also shows times it went spare and trains it took out of sequence.
+  - With nothing searched, sections: **Trains** (least reliable trains (A8),
+    never ran by train number with deadheads never called (A13)),
+    **Turns side by side** by pool (A3), **Runarounds** (A4),
+    **Jobs going spare** and who filled them (A5), **Predictions** day by
+    day and how early the right crew was predicted (A9).
+  - ⬇ Spreadsheet: any search (or all trains) as a CSV file (A10).
+  - Keeps up to a year (A12): BoardChecker\analytics-archive.json, published
+    as data/archive.json (only what's older than the site's first day).
+    `BOARD_ARCHIVE_DAYS` changes the year. It starts filling from the first
+    build with this code, so on day one it only has what the site already has.
+
