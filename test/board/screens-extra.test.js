@@ -346,3 +346,12 @@ test('person stretches: own turn or not starts a new stretch', () => {
     ['SR03', true, '2026-10-25 1005', '2026-10-25 1005'],
   ]);
 });
+
+// Owner, 2026-10-26: the engineer fast/slow boards' time box gets the
+// check's time less 10 minutes, in railway (Toronto) time.
+test('engineer spareboard time box: the check time less 10 minutes', () => {
+  const { hhmmBefore } = require('../../lib/board/time');
+  assert.equal(hhmmBefore(new Date('2026-10-26T22:00:00Z'), 10), '1750'); // 1800 EDT
+  assert.equal(hhmmBefore(new Date('2026-10-27T04:05:00Z'), 10), '2355'); // 0005 → the day before
+  assert.equal(hhmmBefore(new Date('2026-12-01T14:30:00Z'), 10), '0920'); // EST in winter
+});

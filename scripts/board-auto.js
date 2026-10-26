@@ -62,7 +62,7 @@ const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck, mineForPhone } = require('../lib/board/relay');
 const { reviewCheck } = require('../lib/board/review');
 const { buildSite, publishSiteDir, siteSettings } = require('../lib/board/site');
-const { at } = require('../lib/board/time');
+const { at, hhmmBefore } = require('../lib/board/time');
 const config = require('../lib/board/config');
 
 const OUT_DIR = DATA_DIR;
@@ -172,6 +172,22 @@ async function fill(page, values) {
       if (boxes[i]) boxes[i].value = v;
     }
   }, values);
+}
+
+// The box in the top right of a screen (owner, 2026-10-26: the engineer
+// spareboards' time box): of the text boxes in the top third, the one
+// furthest right. Typed like a person would; false when there's none.
+async function fillTopRight(page, value) {
+  return catsFrame(page).evaluate((v) => {
+    const boxes = [...document.querySelectorAll('input[type=text]')].map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter((b) => b.r.width > 0 && b.r.height > 0);
+    if (!boxes.length) return false;
+    const bottom = Math.max(...boxes.map((b) => b.r.bottom), window.innerHeight || 0);
+    const top = boxes.filter((b) => b.r.top < bottom / 3).sort((a, b) => b.r.left - a.r.left)[0];
+    if (!top) return false;
+    top.el.value = v;
+    return true;
+  }, value);
 }
 
 function expect(s, check, what) {
@@ -395,10 +411,20 @@ async function runRoute(page, opts = {}) {
     }
   };
   // Spareboards: F8 until "END OF SPAREBOARD".
-  const spareboard = (menu, option, label, name) => skip(`${name} ${menu} → ${option}`, async () => {
+  // timeBox: the engineer boards' time box gets the check's time less 10 min
+  // (owner, 2026-10-26), then Enter, before reading.
+  const spareboard = (menu, option, label, name, timeBox = false) => skip(`${name} ${menu} → ${option}`, async () => {
     let sb = await chooseFromMenus(page, option, menu);
     if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
     expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
+    if (timeBox) {
+      const t = hhmmBefore(new Date(), 10);
+      if (await fillTopRight(page, t)) {
+        sb = expect(await press(page, 'Enter'), (x) => /SPAREBOARD/.test(x.text), `${name} at ${t}`);
+        const said = (sb.text.match(/[^\n]*(INVALID|ERROR|NOT VALID)[^\n]*/) || [])[0];
+        console.log(`  ${name}: time ${t} entered${said ? ` (CATS: ${said.trim()})` : ''}.`);
+      } else console.log(`  ${name}: no time box found; read as it opened.`);
+    }
     for (let pageNo = 0; pageNo < 15; pageNo++) {
       await capture(label);
       await learn();
@@ -410,8 +436,8 @@ async function runRoute(page, opts = {}) {
   });
   await spareboard(3, 13, 'co-fast', 'Conductor fast board');
   await spareboard(3, 9, 'co-slow', 'Conductor slow board');
-  await spareboard(1, 19, 'en-fast', 'Engineer fast board');
-  await spareboard(1, 17, 'en-slow', 'Engineer slow board');
+  await spareboard(1, 19, 'en-fast', 'Engineer fast board', true);
+  await spareboard(1, 17, 'en-slow', 'Engineer slow board', true);
   // 5: the terminal line-up (vacancies only, as set), Enter, F8 to END OF FILE.
   await skip('Jobs going spare 5', async () => {
     expect(await chooseFromMenus(page, 5), (x) => /TERMINAL\s+LINEUP/.test(x.text), 'Terminal line-up (5)');
