@@ -60,8 +60,11 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   it's **VIEW TIME( ____ )** after the board name; with VIEW TIME 1811 the
   board listed 5 (EN01, EN10, EN07, EN04 REST 0716 27 in red, EN08 ** HT
   1456 27), empty it listed 3: a view time shows the board as it was then,
-  including people who have left it since. ❓ What the extra rows mean for
-  "who fills a job going spare" (they may already be called).
+  including people who have left it since. Owner chose option A: each board
+  is read as it opens (that's what predicts who fills a job), then again
+  with the view time (Enter restarts the list, label `<board>-view`); the
+  turns only in the second read "left the board in the last 10 min"
+  (summary `leftBoard`), shown under that board's tab and never predicted.
 - **Jobs going spare**: **3 → 5**, Enter (TERMINAL LINEUP, PSTS27P,
   vacancies only Y). POS, CALL (MM/DD), TIME, TZ, STATUS, TRAIN/DESC,
   ORGSTN, PL, CC, ST (`* **`), RETN (MM/DD), DTTM, TURN (pool + turn:

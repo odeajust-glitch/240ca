@@ -411,29 +411,34 @@ async function runRoute(page, opts = {}) {
     }
   };
   // Spareboards: F8 until "END OF SPAREBOARD".
-  // timeBox: the spareboards' time box (engineer and conductor, fast and
-  // slow) gets the check's time less 10 min (owner, 2026-10-26), then Enter,
-  // before reading.
+  // timeBox (owner, 2026-10-26): the spareboards' VIEW TIME box. Option A:
+  // the board is read as it opens (what predictions use), then again with
+  // the check's time less 10 min in the box (Enter restarts the list):
+  // whoever shows only then left the board in those 10 minutes, likely
+  // called, and is never predicted for a job. That second read is labelled
+  // "<board>-view" and isn't used for names.
   const spareboard = (menu, option, label, name, timeBox = false) => skip(`${name} ${menu} → ${option}`, async () => {
     let sb = await chooseFromMenus(page, option, menu);
     if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
     expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
-    if (timeBox) {
-      const t = hhmmBefore(new Date(), 10);
-      if (await fillTopRight(page, t)) {
-        sb = expect(await press(page, 'Enter'), (x) => /SPAREBOARD/.test(x.text), `${name} at ${t}`);
-        const said = (sb.text.match(/[^\n]*(INVALID|ERROR|NOT VALID)[^\n]*/) || [])[0];
-        console.log(`  ${name}: time ${t} entered${said ? ` (CATS: ${said.trim()})` : ''}.`);
-      } else console.log(`  ${name}: no time box found; read as it opened.`);
-    }
-    for (let pageNo = 0; pageNo < 15; pageNo++) {
-      await capture(label);
-      await learn();
-      if (/END\s+OF\s+SPAREBOARD/.test(sb.text)) break;
-      const next = await press(page, 'F8');
-      if (!next || next.text === sb.text || !/SPAREBOARD/.test(next.text)) break;
-      sb = next;
-    }
+    const readPages = async (as, names) => {
+      for (let pageNo = 0; pageNo < 15; pageNo++) {
+        await capture(as);
+        if (names) await learn();
+        if (/END\s+OF\s+SPAREBOARD/.test(sb.text)) break;
+        const next = await press(page, 'F8');
+        if (!next || next.text === sb.text || !/SPAREBOARD/.test(next.text)) break;
+        sb = next;
+      }
+    };
+    await readPages(label, true);
+    if (!timeBox) return;
+    const t = hhmmBefore(new Date(), 10);
+    if (!(await fillTopRight(page, t))) { console.log(`  ${name}: no VIEW TIME box found.`); return; }
+    sb = expect(await press(page, 'Enter'), (x) => /SPAREBOARD/.test(x.text), `${name} at ${t}`);
+    const said = (sb.text.match(/[^\n]*(INVALID|ERROR|NOT VALID)[^\n]*/) || [])[0];
+    console.log(`  ${name}: view time ${t} entered${said ? ` (CATS: ${said.trim()})` : ''}.`);
+    await readPages(`${label}-view`, false);
   });
   await spareboard(3, 13, 'co-fast', 'Conductor fast board', true);
   await spareboard(3, 9, 'co-slow', 'Conductor slow board', true);

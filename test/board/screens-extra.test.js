@@ -355,3 +355,26 @@ test('engineer spareboard time box: the check time less 10 minutes', () => {
   assert.equal(hhmmBefore(new Date('2026-10-27T04:05:00Z'), 10), '2355'); // 0005 → the day before
   assert.equal(hhmmBefore(new Date('2026-12-01T14:30:00Z'), 10), '0920'); // EST in winter
 });
+
+// Owner's before/after screenshots (ENG SLOW BOARD, 2026-10-26): empty, the
+// board lists 3; with VIEW TIME 1811 (the check less 10 min) it lists 5.
+// Option A: predictions use the board as it opened; the 2 extra left it in
+// those 10 minutes and show as such.
+test('spareboard VIEW TIME: who left the board in the last 10 minutes', () => {
+  const { loadSummary } = require('../../lib/board/summary');
+  const lines = (rows) => rows.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${maskTokenWith(m[0], BOARD_WORDS)}`)].join(' | '));
+  const head = ['45 SA                    SPAREBOARD INQUIRY                PSTS02D', '                         ENG SLOW BOARD- PSTN             VIEW TIME(     )',
+    '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST    MTPD  USHR   PD    STT  #S  #O'];
+  const rows3 = ['LOGAN*+       B    BEN    EN01  001  **  HT  0559  27                                00  00', 'STREET*+      K    KYLE   EN10  002                                                   00  00',
+    'JAKIMCZUK*+   J    JONA   EN07  003                   2100  26  0745                   00  00'];
+  const rows5 = [...rows3, 'ARCHER*+      J    JERE   EN04  004                   0716  27                         00  00', 'BREAU*+       E    ERIC   EN08  005  **  HT  1456  27                                00  00'];
+  const end = ['END  OF  SPAREBOARD                                                 E010-1'];
+  const input = loadSummary({ probedAt: '2026-10-26T22:21:00Z', screens: [
+    { label: 'en-slow', screenGrid: lines([...head, ...rows3, ...end]) },
+    { label: 'en-slow-view', screenGrid: lines([...head, ...rows5, ...end]) },
+  ] });
+  assert.deepEqual(input.spareboards.enSlow.map((t) => t.turn), ['EN01', 'EN10', 'EN07']); // what predictions use
+  assert.deepEqual(input.leftBoard.enSlow.map((t) => `${t.turn} ${t.pos}`), ['EN04 4', 'EN08 5']);
+  assert.equal(input.leftBoard.enFast, undefined); // not read with a view time
+  assert.equal(input.seen.sarnia, undefined);
+});

@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 147 tests (`npm test`)
+2026-10-26) · 148 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -258,10 +258,13 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
 - All deadheads count as one number "DH" in Analytics (numberOf).
 - Spareboards, engineer fast (1 → 19) / slow (1 → 17) and, same day,
   conductor fast (3 → 13) / slow (3 → 9) (owner, 2026-10-26): the checker types the check's time less 10 min into the time box in the
-  top right (board-auto.js fillTopRight, time.js hhmmBefore), Enter, then
-  reads. The window logs "Engineer fast board: time 1750 entered" (or "no
-  time box found"). ❓ Not seen on real CATS yet: confirm it picks the
-  right box and CATS takes the time.
+  top right (VIEW TIME, owner's screenshots; board-auto.js fillTopRight,
+  time.js hhmmBefore). Option A (owner): each board is read as it opens
+  first (predictions use that), then with the view time (label
+  `<board>-view`, no names learned); turns only in the second read =
+  summary `leftBoard` = "Left the board in the last 10 min" under the
+  board's tab (site pools `left`, FORMAT 13). The window logs "view time
+  1750 entered" (or "no VIEW TIME box found"). ❓ Not seen on real CATS yet.
 - Name codes (owner, 2026-10-26): a name with TV beside it is no longer a
   sighting at all (screens.js parseBoardNames `tv`, board-auto.js sight);
   before, it was kept as "working this job", so JUOD showed S501 whenever
