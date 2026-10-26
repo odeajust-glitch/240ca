@@ -256,6 +256,14 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Fixed (owner, 2026-10-26): a followed person (👤 JUOD) sometimes showed
+  "Not seen on a turn in the saved checks yet" on a fresh load. Race:
+  paintTracked runs before people.json arrives and the redraw was skipped
+  when the snapshot shown had changed meanwhile (`summaryFor === s`); also
+  a failed people.json fetch was cached as empty for the page's life. Now
+  it always redraws, retries a failed fetch, and re-reads people.json when
+  newer checks are published (Person.reset). Reproduced 1 in 5 loads before,
+  0 in 20 after.
 - Sleep wording (owner): "Average gap between the call they slept on and
   the real call", columns "Average gap" / "Gap", plus average gap when
   called earlier and when called later.

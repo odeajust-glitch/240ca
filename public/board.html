@@ -1338,7 +1338,9 @@ const isCode = (t) => /^[A-Z]{4}$/.test(t || '');
 const Person = (() => {
   const SALT = '240ca-person:';
   let data = null;
-  const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : { people: {} })).then((d) => d.people || {}).catch(() => ({})));
+  // A failed fetch (phone signal) isn't kept: the next paint tries again.
+  const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => d.people || {}).catch(() => { data = null; return {}; }));
   async function hash(code) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + code.toUpperCase()));
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -1351,6 +1353,8 @@ const Person = (() => {
       return all[h] && all[h].length ? all[h] : null;
     },
     hash,
+    // The site published newer checks: read people.json again next time.
+    reset() { data = null; },
     // A followed person ('@' + hash) → the turns they were seen on, or null.
     async byHash(h) {
       const all = await load();
@@ -1764,7 +1768,9 @@ source().then(async (src) => {
     box.innerHTML = trackChips('Tracking (tap to change):') + trackSummary(s);
     box.querySelectorAll('[data-track]').forEach((b) => { b.onclick = () => openTrack(b.dataset.track); });
     // Followed people: find their turn now, then draw again if it changed.
-    if (tracked().some(isPerson)) refreshPersons().then((ch) => { if (ch && summaryFor === s) { paintTracked(s); setMarks(); if (mode === 'current' || mode === 'snap') show(cur, true); } });
+    // Their turn arrives after the first paints (owner, 2026-10-26: sometimes
+    // "Not seen on a turn" stayed up): redraw whatever is showing by then.
+    if (tracked().some(isPerson)) refreshPersons().then((ch) => { if (!ch) return; setMarks(); if (mode === 'current' || mode === 'snap') show(cur, true); else paintTracked(); });
     // The newest check's "when it goes", for the current board only.
     if (!s || !src.live || s.taken !== src.index.latest) return;
     whenGo().then((w) => {
@@ -2456,6 +2462,7 @@ source().then(async (src) => {
         if (!idx.checked || idx.checked === src.index.checked) return;
         src.index = idx;
         showUpdated(idx);
+        Person.reset(); // a followed person may be on another turn now
         const s = list.find((x) => x.taken === idx.latest);
         if (s && idx.checked > s.taken) s.sameUntil = idx.checked;
         if (mode === 'current' || mode === 'snap') show(cur, true);
