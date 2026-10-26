@@ -27,6 +27,15 @@ After pulling, restarting is needed; after a Worker change, the owner must
 re-paste `cloudflare/board-worker.js` into Cloudflare (board → Edit code →
 Deploy).
 
+**⚠ To check (owner, 2026-10-26): which 501/502 turn really works L502?**
+For L50231 26 (0400) the line-up said the first crew up on option 29, but
+option 5 (Jobs going spare) put both CO and EN vacancies on **S502**. The
+owner isn't sure which is right. Once L502 goes on duty, look at the Call
+Board crew (Turn History / the snapshot's on-duty list) to see which turn
+was actually called, then adjust: either keep the engine.js L502 rule
+(first crew up) or switch to CATS's option-5 turn (and drop the `s5Turn`
+mapping in site.js vacancies, which shows "CATS lists S502" under it).
+
 **What it does now:**
 - Checks CATS every 5 min in Edge: Call Board, pools 23/19/21/27/25/26,
   line-up 41, Toronto bunkhouse 28 + Mac yard line-up 41. Answers "when do I
