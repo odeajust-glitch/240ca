@@ -1170,12 +1170,12 @@ function sleepCell(off) {
   if (!off) return '<span class="offv ok">on time</span>';
   return `<span class="offv ${band}">${esc(dur(off))} ${off < 0 ? 'earlier' : 'later'}</span>`;
 }
-const SLEEP_NOTE = 'They go to sleep once the expected call is 8 h away (the check where it first showed 8 h or less). The real call is on duty − 2 h. The gap is the time between the call they slept on and the real call: within 30 min green, within an hour yellow, more than that red.';
+const SLEEP_NOTE = 'They go to sleep once the expected call is 8 h away (the check where it first showed 8 h or less). The real call is on duty − 2 h. The gap is the time between the call they slept on and the real call: within 30 min green, within an hour yellow, more than that red. Taken off the line-up after going to sleep ends that wait (counted on its own); the next line-up starts a new one.';
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
   return `<div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Green: called within 30 min of what they slept on')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, 'Yellow: 30 min to 1 h off')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'Red: more than 1 h off', st.bad > 0)}${anaTile(durOr(st.avg), 'Average gap between the call they slept on and the real call (earlier or later)')}</div>
     <div class="strip">${anaTile(st.earlier, 'Called more than 30 min earlier than they slept on', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Called more than 30 min later than they slept on')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
-    <div class="strip two">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Times the expected call moved after they went to sleep (average)')}${anaTile(st.short, 'Short notice: lined up under 8 h before the call')}</div>`;
+    <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Times the expected call moved after they went to sleep (average)')}${anaTile(st.short, 'Short notice: lined up under 8 h before the call')}${anaTile(st.takenOff, 'Taken off the line-up after going to sleep (not in the gaps above)', st.takenOff > 0)}</div>`;
 }
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
@@ -1188,20 +1188,21 @@ function sleepTable(list, showTurn) {
       <td class="num">${start}</td>
       <td class="num"><b>${esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
-      <td class="num"><b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div></td>
-      <td>${sleepCell(z.off)}</td></tr>`;
+      <td class="num">${z.takenOff ? `<span class="offv warn">Taken off the line-up</span><div class="crew">last on it ${esc(dt(z.lastListed))}</div>`
+        : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
+      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr>`;
   }).join('');
   return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Went to sleep (check)</th><th>Call they slept on</th><th>Then the call moved</th><th>Actual call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-const sleepSection = (list) => `<section class="sheet"><header><h2>Sleep tracker</h2><span class="meta">${plural(list.length, 'call')}</span></header>
+const sleepSection = (list) => `<section class="sheet"><header><h2>Sleep tracker</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
     <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
 function anaSleepAll({ sleep }) {
   const st = BoardAnalytics.sleepStats(sleep);
   const turns = BoardAnalytics.sleepByTurn(sleep).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn));
-  const table = turns.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Turn</th><th>Calls</th><th>Green</th><th>Yellow</th><th>Red</th><th>Average gap</th><th>Earlier · later</th><th>Short notice</th></tr></thead><tbody>${turns.map((t) => `<tr class="nolink">
+  const table = turns.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Turn</th><th>Calls</th><th>Green</th><th>Yellow</th><th>Red</th><th>Average gap</th><th>Earlier · later</th><th>Short notice</th><th>Taken off</th></tr></thead><tbody>${turns.map((t) => `<tr class="nolink">
       <td class="num stick"><button type="button" class="qbtn" data-q="${esc(t.turn)}" data-kind="turn">${esc(t.turn)}</button></td><td class="num"><b>${t.n}</b></td>
       <td class="num"><span class="offv ok">${t.ok}</span></td><td class="num"><span class="offv warn">${t.warn}</span></td><td class="num"><span class="offv bad">${t.bad}</span></td>
-      <td class="num">${durOr(t.avg)}</td><td class="num">${t.earlier} · ${t.later}</td><td class="num">${t.short}</td></tr>`).join('')}</tbody></table></div>` : '';
+      <td class="num">${durOr(t.avg)}</td><td class="num">${t.earlier} · ${t.later}</td><td class="num">${t.short}</td><td class="num">${t.takenOff}</td></tr>`).join('')}</tbody></table></div>` : '';
   return `<p class="anote">${SLEEP_NOTE}</p>${sleepTiles(st)}
     ${table ? `<section class="sheet"><header><h2>By turn</h2><span class="meta">most red first · tap a turn for its calls</span></header>${table}</section>` : ''}
     <section class="sheet"><header><h2>Latest calls</h2><span class="meta">newest first</span></header>${sleepTable(sleep, true)}</section>`;

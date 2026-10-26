@@ -313,12 +313,16 @@
   const SLEEP_GREEN = 30;
   const SLEEP_YELLOW = 60;
   const sleepBand = (off) => (Math.abs(off) <= SLEEP_GREEN ? 'ok' : Math.abs(off) <= SLEEP_YELLOW ? 'warn' : 'bad');
-  function sleepStats(list) {
+  // Calls only (a wait ended by being taken off the line-up has no call to
+  // score); takenOff counts those on their own (owner, 2026-10-26).
+  function sleepStats(all) {
+    const list = all.filter((z) => !z.takenOff);
     const offs = list.map((z) => z.off);
     const bands = { ok: 0, warn: 0, bad: 0 };
     for (const o of offs) bands[sleepBand(o)]++;
     return {
       n: list.length, ...bands,
+      takenOff: all.length - list.length,
       earlier: offs.filter((o) => o < -SLEEP_GREEN).length,
       later: offs.filter((o) => o > SLEEP_GREEN).length,
       avg: avg(offs.map(Math.abs)),
@@ -334,7 +338,7 @@
     const by = new Map();
     for (const z of list) { if (!by.has(z.turn)) by.set(z.turn, []); by.get(z.turn).push(z); }
     return [...by.entries()].map(([turn, l]) => ({ turn, ...sleepStats(l) }))
-      .sort((a, b) => b.bad / b.n - a.bad / a.n || b.n - a.n || (a.turn < b.turn ? -1 : 1));
+      .sort((a, b) => (b.n ? b.bad / b.n : 0) - (a.n ? a.bad / a.n : 0) || b.n - a.n || (a.turn < b.turn ? -1 : 1));
   }
 
   // The archive (data/archive.json) and the site's own data meet at the

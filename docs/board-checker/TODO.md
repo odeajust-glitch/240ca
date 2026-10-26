@@ -86,4 +86,9 @@ per week per person (A7).
   sequence, each stretch of checks it showed wrong, the Call Board crew that
   went, and Runaround (still wrong at the end) or Fixed. Line-up "ordered
   for" mismatches are saved per check now (`sequenceAhead`, FORMAT 12).
+- 2026-10-26: **Sleep: clearer wording and "taken off"** (owner): "Average
+  gap between the call they slept on and the real call", averages when
+  called earlier and later; a turn taken off the line-up after going to
+  sleep ends that wait (counted on its own, not as a huge miss), and the
+  next line-up starts a new one (option A).
 

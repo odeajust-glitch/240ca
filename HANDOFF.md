@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
-2026-10-26) · 145 tests (`npm test`)
+2026-10-26) · 146 tests (`npm test`)
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -263,9 +263,13 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   Likely cause (reproduced in code): a turn taken off every line-up after it
   "went to sleep" keeps that call until it works another train, up to 24 h
   later (insights.js DROP_AFTER), so one wait counts as one huge miss.
-  Asked the owner how to count it; not changed yet. This cloud session
-  can't reach board.sarniaboard.workers.dev (network policy) to check the
-  real calls.
+  Owner chose option A (built): taken off the line-up after going to sleep
+  ends that wait as a `takenOff` record (no call, not in the gaps; own
+  tile and By turn column), and the next line-up starts a new wait. Taken
+  off = their train still listed with someone else, or on no line-up for
+  4 h (TAKEN_OFF_MIN) and not on duty. This cloud session can't reach
+  board.sarniaboard.workers.dev (network policy) to check real calls; ❓
+  look at the gaps again once a few days of calls are in.
 - ⚠ The Analytics rewrite had dropped ordersView/heldRows/heldKey/
   HELD_LIMIT/shareLink (Order summary + 18.6(b) stuck on Loading); put back,
   and site.test.js now checks those functions exist. When splicing

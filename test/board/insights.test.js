@@ -142,3 +142,26 @@ test('insights: a line-up train ordered for the wrong pool, then the crew that w
   assert.deepStrictEqual([r.train, r.wrongChecks, r.stretches.length, r.stretches[0].from, r.stretches[0].to, r.fixed, r.crew, r.onDuty],
     ['M38261 26', 4, 1, '2026-10-26 1300', '2026-10-26 1500', false, 'EN S104 · CO SA04', '2026-10-26 1445']);
 });
+
+// Owner, 2026-10-26 (option A): taken off the line-up after going to sleep
+// ends that wait; the next line-up is a new one (no 14 h "miss").
+test('insights: sleep wait ends when taken off the line-up', () => {
+  const A = require('../../public/board-analytics');
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const st = Insights.collect([
+    snap('2026-10-20 0000', { lineup: [{ train: 'M1 20', call: '20th 0600', crew: { co: 'SR01', en: 'SD10' } }] }), // asleep for 0600
+    snap('2026-10-20 0300', { lineup: [{ train: 'M1 20', call: '20th 0600', crew: { co: 'SR01', en: 'SD07' } }] }), // M1 has SD07 now
+    snap('2026-10-20 1700', { lineup: [{ train: 'M9 20', call: '20th 2000', crew: { co: 'SR02', en: 'SD10' } }] }), // lined up again
+    snap('2026-10-20 2100', { onDuty: [{ train: 'M9 20', onDuty: '20th 2215', crew: 'EN SD10 · CO SR02' }] }),
+    // SR01 is off every line-up for 4 h (its train gone too): taken off.
+    snap('2026-10-20 0700', { lineup: [{ train: 'M5 20', call: '20th 2300', crew: { co: 'SR05', en: '' } }] }),
+  ].sort((a, b) => (a.taken < b.taken ? -1 : 1)));
+  const list = Insights.finish(st).sleep.filter((z) => z.turn === 'SD10');
+  assert.deepStrictEqual(list.map((z) => [!!z.takenOff, z.expected, z.off ?? null]),
+    [[true, '2026-10-20 0600', null], [false, '2026-10-20 2000', 15]]);
+  assert.strictEqual(list[0].lastListed, '2026-10-20 0000');
+  const sr01 = Insights.finish(st).sleep.filter((z) => z.turn === 'SR01');
+  assert.deepStrictEqual(sr01.map((z) => [!!z.takenOff, z.seen]), [[true, '2026-10-20 0700']]);
+  const s = A.sleepStats(list);
+  assert.deepStrictEqual([s.n, s.takenOff, s.ok, s.avg], [1, 1, 1, 15]);
+});
