@@ -118,7 +118,7 @@ test('yard crews matched to turns by name, in memory only', () => {
   assert.deepEqual(people, [
     { key: 'DESCHENES/M', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
     { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
-    { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO', own: false, from: 'pool' }, // away and working: maybe covering a trip
+    { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
   ]);
 });
 
@@ -296,7 +296,7 @@ test('turn holders: TV on a pool row is not their own turn', () => {
     "EN S501  0 001  O'DEA+          J  JUSTI  TV",
     "CO SR03  0 004  O'DEA+          J  JUSTI",
   ], false));
-  assert.deepEqual(people.map((p) => [p.turn, p.own]), [['S501', false], ['SR03', true]]);
+  assert.deepEqual(people.map((p) => [p.turn, p.own, p.tv]), [['S501', false, true], ['SR03', true, false]]);
   const H = require('../../lib/board/holders');
   assert.equal(H.turnOf(H.learn({}, people, 1), "O'DEA/J"), 'SR03');
 });

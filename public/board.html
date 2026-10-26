@@ -431,6 +431,9 @@
   .stat .v .offv { font: inherit; padding: 0; background: none; }
   table.orders .stick { position: sticky; left: 0; z-index: 1; background: var(--sheet); }
   @media (max-width: 700px) { table.orders .hide-sm { display: none; } }
+  .pickturn { margin-top: 6px; font-size: 13.5px; color: var(--ink); }
+  .pickturn button { margin: 4px 6px 0 0; padding: 4px 10px; min-height: 34px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font: 600 14px/1 var(--mono); }
+  .pickturn button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .moves { margin: 4px 0 0; padding-left: 16px; font: 12.5px/1.5 var(--mono); }
   table.orders td details summary { cursor: pointer; }
   @media (max-width: 700px) {
@@ -1409,6 +1412,11 @@ const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) =
 const isCode = (t) => /^[A-Z]{4}$/.test(t || '');
 const Person = (() => {
   const SALT = '240ca-person:';
+  const PICK_KEY = 'personPick';
+  const candidates = (list) => {
+    const last = list.reduce((m, e) => (e.to > m ? e.to : m), '');
+    return [...new Set(list.filter((e) => e.own && stampMin(last) - stampMin(e.to) <= 60).map((e) => e.turn))];
+  };
   let data = null;
   // A failed fetch (phone signal) isn't kept: the next paint tries again.
   const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -1433,11 +1441,22 @@ const Person = (() => {
       const list = all[String(h).replace(/^@/, '')];
       return list && list.length ? list : null;
     },
-    // Where they were last seen: their own turn first.
-    current(list) {
+    // Where they were last seen: their own turn first. pick: the turn this
+    // phone picked when the code matched more than one (option B below).
+    current(list, pick) {
+      if (pick && candidates(list).includes(pick)) return list.filter((e) => e.own && e.turn === pick).sort((a, b) => (a.to < b.to ? 1 : -1))[0];
       const last = list.reduce((m, e) => (e.to > m ? e.to : m), '');
       const now = list.filter((e) => e.to === last);
       return now.find((e) => e.own) || now[0] || null;
+    },
+    // Option B (owner, 2026-10-26): a code can match more than one own turn
+    // at once (two people with the same letters, or a day of shuffling). The
+    // own turns seen within an hour of the latest sighting; more than one and
+    // the page asks which is theirs, kept on this phone.
+    candidates: (list) => candidates(list),
+    pickOf(h) { try { return (JSON.parse(localStorage.getItem(PICK_KEY)) || {})[String(h).replace(/^@/, '')] || ''; } catch (e) { return ''; } },
+    setPick(h, turn) {
+      try { const all = JSON.parse(localStorage.getItem(PICK_KEY)) || {}; all[String(h).replace(/^@/, '')] = turn; localStorage.setItem(PICK_KEY, JSON.stringify(all)); } catch (e) { /* not kept */ }
     },
   };
 })();
@@ -1798,15 +1817,17 @@ source().then(async (src) => {
   const codes = () => { try { return JSON.parse(localStorage.getItem(CODES_KEY)) || {}; } catch (e) { return {}; } };
   const keepCode = (h, code) => { try { localStorage.setItem(CODES_KEY, JSON.stringify({ ...codes(), [h]: code })); } catch (e) { /* not kept */ } };
   const personNow = {};
+  const personCands = {}; // a followed code matching more than one turn now: those turns
   const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : BoardTurns.splitCraft(t).base);
   const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t.replace(/-(EN|CO)$/, ' $1'));
   async function refreshPersons() {
     let changed = false;
     for (const t of tracked().filter(isPerson)) {
       const list = await Person.byHash(t);
-      const cur = list && Person.current(list);
+      const cur = list && Person.current(list, Person.pickOf(t));
       const turn = cur ? cur.turn : '';
-      if (personNow[t] !== turn) { personNow[t] = turn; changed = true; }
+      const cands = list ? Person.candidates(list) : [];
+      if (personNow[t] !== turn || String(personCands[t]) !== String(cands)) { personNow[t] = turn; personCands[t] = cands; changed = true; }
     }
     return changed;
   }
@@ -1830,19 +1851,31 @@ source().then(async (src) => {
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
       const lines = [...where.map((text) => ({ kind: 'status', text })), ...lined];
-      return `<li data-sum="${esc(turn)}"><b class="num">${esc(isPerson(entry) ? label(entry) : turn)}</b> <span class="go"></span>${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
+      const cands = isPerson(entry) ? personCands[entry] || [] : [];
+      const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
+      return `<li data-sum="${esc(turn)}"><b class="num">${esc(isPerson(entry) ? label(entry) : turn)}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
+  }
+  // Redraw what shows the tracked turns: the board (once a check is loaded),
+  // else just the list.
+  function redrawTracked() {
+    setMarks();
+    if ((mode === 'current' || mode === 'snap') && list[cur]) show(cur, true);
+    else paintTracked();
   }
   function paintTracked(s = summaryFor) {
     summaryFor = s;
     const box = document.getElementById('tracked');
     box.innerHTML = trackChips('Tracking (tap to change):') + trackSummary(s);
     box.querySelectorAll('[data-track]').forEach((b) => { b.onclick = () => openTrack(b.dataset.track); });
+    box.querySelectorAll('[data-pick]').forEach((b) => {
+      b.onclick = () => { const [who, turn] = b.dataset.pick.split('|'); Person.setPick(who, turn); refreshPersons().then(redrawTracked); };
+    });
     // Followed people: find their turn now, then draw again if it changed.
     // Their turn arrives after the first paints (owner, 2026-10-26: sometimes
     // "Not seen on a turn" stayed up): redraw whatever is showing by then.
-    if (tracked().some(isPerson)) refreshPersons().then((ch) => { if (!ch) return; setMarks(); if (mode === 'current' || mode === 'snap') show(cur, true); else paintTracked(); });
+    if (tracked().some(isPerson)) refreshPersons().then((ch) => { if (ch) redrawTracked(); });
     // The newest check's "when it goes", for the current board only.
     if (!s || !src.live || s.taken !== src.index.latest) return;
     whenGo().then((w) => {
@@ -1962,10 +1995,10 @@ source().then(async (src) => {
     const t = clean(v);
     if (!isCode(t)) return openTrack(t);
     const list = await Person.find(t);
-    const cur = list && Person.current(list);
+    const h = `@${await Person.hash(t)}`;
+    const cur = list && Person.current(list, Person.pickOf(h));
     if (cur) {
       // Follow the person (alerts move with their home turn) or just the turn they're on now.
-      const h = `@${await Person.hash(t)}`;
       dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
         <div class="alertnote">${esc(t)} is on <b>${esc(cur.turn)}</b> now. Follow:</div>
         <div class="btns"><button type="button" class="ok" id="dlgperson">👤 ${esc(t)} (alerts move with their turn)</button>
@@ -2079,8 +2112,10 @@ source().then(async (src) => {
     if (!box || focus !== code) return;
     if (!list) { box.innerHTML = '<p class="empty">Nothing found for that in the saved checks.</p>'; return; }
     const all = await src.turns().catch(() => ({}));
+    const hash = await Person.hash(code);
     if (focus !== code || !box.isConnected) return; // looked up again meanwhile
-    const cur = Person.current(list);
+    const cands = Person.candidates(list);
+    const cur = Person.current(list, Person.pickOf(hash));
     const live = cur && cur.to >= s.taken;
     const span = (e) => `${esc(when(e.from).time)} ${esc(dt(e.from).split(' ')[0])}${e.to !== e.from ? ` – ${esc(when(e.to).time)} ${esc(dt(e.to).split(' ')[0])}` : ''}`;
     const turns = [...list].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b> · ${e.own ? 'their turn' : 'working this job'} · ${span(e)}</span></li>`).join('');
@@ -2091,7 +2126,9 @@ source().then(async (src) => {
       const last = homes[homes.length - 1];
       if (last && last.turn === e.turn) { if (e.to > last.to) last.to = e.to; } else homes.push({ ...e });
     }
-    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e, i) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${i === 0 ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
+    // "now" on the turn they're on now (the latest of it), not on whichever started last.
+    const nowHome = live ? homes.filter((e) => e.turn === cur.turn).sort((a, b) => (a.to < b.to ? 1 : -1))[0] : null;
+    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${e === nowHome ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
       : '<p class="empty" style="padding:0">Not seen on a turn of their own yet.</p>';
     const rec = personHistory(list, all);
     const h = turnHistory(rec, s.taken);
@@ -2101,12 +2138,14 @@ source().then(async (src) => {
     const here = live ? BoardTurns.facts(s, cur.turn) : [];
     box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
       <div id="whengo" class="whengo" hidden></div>
-      <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}</div>
+      <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}${cands.length > 1
+        ? `<div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div>` : ''}</div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
       <div class="tp"><div><h3>Home turn</h3>${homeList}<h3 style="margin-top:12px">Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
       <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
       <div class="tp tp3">${h.more}</div></section>`;
     focus = prev;
+    box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
     wireWork(box.querySelector('#worklog'), rec, cur.turn);
     box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     if (!live) return;
@@ -2436,7 +2475,7 @@ source().then(async (src) => {
         anaCsv = { name: 'person', runs };
         // Their calls: on a turn while they were on it.
         const mine = sleep.filter((z) => stretches.some((e) => e.turn === BoardTurns.splitCraft(z.turn).base && z.firstSeen <= e.to && z.seen >= e.from));
-        body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches).turn)}`, { between: between(runs), spares: null, sleep: mine });
+        body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches, h && Person.pickOf(h)).turn)}`, { between: between(runs), spares: null, sleep: mine });
       }
     }
     const dates = ana.range === 'custom'

@@ -256,6 +256,16 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Name codes (owner, 2026-10-26): a name with TV beside it is no longer a
+  sighting at all (screens.js parseBoardNames `tv`, board-auto.js sight);
+  before, it was kept as "working this job", so JUOD showed S501 whenever
+  SR03 wasn't read in a check. Option B (owner): when a code matches more
+  than one own turn within an hour of its latest sighting
+  (Person.candidates), the tracked list and Person search ask "Which is
+  yours?" and keep the pick on the phone (localStorage `personPick`). Laptop
+  alerts still follow the laptop's own-turn match. Home turn "now" now
+  marks the turn they're on, not the newest start. Old TV entries stay in
+  people.json until they age out of the 30 days.
 - ⚙ Settings (owner, 2026-10-26): gear top right of the page; page style
   Light / Dark / Retro (like CATS), kept on the phone (localStorage
   `boardTheme`; none picked = follows the phone). Retro = :root

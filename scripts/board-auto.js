@@ -465,7 +465,9 @@ async function runRoute(page, opts = {}) {
     const k = `${h}/${turn}`;
     seen.set(k, { h, turn, own: own || (seen.get(k) || {}).own || false });
   };
-  for (const b of boardNames) sight(b.code, b.turn, !!b.own);
+  // A name with TV beside it is on another turn for now (owner, 2026-10-26:
+  // "it's supposed to ignore it if it has a TV beside the name"): not a sighting.
+  for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own);
   for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
   for (const y of yardNames) sight(y.code, y.job, false);
   // In the Toronto bunkhouse under a turn (their own or one they're covering).
