@@ -274,6 +274,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   headings/menu text, black data, yellow #ffff00 highlight, white inputs
   with black edges), Courier New (Courier Prime web font where missing),
   square corners. Labelled just "Retro" (owner).
+  Retro Tablet (owner, same day, `data-theme="tablet"`): CATS in the GLINK
+  3270 app from the owner's photos: black screen, blue #5c8aff labels, cyan
+  #3fe0d8 headings and header bars (blue #1236d0 letters on cyan), white
+  data, green/yellow/red as on the screens, grey #d6d6d6 title box and tab
+  chips, Barlow Condensed (nearest to GLINK's tall narrow letters).
 - Fixed (owner, 2026-10-26): a followed person (👤 JUOD) sometimes showed
   "Not seen on a turn in the saved checks yet" on a fresh load. Race:
   paintTracked runs before people.json arrives and the redraw was skipped

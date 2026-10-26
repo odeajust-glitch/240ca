@@ -14,9 +14,10 @@
 <link rel="apple-touch-icon" href="board-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <script>
-  // Page style picked in ⚙ Settings (owner, 2026-10-26): light, dark or
-  // retro (CATS's own colours). Not picked: follows the phone.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
+  // Page style picked in ⚙ Settings (owner, 2026-10-26): light, dark, retro
+  // (CATS's own colours) or retro tablet (CATS in the GLINK 3270 app).
+  // Not picked: follows the phone.
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,6 +76,29 @@
   :root[data-theme="retro"] .top h1, :root[data-theme="retro"] h2, :root[data-theme="retro"] h3 { color: #800000; letter-spacing: 0.02em; }
   :root[data-theme="retro"] input, :root[data-theme="retro"] select { background: #ffffff !important; border: 1px solid #000000 !important; color: #000000; }
   :root[data-theme="retro"] .sheet, :root[data-theme="retro"] .strip { background: #f1f1f1; }
+  /* Retro Tablet (owner, 2026-10-26): CATS in the GLINK 3270 app, from the
+     owner's photos: black screen, blue labels, cyan menu text and header
+     bars (blue letters on cyan), white numbers, green line-up data, yellow
+     messages, red urgent times, grey title boxes and F-key chips; tall
+     narrow letters (Barlow Condensed, the nearest to GLINK's). */
+  :root[data-theme="tablet"] {
+    --bg: #000000; --sheet: #000000; --ink: #f4f4f4; --soft: #5c8aff; --rule: #2b3f99; --rule-soft: #17235a;
+    --accent: #3fe0d8; --accent-ink: #000000; --accent-tint: #0c3533;
+    --amber: #ffff3c; --amber-tint: #2e2e08; --go: #3dff52; --go-tint: #0b2a0f; --stop: #ff3b30; --stop-tint: #3a0c0a;
+    --plan-tint: #0e1633; --poolA: #5c8aff; --poolB: #ff79d8; --poolSR: #3fe0d8;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --mono: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    color-scheme: dark; }
+  :root[data-theme="tablet"] * { border-radius: 0 !important; box-shadow: none !important; }
+  :root[data-theme="tablet"] body { font-size: 17px; font-weight: 500; }
+  :root[data-theme="tablet"] .top h1 { background: #d6d6d6; color: #111111; padding: 2px 12px; }
+  :root[data-theme="tablet"] .sheet > header, :root[data-theme="tablet"] table thead th { background: #3fe0d8; color: #1236d0; }
+  :root[data-theme="tablet"] .sheet > header h2, :root[data-theme="tablet"] .sheet > header .meta { color: #1236d0; }
+  :root[data-theme="tablet"] h3, :root[data-theme="tablet"] .sec-title { color: #3fe0d8; }
+  :root[data-theme="tablet"] .modes button { background: #d6d6d6; color: #111111; border-color: #d6d6d6; }
+  :root[data-theme="tablet"] .modes button[aria-pressed="true"] { background: #3fe0d8; color: #000000; border-color: #3fe0d8; }
+  :root[data-theme="tablet"] input, :root[data-theme="tablet"] select { background: #000000 !important; color: #f4f4f4; border: 1px solid #5c8aff !important; }
+  :root[data-theme="tablet"] .num, :root[data-theme="tablet"] .mono { font-variant-numeric: tabular-nums; }
 
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--body); }
@@ -487,6 +511,7 @@
       <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
       <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
+      <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
     </div>
     <p class="note" id="stynote"></p>
   </div>
@@ -518,7 +543,7 @@
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
