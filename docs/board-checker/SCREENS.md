@@ -64,7 +64,9 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   is read as it opens (that's what predicts who fills a job), then again
   with the view time (Enter restarts the list, label `<board>-view`); the
   turns only in the second read "left the board in the last 10 min"
-  (summary `leftBoard`), shown under that board's tab and never predicted.
+  (summary `leftBoard`), never predicted. The site shows each board twice
+  (owner, 2026-10-28): as it opens, and "<board> (24h)" with the whole
+  view-time board, the turns that left marked "left the board".
 - **Jobs going spare**: **3 → 5**, Enter (TERMINAL LINEUP, PSTS27P,
   vacancies only Y). POS, CALL (MM/DD), TIME, TZ, STATUS, TRAIN/DESC,
   ORGSTN, PL, CC, ST (`* **`), RETN (MM/DD), DTTM, TURN (pool + turn:

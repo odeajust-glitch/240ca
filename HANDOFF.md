@@ -262,8 +262,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   time.js hhmmBefore). Option A (owner): each board is read as it opens
   first (predictions use that), then with the view time (label
   `<board>-view`, no names learned); turns only in the second read =
-  summary `leftBoard` = "Left the board in the last 10 min" under the
-  board's tab (site pools `left`, FORMAT 13). The window logs "view time
+  summary `leftBoard`. Owner, 2026-10-28: the site shows each spareboard
+  twice, as it opens and a "(24h)" tab with the whole view-time board
+  (summary `spareboardsView`, pools `view: true`, `viewTime`; turns only
+  there marked "left the board"; BoardTurns.facts skips view tabs). Turns
+  and positions only, never names (FORMAT 14). The window logs "view time
   1750 entered" (or "no VIEW TIME box found"). ❓ Not seen on real CATS yet.
 - Name codes (owner, 2026-10-26): a name with TV beside it is no longer a
   sighting at all (screens.js parseBoardNames `tv`, board-auto.js sight);

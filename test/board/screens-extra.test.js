@@ -371,10 +371,24 @@ test('spareboard VIEW TIME: who left the board in the last 10 minutes', () => {
   const end = ['END  OF  SPAREBOARD                                                 E010-1'];
   const input = loadSummary({ probedAt: '2026-10-26T22:21:00Z', screens: [
     { label: 'en-slow', screenGrid: lines([...head, ...rows3, ...end]) },
-    { label: 'en-slow-view', screenGrid: lines([...head, ...rows5, ...end]) },
+    { label: 'en-slow-view', viewTime: '1811', screenGrid: lines([...head, ...rows5, ...end]) },
   ] });
   assert.deepEqual(input.spareboards.enSlow.map((t) => t.turn), ['EN01', 'EN10', 'EN07']); // what predictions use
   assert.deepEqual(input.leftBoard.enSlow.map((t) => `${t.turn} ${t.pos}`), ['EN04 4', 'EN08 5']);
   assert.equal(input.leftBoard.enFast, undefined); // not read with a view time
   assert.equal(input.seen.sarnia, undefined);
+  // Owner, 2026-10-28: the site shows both, the (24h) tab with all five.
+  assert.deepEqual([input.spareboardsView.enSlow.viewTime, input.spareboardsView.enSlow.turns.length], ['1811', 5]);
+  const { snapshotOf } = require('../../lib/board/site');
+  const base = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  const { shown } = snapshotOf({ ...base, screens: [...base.screens,
+    { label: 'en-slow', screenGrid: lines([...head, ...rows3, ...end]) }, { label: 'en-slow-view', viewTime: '1811', screenGrid: lines([...head, ...rows5, ...end]) }] });
+  const names = shown.pools.map((p) => p.name);
+  assert.deepEqual(names.slice(names.indexOf('Engineer slow board'), names.indexOf('Engineer slow board') + 2), ['Engineer slow board', 'Engineer slow board (24h)']);
+  const view = shown.pools.find((p) => p.name === 'Engineer slow board (24h)');
+  assert.deepEqual([view.view, view.viewTime, view.turns.filter((t) => t.left).map((t) => t.turn)], [true, '1811', ['EN04', 'EN08']]);
+  // Facts and history ignore the (24h) copy: EN07 is on one board, once.
+  const BoardTurns = require('../../public/board-turns');
+  const s = { pools: shown.pools };
+  assert.equal(BoardTurns.facts(s, 'EN07').filter((x) => x.kind === 'pool').length, 1);
 });

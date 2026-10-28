@@ -728,13 +728,12 @@ function pools(s, pi) {
   const p = s.pools[pi] || s.pools[0];
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
   const rows = p.turns.map((t) => `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}${t.left ? ' <span class="spare">left the board</span>' : ''}</td></tr>`).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
-  // A spareboard read with VIEW TIME 10 min back (owner, 2026-10-26): who
-  // left it since (likely called), never predicted for a job.
-  const left = p.left ? `<div class="away"><b>Left the board in the last 10 min</b> ${p.left.length
-    ? markTurn(p.left.map((t) => `${t.turn} (pos ${t.pos})`).join(', ')) : '<span class="muted">nobody</span>'}</div>` : '';
+  // A spareboard's (24h) tab (owner, 2026-10-28): the whole board with VIEW
+  // TIME typed; turns only there left the board since (likely called).
+  const left = p.view ? `<p class="anote" style="margin:10px 14px">CATS with VIEW TIME ${esc(p.viewTime || '—')} (the check less 10 min). "Left the board": not on it as it opens, likely called since.</p>` : '';
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
     <div class="tabs" role="tablist">${tabs}</div>
     <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${left}</section>`;

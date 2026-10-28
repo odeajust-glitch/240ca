@@ -421,9 +421,10 @@ async function runRoute(page, opts = {}) {
     let sb = await chooseFromMenus(page, option, menu);
     if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
     expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
-    const readPages = async (as, names) => {
+    const readPages = async (as, names, viewTime) => {
       for (let pageNo = 0; pageNo < 15; pageNo++) {
         await capture(as);
+        if (viewTime) screens[screens.length - 1].viewTime = viewTime;
         if (names) await learn();
         if (/END\s+OF\s+SPAREBOARD/.test(sb.text)) break;
         const next = await press(page, 'F8');
@@ -438,7 +439,7 @@ async function runRoute(page, opts = {}) {
     sb = expect(await press(page, 'Enter'), (x) => /SPAREBOARD/.test(x.text), `${name} at ${t}`);
     const said = (sb.text.match(/[^\n]*(INVALID|ERROR|NOT VALID)[^\n]*/) || [])[0];
     console.log(`  ${name}: view time ${t} entered${said ? ` (CATS: ${said.trim()})` : ''}.`);
-    await readPages(`${label}-view`, false);
+    await readPages(`${label}-view`, false, t);
   });
   await spareboard(3, 13, 'co-fast', 'Conductor fast board', true);
   await spareboard(3, 9, 'co-slow', 'Conductor slow board', true);
