@@ -28,8 +28,8 @@
     const out = [];
     if (!turn) return out;
     for (const p of s.pools || []) {
-      if (p.view) continue; // a spareboard's (24h) tab: the same board again
       for (const t of p.turns) {
+        if (t.left) continue; // only with VIEW TIME: not on the board as it opens
         if (t.turn === turn) out.push({ kind: 'pool', pool: p.name, pos: t.pos, status: t.status, craft: t.craft || '', text: `${shortPool(p.name)} position ${t.pos}${t.craft ? ` (${t.craft})` : ''}: ${t.status}` });
       }
     }

@@ -383,12 +383,14 @@ test('spareboard VIEW TIME: who left the board in the last 10 minutes', () => {
   const base = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
   const { shown } = snapshotOf({ ...base, screens: [...base.screens,
     { label: 'en-slow', screenGrid: lines([...head, ...rows3, ...end]) }, { label: 'en-slow-view', viewTime: '1811', screenGrid: lines([...head, ...rows5, ...end]) }] });
-  const names = shown.pools.map((p) => p.name);
-  assert.deepEqual(names.slice(names.indexOf('Engineer slow board'), names.indexOf('Engineer slow board') + 2), ['Engineer slow board', 'Engineer slow board (24h)']);
-  const view = shown.pools.find((p) => p.name === 'Engineer slow board (24h)');
-  assert.deepEqual([view.view, view.viewTime, view.turns.filter((t) => t.left).map((t) => t.turn)], [true, '1811', ['EN04', 'EN08']]);
-  // Facts and history ignore the (24h) copy: EN07 is on one board, once.
+  // Owner, later the same day: no (24h) tab; one board, the extra two in
+  // their places with the view time beside them.
+  assert.ok(!shown.pools.some((p) => /24h/.test(p.name)));
+  const slow = shown.pools.find((p) => p.name === 'Engineer slow board');
+  assert.deepEqual(slow.turns.map((t) => `${t.pos} ${t.turn}${t.viewTime ? ` ${t.viewTime}` : ''}`), ['001 EN01', '002 EN10', '003 EN07', '004 EN04 1811', '005 EN08 1811']);
+  // Facts and history leave them out: not on the board as it opens.
   const BoardTurns = require('../../public/board-turns');
   const s = { pools: shown.pools };
   assert.equal(BoardTurns.facts(s, 'EN07').filter((x) => x.kind === 'pool').length, 1);
+  assert.equal(BoardTurns.facts(s, 'EN04').filter((x) => x.kind === 'pool').length, 0);
 });
