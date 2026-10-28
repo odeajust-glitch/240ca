@@ -256,6 +256,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Fixed (owner, 2026-10-28): "SA08 is already called for it (out working on
+  M30241)" on M30241 27, PLN for 0331 the next night. CATS's INFO gives the
+  symbol only; SA08 was on the morning's M30241 26 (off the Call Board).
+  engine.js now counts "called for" only when the line-up train is ORD or
+  its call is within the hour; otherwise it takes a turn from the queue.
 - Spareboards, engineer fast (1 → 19) / slow (1 → 17) and, same day,
   conductor fast (3 → 13) / slow (3 → 9) (owner, 2026-10-26): the checker types the check's time less 10 min into the time box in the
   top right (VIEW TIME, owner's screenshots; board-auto.js fillTopRight,

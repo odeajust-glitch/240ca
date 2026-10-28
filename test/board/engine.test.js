@@ -582,3 +582,24 @@ test('L502: the first crew up on 501/502, each craft spare when it can\'t be cal
   // The board not read: as before.
   assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup }).predictions[0].turn, undefined);
 });
+
+// Owner, 2026-10-28 12:39: SA08 at 999 "out working on M30241" (the
+// morning's M30241 26, gone from the Call Board) was put on M30241 27,
+// planned for 0331 the next night. A planned train 12 h out can't have a
+// called crew: it takes the next A turn instead.
+test('out working on a symbol: not the same symbol planned for much later', () => {
+  const now = at(2026, 10, 28, 12, 39);
+  const a = (turn, pos, extra = {}) => ({ craft: 'CO', turn, terminal: 0, pos, restUntil: null, statusUntil: null, ...extra });
+  const input = {
+    now, callBoard: [], chainGangHome: [], sdHome: [], s1Home: [], s3Home: [],
+    aHome: [a('SA08', 999, { working: true, workingOn: 'M30241' }), a('SA02', 1), a('SA03', 2)],
+    lineup: [{ order: at(2026, 10, 29, 3, 31), symbol: 'M30241', trainNo: 'M30241', originDay: '27', status: 'PLN', deadhead: false, trnCrew: '45SASA0' }],
+  };
+  const r = runBoardCheck(input);
+  const p = r.predictions.find((x) => x.symbol === 'M30241');
+  assert.notEqual(p.turn, 'SA08');
+  assert.doesNotMatch(p.reason, /already called/);
+  // Ordered and close: still theirs.
+  const ord = runBoardCheck({ ...input, now: at(2026, 10, 29, 1, 30), lineup: [{ ...input.lineup[0], status: 'ORD' }] });
+  assert.equal(ord.predictions.find((x) => x.symbol === 'M30241').turn, 'SA08');
+});
