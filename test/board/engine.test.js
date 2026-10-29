@@ -603,3 +603,26 @@ test('out working on a symbol: not the same symbol planned for much later', () =
   const ord = runBoardCheck({ ...input, now: at(2026, 10, 29, 1, 30), lineup: [{ ...input.lineup[0], status: 'ORD' }] });
   assert.equal(ord.predictions.find((x) => x.symbol === 'M30241').turn, 'SA08');
 });
+
+// Owner's screenshot (2026-10-29 15:06): the calling sequence said M38261
+// 29 (order 1645, SB06) "B, should be SR", but it's right: A42431 (B) and
+// M38261 are the road day's two B trains. A train still on the line-up,
+// planned before 1645 and not called yet, took the second B slot first.
+// Trains already called take their slots before ones still to come.
+test('a called train keeps its slot ahead of a line-up train planned earlier', () => {
+  const sar = (symbol, day, h, m, co, en) => ({ symbol, trainNo: symbol.slice(0, 4), originDay: day, station: 'SARNIA', onDuty: at(2026, 10, 29, h, m),
+    crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const input = {
+    now: at(2026, 10, 29, 15, 6), seenSince: at(2026, 10, 29, 0, 0), chainGangHome: [], aHome: [], bHome: [], sdHome: [], s1Home: [], s3Home: [],
+    callBoard: [sar('M30241', '27', 7, 0, 'SA03', 'S103'), sar('M39491', '28', 8, 15, 'SA04', 'S104'), sar('A42431', '29', 10, 45, 'SB05', 'S305'),
+      sar('M38261', '29', 16, 30, 'SB06', 'S306')],
+    // Still to come, planned at 1500 (before M38261's 1645).
+    lineup: [{ order: at(2026, 10, 29, 15, 0), symbol: 'X30241', trainNo: 'X302', originDay: '29', status: 'PLN', deadhead: false, trnCrew: '' }],
+  };
+  const r = runBoardCheck(input);
+  const seq = Object.fromEntries(r.today.map((t) => [t.symbol, t.expected]));
+  assert.equal(seq.M38261, 'B');
+  assert.ok(!r.flags.some((f) => /M38261/.test(f.text)), r.flags.map((f) => f.text).join(' | '));
+  // The line-up train comes after both B trains: Chain Gang.
+  assert.equal(r.predictions.find((p) => p.symbol === 'X30241').pool, 'SR');
+});

@@ -256,6 +256,13 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Fixed (owner, 2026-10-29): calling sequence showed M38261 29 (order 1645,
+  SB06) "B, should be SR" though it was the road day's 2nd B. A/B slots were
+  handed out in order time across called trains and line-up trains alike,
+  so a train still planned earlier (not called) took the slot. engine.js now
+  gives each road day's slots to called trains first (Call Board, memory,
+  ORD with crew code), then the rest (`slotOrder`). ❓ Reproduced from the
+  screenshot, not from the real check (site not reachable from the cloud).
 - Fixed (owner, 2026-10-28): "SA08 is already called for it (out working on
   M30241)" on M30241 27, PLN for 0331 the next night. CATS's INFO gives the
   symbol only; SA08 was on the morning's M30241 26 (off the Call Board).
