@@ -640,7 +640,8 @@ async function publishSite(changed) {
 async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
   const settings = siteSettings();
   if (!settings.r2) return;
-  const { events, told } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead });
+  const { events, told, held } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead, now });
+  if (held.length) console.log(`  Holding line-up alerts mid-call: ${held.join(', ')}.`);
   // Followed people: their own turn now (owner, 2026-10-25).
   const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
   try { TurnAlerts.saveTold(PERSON_TURNS_FILE, personTurns); } catch (err) { console.log(`  (followed people not saved: ${err.message})`); }
@@ -660,7 +661,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
     const log = new Map(); // text → { turn, kind, phones, failed }
     for (const sub0 of subs) {
       const s = TurnAlerts.expandPhone(sub0, personTurns);
-      const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now });
+      const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now, held });
       nextBases[s.key] = mine.base;
       for (const e of mine.events) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });

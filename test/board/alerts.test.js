@@ -475,3 +475,29 @@ test('turn alerts: S501-CO hears only the conductor going on duty', () => {
   const r = turnEvents({}, st);
   assert.deepEqual(r.events.filter((e) => /S501-/.test(e.turn)).map((e) => e.text), ['S501-CO on duty on L50231 25 at Sarnia 25th 0300.']);
 });
+
+// Owner, 2026-10-29: mid-call the called crew drops off the board but the
+// train stays on the line-up until both accept, so the next crew looked
+// lined up for it and got a wrong alert. It waits now.
+test('turn alerts: no line-up alert for the next crew while a train is being called', () => {
+  const ord = (o) => pred({ status: 'ORD', ...o });
+  let r = step({}, [ord()], [], { now: at(2026, 10, 22, 12, 40) });
+  let told = r.told; // SR03 + SD05 lined up, ordered
+  // 1250: SR03 is being called (off the board); the prediction moves SR04 up.
+  r = step(told, [ord({ turn: 'SR04' })], [], { now: at(2026, 10, 22, 12, 50) });
+  assert.deepEqual(r.events, []);
+  assert.deepEqual(r.held, ['SR04']);
+  // 1300: called, on the Call Board: SR03 on duty, SR04 never told.
+  r = step(r.told, [], [board()], { now: at(2026, 10, 22, 13, 0) });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind]), [['SD05', 'onDuty'], ['SR03', 'onDuty']]);
+  assert.ok(!r.events.some((e) => e.turn === 'SR04'));
+  // The call really moved on: still the same after 30 min, SR04 is told.
+  r = step(told, [ord({ turn: 'SR04' })], [], { now: at(2026, 10, 22, 12, 50) });
+  r = step(r.told, [ord({ turn: 'SR04' })], [], { now: at(2026, 10, 22, 13, 5) });
+  assert.deepEqual(r.events, []);
+  r = step(r.told, [ord({ turn: 'SR04' })], [], { now: at(2026, 10, 22, 13, 21) });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind]), [['SR04', 'lineup'], ['SR04', 'ordered']]);
+  // Hours before the call, a new line-up is news straight away.
+  r = step(told, [ord({ turn: 'SR04', call: at(2026, 10, 22, 18, 0) })], [], { now: at(2026, 10, 22, 12, 50) });
+  assert.deepEqual(r.events.map((e) => [e.turn, e.kind]), [['SR04', 'lineup'], ['SR04', 'ordered']]);
+});

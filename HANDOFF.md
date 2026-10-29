@@ -256,6 +256,14 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Mid-call hold (owner, 2026-10-29): while a crew is being called they drop
+  off the board but the train stays on the line-up, so the next crew got a
+  wrong "lined up". alerts.js turnEvents (now passed `now`): a new line-up
+  for an ORD train within 15 min of its call (or past it), that another
+  turn was lined up for last check and has dropped off (not on duty), is
+  held (told[turn].held, returned `held`; reminders/time changes skip held
+  turns) until the train shows on the Call Board or 30 min pass (HOLD_MAX),
+  then it goes out. Window logs "Holding line-up alerts mid-call: …".
 - Fixed (owner, 2026-10-29): calling sequence showed M38261 29 (order 1645,
   SB06) "B, should be SR" though it was the road day's 2nd B. A/B slots were
   handed out in order time across called trains and line-up trains alike,
