@@ -256,6 +256,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Toronto call (owner, 2026-10-29): out of Mac yard (bunkhouse crews) the
+  expected call is order − 2 h, train or deadhead (config.torontoCallMinutes,
+  engine.js torontoCallTime), in toronto.js, site.js Mac line-up, alerts.js
+  home line-ups / Toronto South / Toronto rescues. Sarnia unchanged
+  (order − 15 min prep − 2 h). FORMAT 16.
 - Mid-call hold (owner, 2026-10-29): while a crew is being called they drop
   off the board but the train stays on the line-up, so the next crew got a
   wrong "lined up". alerts.js turnEvents (now passed `now`): a new line-up
