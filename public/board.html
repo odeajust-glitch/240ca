@@ -735,7 +735,7 @@ function pools(s, pi) {
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
   // Spareboards (owner, 2026-10-28): anyone who only shows with VIEW TIME
   // (the check less 10 min) has that time in yellow beside their turn.
-  const left = p.turns.some((t) => t.left) ? `<p class="anote" style="margin:10px 14px">A <span class="vt">${esc(p.viewTime || '')}</span> beside a turn: only on the board with VIEW TIME ${esc(p.viewTime || '')} (the check less 10 min), likely called since.</p>` : '';
+  const left = p.turns.some((t) => t.left) ? `<p class="anote" style="margin:10px 14px">A <span class="vt">${esc(p.viewTime || '')}</span> beside a turn: only on the board with VIEW TIME ${esc(p.viewTime || '')} (the check less 10 min).</p>` : '';
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
     <div class="tabs" role="tablist">${tabs}</div>
     <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${left}</section>`;
