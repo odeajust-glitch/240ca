@@ -99,3 +99,5 @@ per week per person (A7).
   page open from earlier; a newer board only put an "Update" bar at the top.
   The Current tab now loads the newer board by itself, and checks as soon
   as the phone comes back to the page.
+- 2026-10-30: **Removed the AI (Anthropic API) check** of each report: no
+  more `AI CHECK` lines, no API key needed.

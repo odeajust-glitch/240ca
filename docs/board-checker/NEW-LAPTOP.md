@@ -54,11 +54,9 @@ Put in (your own values, one per line, no spaces around `=`):
 ```
 CATS_EMPLOYEE_NO=
 CATS_PASSWORD=
-ANTHROPIC_API_KEY=
-BOARD_AI_MODEL=claude-haiku-5-5
 ```
 
-Optional lines: `BOARD_HISTORY_DAYS=90`, `BOARD_AI_REVIEW=off`,
+Optional lines: `BOARD_HISTORY_DAYS=90`,
 `BOARD_RELAY_URL=` and `BOARD_KEY=` (phone relay). See `.env.example`.
 
 If you copied the old history, put it at `$HOME\BoardChecker\history`.

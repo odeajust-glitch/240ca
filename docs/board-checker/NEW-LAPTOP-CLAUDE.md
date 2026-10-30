@@ -29,12 +29,11 @@ these first, from the repo root:
    removes Playwright; reinstall it the same way.
 4. **Settings.** The data folder is `C:\Users\<user>\BoardChecker`. Create it,
    then have Justin open `notepad $HOME\BoardChecker\.env` and type
-   `CATS_EMPLOYEE_NO=`, `CATS_PASSWORD=`, `ANTHROPIC_API_KEY=` and
-   `BOARD_AI_MODEL=claude-haiku-5-5`, one per line, with no spaces around `=`.
-   **Never ask for these values, and never print or read them.** To check the
-   file, print only each name and whether it has a value (and the key's
-   length). If Justin pastes a password in chat, tell him to change it. Make
-   sure it's saved as plain text, not as `.env.txt` or a Word document.
+   `CATS_EMPLOYEE_NO=` and `CATS_PASSWORD=`, one per line, with no spaces
+   around `=`. **Never ask for these values, and never print or read them.**
+   To check the file, print only each name and whether it has a value. If
+   Justin pastes a password in chat, tell him to change it. Make sure it's
+   saved as plain text, not as `.env.txt` or a Word document.
 5. **Old laptop off.** Before starting, confirm with Justin that the script on
    the old laptop is stopped, so the two don't both sign in to CATS.
 6. **Run.** Start it in a terminal tab Justin can see:
@@ -51,9 +50,6 @@ these first, from the repo root:
 
 - The tool's one job is "when do I go to work". Don't add features he didn't
   ask for.
-- When he asks you to check Haiku's notes, compare each `AI CHECK` line with
-  the report it judged, in the terminal or in `history\`. Say whether Haiku
-  was right, then propose prompt fixes in `lib/board/review.js`.
 - Only reason about times that are in a saved snapshot. If a time was never
   captured, say so; don't reconstruct it.
 - Sarnia trains only: a manifest whose third digit is odd (M399, A425) is

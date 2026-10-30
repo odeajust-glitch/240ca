@@ -256,6 +256,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- AI check removed (owner, 2026-10-30: "take out the Anthropic API
+  check"): lib/board/review.js, the `AI CHECK` note (terminal, history,
+  phone relay), the @anthropic-ai/sdk package and the ANTHROPIC_API_KEY /
+  BOARD_AI_* settings are gone. A leftover key line in the laptop's .env
+  is ignored.
 - Current tab keeps itself current (owner, 2026-10-30: two phones showed
   different boards; one had the page open from earlier). A newer board now
   loads by itself on the Current tab (not mid-dialog or typing), checked
@@ -907,7 +912,7 @@ Tested on the fake CATS (as 25/26) + unit test. 23 tests.
 - Owner is setting up a second laptop that will only run the board checker,
   and wants to move everything there soon (see docs/board-checker/NEW-LAPTOP.md).
 
-## 2026-10-16: AI check of each report
+## 2026-10-16: AI check of each report (removed 2026-10-30, owner)
 Owner asked for an AI to check the script's output, with the key changeable
 later. `lib/board/review.js` sends the `--details` report to Claude (Anthropic
 SDK) with a short summary of the rules; it answers "Looks right." or up to 3

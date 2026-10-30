@@ -60,7 +60,6 @@ const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck, mineForPhone } = require('../lib/board/relay');
-const { reviewCheck } = require('../lib/board/review');
 const { buildSite, publishSiteDir, siteSettings } = require('../lib/board/site');
 const { at, hhmmBefore } = require('../lib/board/time');
 const config = require('../lib/board/config');
@@ -531,7 +530,7 @@ function answer(summary, me, nowOverride) {
   const text = formatReport(result, input.seen, { changes: { prev, cur } });
   fs.writeFileSync(LAST_FILE, JSON.stringify(cur, null, 2));
   const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
-  // The working behind each train, for the AI review.
+  // The working behind each train, kept with the snapshot.
   const detailed = formatReport(result, input.seen, { details: true });
   const lines = changeLines(prev, cur); // ['', heading, ...one line per change]
   // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
@@ -543,20 +542,6 @@ function answer(summary, me, nowOverride) {
       spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, fillIns }), lineupRead: !!input.seen.lineup };
 }
 let lastToronto = null;
-
-// Claude's look over the check (lib/board/review.js). Only when something
-// changed, so an unchanged board every 5 minutes doesn't cost a call each time.
-async function aiReview(detailed) {
-  const r = await reviewCheck(detailed);
-  if (r.skipped) return null;
-  if (r.error) {
-    console.log(`  (AI check skipped: ${r.error})`);
-    return null;
-  }
-  const note = `AI CHECK (${r.model}): ${r.note.includes('\n') ? `\n${r.note}` : r.note}`;
-  console.log(`\n${note}`);
-  return note;
-}
 
 // When a check gets stuck, keep the screen it got stuck on (masked, like
 // auto-summary.json) so the route can be taught about it. Prints only the
@@ -579,9 +564,9 @@ async function saveStuckScreen(page) {
 }
 
 // One snapshot per check, so any past board can be looked at again:
-// history\<date>\<HHMM>.txt is the report as printed (plus the AI note and
-// the working behind each train), .json the masked CATS screens behind it.
-function saveSnapshot(summary, { text, detailed, note }) {
+// history\<date>\<HHMM>.txt is the report as printed (plus the working
+// behind each train), .json the masked CATS screens behind it.
+function saveSnapshot(summary, { text, detailed }) {
   const at = new Date(summary.probedAt);
   const day = at.toLocaleDateString('en-CA'); // YYYY-MM-DD, local
   const hhmm = at.toLocaleTimeString('en-CA', { hour12: false, hour: '2-digit', minute: '2-digit' }).replace(':', '');
@@ -589,7 +574,7 @@ function saveSnapshot(summary, { text, detailed, note }) {
   fs.mkdirSync(dir, { recursive: true });
   let base = hhmm;
   for (let n = 2; fs.existsSync(path.join(dir, `${base}.txt`)); n++) base = `${hhmm}-${n}`;
-  const parts = [text, note, `\n--- Working ---\n${detailed}`].filter(Boolean);
+  const parts = [text, `\n--- Working ---\n${detailed}`];
   fs.writeFileSync(path.join(dir, `${base}.txt`), `${parts.join('\n\n')}\n`);
   fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify(summary, null, 2));
 }
@@ -1125,9 +1110,8 @@ async function main() {
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
-      const note = first || changed ? await aiReview(detailed) : null;
       try {
-        saveSnapshot(summary, { text, detailed, note });
+        saveSnapshot(summary, { text, detailed });
         pruneHistory();
       } catch (err) {
         console.log(`  (snapshot not saved: ${err.message})`);
@@ -1138,8 +1122,7 @@ async function main() {
         console.log(`  (crew names not saved: ${err.message})`);
       }
       if (relay) {
-        const report = note ? `${text}\n\n${note}` : text;
-        const check = { checkedAt: summary.probedAt, me: meLines, mine, report, changes, myAnswerChanged };
+        const check = { checkedAt: summary.probedAt, me: meLines, mine, report: text, changes, myAnswerChanged };
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
