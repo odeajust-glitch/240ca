@@ -256,6 +256,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Current tab keeps itself current (owner, 2026-10-30: two phones showed
+  different boards; one had the page open from earlier). A newer board now
+  loads by itself on the Current tab (not mid-dialog or typing), checked
+  every 2 min and as soon as the phone brings the page back on screen
+  (visibilitychange / pageshow). Snapshots tab still gets the Update bar.
 - Followed person off their turn (owner, 2026-10-30: tracking showed
   "JUOD (SR03)" after someone else took SR03; "it should say I'm not
   found"). Off = someone else seen on that turn as their own since, or not

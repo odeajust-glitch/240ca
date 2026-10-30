@@ -2623,12 +2623,23 @@ source().then(async (src) => {
   else if (wantTurns) setMode('turns');
   else if (wantAna) setMode('analytics');
 
-  // A newer board published while this page is open: offer it (live site only).
+  // A newer board published while this page is open (live site only). On
+  // the Current tab it loads by itself (owner, 2026-10-30: two phones showed
+  // different boards: one had the page open from earlier and only got an
+  // "Update" bar at the top, out of sight). Elsewhere (an old snapshot, a
+  // dialog open, typing) the bar offers it. Phones pause the page while it's
+  // in the background, so check again as soon as it's back on screen.
   if (src.live) {
-    setInterval(async () => {
+    let checking = false;
+    const busy = () => document.querySelector('.dlg') || ['INPUT', 'SELECT', 'TEXTAREA'].includes((document.activeElement || {}).tagName);
+    const checkNewer = async () => {
+      if (checking) return;
+      checking = true;
       try {
         const idx = await getJSON('data/index.json');
-        if (!idx.latest || newerBar) return;
+        if (!idx.latest) return;
+        if (idx.latest !== src.index.latest && mode === 'current' && !busy()) { location.hash = '#current'; location.reload(); return; }
+        if (newerBar) return;
         if (idx.latest !== src.index.latest) {
           newerBar = `<div class="newer">A newer board was published (${esc(when(idx.latest).time)}).<button type="button" id="newerbtn">Update</button></div>`;
           if (mode === 'current' || mode === 'snap') show(cur);
@@ -2643,8 +2654,11 @@ source().then(async (src) => {
         const s = list.find((x) => x.taken === idx.latest);
         if (s && idx.checked > s.taken) s.sameUntil = idx.checked;
         if (mode === 'current' || mode === 'snap') show(cur, true);
-      } catch (e) { /* offline: try again next time */ }
-    }, 120000);
+      } catch (e) { /* offline: try again next time */ } finally { checking = false; }
+    };
+    setInterval(checkNewer, 120000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkNewer(); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted) checkNewer(); });
   }
 }).catch((err) => {
   document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;

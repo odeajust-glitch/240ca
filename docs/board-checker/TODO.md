@@ -95,3 +95,7 @@ per week per person (A7).
   else took it (owner: "it should say I'm not found since there is a new
   person on SR03"). Now "Not found on a turn now", and that turn's alerts
   stop for them, until they're seen on a turn of their own again.
+- 2026-10-30: **Fixed: two phones showing different boards.** One had the
+  page open from earlier; a newer board only put an "Update" bar at the top.
+  The Current tab now loads the newer board by itself, and checks as soon
+  as the phone comes back to the page.
