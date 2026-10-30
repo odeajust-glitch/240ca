@@ -467,6 +467,34 @@ test('turn alerts: following a person across turns', () => {
   assert.deepEqual(expandPhone({ turns: ['@ffffffffffffffff', 'SR09'] }, people).turns, ['SR09']);
 });
 
+// Owner, 2026-10-30: "it should say I'm not found since there is a new
+// person on SR03": a followed person off their turn gets no more of its alerts.
+test('turn alerts: a followed person off their turn', () => {
+  const { expandPhone, updatePersonTurns } = require('../../lib/board/alerts');
+  const me = 'abcdef0123456789';
+  const other = '0123456789abcdef';
+  const t0 = Date.UTC(2026, 9, 30, 2, 0);
+  let people = updatePersonTurns({}, [{ h: me, turn: 'SR03', own: true }], t0);
+  // Someone else on SR03 now: straight off.
+  people = updatePersonTurns(people, [{ h: other, turn: 'SR03', own: true }], t0 + 5 * 60000);
+  assert.ok(!people[me]);
+  assert.deepEqual(expandPhone({ turns: [`@${me}`, 'SR09'] }, people).turns, ['SR09']);
+  // Not seen while names are read: off after 30 min, not before.
+  people = updatePersonTurns({}, [{ h: me, turn: 'SR03', own: true }], t0);
+  people = updatePersonTurns(people, [{ h: other, turn: 'SA01', own: true }], t0 + 25 * 60000);
+  assert.equal(people[me].turn, 'SR03');
+  people = updatePersonTurns(people, [{ h: other, turn: 'SA01', own: true }], t0 + 35 * 60000);
+  assert.ok(!people[me]);
+  // A check that read no names says nothing about them.
+  people = updatePersonTurns({}, [{ h: me, turn: 'SR03', own: true }], t0);
+  people = updatePersonTurns(people, [], t0 + 60 * 60000);
+  assert.equal(people[me].turn, 'SR03');
+  // 501/502: two people on one turn.
+  people = updatePersonTurns({}, [{ h: me, turn: 'S501', own: true }], t0);
+  people = updatePersonTurns(people, [{ h: me, turn: 'S501', own: true }, { h: other, turn: 'S501', own: true }], t0 + 5 * 60000);
+  assert.equal(people[me].turn, 'S501');
+});
+
 // Owner, 2026-10-25: S501 is two turns (EN and CO); a phone can follow one.
 test('turn alerts: S501-CO hears only the conductor going on duty', () => {
   const cb = [{ symbol: 'L50231', originDay: '25', station: 'SARNIA', onDuty: at(2026, 10, 25, 3, 0), crew: [{ craft: 'EN', turn: 'S502' }, { craft: 'CO', turn: 'S501' }] }];

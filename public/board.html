@@ -1448,9 +1448,26 @@ const Person = (() => {
     return [...new Set(list.filter((e) => e.own && stampMin(last) - stampMin(e.to) <= 60).map((e) => e.turn))];
   };
   let data = null;
+  let all = {}; // the last people.json read, for away()
   // A failed fetch (phone signal) isn't kept: the next paint tries again.
   const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then((d) => d.people || {}).catch(() => { data = null; return {}; }));
+    .then((d) => (all = d.people || {})).catch(() => { data = null; return {}; }));
+  // Off the turn they were last seen on (owner, 2026-10-30: "it should say
+  // I'm not found since there is a new person on SR03"): someone else seen
+  // on it as their own turn since, or not seen anywhere for GONE_MIN while
+  // the checks read names (the newest sighting of anyone). 501/502 has two
+  // people on one turn: only the time counts there. Same rule as the alerts
+  // (lib/board/alerts.js updatePersonTurns). '' = still there.
+  const GONE_MIN = 30;
+  function away(e, h) {
+    if (!e) return '';
+    let newest = '';
+    for (const l of Object.values(all)) for (const x of l) if (x.to > newest) newest = x.to;
+    const key = String(h || '').replace(/^@/, '');
+    const took = !BoardTurns.SHARED.test(e.turn) && Object.entries(all).some(([k, l]) => k !== key && l.some((x) => x.own && x.turn === e.turn && x.to > e.to));
+    if (took) return 'taken';
+    return newest && stampMin(newest) - stampMin(e.to) > GONE_MIN ? 'unseen' : '';
+  }
   async function hash(code) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + code.toUpperCase()));
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -1463,6 +1480,7 @@ const Person = (() => {
       return all[h] && all[h].length ? all[h] : null;
     },
     hash,
+    away,
     // The site published newer checks: read people.json again next time.
     reset() { data = null; },
     // A followed person ('@' + hash) → the turns they were seen on, or null.
@@ -1848,6 +1866,7 @@ source().then(async (src) => {
   const keepCode = (h, code) => { try { localStorage.setItem(CODES_KEY, JSON.stringify({ ...codes(), [h]: code })); } catch (e) { /* not kept */ } };
   const personNow = {};
   const personCands = {}; // a followed code matching more than one turn now: those turns
+  const personGone = {}; // a followed code off the turn it was last seen on: that sighting
   const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : BoardTurns.splitCraft(t).base);
   const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t.replace(/-(EN|CO)$/, ' $1'));
   async function refreshPersons() {
@@ -1855,9 +1874,12 @@ source().then(async (src) => {
     for (const t of tracked().filter(isPerson)) {
       const list = await Person.byHash(t);
       const cur = list && Person.current(list, Person.pickOf(t));
-      const turn = cur ? cur.turn : '';
-      const cands = list ? Person.candidates(list) : [];
-      if (personNow[t] !== turn || String(personCands[t]) !== String(cands)) { personNow[t] = turn; personCands[t] = cands; changed = true; }
+      const gone = Person.away(cur, t);
+      const turn = cur && !gone ? cur.turn : '';
+      const cands = list && !gone ? Person.candidates(list) : [];
+      const was = personGone[t];
+      personGone[t] = gone ? { ...cur, why: gone } : null;
+      if (personNow[t] !== turn || String(personCands[t]) !== String(cands) || !was !== !gone) { personNow[t] = turn; personCands[t] = cands; changed = true; }
     }
     return changed;
   }
@@ -1875,6 +1897,8 @@ source().then(async (src) => {
     if (!s || !t.length) return '';
     const rows = t.map((entry) => {
       const turn = nowTurn(entry);
+      const gone = isPerson(entry) && personGone[entry];
+      if (!turn && gone) return `<li><b class="num">${esc(label(entry))}</b><div>Not found on a turn now. Last seen on <b>${esc(gone.turn)}</b> until ${esc(dt(gone.to))}${gone.why === 'taken' ? `; someone else is on ${esc(gone.turn)} now` : ''}.</div><div class="muted">Alerts start again when they're seen on a turn of their own.</div></li>`;
       if (!turn) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Not seen on a turn in the saved checks yet.</div></li>`;
       const f = BoardTurns.facts(s, turn);
       const where = f.filter((x) => !LINED.has(x.kind)).map((x) => x.text);
@@ -2027,6 +2051,18 @@ source().then(async (src) => {
     const list = await Person.find(t);
     const h = `@${await Person.hash(t)}`;
     const cur = list && Person.current(list, Person.pickOf(h));
+    if (cur && Person.away(cur, h)) {
+      // Seen before but not on a turn now: follow the person only.
+      dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
+        <div class="alertnote">${esc(t)} isn't on a turn now (last seen on <b>${esc(cur.turn)}</b> until ${esc(dt(cur.to))}). Follow them anyway? Alerts start when they're seen on a turn of their own.</div>
+        <div class="btns"><button type="button" class="ok" id="dlgperson">👤 Follow ${esc(t)}</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
+      dlg.dataset.turn = '';
+      dlg.hidden = false;
+      const shut = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
+      document.getElementById('dlgcancel').onclick = shut;
+      document.getElementById('dlgperson').onclick = () => { shut(); keepCode(h, t); openTrack(h); };
+      return;
+    }
     if (cur) {
       // Follow the person (alerts move with their home turn) or just the turn they're on now.
       dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>

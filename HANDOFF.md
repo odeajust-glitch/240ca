@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-26 · Branch: **`claude/vigilant-planck-zawrj4`**
+Last updated: 2026-10-30 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
 2026-10-26) · 148 tests (`npm test`)
 
@@ -256,6 +256,14 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Followed person off their turn (owner, 2026-10-30: tracking showed
+  "JUOD (SR03)" after someone else took SR03; "it should say I'm not
+  found"). Off = someone else seen on that turn as their own since, or not
+  seen anywhere for 30 min while names were read (not for S501/S502, two
+  people on one turn: time only). Page: Person.away → "Not found on a turn
+  now. Last seen on SR03 until …"; typing the code offers "follow anyway".
+  Alerts: updatePersonTurns drops the turn the same way, so the new SR03
+  holder's alerts stop going to the old one. ❓ Not seen on real checks yet.
 - Toronto call (owner, 2026-10-29): out of Mac yard (bunkhouse crews) the
   expected call is order − 2 h, train or deadhead (config.torontoCallMinutes,
   engine.js torontoCallTime), in toronto.js, site.js Mac line-up, alerts.js

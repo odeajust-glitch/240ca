@@ -91,4 +91,7 @@ per week per person (A7).
   called earlier and later; a turn taken off the line-up after going to
   sleep ends that wait (counted on its own, not as a huge miss), and the
   next line-up starts a new one (option A).
-
+- 2026-10-30: **Fixed: tracking still showed the old turn** after someone
+  else took it (owner: "it should say I'm not found since there is a new
+  person on SR03"). Now "Not found on a turn now", and that turn's alerts
+  stop for them, until they're seen on a turn of their own again.
