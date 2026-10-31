@@ -264,10 +264,14 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   dropped (`bunkAt`, IN_TORONTO). ❓ Relies on the bunkhouse names read; if
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
-  the same train in one check → only "ordered" now (phoneEvents). Still open:
-  lined-up alerts flip-flopping between two trains for hours (SR01 M30241
-  28 / DHT377B 30, SR03 M38261 31 / DHT040B 31, B126/B134 yard jobs); asked
-  the owner how to calm it.
+  the same train in one check → only "ordered" now (phoneEvents).
+- Flip-flopping line-ups (owner, 2026-10-31, option C), alerts.js
+  turnEvents: A. a switch from one train to another is sent only if still
+  there next check (`told[turn].pending`); B. a train that turn was told of
+  in the last 6 h (QUIET_MIN) isn't sent again (`told[turn].recent`), unless
+  it's ordered since. First line-up still immediate. Reminders ("about N
+  min to your call") are once per train even across a flip (timeEvents
+  `reminded` now a list). ❓ Not seen on real checks yet.
 - AI check removed (owner, 2026-10-30: "take out the Anthropic API
   check"): lib/board/review.js, the `AI CHECK` note (terminal, history,
   phone relay), the @anthropic-ai/sdk package and the ANTHROPIC_API_KEY /

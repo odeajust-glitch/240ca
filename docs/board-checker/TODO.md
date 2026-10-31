@@ -21,10 +21,6 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7).
 
-7. **Lined-up alerts flip-flopping** between two trains (alert log
-   2026-10-30: SR01 told M30241 28, then DHT377B 30, then back, four times
-   in 2 h). Owner to pick how to calm it.
-
 ## Done
 
 - 2026-10-26: **Analytics tab**, first version. Search a train number
@@ -108,3 +104,8 @@ per week per person (A7).
 - 2026-10-31: **Fixed: EN03 got no alerts in Toronto** while working S301
   (the trip looked over once the train out left the Call Board). And an
   "ordered" no longer comes with a separate "time change" for the same train.
+- 2026-10-31: **Calmer "lined up" alerts** (owner: option C). A change to
+  another train waits one check (5 min) and is sent only if it's still
+  there; a train already told about in the last 6 h isn't sent again
+  (unless it's been ordered since). A reminder before the call comes once
+  per train.
