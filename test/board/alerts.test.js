@@ -82,11 +82,42 @@ test('turn alerts: each phone gets only what it chose, with its own time thresho
 
 test('turn alerts: a turn moved to another train is lined up again', () => {
   const told = step({}, [pred()]).told;
-  const r = step(told, [pred({ symbol: 'DHT031B', originDay: '22', deadhead: true, turn: 'SR03', engineer: null }), pred({ turn: 'SR07' })]);
-  assert.deepEqual(r.events.map((e) => e.text), [
-    'SR03 lined up: DHT031B 22 (deadhead) planned for 22nd 1500, expected call 22nd 1245.',
-    'SR07 lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.',
-  ]);
+  const moved = [pred({ symbol: 'DHT031B', originDay: '22', deadhead: true, turn: 'SR03', engineer: null }), pred({ turn: 'SR07' })];
+  let r = step(told, moved);
+  // SR07 is newly lined up: straight away. SR03 switched trains: next check (owner, 2026-10-31, A).
+  assert.deepEqual(r.events.map((e) => e.text), ['SR07 lined up: M38261 22 planned for 22nd 1500, expected call 22nd 1245.']);
+  r = step(r.told, moved);
+  assert.deepEqual(r.events.map((e) => e.text), ['SR03 lined up: DHT031B 22 (deadhead) planned for 22nd 1500, expected call 22nd 1245.']);
+});
+
+// Owner, 2026-10-31 (option C): the prediction swapped SR01 between M30241 28
+// and DHT377B 30 four times in 2 h, an alert each time.
+test('turn alerts: a line-up flip-flopping between two trains', () => {
+  const a = pred({ turn: 'SR01', engineer: null });
+  const b = pred({ symbol: 'DHT377B', originDay: '22', deadhead: true, turn: 'SR01', engineer: null });
+  const t0 = at(2026, 10, 22, 8, 0);
+  // SR01 on the Chain Gang, so it's in every check (lined up or not).
+  const gang = { chainGang: [{ craft: 'CO', turn: 'SR01', pos: 1, restUntil: null, statusUntil: null, rn: '' }] };
+  const go = (told, p, min) => turnEvents(told, turnStates({ predictions: p ? [p] : [] }, [], gang), { now: t0 + min });
+  let r = go({}, a, 0);
+  assert.deepEqual(r.events.map((e) => e.kind), ['lineup']); // first line-up: straight away
+  // A: a one-check blip to another train and back says nothing.
+  r = go(r.told, b, 5); assert.deepEqual(r.events, []);
+  r = go(r.told, a, 10); assert.deepEqual(r.events, []);
+  // Still on the other train next check: news.
+  r = go(r.told, b, 15); assert.deepEqual(r.events, []);
+  r = go(r.told, b, 20); assert.deepEqual(r.events.map((e) => e.text), ['SR01 lined up: DHT377B 22 (deadhead) planned for 22nd 1500, expected call 22nd 1245.']);
+  // B: back to the first train (told 20 min ago): quiet.
+  r = go(r.told, a, 25); r = go(r.told, a, 30); assert.deepEqual(r.events, []);
+  assert.equal(r.told.SR01.train, 'M38261 22');
+  // …but ordered since it was told: that's news.
+  r = go(r.told, b, 35); r = go(r.told, pred({ ...b, status: 'ORD' }), 40);
+  assert.deepEqual(r.events.map((e) => e.kind), ['ordered']);
+  // Off the line-up and back on the same train within 6 h: quiet; after 6 h: news.
+  r = go(r.told, null, 60); assert.ok(!r.told.SR01.train);
+  r = go(r.told, pred({ ...b, status: 'ORD' }), 120); assert.deepEqual(r.events, []);
+  r = go(r.told, null, 130);
+  r = go(r.told, a, 8 * 60); assert.deepEqual(r.events.map((e) => e.kind), ['lineup']);
 });
 
 // Owner, 2026-10-22: tell me when someone ahead of me on the Chain Gang
@@ -355,6 +386,11 @@ test('turn alerts: reminder before the expected call', () => {
   assert.deepEqual(r.events.map((e) => e.text), ['B119: about 55 min to your expected call: YPRS60 planned for 24th 2245, expected call 24th 2045.']);
   assert.deepEqual(phoneEvents([], phone, states, r.base, { now: at(2026, 10, 24, 20, 0) }).events, []); // once
   assert.deepEqual(phoneEvents([], { turns: ['B119'] }, states, {}, { now: at(2026, 10, 24, 20, 0) }).events, []); // off by default
+  // Owner, 2026-10-31: a flip to another job and back doesn't remind again.
+  const other = { B119: { lineup: { ...states.B119.lineup, train: 'YBHS01', call: at(2026, 10, 25, 6, 0) } } };
+  r = phoneEvents([], phone, other, r.base, { now: at(2026, 10, 24, 20, 5) });
+  r = phoneEvents([], phone, states, r.base, { now: at(2026, 10, 24, 20, 10) });
+  assert.deepEqual(r.events, []);
 });
 
 // Owner, 2026-10-25: an ordered Mac yard train with no crew rested by the
