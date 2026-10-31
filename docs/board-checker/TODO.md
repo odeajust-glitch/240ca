@@ -109,3 +109,7 @@ per week per person (A7).
   there; a train already told about in the last 6 h isn't sent again
   (unless it's been ordered since). A reminder before the call comes once
   per train.
+- 2026-10-31: **Watchdog closes Edge and starts fresh when stuck.** If
+  reloading CATS doesn't get back to the main menu within 10 min, or a check
+  fails again right after the reload, the watchdog closes the checker's Edge
+  window and starts it again (what the owner was doing by hand).

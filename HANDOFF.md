@@ -265,6 +265,17 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Fresh Edge when stuck (owner, 2026-10-31: "I get the notification that
+  it's down but all I do is close the browser and rerun"). A stuck check
+  reloads CATS in the same window; that wait was heartbeat 'signin' (45 min,
+  longer than the Worker's 30 min "down"). Now: heartbeat 'unstick' (10 min,
+  lib/board/watchdog.js LIMITS) → the watchdog kills the checker + Edge and
+  starts again. And a check that fails again right after the reload exits
+  with code 3 (only under the watchdog, env BOARD_WATCHDOG=1) → restart,
+  logged "still stuck after reloading CATS; closed Edge to start fresh". On
+  every restart the watchdog also stops any msedge.exe whose command line
+  has the checker's profile folder (PowerShell Get-CimInstance), never the
+  owner's own Edge. ❓ Windows part not run here (Linux); watch restarts.log.
 - Flip-flopping line-ups (owner, 2026-10-31, option C), alerts.js
   turnEvents: A. a switch from one train to another is sent only if still
   there next check (`told[turn].pending`); B. a train that turn was told of

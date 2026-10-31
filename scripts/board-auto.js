@@ -996,8 +996,8 @@ function nap(ms) {
   });
 }
 
-async function waitForMainMenu(page, prompt) {
-  heartbeat('signin');
+async function waitForMainMenu(page, prompt, state = 'signin') {
+  heartbeat(state);
   console.log(prompt);
   let otherSince = null; // when a CATS screen that isn't the menu showed up
   let rounds = 0;
@@ -1046,9 +1046,10 @@ async function reloadCats(page, url) {
   } catch (err) {
     console.log(`  (reload: ${err.message})`);
   }
+  // 'unstick': the watchdog closes Edge and starts over if this hangs.
   await waitForMainMenu(page, autoSignOn
     ? 'Signing back in. If Microsoft asks, sign in there (Authenticator) and the script does the rest.'
-    : '\x07Sign in to CATS again and stop at the main menu.');
+    : '\x07Sign in to CATS again and stop at the main menu.', 'unstick');
 }
 
 async function main() {
@@ -1151,6 +1152,14 @@ async function main() {
       console.log(`[${stamp()}] Couldn't finish this check: ${err.message}`);
       await saveStuckScreen(page);
       if (!every) throw err;
+      // Failed again right after reloading CATS: under the watchdog, close
+      // Edge and start over (owner, 2026-10-31: closing Edge and running it
+      // again always fixed it). Code 3 tells the watchdog it's on purpose.
+      if (retried && process.env.BOARD_WATCHDOG) {
+        console.log(`[${stamp()}] Still stuck after reloading CATS: closing Edge so the watchdog starts it fresh.`);
+        await Promise.race([context.close().catch(() => {}), sleep(15000)]);
+        process.exit(3);
+      }
       // Reload, sign back in and check again straight away, once; if that
       // fails too, wait for the next check.
       await reloadCats(page, url);

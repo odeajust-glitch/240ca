@@ -10,7 +10,7 @@
 const { spawn, execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { DATA_DIR, HEARTBEAT_FILE } = require('../lib/board/paths');
+const { DATA_DIR, HEARTBEAT_FILE, browser } = require('../lib/board/paths');
 const { readBeat, stuckReason } = require('../lib/board/watchdog');
 
 const args = process.argv.slice(2);
@@ -46,12 +46,24 @@ function killTree(pid) {
 function start() {
   try { fs.rmSync(HEARTBEAT_FILE, { force: true }); } catch { /* fine */ }
   startedAt = Date.now();
-  child = spawn(process.execPath, [CHILD, ...args], { stdio: 'inherit' });
-  child.on('exit', (code) => {
+  child = spawn(process.execPath, [CHILD, ...args], { stdio: 'inherit', env: { ...process.env, BOARD_WATCHDOG: '1' } });
+  child.on('exit', async (code) => {
     child = null;
     if (stopping || code === 130) process.exit(0); // Ctrl+C
-    restartSoon(restarting ? null : `the board checker quit (code ${code})`);
+    // Whatever it left open of its Edge window goes too, or the next start
+    // finds the browser profile in use.
+    await closeCheckerEdge();
+    restartSoon(restarting ? null : code === 3 ? 'still stuck after reloading CATS; closed Edge to start fresh' : `the board checker quit (code ${code})`);
   });
+}
+
+// The checker's own Edge (its profile folder on the command line), never
+// any other Edge window on the laptop.
+function closeCheckerEdge() {
+  if (process.platform !== 'win32') return Promise.resolve();
+  const dir = browser().profileDir.replace(/'/g, "''");
+  const ps = `Get-CimInstance Win32_Process -Filter "Name='msedge.exe' or Name='chrome.exe'" | Where-Object { $_.CommandLine -like '*${dir}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+  return new Promise((resolve) => execFile('powershell', ['-NoProfile', '-Command', ps], { timeout: 30000 }, () => resolve()));
 }
 
 function restartSoon(reason) {
