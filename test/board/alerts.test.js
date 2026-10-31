@@ -72,6 +72,8 @@ test('turn alerts: each phone gets only what it chose, with its own time thresho
   shared = step(step({}, [pred()]).told, [pred({ status: 'ORD' })]).events;
   assert.deepEqual(run(shared, orderOnly, states({ status: 'ORD' }), b.orderOnly).events.map((e) => e.kind), ['ordered']);
   assert.deepEqual(run(shared, hourMoves, states({ status: 'ORD', call: at(2026, 10, 22, 13, 50) }), r1.base).events, []);
+  // Ordered at a new time: one "ordered" (it gives the new time), no "time change" too.
+  assert.deepEqual(run(shared, everything, states({ status: 'ORD', call: at(2026, 10, 22, 14, 30) }), r2.base).events.map((e) => e.kind), ['ordered']);
   // Lined up already ordered: one alert each, never two.
   shared = step({}, [pred({ status: 'ORD' })]).events;
   assert.deepEqual(run(shared, orderOnly, states({ status: 'ORD' }), undefined).events.map((e) => e.kind), ['ordered']);
@@ -441,9 +443,9 @@ test('turn alerts: a spare filling in, through Toronto and back', () => {
 test('fill-ins: the bunkhouse by name', () => {
   const { updateFillIns } = require('../../lib/board/fillins');
   const now = at(2026, 10, 25, 23, 0);
-  assert.deepEqual(updateFillIns({}, { bunk: [{ job: 'SB04', turn: 'B119' }], now }), { SB04: { turn: 'B119', train: null, at: now } });
+  assert.deepEqual(updateFillIns({}, { bunk: [{ job: 'SB04', turn: 'B119' }], now }), { SB04: { turn: 'B119', train: null, at: now, bunkAt: now } });
   const had = { SB04: { turn: 'B119', train: 'M38261 25', at: now - 60 } };
-  assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'B119' }], now }).SB04, { turn: 'B119', train: 'M38261 25', at: now });
+  assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'B119' }], now }).SB04, { turn: 'B119', train: 'M38261 25', at: now, bunkAt: now });
   assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'SB04' }], now }), {});
 });
 
@@ -493,6 +495,31 @@ test('turn alerts: a followed person off their turn', () => {
   people = updatePersonTurns({}, [{ h: me, turn: 'S501', own: true }], t0);
   people = updatePersonTurns(people, [{ h: me, turn: 'S501', own: true }, { h: other, turn: 'S501', own: true }], t0 + 5 * 60000);
   assert.equal(people[me].turn, 'S501');
+});
+
+// Owner, 2026-10-31: "EN03 didn't get alerts in Toronto this morning". EN03
+// went out on A42431 30 working S301; S301 shows at home on the S3 board
+// (its holder off), so once A42431 left the Call Board the fill-in was
+// dropped. Read by name in the bunkhouse, it stays.
+test('turn alerts: a spare in the bunkhouse keeps the job\'s Toronto alerts', () => {
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const out = { symbol: 'A42431', originDay: '30', station: 'SARNIA', onDuty: at(2026, 10, 30, 10, 15), crew: [{ craft: 'EN', turn: 'S301' }] };
+  let fills = updateFillIns({}, { backfill: [{ train: 'A42431 30', craft: 'EN', job: 'S301', turn: 'EN03' }], callBoard: [out], now: at(2026, 10, 30, 8, 22) });
+  const home = new Set(['S301']);
+  // Overnight: A42431 off the Call Board, EN03 read under S301 in the bunkhouse.
+  for (const h of [20, 23, 26, 29]) {
+    fills = updateFillIns(fills, { bunk: [{ job: 'S301', turn: 'EN03' }], callBoard: [], now: at(2026, 10, 30, 0, 0) + h * 60, homeTurns: home });
+    assert.equal(fills.S301 && fills.S301.turn, 'EN03', `hour ${h}`);
+  }
+  // A check that missed the bunkhouse names keeps it too.
+  fills = updateFillIns(fills, { callBoard: [], now: at(2026, 10, 31, 5, 20), homeTurns: home });
+  assert.equal(fills.S301.turn, 'EN03');
+  const mac = { symbol: 'M30131', originDay: '31', status: 'PLN', order: at(2026, 10, 31, 10, 45), deadhead: false };
+  const r = turnEvents({}, turnStates({ now: at(2026, 10, 31, 5, 20), predictions: [] }, [], { macLineup: [mac], bunkhouse: [{ pos: 1, en: 'S301', co: 'SR05', restUntil: null }], fillIns: fills }), { lineupRead: true });
+  assert.ok(r.told.EN03 && r.told.EN03.train === 'M30131 31');
+  // Home again, not in the bunkhouse for over an hour, on the spareboard: over.
+  fills = updateFillIns(fills, { callBoard: [], now: at(2026, 10, 31, 20, 0), homeTurns: home, spareTurns: new Set(['EN03']) });
+  assert.deepEqual(fills, {});
 });
 
 // Owner, 2026-10-25: S501 is two turns (EN and CO); a phone can follow one.

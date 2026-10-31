@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-30 · Branch: **`claude/vigilant-planck-zawrj4`**
+Last updated: 2026-10-31 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
 2026-10-26) · 148 tests (`npm test`)
 
@@ -256,6 +256,18 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   known) → FORMAT 11 (day files rebuild once). Person: calls on their
   turns while they were on them. ❓ Not seen on real checks yet.
 - All deadheads count as one number "DH" in Analytics (numberOf).
+- Fill-ins in Toronto (owner, 2026-10-31: "EN03 didn't get alerts in
+  Toronto this morning"): EN03 went out on A42431 30 working S301. S301 shows
+  at home on the S3 board (holder off), so once A42431 left the Call Board
+  fillins.js dropped S301 → EN03 and the bunkhouse's S301 news went nowhere.
+  Now a fill-in read by name in the bunkhouse within the last hour is never
+  dropped (`bunkAt`, IN_TORONTO). ❓ Relies on the bunkhouse names read; if
+  it still misses, look for "In Toronto filling in:" in the window.
+- Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
+  the same train in one check → only "ordered" now (phoneEvents). Still open:
+  lined-up alerts flip-flopping between two trains for hours (SR01 M30241
+  28 / DHT377B 30, SR03 M38261 31 / DHT040B 31, B126/B134 yard jobs); asked
+  the owner how to calm it.
 - AI check removed (owner, 2026-10-30: "take out the Anthropic API
   check"): lib/board/review.js, the `AI CHECK` note (terminal, history,
   phone relay), the @anthropic-ai/sdk package and the ANTHROPIC_API_KEY /
