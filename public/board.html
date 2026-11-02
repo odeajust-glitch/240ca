@@ -153,6 +153,7 @@
   .healthpage .nocount { display: flex; align-items: center; gap: 8px; min-height: 36px; }
   .healthpage .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
   tr.catswrong td { opacity: 0.75; }
+  .stalechip { display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; background: #b3261e; color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
   tr.catswrong td:first-child { box-shadow: inset 3px 0 0 #b3261e; }
   .health .who summary { cursor: pointer; color: var(--accent); }
   .health .who div { margin: 2px 0 0 14px; }
@@ -729,6 +730,17 @@ function ruleText(rules) {
     .replace(/ENGSPARE/g, '<span class="spare">spare</span>');
 }
 
+// Still planned 15 min or more past its call, as of the last check that saw
+// this board (owner, 2026-11-02: stale trains; insights.js STALE_GRACE).
+const STALE_GRACE = 15;
+function staleChip(s, t) {
+  if (!t.call || t.status === 'ORD') return '';
+  const call = BoardTrains.resolve(t.call, s.taken);
+  if (!call) return '';
+  const past = stampMin(s.sameUntil || s.taken) - stampMin(call);
+  if (past < STALE_GRACE) return '';
+  return `<span class="stalechip">Past call ${past >= 60 ? `${Math.floor(past / 60)} h ${String(past % 60).padStart(2, '0')} m` : `${past} min`} · not ordered</span>`;
+}
 function lineup(s) {
   if (!s.lineup.length) return '';
   let day = null;
@@ -742,7 +754,7 @@ function lineup(s) {
       <div class="time">${esc(hhmm)}</div>
       <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
         <div class="sub">${esc(t.info)} · <span class="mono">${esc(t.engCrew)} / ${esc(t.trnCrew)}</span></div></div>
-      <div class="right"><span class="st ${t.status}">${esc(t.status)}</span>${t.call ? `<span class="sub mono">call ~${esc(split(t.call)[1])}</span>` : ''}</div>
+      <div class="right"><span class="st ${t.status}">${esc(t.status)}</span>${t.call ? `<span class="sub mono">call ~${esc(split(t.call)[1])}</span>` : ''}${staleChip(s, t)}</div>
       <div class="rule-say">${poolChip(t.rules)}<span>${ruleText(t.rules)}</span>
         ${t.reason ? `<details class="why"><summary>Why</summary><p>${esc(t.reason)}</p></details>` : ''}</div>
     </div>`;
@@ -791,12 +803,12 @@ function toronto(s) {
   const rows = trains.map((t) => {
     if (t.crewExpected) {
       const hit = t.crew.split(' + ').some(marked);
-      return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
+      return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span>${staleChip(s, t)}</td>
       <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${expectedCell(t)}</td></tr>`;
     }
     const c = byPos.get(t.crewPos);
     const hit = c && (marked(c.en) || marked(c.co));
-    return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span></td>
+    return `<tr${hit ? ' class="hit"' : ''}><td class="num">${esc(t.order)}</td><td><span class="st ${t.status}">${esc(t.status)}</span>${staleChip(s, t)}</td>
       <td><b class="num">${esc(t.train)}</b><div class="crew">${esc(t.info)} · from ${esc(t.orstn)}</div></td><td>${crewCell(c, t)}</td></tr>`;
   }).join('');
   const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
@@ -1277,12 +1289,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['pred', 'Predictions']];
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, pred: anaPred }[o.sec] || anaTrains;
+  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
 function anaTrains({ runs }) {
@@ -1384,6 +1396,31 @@ function anaCats({ catsErrors = [] }) {
     <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
     <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
     <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// Stale trains (owner, 2026-11-02): still planned 15 min or more past the
+// call worked out from their plan, how long, how it ended.
+function anaStale({ stale = [] }) {
+  const END = { ordered: ['ok', 'Ordered'], onDuty: ['ok', 'On duty'], gone: ['bad', 'Left the line-up (cancelled?)'], pushed: ['warn', 'Plan moved later'], stale: ['warn', 'Still stale'] };
+  const ended = (r) => { const [c, t] = END[r.end] || ['', r.end || '']; return `<span class="offv ${c}">${esc(t)}</span>`; };
+  const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
+  const total = stale.reduce((n, r) => n + r.minutes, 0);
+  const longest = stale.reduce((a, r) => (r.minutes > (a ? a.minutes : -1) ? r : a), null);
+  const byNum = new Map();
+  for (const r of stale) { const k = BoardAnalytics.numberOf(r.train.split(' ')[0]); const g = byNum.get(k) || { n: 0, min: 0 }; g.n++; g.min += r.minutes; byNum.set(k, g); }
+  const latest = [...stale].reverse().slice(0, 80);
+  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Stale</th><th>For</th><th>Most past the call</th><th>Plan</th><th>Crew lined up</th><th>Ended</th><th>Crew that went</th></tr></thead><tbody>${latest.map((r) => {
+    const st = r.stretches;
+    const detail = st.length > 1 ? `<details><summary>${plural(st.length, 'stretch', 'stretches')}</summary><ul class="moves">${st.map((x) => `<li>${esc(dt(x.from))}–${esc((dt(x.to).split(' ')[1]) || '')}: call ${esc(dt(x.call))}${x.end === 'pushed' ? ' (paused: plan moved later)' : ''}</li>`).join('')}</ul></details>` : '';
+    return `<tr class="nolink"><td class="num stick"><b>${esc(r.train)}</b><div class="crew">${esc(r.where || '')}</div></td>
+      <td class="num">${stampBtn(r.from)}${detail}</td><td class="num"><b>${long(r.minutes)}</b></td><td class="num">${long(r.maxPast)}</td>
+      <td class="num">${esc(dt(r.firstPlan))}${r.moves ? `<div class="crew">moved ${plural(r.moves, 'time')}</div>` : ''}${r.orderedFor ? `<div class="crew">ordered for ${esc(dt(r.orderedFor))}</div>` : ''}</td>
+      <td class="num">${esc(r.crew || '—')}</td><td>${ended(r)}</td>
+      <td class="num">${r.onDuty ? `${esc(r.wentCrew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">—</span>'}</td></tr>`;
+  }).join('')}</tbody></table></div>` : '<p class="empty">No stale trains in the dates picked.</p>';
+  return `<p class="anote">A train still <b>planned</b> (not ordered) once it's 15 min or more past the call worked out from its plan. The stale time runs from the first check past the call to the check that saw it ordered or gone; it pauses when the plan moves later and the call is ahead again. Tap a time to open that snapshot.</p>
+    <div class="strip">${anaTile(stale.length, 'Trains that went stale', stale.length > 0)}${anaTile(stale.length ? long(Math.round(total / stale.length)) : '—', 'Average time stale')}${anaTile(longest ? long(longest.minutes) : '—', longest ? `Longest (${esc(longest.train)})` : 'Longest')}${anaTile(stale.filter((r) => r.end === 'gone').length, 'Left the line-up without being ordered')}</div>
+    <section class="sheet"><header><h2>By train number</h2></header><div class="agrid">${anaList('Times stale', [...byNum].sort((a, b) => b[1].n - a[1].n).map(([k, g]) => [k, g.n]), 'train')}${anaList('Total time stale (minutes)', [...byNum].sort((a, b) => b[1].min - a[1].min).map(([k, g]) => [k, g.min]), 'train')}</div></section>
+    <section class="sheet"><header><h2>Every stale train</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // A5: jobs going spare and who filled them.
 function anaSpare({ spareJobs }) {
@@ -1653,7 +1690,7 @@ const Alerts = (() => {
   const PREFS_KEY = 'alertPrefs';
   // What each turn's alerts cover on this phone (owner: e.g. only when it's
   // ordered, or only when the time moves by a chosen amount). time: minutes, 0 = never.
-  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, time: 30, before: 0 };
+  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 };
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -2004,7 +2041,7 @@ source().then(async (src) => {
       ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
       <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
     // What was sent, for whom (the laptop's alerts log, newest first).
-    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn' };
+    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
     const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
@@ -2237,6 +2274,7 @@ source().then(async (src) => {
         ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
         ${/^(SD|SR)/.test(turn) || isPerson(turn) ? box('mayCall', 'may be called for a job going spare (no one free on the slow board)') : ''}
+        ${box('stale', 'is lined up for a train 15 min past its planned call and still not ordered')}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>
         <label>remind me <select data-k="before">${BEFORE.map(([m, l]) => `<option value="${m}" ${m === p.before ? 'selected' : ''}>${l}</option>`).join('')}</select> before the expected call</label></div>
       <div id="dlgnote" class="alertnote" hidden></div>
@@ -2657,7 +2695,7 @@ source().then(async (src) => {
   // Opens on the last 90 days, so only those archive months load (F7).
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [] };
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -2676,7 +2714,7 @@ source().then(async (src) => {
     const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
     const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
     for (const p of parts.filter(Boolean)) {
-      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'stale']) out[k] = out[k].concat(p[k] || []);
       for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
     }
     return out;
@@ -2720,7 +2758,7 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], ...(found || {}) };
+    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
     // anything in both once (BoardAnalytics.joinOld, the archive's copy).
     const { joinOld } = BoardAnalytics;
@@ -2732,6 +2770,7 @@ source().then(async (src) => {
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
     const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
+    const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
     const workOf = (turn) => {
@@ -2755,7 +2794,7 @@ source().then(async (src) => {
         turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), byId, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors });
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];

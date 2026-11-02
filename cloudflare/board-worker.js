@@ -84,6 +84,8 @@ async function subscribe(request, env) {
     const time = Math.round(Number(p.time));
     prefs[t] = {
       lineup: p.lineup !== false, ordered: p.ordered !== false, onDuty: p.onDuty !== false, aheadRest: p.aheadRest !== false, aheadBack: p.aheadBack !== false, reset: p.reset !== false, position: p.position !== false, rescue: p.rescue !== false, mayCall: p.mayCall !== false,
+      // Off unless asked for (owner, 2026-11-02): a train past its call and not ordered.
+      stale: p.stale === true,
       time: Number.isFinite(time) && time >= 0 && time <= 24 * 60 ? time : 30,
       before: [30, 45, 60, 90].includes(Number(p.before)) ? Number(p.before) : 0,
     };

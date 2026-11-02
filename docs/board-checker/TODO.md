@@ -148,3 +148,7 @@ per week per person (A7).
 - 2026-11-02: **Down banner** for everyone when the board checker hasn't
   checked for 3 h+, and **tracked spares show both boards** (fast and slow)
   on one line.
+- 2026-11-02: **Stale trains**: a train still planned 15 min+ past its call
+  gets a "Past call … · not ordered" badge; Analytics → Stale trains keeps
+  how long each sat (pausing when the plan moves later), how it ended and
+  the crew; an optional phone alert for the crew lined up for it.

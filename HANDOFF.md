@@ -265,6 +265,15 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Stale trains (owner, 2026-11-02: planned, not ordered, past the call;
+  "pause, 15 minutes is fine, and yes"): insights staleCheck (Sarnia and
+  Toronto line-ups; stretches from the first check past the call to the
+  check that saw it ordered / gone / the plan moved later (pause); kept
+  when 15 min+ past, STALE_GRACE; uses sameUntil so an unchanged board still
+  counts) → analytics `stale`, archived, Analytics → Stale trains. Page
+  badge "Past call N min · not ordered" on line-up rows. Alert kind
+  'stale', pref `stale` default off (Worker saves it: re-paste needed),
+  checkbox in the alert dialog; once per train + call.
 - Tracked spares (owner, 2026-11-02: "show their position on both boards"):
   board.html spareBoardsLine puts the fast and slow board on one line in
   the tracking box ("Conductor fast 002: available · Conductor slow 004:

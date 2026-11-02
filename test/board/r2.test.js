@@ -102,10 +102,10 @@ test('the Worker keeps turn-alert subscriptions and never serves them', async ()
   assert.deepEqual(JSON.parse(saved).turns, ['SR03', 'SD05']);
   // Each turn's choices, cleaned up; missing ones are the defaults.
   res = await post({ subscription, turns: ['SR03'], prefs: { SR03: { lineup: false, ordered: true, onDuty: 'x', time: 60, evil: 1 } } });
-  assert.deepEqual((await res.json()).prefs, { SR03: { lineup: false, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, time: 60, before: 0 } });
+  assert.deepEqual((await res.json()).prefs, { SR03: { lineup: false, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, stale: false, time: 60, before: 0 } });
   assert.deepEqual(JSON.parse([...store.values()][0]).prefs.SR03.time, 60);
   res = await post({ subscription, turns: ['SR03', 'SD05'] });
-  assert.deepEqual((await res.json()).prefs.SD05, { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, time: 30, before: 0 });
+  assert.deepEqual((await res.json()).prefs.SD05, { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 });
   // A followed person: '@' + a 16-hex hash (never a name); anything else isn't kept.
   res = await post({ subscription, turns: ['@0123456789ABCDEF', '@JUOD', 'SR03'] });
   assert.deepEqual((await res.json()).turns, ['@0123456789abcdef', 'SR03']);

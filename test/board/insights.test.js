@@ -186,3 +186,32 @@ test('insights: CATS option 5 errors, once each, with the crew that went', () =>
   const fixed = Insights.finish(Insights.collect([snaps[0], snaps[1], { taken: '2026-11-02 1240', lineup, catsErrors: [] }])).catsErrors[0];
   assert.equal(fixed.fixed, '2026-11-02 1240');
 });
+
+// Owner, 2026-11-02: "trains that should have been called according to the
+// plan but haven't been ordered … how long it sits stale" (pause when the
+// plan moves later; counted once 15 min past the call).
+test('insights: stale trains, E27861 02 past its call and not ordered', () => {
+  const row = (order, call, status = 'PLN') => ({ train: 'E27861 02', order, call, status, crew: { co: 'SR05', en: 'SD01' } });
+  const snap = (taken, lineup, extra = {}) => ({ taken, lineup, ...extra });
+  const snaps = [
+    snap('2026-11-02 1231', [row('2nd 1920', '2nd 1705')]),
+    snap('2026-11-02 1635', [row('2nd 1854', '2nd 1639')]),
+    snap('2026-11-02 1640', [row('2nd 1854', '2nd 1639')], { sameUntil: '2026-11-02 1711' }), // the board unchanged till 17:11
+    snap('2026-11-02 1745', [row('2nd 1930', '2nd 1715')]),
+    snap('2026-11-02 1805', [row('2nd 1945', '2nd 1730', 'ORD')]),
+    snap('2026-11-02 1930', [], { onDuty: [{ train: 'E27861 02', onDuty: '2nd 1930', crew: 'EN EN04 · CO SR05' }, { train: 'YFLS60', onDuty: '2nd 2359' }] }),
+  ];
+  const r = Insights.finish(Insights.collect(snaps)).stale;
+  assert.equal(r.length, 1);
+  assert.deepEqual([r[0].train, r[0].from, r[0].minutes, r[0].maxPast, r[0].end, r[0].moves, r[0].crew, r[0].ordered, r[0].wentCrew],
+    ['E27861 02', '2026-11-02 1640', 85, 32, 'ordered', 1, 'SR05 + SD01', '2026-11-02 1805', 'EN EN04 · CO SR05']);
+  // The plan moved later and the call is ahead again: paused, then a second stretch.
+  const paused = Insights.finish(Insights.collect([
+    snap('2026-11-02 1700', [row('2nd 1854', '2nd 1639')]),
+    snap('2026-11-02 1720', [row('2nd 2100', '2nd 1845')]),
+    snap('2026-11-02 1905', [row('2nd 2100', '2nd 1845')]),
+  ])).stale[0];
+  assert.deepEqual(paused.stretches.map((x) => [x.from, x.to, x.end || 'open']), [['2026-11-02 1700', '2026-11-02 1720', 'pushed'], ['2026-11-02 1905', '2026-11-02 1905', 'open']]);
+  // Only 5 min past before it was ordered: not counted.
+  assert.equal(Insights.finish(Insights.collect([snap('2026-11-02 1644', [row('2nd 1854', '2nd 1639')]), snap('2026-11-02 1650', [row('2nd 1854', '2nd 1639', 'ORD')])])).stale.length, 0);
+});

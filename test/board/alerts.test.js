@@ -117,7 +117,7 @@ test('turn alerts: a line-up flip-flopping between two trains', () => {
   r = go(r.told, null, 60); assert.ok(!r.told.SR01.train);
   r = go(r.told, pred({ ...b, status: 'ORD' }), 120); assert.deepEqual(r.events, []);
   r = go(r.told, null, 130);
-  r = go(r.told, a, 8 * 60); assert.deepEqual(r.events.map((e) => e.kind), ['lineup']);
+  r = go(r.told, a, 8 * 60); assert.deepEqual(r.events.map((e) => e.kind).filter((k) => k !== 'stale'), ['lineup']); // (by 16:00 it's also past its 12:45 call: stale)
 });
 
 // Owner, 2026-10-22: tell me when someone ahead of me on the Chain Gang
@@ -630,4 +630,22 @@ test('option 5 checked against the order: E27861 02, SA09 listed, SR05 in the or
   // Once per wrong listing, not every check.
   r = turnEvents(r.told, turnStates({ now: now + 5, predictions: [e278] }, [], pools), { lineupRead: true, now: now + 5 });
   assert.ok(!r.events.some((e) => e.kind === 'catsWrong'));
+});
+
+// Owner, 2026-11-02: a phone can ask to hear when its turn's train is 15 min
+// past its planned call and still not ordered (off unless turned on).
+test('turn alerts: lined up for a stale train (past its call, not ordered)', () => {
+  const e278 = pred({ symbol: 'E27861', originDay: '02', order: at(2026, 11, 2, 18, 54), call: at(2026, 11, 2, 16, 39), turn: 'SR05', engineer: null });
+  const st = () => turnStates({ predictions: [e278] }, []);
+  let r = turnEvents({}, st(), { lineupRead: true, now: at(2026, 11, 2, 16, 50) }); // 11 min past: not yet
+  assert.ok(!r.events.some((e) => e.kind === 'stale'));
+  r = turnEvents(r.told, st(), { lineupRead: true, now: at(2026, 11, 2, 17, 11) });
+  assert.deepEqual(r.events.filter((e) => e.kind === 'stale').map((e) => e.text), ['SR05: E27861 02 is 32 min past its planned call (2nd 1639) and still not ordered (planned for 2nd 1854).']);
+  r = turnEvents(r.told, st(), { lineupRead: true, now: at(2026, 11, 2, 17, 40) }); // once, not every check
+  assert.ok(!r.events.some((e) => e.kind === 'stale'));
+  // Off unless the phone turned it on.
+  const phone = (prefs) => ({ turns: ['SR05'], prefs });
+  const shared = [{ turn: 'SR05', kind: 'stale', text: 'x' }];
+  assert.deepEqual(phoneEvents(shared, phone({}), {}, { __welcomed: ['SR05'] }, {}).events, []);
+  assert.deepEqual(phoneEvents(shared, phone({ SR05: { stale: true } }), {}, { __welcomed: ['SR05'] }, {}).events.map((e) => e.kind), ['stale']);
 });
