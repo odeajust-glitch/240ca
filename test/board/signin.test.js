@@ -1,22 +1,31 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { dueOnDuty, sinceLast, RECENT_MS } = require('../../lib/board/signin');
-const { at } = require('../../lib/board/time');
+const { reminderDue, sinceLast } = require('../../lib/board/signin');
 
-// Owner, 2026-10-22: sign in to Microsoft fresh once their turn shows on
-// duty on the Sarnia Call Board (not before the call), so the ~24 h covers the trip.
-test("a fresh sign-in is due once the owner's turn is on duty on the Sarnia Call Board", () => {
-  const train = (station, co) => ({ symbol: 'M39671', originDay: '22', station, onDuty: at(2026, 10, 22, 16, 0),
-    crew: [{ craft: 'EN', turn: 'SD04' }, { craft: 'CO', turn: co }] });
-  const nowMs = Date.UTC(2026, 9, 22, 20, 0);
-  assert.deepEqual(dueOnDuty([train('SARNIA', 'SR03')], 'SR03', {}, { nowMs }),
-    { train: 'M39671 22', why: "you're on duty on M39671 22 at 22nd 1600" });
-  assert.equal(dueOnDuty([train('SARNIA', 'SR07')], 'SR03', {}, { nowMs }), null); // someone else's
-  assert.equal(dueOnDuty([train('TORONTO', 'SR03')], 'SR03', {}, { nowMs }), null); // the trip home
-  assert.equal(dueOnDuty([], 'SR03', {}, { nowMs }), null); // lined up or waiting: not yet
-  assert.equal(dueOnDuty([train('SARNIA', 'SR03')], 'SR03', { doneFor: 'M39671 22' }, { nowMs }), null); // once per train
-  assert.equal(dueOnDuty([train('SARNIA', 'SR03')], 'SR03', { lastAt: nowMs - RECENT_MS + 60000 }, { nowMs }), null); // just signed in (R)
-  assert.ok(dueOnDuty([train('SARNIA', 'SR03')], 'SR03', { lastAt: nowMs - RECENT_MS - 60000 }, { nowMs }));
+// Owner, 2026-11-02: no automatic fresh sign-in when going on duty; a
+// reminder 12 h before the ~24 h sign-in runs out, and again at 2 h.
+test('reminders 12 h and 2 h before the Microsoft sign-in runs out', () => {
+  const H = 3600000;
+  const lastAt = Date.UTC(2026, 10, 1, 20, 30); // 1st 1530 Toronto (EST)
+  const st = { lastAt };
+  assert.equal(reminderDue(st, lastAt + 11 * H, { hours: 24 }), null); // 13 h left
+  const r12 = reminderDue(st, lastAt + 12 * H + 60000, { hours: 24 });
+  assert.equal(r12.hours, 12);
+  assert.match(r12.text, /runs out in about 12 h \(around 2nd 1530\)/);
+  const after12 = { ...st, remindedFor: lastAt, reminded: r12.reminded };
+  assert.equal(reminderDue(after12, lastAt + 15 * H, { hours: 24 }), null); // once
+  const r2 = reminderDue(after12, lastAt + 22 * H + 60000, { hours: 24 });
+  assert.equal(r2.hours, 2);
+  assert.match(r2.text, /about 2 h/);
+  assert.equal(reminderDue({ ...after12, reminded: r2.reminded }, lastAt + 23 * H, { hours: 24 }), null);
+  assert.equal(reminderDue(st, lastAt + 25 * H, { hours: 24 }), null); // already out: Microsoft asks anyway
+  // Checker off at the 12 h mark, back with 1 h left: only the 2 h one.
+  const late = reminderDue(st, lastAt + 23 * H, { hours: 24 });
+  assert.equal(late.hours, 2);
+  assert.equal(reminderDue({ ...st, remindedFor: lastAt, reminded: late.reminded }, lastAt + 23.5 * H, { hours: 24 }), null);
+  // A new sign-in starts over.
+  assert.equal(reminderDue({ lastAt: lastAt + 23 * H, remindedFor: lastAt, reminded: [12, 2] }, lastAt + 35 * H + 60000, { hours: 24 }).hours, 12);
+  assert.equal(reminderDue({}, lastAt), null);
 });
 
 test('time since the last sign-in reads as hours and minutes', () => {

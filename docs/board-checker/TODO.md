@@ -116,3 +116,7 @@ per week per person (A7).
 - 2026-11-02: **Visitor count** (owner: option B). ⚙ Settings → Visitors:
   how many times the page was opened each day and on how many phones, last
   30 days, plus "Don't count this phone". Nothing about who.
+- 2026-11-02: **Sign-in reminders instead of the automatic one.** No fresh
+  Microsoft sign-in when you go on duty any more; your phone gets a reminder
+  12 h and 2 h before the ~24 h sign-in runs out (press R or send "signin"
+  to renew).

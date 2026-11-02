@@ -11,9 +11,9 @@
 //
 // Press R in this window (or publish "signin" to the ntfy topic
 // <BOARD_NTFY_TOPIC>-signin from your phone) for a fresh Microsoft sign-in
-// after the current check, so the ~24 h CN sign-in restarts before you leave; it also does one
-// by itself when your turn shows on duty on the Sarnia Call Board
-// (lib/board/signin.js). You approve it in Authenticator either way.
+// after the current check, so the ~24 h CN sign-in restarts before you leave.
+// Your phone is reminded 12 h and 2 h before it runs out (lib/board/signin.js).
+// You approve it in Authenticator either way.
 //
 // You do the Microsoft sign-in (Authenticator). The CATS sign-on is yours too,
 // unless CATS_EMPLOYEE_NO and CATS_PASSWORD are in .env: then the script fills
@@ -1130,13 +1130,14 @@ async function main() {
       await publishSite(first || changed || torontoChanged);
       await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
       retried = false;
-      // You're on duty on the Sarnia Call Board: sign in fresh now, so the
-      // ~24 h covers the trip (owner, 2026-10-22: once working, not before).
+      // The Microsoft sign-in runs out in 12 h, then 2 h: remind the phone
+      // (owner, 2026-11-02; no automatic fresh sign-in any more).
       const signInState = SignIn.loadState(SIGNIN_FILE);
-      const due = SignIn.dueOnDuty(callBoard, me, signInState);
-      if (due) {
-        SignIn.saveState(SIGNIN_FILE, { ...signInState, doneFor: due.train });
-        await freshSignIn(page, due.why);
+      const remind = SignIn.reminderDue(signInState);
+      if (remind) {
+        console.log(`[${stamp()}] ${remind.text}`);
+        await alertPhone(remind.text);
+        try { SignIn.saveState(SIGNIN_FILE, { ...signInState, remindedFor: signInState.lastAt, reminded: remind.reminded }); } catch { /* reminded again next check */ }
       }
     } catch (err) {
       if (err instanceof NeedSignIn) {

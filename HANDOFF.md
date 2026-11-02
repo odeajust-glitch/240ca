@@ -265,6 +265,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Sign-in reminders (owner, 2026-11-02): the automatic fresh Microsoft
+  sign-in when SR03 goes on duty on the Sarnia Call Board is gone
+  (signin.js dueOnDuty removed). Instead ntfy reminders 12 h and 2 h before
+  the ~24 h runs out (reminderDue; ms-signin.json lastAt + 24 h, or
+  BOARD_MS_SIGNIN_HOURS), once each per sign-in. R / phone "signin" unchanged.
 - Visitor count (owner, 2026-11-01, option B; needs the Worker re-pasted):
   the page POSTs /stats/hit once per visit (sessionStorage; the Current
   tab's own reloads don't count), `{ phone: true }` the first time that
