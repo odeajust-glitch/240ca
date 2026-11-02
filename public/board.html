@@ -606,7 +606,7 @@
       const total = days.reduce((a, d) => ({ opens: a.opens + d.opens, phones: a.phones + d.phones }), { opens: 0, phones: 0 });
       const day = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
       visits.innerHTML = `<p class="today"><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}.</p>
-        <p class="note" style="margin-top:4px">Last ${days.length} days: ${total.opens} opens. Phones are counted once a day each.</p>
+        <p class="note" style="margin-top:4px">Last ${days.length} days: ${total.opens} open${total.opens === 1 ? '' : 's'}. Phones are counted once a day each.</p>
         <div class="scroll"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
     } catch (e) {
       visits.innerHTML = '<p class="note">Not counted on this copy of the site.</p>';
