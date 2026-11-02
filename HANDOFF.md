@@ -265,6 +265,12 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Health line extras (owner, 2026-11-02: "what notifications are being
+  sent out for whom"): "Who gets alerts" (health.js subscribersOf: phones,
+  phones per turn, followed people by name code + their turn now; codes
+  from codeByHash, filled by sight() in board-auto, memory only) and
+  "Alerts sent" (recentAlerts: the alerts log's last 50, newest first).
+  Both owner-only via /health; phones stay anonymous.
 - Laptop backup (owner, 2026-11-02): lib/board/backup.js, called after the
   alerts each check (board-auto backupLaptop, Cloudflare only); once a day
   after 03:00: backups/state/<date>.zip (data folder's top-level files except

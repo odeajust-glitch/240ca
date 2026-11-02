@@ -128,3 +128,6 @@ per week per person (A7).
   checker's memory and each finished day of history; not passwords or crew
   names). How to restore: docs/board-checker/CLOUDFLARE.md. Also fixed: site
   updates were wiping the visitor counts.
+- 2026-11-02: **Who gets alerts, and what was sent** (in the owner-only
+  health line): how many phones, which turns and name codes they follow, and
+  the latest 50 alerts with who they were for.

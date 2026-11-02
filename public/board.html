@@ -134,6 +134,14 @@
   .health { font-size: 12px; color: var(--soft); margin-top: 6px; line-height: 1.5; }
   .health b { color: var(--ink, inherit); }
   .health .warn { color: #b3261e; font-weight: 600; }
+  .health .who { margin-top: 4px; }
+  .health .who summary { cursor: pointer; color: var(--accent); }
+  .health .who div { margin: 2px 0 0 14px; }
+  .health { overflow-wrap: anywhere; }
+  .health .sentlist { max-height: 340px; overflow-y: auto; margin: 4px 0 0; padding: 0; list-style: none; }
+  .health .sentlist li { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+  .health .sentlist .meta { color: var(--soft); }
+  .health .sentlist .meta b { color: inherit; }
   :root[data-theme="dark"] .health .warn, :root[data-theme="tablet"] .health .warn { color: #ff8a80; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) .health .warn { color: #ff8a80; } }
   .visits table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -1880,7 +1888,17 @@ source().then(async (src) => {
     // Laptop backup (lib/board/backup.js): once a day after 03:00.
     (!L.backup || now - L.backup > 30 * 3600000 ? warn : ok)(L.backup ? `backed up ${ago(L.backup)}` : 'no backup yet');
     if (L.version) ok(`code ${L.version}`);
-    box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}`;
+    // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
+    // name code (known once they're seen on a board) and their turn now.
+    const S = L.subscribers;
+    const who = S && S.phones ? `<details class="who"><summary>Who gets alerts (${S.phones} phone${S.phones === 1 ? '' : 's'})</summary>
+      ${S.turns.length ? `<div><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</div>` : ''}
+      ${S.people.length ? `<div><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</div>` : ''}
+      <div class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</div></details>` : '';
+    // What was sent, for whom (the laptop's alerts log, newest first).
+    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker' };
+    const sent = L.sent && L.sent.length ? `<details class="who"><summary>Alerts sent (latest ${L.sent.length})</summary><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></details>` : '';
+    box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}${who}${sent}`;
   }
   showUpdated(src.index);
   const daySel = document.getElementById('day');

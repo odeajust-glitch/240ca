@@ -496,6 +496,7 @@ async function runRoute(page, opts = {}) {
   const sight = (code, turn, own) => {
     if (!code || !turn) return;
     const h = People.personHash(code);
+    codeByHash.set(h, code); // memory only: the owner's "who gets alerts"
     const k = `${h}/${turn}`;
     seen.set(k, { h, turn, own: own || (seen.get(k) || {}).own || false });
   };
@@ -657,6 +658,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
     // Every check: a phone's time alerts depend on its own last-told call.
     const subs = await listSubscriptions(settings.r2);
     health.phones = subs.length;
+    health.subscribers = Health.subscribersOf(subs, personTurns, codeByHash);
     if (!subs.length) return;
     const bases = TurnAlerts.loadTold(PHONES_FILE) || {};
     const nextBases = {};
@@ -711,7 +713,11 @@ function writeAlertsLog(log) {
 
 // The board checker's health, for the owner only (lib/board/health.js;
 // owner, 2026-11-02). Was a public line on the site (2026-10-22).
-const health = { lastCheck: null, lastProblem: null, phones: null, version: null };
+const health = { lastCheck: null, lastProblem: null, phones: null, subscribers: null, version: null };
+// Name codes seen on the boards, by their hash (owner, 2026-11-02: "what name
+// codes notifications are getting sent to"). Kept in memory only, never in
+// history; it goes no further than the owner-only health line.
+const codeByHash = new Map();
 try { health.version = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', timeout: 5000 }).trim(); } catch { /* not a git copy */ }
 function healthNow() {
   const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
@@ -723,6 +729,7 @@ function healthNow() {
     signInHours: SignIn.signInHours(),
     restarts: Health.restartsToday(read(path.join(OUT_DIR, 'restarts.log')), today),
     alerts: Health.alertsToday(read(alertsLog()), todayToronto),
+    sent: Health.recentAlerts(read(alertsLog())),
     backup: (() => { try { return JSON.parse(read(path.join(OUT_DIR, 'backup.json'))).lastAt || null; } catch { return null; } })(),
   });
 }

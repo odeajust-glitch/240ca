@@ -82,3 +82,33 @@ test('health: restarts and alert sends today, from the logs', () => {
   assert.deepEqual(h.signIn, { lastAt: 1000, endsAt: 1000 + 24 * 3600000 });
   assert.equal(healthOf({ signIn: {} }).signIn, null);
 });
+
+// Owner, 2026-11-02: "what name codes notifications are getting sent to".
+test('health: who gets alerts, by turn and by followed person', () => {
+  const { subscribersOf } = require('../../lib/board/health');
+  const a = 'aaaaaaaaaaaaaaaa';
+  const b = 'bbbbbbbbbbbbbbbb';
+  const subs = [{ turns: ['SR03', `@${a}`] }, { turns: ['SR03', 'SD08'] }, { turns: [`@${a}`, `@${b}`, 'SR03'] }, { turns: ['B126'] }];
+  assert.deepEqual(subscribersOf(subs, { [a]: { turn: 'SR03' } }, new Map([[a, 'JUOD']])), {
+    phones: 4,
+    turns: [['SR03', 3], ['B126', 1], ['SD08', 1]],
+    people: [{ code: 'JUOD', turn: 'SR03', phones: 2 }, { code: null, turn: null, phones: 1 }],
+  });
+  assert.deepEqual(subscribersOf([]), { phones: 0, turns: [], people: [] });
+});
+
+// Owner, 2026-11-02: "what notifications are being sent out for whom".
+test('health: the latest alerts sent, newest first', () => {
+  const { recentAlerts } = require('../../lib/board/health');
+  const log = [
+    'When              Turn    Alert      Sent to   Message',
+    '2026-11-01 23:59  SR03    lineup     4 phones  SR03 lined up: M38261 31 planned for 31st 1500.',
+    '2026-11-02 06:11  SD05    aheadBack  0 phones, 1 failed  SD05: SD10 ahead of you is back.',
+    '2026-11-02 07:00  YOU     ntfy       1 phone  Microsoft sign-in: enter 40 in Authenticator.',
+  ].join('\r\n');
+  assert.deepEqual(recentAlerts(log, 2), [
+    { at: '2026-11-02 07:00', turn: 'YOU', kind: 'ntfy', phones: 1, failed: 0, text: 'Microsoft sign-in: enter 40 in Authenticator.' },
+    { at: '2026-11-02 06:11', turn: 'SD05', kind: 'aheadBack', phones: 0, failed: 1, text: 'SD05: SD10 ahead of you is back.' },
+  ]);
+  assert.equal(recentAlerts(log).length, 3);
+});
