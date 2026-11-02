@@ -1870,8 +1870,10 @@ source().then(async (src) => {
     let h = null;
     try { const r = await fetch('health', { cache: 'no-store' }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
     let box = document.getElementById('health');
-    if (!h || !h.laptop) { if (box) box.remove(); return; }
+    if (!h) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement('div'); box.id = 'health'; box.className = 'health'; after.after(box); }
+    // The owner, but the laptop hasn't sent its health yet (just updated).
+    if (!h.laptop) { box.innerHTML = '<b>Health</b> <span class="muted">(only you see this)</span> · waiting for the laptop\'s first update with the new code (restart the checker after pulling).'; return; }
     const L = h.laptop;
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
