@@ -1877,6 +1877,8 @@ source().then(async (src) => {
     (r.count ? warn : ok)(`${r.count} watchdog restart${r.count === 1 ? '' : 's'} today${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`);
     if (L.alerts) (L.alerts.failed ? warn : ok)(`alerts today: ${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text.slice(0, 60)})` : ''}`);
     if (L.phones != null) ok(`${L.phones} phone${L.phones === 1 ? '' : 's'} get alerts`);
+    // Laptop backup (lib/board/backup.js): once a day after 03:00.
+    (!L.backup || now - L.backup > 30 * 3600000 ? warn : ok)(L.backup ? `backed up ${ago(L.backup)}` : 'no backup yet');
     if (L.version) ok(`code ${L.version}`);
     box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}`;
   }

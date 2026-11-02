@@ -184,6 +184,7 @@ test('the Worker counts visits per day and never serves the files', async () => 
   assert.equal((await call('/stats/hit')).status, 405);
   assert.equal((await call('/stats/hit', { method: 'POST', body: 'x'.repeat(300) })).status, 413);
   assert.equal((await call(`/stats/${day}.json`)).status, 404);
+  assert.equal((await call('/backups/state/2026-11-02.zip')).status, 404); // the laptop's backups: never served
 });
 
 // Owner, 2026-11-02: the health line is only for the owner's email.

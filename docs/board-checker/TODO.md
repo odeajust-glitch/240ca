@@ -124,3 +124,7 @@ per week per person (A7).
   check, Microsoft sign-in and when it runs out, watchdog restarts today,
   alerts sent/failed today, phones getting alerts, code version. Needs
   OWNER_EMAIL set on the Worker.
+- 2026-11-02: **Laptop backup** to Cloudflare once a day after 03:00 (the
+  checker's memory and each finished day of history; not passwords or crew
+  names). How to restore: docs/board-checker/CLOUDFLARE.md. Also fixed: site
+  updates were wiping the visitor counts.

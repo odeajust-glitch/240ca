@@ -169,3 +169,25 @@ the owner. In the Worker: **Settings → Variables and Secrets → Add**:
 type **Text**, name `OWNER_EMAIL`, value the email you sign in to the site
 with (commas for more than one). **Deploy**. Anyone signed in with another
 email sees nothing.
+
+## Laptop backup, and getting it back (2026-11-02)
+
+Once a day (the first check after 03:00) the board checker zips its memory
+into the same R2 bucket, under **backups/** (never shown on the site):
+
+- `backups/state/<date>.zip`: the BoardChecker folder's own files (alert
+  memory, fill-ins, sign-in times, road days, analytics archive, the push
+  keys phones' alerts use, the logs). The last 14 days are kept.
+- `backups/history/<date>.zip`: each finished day of `history\`, once. Kept
+  as long as history is (BOARD_HISTORY_DAYS, default 90).
+
+Not backed up: `.env` (passwords: keep your own copy somewhere safe),
+`names.json` (crew names stay on the laptop), the Edge sign-in folder and
+the built site.
+
+**To restore on a new laptop:** set it up as in NEW-LAPTOP.md, then in
+Cloudflare **R2 → board-site → Objects → backups/state/**, download the
+newest zip and unzip it into `C:\Users\<you>\BoardChecker`. For history,
+download the days you want from **backups/history/** and unzip each into
+`BoardChecker\history\<date>\`. Then put your `.env` back and start the
+checker.

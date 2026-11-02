@@ -181,7 +181,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });

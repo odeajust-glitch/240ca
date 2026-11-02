@@ -41,6 +41,7 @@ const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
 const Health = require('../lib/board/health');
+const Backup = require('../lib/board/backup');
 const Remote = require('../lib/board/remote');
 const TurnAlerts = require('../lib/board/alerts');
 // For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
@@ -624,6 +625,21 @@ async function publishSite(changed) {
   }
 }
 
+// The laptop's memory, backed up to the R2 bucket once a day after 03:00
+// (lib/board/backup.js; owner, 2026-11-02). Cloudflare only.
+const BACKUP_FILE = path.join(OUT_DIR, 'backup.json');
+async function backupLaptop() {
+  const settings = siteSettings();
+  if (!settings.r2) return;
+  let state = {};
+  try { state = JSON.parse(fs.readFileSync(BACKUP_FILE, 'utf8')); } catch { /* first one */ }
+  const historyDays = process.env.BOARD_HISTORY_DAYS === undefined ? 90 : +process.env.BOARD_HISTORY_DAYS || 0;
+  const r = await Backup.runBackup({ dataDir: OUT_DIR, historyDir: HISTORY_DIR, r2: settings.r2, state, historyDays });
+  if (r.did.length) console.log(`[${stamp()}] Backed up to Cloudflare: ${r.did.join(', ')}.`);
+  if (!r.ok) console.log(`  (backup not finished: ${r.message}; trying again next check)`);
+  if (r.state !== state) try { fs.writeFileSync(BACKUP_FILE, JSON.stringify(r.state)); } catch { /* tried again tomorrow */ }
+}
+
 // Turn alerts (owner, 2026-10-22): what changed for each turn since the last
 // check (lib/board/alerts.js), pushed to the phones that chose that turn on
 // the site (subscriptions in the R2 bucket). Only with the site on
@@ -707,6 +723,7 @@ function healthNow() {
     signInHours: SignIn.signInHours(),
     restarts: Health.restartsToday(read(path.join(OUT_DIR, 'restarts.log')), today),
     alerts: Health.alertsToday(read(alertsLog()), todayToronto),
+    backup: (() => { try { return JSON.parse(read(path.join(OUT_DIR, 'backup.json'))).lastAt || null; } catch { return null; } })(),
   });
 }
 
@@ -1142,6 +1159,7 @@ async function main() {
       }
       await publishSite(first || changed || torontoChanged);
       await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
+      await backupLaptop();
       retried = false;
       // The Microsoft sign-in runs out in 12 h, then 2 h: remind the phone
       // (owner, 2026-11-02; no automatic fresh sign-in any more).

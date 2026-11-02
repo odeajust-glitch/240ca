@@ -265,6 +265,16 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Laptop backup (owner, 2026-11-02): lib/board/backup.js, called after the
+  alerts each check (board-auto backupLaptop, Cloudflare only); once a day
+  after 03:00: backups/state/<date>.zip (data folder's top-level files except
+  .env*, names.json, heartbeat.json; 14 kept) + each finished history day
+  as backups/history/<date>.zip (10 per run to catch up; kept
+  BOARD_HISTORY_DAYS). BoardChecker\backup.json { lastStateDay, lastAt };
+  "backed up … ago" in the health line. Restore steps: CLOUDFLARE.md.
+- Fixed with it: deployR2 deleted every bucket key not in the site except
+  subs/ and status/, so the Worker's visitor counts (stats/) were wiped each
+  update. Now r2.js KEEP_PREFIXES: subs/, status/, stats/, backups/.
 - Owner-only health line (owner, 2026-11-02; needs the Worker re-pasted +
   Worker variable OWNER_EMAIL): laptop writes site/status/health.json
   (lib/board/health.js: last check, last failed check, sign-in + runs-out,
