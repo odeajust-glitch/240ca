@@ -145,3 +145,6 @@ per week per person (A7).
 - 2026-11-02: **Page Health tab** (owner's key only) with the checker's
   health, who gets alerts and the alerts sent; the main screen keeps only the
   Microsoft sign-in countdown.
+- 2026-11-02: **Down banner** for everyone when the board checker hasn't
+  checked for 3 h+, and **tracked spares show both boards** (fast and slow)
+  on one line.

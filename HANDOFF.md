@@ -265,6 +265,10 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Tracked spares (owner, 2026-11-02: "show their position on both boards"):
+  board.html spareBoardsLine puts the fast and slow board on one line in
+  the tracking box ("Conductor fast 002: available · Conductor slow 004:
+  …", "not on it" when absent from one).
 - Down banner (owner, 2026-11-02: "lets people know if the board tracker
   has been down for more than 3 hours"): page #downbanner for everyone when
   index.json's last check (checked || latest) is 3 h+ old (DOWN_WARN_MIN),

@@ -2123,7 +2123,7 @@ source().then(async (src) => {
       if (!turn && gone) return `<li><b class="num">${esc(label(entry))}</b><div>Not found on a turn now. Last seen on <b>${esc(gone.turn)}</b> until ${esc(dt(gone.to))}${gone.why === 'taken' ? `; someone else is on ${esc(gone.turn)} now` : ''}.</div><div class="muted">Alerts start again when they're seen on a turn of their own.</div></li>`;
       if (!turn) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Not seen on a turn in the saved checks yet.</div></li>`;
       const f = BoardTurns.facts(s, turn);
-      const where = f.filter((x) => !LINED.has(x.kind)).map((x) => x.text);
+      const where = spareBoardsLine(s, f).filter((x) => !LINED.has(x.kind)).map((x) => x.text);
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
       const lines = [...where.map((text) => ({ kind: 'status', text })), ...lined];
@@ -2132,6 +2132,25 @@ source().then(async (src) => {
       return `<li data-sum="${esc(turn)}"><b class="num">${esc(isPerson(entry) ? label(entry) : turn)}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
+  }
+  // A spare on the spareboards (owner, 2026-11-02: "show their position on
+  // both boards"): the fast and slow board on one line, saying so when
+  // they're not on one of them, in place of a line per board.
+  const SPARE_BOARDS = [['Conductor fast board', 'Conductor slow board'], ['Engineer fast board', 'Engineer slow board']];
+  function spareBoardsLine(s, facts) {
+    const on = facts.filter((x) => x.kind === 'pool');
+    const pair = SPARE_BOARDS.find((names) => on.some((x) => names.includes(x.pool)));
+    if (!pair || !pair.every((n) => (s.pools || []).some((p) => p.name === n))) return facts;
+    const one = (name) => {
+      const x = on.find((y) => y.pool === name);
+      const label = name.replace(' board', '');
+      return x ? `${label} ${x.pos}: ${x.status}` : `${label}: not on it`;
+    };
+    const line = { kind: 'pool', text: `${one(pair[0])} · ${one(pair[1])}` };
+    const rest = facts.filter((x) => !(x.kind === 'pool' && pair.includes(x.pool)));
+    const at = facts.findIndex((x) => x.kind === 'pool' && pair.includes(x.pool));
+    rest.splice(at, 0, line);
+    return rest;
   }
   // Redraw what shows the tracked turns: the board (once a check is loaded),
   // else just the list.
