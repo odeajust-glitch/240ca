@@ -271,7 +271,10 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   now also reads Access's token (Cf-Access-Jwt-Assertion or CF_Authorization
   cookie), RS256-verified against <iss>/cdn-cgi/access/certs, iss must be
   *.cloudflareaccess.com. GET /whoami → { email, via, ownerEmailSet, owner }.
-  ❓ Waiting on the owner's /whoami result.
+  Owner's /whoami: {"email":null,"via":"no sign-in token","ownerEmailSet":
+  true} and a private tab opens the site with no login: **Cloudflare Access
+  was never on** (site public to anyone with the address). Owner told to
+  enable it (CLOUDFLARE.md step 4). ❓ Confirm /whoami → "owner":true after.
 - Visitor numbers owner-only too (owner, 2026-11-02): Worker /stats/days
   answers only OWNER_EMAIL (404 otherwise); Settings → Visitors (#visitbox)
   shows only when that answers. Everyone's visits still count (/stats/hit).
