@@ -265,6 +265,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Page Health tab (owner, 2026-11-02: "a tab for this info that can only
+  be seen with the owner's key … only a countdown for the authenticator on
+  the main page"): #modeHealth, hidden unless /health answers; renderHealth
+  (status table, who gets alerts, alerts sent). Main screen #health is now
+  just "Microsoft sign-in: Xh Ym left (runs out ~…)".
 - CATS option 5 checked against the order (owner, 2026-11-02: E27861 02's
   conductor listed as SA09 (A pool) going spare while the order had SR05;
   "CATS is wrong, the turn showing is correct"). spares.js checkVacancies:

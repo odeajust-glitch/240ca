@@ -142,3 +142,6 @@ per week per person (A7).
   the wrong turn"; every error kept in Analytics → CATS errors (with the
   crew that went). Open: also add jobs the order says go spare that option 5
   doesn't list (owner's choice a, not picked yet).
+- 2026-11-02: **Page Health tab** (owner's key only) with the checker's
+  health, who gets alerts and the alerts sent; the main screen keeps only the
+  Microsoft sign-in countdown.

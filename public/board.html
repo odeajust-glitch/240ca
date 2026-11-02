@@ -136,15 +136,26 @@
   .health b { color: var(--ink, inherit); }
   .health .warn { color: #b3261e; font-weight: 600; }
   .health .who { margin-top: 4px; }
+  .healthpage { max-width: 900px; }
+  .healthpage .hpt { font: 600 22px/1.2 var(--display); margin: 0 0 12px; }
+  .healthpage .hpt .muted { font-size: 13px; font-weight: 400; }
+  .htable { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .htable th, .htable td { text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .htable th { width: 34%; color: var(--soft); font-weight: 500; }
+  .htable td.warn { color: #b3261e; font-weight: 600; }
+  :root[data-theme="dark"] .htable td.warn, :root[data-theme="tablet"] .htable td.warn { color: #ff8a80; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) .htable td.warn { color: #ff8a80; } }
+  .healthpage .hbody { padding: 4px 14px 10px; font-size: 14px; }
+  .healthpage .sentlist { max-height: none; padding: 0 14px; font-size: 13px; }
   tr.catswrong td { opacity: 0.75; }
   tr.catswrong td:first-child { box-shadow: inset 3px 0 0 #b3261e; }
   .health .who summary { cursor: pointer; color: var(--accent); }
   .health .who div { margin: 2px 0 0 14px; }
   .health { overflow-wrap: anywhere; }
-  .health .sentlist { max-height: 340px; overflow-y: auto; margin: 4px 0 0; padding: 0; list-style: none; }
-  .health .sentlist li { padding: 5px 0; border-bottom: 1px solid var(--rule); }
-  .health .sentlist .meta { color: var(--soft); }
-  .health .sentlist .meta b { color: inherit; }
+  .sentlist { max-height: 340px; overflow-y: auto; margin: 4px 0 0; padding: 0; list-style: none; }
+  .sentlist li { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+  .sentlist .meta { color: var(--soft); }
+  .sentlist .meta b { color: inherit; }
   :root[data-theme="dark"] .health .warn, :root[data-theme="tablet"] .health .warn { color: #ff8a80; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) .health .warn { color: #ff8a80; } }
   .visits table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -526,7 +537,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -1941,47 +1952,65 @@ source().then(async (src) => {
   // The board checker's health, for the owner only (owner, 2026-11-02): the
   // Worker answers /health only to the owner's Cloudflare email; anyone else
   // gets nothing and sees nothing. Read again when the page updates.
+  // The board checker's health, for the owner only (owner, 2026-11-02): the
+  // Worker answers /health only to the owner (key or email); anyone else
+  // gets nothing and sees nothing. On the main screen only the Microsoft
+  // sign-in countdown; the rest on the Page Health tab (owner: "so the info
+  // doesn't clutter the main screen"). Read again when the page updates.
+  let healthData = null;
   async function showHealth(after) {
     let h = null;
     try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
+    healthData = h;
+    document.getElementById('modeHealth').hidden = !h;
     let box = document.getElementById('health');
-    if (!h) { if (box) box.remove(); return; }
-    if (!box) { box = document.createElement('div'); box.id = 'health'; box.className = 'health'; after.after(box); }
-    // The owner, but the laptop hasn't sent its health yet (just updated).
-    if (!h.laptop) { box.innerHTML = '<b>Health</b> <span class="muted">(only you see this)</span> · waiting for the laptop\'s first update with the new code (restart the checker after pulling).'; return; }
+    const S = h && h.laptop && h.laptop.signIn;
+    if (!S) { if (box) box.remove(); } else {
+      if (!box) { box = document.createElement('div'); box.id = 'health'; box.className = 'health'; after.after(box); }
+      const left = S.endsAt - Date.now();
+      const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
+      box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
+    }
+    if (h && mode === 'health') renderHealth();
+  }
+  const healthClock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  // The Page Health tab: everything the laptop and the Worker know.
+  async function renderHealth() {
+    const view = document.getElementById('view');
+    const h = healthData;
+    if (!h) { view.innerHTML = '<p class="empty">Page Health is only for the owner.</p>'; return; }
+    if (!h.laptop) { view.innerHTML = '<p class="empty">Waiting for the laptop\'s first update with the new code (restart the checker after pulling).</p>'; return; }
     const L = h.laptop;
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
-    const clock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-    const bits = [];
-    const warn = (t) => bits.push(`<span class="warn">${esc(t)}</span>`);
-    const ok = (t) => bits.push(esc(t));
-    if (h.down) warn(`"Down" alert sent ${ago(h.down.alerted)}`);
-    if (L.lastCheck) (now - L.lastCheck > 20 * 60000 ? warn : ok)(`last check ${ago(L.lastCheck)}`);
-    if (L.lastProblem && now - L.lastProblem.at < 6 * 3600000) warn(`check failed ${ago(L.lastProblem.at)}: ${L.lastProblem.text}`);
+    const rows = [];
+    const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
+    if (h.down) row('Down alert', `sent ${ago(h.down.alerted)}`, true);
+    if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
+    row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
     if (L.signIn) {
       const left = L.signIn.endsAt - now;
-      const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
-      (left < 2 * 3600000 ? warn : ok)(`Microsoft sign-in ${ago(L.signIn.lastAt)}, runs out ~${clock(L.signIn.endsAt)} (${leftTxt})`);
+      row('Microsoft sign-in', `${ago(L.signIn.lastAt)}; runs out ~${healthClock(L.signIn.endsAt)} (${left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now'})`, left < 2 * 3600000);
     }
     const r = L.restarts || { count: 0 };
-    (r.count ? warn : ok)(`${r.count} watchdog restart${r.count === 1 ? '' : 's'} today${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`);
-    if (L.alerts) (L.alerts.failed ? warn : ok)(`alerts today: ${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text.slice(0, 60)})` : ''}`);
-    if (L.phones != null) ok(`${L.phones} phone${L.phones === 1 ? '' : 's'} get alerts`);
-    // Laptop backup (lib/board/backup.js): once a day after 03:00.
-    (!L.backup || now - L.backup > 30 * 3600000 ? warn : ok)(L.backup ? `backed up ${ago(L.backup)}` : 'no backup yet');
-    if (L.version) ok(`code ${L.version}`);
+    row('Watchdog restarts today', `${r.count}${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`, r.count > 0);
+    if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
+    if (L.phones != null) row('Phones getting alerts', String(L.phones));
+    row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
+    if (L.version) row('Code version', L.version);
+    row('Health sent', ago(L.at));
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
     const S = L.subscribers;
-    const who = S && S.phones ? `<details class="who"><summary>Who gets alerts (${S.phones} phone${S.phones === 1 ? '' : 's'})</summary>
-      ${S.turns.length ? `<div><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</div>` : ''}
-      ${S.people.length ? `<div><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</div>` : ''}
-      <div class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</div></details>` : '';
+    const who = S && S.phones ? `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${S.phones} phone${S.phones === 1 ? '' : 's'}</span></header><div class="hbody">
+      ${S.turns.length ? `<p><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
+      ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
+      <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
     // What was sent, for whom (the laptop's alerts log, newest first).
     const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn' };
-    const sent = L.sent && L.sent.length ? `<details class="who"><summary>Alerts sent (latest ${L.sent.length})</summary><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></details>` : '';
-    box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}${who}${sent}`;
+    const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
+    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
+      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>${who}${sent}</div>`;
   }
   showUpdated(src.index);
   const daySel = document.getElementById('day');
@@ -2485,9 +2514,10 @@ source().then(async (src) => {
   const modeOrders = document.getElementById('modeOrders');
   const modeHeld = document.getElementById('modeHeld');
   const modeAna = document.getElementById('modeAna');
+  const modeHealth = document.getElementById('modeHealth');
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics');
+    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -2496,7 +2526,9 @@ source().then(async (src) => {
     modeOrders.setAttribute('aria-pressed', mode === 'orders');
     modeHeld.setAttribute('aria-pressed', mode === 'held');
     modeAna.setAttribute('aria-pressed', mode === 'analytics');
+    modeHealth.setAttribute('aria-pressed', mode === 'health');
     if (mode === 'orders') renderOrders();
+    else if (mode === 'health') renderHealth();
     else if (mode === 'held') renderHeld();
     else if (mode === 'analytics') renderAnalytics();
     else if (mode === 'turns') renderTurns();
@@ -2772,6 +2804,7 @@ source().then(async (src) => {
   modeOrders.onclick = () => setMode(true);
   modeHeld.onclick = () => setMode('held');
   modeAna.onclick = () => setMode('analytics');
+  modeHealth.onclick = () => setMode('health');
 
   document.getElementById('rail').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
