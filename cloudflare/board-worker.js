@@ -22,7 +22,10 @@
 // one in the OWNER_EMAIL variable (Settings → Variables; commas for more
 // than one). Anyone else, or no OWNER_EMAIL: 404, and the page shows nothing.
 // The email comes from Access's header or, failing that, its signed token
-// (accessEmail). GET /whoami shows what the Worker sees, to check the setup.
+// (accessEmail). With the site open (no Access; owner, 2026-11-02: "leave
+// the site open"), the owner's phone sends the OWNER_KEY variable's value
+// instead (header x-owner-key; at least 16 characters). GET /whoami shows
+// what the Worker sees, to check the setup.
 //
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
@@ -175,7 +178,17 @@ async function accessEmail(request) {
 }
 
 const owners = (env) => String(env.OWNER_EMAIL || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+// The owner key, compared without giving away how much of it matched.
+function keyMatches(request, env) {
+  const want = String(env.OWNER_KEY || '');
+  const got = String(request.headers.get('x-owner-key') || '');
+  if (want.length < 16 || got.length !== want.length) return false;
+  let diff = 0;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
+  return diff === 0;
+}
 async function isOwner(request, env) {
+  if (keyMatches(request, env)) return true;
   const { email } = await accessEmail(request);
   return !!email && owners(env).includes(email);
 }
@@ -184,7 +197,7 @@ async function isOwner(request, env) {
 // line didn't show): their own email, and whether OWNER_EMAIL is set.
 async function whoami(request, env) {
   const { email, via } = await accessEmail(request);
-  return json({ email, via, ownerEmailSet: owners(env).length > 0, owner: !!email && owners(env).includes(email) });
+  return json({ email, via, ownerEmailSet: owners(env).length > 0, ownerKeySet: String(env.OWNER_KEY || '').length >= 16, ownerKey: keyMatches(request, env), owner: await isOwner(request, env) });
 }
 
 async function healthFor(request, env) {

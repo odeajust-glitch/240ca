@@ -230,7 +230,7 @@ test('the Worker knows the owner from Access\'s signed token too', async () => {
     const env = { OWNER_EMAIL: 'odeajust@gmail.com', SITE: { get: async () => null, head: async () => null } };
     const ask = async (p, headers) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, { headers }), env);
     let me = await (await ask('/whoami', { cookie: `a=1; CF_Authorization=${token({ email: 'Odeajust@gmail.com' })}` })).json();
-    assert.deepEqual(me, { email: 'odeajust@gmail.com', via: 'token', ownerEmailSet: true, owner: true });
+    assert.deepEqual(me, { email: 'odeajust@gmail.com', via: 'token', ownerEmailSet: true, ownerKeySet: false, ownerKey: false, owner: true });
     assert.equal((await ask('/health', { 'cf-access-jwt-assertion': token({ email: 'odeajust@gmail.com' }) })).status, 200);
     // Someone else's token, a changed one, or none.
     assert.equal((await ask('/health', { 'cf-access-jwt-assertion': token({ email: 'someone@else.ca' }) })).status, 404);
@@ -239,10 +239,28 @@ test('the Worker knows the owner from Access\'s signed token too', async () => {
     me = await (await ask('/whoami', { 'cf-access-jwt-assertion': forged.join('.') })).json();
     assert.deepEqual([me.email, me.owner], [null, false]);
     me = await (await ask('/whoami', {})).json();
-    assert.deepEqual(me, { email: null, via: 'no sign-in token', ownerEmailSet: true, owner: false });
+    assert.deepEqual(me, { email: null, via: 'no sign-in token', ownerEmailSet: true, ownerKeySet: false, ownerKey: false, owner: false });
     me = await (await ask('/whoami', { 'cf-access-authenticated-user-email': 'odeajust@gmail.com' })).json();
     assert.equal(me.via, 'header');
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+// Owner, 2026-11-02: "leave the site open" (no email login): the owner's
+// phone sends the OWNER_KEY instead.
+test('the Worker knows the owner by the owner key', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map([['status/health.json', '{"phones":4}']]);
+  const env = { OWNER_KEY: 'tr41n-B0ard-k3y-2026', SITE: { get: async (k) => (store.has(k) ? { text: async () => store.get(k) } : null), head: async () => null } };
+  const ask = (p, key) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, { headers: key ? { 'x-owner-key': key } : {} }), env);
+  assert.equal((await ask('/health', 'tr41n-B0ard-k3y-2026')).status, 200);
+  assert.equal((await ask('/stats/days', 'tr41n-B0ard-k3y-2026')).status, 200);
+  for (const k of [null, 'wrong', 'tr41n-B0ard-k3y-2027', 'tr41n-B0ard-k3y-2026x']) assert.equal((await ask('/health', k)).status, 404, String(k));
+  const me = await (await ask('/whoami', 'tr41n-B0ard-k3y-2026')).json();
+  assert.deepEqual([me.ownerKeySet, me.ownerKey, me.owner], [true, true, true]);
+  // Too short a key is never accepted.
+  const weak = await worker.fetch(new Request('https://board.x.workers.dev/health', { headers: { 'x-owner-key': 'short' } }), { ...env, OWNER_KEY: 'short' });
+  assert.equal(weak.status, 404);
 });

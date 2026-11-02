@@ -274,7 +274,11 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   Owner's /whoami: {"email":null,"via":"no sign-in token","ownerEmailSet":
   true} and a private tab opens the site with no login: **Cloudflare Access
   was never on** (site public to anyone with the address). Owner told to
-  enable it (CLOUDFLARE.md step 4). ❓ Confirm /whoami → "owner":true after.
+  enable it (CLOUDFLARE.md step 4). Owner: "leave the site open" → owner
+  key instead: Worker variable OWNER_KEY (≥16 chars), page OwnerKey (from
+  #ownerkey=… once, localStorage boardOwnerKey, header x-owner-key on
+  /health and /stats/days; Settings → "Forget the owner key"). Access/
+  OWNER_EMAIL still works if ever turned on. ⚠ The site stays public.
 - Visitor numbers owner-only too (owner, 2026-11-02): Worker /stats/days
   answers only OWNER_EMAIL (404 otherwise); Settings → Visitors (#visitbox)
   shows only when that answers. Everyone's visits still count (/stats/hit).

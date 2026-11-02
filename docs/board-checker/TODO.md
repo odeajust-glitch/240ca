@@ -133,3 +133,6 @@ per week per person (A7).
   the latest 50 alerts with who they were for.
 - 2026-11-02: **Visitor numbers only for the owner** (like the health line);
   everyone else's Settings has no Visitors section.
+- 2026-11-02: **Owner key** for the health line and visitor numbers (the
+  site stays open, no email login): OWNER_KEY on the Worker, opened once per
+  device as …/#ownerkey=<key>.

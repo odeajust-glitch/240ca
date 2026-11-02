@@ -541,6 +541,7 @@
       <h2 class="vish">Visitors <span class="only">(only you see this)</span></h2>
       <div id="visits" class="visits"></div>
       <label class="nocount"><input type="checkbox" id="nocount"> Don't count this phone</label>
+      <p class="note"><button type="button" id="forgetkey">Forget the owner key on this phone</button></p>
     </div>
   </div>
 </div>
@@ -566,6 +567,25 @@
 <script src="grievance.js"></script>
 <script src="board-names.js"></script>
 <script>
+// The owner's key (owner, 2026-11-02: "leave the site open", so no email
+// login to know them by): opened once as …/#ownerkey=<OWNER_KEY>, it's kept
+// on that phone and sent with the owner-only requests (health line,
+// visitor numbers); the Worker checks it. Taken out of the address at once.
+const OwnerKey = (() => {
+  const KEY = 'boardOwnerKey';
+  const m = /^#ownerkey=([^&]+)$/.exec(location.hash);
+  if (m) {
+    try { localStorage.setItem(KEY, decodeURIComponent(m[1])); } catch (e) { /* not kept */ }
+    try { history.replaceState(null, '', location.pathname + '#current'); } catch (e) { location.hash = '#current'; }
+  }
+  const get = () => { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } };
+  return {
+    headers: () => (get() ? { 'x-owner-key': get() } : {}),
+    forget: () => { try { localStorage.removeItem(KEY); } catch (e) { /* gone */ } },
+    has: () => !!get(),
+  };
+})();
+
 // ⚙ Settings (owner, 2026-10-26): the page style, kept on this phone.
 (() => {
   const gear = document.getElementById('gear');
@@ -602,7 +622,7 @@
   const visits = document.getElementById('visits');
   async function showVisits() {
     try {
-      const r = await fetch('stats/days', { cache: 'no-store' });
+      const r = await fetch('stats/days', { cache: 'no-store', headers: OwnerKey.headers() });
       if (!r.ok) throw new Error(r.status);
       const days = (await r.json()).days || [];
       const t = days[0] || { opens: 0, phones: 0 };
@@ -617,6 +637,7 @@
       document.getElementById('visitbox').hidden = true;
     }
   }
+  document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.reload(); };
   const open = (yes) => { box.hidden = !yes; gear.setAttribute('aria-expanded', yes); if (yes) showVisits(); };
   gear.onclick = (e) => { e.stopPropagation(); open(box.hidden); };
   document.addEventListener('click', (e) => { if (!box.hidden && !box.contains(e.target) && e.target !== gear) open(false); });
@@ -1868,7 +1889,7 @@ source().then(async (src) => {
   // gets nothing and sees nothing. Read again when the page updates.
   async function showHealth(after) {
     let h = null;
-    try { const r = await fetch('health', { cache: 'no-store' }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
+    try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
     let box = document.getElementById('health');
     if (!h) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement('div'); box.id = 'health'; box.className = 'health'; after.after(box); }

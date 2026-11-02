@@ -161,14 +161,24 @@ sign-in and today's automatic restarts.
   train, and % right this day / last 7 days.
 - **Home-screen icon** ("240" over a rail; `scripts/make-icons.js`).
 
-## Health line, only for you (2026-11-02)
+## Health line and visitor numbers, only for you (2026-11-02)
 
 The site shows a **Health** line under "Updated …" (last check, Microsoft
-sign-in and when it runs out, watchdog restarts, alerts sent/failed) only to
-the owner. In the Worker: **Settings → Variables and Secrets → Add**:
-type **Text**, name `OWNER_EMAIL`, value the email you sign in to the site
-with (commas for more than one). **Deploy**. Anyone signed in with another
-email sees nothing.
+sign-in and when it runs out, watchdog restarts, alerts sent/failed, who
+gets alerts) and **Settings → Visitors** only to the owner. The site is
+open (no email login), so the owner is known by a private key:
+
+1. Make up a key: 20 or more letters, numbers and dashes (no spaces, `#`,
+   `&` or `%`).
+2. In the Worker: **Settings → Variables and Secrets → Add** → type
+   **Secret**, name `OWNER_KEY`, value your key → **Deploy**.
+3. On each of your own phones/computers, open the site once as
+   `https://board.<your-name>.workers.dev/#ownerkey=<your key>`. The page
+   keeps it on that device and takes it out of the address. To remove it:
+   **Settings → Forget the owner key on this phone**.
+4. Check with `https://board.<your-name>.workers.dev/whoami`: `"owner":true`.
+
+(With Cloudflare Access on, an email in `OWNER_EMAIL` works too.)
 
 ## Laptop backup, and getting it back (2026-11-02)
 
