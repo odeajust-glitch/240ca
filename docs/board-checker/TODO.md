@@ -131,3 +131,5 @@ per week per person (A7).
 - 2026-11-02: **Who gets alerts, and what was sent** (in the owner-only
   health line): how many phones, which turns and name codes they follow, and
   the latest 50 alerts with who they were for.
+- 2026-11-02: **Visitor numbers only for the owner** (like the health line);
+  everyone else's Settings has no Visitors section.

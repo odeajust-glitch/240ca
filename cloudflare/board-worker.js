@@ -13,7 +13,8 @@
 // visit (POST /stats/hit, { phone: true } the first time that phone opens it
 // that day) and the Worker adds it to that day's two numbers in
 // stats/YYYY-MM-DD.json (Toronto days). Nothing about who: no address, no
-// phone id. GET /stats/days gives the last 30 days for Settings.
+// phone id. GET /stats/days gives the last 30 days for Settings, to the
+// owner only (OWNER_EMAIL, like /health below; owner, 2026-11-02).
 //
 // Health (owner, 2026-11-02: "can this be set up so only I see it"): GET
 // /health gives the laptop's status/health.json plus this Worker's own
@@ -165,7 +166,7 @@ export default {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return statsHit(request, env);
     }
-    if (url.pathname === '/stats/days') return statsDays(env);
+    if (url.pathname === '/stats/days') return isOwner(request, env) ? statsDays(env) : json({ error: 'not found' }, 404);
     if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);

@@ -167,17 +167,21 @@ test('the Worker counts visits per day and never serves the files', async () => 
   const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
   const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
   const store = new Map();
-  const env = { SITE: {
+  const env = { OWNER_EMAIL: 'odeajust@gmail.com', SITE: {
     put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
     head: async (k) => (store.has(k) ? { httpEtag: '"e"', writeHttpMetadata: () => {} } : null),
     get: async (k) => (store.has(k) ? { body: store.get(k), text: async () => store.get(k) } : null),
   } };
   const call = (p, init) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, init), env);
+  const owner = { headers: { 'cf-access-authenticated-user-email': 'odeajust@gmail.com' } };
   const hit = (phone) => call('/stats/hit', { method: 'POST', body: JSON.stringify({ phone }) });
   for (const phone of [true, false, false, true]) assert.equal((await hit(phone)).status, 200);
   const day = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
   assert.deepEqual(JSON.parse(store.get(`stats/${day}.json`)), { opens: 4, phones: 2 });
-  const days = (await (await call('/stats/days')).json()).days;
+  // The numbers: the owner only (owner, 2026-11-02); everyone's visits count.
+  assert.equal((await call('/stats/days')).status, 404);
+  assert.equal((await call('/stats/days', { headers: { 'cf-access-authenticated-user-email': 'someone@else.ca' } })).status, 404);
+  const days = (await (await call('/stats/days', owner)).json()).days;
   assert.equal(days.length, 30);
   assert.deepEqual(days[0], { day, opens: 4, phones: 2 });
   assert.deepEqual(days[1].opens, 0);

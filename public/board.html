@@ -131,6 +131,7 @@
   .settings .sw { width: 34px; height: 24px; border-radius: 4px; border: 1px solid var(--rule); flex: none; display: grid; place-items: center; font: 600 11px/1 'IBM Plex Mono', monospace; }
   .settings .note { font-size: 12px; color: var(--soft); margin: 10px 0 0; }
   .settings h2.vish { margin-top: 16px; }
+  .settings h2 .only { font: 400 11px/1 var(--body, inherit); letter-spacing: 0; text-transform: none; }
   .health { font-size: 12px; color: var(--soft); margin-top: 6px; line-height: 1.5; }
   .health b { color: var(--ink, inherit); }
   .health .warn { color: #b3261e; font-weight: 600; }
@@ -536,9 +537,11 @@
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
     </div>
     <p class="note" id="stynote"></p>
-    <h2 class="vish">Visitors</h2>
-    <div id="visits" class="visits"><p class="note">Loading…</p></div>
-    <label class="nocount"><input type="checkbox" id="nocount"> Don't count this phone</label>
+    <div id="visitbox" hidden>
+      <h2 class="vish">Visitors <span class="only">(only you see this)</span></h2>
+      <div id="visits" class="visits"></div>
+      <label class="nocount"><input type="checkbox" id="nocount"> Don't count this phone</label>
+    </div>
   </div>
 </div>
 <div class="wrap">
@@ -608,8 +611,10 @@
       visits.innerHTML = `<p class="today"><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}.</p>
         <p class="note" style="margin-top:4px">Last ${days.length} days: ${total.opens} open${total.opens === 1 ? '' : 's'}. Phones are counted once a day each.</p>
         <div class="scroll"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
+      document.getElementById('visitbox').hidden = false;
     } catch (e) {
-      visits.innerHTML = '<p class="note">Not counted on this copy of the site.</p>';
+      // Not the owner (the Worker answers only their email), or no counter here.
+      document.getElementById('visitbox').hidden = true;
     }
   }
   const open = (yes) => { box.hidden = !yes; gear.setAttribute('aria-expanded', yes); if (yes) showVisits(); };
@@ -617,6 +622,7 @@
   document.addEventListener('click', (e) => { if (!box.hidden && !box.contains(e.target) && e.target !== gear) open(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) { open(false); gear.focus(); } });
   apply(picked());
+  if (location.protocol !== 'file:') showVisits(); // only the owner gets the numbers: shows the section for them
 })();
 
 let focus = ''; // the turn open on the Turn History tab, e.g. "SR03"
