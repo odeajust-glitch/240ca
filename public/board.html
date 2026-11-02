@@ -136,6 +136,8 @@
   .health b { color: var(--ink, inherit); }
   .health .warn { color: #b3261e; font-weight: 600; }
   .health .who { margin-top: 4px; }
+  .downbanner { background: #b3261e; color: #fff; padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; }
+  .downbanner[hidden] { display: none; }
   .healthpage { max-width: 900px; }
   .healthpage .hpt { font: 600 22px/1.2 var(--display); margin: 0 0 12px; }
   .healthpage .hpt .muted { font-size: 13px; font-weight: 400; }
@@ -556,6 +558,7 @@
     <p class="note" id="keynote" hidden></p>
   </div>
 </div>
+<div class="downbanner" id="downbanner" role="alert" hidden></div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
     <div class="turnpick">
@@ -687,6 +690,23 @@ function tickAges() {
   });
 }
 setInterval(tickAges, 30000);
+// Down 3 hours or more (owner, 2026-11-02: "something that lets people know
+// if the board tracker has been down for more than 3 hours"): a banner for
+// everyone, from the last check the site has. It goes away by itself when
+// checks come in again (the page reads index.json every 2 minutes).
+const DOWN_WARN_MIN = 3 * 60;
+let lastCheckStamp = null;
+function showDown() {
+  const el = document.getElementById('downbanner');
+  if (!el) return;
+  const m = lastCheckStamp ? torontoNowMin() - stampMin(lastCheckStamp) : 0;
+  el.hidden = m < DOWN_WARN_MIN;
+  if (el.hidden) return;
+  const h = Math.floor(m / 60);
+  const since = `${lastCheckStamp.slice(8, 10).replace(/^0/, '')} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+lastCheckStamp.slice(5, 7) - 1]}, ${lastCheckStamp.slice(11, 13)}:${lastCheckStamp.slice(13, 15)}`;
+  el.innerHTML = `<b>⚠ The board checker is down.</b> No check of CATS since ${since} (${h >= 48 ? `${Math.floor(h / 24)} days` : `${h} h ${String(m % 60).padStart(2, '0')} m`}). The board and alerts below are from then and may be out of date; check CATS yourself.`;
+}
+setInterval(showDown, 30000);
 // "15th 1100" → ["15th", "1100"]
 const split = (s) => s.split(' ');
 
@@ -1911,6 +1931,8 @@ source().then(async (src) => {
   document.getElementById('sample').hidden = src.live;
   const showUpdated = (idx) => {
     if (!src.live || !idx.generatedAt) return;
+    lastCheckStamp = idx.checked || idx.latest || null;
+    showDown();
     const u = document.getElementById('updated');
     u.hidden = false;
     u.textContent = 'Updated ' + new Date(idx.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });

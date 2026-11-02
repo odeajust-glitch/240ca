@@ -265,6 +265,12 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Down banner (owner, 2026-11-02: "lets people know if the board tracker
+  has been down for more than 3 hours"): page #downbanner for everyone when
+  index.json's last check (checked || latest) is 3 h+ old (DOWN_WARN_MIN),
+  ticks every 30 s, goes away when checks come back. Phone push for it
+  would need the Worker to send web push (VAPID private key as a Worker
+  secret); asked the owner.
 - Page Health tab (owner, 2026-11-02: "a tab for this info that can only
   be seen with the owner's key … only a countdown for the authenticator on
   the main page"): #modeHealth, hidden unless /health answers; renderHealth
