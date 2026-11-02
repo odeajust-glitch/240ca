@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-10-31 · Branch: **`claude/vigilant-planck-zawrj4`**
+Last updated: 2026-11-02 · Branch: **`claude/vigilant-planck-zawrj4`**
 (has everything; the board-checker laptop runs it, pulled + restarted
 2026-10-26) · 148 tests (`npm test`)
 
@@ -265,6 +265,13 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Visitor count (owner, 2026-11-01, option B; needs the Worker re-pasted):
+  the page POSTs /stats/hit once per visit (sessionStorage; the Current
+  tab's own reloads don't count), `{ phone: true }` the first time that
+  phone opens it that Toronto day (localStorage boardCountedDay). Worker
+  keeps stats/YYYY-MM-DD.json { opens, phones } (never served), GET
+  /stats/days → last 30 days, shown in ⚙ Settings → Visitors with "Don't
+  count this phone". No ids, no addresses.
 - Fresh Edge when stuck (owner, 2026-10-31: "I get the notification that
   it's down but all I do is close the browser and rerun"). A stuck check
   reloads CATS in the same window; that wait was heartbeat 'signin' (45 min,

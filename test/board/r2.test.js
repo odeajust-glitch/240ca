@@ -160,3 +160,28 @@ test('the Worker alerts once when the checker is down, and once when it is back'
     globalThis.fetch = realFetch;
   }
 });
+
+// Owner, 2026-11-01 (option B): how many times the page was opened each day,
+// and on how many phones; nothing about who.
+test('the Worker counts visits per day and never serves the files', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map();
+  const env = { SITE: {
+    put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    head: async (k) => (store.has(k) ? { httpEtag: '"e"', writeHttpMetadata: () => {} } : null),
+    get: async (k) => (store.has(k) ? { body: store.get(k), text: async () => store.get(k) } : null),
+  } };
+  const call = (p, init) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, init), env);
+  const hit = (phone) => call('/stats/hit', { method: 'POST', body: JSON.stringify({ phone }) });
+  for (const phone of [true, false, false, true]) assert.equal((await hit(phone)).status, 200);
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  assert.deepEqual(JSON.parse(store.get(`stats/${day}.json`)), { opens: 4, phones: 2 });
+  const days = (await (await call('/stats/days')).json()).days;
+  assert.equal(days.length, 30);
+  assert.deepEqual(days[0], { day, opens: 4, phones: 2 });
+  assert.deepEqual(days[1].opens, 0);
+  assert.equal((await call('/stats/hit')).status, 405);
+  assert.equal((await call('/stats/hit', { method: 'POST', body: 'x'.repeat(300) })).status, 413);
+  assert.equal((await call(`/stats/${day}.json`)).status, 404);
+});

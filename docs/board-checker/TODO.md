@@ -113,3 +113,6 @@ per week per person (A7).
   reloading CATS doesn't get back to the main menu within 10 min, or a check
   fails again right after the reload, the watchdog closes the checker's Edge
   window and starts it again (what the owner was doing by hand).
+- 2026-11-02: **Visitor count** (owner: option B). ⚙ Settings → Visitors:
+  how many times the page was opened each day and on how many phones, last
+  30 days, plus "Don't count this phone". Nothing about who.

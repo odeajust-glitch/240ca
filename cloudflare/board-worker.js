@@ -9,6 +9,12 @@
 // Enable Cloudflare Access) asks each visitor for an allowed email and a
 // one-time code before a request reaches this code.
 //
+// Visitors (owner, 2026-11-01, option B): the page says "opened" once per
+// visit (POST /stats/hit, { phone: true } the first time that phone opens it
+// that day) and the Worker adds it to that day's two numbers in
+// stats/YYYY-MM-DD.json (Toronto days). Nothing about who: no address, no
+// phone id. GET /stats/days gives the last 30 days for Settings.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -97,6 +103,38 @@ async function watchChecker(env) {
   }
 }
 
+const torontoDay = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+const STATS_DAYS = 30;
+
+async function readDay(env, day) {
+  const o = await env.SITE.get(`stats/${day}.json`);
+  if (!o) return { opens: 0, phones: 0 };
+  try { const d = JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); return { opens: +d.opens || 0, phones: +d.phones || 0 }; } catch { return { opens: 0, phones: 0 }; }
+}
+
+// Two visits at the same moment can lose one count (no locking): fine for a
+// rough daily number.
+async function statsHit(request, env) {
+  const text = await request.text();
+  if (text.length > 200) return json({ error: 'too big' }, 413);
+  let body = {};
+  try { body = JSON.parse(text || '{}'); } catch { return json({ error: 'not JSON' }, 400); }
+  const day = torontoDay(Date.now());
+  const d = await readDay(env, day);
+  d.opens += 1;
+  if (body && body.phone === true) d.phones += 1;
+  await env.SITE.put(`stats/${day}.json`, JSON.stringify(d), { httpMetadata: { contentType: 'application/json' } });
+  return json({ ok: true });
+}
+
+async function statsDays(env) {
+  const now = Date.now();
+  const days = [];
+  for (let i = 0; i < STATS_DAYS; i++) days.push(torontoDay(now - i * 864e5));
+  const counts = await Promise.all([...new Set(days)].map(async (day) => ({ day, ...(await readDay(env, day)) })));
+  return json({ days: counts });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(watchChecker(env));
@@ -104,6 +142,11 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/stats/hit') {
+      if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+      return statsHit(request, env);
+    }
+    if (url.pathname === '/stats/days') return statsDays(env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);
@@ -118,7 +161,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
