@@ -185,3 +185,23 @@ test('the Worker counts visits per day and never serves the files', async () => 
   assert.equal((await call('/stats/hit', { method: 'POST', body: 'x'.repeat(300) })).status, 413);
   assert.equal((await call(`/stats/${day}.json`)).status, 404);
 });
+
+// Owner, 2026-11-02: the health line is only for the owner's email.
+test('the Worker gives the health line only to the owner', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map([['status/health.json', JSON.stringify({ lastCheck: 1, phones: 4 })], ['status/down.json', JSON.stringify({ since: 1, alerted: 2 })]]);
+  const env = { OWNER_EMAIL: 'Odeajust@gmail.com, other@x.ca', SITE: {
+    head: async (k) => (store.has(k) ? { httpEtag: '"e"', writeHttpMetadata: () => {} } : null),
+    get: async (k) => (store.has(k) ? { text: async () => store.get(k) } : null),
+  } };
+  const as = (email) => worker.fetch(new Request('https://board.x.workers.dev/health', { headers: email ? { 'cf-access-authenticated-user-email': email } : {} }), env);
+  let res = await as('odeajust@gmail.com');
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { laptop: { lastCheck: 1, phones: 4 }, down: { since: 1, alerted: 2 } });
+  assert.equal((await as('someone@else.ca')).status, 404);
+  assert.equal((await as(null)).status, 404);
+  assert.equal((await worker.fetch(new Request('https://board.x.workers.dev/health', { headers: { 'cf-access-authenticated-user-email': 'odeajust@gmail.com' } }), { ...env, OWNER_EMAIL: '' })).status, 404);
+  // Never as a file.
+  assert.equal((await as('odeajust@gmail.com').then(() => worker.fetch(new Request('https://board.x.workers.dev/status/health.json'), env))).status, 404);
+});

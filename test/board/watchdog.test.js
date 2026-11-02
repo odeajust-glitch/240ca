@@ -58,3 +58,27 @@ test('watchdog: starts the checker again after a "still stuck" quit', async () =
     wd.kill('SIGKILL'); // its stand-in checker ends by itself in 3 s
   }
 });
+
+// Owner, 2026-11-02: one health line on the site, only for the owner.
+test('health: restarts and alert sends today, from the logs', () => {
+  const { restartsToday, alertsToday, healthOf } = require('../../lib/board/health');
+  const restarts = [
+    '2026-11-01, 23:10:00  Restarting: the board checker quit (code 1).',
+    '2026-11-02, 03:12:44  The board checker looks stuck (a check has been running for 15 min). Closing it and its browser, then starting it again.',
+    '2026-11-02, 03:12:50  Restarting: still stuck after reloading CATS; closed Edge to start fresh.',
+    '2026-11-02, 04:00:00  Several restarts in a short time; waiting 5 minutes before the next.',
+  ].join('\n');
+  assert.deepEqual(restartsToday(restarts, '2026-11-02'), { count: 2, last: { at: '2026-11-02 03:12', text: 'Restarting: still stuck after reloading CATS; closed Edge to start fresh.' } });
+  assert.deepEqual(restartsToday('', '2026-11-02'), { count: 0, last: null });
+  const alerts = [
+    'When              Turn    Alert      Sent to   Message',
+    '2026-11-01 23:59  SR03    lineup     4 phones  SR03 lined up: …',
+    '2026-11-02 06:11  SD05    aheadBack  0 phones, 1 failed  SD05: SD10 ahead of you is back.',
+    '2026-11-02 06:29  SR03    time       4 phones  SR03 time change: …',
+    '2026-11-02 07:52  B126    position   1 phone  B126: now position 010.',
+  ].join('\r\n');
+  assert.deepEqual(alertsToday(alerts, '2026-11-02'), { sent: 5, failed: 1, lastFailure: { at: '2026-11-02 06:11', text: 'SD05: SD10 ahead of you is back.' } });
+  const h = healthOf({ now: 5, signIn: { lastAt: 1000 }, signInHours: 24 });
+  assert.deepEqual(h.signIn, { lastAt: 1000, endsAt: 1000 + 24 * 3600000 });
+  assert.equal(healthOf({ signIn: {} }).signIn, null);
+});

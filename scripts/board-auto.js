@@ -40,6 +40,7 @@ const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
 const SignIn = require('../lib/board/signin');
+const Health = require('../lib/board/health');
 const Remote = require('../lib/board/remote');
 const TurnAlerts = require('../lib/board/alerts');
 // For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
@@ -609,7 +610,12 @@ async function publishSite(changed) {
     const dir = path.join(OUT_DIR, 'site');
     // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
     const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, status: checkerStatus() });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push });
+    // The owner's health line: on Cloudflare only, where the Worker keeps it
+    // to the owner's email (status/ is never served as a file).
+    const healthFile = path.join(dir, 'status', 'health.json');
+    if (settings.r2) { fs.mkdirSync(path.dirname(healthFile), { recursive: true }); fs.writeFileSync(healthFile, JSON.stringify(healthNow())); }
+    else fs.rmSync(path.join(dir, 'status'), { recursive: true, force: true });
     const sent = await publishSiteDir(dir, settings);
     if (sent.ok) site.due = false;
     console.log(sent.ok ? `[${stamp()}] Snapshot website updated (${sent.where}).` : `[${stamp()}] Snapshot website not updated (${sent.where}): ${sent.message}`);
@@ -634,6 +640,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
   try {
     // Every check: a phone's time alerts depend on its own last-told call.
     const subs = await listSubscriptions(settings.r2);
+    health.phones = subs.length;
     if (!subs.length) return;
     const bases = TurnAlerts.loadTold(PHONES_FILE) || {};
     const nextBases = {};
@@ -686,16 +693,21 @@ function writeAlertsLog(log) {
   }
 }
 
-// The board checker's health for the site (owner, 2026-10-22): when the last
-// Microsoft sign-in was, and how often the watchdog restarted it today.
-function checkerStatus() {
+// The board checker's health, for the owner only (lib/board/health.js;
+// owner, 2026-11-02). Was a public line on the site (2026-10-22).
+const health = { lastCheck: null, lastProblem: null, phones: null, version: null };
+try { health.version = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', timeout: 5000 }).trim(); } catch { /* not a git copy */ }
+function healthNow() {
+  const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
   const today = new Date().toLocaleDateString('en-CA');
-  let restartsToday = 0;
-  try {
-    restartsToday = fs.readFileSync(path.join(OUT_DIR, 'restarts.log'), 'utf8').split('\n')
-      .filter((l) => l.startsWith(today) && /looks stuck|Restarting:/.test(l)).length;
-  } catch { /* no restarts yet */ }
-  return { lastSignInAt: SignIn.loadState(SIGNIN_FILE).lastAt || null, restartsToday };
+  const todayToronto = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  return Health.healthOf({
+    ...health,
+    signIn: SignIn.loadState(SIGNIN_FILE),
+    signInHours: SignIn.signInHours(),
+    restarts: Health.restartsToday(read(path.join(OUT_DIR, 'restarts.log')), today),
+    alerts: Health.alertsToday(read(alertsLog()), todayToronto),
+  });
 }
 
 // Deletes day folders older than BOARD_HISTORY_DAYS (default 90; 0 keeps all).
@@ -1106,6 +1118,7 @@ async function main() {
       console.log(`\n[${stamp()}] Checking the board…`);
       const names = [];
       const summary = await runRoute(page, { ...poolOpts, names });
+      health.lastCheck = Date.now();
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
       const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
@@ -1151,6 +1164,7 @@ async function main() {
         continue;
       }
       console.log(`[${stamp()}] Couldn't finish this check: ${err.message}`);
+      health.lastProblem = { at: Date.now(), text: err.message };
       await saveStuckScreen(page);
       if (!every) throw err;
       // Failed again right after reloading CATS: under the watchdog, close

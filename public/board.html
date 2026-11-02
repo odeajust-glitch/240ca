@@ -131,6 +131,11 @@
   .settings .sw { width: 34px; height: 24px; border-radius: 4px; border: 1px solid var(--rule); flex: none; display: grid; place-items: center; font: 600 11px/1 'IBM Plex Mono', monospace; }
   .settings .note { font-size: 12px; color: var(--soft); margin: 10px 0 0; }
   .settings h2.vish { margin-top: 16px; }
+  .health { font-size: 12px; color: var(--soft); margin-top: 6px; line-height: 1.5; }
+  .health b { color: var(--ink, inherit); }
+  .health .warn { color: #b3261e; font-weight: 600; }
+  :root[data-theme="dark"] .health .warn, :root[data-theme="tablet"] .health .warn { color: #ff8a80; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) .health .warn { color: #ff8a80; } }
   .visits table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .visits th, .visits td { text-align: right; padding: 3px 4px; border-bottom: 1px solid var(--rule); }
   .visits th:first-child, .visits td:first-child { text-align: left; }
@@ -1842,16 +1847,39 @@ source().then(async (src) => {
     const u = document.getElementById('updated');
     u.hidden = false;
     u.textContent = 'Updated ' + new Date(idx.generatedAt).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-    // The board checker's own health (owner, 2026-10-22).
-    const st = idx.status;
-    let line = document.getElementById('checkerstatus');
-    if (st && !line) { line = document.createElement('div'); line.id = 'checkerstatus'; line.className = 'status-line'; u.after(line); }
-    if (st && line) {
-      const ago = (ms) => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
-      line.textContent = [st.lastSignInAt ? `Microsoft sign-in ${ago(st.lastSignInAt)}` : null,
-        st.restartsToday != null ? `${st.restartsToday} automatic restart${st.restartsToday === 1 ? '' : 's'} today` : null].filter(Boolean).join(' · ');
-    }
+    showHealth(u);
   };
+  // The board checker's health, for the owner only (owner, 2026-11-02): the
+  // Worker answers /health only to the owner's Cloudflare email; anyone else
+  // gets nothing and sees nothing. Read again when the page updates.
+  async function showHealth(after) {
+    let h = null;
+    try { const r = await fetch('health', { cache: 'no-store' }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
+    let box = document.getElementById('health');
+    if (!h || !h.laptop) { if (box) box.remove(); return; }
+    if (!box) { box = document.createElement('div'); box.id = 'health'; box.className = 'health'; after.after(box); }
+    const L = h.laptop;
+    const now = Date.now();
+    const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
+    const clock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const bits = [];
+    const warn = (t) => bits.push(`<span class="warn">${esc(t)}</span>`);
+    const ok = (t) => bits.push(esc(t));
+    if (h.down) warn(`"Down" alert sent ${ago(h.down.alerted)}`);
+    if (L.lastCheck) (now - L.lastCheck > 20 * 60000 ? warn : ok)(`last check ${ago(L.lastCheck)}`);
+    if (L.lastProblem && now - L.lastProblem.at < 6 * 3600000) warn(`check failed ${ago(L.lastProblem.at)}: ${L.lastProblem.text}`);
+    if (L.signIn) {
+      const left = L.signIn.endsAt - now;
+      const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
+      (left < 2 * 3600000 ? warn : ok)(`Microsoft sign-in ${ago(L.signIn.lastAt)}, runs out ~${clock(L.signIn.endsAt)} (${leftTxt})`);
+    }
+    const r = L.restarts || { count: 0 };
+    (r.count ? warn : ok)(`${r.count} watchdog restart${r.count === 1 ? '' : 's'} today${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`);
+    if (L.alerts) (L.alerts.failed ? warn : ok)(`alerts today: ${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text.slice(0, 60)})` : ''}`);
+    if (L.phones != null) ok(`${L.phones} phone${L.phones === 1 ? '' : 's'} get alerts`);
+    if (L.version) ok(`code ${L.version}`);
+    box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}`;
+  }
   showUpdated(src.index);
   const daySel = document.getElementById('day');
   daySel.innerHTML = src.days.map((d) => `<option value="${d}">${esc(when(d + ' 0000').day)}</option>`).join('');

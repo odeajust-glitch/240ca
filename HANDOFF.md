@@ -265,6 +265,15 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Owner-only health line (owner, 2026-11-02; needs the Worker re-pasted +
+  Worker variable OWNER_EMAIL): laptop writes site/status/health.json
+  (lib/board/health.js: last check, last failed check, sign-in + runs-out,
+  restarts today from restarts.log, alerts sent/failed today from the alerts
+  log, phones subscribed, git version) on Cloudflare only. Worker GET
+  /health → that + status/down.json, only when cf-access-authenticated-user-
+  email is in OWNER_EMAIL; else 404 and the page shows nothing. The old
+  public "Microsoft sign-in … · restarts today" line (index.json status) is
+  gone. ❓ Relies on Cloudflare Access setting that header.
 - Sign-in reminders (owner, 2026-11-02): the automatic fresh Microsoft
   sign-in when SR03 goes on duty on the Sarnia Call Board is gone
   (signin.js dueOnDuty removed). Instead ntfy reminders 12 h and 2 h before

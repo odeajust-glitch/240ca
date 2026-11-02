@@ -15,6 +15,12 @@
 // stats/YYYY-MM-DD.json (Toronto days). Nothing about who: no address, no
 // phone id. GET /stats/days gives the last 30 days for Settings.
 //
+// Health (owner, 2026-11-02: "can this be set up so only I see it"): GET
+// /health gives the laptop's status/health.json plus this Worker's own
+// "down" note, but only to the email Cloudflare Access signed in, when it's
+// one in the OWNER_EMAIL variable (Settings → Variables; commas for more
+// than one). Anyone else, or no OWNER_EMAIL: 404, and the page shows nothing.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -135,6 +141,19 @@ async function statsDays(env) {
   return json({ days: counts });
 }
 
+function isOwner(request, env) {
+  const who = (request.headers.get('cf-access-authenticated-user-email') || '').trim().toLowerCase();
+  const owners = String(env.OWNER_EMAIL || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return !!who && owners.includes(who);
+}
+
+async function healthFor(request, env) {
+  if (!isOwner(request, env)) return json({ error: 'not found' }, 404);
+  const read = async (k) => { const o = await env.SITE.get(k); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
+  const [laptop, down] = await Promise.all([read('status/health.json'), read('status/down.json')]);
+  return json({ laptop, down });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(watchChecker(env));
@@ -147,6 +166,7 @@ export default {
       return statsHit(request, env);
     }
     if (url.pathname === '/stats/days') return statsDays(env);
+    if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);

@@ -160,3 +160,12 @@ sign-in and today's automatic restarts.
 - **Prediction accuracy** in the Order summary: predicted vs actual crew per
   train, and % right this day / last 7 days.
 - **Home-screen icon** ("240" over a rail; `scripts/make-icons.js`).
+
+## Health line, only for you (2026-11-02)
+
+The site shows a **Health** line under "Updated …" (last check, Microsoft
+sign-in and when it runs out, watchdog restarts, alerts sent/failed) only to
+the owner. In the Worker: **Settings → Variables and Secrets → Add**:
+type **Text**, name `OWNER_EMAIL`, value the email you sign in to the site
+with (commas for more than one). **Deploy**. Anyone signed in with another
+email sees nothing.

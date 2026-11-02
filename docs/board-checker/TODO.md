@@ -120,3 +120,7 @@ per week per person (A7).
   Microsoft sign-in when you go on duty any more; your phone gets a reminder
   12 h and 2 h before the ~24 h sign-in runs out (press R or send "signin"
   to renew).
+- 2026-11-02: **Health line, only for the owner**: under "Updated …", last
+  check, Microsoft sign-in and when it runs out, watchdog restarts today,
+  alerts sent/failed today, phones getting alerts, code version. Needs
+  OWNER_EMAIL set on the Worker.
