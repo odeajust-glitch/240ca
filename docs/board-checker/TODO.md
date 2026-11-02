@@ -136,3 +136,9 @@ per week per person (A7).
 - 2026-11-02: **Owner key** for the health line and visitor numbers (the
   site stays open, no email login): OWNER_KEY on the Worker, opened once per
   device as …/#ownerkey=<key>.
+- 2026-11-02: **CATS option 5 checked against the order.** Jobs Going Spare
+  shows the corrected list (default) and "As CATS shows" with wrong turns
+  marked; the spare CATS would call gets "CATS shows you to work … but that's
+  the wrong turn"; every error kept in Analytics → CATS errors (with the
+  crew that went). Open: also add jobs the order says go spare that option 5
+  doesn't list (owner's choice a, not picked yet).

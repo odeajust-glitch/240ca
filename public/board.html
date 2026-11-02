@@ -136,6 +136,8 @@
   .health b { color: var(--ink, inherit); }
   .health .warn { color: #b3261e; font-weight: 600; }
   .health .who { margin-top: 4px; }
+  tr.catswrong td { opacity: 0.75; }
+  tr.catswrong td:first-child { box-shadow: inset 3px 0 0 #b3261e; }
   .health .who summary { cursor: pointer; color: var(--accent); }
   .health .who div { margin: 2px 0 0 14px; }
   .health { overflow-wrap: anywhere; }
@@ -842,8 +844,17 @@ function yardJobs(s) {
 }
 
 // The jobs going spare: the terminal line-up, vacancies only (option 5).
+// Two views (owner, 2026-11-02: "I want option 5 to show what is seen in
+// CATS still but I want the corrected jobs going spare to show"): corrected
+// by the order (the default), and as CATS shows it, wrong turns marked.
+let vacTab = 'fixed';
 function vacancies(s) {
-  if (!(s.vacancies || []).length) return '';
+  const cats = s.vacanciesCats;
+  const wrongs = (cats || []).filter((v) => v.wrong).length;
+  const tabbed = cats && (wrongs || cats.length !== (s.vacancies || []).length);
+  const showCats = tabbed && vacTab === 'cats';
+  const list = showCats ? cats : s.vacancies || [];
+  if (!list.length && !(cats || []).length) return '';
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
   const fill = (v) => (!v.fill ? ''
@@ -856,11 +867,14 @@ function vacancies(s) {
     const parts = [...rest, ...(b0.length ? [`${b0.length} on B0 (working)`] : [])];
     return ` · skipped: ${esc(parts.join(' · '))}`;
   }
-  const rows = s.vacancies.map((v) => `<tr${marked(v.turn) || (v.fill && marked(v.fill.turn)) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td>
-    <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${fill(v)}</td>
-    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} <span class="spare">(spare)</span>${v.cats ? `<div class="crew">CATS lists ${esc(v.cats)}</div>` : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
-  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${s.vacancies.length} jobs</span></header>
-    <div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>
+  const wrongNote = (v) => (!v.wrong ? '' : `<div class="crew"><span class="bad">Wrong turn:</span> the order has <b class="num">${markTurn(v.wrong.order)}</b> on ${esc(v.wrong.train)}${v.wrong.spare ? ` (going spare)` : ', so this job isn\'t going spare'}${v.fill && v.fill.turn ? `. ${esc(v.fill.turn)} is told it's the wrong turn.` : '.'}</div>`);
+  const rows = list.map((v) => `<tr class="${[marked(v.turn) || (v.fill && marked(v.fill.turn)) ? 'hit' : '', v.wrong ? 'catswrong' : ''].filter(Boolean).join(' ')}"><td class="num">${esc(v.at)}</td>
+    <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${wrongNote(v)}${fill(v)}</td>
+    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} <span class="spare">(spare)</span>${v.cats && !showCats ? `<div class="crew">CATS lists ${esc(v.cats)}</div>` : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
+  const tabs = tabbed ? `<div class="tabs" role="tablist"><button type="button" role="tab" data-vactab="fixed" aria-selected="${!showCats}">Corrected (by the order)</button><button type="button" role="tab" data-vactab="cats" aria-selected="${showCats}">As CATS shows${wrongs ? ` <span class="bad">· ${wrongs} wrong</span>` : ''}</button></div>` : '';
+  const why = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
+  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}</span></header>${tabs}${why}
+    ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">No jobs going spare once CATS\'s errors are taken out.</p>'}
     <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.</div></section>`;
 }
 
@@ -1256,12 +1270,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['pred', 'Predictions']];
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, pred: anaPred }[o.sec] || anaTrains;
+  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, pred: anaPred }[o.sec] || anaTrains;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
 function anaTrains({ runs }) {
@@ -1332,6 +1346,37 @@ function anaRunarounds({ runarounds }) {
     <div class="strip">${anaTile(st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Runarounds (still wrong at the end)', st.n > 0)}${anaTile(st.fixed, 'Fixed before they went')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
     <section class="sheet"><header><h2>Runarounds by pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
     <section class="sheet"><header><h2>Every train shown out of sequence</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// CATS's option 5 against the order (owner, 2026-11-02: "track these
+// errors in CATS"): each train and job CATS listed under the wrong turn, how
+// long it showed, who CATS's list would have called, whether CATS fixed it
+// before the train went, and the crew that went (who was right).
+function anaCats({ catsErrors = [] }) {
+  const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
+  const result = (r) => (r.fixed ? `<span class="offv ok">CATS fixed it</span><div class="crew">${esc(dt(r.fixed))}</div>`
+    : r.onDuty ? '<span class="offv bad">Still wrong when it went</span>' : '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>');
+  const went = (r) => {
+    if (!r.onDuty) return '<span class="muted">not on duty yet</span>';
+    const right = new RegExp(`\\b${r.order}\\b`).test(r.crew || '');
+    return `${esc(r.crew || '—')}${r.order ? (right ? ' <span class="ok">✓ the order</span>' : '') : ''}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>`;
+  };
+  const latest = [...catsErrors].reverse().slice(0, 80);
+  const wrongAtEnd = catsErrors.filter((r) => !r.fixed && r.onDuty).length;
+  const called = catsErrors.filter((r) => r.wouldCall).length;
+  const byTurn = new Map();
+  for (const r of catsErrors) byTurn.set(r.cats, (byTurn.get(r.cats) || 0) + 1);
+  const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Showed</th><th>CATS listed</th><th>The order</th><th>CATS would call</th><th>Crew that went</th><th>Result</th></tr></thead><tbody>${latest.map((r) => `<tr class="nolink">
+      <td class="num stick"><b>${esc(r.train)}</b><div class="crew">${craft(r.craft)}${r.at ? ` · ${esc(r.at)}` : ''}</div></td>
+      <td class="num">${stampBtn(r.first)}${r.last !== r.first ? ` – ${stampBtn(r.last)}` : ''}<div class="crew">${plural(r.checks, 'check')}</div></td>
+      <td class="num"><span class="bad">${esc(r.cats)}</span> going spare</td>
+      <td class="num"><button type="button" class="qbtn" data-q="${esc(r.order)}" data-kind="turn">${esc(r.order)}</button>${r.orderSpare ? ' (going spare)' : ''}</td>
+      <td class="num">${r.wouldCall ? `${esc(r.wouldCall)}<div class="crew">call ~${esc(r.call)}</div>` : '—'}</td>
+      <td class="num">${went(r)}</td><td>${result(r)}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">No CATS option 5 errors in the dates picked.</p>';
+  return `<p class="anote">CATS's jobs going spare (option 5) checked against the order: a job CATS lists under a turn the order doesn't have on that train. The site's Jobs Going Spare shows the corrected list; the spare CATS's list would call is told it's the wrong turn. A one-check blip isn't counted. Tap a time to open that snapshot.</p>
+    <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
+    <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
+    <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // A5: jobs going spare and who filled them.
 function anaSpare({ spareJobs }) {
@@ -1925,7 +1970,7 @@ source().then(async (src) => {
       ${S.people.length ? `<div><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</div>` : ''}
       <div class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</div></details>` : '';
     // What was sent, for whom (the laptop's alerts log, newest first).
-    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker' };
+    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn' };
     const sent = L.sent && L.sent.length ? `<details class="who"><summary>Alerts sent (latest ${L.sent.length})</summary><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></details>` : '';
     box.innerHTML = `<b>Health</b> <span class="muted">(only you see this)</span> · ${bits.join(' · ')}${who}${sent}`;
   }
@@ -2408,6 +2453,7 @@ source().then(async (src) => {
     const upd = document.getElementById('newerbtn');
     if (upd) upd.onclick = () => { location.hash = '#current'; location.reload(); };
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
+    document.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; show(cur, true); }; });
     document.querySelectorAll('[data-jump]').forEach((b) => { b.onclick = () => {
       const j = JUMPS[b.dataset.jump];
       if (j.pool) {
@@ -2531,7 +2577,7 @@ source().then(async (src) => {
   // Opens on the last 90 days, so only those archive months load (F7).
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [] };
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -2550,7 +2596,7 @@ source().then(async (src) => {
     const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
     const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
     for (const p of parts.filter(Boolean)) {
-      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors']) out[k] = out[k].concat(p[k] || []);
       for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
     }
     return out;
@@ -2594,7 +2640,7 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = { runarounds: [], spareJobs: [], sleep: [], ...(found || {}) };
+    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
     // anything in both once (BoardAnalytics.joinOld, the archive's copy).
     const { joinOld } = BoardAnalytics;
@@ -2605,6 +2651,7 @@ source().then(async (src) => {
     const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
     const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
+    const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
     const workOf = (turn) => {
@@ -2628,7 +2675,7 @@ source().then(async (src) => {
         turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), byId, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep });
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];

@@ -592,3 +592,42 @@ test('turn alerts: no line-up alert for the next crew while a train is being cal
   r = step(told, [ord({ turn: 'SR04', call: at(2026, 10, 22, 18, 0) })], [], { now: at(2026, 10, 22, 12, 50) });
   assert.deepEqual(r.events.map((e) => [e.turn, e.kind]), [['SR04', 'lineup'], ['SR04', 'ordered']]);
 });
+
+// Owner, 2026-11-02: CATS's option 5 listed E27861 02's conductor job as
+// SA09's (A pool) going spare; the order (and the line-up) had SR05 on it
+// with SD01's engineer job going spare. "CATS is wrong, the turn showing is
+// correct": the corrected list lines up EN04 for SD01's job and no one for
+// SA09's, and B134 (who CATS's list would call) hears it's the wrong turn.
+test('option 5 checked against the order: E27861 02, SA09 listed, SR05 in the order', () => {
+  const { checkVacancies } = require('../../lib/board/spares');
+  const now = at(2026, 11, 2, 12, 31);
+  const e278 = pred({ symbol: 'E27861', originDay: '02', order: at(2026, 11, 2, 19, 20), call: at(2026, 11, 2, 17, 5), turn: 'SR05', pool: 'SR', engineer: 'SD01', engineerSpare: true });
+  const tomorrow = pred({ symbol: 'E27861', originDay: '03', order: at(2026, 11, 3, 13, 10), call: at(2026, 11, 3, 10, 55), turn: 'SR10', pool: 'SR', engineer: 'SD04' });
+  const job = (o) => ({ pos: 1, at: at(2026, 11, 2, 19, 20), status: 'PLANNED', train: 'E27861', yard: false, st: '', returns: null, ...o });
+  const sa09 = job({ pool: 'SA', cc: 'CO', turn: 'SA09' });
+  const sd01 = job({ pool: 'SD', cc: 'EN', turn: 'SD01', at: at(2026, 11, 2, 14, 25) }); // option 5's old time
+  const yard = job({ train: 'YFLS60', yard: true, pool: 'YD', cc: 'CO', turn: 'YFLS60', at: at(2026, 11, 2, 23, 59) });
+  const c = checkVacancies([sa09, sd01, yard], [e278, tomorrow]);
+  assert.deepEqual(c.errors.map((e) => [e.train, e.craft, e.cats.turn, e.order.turn, e.order.spare]), [['E27861 02', 'CO', 'SA09', 'SR05', false]]);
+  assert.deepEqual(c.corrected.map((j) => [j.train, j.turn, j.at]), [['E27861', 'SD01', at(2026, 11, 2, 19, 20)], ['YFLS60', 'YFLS60', at(2026, 11, 2, 23, 59)]]);
+  // The order's turn going spare too: the job stays, under the order's turn.
+  const fixed = checkVacancies([sa09], [{ ...e278, spare: true }]);
+  assert.deepEqual(fixed.corrected.map((j) => [j.turn, j.pool, j.catsTurn]), [['SR05', 'SR', 'SA09']]);
+
+  // Alerts: the spareboards as they were (B126 on a hold turn, B134 next; EN10 and EN12 held, EN04 next).
+  const sb = (turn, pos, o = {}) => ({ turn, pos, terminal: 0, working: false, workingOn: null, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const pools = { vacancies: [sa09, sd01], spareboards: {
+    coSlow: [sb('B126', 1, { rn: 'HT', statusUntil: at(2026, 11, 3, 5, 59) }), sb('B134', 2)],
+    enSlow: [sb('EN10', 1, { rn: 'HT', statusUntil: at(2026, 11, 3, 1, 0) }), sb('EN12', 2, { rn: 'HT', statusUntil: at(2026, 11, 2, 19, 0) }), sb('EN04', 3)],
+  } };
+  const states = turnStates({ now, predictions: [e278] }, [], pools);
+  assert.equal(states.EN04.lineup.train, 'E27861');
+  assert.equal(states.EN04.lineup.order, at(2026, 11, 2, 19, 20)); // the line-up's time, not option 5's
+  assert.ok(!states.B134.lineup); // no job for B134 on E27861
+  let r = turnEvents({}, states, { lineupRead: true, now });
+  assert.deepEqual(r.events.filter((e) => e.turn === 'B134').map((e) => [e.kind, e.text]), [['catsWrong',
+    "B134: CATS shows you to work E27861 02 (filling SA09's conductor job, call ~2nd 1705), but that's the wrong turn: the order has SR05 on E27861 02, so no conductor job is going spare."]]);
+  // Once per wrong listing, not every check.
+  r = turnEvents(r.told, turnStates({ now: now + 5, predictions: [e278] }, [], pools), { lineupRead: true, now: now + 5 });
+  assert.ok(!r.events.some((e) => e.kind === 'catsWrong'));
+});

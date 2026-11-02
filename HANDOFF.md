@@ -265,6 +265,23 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- CATS option 5 checked against the order (owner, 2026-11-02: E27861 02's
+  conductor listed as SA09 (A pool) going spare while the order had SR05;
+  "CATS is wrong, the turn showing is correct"). spares.js checkVacancies:
+  each road job matched to its line-up prediction (same symbol, closest
+  order within 12 h; yard, S5 and unmatched kept as CATS shows), compared
+  per craft to the order's turn: same → kept at the line-up's time; other
+  → a CATS error, kept under the order's turn only if that turn goes spare.
+  Used by site.js (snapshot `vacancies` = corrected, `vacanciesCats` = as
+  CATS shows with `wrong`, `catsErrors`; FORMAT 17) and alerts.js (only
+  corrected jobs line spares up; the spare CATS's list would call gets kind
+  'catsWrong' once per wrong listing: "B134: CATS shows you to work …
+  but that's the wrong turn …"). Tracked: insights catsCheck → analytics
+  `catsErrors` (blips dropped; fixed = gone while still on the line-up;
+  crew that went), archived; Analytics → CATS errors. Page: Jobs Going
+  Spare tabs "Corrected (by the order)" / "As CATS shows · N wrong".
+  Not done (owner didn't pick a): jobs the order says go spare that option 5
+  doesn't list. ❓ Not seen on real checks yet.
 - Owner check fix (2026-11-02): /health answered {"error":"not found"} to
   the owner (header cf-access-authenticated-user-email apparently absent on
   workers.dev, or OWNER_EMAIL mismatch: not known yet). Worker accessEmail

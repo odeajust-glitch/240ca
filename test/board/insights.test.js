@@ -165,3 +165,24 @@ test('insights: sleep wait ends when taken off the line-up', () => {
   const s = A.sleepStats(list);
   assert.deepStrictEqual([s.n, s.takenOff, s.ok, s.avg], [1, 1, 1, 15]);
 });
+
+// Owner, 2026-11-02: "track these errors in CATS" (option 5 vs the order).
+test('insights: CATS option 5 errors, once each, with the crew that went', () => {
+  const err = { train: 'E27861 02', craft: 'CO', cats: 'SA09', catsPool: 'SA', order: 'SR05', orderSpare: false, at: '2026-11-02 1920', wouldCall: 'B134', call: '2026-11-02 1705' };
+  const blip = { ...err, train: 'M39671 01', cats: 'SA02', order: 'SR08' };
+  const lineup = [{ train: 'E27861 02' }, { train: 'M39671 01' }];
+  const snaps = [
+    { taken: '2026-11-02 1215', lineup, catsErrors: [err, blip] },
+    { taken: '2026-11-02 1220', lineup, catsErrors: [err] },
+    { taken: '2026-11-02 1231', lineup, catsErrors: [err], sameUntil: '2026-11-02 1500' },
+    { taken: '2026-11-02 1810', lineup: [], onDuty: [{ train: 'E27861 02', onDuty: '2nd 1720', crew: 'EN EN04 · CO SR05' }] },
+  ];
+  const found = Insights.finish(Insights.collect(snaps));
+  assert.equal(found.catsErrors.length, 1); // the one-check blip isn't counted
+  const r = found.catsErrors[0];
+  assert.deepEqual([r.train, r.cats, r.order, r.wouldCall, r.first, r.last, r.checks, r.fixed, r.crew],
+    ['E27861 02', 'SA09', 'SR05', 'B134', '2026-11-02 1215', '2026-11-02 1500', 3, null, 'EN EN04 · CO SR05']);
+  // CATS correcting itself while the train is still on the line-up.
+  const fixed = Insights.finish(Insights.collect([snaps[0], snaps[1], { taken: '2026-11-02 1240', lineup, catsErrors: [] }])).catsErrors[0];
+  assert.equal(fixed.fixed, '2026-11-02 1240');
+});
