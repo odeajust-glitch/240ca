@@ -25,7 +25,8 @@
 // (accessEmail). With the site open (no Access; owner, 2026-11-02: "leave
 // the site open"), the owner's phone sends the OWNER_KEY variable's value
 // instead (header x-owner-key; at least 16 characters). GET /whoami shows
-// what the Worker sees, to check the setup.
+// what the Worker sees, to check the setup (opened in the address bar it
+// never has the key: only the page sends it).
 //
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.

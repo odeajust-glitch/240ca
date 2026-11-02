@@ -539,6 +539,7 @@
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
     </div>
     <p class="note" id="stynote"></p>
+    <p class="note" id="keynote" hidden></p>
     <div id="visitbox" hidden>
       <h2 class="vish">Visitors <span class="only">(only you see this)</span></h2>
       <div id="visits" class="visits"></div>
@@ -634,9 +635,17 @@ const OwnerKey = (() => {
         <p class="note" style="margin-top:4px">Last ${days.length} days: ${total.opens} open${total.opens === 1 ? '' : 's'}. Phones are counted once a day each.</p>
         <div class="scroll"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
       document.getElementById('visitbox').hidden = false;
+      document.getElementById('keynote').hidden = true;
     } catch (e) {
       // Not the owner (the Worker answers only their email), or no counter here.
       document.getElementById('visitbox').hidden = true;
+      // A key saved on this phone that the site doesn't take: say so (owner, 2026-11-02).
+      const note = document.getElementById('keynote');
+      note.hidden = !OwnerKey.has();
+      if (OwnerKey.has()) {
+        note.innerHTML = 'This phone has an owner key saved, but the site doesn\'t accept it (it must match OWNER_KEY in Cloudflare exactly). <button type="button" id="keyforget2">Forget it</button>';
+        document.getElementById('keyforget2').onclick = () => { OwnerKey.forget(); location.reload(); };
+      }
     }
   }
   document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.reload(); };
