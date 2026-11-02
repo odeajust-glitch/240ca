@@ -147,6 +147,9 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) .htable td.warn { color: #ff8a80; } }
   .healthpage .hbody { padding: 4px 14px 10px; font-size: 14px; }
   .healthpage .sentlist { max-height: none; padding: 0 14px; font-size: 13px; }
+  .healthpage .visits { max-height: 320px; overflow-y: auto; }
+  .healthpage .nocount { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+  .healthpage .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
   tr.catswrong td { opacity: 0.75; }
   tr.catswrong td:first-child { box-shadow: inset 3px 0 0 #b3261e; }
   .health .who summary { cursor: pointer; color: var(--accent); }
@@ -551,12 +554,6 @@
     </div>
     <p class="note" id="stynote"></p>
     <p class="note" id="keynote" hidden></p>
-    <div id="visitbox" hidden>
-      <h2 class="vish">Visitors <span class="only">(only you see this)</span></h2>
-      <div id="visits" class="visits"></div>
-      <label class="nocount"><input type="checkbox" id="nocount"> Don't count this phone</label>
-      <p class="note"><button type="button" id="forgetkey">Forget the owner key on this phone</button></p>
-    </div>
   </div>
 </div>
 <div class="wrap">
@@ -620,52 +617,22 @@ const OwnerKey = (() => {
   // Visitors (owner, 2026-11-01, option B): this page counts itself once per
   // visit (a reload in the same tab, like the Current tab's own, doesn't),
   // and once a day per phone; only the two numbers reach the site
-  // (cloudflare/board-worker.js /stats). "Don't count this phone" for yours.
+  // (cloudflare/board-worker.js /stats). "Don't count this phone" (on Page
+  // Health, owner only) for yours.
   const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } return null; };
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
-  const noCount = document.getElementById('nocount');
-  noCount.checked = store('boardNoCount') === '1';
-  noCount.onchange = () => store('boardNoCount', noCount.checked ? '1' : null);
   let counted = false;
   try { counted = sessionStorage.getItem('boardCounted') === '1'; sessionStorage.setItem('boardCounted', '1'); } catch (e) { /* storage off: count it */ }
-  if (!counted && !noCount.checked && location.protocol !== 'file:') {
+  if (!counted && store('boardNoCount') !== '1' && location.protocol !== 'file:') {
     const phone = store('boardCountedDay') !== today;
     store('boardCountedDay', today);
     fetch('stats/hit', { method: 'POST', body: JSON.stringify({ phone }), keepalive: true }).catch(() => { /* not counted */ });
   }
-  const visits = document.getElementById('visits');
-  async function showVisits() {
-    try {
-      const r = await fetch('stats/days', { cache: 'no-store', headers: OwnerKey.headers() });
-      if (!r.ok) throw new Error(r.status);
-      const days = (await r.json()).days || [];
-      const t = days[0] || { opens: 0, phones: 0 };
-      const total = days.reduce((a, d) => ({ opens: a.opens + d.opens, phones: a.phones + d.phones }), { opens: 0, phones: 0 });
-      const day = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-      visits.innerHTML = `<p class="today"><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}.</p>
-        <p class="note" style="margin-top:4px">Last ${days.length} days: ${total.opens} open${total.opens === 1 ? '' : 's'}. Phones are counted once a day each.</p>
-        <div class="scroll"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
-      document.getElementById('visitbox').hidden = false;
-      document.getElementById('keynote').hidden = true;
-    } catch (e) {
-      // Not the owner (the Worker answers only their email), or no counter here.
-      document.getElementById('visitbox').hidden = true;
-      // A key saved on this phone that the site doesn't take: say so (owner, 2026-11-02).
-      const note = document.getElementById('keynote');
-      note.hidden = !OwnerKey.has();
-      if (OwnerKey.has()) {
-        note.innerHTML = 'This phone has an owner key saved, but the site doesn\'t accept it (it must match OWNER_KEY in Cloudflare exactly). <button type="button" id="keyforget2">Forget it</button>';
-        document.getElementById('keyforget2').onclick = () => { OwnerKey.forget(); location.reload(); };
-      }
-    }
-  }
-  document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.reload(); };
-  const open = (yes) => { box.hidden = !yes; gear.setAttribute('aria-expanded', yes); if (yes) showVisits(); };
+  const open = (yes) => { box.hidden = !yes; gear.setAttribute('aria-expanded', yes); };
   gear.onclick = (e) => { e.stopPropagation(); open(box.hidden); };
   document.addEventListener('click', (e) => { if (!box.hidden && !box.contains(e.target) && e.target !== gear) open(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) { open(false); gear.focus(); } });
   apply(picked());
-  if (location.protocol !== 'file:') showVisits(); // only the owner gets the numbers: shows the section for them
 })();
 
 let focus = ''; // the turn open on the Turn History tab, e.g. "SR03"
@@ -1963,6 +1930,13 @@ source().then(async (src) => {
     try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
     healthData = h;
     document.getElementById('modeHealth').hidden = !h;
+    // A key saved on this phone that the site doesn't take: say so in Settings (owner, 2026-11-02).
+    const note = document.getElementById('keynote');
+    note.hidden = !(OwnerKey.has() && !h);
+    if (!note.hidden) {
+      note.innerHTML = 'This phone has an owner key saved, but the site doesn\'t accept it (it must match OWNER_KEY in Cloudflare exactly). <button type="button" id="keyforget2">Forget it</button>';
+      document.getElementById('keyforget2').onclick = () => { OwnerKey.forget(); location.reload(); };
+    }
     let box = document.getElementById('health');
     const S = h && h.laptop && h.laptop.signIn;
     if (!S) { if (box) box.remove(); } else {
@@ -1973,6 +1947,7 @@ source().then(async (src) => {
     }
     if (h && mode === 'health') renderHealth();
   }
+  const noCountSaved = () => { try { return localStorage.getItem('boardNoCount') === '1'; } catch (e) { return false; } };
   const healthClock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   // The Page Health tab: everything the laptop and the Worker know.
   async function renderHealth() {
@@ -2010,7 +1985,30 @@ source().then(async (src) => {
     const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn' };
     const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
-      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>${who}${sent}</div>`;
+      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
+      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${who}${sent}
+      <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
+        <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
+        <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
+    // Kept as the plain '1' the visit counter (Settings script) reads.
+    document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
+    document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
+    // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
+    // and phones per day, from the Worker (owner only).
+    const box = document.getElementById('hvisits');
+    try {
+      const r = await fetch('stats/days', { cache: 'no-store', headers: OwnerKey.headers() });
+      if (!r.ok) throw new Error(r.status);
+      const days = (await r.json()).days || [];
+      if (mode !== 'health' || !box.isConnected) return;
+      const t = days[0] || { opens: 0, phones: 0 };
+      const total = days.reduce((a, d) => a + d.opens, 0);
+      const day = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+      box.innerHTML = `<p><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}. <span class="muted">Last ${days.length} days: ${total} open${total === 1 ? '' : 's'}. Phones are counted once a day each.</span></p>
+        <div class="scroll visits"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
+    } catch (e) {
+      if (box.isConnected) box.innerHTML = '<p class="muted">Visitor numbers aren\'t available right now.</p>';
+    }
   }
   showUpdated(src.index);
   const daySel = document.getElementById('day');

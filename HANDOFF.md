@@ -270,6 +270,9 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   the main page"): #modeHealth, hidden unless /health answers; renderHealth
   (status table, who gets alerts, alerts sent). Main screen #health is now
   just "Microsoft sign-in: Xh Ym left (runs out ~…)".
+  Visitors moved there too (2026-11-02), with "Don't count this phone"
+  (localStorage boardNoCount = '1') and "Forget the owner key"; Settings is
+  back to page style + the "key not accepted" note (set by showHealth).
 - CATS option 5 checked against the order (owner, 2026-11-02: E27861 02's
   conductor listed as SA09 (A pool) going spare while the order had SR05;
   "CATS is wrong, the turn showing is correct"). spares.js checkVacancies:
