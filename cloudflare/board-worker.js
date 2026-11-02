@@ -21,6 +21,8 @@
 // "down" note, but only to the email Cloudflare Access signed in, when it's
 // one in the OWNER_EMAIL variable (Settings → Variables; commas for more
 // than one). Anyone else, or no OWNER_EMAIL: 404, and the page shows nothing.
+// The email comes from Access's header or, failing that, its signed token
+// (accessEmail). GET /whoami shows what the Worker sees, to check the setup.
 //
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
@@ -142,14 +144,51 @@ async function statsDays(env) {
   return json({ days: counts });
 }
 
-function isOwner(request, env) {
-  const who = (request.headers.get('cf-access-authenticated-user-email') || '').trim().toLowerCase();
-  const owners = String(env.OWNER_EMAIL || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-  return !!who && owners.includes(who);
+// Who's looking, as Cloudflare Access signed them in: its email header, or
+// else its sign-in token (the Cf-Access-Jwt-Assertion header or the
+// CF_Authorization cookie), whose signature is checked against Access's own
+// keys so it can't be made up. → { email, via } (email null if unknown).
+const b64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+async function accessEmail(request) {
+  const header = (request.headers.get('cf-access-authenticated-user-email') || '').trim().toLowerCase();
+  if (header) return { email: header, via: 'header' };
+  let jwt = request.headers.get('cf-access-jwt-assertion');
+  if (!jwt) { const m = /(?:^|;\s*)CF_Authorization=([^;]+)/.exec(request.headers.get('cookie') || ''); jwt = m && m[1]; }
+  if (!jwt) return { email: null, via: 'no sign-in token' };
+  try {
+    const [h64, p64, s64] = jwt.split('.');
+    const dec = (x) => JSON.parse(new TextDecoder().decode(b64u(x)));
+    const head = dec(h64);
+    const claims = dec(p64);
+    if (!/^https:\/\/[a-z0-9-]+\.cloudflareaccess\.com$/.test(claims.iss || '')) return { email: null, via: 'token not from Access' };
+    if (!(claims.exp * 1000 > Date.now())) return { email: null, via: 'token expired' };
+    const certs = await (await fetch(`${claims.iss}/cdn-cgi/access/certs`)).json();
+    const jwk = (certs.keys || []).find((k) => k.kid === head.kid);
+    if (!jwk) return { email: null, via: 'token key not found' };
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+    const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64u(s64), new TextEncoder().encode(`${h64}.${p64}`));
+    if (!ok || !claims.email) return { email: null, via: 'token not valid' };
+    return { email: String(claims.email).trim().toLowerCase(), via: 'token' };
+  } catch (err) {
+    return { email: null, via: `token unreadable (${err.message})` };
+  }
+}
+
+const owners = (env) => String(env.OWNER_EMAIL || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+async function isOwner(request, env) {
+  const { email } = await accessEmail(request);
+  return !!email && owners(env).includes(email);
+}
+
+// What the Worker sees of the person asking (owner, 2026-11-02: the health
+// line didn't show): their own email, and whether OWNER_EMAIL is set.
+async function whoami(request, env) {
+  const { email, via } = await accessEmail(request);
+  return json({ email, via, ownerEmailSet: owners(env).length > 0, owner: !!email && owners(env).includes(email) });
 }
 
 async function healthFor(request, env) {
-  if (!isOwner(request, env)) return json({ error: 'not found' }, 404);
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
   const read = async (k) => { const o = await env.SITE.get(k); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
   const [laptop, down] = await Promise.all([read('status/health.json'), read('status/down.json')]);
   return json({ laptop, down });
@@ -166,7 +205,8 @@ export default {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return statsHit(request, env);
     }
-    if (url.pathname === '/stats/days') return isOwner(request, env) ? statsDays(env) : json({ error: 'not found' }, 404);
+    if (url.pathname === '/stats/days') return (await isOwner(request, env)) ? statsDays(env) : json({ error: 'not found' }, 404);
+    if (url.pathname === '/whoami') return whoami(request, env);
     if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);

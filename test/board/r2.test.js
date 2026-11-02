@@ -210,3 +210,39 @@ test('the Worker gives the health line only to the owner', async () => {
   // Never as a file.
   assert.equal((await as('odeajust@gmail.com').then(() => worker.fetch(new Request('https://board.x.workers.dev/status/health.json'), env))).status, 404);
 });
+
+// Owner, 2026-11-02: the health line didn't show; the Worker also reads the
+// owner's email from Access's signed token, and /whoami says what it sees.
+test('the Worker knows the owner from Access\'s signed token too', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'k1', alg: 'RS256' };
+  const b64u = (x) => Buffer.from(x).toString('base64url');
+  const iss = 'https://sarnia.cloudflareaccess.com';
+  const token = (claims) => {
+    const body = `${b64u(JSON.stringify({ alg: 'RS256', kid: 'k1' }))}.${b64u(JSON.stringify({ iss, exp: Math.floor(Date.now() / 1000) + 3600, ...claims }))}`;
+    return `${body}.${crypto.sign('sha256', Buffer.from(body), privateKey).toString('base64url')}`;
+  };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (u) => { assert.equal(String(u), `${iss}/cdn-cgi/access/certs`); return { json: async () => ({ keys: [jwk] }) }; };
+  try {
+    const env = { OWNER_EMAIL: 'odeajust@gmail.com', SITE: { get: async () => null, head: async () => null } };
+    const ask = async (p, headers) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, { headers }), env);
+    let me = await (await ask('/whoami', { cookie: `a=1; CF_Authorization=${token({ email: 'Odeajust@gmail.com' })}` })).json();
+    assert.deepEqual(me, { email: 'odeajust@gmail.com', via: 'token', ownerEmailSet: true, owner: true });
+    assert.equal((await ask('/health', { 'cf-access-jwt-assertion': token({ email: 'odeajust@gmail.com' }) })).status, 200);
+    // Someone else's token, a changed one, or none.
+    assert.equal((await ask('/health', { 'cf-access-jwt-assertion': token({ email: 'someone@else.ca' }) })).status, 404);
+    const forged = token({ email: 'someone@else.ca' }).split('.');
+    forged[1] = b64u(JSON.stringify({ iss, exp: Math.floor(Date.now() / 1000) + 3600, email: 'odeajust@gmail.com' }));
+    me = await (await ask('/whoami', { 'cf-access-jwt-assertion': forged.join('.') })).json();
+    assert.deepEqual([me.email, me.owner], [null, false]);
+    me = await (await ask('/whoami', {})).json();
+    assert.deepEqual(me, { email: null, via: 'no sign-in token', ownerEmailSet: true, owner: false });
+    me = await (await ask('/whoami', { 'cf-access-authenticated-user-email': 'odeajust@gmail.com' })).json();
+    assert.equal(me.via, 'header');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

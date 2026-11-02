@@ -265,6 +265,13 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Owner check fix (2026-11-02): /health answered {"error":"not found"} to
+  the owner (header cf-access-authenticated-user-email apparently absent on
+  workers.dev, or OWNER_EMAIL mismatch: not known yet). Worker accessEmail
+  now also reads Access's token (Cf-Access-Jwt-Assertion or CF_Authorization
+  cookie), RS256-verified against <iss>/cdn-cgi/access/certs, iss must be
+  *.cloudflareaccess.com. GET /whoami → { email, via, ownerEmailSet, owner }.
+  ❓ Waiting on the owner's /whoami result.
 - Visitor numbers owner-only too (owner, 2026-11-02): Worker /stats/days
   answers only OWNER_EMAIL (404 otherwise); Settings → Visitors (#visitbox)
   shows only when that answers. Everyone's visits still count (/stats/hit).
