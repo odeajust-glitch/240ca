@@ -265,6 +265,19 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- Runaround log (owner, 2026-11-02: "just start the log. All boards. No
+  notifications until we know it's working"): insights runLogCheck keeps,
+  per train not on duty yet, the order at the latest check (Sarnia line-up
+  crew + "(goes spare" from its rules + the corrected vacancy's fill;
+  Toronto macLineup crew + bunkhouse; yard vacancies' fill), with each
+  expected turn's board/pos/status. First sight on the Call Board (or yard
+  job on duty) compares: another turn went (kind turn), another spare filled
+  the job (spare, via backfill), another Toronto crew (bunkhouse), another
+  yard spare (yard). Result: explained (went on another train in 12 h,
+  rest until > call, hold turn, B0/TV/working, not on a board), possible
+  (order seen > 3 h before, RA_OLD), else likely. → analytics `runLog`,
+  archived; Analytics → Runaround log (Likely/Possible/Explained/All tabs).
+  ❓ Needs checking against real runs before any alerts.
 - Stale trains (owner, 2026-11-02: planned, not ordered, past the call;
   "pause, 15 minutes is fine, and yes"): insights staleCheck (Sarnia and
   Toronto line-ups; stretches from the first check past the call to the

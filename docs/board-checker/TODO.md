@@ -5,10 +5,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
-1. **Possible-runaround log (#5).** A page listing trains that went to a
-   different pool or turn than the sequence said (engine `flags`, rule
-   'pool'), each linked to its snapshot. Owner wants to add to the idea
-   before it's built.
+1. **Runaround log: check it on real runs**, then decide on alerts (to the
+   passed-over turn? the rep?), claim time limits and an evidence page.
 2. **Turn History redesign, step 2.** Step 1 ("Work history" first) is done;
    owner said more changes may follow.
 3. **Calendar export (#3)** (not picked on 2026-10-22, still on the list).
@@ -152,3 +150,6 @@ per week per person (A7).
   gets a "Past call … · not ordered" badge; Analytics → Stale trains keeps
   how long each sat (pausing when the plan moves later), how it ended and
   the crew; an optional phone alert for the crew lined up for it.
+- 2026-11-02: **Runaround log** (Analytics → Runaround log), all boards: when
+  a train goes, each job's crew against the order at the last check before;
+  likely / possible / explained, with the snapshots. No alerts yet.

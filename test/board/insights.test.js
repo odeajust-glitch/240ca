@@ -215,3 +215,37 @@ test('insights: stale trains, E27861 02 past its call and not ordered', () => {
   // Only 5 min past before it was ordered: not counted.
   assert.equal(Insights.finish(Insights.collect([snap('2026-11-02 1644', [row('2nd 1854', '2nd 1639')]), snap('2026-11-02 1650', [row('2nd 1854', '2nd 1639', 'ORD')])])).stale.length, 0);
 });
+
+// Owner, 2026-11-02: the runaround log, all boards, no alerts yet.
+test('insights: runaround log against the order at the last check before', () => {
+  const lineRow = (train, co, en, rules) => ({ train, order: '2nd 1500', call: '2nd 1245', status: 'ORD', crew: { co, en }, rules });
+  const pools = (rows) => [{ name: 'Chain Gang (SR) · conductors', turns: rows }, { name: 'Engineer slow board', turns: [{ pos: '003', turn: 'EN04', status: 'available' }] }];
+  const snaps = [
+    // M38261 02: the order has SR03 + SD05; SR07 went. SR03 was free: likely.
+    // M39671 01: the order has SR08 + SD09 (goes spare, EN04 to fill); EN12 filled it: likely (spareboard).
+    // E27861 02: the order has SR05; SR10 went, but SR05 was on rest past the call: explained.
+    { taken: '2026-11-02 1230', pools: pools([{ pos: '001', turn: 'SR03', status: 'available' }, { pos: '002', turn: 'SR05', status: 'rest until 2nd 1400' }]),
+      lineup: [lineRow('M38261 02', 'SR03', 'SD05', 'Chain Gang: SR03 + SD05'), lineRow('M39671 01', 'SR08', 'SD09', 'Chain Gang: SR08 + SD09 (goes spare)'), lineRow('E27861 02', 'SR05', 'SD01', 'Chain Gang: SR05 + SD01')],
+      vacancies: [{ train: 'M39671', at: '2nd 1500', cc: 'EN', turn: 'SD09', fill: { turn: 'EN04', call: '2nd 1245' } }] },
+    { taken: '2026-11-02 1300', lineup: [], onDuty: [
+      { train: 'M38261 02', onDuty: '2nd 1500', crew: 'EN SD05 · CO SR07' },
+      { train: 'M39671 01', onDuty: '2nd 1500', crew: 'EN SD09 · CO SR08', backfill: [{ craft: 'EN', job: 'SD09', turn: 'EN12' }] },
+      { train: 'E27861 02', onDuty: '2nd 1500', crew: 'EN SD01 · CO SR10' },
+    ] },
+  ];
+  const log = Insights.finish(Insights.collect(snaps)).runLog;
+  const row = (train) => log.find((r) => r.train === train);
+  assert.deepEqual(log.map((r) => [r.train, r.craft, r.passed, r.went, r.kind, r.result]), [
+    ['M38261 02', 'CO', 'SR03', 'SR07', 'turn', 'likely'],
+    ['M39671 01', 'EN', 'EN04', 'EN12', 'spare', 'likely'],
+    ['E27861 02', 'CO', 'SR05', 'SR10', 'turn', 'explained'],
+  ]);
+  assert.equal(row('M38261 02').passedPos, '001');
+  assert.match(row('E27861 02').reason, /^on rest until 2nd 1400, after the call/);
+  // The same train seen again on the Call Board: not logged twice.
+  const again = Insights.finish(Insights.collect([...snaps, { ...snaps[1], taken: '2026-11-02 1305' }])).runLog;
+  assert.equal(again.length, 3);
+  // The order last seen long before: only possible.
+  const late = Insights.finish(Insights.collect([snaps[0], { ...snaps[1], taken: '2026-11-02 1700' }])).runLog;
+  assert.equal(late.find((r) => r.train === 'M38261 02').result, 'possible');
+});

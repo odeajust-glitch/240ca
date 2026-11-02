@@ -355,6 +355,7 @@
     sleep: (z) => `${z.turn}|${z.train}|${z.onDuty}`,
     catsErrors: (r) => `${r.train}|${r.craft}|${r.cats}|${String(r.first).slice(0, 7)}`,
     stale: (r) => `${r.train}|${String(r.from).slice(0, 7)}`,
+    runLog: (r) => `${r.train}|${r.craft}|${String(r.seen).slice(0, 7)}`,
   };
   // older + newer as one list, each thing once.
   function joinOld(kind, older = [], newer = []) {

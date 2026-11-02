@@ -1289,12 +1289,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
+const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
+  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
 function anaTrains({ runs }) {
@@ -1396,6 +1396,36 @@ function anaCats({ catsErrors = [] }) {
     <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
     <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
     <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// The runaround log (owner, 2026-11-02, all boards; no alerts until it's
+// been checked against real runs): when a train went, each craft's crew
+// against the order at the last check before it. Likely: the passed-over
+// turn was free; possible: the order was old; explained: on rest, a hold
+// turn, working, or went on another train.
+let raShow = 'likely';
+function anaRunLog({ runLog = [] }) {
+  const KIND = { turn: 'another turn went', spare: 'another spare filled the job', bunkhouse: 'Toronto: another crew went home', yard: 'yard job: another spare went' };
+  const RES = { likely: ['bad', 'Likely runaround'], possible: ['warn', 'Possible'], explained: ['ok', 'Explained'] };
+  const count = (k) => runLog.filter((r) => r.result === k).length;
+  const shown = runLog.filter((r) => raShow === 'all' || r.result === raShow);
+  const byTurn = new Map();
+  for (const r of runLog.filter((x) => x.result !== 'explained')) byTurn.set(r.passed, (byTurn.get(r.passed) || 0) + 1);
+  const tabs = `<div class="tabs" role="tablist">${[['likely', `Likely (${count('likely')})`], ['possible', `Possible (${count('possible')})`], ['explained', `Explained (${count('explained')})`], ['all', `All (${runLog.length})`]].map(([k, l]) => `<button type="button" role="tab" data-rashow="${k}" aria-selected="${raShow === k}">${l}</button>`).join('')}</div>`;
+  const turnBtn = (t) => (t ? `<button type="button" class="qbtn" data-q="${esc(t)}" data-kind="turn">${esc(t)}</button>` : '—');
+  const list = shown.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Passed over</th><th>At the last check</th><th>Went</th><th>Result</th><th>Checks</th></tr></thead><tbody>${[...shown].reverse().slice(0, 100).map((r) => {
+    const [c, t] = RES[r.result] || ['', r.result];
+    return `<tr class="nolink"><td class="num stick"><b>${esc(r.train)}</b><div class="crew">${esc(r.where)} · ${esc(r.craft === 'EN' ? 'engineer' : r.craft === 'CO' ? 'conductor' : r.craft)}${r.onDuty ? ` · on duty ${esc(dt(r.onDuty))}` : ''}</div></td>
+      <td class="num">${turnBtn(r.passed)}<div class="crew">${esc(KIND[r.kind] || '')}</div></td>
+      <td>${esc(r.board || '')}${r.passedPos ? ` pos ${esc(r.passedPos)}` : ''}<div class="crew">${esc(r.passedStatus || '')}</div></td>
+      <td class="num">${turnBtn(r.went)}${r.wentJob ? `<div class="crew">on ${esc(r.wentJob)}'s job</div>` : ''}</td>
+      <td><span class="offv ${c}">${esc(t)}</span>${r.reason ? `<div class="crew">${esc(r.reason)}</div>` : ''}</td>
+      <td class="num">${stampBtn(r.orderSeen)}<div class="crew">order last seen</div>${stampBtn(r.seen)}<div class="crew">on the Call Board</div></td></tr>`;
+  }).join('')}</tbody></table></div>` : '<p class="empty">Nothing here in the dates picked.</p>';
+  return `<p class="anote">When a train goes on duty, each job's crew is checked against the order the site worked out at the last check before it: the line-up's turn, the spare expected to fill a job going spare, the Toronto bunkhouse crew, or a yard job's spare. <b>Likely</b>: the passed-over turn was on the board and free. <b>Possible</b>: the order was last seen over 3 h before, so something may have changed. <b>Explained</b>: on rest past the call, a hold turn, working, or went on another train. Still being checked against real runs: no alerts yet. Tap a time for that snapshot, a turn to look it up.</p>
+    <div class="strip">${anaTile(count('likely'), 'Likely runarounds', count('likely') > 0)}${anaTile(count('possible'), 'Possible')}${anaTile(count('explained'), 'Explained')}${anaTile(runLog.length, 'Times the crew wasn\'t the order')}</div>
+    <section class="sheet"><header><h2>Turns passed over</h2><span class="meta">likely and possible</span></header><div class="agrid">${anaList('Passed over', [...byTurn].sort((a, b) => b[1] - a[1]), 'turn')}</div></section>
+    <section class="sheet secpick">${tabs}</section>
+    <section class="sheet"><header><h2>The log</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // Stale trains (owner, 2026-11-02): still planned 15 min or more past the
 // call worked out from their plan, how long, how it ended.
@@ -2695,7 +2725,7 @@ source().then(async (src) => {
   // Opens on the last 90 days, so only those archive months load (F7).
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], runLog: [] };
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -2714,7 +2744,7 @@ source().then(async (src) => {
     const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
     const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
     for (const p of parts.filter(Boolean)) {
-      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'stale']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'stale', 'runLog']) out[k] = out[k].concat(p[k] || []);
       for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
     }
     return out;
@@ -2758,7 +2788,7 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], ...(found || {}) };
+    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], runLog: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
     // anything in both once (BoardAnalytics.joinOld, the archive's copy).
     const { joinOld } = BoardAnalytics;
@@ -2771,6 +2801,7 @@ source().then(async (src) => {
     const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
+    const runLog = joinOld('runLog', arch.runLog || [], found.runLog).filter((r) => inDates(r.seen));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
     const workOf = (turn) => {
@@ -2794,7 +2825,7 @@ source().then(async (src) => {
         turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), byId, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale });
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale, runLog });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
@@ -2868,6 +2899,7 @@ source().then(async (src) => {
       };
     }
     view.querySelectorAll('button[data-sec]').forEach((b) => { b.onclick = () => { ana.sec = b.dataset.sec; renderAnalytics(); }; });
+    view.querySelectorAll('button[data-rashow]').forEach((b) => { b.onclick = () => { raShow = b.dataset.rashow; renderAnalytics(); }; });
     const pool = document.getElementById('apool');
     if (pool) pool.onchange = () => { ana.pool = pool.value; renderAnalytics(); };
     view.querySelectorAll('button[data-q]').forEach((b) => { b.onclick = () => { ana.q = b.dataset.q; ana.kind = b.dataset.kind; renderAnalytics(); window.scrollTo(0, 0); }; });
