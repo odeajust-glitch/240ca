@@ -153,3 +153,7 @@ per week per person (A7).
 - 2026-11-02: **Runaround log** (Analytics → Runaround log), all boards: when
   a train goes, each job's crew against the order at the last check before;
   likely / possible / explained, with the snapshots. No alerts yet.
+- 2026-11-03: **Housekeeping**: HANDOFF.md cut to the current state (the
+  full old one kept as docs/board-checker/HANDOFF-ARCHIVE.md); Netlify
+  publishing removed (the site is Cloudflare only); the Render relay kept
+  (owner uses the RailroadTracker app).
