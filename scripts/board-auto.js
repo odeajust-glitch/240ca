@@ -44,6 +44,7 @@ const Remote = require('../lib/board/remote');
 const Stuck = require('../lib/board/signin-stuck');
 const CatsAsk = require('../lib/board/cats-ask');
 const TurnAlerts = require('../lib/board/alerts');
+const ResetAlerts = require('../lib/board/reset-alerts');
 // For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
 const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
@@ -708,7 +709,9 @@ function answer(summary, me, nowOverride) {
   // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
-  return { text, screenText, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
+  // The reset alerts re-run the check with a turn on a reset (reset-alerts.js).
+  const resetCtx = { input, result, run: (inp) => runBoardCheck({ ...inp, departed: RoadDays.departed(memory, inp.callBoard), seenSince: memory.since, me: null }) };
+  return { resetCtx, text, screenText, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
     callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
       spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, fillIns }), lineupRead: !!input.seen.lineup };
@@ -865,10 +868,33 @@ async function backupLaptop() {
 // check (lib/board/alerts.js), pushed to the phones that chose that turn on
 // the site (subscriptions in the R2 bucket). Only with the site on
 // Cloudflare. Never stops a check; a phone that unsubscribed is dropped.
-async function sendTurnAlerts(states, lineupRead, now, sightings = []) {
+// Reset alerts (owner, 2026-11-03; lib/board/reset-alerts.js): from the
+// reset deadlines the site build just worked out (site\data\resets.json),
+// only when they're from this check (within 30 min).
+const RESET_TOLD_FILE = path.join(DATA_DIR, 'reset-alerts-told.json');
+function resetEventsNow(ctx) {
+  try {
+    if (!ctx) return [];
+    const r = JSON.parse(fs.readFileSync(path.join(OUT_DIR, 'site', 'data', 'resets.json'), 'utf8'));
+    const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})$/.exec(r.taken || '');
+    const taken = m ? Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) / 60000 : null;
+    if (taken == null || Math.abs(ctx.input.now - taken) > 30) return [];
+    const { events, told } = ResetAlerts.resetEvents({ ...ctx, resets: r.turns, told: TurnAlerts.loadTold(RESET_TOLD_FILE) || {}, now: ctx.input.now });
+    TurnAlerts.saveTold(RESET_TOLD_FILE, told);
+    if (events.length) console.log(`  Reset alerts: ${events.map((e) => `${e.about} (${e.level === 'will' ? 'likely reset' : 'could be reset'}, ${e.train}) → ${e.turn}`).join('; ')}.`);
+    return events;
+  } catch (err) {
+    console.log(`  (reset alerts skipped: ${err.message})`);
+    return [];
+  }
+}
+
+async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = []) {
   const settings = siteSettings();
   if (!settings.r2) return;
-  const { events, told, held } = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead, now });
+  const turned = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead, now });
+  const { told, held } = turned;
+  const events = [...turned.events, ...extra];
   if (held.length) console.log(`  Holding line-up alerts mid-call: ${held.join(', ')}.`);
   // Followed people: their own turn now (owner, 2026-10-25).
   const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
@@ -1466,7 +1492,7 @@ async function main() {
       const summary = await runRoute(page, { ...poolOpts, names });
       health.lastCheck = Date.now();
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, screenText, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
+      const { resetCtx, text, screenText, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`\n${screenText}`);
@@ -1495,7 +1521,7 @@ async function main() {
           .catch((err) => console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`))
           .finally(() => { site.busy = null; });
       } else console.log(`  (snapshot website: the last upload is still going; this check goes with the next one)`);
-      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
+      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx));
       await backupLaptop();
       await sendWeekly();
       retried = false;

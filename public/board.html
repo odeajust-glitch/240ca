@@ -1939,7 +1939,7 @@ const Alerts = (() => {
   const PREFS_KEY = 'alertPrefs';
   // What each turn's alerts cover on this phone (owner: e.g. only when it's
   // ordered, or only when the time moves by a chosen amount). time: minutes, 0 = never.
-  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 };
+  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, resetAhead: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 };
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -2299,7 +2299,7 @@ source().then(async (src) => {
       ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
       <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
     // What was sent, for whom (the laptop's alerts log, newest first).
-    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
+    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
     const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
     // CATS's "Do you wish to place on another assignment?" pages, word for
     // word, as the checker answered them (owner, 2026-11-03).
@@ -2543,7 +2543,7 @@ source().then(async (src) => {
     dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(label(turn))}">
       <header><h2>Track <span class="num">${esc(label(turn))}</span></h2></header>
       <div class="alertopts"><span class="lbl">Alert me when ${esc(label(turn))}:</span>
-        ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}
+        ${box('lineup', 'is lined up')}${box('ordered', 'is ordered')}${box('onDuty', 'goes on duty')}${box('reset', 'is put on a mandatory reset')}${box('resetAhead', 'would get a train or job because someone may be put on a mandatory reset')}
         ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
         ${/^(SD|SR)/.test(turn) || isPerson(turn) ? box('mayCall', 'may be called for a job going spare (no one free on the slow board)') : ''}

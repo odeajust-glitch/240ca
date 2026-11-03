@@ -231,6 +231,17 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **reset alerts** (lib/board/reset-alerts.js; board-auto
+  resetEventsNow, reads site\data\resets.json from this check): for each
+  projected train/job, if its person's reset is needed (pools: under 24 h
+  left at the call = likely reset, 24–48 h = heads-up; spares: deadline
+  before the job ends, yard 8/12 h, road ~24 h), the check is re-run with
+  that turn on a 32 h reset and whoever then gets that job (same craft) is
+  told (kind resetAhead, phone option on by default). Owner: Chain Gang /
+  SD / spareboards → the next person; A/B/S1/S3 → the spare who'd fill it;
+  "if that person going on reset would cause someone to get a notification
+  that they are going to work, make sure they know"; once per train
+  (BoardChecker\reset-alerts-told.json). ❓ Not seen on real checks yet.
 - 2026-11-03: trips a spare works filling in on another turn now count
   for the spare (collect: backfill → the spare's own turn's turnTrips;
   work(): a fill-in trip is theirs if that turn was their latest own one

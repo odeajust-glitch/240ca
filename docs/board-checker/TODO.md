@@ -34,8 +34,7 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    public/board-ref.js penalty). An estimate to check a claim against.
 
 8. **Rest / reset tracker: check it on real runs** (built 2026-11-03, see
-   "Done"). Then: notification rules (owner: "we can set rules for
-   notifications after"), maybe Person search / Analytics views, and the
+   "Done"; reset alerts built too). Then maybe Person search / Analytics views, and the
    hours limits (60 h / 7 days, 192 h / 28 days; owner: "too hard to pass",
    not tracked for now). **Saved question (owner: "save your question …
    see if it gets answered once we do the rest tracker"):** DHT040B 31
@@ -288,3 +287,11 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   person needs a reset within 2 days is yellow, within 24 h red, with
   "reset needed by …" (owner). Rules: data/rest_rules.pdf (10.1 reset
   break within any 7 days). Code: lib/board/resets.js, data/resets.json.
+- 2026-11-03: **Reset alerts.** When the person projected for a train or
+  spare job may be put on a mandatory reset at the call, whoever would get
+  it instead is told: "SB04 needs a reset by … and is likely to be put on
+  it when called for M38261 03 … B111 is next for it" (under 24 h left at
+  the call), or a heads-up at 24–48 h (pools only). Chain Gang / SD /
+  spareboards: the next person; A/B/S1/S3: the spare who'd fill the job.
+  Once per train. Phone option "would get a train or job because someone
+  may be put on a mandatory reset" (on by default).
