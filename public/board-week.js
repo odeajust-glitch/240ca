@@ -36,8 +36,10 @@
       if (!r) continue;
       const tag = (x) => ({ ...x, turn: e.turn });
       rec.changes.push(...r.changes.filter((c) => within(c.taken, e)).map(tag));
-      rec.orders.push(...r.orders.filter((o) => within(o.first, e) || within(o.last, e) || within(o.onDutySeen, e)).map(tag));
-      rec.rests.push(...r.rests.filter((x) => within(x.seen, e)).map(tag));
+      // A train that went on duty counts only if it went while they were on
+      // the turn (owner, 2026-11-03); 501/502 rests only for their craft.
+      rec.orders.push(...r.orders.filter((o) => (o.onDuty ? within(o.onDutySeen, e) : within(o.first, e) || within(o.last, e))).map(tag));
+      rec.rests.push(...r.rests.filter((x) => within(x.seen, e) && (!e.craft || !x.craft || x.craft === e.craft)).map(tag));
       rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
     }
     const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
@@ -57,10 +59,20 @@
   // or every turn a person was on that week); trains: trains.json rows;
   // lists: analytics.json (+ archive) sleep, runLog, stale, catsErrors,
   // runarounds; week: { from, to }.
-  function weekSummary({ rec, turns = [], trains = [], sleep = [], runLog = [], stale = [], catsErrors = [], runarounds = [], week }) {
+  // spans (a person): their stretches { turn, from, to, craft? }. Then a
+  // turn counts as theirs only at a time they were on it, and on 501/502
+  // only their craft (owner, 2026-11-03: JUOD, on S501 from 3rd 0509, was
+  // shown S501's calls and a runaround from the days before).
+  function weekSummary({ rec, turns = [], spans = null, trains = [], sleep = [], runLog = [], stale = [], catsErrors = [], runarounds = [], week }) {
     const inWeek = (st) => !!st && st.slice(0, 10) >= week.from && st.slice(0, 10) <= week.to;
-    const mine = new Set(turns.map((t) => String(t).replace(/-(CO|EN)$/, '')));
-    const isMine = (t) => !!t && (mine.has(t) || mine.has(String(t).replace(/-(CO|EN)$/, '')));
+    const baseOf = (t) => String(t).replace(/-(CO|EN)$/, '');
+    const craftOf = (t) => (/-(CO|EN)$/.exec(String(t)) || [])[1] || '';
+    const mine = new Set(turns.map(baseOf));
+    const isMine = (t, at) => {
+      if (!t) return false;
+      if (!spans) return mine.has(t) || mine.has(baseOf(t));
+      return spans.some((e) => e.turn === baseOf(t) && (!at || (at >= e.from && at <= e.to)) && (!e.craft || !craftOf(t) || craftOf(t) === e.craft));
+    };
     const work = ((rec && rec.orders) || []).filter((o) => o.onDuty && !o.workedBy)
       .map((o) => ({ train: o.train, at: T.resolve(o.onDutyAt, o.onDutySeen) || o.onDutySeen, crew: o.crew || '', station: o.station || '', job: o.job || '', yard: !!o.yard, turn: o.turn || '' }))
       .filter((o) => inWeek(o.at));
@@ -69,13 +81,15 @@
     const onDutyMin = roads.reduce((n, r) => n + (r.timeOnDuty || 0), 0);
     const rests = ((rec && rec.rests) || []).filter((x) => inWeek(x.seen));
     const spares = ((rec && rec.spares) || []).filter((x) => inWeek(x.seen));
-    const calls = sleep.filter((z) => isMine(z.turn) && inWeek(z.onDuty) && !z.takenOff && z.off != null);
+    // One per train: 501/502 can list the conductor and engineer the same.
+    const calls = sleep.filter((z) => isMine(z.turn, z.onDuty) && inWeek(z.onDuty) && !z.takenOff && z.off != null)
+      .filter((z, i, a) => !spans || a.findIndex((y) => y.train === z.train && y.onDuty === z.onDuty && baseOf(y.turn) === baseOf(z.turn)) === i);
     const band = { ok: 0, warn: 0, bad: 0 };
     for (const z of calls) band[A.sleepBand(z.off)]++;
-    const passed = runLog.filter((r) => isMine(r.passed) && r.result !== 'explained' && inWeek(r.seen));
-    const staleHere = stale.filter((r) => inWeek(r.from) && String(r.crew || '').split(' + ').some(isMine));
-    const cats = catsErrors.filter((r) => isMine(r.wouldCall) && inWeek(r.first));
-    const seq = runarounds.filter((r) => isMine(r.turn) && !r.fixed && inWeek(r.taken));
+    const passed = runLog.filter((r) => isMine(r.passed, r.seen) && r.result !== 'explained' && inWeek(r.seen));
+    const staleHere = stale.filter((r) => inWeek(r.from) && String(r.crew || '').split(' + ').some((t) => isMine(t, r.from)));
+    const cats = catsErrors.filter((r) => isMine(r.wouldCall, r.first) && inWeek(r.first));
+    const seq = runarounds.filter((r) => isMine(r.turn, r.taken) && !r.fixed && inWeek(r.taken));
     return {
       week, label: label(week), runs,
       trips: roads.length, yard: runs.length - roads.length,
@@ -93,7 +107,7 @@
   function personWeek(h, data, week) {
     const stretches = (((data.people || {})[h]) || []).filter((e) => e.to.slice(0, 10) >= week.from && e.from.slice(0, 10) <= week.to);
     const f = data.analytics || {};
-    return weekSummary({ rec: personRec(stretches, data.turns || {}), turns: [...new Set(stretches.map((e) => e.turn))], trains: data.trains || [],
+    return weekSummary({ rec: personRec(stretches, data.turns || {}), turns: [...new Set(stretches.map((e) => e.turn))], spans: stretches, trains: data.trains || [],
       sleep: f.sleep || [], runLog: f.runLog || [], stale: f.stale || [], catsErrors: f.catsErrors || [], runarounds: f.runarounds || [], week });
   }
 

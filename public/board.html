@@ -3034,8 +3034,11 @@ source().then(async (src) => {
         const lists = { trains: all, sleep, runLog, stale, catsErrors, runarounds };
         for (const t of followed) {
           if (/^@[0-9a-f]{16}$/.test(t)) {
-            const st = ((await Person.byHash(t)) || []).filter((e) => e.to.slice(0, 10) >= week.from && e.from.slice(0, 10) <= week.to);
-            weeks.push({ name: `👤 ${codes[t] || 'person'}`, sum: BoardWeek.weekSummary({ ...lists, rec: BoardWeek.personRec(st, turnsAll), turns: [...new Set(st.map((e) => e.turn))], week }) });
+            const listAll = (await Person.byHash(t)) || [];
+            // 501/502 craft for the newest stretch from the newest check, when the stretch has none.
+            const st = listAll.filter((e) => e.to.slice(0, 10) >= week.from && e.from.slice(0, 10) <= week.to)
+              .map((e) => (e.craft || !BoardTurns.SHARED.test(e.turn) || listAll.some((x) => x.turn === e.turn && x.to > e.to) ? e : { ...e, craft: Person.craftNow(t, e.turn) || undefined }));
+            weeks.push({ name: `👤 ${codes[t] || 'person'}`, sum: BoardWeek.weekSummary({ ...lists, rec: BoardWeek.personRec(st, turnsAll), turns: [...new Set(st.map((e) => e.turn))], spans: st, week }) });
           } else {
             const base = BoardTurns.splitCraft(t).base;
             weeks.push({ name: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });

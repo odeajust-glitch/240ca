@@ -173,6 +173,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **My week for a person: only while on the turn** (owner: JUOD
+  shown S501's L50231 02 / L50131 02 calls twice and runaround L50231 01
+  from before he was on S501). board-week.js weekSummary `spans` (people
+  stretches): a turn counts only at times they were on it, 501/502 only
+  their craft, one call per train; personRec uses the on-duty-while-on-it
+  rule and craft rests. ❓ "M39671 30 called 901 min later": the sleep
+  tracker took a one-check flicker (DHT040B 31 at 30th 2327, call 31st 0700)
+  as the call slept on; asked the owner whether to require it to hold.
+
 - 2026-11-03: **501/502 "**" beside a hold turn** (owner's option 29 shots:
   CO S501 O'DEA ST ** RN HT RETN 0559 03): the L502 check now lets HT decide
   (spare only if the hold runs past the call), like the other pools; the
