@@ -294,3 +294,19 @@ test('insights: runaround log shows the board the spare was expected from', () =
   const r = Insights.finish(Insights.collect(snaps)).runLog.find((x) => x.passed === 'B111');
   assert.deepEqual([r.board, r.passedPos], ['Conductor slow board', '001']);
 });
+
+// Owner, 2026-11-03: M30241 19 planned 0534 (A pool SA05 + S103), went at
+// 0345 with SR02 + SD02 (order moved before 0459): not a runaround.
+test('insights: runaround log, the whole crew from another pool is explained', () => {
+  const lineRow = { train: 'M30241 19', order: '21st 0534', call: '21st 0319', status: 'PLN', crew: { co: 'SA05', en: 'S103' }, rules: 'A pool: SA05 + S103' };
+  const snaps = [
+    { taken: '2026-10-21 0300', lineup: [lineRow], pools: [{ name: 'A pool (SA) · conductors', turns: [{ pos: '001', turn: 'SA05', status: 'available' }] }, { name: 'S1 (A) · engineers', turns: [{ pos: '001', turn: 'S103', status: 'available' }] }] },
+    { taken: '2026-10-21 0310', lineup: [], onDuty: [{ train: 'M30241 19', onDuty: '21st 0345', crew: 'EN SD02 · CO SR02' }] },
+  ];
+  const log = Insights.finish(Insights.collect(snaps)).runLog;
+  assert.deepEqual(log.map((r) => [r.passed, r.result]), [['SA05', 'explained'], ['S103', 'explained']]);
+  assert.match(log[0].reason, /went to the Chain Gang, not the A pool/);
+  // Same pool, another turn: still checked.
+  const same = [snaps[0], { ...snaps[1], onDuty: [{ train: 'M30241 19', onDuty: '21st 0345', crew: 'EN S105 · CO SA07' }] }];
+  assert.ok(Insights.finish(Insights.collect(same)).runLog.every((r) => r.result === 'likely'));
+});

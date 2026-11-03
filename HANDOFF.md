@@ -179,7 +179,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   passed-over turn "** goes spare" with no return or a return after the call
   → explained (insights.js why). DHT040B 31 (B111 slow 001 passed, B133
   went): owner says not a runaround (not enough time for a road trip, enough
-  for a yard shift); tabled for the **rest tracker** (TODO #8).
+  for a yard shift); tabled for the **rest tracker** (TODO #8). The log now
+  shows a spare at the board they were expected from (look(turn, board)).
+  Whole crew from another pool than the order (M30241 19: A pool → Chain
+  Gang, order moved before 0459) → explained.
 
 - 2026-11-03: **My week for a person: only while on the turn** (owner: JUOD
   shown S501's L50231 02 / L50131 02 calls twice and runaround L50231 01
