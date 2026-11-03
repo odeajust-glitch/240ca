@@ -599,6 +599,10 @@ test('L502 alternates: the crew bringing L501 home takes the next one', () => {
   const [a, b] = r.predictions.filter((x) => x.symbol === 'L50231');
   assert.deepEqual([a.turn, a.spare, a.engineer, a.engineerSpare], ['S501', false, 'S501', false]);
   // Still on duty on L501: spare or not can't be told yet (owner, 2026-11-03).
+  // CATS shows the engineer B0 while working L501 home (0457 check): still not known.
+  const b0 = s5.map((x) => (x.turn === 'S501' && x.craft === 'EN' ? { ...x, st: 'B0' } : x));
+  const pb = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4)], s5: b0 }).predictions.find((x) => x.symbol === 'L50231');
+  assert.deepEqual([pb.turn, pb.spare, pb.engineerSpare, pb.s5Pending], ['S501', false, false, true]);
   assert.equal(require('../../lib/board/view').goesTo(a), "S5: S501 + S501 (spare or not: known once they're off duty)");
   assert.match(a.reason, /alternates.*S501.*bring L501 home.*known once S501 is off duty/);
   // Off duty in Sarnia, resting past the call: the conductor goes spare.
