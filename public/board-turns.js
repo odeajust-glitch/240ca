@@ -52,7 +52,7 @@
     // Yard jobs (owner, 2026-10-24), taken as 8 h: a crew on one, or the job itself.
     for (const j of s.yardJobs || []) {
       if (j.job !== turn && !turnIn(j.crew, turn)) continue;
-      out.push({ kind: 'onDuty', train: j.job, crew: j.crew, at: j.onDuty, station: j.station, yard: true, text: `On duty on ${j.job} yard at ${title(j.station)}, ${j.onDuty || 'time not shown'}${j.off ? ` (off ~${j.off}, 8 h assumed)` : ''}${j.job === turn && j.crew ? `: ${j.crew}` : ''}` });
+      out.push({ kind: 'onDuty', train: j.job, crew: j.crew, at: j.onDuty, station: j.station, yard: true, text: `On duty on ${j.job} yard at ${title(j.station)}, ${j.onDuty || 'time not shown'}${j.off ? ` (off ~${j.off}, ${j.hours || 8} h assumed)` : ''}${j.job === turn && j.crew ? `: ${j.crew}` : ''}` });
     }
     // Predicted to fill a job going spare, off its spareboard (owner, 2026-10-24).
     for (const v of s.vacancies || []) {

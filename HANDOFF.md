@@ -146,6 +146,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - Toronto: PLN train → next crew in bunkhouse order even if resting; ORD →
   next crew rested by the call; none rested → possible Toronto South crew.
   Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h.
+- Yard jobs are 8 h, **YSBY jobs 12 h** by default (owner, 2026-11-03;
+  site.js yardMinutes).
 - A/B slots per road day: first 3 after 0459 → A, next 2 → B; called trains
   count first.
 - Rows with TV beside a name don't count as that person's turn.

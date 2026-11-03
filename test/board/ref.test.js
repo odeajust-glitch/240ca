@@ -20,3 +20,10 @@ test('reference lists: every status letter, C yard without CO45', () => {
   assert.ok(!c.some((x) => x[0] === 'CO45'));
   assert.deepStrictEqual(c.find((x) => x[0] === 'CO78'), ['CO78', 900]);
 });
+
+test('yard jobs: YSBY is a 12-hour shift (owner, 2026-11-03)', () => {
+  const BoardTurns = require('../../public/board-turns');
+  const s = { taken: '2026-11-03 0500', lineup: [], onDuty: [], away: [], returning: [], sequence: [], bunkhouse: [], vacancies: [], pools: [],
+    yardJobs: [{ job: 'YSBY04', station: 'SARNIA', onDuty: '2nd 1900', off: '3rd 0700', hours: 12, crew: 'FO B126' }] };
+  assert.ok(BoardTurns.facts(s, 'B126').some((f) => /off ~3rd 0700, 12 h assumed/.test(f.text)));
+});
