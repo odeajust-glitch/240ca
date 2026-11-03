@@ -101,7 +101,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   `board-site`, uploaded every check (`lib/board/site.js`, `lib/board/r2.js`).
   **Open to anyone with the link** (owner: "leave the site open"; Access off).
   Tabs: Current, Turn History, Snapshots, Order summary, Article 18.6(b),
-  Analytics, and **Page Health** (owner key only). 3 h+ down → red banner.
+  Analytics, **Reference** (public/board-ref.js: CATS status/ECC codes, job
+  types, Mac/B.I.T./Malport track lengths, held-away penalty + calculator;
+  typed from the owner's photos 2026-11-03), and **Page Health** (owner key only). 3 h+ down → red banner.
   Netlify publishing was removed 2026-11-03 (boardtestsa.netlify.app is only
   a redirect now). Snapshot FORMAT 17 in site.js.
 - **Owner-only bits** (owner key: `#ownerkey=…` once per device, header
@@ -169,6 +171,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **Reference tab** (owner: "general useful information", name
+  left to me): board-ref.js (copied by site.js, in relay SITE_ONLY), #ref.
+  Held-away penalty formula checked against the sheet (test/board/ref.test.js).
+  B.I.T.: newer sheet's PAD 010–120 = older sheet's Y217, Y240–Y250 (same
+  lengths). C yard has no CO45. Lengths shown as posted (no units on the sheet).
 
 - 2026-11-03: **Turn History, name code (person search) cleanup** (owner's
   picks): Home turn = latest spot the tracker has them; Status = where they

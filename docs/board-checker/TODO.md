@@ -192,3 +192,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   board spots), a short Changes list with a button for every check, one date
   style (28th 0120). Fixed: trains worked while filling in on another turn
   (DRDI on SR07) were missing from the name code's Work history.
+- 2026-11-03: **Reference tab**: CATS status and ECC codes, job types for
+  Eastern Canada, Mac Yard / B.I.T. Yard / Malport track lengths (search a
+  track), and the held-away penalty table with a calculator (type the time
+  held, or off-duty and on-duty times).
