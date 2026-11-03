@@ -175,6 +175,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   the page was and sends your ntfy once. Next: teach it the real notice
   page once the owner shows how he gets past it.
 - 2026-11-03: **CATS "Do you wish to place on another assignment?"** answered
-  Y automatically (BOARD_ASSIGNMENT_ANSWER: Y / N / off); the page is saved
-  first (words + picture) for you to review: Page Health and
-  BoardChecker\assignment-questions.
+  → **sent to your ntfy** with the page's words, its boxes and Y / N
+  buttons; your tap or reply (Y, 2=Y, F3…) is typed in. Also for other CATS
+  pages it can't get past before the main menu. Every page saved (words +
+  picture): Page Health and BoardChecker\assignment-questions.
+  BOARD_ASSIGNMENT_ANSWER: ask (default) / Y / N / off.

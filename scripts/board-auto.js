@@ -42,6 +42,7 @@ const Health = require('../lib/board/health');
 const Backup = require('../lib/board/backup');
 const Remote = require('../lib/board/remote');
 const Stuck = require('../lib/board/signin-stuck');
+const CatsAsk = require('../lib/board/cats-ask');
 const TurnAlerts = require('../lib/board/alerts');
 // For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
 const { beat } = require('../lib/board/watchdog');
@@ -205,6 +206,7 @@ async function toMainMenu(page) {
     if (s && is.mainMenu(s)) return s;
     if (!s) { await sleep(1000); continue; }
     if (await answerAssignment(page, s)) continue;
+    if (Stuck.isAssignmentQuestion(s)) throw new OffRoute('CATS is asking "Do you wish to place on another assignment?"');
     // A CATS message screen (broadcast, timeout warning) can have no F3,
     // only Enter to get past it, the same as you'd do by hand.
     try {
@@ -218,40 +220,58 @@ async function toMainMenu(page) {
 }
 
 // CATS's "Do you wish to place on another assignment?" (Y/N) at sign-in
-// (owner, 2026-11-03): typed as BOARD_ASSIGNMENT_ANSWER (Y unless set to N
-// or off), then Enter. True if it answered.
-let assignmentTold = false;
-// Each time, before answering: the page's words and a picture, on the laptop
+// (owner, 2026-11-03), and any other CATS page it can't get past before the
+// main menu. BOARD_ASSIGNMENT_ANSWER (lib/board/signin-stuck.js): ask (the
+// default) sends the page to the owner's ntfy and types their reply
+// (lib/board/cats-ask.js); Y or N types that; off leaves it.
+const assignmentMode = () => Stuck.assignmentAnswer(process.env);
+// Each page asked about or answered: its words and a picture, on the laptop
 // (BoardChecker\assignment-questions\<date>_<time>.txt / .png) and the last
 // 20 in assignment-questions.json, shown in the owner's Page Health.
 const QUESTIONS_DIR = path.join(OUT_DIR, 'assignment-questions');
 const QUESTIONS_FILE = path.join(OUT_DIR, 'assignment-questions.json');
 const readQuestions = () => { try { return JSON.parse(fs.readFileSync(QUESTIONS_FILE, 'utf8')); } catch { return []; } };
-async function saveQuestion(page, frame, ans) {
-  // The words, plus what's in the boxes (CATS shows some of the page in them).
-  const text = await frame.evaluate(() => {
+// The page: its words (with what's in the boxes, where CATS shows some of
+// it) and the visible boxes in order.
+async function readPage(frame) {
+  return frame.evaluate(() => {
     const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-    const boxes = [...document.querySelectorAll('input[type=text]')].filter(visible).map((el) => el.value.trim()).filter(Boolean);
-    return `${document.body ? document.body.innerText : ''}${boxes.length ? `\n\nIn the boxes: ${boxes.join(' | ')}` : ''}`;
-  }).catch(() => '');
+    const boxes = [...document.querySelectorAll('input[type=text]')].filter(visible).map((el) => ({ maxLength: el.maxLength, value: el.value }));
+    const filled = boxes.map((b) => b.value.trim()).filter(Boolean);
+    return { text: `${document.body ? document.body.innerText : ''}${filled.length ? `\n\nIn the boxes: ${filled.join(' | ')}` : ''}`, words: document.body ? document.body.innerText : '', boxes };
+  }).catch(() => ({ text: '', words: '', boxes: [] }));
+}
+function saveQuestion(page, text, answer) {
   const now = new Date();
   const name = `${now.toLocaleDateString('en-CA')}_${now.toLocaleTimeString('en-CA', { hour12: false }).replace(/:/g, '')}`;
-  fs.mkdirSync(QUESTIONS_DIR, { recursive: true });
-  fs.writeFileSync(path.join(QUESTIONS_DIR, `${name}.txt`), `${now.toString()}\nAnswered: ${ans}\n\n${text}\n`);
-  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(Stuck.addQuestion(readQuestions(), { at: now.getTime(), answer: ans, text }), null, 2));
-  await page.screenshot({ path: path.join(QUESTIONS_DIR, `${name}.png`) }).catch(() => {});
+  try {
+    fs.mkdirSync(QUESTIONS_DIR, { recursive: true });
+    fs.writeFileSync(path.join(QUESTIONS_DIR, `${name}.txt`), `${now.toString()}\n${answer}\n\n${text}\n`);
+    fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(Stuck.addQuestion(readQuestions(), { at: now.getTime(), answer, text }), null, 2));
+  } catch (err) {
+    console.log(`  (the CATS page wasn't saved: ${err.message})`);
+  }
+  return page.screenshot({ path: path.join(QUESTIONS_DIR, `${name}.png`) }).catch(() => {}).then(() => ({ at: now.getTime(), name }));
 }
+function noteAnswer(rec, answer) {
+  try {
+    const list = readQuestions();
+    const q = list.find((x) => x.at === rec.at);
+    if (q) { q.answer = answer; fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(list, null, 2)); }
+    fs.appendFileSync(path.join(QUESTIONS_DIR, `${rec.name}.txt`), `\n${new Date().toString()}\n${answer}\n`);
+  } catch { /* only a note */ }
+}
+
+// Y or N mode: type it and press Enter. True if it answered.
+let assignmentTold = false;
 async function answerAssignment(page, s) {
-  const ans = Stuck.assignmentAnswer(process.env);
-  if (!ans || !Stuck.isAssignmentQuestion(s)) return false;
+  const ans = assignmentMode();
+  if ((ans !== 'Y' && ans !== 'N') || !Stuck.isAssignmentQuestion(s)) return false;
   const frame = catsFrame(page);
-  const boxes = await frame.evaluate(() => {
-    const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-    return [...document.querySelectorAll('input[type=text]')].filter(visible).map((el) => ({ maxLength: el.maxLength, value: el.value }));
-  }).catch(() => []);
-  const i = Stuck.answerBox(boxes);
+  const pg = await readPage(frame);
+  const i = Stuck.answerBox(pg.boxes);
   if (i < 0) return false;
-  await saveQuestion(page, frame, ans).catch((err) => console.log(`  (the question page wasn't saved: ${err.message})`));
+  await saveQuestion(page, pg.text, `Answered: ${ans}`);
   await fill(page, { [i]: ans });
   console.log(`[${stamp()}] CATS asked "place on another assignment?": answered ${ans}. The page is saved in ${QUESTIONS_DIR} and Page Health.`);
   if (!assignmentTold) {
@@ -262,6 +282,50 @@ async function answerAssignment(page, s) {
   return true;
 }
 
+// Ask mode: the page to the owner's ntfy, with Y / N buttons when it wants a
+// yes or no. -> the question waiting for a reply, or null (no ntfy topic).
+async function askOwner(page, s) {
+  const topic = (process.env.BOARD_NTFY_TOPIC || '').trim();
+  const cmd = Remote.commandTopic();
+  if (!topic || !cmd || assignmentMode() === null) return null;
+  const pg = await readPage(catsFrame(page));
+  const msg = CatsAsk.questionMessage({ text: pg.words, boxes: pg.boxes, topic: cmd });
+  const rec = await saveQuestion(page, pg.text, 'Sent to your ntfy; waiting for your answer.');
+  const headers = { Title: msg.title, Priority: 'urgent', Tags: 'question' };
+  if (msg.actions) headers.Actions = msg.actions;
+  let ok = false;
+  try {
+    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, { method: 'POST', body: msg.body, headers, signal: AbortSignal.timeout(10000) });
+    ok = res.ok;
+    writeAlertsLog(new Map([['CATS is asking you (the page sent to ntfy)', { turn: 'YOU', kind: 'ntfy', phones: ok ? 1 : 0, failed: ok ? 0 : 1 }]]));
+  } catch { /* ok stays false */ }
+  if (!ok) { console.log('  (the CATS page couldn\'t be sent to your phone)'); noteAnswer(rec, 'Not sent: ntfy didn\'t answer.'); return null; }
+  console.log(`\x07[${stamp()}] CATS is showing a page it can't get past. Sent it to your phone (ntfy): answer there${msg.actions ? ' (Y / N buttons)' : ''}, or deal with it here. Waiting up to 30 minutes.`);
+  return { at: Date.now(), since: Math.floor(Date.now() / 1000) - 1, seq: s.seq, boxes: pg.boxes, rec, polled: 0 };
+}
+
+// The owner's reply, typed in. True when it did something.
+async function checkReply(page, q) {
+  const replies = await Remote.pollReplies({ topic: Remote.commandTopic(), since: q.since });
+  for (const r of replies) {
+    q.since = Math.max(q.since, r.time);
+    const how = CatsAsk.parseReply(r.text, q.boxes);
+    if (!how) {
+      console.log(`[${stamp()}] Your reply "${r.text.slice(0, 40)}" didn't make sense for this page; still waiting.`);
+      alertPhone(`Board checker: "${r.text.slice(0, 40)}" didn't fit the CATS page. Reply Y, or 2=Y for box 2, or F3.`);
+      continue;
+    }
+    if (Object.keys(how.fills).length) await fill(page, how.fills);
+    const did = CatsAsk.replyText(how);
+    console.log(`[${stamp()}] Your answer from the phone: ${did}.`);
+    noteAnswer(q.rec, `Your answer (ntfy "${r.text.slice(0, 40)}"): ${did}.`);
+    try { await press(page, how.key); } catch (err) { if (!(err instanceof OffRoute)) throw err; console.log(`  (${err.message})`); }
+    alertPhone(`Board checker: ${did} on the CATS page.`);
+    return true;
+  }
+  return false;
+}
+
 // CATS sometimes shows messages right after signing on. Press Enter to clear
 // them, as the owner does by hand (2026-10-16): up to 5 times, stopping as
 // soon as the main menu shows, so nothing extra gets pressed.
@@ -270,6 +334,7 @@ async function clearMessages(page, max = 5) {
     const s = await screenState(page);
     if (!s || is.mainMenu(s) || is.signOn(s)) return s;
     if (await answerAssignment(page, s)) continue;
+    if (Stuck.isAssignmentQuestion(s)) return s; // ask mode: the owner answers
     try {
       await press(page, 'Enter');
     } catch (err) {
@@ -1151,7 +1216,8 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
   // Stuck before the main menu (lib/board/signin-stuck.js): Enter, F3,
   // reload CATS, then a fresh Edge. Never while Microsoft or the CATS
   // sign-on is waiting on a person.
-  const t = { stuckFor: 0, enter: 0, keys: 0, reloads: 0, restarted: false, answered: 0 };
+  const t = { stuckFor: 0, enter: 0, keys: 0, reloads: 0, restarted: false, answered: 0, asks: 0, awaiting: false, canAsk: false };
+  let q = null; // a page sent to the owner's ntfy, waiting for their reply
   let stuckSince = null;
   let told = false;
   for (;;) {
@@ -1160,9 +1226,31 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
     const s = await screenState(page);
     const kind = Stuck.kindOf({ s, onMicrosoft: onMicrosoft(page), isMenu: !!s && is.mainMenu(s), isSignOn: !!s && is.signOn(s) });
     if (kind === 'menu') { microsoftDone(); return; }
-    // CATS's "another assignment?" question: answered straight away (twice
-    // at most per wait; after that the steps below take over).
+    // A page sent to the owner: their reply typed in (looked for every 10 s);
+    // given up when the page changes (answered by hand) or after 30 min.
+    if (q) {
+      if (kind !== 'cats' || s.seq !== q.seq) {
+        q = null;
+      } else if (Date.now() - q.at > Stuck.ASK_WAIT) {
+        console.log(`[${stamp()}] No answer from your phone in 30 minutes; trying to get past it again.`);
+        noteAnswer(q.rec, 'No answer in 30 minutes.');
+        q = null;
+        stuckSince = Date.now();
+      } else if (Date.now() - q.polled > 10000) {
+        q.polled = Date.now();
+        if (await checkReply(page, q)) { q = null; continue; }
+      }
+    }
+    t.awaiting = !!q;
+    t.canAsk = !!(process.env.BOARD_NTFY_TOPIC || '').trim() && assignmentMode() !== null;
+    // CATS's "another assignment?" question: Y or N straight away (twice at
+    // most per wait), or (ask) sent to the owner straight away.
     if (kind === 'cats' && t.answered < 2 && await answerAssignment(page, s)) { t.answered++; continue; }
+    if (kind === 'cats' && !q && assignmentMode() === 'ASK' && t.asks < Stuck.MAX.asks && Stuck.isAssignmentQuestion(s)) {
+      t.asks++;
+      q = await askOwner(page, s);
+      if (q) { heartbeat('signin'); continue; } // the watchdog gives a sign-in 45 min
+    }
     if (Stuck.waiting(kind)) stuckSince = null;
     else stuckSince ??= Date.now();
     t.stuckFor = stuckSince ? Date.now() - stuckSince : 0;
@@ -1171,6 +1259,12 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
       t.enter++;
       console.log(`[${stamp()}] Clearing CATS messages with Enter…`);
       await clearMessages(page);
+      continue;
+    }
+    if (step === 'ask') {
+      t.asks++;
+      q = await askOwner(page, s);
+      if (q) heartbeat('signin');
       continue;
     }
     if (step === 'keys') {

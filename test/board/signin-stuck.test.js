@@ -54,7 +54,8 @@ test('the "another assignment" question is spotted and answered in the right box
   assert.ok(!S.isAssignmentQuestion(scr('DO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT?', 0))); // no box to answer in
   assert.ok(!S.isAssignmentQuestion(scr('MAIN MENU MILEAGE')));
   assert.ok(!S.isAssignmentQuestion(null));
-  assert.equal(S.assignmentAnswer({}), 'Y');
+  assert.equal(S.assignmentAnswer({}), 'ASK'); // owner, 2026-11-03: Y means calling in; ask instead
+  assert.equal(S.assignmentAnswer({ BOARD_ASSIGNMENT_ANSWER: 'y' }), 'Y');
   assert.equal(S.assignmentAnswer({ BOARD_ASSIGNMENT_ANSWER: ' n ' }), 'N');
   assert.equal(S.assignmentAnswer({ BOARD_ASSIGNMENT_ANSWER: 'off' }), null);
   assert.equal(S.answerBox([{ maxLength: 8, value: '' }, { maxLength: 1, value: '' }]), 1);
@@ -70,4 +71,14 @@ test('the question page is kept for the owner, newest first, the last 20', () =>
   assert.equal(list[0].at, 24);
   assert.equal(list[0].text, 'JOB 24\n\nDO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT?');
   assert.equal(S.addQuestion(null, { at: 1, answer: 'N', text: 'x'.repeat(5000) })[0].text.length, 3000);
+});
+
+test('a CATS page still there after the keys goes to the owner, and nothing else is tried while waiting', () => {
+  const base = { ...t0, enter: 2, keys: 2, canAsk: true };
+  assert.equal(S.nextStep('cats', { ...base, stuckFor: 2.5 * min }), 'wait');
+  assert.equal(S.nextStep('cats', { ...base, stuckFor: 3 * min }), 'ask');
+  assert.equal(S.nextStep('cats', { ...base, stuckFor: 20 * min, asks: 1, awaiting: true }), 'wait'); // no reload while waiting
+  assert.equal(S.nextStep('cats', { ...base, stuckFor: 5 * min, asks: 2 }), 'reload');
+  assert.equal(S.nextStep('cats', { ...base, stuckFor: 3 * min, canAsk: false }), 'wait'); // no ntfy: the old steps
+  assert.equal(S.nextStep('other', { ...base, stuckFor: 3 * min }), 'wait'); // only CATS pages
 });
