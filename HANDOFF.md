@@ -173,6 +173,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **501/502 "**" beside a hold turn** (owner's option 29 shots:
+  CO S501 O'DEA ST ** RN HT RETN 0559 03): the L502 check now lets HT decide
+  (spare only if the hold runs past the call), like the other pools; the
+  page shows "hold turn until … (**)". Option 29 with the CC box blank lists
+  EN and CO together (owner's screenshot), so it stays one read (typing CO
+  then EN works too, not needed).
+
 - 2026-11-03: **Garnet line-up (41, 47956 W S5, 24 h)** after Mac yard's
   (board-auto, label garnetLineup; summary classifies [47956] too; snapshot
   garnetLineup [{train, status, order}]; Current: a line under the 501/502

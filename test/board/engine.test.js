@@ -685,3 +685,18 @@ test('L502: the L501 out of Garnet is named for the crew coming home (owner, 202
   assert.deepEqual(ps.map((p) => p.turn), ['S502', 'S501']);
   assert.match(ps[1].reason, /L50131 04 ORD out of Garnet 4th 2100/);
 });
+
+test('L502: ** beside a hold turn that ends before the call is not spare (owner, 2026-11-03)', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 11, 3, 5, 18);
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 1, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  // Option 29 at 0518: CO S501 ** HT RETN 3rd 0559; EN S501 rest until 3rd 1500; S502 out on L50231.
+  const s5 = [row('CO', 'S501', { st: '**', rn: 'HT', statusUntil: at(2026, 11, 3, 5, 59) }), row('EN', 'S501', { restUntil: at(2026, 11, 3, 15, 0) }),
+    row('CO', 'S502', { pos: 999, working: true, workingOn: 'L50231', st: 'B0' }), row('EN', 'S502', { pos: 999, working: true, workingOn: 'L50231', st: 'B0' })];
+  const lineup = [{ symbol: 'L50231', trainNo: 'L502', originDay: '04', order: at(2026, 11, 4, 4, 0), status: 'PLN', deadhead: false }];
+  const p = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5 }).predictions.find((x) => x.symbol === 'L50231');
+  assert.deepEqual([p.turn, p.spare, p.engineerSpare], ['S501', false, false]);
+  // A hold past the call still goes spare.
+  const late = s5.map((x) => (x.craft === 'CO' && x.turn === 'S501' ? { ...x, statusUntil: at(2026, 11, 4, 3, 0) } : x));
+  assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5: late }).predictions.find((x) => x.symbol === 'L50231').spare, true);
+});
