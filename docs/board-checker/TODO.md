@@ -229,3 +229,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Garnet line-up** (option 41, station 47956): when L501 is
   planned / ordered out of Garnet, shown under the 501/502 board and in the
   why for the next L502.
+- 2026-11-03: **Analytics → Trains: first row of tiles removed** (went on
+  duty, usually on duty, earliest–latest, never ran). Turn and name code
+  searches keep theirs. My week for a name code counts a turn only while
+  they were on it (and only their craft on 501/502).

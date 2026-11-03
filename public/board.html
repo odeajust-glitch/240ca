@@ -1263,10 +1263,12 @@ function anaTiles(st, kind) {
     ? tile(`${st.cancelled}${st.nonSarnia || st.possibleNonSarnia ? ` <small>+ ${st.nonSarnia + st.possibleNonSarnia} Toronto crew</small>` : ''}`,
       `Never ran: cancelled or on duty between checks${st.nonSarnia || st.possibleNonSarnia ? `; ${st.nonSarnia} went to a non-Sarnia crew${st.possibleNonSarnia ? `, ${st.possibleNonSarnia} possibly` : ''}` : ''}`, st.cancelled > 0)
     : tile(st.deadheads, 'Deadheads');
-  return `<div class="strip">${first}
+  // Trains (owner, 2026-11-03): without the first row (went on duty, usual
+  // and earliest–latest on duty, never ran); a turn or person keeps it.
+  return `${kind === 'train' ? '' : `<div class="strip">${first}
       ${tile(t ? `${t.from}–${t.to}` : '—', 'Usually on duty (middle half of the times)')}
       ${tile(t ? `${t.earliest}–${t.latest}` : '—', 'Earliest – latest on duty')}
-      ${last}</div>
+      ${last}</div>`}
     <div class="strip">
       ${tile(d(st.timeOnDuty.avg), `Average time on duty, Sarnia to Toronto${st.timeOnDuty.n ? ` (${st.timeOnDuty.n})` : ''}`)}
       ${tile(d(st.timeOnDuty.max), 'Longest time on duty')}
