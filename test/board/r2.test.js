@@ -264,3 +264,76 @@ test('the Worker knows the owner by the owner key', async () => {
   const weak = await worker.fetch(new Request('https://board.x.workers.dev/health', { headers: { 'x-owner-key': 'short' } }), { ...env, OWNER_KEY: 'short' });
   assert.equal(weak.status, 404);
 });
+
+// Owner, 2026-11-03: every phone with turn alerts hears when the checker
+// has been down 3 h+ (and when it's back), sent by the Worker itself.
+test('the Worker pushes "down 3 h" and "back" to every phone, readable by the phone', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const { loadOrCreateKeys } = require('../../lib/board/webpush');
+  const keys = loadOrCreateKeys(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vk-')), 'push-keys.json'));
+  // A phone: its own key pair and auth secret.
+  const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+  const auth = crypto.randomBytes(16);
+  const sub = { endpoint: 'https://fcm.googleapis.com/fcm/send/phone1', keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: auth.toString('base64url') }, turns: ['SR03'] };
+  const gone = { ...sub, endpoint: 'https://fcm.googleapis.com/fcm/send/gone' };
+  const store = new Map([['subs/a.json', JSON.stringify(sub)], ['subs/b.json', JSON.stringify(gone)]]);
+  const setIndex = (minsAgo) => store.set('data/index.json', JSON.stringify({ generatedAt: new Date(Date.now() - minsAgo * 60000).toISOString() }));
+  const obj = (k) => store.has(k) && { text: async () => store.get(k), json: async () => JSON.parse(store.get(k)), httpEtag: '"e"', writeHttpMetadata: () => {} };
+  const env = { VAPID_KEYS: JSON.stringify(keys), NTFY_TOPIC: 'me', SITE: {
+    get: async (k) => obj(k) || null, head: async (k) => obj(k) || null, put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    list: async ({ prefix }) => ({ objects: [...store.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })), truncated: false }),
+  } };
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => { sent.push({ url: String(url), init }); return { ok: !String(url).endsWith('/gone'), status: String(url).endsWith('/gone') ? 410 : 201 }; };
+  const run = async () => { let p; await worker.scheduled({}, env, { waitUntil: (x) => { p = x; } }); await p; };
+  // What the phone would read.
+  const open = (body) => {
+    const b = Buffer.from(body);
+    const salt = b.subarray(0, 16);
+    const as = b.subarray(21, 21 + b[20]);
+    const secret = ua.computeSecret(as);
+    const h = (k, d) => crypto.createHmac('sha256', k).update(d).digest();
+    const prk = h(salt, h(h(auth, secret), Buffer.concat([Buffer.from('WebPush: info\0'), ua.getPublicKey(), as, Buffer.from([1])])));
+    const cek = h(prk, Buffer.from('Content-Encoding: aes128gcm\0\x01')).subarray(0, 16);
+    const nonce = h(prk, Buffer.from('Content-Encoding: nonce\0\x01')).subarray(0, 12);
+    const rest = b.subarray(21 + b[20]);
+    const d = crypto.createDecipheriv('aes-128-gcm', cek, nonce);
+    d.setAuthTag(rest.subarray(rest.length - 16));
+    const plain = Buffer.concat([d.update(rest.subarray(0, rest.length - 16)), d.final()]);
+    return JSON.parse(plain.subarray(0, plain.length - 1).toString());
+  };
+  try {
+    setIndex(100); // 1 h 40 m: the owner's ntfy, no phones yet
+    await run();
+    assert.deepEqual(sent.map((x) => x.url), ['https://ntfy.sh/me']);
+    sent.length = 0;
+    setIndex(185); // 3 h+: every phone
+    await run();
+    const push = sent.find((x) => x.url.endsWith('/phone1'));
+    assert.ok(push);
+    const msg = open(push.init.body);
+    assert.equal(msg.title, 'Board checker down');
+    assert.match(msg.body, /^No board check since .* \(3 h\)\. The board and turn alerts are out of date; check CATS yourself\.$/);
+    // Signed with the board checker's own key (the one phones subscribed with).
+    const [, t, k] = /^vapid t=(\S+), k=(\S+)$/.exec(push.init.headers.authorization);
+    assert.equal(k, keys.publicKey);
+    const [h64, c64, s64] = t.split('.');
+    const pub = crypto.createPublicKey({ key: { kty: 'EC', crv: 'P-256', x: keys.privateJwk.x, y: keys.privateJwk.y }, format: 'jwk' });
+    assert.ok(crypto.verify('sha256', Buffer.from(`${h64}.${c64}`), { key: pub, dsaEncoding: 'ieee-p1363' }, Buffer.from(s64, 'base64url')));
+    assert.equal(JSON.parse(Buffer.from(c64, 'base64url')).aud, 'https://fcm.googleapis.com');
+    assert.ok(!store.has('subs/b.json')); // that phone unsubscribed: dropped
+    assert.deepEqual(JSON.parse(store.get('status/down.json')).phones, { sent: 1, failed: 0, dropped: 1 });
+    sent.length = 0;
+    await run(); // still down: not sent again
+    assert.equal(sent.length, 0);
+    setIndex(3); // back
+    await run();
+    assert.deepEqual(sent.map((x) => x.url), ['https://ntfy.sh/me', 'https://fcm.googleapis.com/fcm/send/phone1']);
+    assert.equal(open(sent[1].init.body).title, 'Board checker back');
+    assert.ok(!store.has('status/down.json'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

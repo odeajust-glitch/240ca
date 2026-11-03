@@ -202,3 +202,21 @@ newest zip and unzip it into `C:\Users\<you>\BoardChecker`. For history,
 download the days you want from **backups/history/** and unzip each into
 `BoardChecker\history\<date>\`. Then put your `.env` back and start the
 checker.
+
+## Phone alert to everyone when the checker is down 3 hours (2026-11-03)
+
+After 3 hours with no check, the Worker itself sends every phone with turn
+alerts: "No board check since … (3 h). The board and turn alerts are out of
+date; check CATS yourself.", and "Checking CATS again …" when it's back.
+(You still get your own ntfy message after 30 minutes.) It signs them with the
+board checker's own key, so it needs a copy of it, once:
+
+1. On the laptop, open the key file: `notepad %USERPROFILE%\BoardChecker\push-keys.json`
+   (don't change anything in it). Press **Ctrl+A**, **Ctrl+C**, close Notepad.
+2. Cloudflare → **Workers & Pages → board → Settings → Variables and
+   Secrets → Add**: type **Secret**, name `VAPID_KEYS`, paste as the value →
+   **Deploy**.
+
+Treat that key like a password: it's what lets alerts reach the phones. It
+stays only on the laptop and in this Cloudflare secret. `PUSH_DOWN_MINUTES`
+(a Text variable) changes the 3 hours (180).

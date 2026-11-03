@@ -112,10 +112,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Waiting on the owner / to check on real runs
 
-- **Not pulled yet** (he's away; pull + restart when home, then **re-paste the
-  Worker** for the stale-alert pref): everything after cbec2db, i.e. Page
-  Health visitors, down banner, spares on both boards, stale trains,
-  runaround log, Netlify removal, this trim.
+- **Not pulled yet** (he's away; when home: pull + restart, **re-paste the
+  Worker**, add the **VAPID_KEYS** secret): everything after cbec2db, i.e.
+  Page Health visitors, down banner, spares on both boards, stale trains,
+  runaround log, Netlify removal, the trim, My week, missing from option 5,
+  down-3 h phone alert.
 - ❓ Runaround log results: he reviews them before any alerts are added.
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
@@ -123,10 +124,20 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - Open TODO items: runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now); calendar export taken off (owner, 2026-11-03),
-  "missing from option 5" jobs, phone alert to everyone when down 3 h+
-  (needs Worker web push + a VAPID key secret).
+  "missing from option 5" jobs (now tracked), phone alert to everyone when
+  down 3 h+ (built; owner adds the VAPID_KEYS secret).
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **Down 3 h+ → every phone** (owner: go ahead). Worker
+  watchChecker: status/down.json made at DOWN_MINUTES regardless of ntfy;
+  at PUSH_DOWN_MINUTES (180) and secret VAPID_KEYS (the laptop's
+  push-keys.json pasted whole) → pushAll(): web push from the Worker with
+  WebCrypto (RFC 8291/8292, one sender key per run, one VAPID JWT per push
+  service), to every subs/ phone; 404/410 drops the sub; down.pushed is set
+  before sending (never twice); "back" pushed when it recovers if down was
+  pushed. Page Health shows phones told. ❓ Free-plan CPU per cron run with
+  many phones: not seen live.
 
 - 2026-11-03: **Missing from option 5** (owner: "yes add it, 30 minutes is
   fine"): insights missingCheck: a line-up job marked "(goes spare" (crew

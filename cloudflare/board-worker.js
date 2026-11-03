@@ -28,6 +28,8 @@
 // what the Worker sees, to check the setup (opened in the address bar it
 // never has the key: only the page sends it).
 //
+// Down 3 h+ (owner, 2026-11-03): see watchChecker; needs the VAPID_KEYS secret.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -96,26 +98,122 @@ async function subscribe(request, env) {
 }
 
 // The board checker is down when the site hasn't been published for a while
-// (it publishes after every check). status/down.json remembers that the
-// alert went out, so it's sent once, and "back" once.
+// (it publishes after every check). status/down.json remembers what was
+// sent, so each message goes once: ntfy to the owner after DOWN_MINUTES
+// (default 30) and "back" when it is; and (owner, 2026-11-03: "lets people
+// know if the board tracker has been down for more than 3 hours") a phone
+// alert to every phone with turn alerts after PUSH_DOWN_MINUTES (default
+// 180), and "back" to them too, when the VAPID_KEYS secret is set (the
+// laptop's BoardChecker\push-keys.json, pasted whole).
 async function watchChecker(env) {
-  if (!env.NTFY_TOPIC) return;
   const idx = await env.SITE.get('data/index.json');
   if (!idx) return;
   let at;
   try { at = Date.parse((await idx.json()).generatedAt); } catch { return; }
   const mins = Math.round((Date.now() - at) / 60000);
   const limit = Number(env.DOWN_MINUTES) || 30;
-  const down = await env.SITE.head('status/down.json');
+  const pushLimit = Number(env.PUSH_DOWN_MINUTES) || 180;
+  const o = await env.SITE.get('status/down.json');
+  let down = null;
+  if (o) { try { down = JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { down = {}; } }
   const when = new Date(at).toLocaleString('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', month: 'short', day: 'numeric' });
-  const say = (title, body) => fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body, headers: { Title: title, Priority: 'high' } });
+  const say = (title, body) => (env.NTFY_TOPIC ? fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body, headers: { Title: title, Priority: 'high' } }) : null);
+  const save = (d) => env.SITE.put('status/down.json', JSON.stringify(d));
   if (mins >= limit && !down) {
     await say('Board checker is down', `No board check since ${when} (${mins} min). The laptop may be off, stuck, or waiting for a Microsoft sign-in.`);
-    await env.SITE.put('status/down.json', JSON.stringify({ since: at, alerted: Date.now() }));
-  } else if (mins < limit && down) {
+    down = { since: at, alerted: Date.now() };
+    await save(down);
+  }
+  if (down && mins >= pushLimit && !down.pushed && env.VAPID_KEYS) {
+    const h = Math.floor(mins / 60);
+    // Marked first: a run cut short never sends it twice.
+    down.pushed = Date.now();
+    await save(down);
+    down.phones = await pushAll(env, { title: 'Board checker down', body: `No board check since ${when} (${h} h). The board and turn alerts are out of date; check CATS yourself.`, tag: 'board-down', url: './#current' });
+    await save(down);
+  }
+  if (mins < limit && down) {
     await say('Board checker is back', `Checking again (last check ${when}).`);
+    if (down.pushed && env.VAPID_KEYS) await pushAll(env, { title: 'Board checker back', body: `Checking CATS again (last check ${when}). Turn alerts are back on.`, tag: 'board-down', url: './#current' });
     await env.SITE.delete('status/down.json');
   }
+}
+
+// Web push from the Worker (RFC 8291 aes128gcm + RFC 8292 VAPID), the same
+// messages the laptop's lib/board/webpush.js sends, with WebCrypto. Only
+// real push services (PUSH_HOSTS). One sender key per run (each message
+// still has its own salt); one VAPID signature per push service.
+const ub64 = (s) => Uint8Array.from(atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(s).length + 3) % 4)), (c) => c.charCodeAt(0));
+const b64 = (u8) => btoa(String.fromCharCode(...new Uint8Array(u8))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const cat = (...parts) => { const n = parts.reduce((a, p) => a + p.length, 0); const out = new Uint8Array(n); let i = 0; for (const p of parts) { out.set(p, i); i += p.length; } return out; };
+const utf8 = (t) => new TextEncoder().encode(t);
+async function hmac256(key, data) {
+  const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', k, data));
+}
+async function encryptPush(payload, sub, sender) {
+  const ua = ub64(sub.keys.p256dh);
+  const auth = ub64(sub.keys.auth);
+  const uaKey = await crypto.subtle.importKey('raw', ua, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, sender.privateKey, 256));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const ikm = await hmac256(await hmac256(auth, secret), cat(utf8('WebPush: info\0'), ua, sender.publicRaw, new Uint8Array([1])));
+  const prk = await hmac256(salt, ikm);
+  const cek = (await hmac256(prk, cat(utf8('Content-Encoding: aes128gcm\0'), new Uint8Array([1])))).slice(0, 16);
+  const nonce = (await hmac256(prk, cat(utf8('Content-Encoding: nonce\0'), new Uint8Array([1])))).slice(0, 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const sealed = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(utf8(payload), new Uint8Array([2]))));
+  const header = new Uint8Array(21);
+  header.set(salt, 0);
+  new DataView(header.buffer).setUint32(16, 4096);
+  header[20] = sender.publicRaw.length;
+  return cat(header, sender.publicRaw, sealed);
+}
+async function vapidFor(endpoint, keys, signer, cache, subject) {
+  const aud = new URL(endpoint).origin;
+  if (cache.has(aud)) return cache.get(aud);
+  const head = b64(utf8(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const claims = b64(utf8(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: subject })));
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, signer, utf8(`${head}.${claims}`));
+  const v = `vapid t=${head}.${claims}.${b64(sig)}, k=${keys.publicKey}`;
+  cache.set(aud, v);
+  return v;
+}
+// Every phone with turn alerts (subs/), one message each. → { sent, failed, dropped }.
+async function pushAll(env, message, { fetchImpl = fetch } = {}) {
+  const out = { sent: 0, failed: 0, dropped: 0 };
+  let keys;
+  try { keys = JSON.parse(env.VAPID_KEYS); } catch { return { ...out, error: 'VAPID_KEYS is not the push-keys.json text' }; }
+  if (!keys || !keys.publicKey || !keys.privateJwk) return { ...out, error: 'VAPID_KEYS has no publicKey / privateJwk' };
+  const { d, x, y } = keys.privateJwk;
+  const signer = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', d, x, y, ext: true }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const sender = { privateKey: pair.privateKey, publicRaw: new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey)) };
+  const subject = env.SITE_URL || 'https://board.sarniaboard.workers.dev';
+  const cache = new Map();
+  let cursor;
+  do {
+    const page = await env.SITE.list({ prefix: 'subs/', cursor });
+    for (const obj of page.objects || []) {
+      try {
+        const g = await env.SITE.get(obj.key);
+        if (!g) continue;
+        const sub = JSON.parse(typeof g.text === 'function' ? await g.text() : g.body);
+        let host = '';
+        try { host = new URL(sub.endpoint).hostname; } catch { /* checked below */ }
+        if (!PUSH_HOSTS.some((re) => re.test(host)) || !sub.keys) continue;
+        const res = await fetchImpl(sub.endpoint, {
+          method: 'POST',
+          headers: { 'content-encoding': 'aes128gcm', 'content-type': 'application/octet-stream', ttl: String(6 * 3600), urgency: 'high',
+            authorization: await vapidFor(sub.endpoint, keys, signer, cache, subject) },
+          body: await encryptPush(JSON.stringify(message), sub, sender),
+        });
+        if (res.status === 404 || res.status === 410) { await env.SITE.delete(obj.key); out.dropped++; } else if (res.ok) out.sent++; else out.failed++;
+      } catch { out.failed++; }
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  return out;
 }
 
 const torontoDay = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });

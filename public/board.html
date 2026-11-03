@@ -2096,7 +2096,7 @@ source().then(async (src) => {
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const rows = [];
     const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
-    if (h.down) row('Down alert', `sent ${ago(h.down.alerted)}`, true);
+    if (h.down) row('Down alert', `sent ${ago(h.down.alerted)}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
     if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
     row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
     if (L.signIn) {
