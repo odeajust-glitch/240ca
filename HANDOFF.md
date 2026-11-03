@@ -22,6 +22,11 @@ Non-technical, on Windows: give exact click-by-click / copy-paste steps,
 Command Prompt syntax (`%USERPROFILE%`), not PowerShell's. Explain a change
 before making it when he asks; offer options with a recommendation.
 
+**The VAPID private key** (BoardChecker\push-keys.json, the Worker's
+`VAPID_KEYS` secret) was pasted into the chat on 2026-11-03; the owner chose
+to keep it (option A: low risk, the phones' subscription addresses are only
+in R2). Making a new one means every phone re-subscribes. Never ask for it.
+
 **Never ask for `.env` contents** (he once pasted passwords into chat and was
 told to change them); check settings with `findstr /B /C:"NAME=" …` (ok /
 MISSING). Automating the Microsoft second factor (TOTP) was refused by the
