@@ -51,8 +51,10 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
    a tester was built to ask several AI keys/models the same question about
    the agreement and compare the answers, for later use; not used yet. Not
-   found in this repository (any branch) on 2026-11-03: ask the owner where
-   it lives. How (owner): ask questions he already knows the answer to,
+   in this repository: it was built in the owner's claude.ai chat
+   https://claude.ai/chat/cab5e05d-70a6-4580-8036-3bb18c6049a8 (a Claude
+   Code session can't open it: ask the owner to paste the tester's code or
+   files when it's time). How (owner): ask questions he already knows the answer to,
    to see which model gives the most accurate answers. The agreement search now runs on the Worker with Kimi
    (KIMI_API_KEY); the comparison would tell whether another model answers
    better or cheaper.

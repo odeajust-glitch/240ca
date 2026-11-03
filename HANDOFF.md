@@ -174,7 +174,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - Open TODO items: rest tracker (TODO #8), reset tracker (#9) and expanded
   Call Board information (#10) (owner, 2026-11-03: housekeeping, details to ask),
   API key tester (#11: compare AI keys on the same agreement question; where
-  the tester lives is unknown), home turn worked out better (tabled, owner 2026-11-03: he
+  the tester is in the owner's claude.ai chat, link in TODO #11; he pastes
+  the code when it's time), home turn worked out better (tabled, owner 2026-11-03: he
   was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
