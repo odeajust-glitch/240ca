@@ -671,3 +671,17 @@ test('Toronto call: order less 2 hours; Sarnia unchanged', () => {
   assert.equal(order - callTime(order, false, config), 135);
   assert.equal(order - callTime(order, true, config), 120);
 });
+
+test('L502: the L501 out of Garnet is named for the crew coming home (owner, 2026-11-03)', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 11, 3, 12, 0);
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const s5 = [row('EN', 'S501', { terminal: 1 }), row('CO', 'S501', { terminal: 1 }), row('EN', 'S502', { pos: 1 }), row('CO', 'S502', { pos: 1 })];
+  const lineup = [{ symbol: 'L50231', trainNo: 'L502', originDay: '04', order: at(2026, 11, 4, 4, 0), status: 'PLN', deadhead: false }];
+  // S502 is home, so it takes this one; S501 (at Garnet) is next.
+  const two = [...lineup, { ...lineup[0], originDay: '05', order: at(2026, 11, 5, 4, 0) }];
+  const garnetLineup = [{ symbol: 'L50131', originDay: '04', order: at(2026, 11, 4, 21, 0), status: 'ORD' }];
+  const ps = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: two, s5, garnetLineup }).predictions.filter((x) => x.symbol === 'L50231');
+  assert.deepEqual(ps.map((p) => p.turn), ['S502', 'S501']);
+  assert.match(ps[1].reason, /L50131 04 ORD out of Garnet 4th 2100/);
+});

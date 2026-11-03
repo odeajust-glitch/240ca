@@ -226,3 +226,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Article 18.6(b): two tiles** instead of four: crews violated
   (held 14 h+) in the last 7 days, and the percentage of Toronto stays that
   were violations in those 7 days.
+- 2026-11-03: **Garnet line-up** (option 41, station 47956): when L501 is
+  planned / ordered out of Garnet, shown under the 501/502 board and in the
+  why for the next L502.

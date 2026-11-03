@@ -173,6 +173,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Garnet line-up (41, 47956 W S5, 24 h)** after Mac yard's
+  (board-auto, label garnetLineup; summary classifies [47956] too; snapshot
+  garnetLineup [{train, status, order}]; Current: a line under the 501/502
+  pool tab; engine: the L502 reason names the L501 out of Garnet for the crew
+  coming home). Owner: 501/502 conductor + engineer never split (crew
+  alternation stays); option 29 CC box takes CO / EN (not needed: 29 already
+  lists both crafts). ❓ Pool S5 / direction W for Garnet not confirmed by
+  the owner: check the first run's log for "skipped Garnet line-up 41".
+  ❓ Trip time Garnet→Sarnia and rest rule for an estimate not answered yet.
+
 - 2026-11-03: **JUOD bumped back onto S501 CO** (owner: "I am not on duty at
   garnet … I wasn't working 501"): (1) the name code's Work history counts a
   train only if it went on duty while they were on that turn (personHistory

@@ -514,6 +514,22 @@ async function runRoute(page, opts = {}) {
     if (err instanceof NeedSignIn) throw err;
     console.log(`  (skipped Mac yard line-up 41: ${err.message})`);
   }
+  // 41 for Garnet (owner, 2026-11-03): station 47956, westbound, pool S5,
+  // 24 h ahead: when L501 is planned / ordered out of Garnet, i.e. when the
+  // 501/502 crew there comes home for the next L502.
+  try {
+    expect(await chooseFromMenus(page, 41), is.lineup, 'Garnet line-up (41)');
+    await fill(page, { 0: '47956', 1: 'W', 2: 'S5', '-1': '24' });
+    let g = expect(await press(page, 'Enter'), is.lineup, 'Garnet line-up');
+    for (let pageNo = 0; pageNo < 3; pageNo++) {
+      await capture('garnetLineup');
+      if (/END OF FILE/.test(g.text)) break;
+      g = expect(await press(page, 'F8'), is.lineup, 'next Garnet line-up page');
+    }
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (skipped Garnet line-up 41: ${err.message})`);
+  }
 
   // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and
   // Garnet. Each is labelled for the loader; trouble with one only skips it.

@@ -436,3 +436,19 @@ test('site page: every function the page calls at the top level is still there',
     assert.ok(defined.has(name), `${name} is missing from board.html`);
   }
 });
+
+// Owner, 2026-11-03: option 41 for Garnet (47956 W S5): when L501 comes home.
+test('Garnet line-up: read apart from Sarnia, shown under 501/502', () => {
+  const fx = JSON.parse(fixture('2026-10-15b.json'));
+  const garnet = [
+    '1 | 226:TRAIN LINE UP FIELD INQUIRY | 649:PSTS02H',
+    '37 | 10:STATION | 82:( | 100:[47956] | 154:) | 181:DIR | 217:( | 235:[W] | 253:) | 280:POOL | 325:( | 343:[S5] | 370:) | 397:HOURS IN FUTURE | 541:( | 559:[24] | 586:) | 604:DEFAULT=16',
+    '91 | 10:MMDD-HRMN | 100:Z | 118:STA | 154:TRAIN/ASGN | 253:ORSTN | 379:INFORMATION | 586:ENG CRW | 658:TRN CRW',
+    '109 | 10:1015-2100 | 100:E | 118:ORD | 163:L50131 | 226:15 | 253:47956 | 307:TOPC | 352:500SAR | 433:A | 451:EnCo | 586:45SAS50 | 658:45SAS50',
+    '415 | 10:END | 46:OF | 73:FILE | 640:E011-1',
+  ];
+  const { shown } = snapshotOf({ ...fx, screens: [...fx.screens, { screenGrid: garnet, label: 'garnetLineup' }] });
+  assert.ok(shown.screens.includes('garnetLineup'));
+  assert.strictEqual(shown.lineup.length, 9); // Sarnia's line-up untouched
+  assert.deepStrictEqual(shown.garnetLineup, [{ train: 'L50131 15', status: 'ORD', order: '15th 2100' }]);
+});
