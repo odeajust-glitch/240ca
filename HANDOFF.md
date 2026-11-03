@@ -231,6 +231,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: trips a spare works filling in on another turn now count
+  for the spare (collect: backfill → the spare's own turn's turnTrips;
+  work(): a fill-in trip is theirs if that turn was their latest own one
+  before it). FORMAT 21. Owner asked about COBO (SD08): reset 30th 0559,
+  back 30th 2030 → needed by 6th 2030 (S301 fill-ins 27th/28th now counted).
 - 2026-11-03: website publish runs in the background (board-auto.js
   site.busy; owner: "the checker is taking too long … it needs to update
   the site its getting stuck here"); one upload at a time. First live

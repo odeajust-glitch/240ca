@@ -153,7 +153,9 @@ test('collect: each turn\'s trains, and jobs a spare filled in', () => {
   const input = { callBoard: [{ symbol: 'A42431', originDay: '03', onDuty: t(3, 1000), crew: [{ craft: 'EN', turn: 'S104' }, { craft: 'CO', turn: 'SA07' }] },
     { symbol: 'L50231', originDay: '03', onDuty: t(3, 400), crew: [{ craft: 'EN', turn: 'S502' }] }] };
   R.collect(acc, input, [], t(3, 1010), [{ train: 'A42431 03', craft: 'EN', job: 'S104', turn: 'B108' }]);
-  assert.deepEqual(Object.keys(acc.turnTrips).sort(), ['S104', 'S502-EN', 'SA07']);
+  // B108 filled in on S104: the trip is on B108's list too (for B108's person).
+  assert.deepEqual(Object.keys(acc.turnTrips).sort(), ['B108', 'S104', 'S502-EN', 'SA07']);
+  assert.equal(acc.turnTrips.B108[`A42431 03/${t(3, 1000)}`].job, 'S104');
   assert.deepEqual(acc.filled[`A42431 03/${t(3, 1000)}`], ['S104']);
 });
 
@@ -168,4 +170,20 @@ test('regular yard jobs are left out', () => {
   const turns = R.byTurn(acc, people, t(2, 800));
   assert.equal(turns.YFLS01, undefined);
   assert.equal(turns.B111.level, 'red');
+});
+
+// Owner asked about COBO (SD08), who filled in on S301 for M38261 27 and
+// M39731 28 while not seen on SD08: those trips are COBO's.
+test('trips filling in on another turn count for the spare', () => {
+  const acc = R.empty();
+  acc.since = t(26, 0); acc.last = t(28, 2100);
+  acc.turnTrips = { SD08: {
+    [`M38261 27/${t(27, 1715)}`]: { train: 'M38261 27', on: t(27, 1715), job: 'S301', first: t(27, 1530), last: t(28, 100) },
+    [`M39731 28/${t(28, 1050)}`]: { train: 'M39731 28', on: t(28, 1050), job: 'S301', first: t(28, 900), last: t(28, 1650) },
+  } };
+  const people = { c: [{ turn: 'SD08', own: true, from: '2026-10-26 0000', to: '2026-10-27 1515' },
+    { turn: 'S301', own: false, from: '2026-10-27 1522', to: '2026-10-28 1950' }, { turn: 'SD08', own: true, from: '2026-10-28 1958', to: '2026-10-28 2100' }] };
+  const r = R.finish(acc, people, t(28, 2100)).c;
+  assert.deepEqual(r.duty.map((d) => d.train), ['M38261 27', 'M39731 28']);
+  assert.equal(fmt(r.due), '3rd 1715'); // reset 27th 0559, back 27th 1715
 });
