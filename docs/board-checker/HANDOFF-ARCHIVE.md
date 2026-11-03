@@ -5,6 +5,49 @@ current state (owner: "trim the file"). Nothing was dropped: search here for a
 feature, file or rule by name. Newest notes are near the top of the "Start
 here" section; the dated sections below it go back to 2026-10-14.
 
+## Later notes (moved out of HANDOFF.md's "Latest", newest first)
+
+- 2026-11-03: **Down 3 h+ → every phone** (owner: go ahead). Worker
+  watchChecker: status/down.json made at DOWN_MINUTES regardless of ntfy;
+  at PUSH_DOWN_MINUTES (180) and secret VAPID_KEYS (the laptop's
+  push-keys.json pasted whole) → pushAll(): web push from the Worker with
+  WebCrypto (RFC 8291/8292, one sender key per run, one VAPID JWT per push
+  service), to every subs/ phone; 404/410 drops the sub; down.pushed is set
+  before sending (never twice); "back" pushed when it recovers if down was
+  pushed. Page Health shows phones told. ❓ Free-plan CPU per cron run with
+  many phones: not seen live.
+
+- 2026-11-03: **Missing from option 5** (owner: "yes add it, 30 minutes is
+  fine"): insights missingCheck: a line-up job marked "(goes spare" (crew
+  co/en in the row's rules) with no option 5 job for that train and craft
+  (vacanciesCats, else vacancies), only in checks that read option 5
+  (`screens` has 'terminal'); kept when missing 30 min+ (MISSING_MIN),
+  listedAt when CATS catches up, ended when the order stops saying spare,
+  Call Board crew. → analytics `catsMissing`, archived; shown under
+  Analytics → CATS errors. Tracking only, no alerts.
+
+- 2026-11-03: **My week** (owner: page + Sunday alert, "only works for JUOD
+  first. If it's nice we can push it out"). public/board-week.js (shared by
+  page and laptop): weekOf / weekBefore (Sun–Sat), personRec (moved from the
+  page's personHistory logic), weekSummary (trips, yard, time on duty to
+  Toronto, held 14 h+, rests, calls vs the one slept on, runarounds, stale,
+  CATS errors, out of sequence), personWeek, weekText. Page: Analytics → My
+  week (first tab; every turn/person followed on this phone; Last week / This
+  week / Week before), opened by `#week`. Laptop: board-auto sendWeekly, the
+  first check after 09:00 Sunday (Toronto), last week's text to phones
+  following '@hash' of BOARD_WEEKLY_CODES (default JUOD), once a week
+  (BoardChecker\weekly.json), logged as kind 'weekly'. To open it up: more
+  codes in BOARD_WEEKLY_CODES, or (later) a per-phone option.
+
+- 2026-11-03: HANDOFF trimmed (old content → HANDOFF-ARCHIVE.md); Netlify
+  publishing removed (site.js deploySite, settings, tests, .env.example);
+  relay kept (owner uses the app).
+- 2026-11-02: runaround log, stale trains, tracked spares on both boards,
+  down banner, Page Health tab (+ visitors), owner key, CATS option 5 check
+  + wrong-turn alert + CATS errors, backup, visitor counter, sign-in
+  reminders, watchdog fresh Edge, calmer line-up alerts, EN03 Toronto
+  fill-in fix, AI check removed. Details: the archive's "Start here" section.
+
 ---
 
 # HANDOFF — read this before doing anything

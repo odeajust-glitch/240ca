@@ -1,7 +1,16 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-11-03 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything) · 186 tests (`npm test`).
+Last updated: 2026-11-03 (end of session) · Branch:
+**`claude/vigilant-planck-zawrj4`** (has everything) · 186 tests (`npm test`).
+**The laptop runs `06d7924`** (pulled 2026-11-03).
+
+## ▶ Next session: site housekeeping
+
+The owner is starting a new conversation to do **housekeeping on the site**
+(public/board.html and friends). He hasn't said what yet: ask what he wants
+changed, show options with a recommendation, then build. Before changing a
+tab, search the archive for why it is the way it is. Still open from this
+session: see "Waiting on the owner" below (Worker re-paste, Worker timer line).
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -141,20 +150,25 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Waiting on the owner / to check on real runs
 
-- **Not pulled yet** (he's away; when home: pull + restart, **re-paste the
-  Worker**, add the **VAPID_KEYS** secret): everything after cbec2db, i.e.
-  Page Health visitors, down banner, spares on both boards, stale trains,
-  runaround log, Netlify removal, the trim, My week, missing from option 5,
-  down-3 h phone alert.
+- **Laptop pulled to 06d7924** (everything so far). VAPID_KEYS secret is
+  added and the Worker with pushAll was deployed. ❓ **Worker re-paste for
+  256eddf** (1 h owner push + status/watch.json) not confirmed: ask whether
+  `OWNER_DOWN_MINUTES` is in the deployed Worker.
+- ❓ **The 30-min ntfy "down" never arrives** (owner): asked him to read Page
+  Health → **Worker timer** ("never ran" = no Cron Trigger `*/10 * * * *`;
+  "ntfy topic NOT set" = add Worker variable NTFY_TOPIC = laptop's
+  BOARD_NTFY_TOPIC). Not answered yet.
+- ❓ The first real "another assignment?" page: check Page Health → "CATS
+  pages it asked you about" and that the ntfy Y / N buttons worked. The
+  startup line must say "phone alerts on (ntfy)" or asking can't work (it
+  then types N after 15 min).
 - ❓ Runaround log results: he reviews them before any alerts are added.
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
 - Open TODO items: runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
-  everyone (JUOD only now); calendar export taken off (owner, 2026-11-03),
-  "missing from option 5" jobs (now tracked), phone alert to everyone when
-  down 3 h+ (built; owner adds the VAPID_KEYS secret).
+  everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
@@ -190,43 +204,5 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (owner said the 30-min ntfy never arrives: ❓ check the Cron Trigger and
   NTFY_TOPIC there).
 
-- 2026-11-03: **Down 3 h+ → every phone** (owner: go ahead). Worker
-  watchChecker: status/down.json made at DOWN_MINUTES regardless of ntfy;
-  at PUSH_DOWN_MINUTES (180) and secret VAPID_KEYS (the laptop's
-  push-keys.json pasted whole) → pushAll(): web push from the Worker with
-  WebCrypto (RFC 8291/8292, one sender key per run, one VAPID JWT per push
-  service), to every subs/ phone; 404/410 drops the sub; down.pushed is set
-  before sending (never twice); "back" pushed when it recovers if down was
-  pushed. Page Health shows phones told. ❓ Free-plan CPU per cron run with
-  many phones: not seen live.
-
-- 2026-11-03: **Missing from option 5** (owner: "yes add it, 30 minutes is
-  fine"): insights missingCheck: a line-up job marked "(goes spare" (crew
-  co/en in the row's rules) with no option 5 job for that train and craft
-  (vacanciesCats, else vacancies), only in checks that read option 5
-  (`screens` has 'terminal'); kept when missing 30 min+ (MISSING_MIN),
-  listedAt when CATS catches up, ended when the order stops saying spare,
-  Call Board crew. → analytics `catsMissing`, archived; shown under
-  Analytics → CATS errors. Tracking only, no alerts.
-
-- 2026-11-03: **My week** (owner: page + Sunday alert, "only works for JUOD
-  first. If it's nice we can push it out"). public/board-week.js (shared by
-  page and laptop): weekOf / weekBefore (Sun–Sat), personRec (moved from the
-  page's personHistory logic), weekSummary (trips, yard, time on duty to
-  Toronto, held 14 h+, rests, calls vs the one slept on, runarounds, stale,
-  CATS errors, out of sequence), personWeek, weekText. Page: Analytics → My
-  week (first tab; every turn/person followed on this phone; Last week / This
-  week / Week before), opened by `#week`. Laptop: board-auto sendWeekly, the
-  first check after 09:00 Sunday (Toronto), last week's text to phones
-  following '@hash' of BOARD_WEEKLY_CODES (default JUOD), once a week
-  (BoardChecker\weekly.json), logged as kind 'weekly'. To open it up: more
-  codes in BOARD_WEEKLY_CODES, or (later) a per-phone option.
-
-- 2026-11-03: HANDOFF trimmed (old content → HANDOFF-ARCHIVE.md); Netlify
-  publishing removed (site.js deploySite, settings, tests, .env.example);
-  relay kept (owner uses the app).
-- 2026-11-02: runaround log, stale trains, tracked spares on both boards,
-  down banner, Page Health tab (+ visitors), owner key, CATS option 5 check
-  + wrong-turn alert + CATS errors, backup, visitor counter, sign-in
-  reminders, watchdog fresh Edge, calmer line-up alerts, EN03 Toronto
-  fill-in fix, AI check removed. Details: the archive's "Start here" section.
+Older notes (down 3 h push, missing from option 5, My week, the trim, 2026-11-02
+work): the archive's "Later notes" section at its top.
