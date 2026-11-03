@@ -1,16 +1,24 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-11-03 (end of session) · Branch:
-**`claude/vigilant-planck-zawrj4`** (has everything) · 186 tests (`npm test`).
-**The laptop runs `06d7924`** (pulled 2026-11-03).
+Last updated: 2026-11-03 (end of the housekeeping session) · Branch:
+**`claude/vigilant-planck-zawrj4`** (has everything) · 205 tests (`npm test`).
+**The laptop runs at least `a9f02e2`** (pulled 2026-11-03; ask him to
+`git pull` again: later commits are notes and the API-key TODO only).
 
-## ▶ Next session: site housekeeping
+## ▶ Next session
 
-The owner is starting a new conversation to do **housekeeping on the site**
-(public/board.html and friends). He hasn't said what yet: ask what he wants
-changed, show options with a recommendation, then build. Before changing a
-tab, search the archive for why it is the way it is. Still open from this
-session: see "Waiting on the owner" below (Worker re-paste, Worker timer line).
+Nothing is half-built. Ask the owner what he wants next; his to-do list has
+these waiting (details to ask before building): **#8 rest tracker** (helps
+the runaround log: DHT040B 31), **#9 reset tracker**, **#10 expanded Call
+Board information**, **#11 API key tester** (compare AI models on
+agreement questions he knows the answers to; the tester is in his claude.ai
+chat, he pastes it), #6 home turn worked out better, and the older ones.
+Show options with a recommendation, then build. Before changing a tab,
+search the archive for why it is the way it is.
+
+**2026-11-23 reminder (scheduled in that session):** the owner deletes the
+Render service (suspended 2026-11-03) and any Render Blueprint. Check
+`/api/status` is `ready:true` first.
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -58,10 +66,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Tell him to open it fresh in Notepad and check for a word only the new
   version has (an old open Notepad bit him twice), or use GitHub's "Copy raw file".
 - Worker variables: `NTFY_TOPIC`, `DOWN_MINUTES` (30), `OWNER_KEY` (secret,
-  set 2026-11-02), `VAPID_KEYS` (secret, set 2026-11-03),
-  `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD), `PUSH_DOWN_MINUTES` (180),
-  `OWNER_EMAIL` (unused while Access is off). Cron */10 (needed for every
-  down alert; Page Health → Worker timer shows whether it runs).
+  set 2026-11-02), `VAPID_KEYS` (secret, set 2026-11-03), `KIMI_API_KEY`
+  (secret, set 2026-11-03), `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD),
+  `PUSH_DOWN_MINUTES` (180), `OWNER_EMAIL` (unused while Access is off);
+  optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `BOARD_KEY`
+  (relay, unused). Cron */10 (Page Health → Worker timer: runs, checked
+  2026-11-03). **Workers Paid plan** ($5/mo, needed by the search).
+- **Agreement search documents:** after adding or changing a PDF in `data\`:
+  `node scripts/search-upload.js` (builds the index, uploads only what
+  changed to R2 search/ + docs/, retries dropped connections).
 
 ## What it does now (one line each; details in the archive and the code)
 
@@ -69,7 +82,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   `runRoute`): Call Board (+ crews in town), pools 23/19/21/27/25/26, line-up
   41, spareboards 13/9/19/17 (with VIEW TIME = now − 10 min, extras shown in
   yellow), 5 (jobs going spare), 29 (501/502), 31 (Garnet), Toronto
-  bunkhouse 28 + Mac yard line-up 41. Engine: `lib/board/engine.js`.
+  bunkhouse 28 + Mac yard line-up 41 + **Garnet line-up 41** (47956 W S5:
+  L501 home). Engine: `lib/board/engine.js`.
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
@@ -100,10 +114,19 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - **Website** https://board.sarniaboard.workers.dev: Cloudflare Worker + R2
   `board-site`, uploaded every check (`lib/board/site.js`, `lib/board/r2.js`).
   **Open to anyone with the link** (owner: "leave the site open"; Access off).
-  Tabs: Current, Turn History, Snapshots, Order summary, Article 18.6(b),
+  Tabs: Current, Turn History, Snapshots (hours 0000–2300, then that hour's
+  checks), Order summary, Article 18.6(b) (2 tiles + link to grievance.html),
   Analytics, **Reference** (public/board-ref.js: CATS status/ECC codes, job
-  types, Mac/B.I.T./Malport track lengths, held-away penalty + calculator;
-  typed from the owner's photos 2026-11-03), and **Page Health** (owner key only). 3 h+ down → red banner.
+  types, track lengths, held-away penalty + calculator), **Agreements**
+  (public/board-ask.js, below) and **Page Health** (owner key only). 3 h+
+  down → red banner. Uploads retry dropped connections (r2.js retryingFetch).
+- **Agreement search** (moved off Render 2026-11-03, live and verified):
+  the Agreements tab asks the Worker's `/api/ask` (BM25 over R2 `search/`,
+  same tokenizer/scoring as lib/search.js; Kimi streams the answer; deeper
+  search; 10 questions per 5 min per address; daily counts `ask/stats/`,
+  `/api/stats?key=`). PDFs at R2 `docs/<id>.pdf`; viewer.html, stats.html,
+  grievance.html (board look) on the site. Index: lib/search-shards.js,
+  uploaded by scripts/search-upload.js. Render (server.js) is no longer used.
   Netlify publishing was removed 2026-11-03 (boardtestsa.netlify.app is only
   a redirect now). Snapshot FORMAT 17 in site.js.
 - **Owner-only bits** (owner key: `#ownerkey=…` once per device, header
@@ -131,11 +154,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - **Backup** to R2 `backups/` once a day after 03:00 (`lib/board/backup.js`):
   state zip (14 kept) + finished history days; never `.env` or names.json.
   Restore steps in docs/board-checker/CLOUDFLARE.md.
-- **RailroadTracker relay: keep it** (owner, 2026-11-03: "I am using the
-  app"): each check also goes to the relay (`BOARD_RELAY_URL` + `BOARD_KEY`,
-  `lib/board/relay.js` pushCheck) for the app's Board tab; on the Worker
-  now (2026-11-03). Not configured on the laptop: the app reads the board
-  site directly.
+- **RailroadTracker app** (repo odeajust-glitch/RailroadTracker): reads the
+  board site directly. The relay (`BOARD_RELAY_URL` + `BOARD_KEY`) was never
+  configured on the laptop; the Worker has it (`/api/board`, off without a
+  BOARD_KEY secret). Don't suggest removing it.
+- **People (name codes):** sightings carry craft (501/502) and the Call
+  Board train (people.json `now`); a person's Work history counts a train
+  only if it went on duty while they were on that turn.
 
 ## Rules settled with the owner (don't re-litigate)
 
@@ -159,10 +184,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Waiting on the owner / to check on real runs
 
-- **Laptop pulled to 06d7924** (everything so far). VAPID_KEYS secret is
-  added. **Worker 256eddf deployed 2026-11-03** (it had been pasted but not
-  deployed); Worker timer runs, ntfy topic and push key set. ❓ Confirm the
-  30-min ntfy "down" arrives the next time the checker is down.
+- **Worker:** the version with the agreement search is deployed (checked
+  2026-11-03). ❓ Confirm the 30-min ntfy "down" arrives the next time the
+  checker is down.
+- ❓ Garnet line-up 41 (W / S5 guessed): if the checker log says "skipped
+  Garnet line-up 41", ask what he types in DIR and POOL.
+- ❓ Sleep tracker one-check flickers ("M39671 30 called 901 min later"):
+  asked whether a prediction must hold 2 checks; no answer yet.
 - ❓ The first real "another assignment?" page: check Page Health → "CATS
   pages it asked you about" and that the ntfy Y / N buttons worked. The
   startup line must say "phone alerts on (ntfy)" or asking can't work (it
@@ -175,185 +203,19 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Call Board information (#10) (owner, 2026-11-03: housekeeping, details to ask),
   API key tester (#11: compare AI keys on the same agreement question; where
   the tester is in the owner's claude.ai chat, link in TODO #11; he pastes
-  the code when it's time), home turn worked out better (tabled, owner 2026-11-03: he
+  the code when it's time), DHT040B 31 runaround (waits for #8), home turn worked out better (tabled, owner 2026-11-03: he
   was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
-- 2026-11-03: **Moving off Render (owner: "I pay 7$ for the render … do
-  option 3 and move the relay for the app as well"; $5 Cloudflare Workers
-  plan OK; order: relay first, then the agreement search).** Step 1 done in
-  code: the Worker serves `POST /api/board` + `GET /api/board/latest`
-  (Bearer BOARD_KEY secret, R2 relay/board-latest.json, same checks as
-  relay.js; r2.js keeps relay/). Owner's steps: CLOUDFLARE.md "RailroadTracker
-  relay on the Worker". The app (repo odeajust-glitch/RailroadTracker, branch
-  board-relay) has the server address as a setting (Board tab → Automatic
-  board check), so no app code change; branch board-shifts reads the board
-  site directly and has no relay. **The laptop has no BOARD_KEY /
-  BOARD_RELAY_URL** (checked 2026-11-03): the relay was never in use; the app
-  reads the board site. Nothing to move for the app; the Worker relay stays
-  off (404) unless a BOARD_KEY secret is added.
-  **Step 2 built (search on the Worker):** lib/search-shards.js cuts the
-  BM25 index into R2 search/ (meta 2.5 MB, 512 term buckets, chunk texts by
-  200; same tokenizer/BM25 as lib/search.js, test/search-shards.test.js +
-  12/12 identical on the full corpus); scripts/search-upload.js (laptop,
-  R2 keys from .env, r2.js syncPrefixes) uploads it + docs/<id>.pdf; the
-  Worker serves /api/ask (NDJSON, Kimi streaming, escalation, 10 per 5 min
-  per address in ask/rl/, daily counts in ask/stats/), /api/sources,
-  /api/status, /api/stats?key= (STATS_KEY or OWNER_KEY). The site build
-  adds agreements.html (public/index.html), viewer.html, stats.html,
-  grievance.html (href="/" → /#agreements), pdfjs/, vendor/jszip/. Then (owner:
-  "make it … an integrated part of the site") the search is the board page's
-  **Agreements tab** (public/board-ask.js, mode 'ask', #agreements, board's
-  look, dark mode); agreements.html only forwards to /#agreements. Tried in Chromium against the Worker code with a
-  stand-in Kimi. ❓ Owner's steps: CLOUDFLARE.md "Agreement search on the
-  Worker" (Workers Paid, KIMI_API_KEY secret from Render, re-paste, laptop
-  upload). **Live and verified 2026-11-03**: /api/status ready 31,698
-  passages, PDFs served, a real question answered by Kimi with citations.
-  Owner **suspended Render** 2026-11-03. Reminder 2026-11-23: delete the
-  Render service and any Render Blueprint.
-
-- 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
-  A pool turn, and it goes spare it should show the actual turn going out
-  still, same with B pool. the rule doesnt apply to chain gang, sd, or 502";
-  "an MU turn is not a chain gang turn, its a placeholder turn"): engine
-  skips the called-crew shortcut when the called turn is MU on an A/B train;
-  the A/B queue's turn is shown, spare. Runaround log: MU on a train whose
-  turn went spare isn't a 'turn' runaround. Old out-of-sequence entries
-  (A42431 25, Z14891 24, M39491 24) keep the predictions saved then.
-
-- 2026-11-03: **Runaround log fixes** (owner: "I want to fix a few things"):
-  passed-over turn "** goes spare" with no return or a return after the call
-  → explained (insights.js why). DHT040B 31 (B111 slow 001 passed, B133
-  went): owner says not a runaround (not enough time for a road trip, enough
-  for a yard shift); tabled for the **rest tracker** (TODO #8). The log now
-  shows a spare at the board they were expected from (look(turn, board)).
-  Whole crew from another pool than the order (M30241 19: A pool → Chain
-  Gang, order moved before 0459) → explained.
-
-- 2026-11-03: **My week for a person: only while on the turn** (owner: JUOD
-  shown S501's L50231 02 / L50131 02 calls twice and runaround L50231 01
-  from before he was on S501). board-week.js weekSummary `spans` (people
-  stretches): a turn counts only at times they were on it, 501/502 only
-  their craft, one call per train; personRec uses the on-duty-while-on-it
-  rule and craft rests. ❓ "M39671 30 called 901 min later": the sleep
-  tracker took a one-check flicker (DHT040B 31 at 30th 2327, call 31st 0700)
-  as the call slept on; asked the owner whether to require it to hold.
-
-- 2026-11-03: **501/502 "**" beside a hold turn** (owner's option 29 shots:
-  CO S501 O'DEA ST ** RN HT RETN 0559 03): the L502 check now lets HT decide
-  (spare only if the hold runs past the call), like the other pools; the
-  page shows "hold turn until … (**)". Option 29 with the CC box blank lists
-  EN and CO together (owner's screenshot), so it stays one read (typing CO
-  then EN works too, not needed).
-
-- 2026-11-03: **Garnet line-up (41, 47956 W S5, 24 h)** after Mac yard's
-  (board-auto, label garnetLineup; summary classifies [47956] too; snapshot
-  garnetLineup [{train, status, order}]; Current: a line under the 501/502
-  pool tab; engine: the L502 reason names the L501 out of Garnet for the crew
-  coming home). Owner: 501/502 conductor + engineer never split (crew
-  alternation stays); option 29 CC box takes CO / EN (not needed: 29 already
-  lists both crafts). ❓ Pool S5 / direction W for Garnet not confirmed by
-  the owner: check the first run's log for "skipped Garnet line-up 41".
-  Trip time / rest estimate: owner "won't matter, but if you need to assume
-  a time 8 is a safe number" (8 h): not built; spare or not still waits
-  until they're off duty.
-
-- 2026-11-03: **JUOD bumped back onto S501 CO** (owner: "I am not on duty at
-  garnet … I wasn't working 501"): (1) the name code's Work history counts a
-  train only if it went on duty while they were on that turn (personHistory
-  `theirs`: onDutySeen inside the stretch); (2) sightings now carry craft
-  (pool rows) and the Call Board train (board-auto sight), site.js writes
-  people.json `now` {taken, seen:[{h, turn, craft, train}]}; the page's
-  Person.factsFor shows a followed person only their craft on 501/502 and
-  Call Board trains only with their name on (newest check only; needs the
-  laptop on this code). Then rests split by craft: board-turns history
-  rests get craft on 501/502; people stretches keep craft (addSightings);
-  personHistory / a S501-CO turn search show only that craft's rests. ❓ At 0518 CATS showed S501 CO
-  marked ** → the site says the conductor goes spare on L50231 04: ask.
-
-- 2026-11-03: **Predicted crew, scored better** (owner, option 3): the
-  Order summary story shows the last prediction (minutes before the call,
-  nearly always right) plus "right since … (x before on duty)" and the
-  prediction **8 h before the call** (on duty − 10 h, when people sleep),
-  each ✓/✗. board-trains.js predHit: coSince/enSince, early {taken, co, en,
-  coHit, enHit} or {none, first}. Analytics → Predictions: "right 8 h before
-  the call" tiles. Only trains tracked with this code have it. Also: Order
-  summary tiles removed (owner), Snapshots hours 0000–2300. Article 18.6(b):
-  two tiles (owner): crews violated last 7 days (off duty in Toronto in the
-  7 days before the newest check, still-held counts) and % of Toronto stays
-  (heldMin known) in those 7 days.
-
-- 2026-11-03: **Snapshots: hours first** (owner: "organize the times … not
-  making the page massive"): #hours (the day's hours with checks), then only
-  that hour's checks (renderRail / railHour; show() switches the hour; an
-  hour opens its first check). Phone: times only, wrapping, no date.
-
-- 2026-11-03: **Reference tab** (owner: "general useful information", name
-  left to me): board-ref.js (copied by site.js, in relay SITE_ONLY), #ref.
-  Held-away penalty formula checked against the sheet (test/board/ref.test.js).
-  B.I.T.: newer sheet's PAD 010–120 = older sheet's Y217, Y240–Y250 (same
-  lengths; owner confirmed the PAD names are correct). C yard has no CO45. Lengths shown as posted (no units on the sheet).
-
-- 2026-11-03: **Turn History, name code (person search) cleanup** (owner's
-  picks): Home turn = latest spot the tracker has them; Status = where they
-  are now (BoardTurns.facts, or "not seen since … / someone else on SR03
-  since …", Person.takenSince); Turns seen on = own board spots only (jobs
-  worked are the Work history); Changes = short version (changeSummary:
-  no position steps / predicted-train flips) + "Show every check" button;
-  dates "28th 0120" everywhere (stampBtn); long train names wrap.
-  **Fixed: trains worked filling in on another turn** missing from the
-  person view (owner: DRDI vs B126; E27861 27 / Z14931 28 working SR07):
-  personHistory takes them from their own turn's record, and the copy not
-  "worked by" someone else wins. Then (owner): turn searches get the short
-  Changes too, and Orders / Rest / Goes spare fold into "More detail"
-  (details.moredet, closed). Held-away time + penalty miles in Work history:
-  TODO #7 (later).
-
-- 2026-11-03: **L502 alternates** (owner: "S501 should work it, it
-  alternates"; at 0420 the site gave L50231 04 to S502, which had just taken
-  L50231 03 to Garnet, "goes spare" both). engine.js s5Order: home and not
-  out on a 502 → coming home on L501 / at Garnet → out on a 502; each later
-  L502 the next crew; a crew called for this L502 keeps it. Still on duty on
-  L501 → shows plain "S501 + S501"; the why says spare or not is known once
-  they're off duty (owner). **Worker
-  timer fixed**: the new code was in the editor but not deployed; after
-  Deploy, Page Health: "ran 1 min ago; ntfy topic set; push key set". Site readable from this session now
-  (board.sarniaboard.workers.dev allowed).
-
-- 2026-11-03: **"Another assignment?" answered Y** (owner: the stuck page was
-  CATS asking "Do you wish to place on another assignment?", Y or N; "answers
-  y … Once I … bypass it … it doesn't pop up anymore"; then "if you answer Y
-  i have to call in. Can you have it record whats on the page"). signin-stuck
-  isAssignmentQuestion (/ANOTHER ASSIGNMENT…?/ + a box), answerBox (1-letter
-  box, the only box, first empty), addQuestion. Then (owner: "OR … send a
-  notification on ntfy with the wording … I could type what needed to be
-  typed in ntfy and then the board checker can fill the page") → **ask**
-  became the default (above). Tested in Chromium with a fake ntfy (reply N →
-  typed, Enter, main menu). ❓ Not seen on real CATS / the real ntfy app yet
-  (the Y / N buttons need the ntfy app; check the first saved page).
-
-- 2026-11-03: **Stuck before the CATS main menu** (owner: "stuck at a
-  notification page … trying to sign into cats"): signin-stuck.js
-  kindOf/nextStep (above). Tested in Chromium on a fake notice that only F3
-  clears. ❓ The owner will describe the real screen and how he gets past it;
-  teach that screen its own step then (add a kind/step, don't widen the
-  generic one). Ask for: a phone photo, whether it's inside the CATS box or a
-  whole web page, and exactly what he clicks/types.
-
-- 2026-11-03: **Down 1 h → only the owner's phones** (owner: "a page
-  notification like everyone gets at 3 hours, but just to me"). Worker
-  watchChecker: the owner = subs whose turns include `@` + personHash of
-  OWNER_CODE (default JUOD; hashed in the Worker with the people.js salt);
-  at OWNER_DOWN_MINUTES (60), below 3 h, pushAll(..., { only }) once
-  (down.ownerPushed/ownerPhones); "back" to them only if the 3 h push never
-  went. down.json is now made at min(DOWN_MINUTES, OWNER_DOWN_MINUTES) with
-  `alerted` = when the ntfy went (null until then). Every run writes
-  status/watch.json { at, mins, ntfy, push } → Page Health "Worker timer"
-  (owner said the 30-min ntfy never arrives: ❓ check the Cron Trigger and
-  NTFY_TOPIC there).
-
-Older notes (down 3 h push, missing from option 5, My week, the trim, 2026-11-02
-work): the archive's "Later notes" section at its top.
+- 2026-11-03 (housekeeping session; every note in the archive's "Later
+  notes"): L502 alternation + Garnet line-up; Worker timer fixed (wasn't
+  deployed); person search (home turn, status, craft, own trains only);
+  Turn History short Changes + More detail; Reference tab; Snapshots by
+  hour; Order summary / Analytics / 18.6(b) tiles trimmed; predictions
+  scored 8 h before the call; My week only while on the turn; runaround log
+  (** explained, other pool explained, MU placeholder, board shown);
+  YSBY 12 h; **agreement search moved from Render to the Worker** as the
+  Agreements tab; grievance page in the board look; Render suspended.
