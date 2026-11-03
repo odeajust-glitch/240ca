@@ -426,3 +426,17 @@ test('R2 syncPrefixes uploads changed files and removes stale ones under its pre
   assert.deepEqual(await syncPrefixes({ files, prefixes: ['search/', 'docs/'], r2, fetchImpl: bucket.fetchImpl }), { ok: true, uploaded: 1, removed: 1 });
   assert.deepEqual([...bucket.objects.keys()].sort(), ['docs/a.pdf', 'index.html', 'search/meta.json', 'search/t/1.json', 'subs/s.json']);
 });
+
+test('R2 syncPrefixes tries a dropped connection again, then says which file', async () => {
+  const { syncPrefixes } = require('../../lib/board/r2');
+  const bucket = fakeBucket({});
+  const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
+  let drops = 2;
+  const flaky = async (url, opts = {}) => { if (opts.method === 'PUT' && drops-- > 0) throw new TypeError('fetch failed', { cause: { code: 'ETIMEDOUT' } }); return bucket.fetchImpl(url, opts); };
+  const files = new Map([['search/a.json', '1'], ['search/b.json', '2']]);
+  assert.deepEqual(await syncPrefixes({ files, prefixes: ['search/'], r2, fetchImpl: flaky, wait: async () => {} }), { ok: true, uploaded: 2, removed: 0 });
+  const dead = async (url, opts = {}) => { if (opts.method === 'PUT') throw new TypeError('fetch failed', { cause: { code: 'ETIMEDOUT' } }); return bucket.fetchImpl(url, opts); };
+  const r = await syncPrefixes({ files: new Map([['search/c.json', '3']]), prefixes: ['search/'], r2, fetchImpl: dead, wait: async () => {} });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /uploading search\/c\.json: fetch failed \(ETIMEDOUT\)/);
+});
