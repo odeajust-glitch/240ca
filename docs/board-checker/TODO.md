@@ -45,16 +45,6 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 9. **Reset tracker** (owner, 2026-11-03: "add … to housekeeping"). Details
    to come from the owner: what a reset is to track (when a turn resets,
    how long, against which rule) and where to show it.
-10. **Expanded Call Board information** (owner, 2026-11-03; worked on
-   first, before the rest tracker). Owner: "for the actual check we will
-   keep reading the crews in town, and we will work how to add the
-   information collected into the site". Done 2026-11-03: the checker
-   pages through the whole CREWS IN TOWN list (pages 5–29 of 29 in his
-   screenshots) and reads each pool's crews: turn, rested / rest until /
-   hold turn / open turn (summary `crewsInTown`). **Next:** confirm what
-   "**HT 1104 0635" means, what pools pages 7–29 hold, whether the extra
-   paging time per check is ok, and how the site shows it.
-
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
    a tester was built to ask several AI keys/models the same question about
    the agreement and compare the answers, for later use; not used yet. Not
@@ -268,3 +258,10 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   duty, usually on duty, earliest–latest, never ran). Turn and name code
   searches keep theirs. My week for a name code counts a turn only while
   they were on it (and only their craft on 501/502).
+- 2026-11-03: **Crews in town read every check** (TODO #10, expanded Call
+  Board; owner: "keep reading the crews in town"). The checker pages
+  through the whole list (Call Board pages 5–29) and reads each pool's
+  crews: rested, rest until, hold turn ("**HT 1104 0635" = held until 4th
+  0635, owner), open turn. Owner's choices: read every page (the extra
+  time per check is fine); **not shown on the site**, used behind the
+  scenes (first by the rest tracker, #8).

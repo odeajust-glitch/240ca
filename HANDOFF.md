@@ -7,18 +7,16 @@ Last updated: 2026-11-03 (crews in town session) · Branch:
 
 ## ▶ Next session
 
-**In progress: TODO #10, expanded Call Board** (owner's order: #10 first,
-then **#8 rest tracker**). Pushed: the checker pages through the whole
-CREWS IN TOWN list (Call Board pages 5–29 of 29; later pages labelled
-`crewsInTown`) and summary.js reads it (screens.js parseCrewsInTown →
-`summary.crewsInTown` [{ pool, crews: [{ pos, craft, turn, status
-rested/rest/hold/open/other, until }] }], `seen.crewsInTown`). New safe
-words in capture.js BOARD_WORDS (RESTED, OPEN, TOWN, DRAG, SDM, …). **Not
-on the site yet.** Open questions to the owner: "**HT 1104 0635" (read as
-hold until 11/04 0635), what pages 7–29 hold, extra time per check, how to
-show it. The laptop needs `git pull` + restart. Tests use made-up names:
+**Next: TODO #8 rest tracker** (owner's order). #10 (expanded Call Board)
+is done: the checker pages through the whole CREWS IN TOWN list (Call Board
+pages 5–29 of 29; later pages labelled `crewsInTown`) and summary.js reads
+it (screens.js parseCrewsInTown → `summary.crewsInTown` [{ pool, crews:
+[{ pos, craft, turn, status rested/rest/hold/open/other, until }] }]).
+Owner: read every page; **not shown on the site, behind the scenes only**
+(use it in the rest tracker). "**HT 1104 0635" = hold until 11/04 0635
+(owner). The laptop needs `git pull` + restart. Tests use made-up names:
 never copy names from the owner's screenshots into the repo.
-Then #8 rest tracker (DHT040B 31 case, see TODO), #9, #11, #6 and the older
+#8 rest tracker (DHT040B 31 case, see TODO), then #9, #11, #6 and the older
 ones. Show options with a recommendation, then build. Before changing a tab,
 search the archive for why it is the way it is.
 
@@ -205,8 +203,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
-- Open TODO items: rest tracker (TODO #8), reset tracker (#9) and expanded
-  Call Board information (#10) (owner, 2026-11-03: housekeeping, details to ask),
+- ❓ Crews in town on real CATS: the first checks after the pull should
+  show `seen.crewsInTown` and pools in the history .json; pages 7–29 not
+  seen yet (other pool names may come through masked as AAAA).
+- Open TODO items: rest tracker (TODO #8), reset tracker (#9) (owner,
+  2026-11-03: housekeeping, details to ask),
   API key tester (#11: compare AI keys on the same agreement question; where
   the tester is in the owner's claude.ai chat, link in TODO #11; he pastes
   the code when it's time), DHT040B 31 runaround (waits for #8), home turn worked out better (tabled, owner 2026-11-03: he
@@ -220,7 +221,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   before #8 (rest tracker). Checker reads past CREWS IN TOWN to the last
   page (board-auto.js Call Board loop, up to 40 more pages; trouble there
   only shortens the list); reader written from his two screenshots (pages
-  5 and 6). Not shown on the site yet. Tests: run
+  5 and 6). Owner: every page, HT confirmed, behind the scenes only (not
+  on the site); feeds the rest tracker next. Tests: run
   `npm ci` first in a fresh container (jszip etc.), then 207 pass.
 - 2026-11-03 (housekeeping session; every note in the archive's "Later
   notes"): L502 alternation + Garnet line-up; Worker timer fixed (wasn't

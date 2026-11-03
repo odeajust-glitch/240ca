@@ -42,8 +42,8 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   TOWN, then `POOL: <name>  RESTED/STATUS` per pool (S1/SA C+C, S3/SB C+C,
   CO "A"POOL, CO "B"POOL, DRAG POOL, SDM POOL, …) and rows
   `01 CO SA02 <name> ** RESTED **`, `03 CO SB05 <name> 26/11/03-1815`
-  (rest until), `05 EN SD07 <name> **HT 1104 0635` (hold turn, read as
-  11/04 0635 ❓), `TT SB99 << OPEN TURN >>`, `<< NO CREWS IN TOWN >>`. A
+  (rest until), `05 EN SD07 <name> **HT 1104 0635` (hold turn until
+  11/04 0635, owner), `TT SB99 << OPEN TURN >>`, `<< NO CREWS IN TOWN >>`. A
   pool runs on to the next page without its heading. screens.js
   parseCrewsInTown → summary `crewsInTown` [{ pool, crews: [{ pos, craft,
   turn, status rested/rest/hold/open/other, until, text }] }]. On duty taken as
