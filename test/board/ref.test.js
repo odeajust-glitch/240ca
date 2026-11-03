@@ -15,7 +15,8 @@ test('held-away penalty matches the posted sheet', () => {
 
 test('reference lists: every status letter, C yard without CO45', () => {
   assert.strictEqual(R.STATUS.map((s) => s[0]).join(''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-  const c = R.YARDS[0].tracks;
+  const c = R.YARDS.find((y) => y.name === 'Mac Yard: C yard').tracks;
+  assert.strictEqual(R.YARDS[R.YARDS.length - 1].name, 'Mac Yard: C yard'); // after Malport
   assert.strictEqual(c.length, 77);
   assert.ok(!c.some((x) => x[0] === 'CO45'));
   assert.deepStrictEqual(c.find((x) => x[0] === 'CO78'), ['CO78', 900]);
