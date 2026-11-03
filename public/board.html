@@ -427,6 +427,7 @@
   .askitem.off { opacity: 0.45; }
   .askdates { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--soft); margin-bottom: 12px; }
   .askdates input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 6px; }
+  .ohead .glink { color: var(--accent); font-size: 14px; }
   /* Reference tab */
   .refsec { border-bottom: 1px solid var(--rule-soft); padding: 0 14px; }
   .refsec > summary { cursor: pointer; padding: 14px 0; font: 600 15px/1.3 var(--body); }
@@ -2013,6 +2014,7 @@ function heldView(all, openKey, lastTaken, names, namesState) {
   return `
     <div class="ohead">
       <div><div class="sec-title" style="margin-bottom:6px">14-hour rule · Article 18.6(b)</div><div class="when">Held in Toronto 14 h+</div></div>
+      <div class="ctl"><a class="glink" href="grievance.html">Grievance letter for any crew ↗</a></div>
     </div>
     <div class="strip two">
       <div class="stat ${week.length ? 'alert' : ''}"><div class="v">${week.length}</div><div class="l">Crews violated in the last 7 days</div></div>

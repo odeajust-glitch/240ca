@@ -27,8 +27,7 @@
         <div class="askbtns"><button type="button" data-pick="all">All</button><button type="button" data-pick="none">None</button><button type="button" data-pick="conductor">Conductor</button><button type="button" data-pick="engineer">Engineer</button></div>
         <div class="asklist">Loading…</div>
         <div class="askdates" hidden><span>CROA awards from</span> <input type="date" class="askfrom"> <span>to</span> <input type="date" class="askto"></div>
-      </details>
-      <p class="muted" style="margin:14px 2px"><a href="grievance.html">14-hour rule grievance generator</a></p>`;
+      </details>`;
     const $ = (s) => box.querySelector(s);
     $('#askgo').onclick = ask;
     $('#askq').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } };
