@@ -207,7 +207,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   look, dark mode); agreements.html only forwards to /#agreements. Tried in Chromium against the Worker code with a
   stand-in Kimi. ❓ Owner's steps: CLOUDFLARE.md "Agreement search on the
   Worker" (Workers Paid, KIMI_API_KEY secret from Render, re-paste, laptop
-  upload). Cancel Render only after a real question works.
+  upload). **Live and verified 2026-11-03**: /api/status ready 31,698
+  passages, PDFs served, a real question answered by Kimi with citations.
+  Reminder set for 2026-11-23 to suspend the Render service (then delete it
+  and any Render Blueprint).
 
 - 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
   A pool turn, and it goes spare it should show the actual turn going out
