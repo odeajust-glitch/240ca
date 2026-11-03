@@ -153,13 +153,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 ## Waiting on the owner / to check on real runs
 
 - **Laptop pulled to 06d7924** (everything so far). VAPID_KEYS secret is
-  added and the Worker with pushAll was deployed. ❓ **Worker re-paste for
-  256eddf** (1 h owner push + status/watch.json) not confirmed: ask whether
-  `OWNER_DOWN_MINUTES` is in the deployed Worker.
-- ❓ **The 30-min ntfy "down" never arrives** (owner): asked him to read Page
-  Health → **Worker timer** ("never ran" = no Cron Trigger `*/10 * * * *`;
-  "ntfy topic NOT set" = add Worker variable NTFY_TOPIC = laptop's
-  BOARD_NTFY_TOPIC). Not answered yet.
+  added. **Worker 256eddf deployed 2026-11-03** (it had been pasted but not
+  deployed); Worker timer runs, ntfy topic and push key set. ❓ Confirm the
+  30-min ntfy "down" arrives the next time the checker is down.
 - ❓ The first real "another assignment?" page: check Page Health → "CATS
   pages it asked you about" and that the ntfy Y / N buttons worked. The
   startup line must say "phone alerts on (ntfy)" or asking can't work (it
@@ -179,10 +175,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   L50231 03 to Garnet, "goes spare" both). engine.js s5Order: home and not
   out on a 502 → coming home on L501 / at Garnet → out on a 502; each later
   L502 the next crew; a crew called for this L502 keeps it. Still on duty on
-  L501 → "spare or not: known once they're off duty" (owner). Worker timer:
-  Cron Trigger is there and the deployed code has watch.json; owner
-  re-clicked Deploy, ❓ check Page Health again (still "never ran" → look at
-  the Worker's cron logs). Site readable from this session now
+  L501 → "spare or not: known once they're off duty" (owner). **Worker
+  timer fixed**: the new code was in the editor but not deployed; after
+  Deploy, Page Health: "ran 1 min ago; ntfy topic set; push key set". Site readable from this session now
   (board.sarniaboard.workers.dev allowed).
 
 - 2026-11-03: **"Another assignment?" answered Y** (owner: the stuck page was
