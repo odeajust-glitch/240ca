@@ -247,3 +247,22 @@ as a file; the site mirror leaves `relay/` alone).
    then restart the checker.
 4. RailroadTracker app → Board tab → Automatic board check → Server address
    `https://board.sarniaboard.workers.dev` (same key) → Save.
+
+## Agreement search on the Worker (2026-11-03, moved off Render)
+
+The search page is `agreements.html` on the board site (the **Agreements**
+link at the top), with `viewer.html`, `grievance.html` and `stats.html`.
+The Worker answers `/api/ask` from the index in R2 `search/` and the PDFs in
+`docs/`, both uploaded from the laptop by `scripts/search-upload.js`.
+
+1. Workers Paid plan ($5/month): the Worker reads a 2.5 MB index file when
+   it starts, more than the free plan's 10 ms of CPU allows.
+2. Worker secrets (Settings → Variables and Secrets → Add → Secret):
+   `KIMI_API_KEY` (copy it from Render → the service → Environment), and
+   optionally `STATS_KEY` (same as Render's; otherwise `OWNER_KEY` opens
+   stats.html).
+3. Re-paste `cloudflare/board-worker.js` and Deploy.
+4. On the laptop: `git pull`, `npm install`, `node scripts/search-upload.js`
+   (a few minutes the first time; run it again after adding a document).
+5. Check: board site → Agreements → ask a question; tap a citation's PDF.
+6. Then cancel Render. The old onrender.com link stops working.

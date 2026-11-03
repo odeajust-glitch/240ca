@@ -41,6 +41,9 @@ test('site: builds a day file per day, newest day first in the index', () => {
   assert.strictEqual(index.checked, '2026-10-15 0820'); // the unchanged 0820 check
   assert.ok(fs.existsSync(path.join(out, 'index.html')));
   assert.match(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8'), /Disallow: \//);
+  // The agreement search moved here from Render (owner, 2026-11-03).
+  for (const f of ['agreements.html', 'viewer.html', 'stats.html', 'grievance.html', 'vendor/jszip/jszip.min.js', 'pdfjs/pdf.min.mjs', 'pdfjs/pdf.worker.min.mjs']) assert.ok(fs.existsSync(path.join(out, f)), f);
+  assert.match(fs.readFileSync(path.join(out, 'grievance.html'), 'utf8'), /href="\/agreements\.html"/);
 });
 
 test('site: turn alerts ship the service worker always, the push key only when set up', () => {

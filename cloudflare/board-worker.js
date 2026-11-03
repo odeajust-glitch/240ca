@@ -36,6 +36,14 @@
 // BOARD_KEY). Only the newest check is kept (R2 relay/board-latest.json),
 // never served as a file. Without BOARD_KEY both answer 404, as on Render.
 //
+// Agreement search (owner, 2026-11-03: moved off Render): POST /api/ask
+// streams an answer (NDJSON, as server.js did) from the passages the search
+// finds in R2 search/ (built and uploaded by scripts/search-upload.js on the
+// laptop) and Moonshot's Kimi (secret KIMI_API_KEY; KIMI_MODEL_FAST /
+// KIMI_MODEL_SLOW variables, else kimi-k2.6 / kimi-k3). GET /api/sources,
+// /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
+// R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -43,6 +51,7 @@ const TYPES = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json',
   txt: 'text/plain; charset=utf-8', png: 'image/png', css: 'text/css; charset=utf-8',
   odt: 'application/vnd.oasis.opendocument.text', webmanifest: 'application/manifest+json',
+  pdf: 'application/pdf', mjs: 'text/javascript; charset=utf-8',
 };
 
 // Only real push services (Google, Apple, Mozilla, Microsoft).
@@ -317,6 +326,264 @@ async function relay(request, env, url) {
   return json({ ok: true, checkedAt: saved.checkedAt });
 }
 
+// --- Agreement search (same tokenizer and BM25 as lib/search.js) ---
+const STOPWORDS = new Set(['the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'for', 'is', 'are', 'be', 'was',
+  'were', 'will', 'shall', 'with', 'as', 'by', 'at', 'from', 'that', 'this', 'it', 'its',
+  'if', 'not', 'no', 'than', 'then', 'do', 'does', 'did', 'i', 'you', 'he', 'she',
+  'they', 'we', 'what', 'when', 'where', 'why', 'how', 'can', 'could', 'would', 'should']);
+const compoundArticleRefs = (text) => text.replace(/\b(article|art\.?|paragraph|para\.?|section|sec\.?)\s+(\d+(?:\.\d+)*)/gi, (_, word, num) => `article${num.replace(/\./g, '_')}`);
+function foldPlural(t) {
+  if (/\d/.test(t)) return t;
+  if (t.length > 4 && t.endsWith('ies')) return t.slice(0, -3) + 'y';
+  if (t.length > 3 && t.endsWith('s') && !t.endsWith('ss')) return t.slice(0, -1);
+  return t;
+}
+const tokenize = (text) => (compoundArticleRefs(text).toLowerCase().match(/[a-z0-9_.]+/g) || []).filter((t) => t.length > 1 && !STOPWORDS.has(t)).map(foldPlural);
+function bucketOf(term, buckets) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < term.length; i++) { h ^= term.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h % buckets;
+}
+// Kept while the Worker stays warm; a new meta key (an upload) starts over.
+const searchCache = { key: null, meta: null, files: new Map() };
+async function searchFile(env, key) {
+  if (searchCache.files.has(key)) return searchCache.files.get(key);
+  const o = await env.SITE.get(key);
+  const v = o ? JSON.parse(typeof o.text === 'function' ? await o.text() : o.body) : null;
+  if (searchCache.files.size > 400) searchCache.files.clear();
+  searchCache.files.set(key, v);
+  return v;
+}
+async function searchMeta(env) {
+  const o = await env.SITE.get('search/meta.json');
+  if (!o) return null;
+  const text = typeof o.text === 'function' ? await o.text() : o.body;
+  const key = (/"key":"([0-9a-f]+)"/.exec(text) || [])[1];
+  if (key && key === searchCache.key) return searchCache.meta;
+  Object.assign(searchCache, { key, meta: JSON.parse(text), files: new Map() });
+  return searchCache.meta;
+}
+const K1 = 1.5;
+const B = 0.75;
+async function searchShards(env, query, { topK = 8, sources = null, dateFrom = null, dateTo = null } = {}) {
+  const meta = await searchMeta(env);
+  if (!meta) return null;
+  const q = tokenize(query);
+  if (!q.length) return [];
+  const freq = new Map();
+  for (const t of q) freq.set(t, (freq.get(t) || 0) + 1);
+  // Own keys only: "constructor" is a word, not Object's.
+  const lists = await Promise.all([...freq.keys()].map(async (t) => { const b = (await searchFile(env, `search/t/${bucketOf(t, meta.buckets)}.json`)) || {}; return [t, Object.prototype.hasOwnProperty.call(b, t) ? b[t] : null]; }));
+  const scores = new Map();
+  for (const [t, list] of lists) {
+    if (!list) continue;
+    const qtf = freq.get(t);
+    const df = list.length / 2;
+    const idf = Math.log(1 + (meta.N - df + 0.5) / (df + 0.5));
+    for (let p = 0; p < list.length; p += 2) {
+      const d = list[p];
+      const tf = list[p + 1];
+      const denom = tf + K1 * (1 - B + B * (meta.docs[d][4] / meta.avgLength));
+      scores.set(d, (scores.get(d) || 0) + qtf * idf * ((tf * (K1 + 1)) / denom));
+    }
+  }
+  const results = [];
+  for (const [d, score] of scores) {
+    if (score <= 0) continue;
+    const [source, , date] = meta.docs[d];
+    if (sources && !sources.includes(source)) continue;
+    if (date) {
+      if (dateFrom && date < dateFrom) continue;
+      if (dateTo && date > dateTo) continue;
+    }
+    results.push({ d, score });
+  }
+  // Ties keep the index's order, as the Map-based sort on Render did.
+  results.sort((a, b) => b.score - a.score);
+  return Promise.all(results.slice(0, topK).map(async ({ d }) => {
+    const [source, page, date, url] = meta.docs[d];
+    const texts = await searchFile(env, `search/c/${Math.floor(d / meta.perFile)}.json`);
+    return { source, page, date, url, text: (texts || [])[d % meta.perFile] || '' };
+  }));
+}
+
+// Kimi (lib/kimi.js on Render): streams the answer, retries a 429 / 5xx
+// before the first token, 120 s cap per call.
+const NOT_FOUND_PATTERN = /could not find/i;
+const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
+function kimiMessages(question, chunks, names) {
+  const context = chunks.map((c, i) => `[${i + 1}] (${names[c.source] || c.source}, ${/^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page})\n${c.text}`).join('\n\n');
+  const system = 'You are a search assistant for TCRC Division 240 railroad workers. '
+    + 'Answer the question using ONLY the excerpts provided below, which come from '
+    + 'the official Conductors and Locomotive Engineers collective agreements, and the '
+    + 'Transport Canada Duty and Rest Period Rules for Railway Operating Employees, the Conductors '
+    + 'Agreement addenda, the TCRC Sarnia Crew Calling Manual, and the Engineer Mileage Committee '
+    + 'Operating Guidelines. '
+    + 'If an excerpt comes from Agreement 4.3 or Agreement 1.2, note that those govern Western Canada, '
+    + 'not Division 240, which works under Agreements 4.16 (conductors) and 1.1 (locomotive engineers). '
+    + 'Always cite the source document and page number for every claim, using the '
+    + 'bracketed excerpt numbers (e.g. "[2]"). '
+    + 'If the excerpts do not contain the answer, say plainly that you could not find '
+    + 'it in the agreement excerpts provided — do not guess, and do not use outside knowledge. '
+    + 'This is not legal advice; tell the user to confirm with their Local Chairperson for anything that affects a grievance.';
+  return [{ role: 'system', content: system }, { role: 'user', content: `Excerpts:\n\n${context}\n\nQuestion: ${question}` }];
+}
+async function streamKimi(env, { question, chunks, names, model, fast, onToken, signal, fetchImpl = fetch }) {
+  if (!env.KIMI_API_KEY) throw new Error('KIMI_API_KEY is not set on the Worker.');
+  const body = JSON.stringify({ model, messages: kimiMessages(question, chunks, names), stream: true,
+    ...(/^kimi-k/.test(model) ? {} : { temperature: 0.2 }), ...(fast && /^kimi-k/.test(model) ? { thinking: { type: 'disabled' } } : {}) });
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    const timeout = AbortSignal.timeout(120000);
+    try {
+      res = await fetchImpl(KIMI_API_URL, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${env.KIMI_API_KEY}` }, body,
+        signal: signal && AbortSignal.any ? AbortSignal.any([signal, timeout]) : timeout });
+    } catch (err) {
+      if (timeout.aborted && !(signal && signal.aborted)) throw new Error('The answer service did not respond within 120 seconds. Please try again.');
+      throw err;
+    }
+    if (res.ok) break;
+    const text = await res.text();
+    if (!(res.status === 429 || res.status >= 500) || attempt === 3) throw new Error(`Kimi API error ${res.status}: ${text}`);
+    const advised = Number(res.headers.get('retry-after')) || Number((/try again after (\d+) seconds?/i.exec(text) || [])[1]) || 0;
+    await new Promise((r) => setTimeout(r, Math.min(advised ? advised * 1000 : 1000 * 2 ** attempt, 8000) * (0.5 + Math.random() / 2)));
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let full = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith('data:')) continue;
+      const payload = t.slice(5).trim();
+      if (payload === '[DONE]') continue;
+      try {
+        const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
+        if (delta) { full += delta; await onToken(delta); }
+      } catch (err) { if (err && err.name === 'AbortError') throw err; /* a partial line */ }
+    }
+  }
+  return full;
+}
+
+const sha16 = async (text) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+const readJson = async (env, key) => { const o = await env.SITE.get(key); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
+// 10 questions per 5 minutes per address (cost protection, as on Render).
+// Two at the same moment can both get through: fine for this.
+const ASK_WINDOW_MS = 5 * 60 * 1000;
+const ASK_MAX = 10;
+async function askAllowed(env, ip, now = Date.now()) {
+  const key = `ask/rl/${await sha16(`${torontoDay(now)}:${ip}`)}.json`;
+  const window = Math.floor(now / ASK_WINDOW_MS);
+  const was = await readJson(env, key);
+  const n = was && was.window === window ? was.n : 0;
+  if (n >= ASK_MAX) return false;
+  await env.SITE.put(key, JSON.stringify({ window, n: n + 1 }));
+  return true;
+}
+// Per day: questions answered and how many different people (an opaque
+// daily hash, as on Render: no address, no question kept).
+async function askCount(env, ip, now = Date.now()) {
+  const day = torontoDay(now);
+  const key = `ask/stats/${day}.json`;
+  const d = (await readJson(env, key)) || { questions: 0, visitors: [] };
+  d.questions += 1;
+  const h = await sha16(`${env.STATS_KEY || env.OWNER_KEY || ''}:${day}:${ip}`);
+  if (!d.visitors.includes(h)) d.visitors.push(h);
+  await env.SITE.put(key, JSON.stringify(d));
+}
+async function askStats(request, env) {
+  const want = String(env.STATS_KEY || env.OWNER_KEY || '');
+  const got = new URL(request.url).searchParams.get('key') || '';
+  let diff = want.length === got.length && want.length > 0 ? 0 : 1;
+  for (let i = 0; i < Math.min(want.length, got.length); i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
+  if (diff) return json({ error: 'Not found.' }, 404);
+  const byDay = [];
+  let cursor;
+  do {
+    const page = await env.SITE.list({ prefix: 'ask/stats/', cursor });
+    for (const o of page.objects || []) {
+      const d = await readJson(env, o.key);
+      if (d) byDay.push({ date: o.key.slice(10, 20), questions: d.questions || 0, visitors: (d.visitors || []).length });
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  byDay.sort((a, b) => (a.date < b.date ? -1 : 1));
+  const today = torontoDay(Date.now());
+  const since = (n) => { const r = byDay.slice(-n); return { questions: r.reduce((s, d) => s + d.questions, 0), visits: r.reduce((s, d) => s + d.visitors, 0) }; };
+  return json({ firstSeen: byDay.length ? byDay[0].date : today, totalQuestions: byDay.reduce((s, d) => s + d.questions, 0),
+    today: byDay.length && byDay[byDay.length - 1].date === today ? byDay[byDay.length - 1] : { date: today, questions: 0, visitors: 0 },
+    last7: since(7), last30: since(30), byDay });
+}
+
+const TOP_K = 9;
+const TOP_K_DEEP = 24;
+async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
+  let body;
+  try { body = JSON.parse(await request.text()); } catch { return json({ error: 'Question is required.' }, 400); }
+  const { question, sources: wanted, dateFrom, dateTo, tier } = body || {};
+  if (!question || !String(question).trim()) return json({ error: 'Question is required.' }, 400);
+  if (String(question).length > 500) return json({ error: 'Question is too long (maximum 500 characters).' }, 400);
+  const list = await readJson(env, 'search/sources.json');
+  if (!list || !(await searchMeta(env))) return json({ error: 'Index still building, try again shortly.' }, 503);
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (!(await askAllowed(env, ip))) return new Response('Too many questions in a short time — please wait a few minutes and try again.', { status: 429 });
+  await askCount(env, ip);
+
+  const names = Object.fromEntries(list.sources.map((x) => [x.id, x.name]));
+  const all = list.sources.map((x) => x.id);
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  const abort = new AbortController();
+  const send = (obj) => writer.write(enc.encode(JSON.stringify(obj) + '\n')).catch(() => abort.abort());
+  const work = (async () => {
+    try {
+      let sources = list.defaults;
+      if (Array.isArray(wanted) && wanted.length) {
+        const valid = wanted.filter((id) => all.includes(id));
+        if (!valid.length) { await send({ type: 'chunk', text: 'No documents are selected to search. Enable at least one source.' }); await send({ type: 'done', citations: [] }); return; }
+        const conflict = (() => { for (const x of list.sources) { if (!valid.includes(x.id)) continue; const o = (x.conflictsWith || []).find((id) => valid.includes(id)); if (o) return [x.id, o]; } return null; })();
+        if (conflict) { await send({ type: 'chunk', text: `${names[conflict[0]]} can't be searched together with ${names[conflict[1]]}. Deselect one of them.` }); await send({ type: 'done', citations: [] }); return; }
+        sources = valid;
+      }
+      if (sources.length === all.length) sources = null;
+      const opts = { sources, dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null, dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null };
+      const slow = tier === 'slow';
+      const chunks = await searchShards(env, question, { topK: slow ? TOP_K_DEEP : TOP_K, ...opts });
+      if (!chunks || !chunks.length) { await send({ type: 'chunk', text: 'No matching passages were found in the selected document(s) for this question.' }); await send({ type: 'done', citations: [] }); return; }
+      const cite = (cs) => send({ type: 'citations', citations: cs.map((c) => ({ source: c.source, page: c.page, snippet: c.text.slice(0, 220), fullText: c.text,
+        url: c.url || (list.pdfs.includes(c.source) && /^\d+$/.test(String(c.page)) ? `/docs/${c.source}.pdf#page=${c.page}` : null) })) });
+      await cite(chunks);
+      const FAST = env.KIMI_MODEL_FAST || 'kimi-k2.6';
+      const SLOW = env.KIMI_MODEL_SLOW || 'kimi-k3';
+      const onToken = (text) => send({ type: 'chunk', text });
+      const first = await streamKimi(env, { question, chunks, names, model: slow ? SLOW : FAST, fast: !slow, onToken, signal: abort.signal, fetchImpl });
+      if (!slow && NOT_FOUND_PATTERN.test(first)) {
+        await send({ type: 'escalating' });
+        const deep = await searchShards(env, question, { topK: TOP_K_DEEP, ...opts });
+        await cite(deep);
+        await streamKimi(env, { question, chunks: deep, names, model: SLOW, fast: false, onToken, signal: abort.signal, fetchImpl });
+        await send({ type: 'done', escalated: true });
+      } else {
+        await send({ type: 'done', canEscalate: !slow });
+      }
+    } catch (err) {
+      if (!abort.signal.aborted) await send({ type: 'error', error: err.message });
+    } finally {
+      await writer.close().catch(() => {});
+    }
+  })();
+  if (ctx && ctx.waitUntil) ctx.waitUntil(work);
+  return new Response(readable, { headers: { 'content-type': 'application/x-ndjson', 'cache-control': 'no-cache' } });
+}
+
 const torontoDay = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
 const STATS_DAYS = 30;
 
@@ -414,8 +681,21 @@ export default {
     ctx.waitUntil(watchChecker(env));
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/ask') {
+      if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+      return ask(request, env, ctx);
+    }
+    if (url.pathname === '/api/sources') {
+      const list = await readJson(env, 'search/sources.json');
+      return list ? json({ sources: list.sources }) : json({ error: 'Not uploaded yet.' }, 503);
+    }
+    if (url.pathname === '/api/status') {
+      const meta = await searchMeta(env).catch(() => null);
+      return json({ ready: !!meta, chunkCount: meta ? meta.N : 0 });
+    }
+    if (url.pathname === '/api/stats') return askStats(request, env);
     if (url.pathname === '/stats/hit') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return statsHit(request, env);
@@ -438,7 +718,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/') || key.startsWith('search/') || key.startsWith('ask/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });

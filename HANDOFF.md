@@ -191,8 +191,20 @@ node scripts/board-watchdog.js --me SR03 --every 5
   BOARD_RELAY_URL** (checked 2026-11-03): the relay was never in use; the app
   reads the board site. Nothing to move for the app; the Worker relay stays
   off (404) unless a BOARD_KEY secret is added.
-  Step 2 (search: D1 full-text + R2 PDFs + Kimi from the Worker) next.
-  Don't cancel Render until both are verified.
+  **Step 2 built (search on the Worker):** lib/search-shards.js cuts the
+  BM25 index into R2 search/ (meta 2.5 MB, 512 term buckets, chunk texts by
+  200; same tokenizer/BM25 as lib/search.js, test/search-shards.test.js +
+  12/12 identical on the full corpus); scripts/search-upload.js (laptop,
+  R2 keys from .env, r2.js syncPrefixes) uploads it + docs/<id>.pdf; the
+  Worker serves /api/ask (NDJSON, Kimi streaming, escalation, 10 per 5 min
+  per address in ask/rl/, daily counts in ask/stats/), /api/sources,
+  /api/status, /api/stats?key= (STATS_KEY or OWNER_KEY). The site build
+  adds agreements.html (public/index.html), viewer.html, stats.html,
+  grievance.html (href="/" → agreements.html), pdfjs/, vendor/jszip/; board.html
+  has an "Agreements" link. Tried in Chromium against the Worker code with a
+  stand-in Kimi. ❓ Owner's steps: CLOUDFLARE.md "Agreement search on the
+  Worker" (Workers Paid, KIMI_API_KEY secret from Render, re-paste, laptop
+  upload). Cancel Render only after a real question works.
 
 - 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
   A pool turn, and it goes spare it should show the actual turn going out

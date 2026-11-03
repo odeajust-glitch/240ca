@@ -416,3 +416,13 @@ test('the Worker relays the latest board check to the app, with the key', async 
   // Never served as a file.
   assert.equal((await worker.fetch(new Request('https://board.x.workers.dev/relay/board-latest.json'), env)).status, 404);
 });
+
+// Owner, 2026-11-03: the agreement search's files go up under search/ and docs/.
+test('R2 syncPrefixes uploads changed files and removes stale ones under its prefixes only', async () => {
+  const { syncPrefixes } = require('../../lib/board/r2');
+  const bucket = fakeBucket({ 'search/t/1.json': '{}', 'search/old.json': 'x', 'docs/a.pdf': 'pdf', 'index.html': 'site', 'subs/s.json': '{}' });
+  const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
+  const files = new Map([['search/t/1.json', '{}'], ['search/meta.json', '{"N":1}'], ['docs/a.pdf', Buffer.from('pdf')]]);
+  assert.deepEqual(await syncPrefixes({ files, prefixes: ['search/', 'docs/'], r2, fetchImpl: bucket.fetchImpl }), { ok: true, uploaded: 1, removed: 1 });
+  assert.deepEqual([...bucket.objects.keys()].sort(), ['docs/a.pdf', 'index.html', 'search/meta.json', 'search/t/1.json', 'subs/s.json']);
+});
