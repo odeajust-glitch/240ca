@@ -383,6 +383,13 @@
   .work .det ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13.5px; }
   .work table { table-layout: fixed; }
   .work td, .work th { overflow-wrap: anywhere; }
+  .work td .num { white-space: normal; }
+  .chg-toggle { margin-top: 8px; background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 6px 10px; color: var(--accent); font: 500 13px/1.2 var(--body); cursor: pointer; } /* long train names wrap, not run into Worked with */
+  .pstat { padding: 10px 14px 12px; border-bottom: 1px solid var(--rule-soft); display: grid; gap: 10px; }
+  .pstat h3 { margin: 0 0 4px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .pstat p { margin: 0; }
+  .pstat ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  .pstat li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; font-size: 13.5px; }
   .work th:nth-child(1) { width: 30%; } .work th:nth-child(2) { width: 34%; }
   .work .det li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; }
   .work .det li span { min-width: 0; overflow-wrap: anywhere; }
@@ -973,7 +980,8 @@ function turnPanel(s) {
     <div class="tp tp3" id="turnmore"></div></section>`;
 }
 // A time that opens that snapshot.
-const stampBtn = (taken) => { const w = when(taken); return `<button type="button" data-taken="${esc(taken)}">${esc(w.day.replace(/^\w+, /, ''))} ${esc(w.time)}</button>`; };
+// One date style (owner, 2026-11-03): "28th 0120", like the rest of the site.
+const stampBtn = (taken) => `<button type="button" data-taken="${esc(taken)}">${esc(dt(taken))}</button>`;
 // A person's history (hidden search): each turn's history, only while they
 // were on it, put together and marked with the turn.
 function personHistory(stretches, all) {
@@ -1072,13 +1080,36 @@ function wireWork(box, rec, turn) {
 
 // The turn's history (BoardTurns.finish): changes, then orders, rest and
 // spare, newest first. `current` marks the change in force at this snapshot.
-function turnHistory(rec, current) {
+// Short version of the changes (owner, 2026-11-03, person search): only
+// real changes (rest, hold, available, called, on duty, Toronto, spare…),
+// not every step up the board or a predicted train flipping between checks.
+// Each kept line without its position number and predictions.
+const changeCore = (text) => text.split(' · ').filter((p) => !/^(Projected for|Predicted home on)\b/.test(p))
+  .map((p) => p.replace(/,? position \d{3}\b/g, '').replace(/; predicted home on .*$/, '').replace(/\(PLN [^)]*\)|\(ORD [^)]*\)/g, '')).join(' · ').replace(/\s+/g, ' ').trim();
+function changeSummary(changes) {
+  const out = [];
+  for (const e of changes) {
+    const core = changeCore(e.text);
+    if (out.length && out[out.length - 1].core === core) continue;
+    out.push({ ...e, core });
+  }
+  return out;
+}
+function turnHistory(rec, current, { summary = false } = {}) {
   const none = (what) => `<p class="empty" style="padding:0">${what}</p>`;
   if (!rec || !rec.changes.length) return { changes: none('No history for this turn in the saved checks.'), more: '' };
-  let nowIdx = -1;
-  rec.changes.forEach((e, i) => { if (e.taken <= current) nowIdx = i; });
-  const changes = `<ul>${rec.changes.map((e, i) => [e, i]).reverse().map(([e, i]) =>
-    `<li class="${i === nowIdx ? 'now' : ''}">${stampBtn(e.taken)}<span>${markTurn(e.text)}</span></li>`).join('')}</ul>`;
+  const list = (items, text) => {
+    let nowIdx = -1;
+    items.forEach((e, i) => { if (e.taken <= current) nowIdx = i; });
+    return `<ul>${items.map((e, i) => [e, i]).reverse().map(([e, i]) =>
+      `<li class="${i === nowIdx ? 'now' : ''}">${stampBtn(e.taken)}<span>${markTurn(text(e))}</span></li>`).join('')}</ul>`;
+  };
+  const full = list(rec.changes, (e) => e.text);
+  const short = summary && changeSummary(rec.changes);
+  const changes = short && short.length < rec.changes.length
+    ? `<div class="chg-short">${list(short, (e) => e.core)}</div><div class="chg-full" hidden>${full}</div>
+      <button type="button" class="chg-toggle" onclick="const h=this.parentNode;const f=h.querySelector('.chg-full');f.hidden=!f.hidden;h.querySelector('.chg-short').hidden=!f.hidden;this.textContent=f.hidden?'Show every check (${rec.changes.length})':'Show the short version';">Show every check (${rec.changes.length})</button>`
+    : full;
   const orders = rec.orders.length ? `<ul>${[...rec.orders].reverse().map((o) => `<li>${stampBtn(o.first)}<span><b class="num">${esc(o.train)}</b>${
     o.projected ? `<br>Projected: ${markTurn(o.projected)}` : ''}${o.called ? `<br>Called: ${esc(o.called)}` : ''}${
     o.onDuty ? `<br><b>On duty</b> ${esc(o.onDuty)}` : ''}</span></li>`).join('')}</ul>` : none('No trains for this turn in the saved checks.');
@@ -1717,6 +1748,13 @@ const Person = (() => {
     if (took) return 'taken';
     return newest && stampMin(newest) - stampMin(e.to) > GONE_MIN ? 'unseen' : '';
   }
+  // When someone else was first seen on that turn after them ('' = nobody).
+  function takenSince(e, h) {
+    const key = String(h || '').replace(/^@/, '');
+    let first = '';
+    for (const [k, l] of Object.entries(all)) if (k !== key) for (const x of l) if (x.own && x.turn === e.turn && x.to > e.to && (!first || x.from < first)) first = x.from < e.to ? e.to : x.from;
+    return first;
+  }
   async function hash(code) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SALT + code.toUpperCase()));
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -1730,6 +1768,7 @@ const Person = (() => {
     },
     hash,
     away,
+    takenSince,
     // The site published newer checks: read people.json again next time.
     reset() { data = null; },
     // A followed person ('@' + hash) → the turns they were seen on, or null.
@@ -2548,32 +2587,49 @@ source().then(async (src) => {
     const cands = Person.candidates(list);
     const cur = Person.current(list, Person.pickOf(hash));
     const live = cur && cur.to >= s.taken;
-    const span = (e) => `${esc(when(e.from).time)} ${esc(dt(e.from).split(' ')[0])}${e.to !== e.from ? ` – ${esc(when(e.to).time)} ${esc(dt(e.to).split(' ')[0])}` : ''}`;
-    const turns = [...list].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b> · ${e.own ? 'their turn' : 'working this job'} · ${span(e)}</span></li>`).join('');
-    // Their home turn over time (owner, 2026-10-25): their own turns only,
-    // one line per change, e.g. B119 (conductor spareboard) → SR03.
+    const span = (e) => `${esc(dt(e.from))}${e.to !== e.from ? ` – ${esc(dt(e.to))}` : ''}`;
+    // Turns seen on (owner, 2026-11-03): only their own spots on a board
+    // (spareboard, Chain Gang, pools…), one line per change; the jobs they
+    // worked are the Work history. B119 → SR03 reads oldest to newest.
     const homes = [];
     for (const e of [...list].filter((x) => x.own).sort((a, b) => (a.from < b.from ? -1 : 1))) {
       const last = homes[homes.length - 1];
       if (last && last.turn === e.turn) { if (e.to > last.to) last.to = e.to; } else homes.push({ ...e });
     }
-    // "now" on the turn they're on now (the latest of it), not on whichever started last.
-    const nowHome = live ? homes.filter((e) => e.turn === cur.turn).sort((a, b) => (a.to < b.to ? 1 : -1))[0] : null;
-    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${e === nowHome ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
-      : '<p class="empty" style="padding:0">Not seen on a turn of their own yet.</p>';
+    // Home turn (owner, 2026-11-03): the latest spot the tracker has them,
+    // the one picked on this phone when the code matches more than one.
+    const pickNow = cur && cur.own ? homes.filter((e) => e.turn === cur.turn).sort((a, b) => (a.to < b.to ? 1 : -1))[0] : null;
+    const home = pickNow || [...homes].sort((a, b) => (a.to < b.to ? 1 : -1))[0] || null;
+    const homeLive = !!home && home.to >= s.taken;
+    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${e === home && homeLive ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
+      : '<p class="empty" style="padding:0">Not seen on a board under a turn of their own yet.</p>';
+    // Status (owner, 2026-11-03): where they are now: rest, hold, position,
+    // out working, Toronto… from the newest check; or why they aren't seen.
+    let status;
+    const factList = (turn) => { const f = BoardTurns.facts(s, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
+    if (live) {
+      const lead = cur.own ? `On <b class="num">${esc(cur.turn)}</b>.` : `Filling in on <b class="num">${esc(cur.turn)}</b>${home ? ` (home turn ${esc(home.turn)})` : ''}.`;
+      status = `<p>${lead}</p>${factList(cur.turn) || '<p class="muted">Nothing else on the board about it in the newest check.</p>'}`;
+    } else if (home) {
+      const gone = Person.away(home, hash);
+      const since = gone === 'taken' ? Person.takenSince(home, hash) : '';
+      status = `<p>Not seen on the board since <b>${esc(dt(cur.to))}</b>${cur.turn !== home.turn ? ` (${esc(cur.turn)})` : ''}.${since ? ` Someone else has been on ${esc(home.turn)} since ${esc(dt(since))}.` : ''}</p><p class="muted">Booked off, on a job the board doesn't show, or their name wasn't read.</p>`;
+    } else {
+      status = `<p>Last seen filling in on <b class="num">${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.</p>`;
+    }
     const rec = personHistory(list, all);
-    const h = turnHistory(rec, s.taken);
+    const h = turnHistory(rec, s.taken, { summary: true });
     const prev = focus;
     focus = live ? cur.turn : '';
     setMarks();
-    const here = live ? BoardTurns.facts(s, cur.turn) : [];
     box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
+      ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
+      <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(home.turn)}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
+        <div><h3>Status</h3>${status}</div></div>
       <div id="whengo" class="whengo" hidden></div>
-      <div class="alertnote">${live ? `Now on <b>${esc(cur.turn)}</b>.` : `Last seen on <b>${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.`}${cands.length > 1
-        ? `<div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div>` : ''}</div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
-      <div class="tp"><div><h3>Home turn</h3>${homeList}<h3 style="margin-top:12px">Turns seen on</h3><ul>${turns}</ul>${here.length ? `<h3 style="margin-top:12px">Now</h3><ul>${here.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''}</div>
-      <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div class="hist">${h.changes}</div></div></div>
+      <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
+      <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
       <div class="tp tp3">${h.more}</div></section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
