@@ -12,7 +12,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 3. **Calendar export (#3)** (not picked on 2026-10-22, still on the list).
 4. **Article 18.6(b) rep alert (#4)** (not picked on 2026-10-22, still on
    the list).
-5. **Weekly summary (#9)** (not picked on 2026-10-22, still on the list).
+5. **My week for everyone:** the Sunday alert goes only to phones following
+   JUOD for now; open it up if the owner likes it.
 6. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
@@ -157,3 +158,7 @@ per week per person (A7).
   full old one kept as docs/board-checker/HANDOFF-ARCHIVE.md); Netlify
   publishing removed (the site is Cloudflare only); the Render relay kept
   (owner uses the RailroadTracker app).
+- 2026-11-03: **My week**: Analytics → My week (each turn or name code
+  followed on the phone, Sunday to Saturday: trips, time on duty, holds,
+  rests, calls vs the one slept on, runarounds, stale trains, CATS errors),
+  and a Sunday 9 AM alert with last week's summary, JUOD only for now.

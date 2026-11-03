@@ -624,6 +624,57 @@ async function publishSite(changed) {
   }
 }
 
+// "My week" on Sunday (owner, 2026-11-03: "a Sunday alert … only works for
+// JUOD first. If it's nice we can push it out"): the first check after 09:00
+// on a Sunday sends last week's summary (public/board-week.js) to the phones
+// following that person (BOARD_WEEKLY_CODES, default JUOD; comma-separated
+// name codes), once per week. From the site just built (BoardChecker\site).
+const WEEKLY_FILE = path.join(OUT_DIR, 'weekly.json');
+const BoardWeek = require('../public/board-week');
+async function sendWeekly() {
+  const settings = siteSettings();
+  if (!settings.r2) return;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', weekday: 'short' })
+    .formatToParts(new Date()).map((x) => [x.type, x.value]));
+  if (p.weekday !== 'Sun' || +p.hour < 9) return;
+  const today = `${p.year}-${p.month}-${p.day}`;
+  const week = BoardWeek.weekBefore(today);
+  let state = {};
+  try { state = JSON.parse(fs.readFileSync(WEEKLY_FILE, 'utf8')); } catch { /* first one */ }
+  if (state.week === week.from) return;
+  const read = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, 'site', 'data', f), 'utf8')); } catch { return {}; } };
+  const people = read('people.json').people || {};
+  const turnsAll = read('turns.json').turns || {};
+  const trains = read('trains.json').trains || [];
+  const found = read('analytics.json');
+  const codes = String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',').map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{4}$/.test(c));
+  try {
+    const subs = await listSubscriptions(settings.r2);
+    const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
+    const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
+    const log = new Map();
+    let failed = 0;
+    for (const code of codes) {
+      const h = People.personHash(code);
+      const phones = subs.filter((x) => (x.turns || []).includes(`@${h}`));
+      if (!phones.length) continue;
+      const text = BoardWeek.weekText(BoardWeek.personWeek(h, { people, turns: turnsAll, trains, analytics: found }, week));
+      const l = { turn: code, kind: 'weekly', phones: 0, failed: 0 };
+      for (const ph of phones) {
+        const r = await sendPush(ph, { title: 'My week', body: text, tag: 'week', url: './#week' }, { keys, sub });
+        if (r.ok) l.phones++; else { l.failed++; failed++; }
+      }
+      log.set(text, l);
+      console.log(`[${stamp()}] My week sent for ${code} (${l.phones} phone${l.phones === 1 ? '' : 's'}): ${text}`);
+    }
+    writeAlertsLog(log);
+    // Every phone failed: try again next check (still Sunday).
+    if (!failed || [...log.values()].some((l) => l.phones)) fs.writeFileSync(WEEKLY_FILE, JSON.stringify({ week: week.from, at: Date.now() }));
+  } catch (err) {
+    console.log(`  (My week not sent: ${err.message}; trying again next check)`);
+  }
+}
+
 // The laptop's memory, backed up to the R2 bucket once a day after 03:00
 // (lib/board/backup.js; owner, 2026-11-02). Cloudflare only.
 const BACKUP_FILE = path.join(OUT_DIR, 'backup.json');
@@ -1165,6 +1216,7 @@ async function main() {
       await publishSite(first || changed || torontoChanged);
       await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
       await backupLaptop();
+      await sendWeekly();
       retried = false;
       // The Microsoft sign-in runs out in 12 h, then 2 h: remind the phone
       // (owner, 2026-11-02; no automatic fresh sign-in any more).

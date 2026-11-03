@@ -121,11 +121,24 @@ node scripts/board-watchdog.js --me SR03 --every 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
 - Open TODO items: runaround log alerts / claims, Turn History step 2,
-  calendar export, 18.6(b) rep alert, weekly summary ("My week"),
+  calendar export, 18.6(b) rep alert, My week for everyone (JUOD only now),
   "missing from option 5" jobs, phone alert to everyone when down 3 h+
   (needs Worker web push + a VAPID key secret).
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **My week** (owner: page + Sunday alert, "only works for JUOD
+  first. If it's nice we can push it out"). public/board-week.js (shared by
+  page and laptop): weekOf / weekBefore (Sun–Sat), personRec (moved from the
+  page's personHistory logic), weekSummary (trips, yard, time on duty to
+  Toronto, held 14 h+, rests, calls vs the one slept on, runarounds, stale,
+  CATS errors, out of sequence), personWeek, weekText. Page: Analytics → My
+  week (first tab; every turn/person followed on this phone; Last week / This
+  week / Week before), opened by `#week`. Laptop: board-auto sendWeekly, the
+  first check after 09:00 Sunday (Toronto), last week's text to phones
+  following '@hash' of BOARD_WEEKLY_CODES (default JUOD), once a week
+  (BoardChecker\weekly.json), logged as kind 'weekly'. To open it up: more
+  codes in BOARD_WEEKLY_CODES, or (later) a per-phone option.
 
 - 2026-11-03: HANDOFF trimmed (old content → HANDOFF-ARCHIVE.md); Netlify
   publishing removed (site.js deploySite, settings, tests, .env.example);

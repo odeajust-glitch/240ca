@@ -578,6 +578,7 @@
 <script src="board-turns.js"></script>
 <script src="board-trains.js"></script>
 <script src="board-analytics.js"></script>
+<script src="board-week.js"></script>
 <script src="jszip.min.js"></script>
 <script src="grievance.js"></script>
 <script src="board-names.js"></script>
@@ -1289,12 +1290,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
+const ANA_SECS = [['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
+  const body = { week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
 function anaTrains({ runs }) {
@@ -1396,6 +1397,35 @@ function anaCats({ catsErrors = [] }) {
     <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
     <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
     <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>`;
+}
+// My week (owner, 2026-11-03): each turn or person followed on this phone,
+// one week at a time (public/board-week.js, the same summary the Sunday
+// alert sends).
+let weekPick = 'last';
+function anaMyWeek({ weeks = [] }) {
+  const picks = [['last', 'Last week'], ['this', 'This week'], ['before', 'Week before']];
+  const tabs = `<div class="tabs" role="tablist">${picks.map(([k, l]) => `<button type="button" role="tab" data-weekpick="${k}" aria-selected="${weekPick === k}">${l}</button>`).join('')}</div>`;
+  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (Find a turn, on Current) and its week shows here.</p>`;
+  const hm = (m) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m`;
+  const one = ({ name, sum: x }) => {
+    const trips = x.runs.length ? `<div class="scroll"><table class="orders"><thead><tr><th>On duty</th><th>Train</th><th>Crew</th><th>To Toronto</th><th>Held</th></tr></thead><tbody>${x.runs.map((r) => `<tr class="nolink">
+      <td class="num">${esc(dt(r.at))}</td><td class="num"><b>${esc(r.id)}</b>${r.yard ? ' <span class="chip">yard</span>' : ''}${r.as ? `<div class="crew">${esc(r.as)}</div>` : ''}</td><td class="num">${esc(r.crew || '')}</td>
+      <td class="num">${r.timeOnDuty != null ? hm(r.timeOnDuty) : '—'}</td><td class="num">${r.heldMin != null ? `<span class="${r.heldMin >= 840 ? 'bad' : ''}">${hm(r.heldMin)}</span>` : '—'}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="empty" style="margin:10px 14px">No trains or yard jobs worked that week.</p>';
+    const list = (title, rows) => (rows.length ? `<h3 style="margin:12px 14px 4px">${title}</h3><ul class="moves" style="margin:0 14px 10px">${rows.join('')}</ul>` : '');
+    const extra = [
+      list('Rests and holds', x.rests.map((r) => `<li>${esc(dt(r.seen))}: ${esc(r.kind || 'rest')} until ${esc(r.until || '')}</li>`)),
+      list('Calls vs the one you slept on', x.calls.list.map((z) => `<li>${esc(dt(z.onDuty))} · ${esc(z.train)}: called ${Math.abs(z.off)} min ${z.off >= 0 ? 'later' : 'earlier'} <span class="${BoardAnalytics.sleepBand(z.off)}">●</span></li>`)),
+      list('Possible runarounds', x.runarounds.map((r) => `<li>${esc(r.train)}: ${esc(r.went)} went (${esc(r.result)}) · ${stampBtn(r.seen)}</li>`)),
+      list('Lined up for a stale train', x.stale.map((r) => `<li>${esc(r.train)}: ${esc(String(r.minutes || 0))} min past its call, not ordered</li>`)),
+      list('CATS option 5 would have called you', x.cats.map((r) => `<li>${esc(r.train)}: CATS listed ${esc(r.cats)}, the order had ${esc(r.order)}</li>`)),
+    ].join('');
+    return `<section class="sheet"><header><h2>${esc(name)}</h2><span class="meta">${esc(x.label)}</span></header>
+      <p class="anote" style="margin:10px 14px">${esc(BoardWeek.weekText(x))}</p>
+      <div class="strip">${anaTile(x.trips, 'Trips')}${anaTile(x.yard, 'Yard jobs')}${anaTile(x.onDutyMin ? hm(x.onDutyMin) : '—', 'On duty to Toronto')}${anaTile(x.held14, 'Held 14 h+', x.held14 > 0)}</div>
+      ${trips}${extra}</section>`;
+  };
+  return `<p class="anote">The turns and people followed on this phone, Sunday to Saturday. The Sunday alert sends the same summary for last week.</p><section class="sheet secpick">${tabs}</section>${weeks.map(one).join('')}`;
 }
 // The runaround log (owner, 2026-11-02, all boards; no alerts until it's
 // been checked against real runs): when a train went, each craft's crew
@@ -2825,7 +2855,27 @@ source().then(async (src) => {
         turnRows = turns.map((t) => turnRow(t, inRange(workRuns(workOf(t), byId, t), range), { spares: countIn(t, 'spares'), rests: countIn(t, 'rests'), tookOutOfTurn: took(t) }));
       }
       anaCsv = { name: 'all-trains', runs };
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale, runLog });
+      // My week: every turn or person followed on this phone.
+      let weeks = [];
+      if (ana.sec === 'week') {
+        const today = new Date(torontoNowMin() * 60000).toISOString().slice(0, 10);
+        const week = weekPick === 'this' ? BoardWeek.weekOf(today) : weekPick === 'before' ? BoardWeek.weekBefore(BoardWeek.weekBefore(today).from) : BoardWeek.weekBefore(today);
+        let followed = [];
+        let codes = {};
+        try { followed = JSON.parse(localStorage.getItem('trackTurns')) || []; codes = JSON.parse(localStorage.getItem('personCodes')) || {}; } catch (e) { /* nothing kept */ }
+        const lists = { trains: all, sleep, runLog, stale, catsErrors, runarounds };
+        for (const t of followed) {
+          if (/^@[0-9a-f]{16}$/.test(t)) {
+            const st = ((await Person.byHash(t)) || []).filter((e) => e.to.slice(0, 10) >= week.from && e.from.slice(0, 10) <= week.to);
+            weeks.push({ name: `👤 ${codes[t] || 'person'}`, sum: BoardWeek.weekSummary({ ...lists, rec: BoardWeek.personRec(st, turnsAll), turns: [...new Set(st.map((e) => e.turn))], week }) });
+          } else {
+            const base = BoardTurns.splitCraft(t).base;
+            weeks.push({ name: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });
+          }
+        }
+        if (mode !== 'analytics') return;
+      }
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale, runLog, weeks });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
@@ -2900,6 +2950,7 @@ source().then(async (src) => {
     }
     view.querySelectorAll('button[data-sec]').forEach((b) => { b.onclick = () => { ana.sec = b.dataset.sec; renderAnalytics(); }; });
     view.querySelectorAll('button[data-rashow]').forEach((b) => { b.onclick = () => { raShow = b.dataset.rashow; renderAnalytics(); }; });
+    view.querySelectorAll('button[data-weekpick]').forEach((b) => { b.onclick = () => { weekPick = b.dataset.weekpick; renderAnalytics(); }; });
     const pool = document.getElementById('apool');
     if (pool) pool.onchange = () => { ana.pool = pool.value; renderAnalytics(); };
     view.querySelectorAll('button[data-q]').forEach((b) => { b.onclick = () => { ana.q = b.dataset.q; ana.kind = b.dataset.kind; renderAnalytics(); window.scrollTo(0, 0); }; });
@@ -2931,7 +2982,8 @@ source().then(async (src) => {
   if (shared && shared[1] === 'train') order.find = decodeURIComponent(shared[2]).replace(/-/g, ' ');
   const wantOrders = location.hash === '#orders' || (shared && shared[1] === 'train');
   const wantHeld = location.hash === '#14h';
-  const wantAna = location.hash === '#analytics';
+  const wantAna = location.hash === '#analytics' || location.hash === '#week';
+  if (location.hash === '#week') ana.sec = 'week'; // the Sunday alert opens My week
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
