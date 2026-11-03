@@ -48,6 +48,14 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 10. **Expanded Call Board information** (owner, 2026-11-03). Details to come
    from the owner: what more of the Call Board (option 6) to read or show.
 
+11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
+   a tester was built to ask several AI keys/models the same question about
+   the agreement and compare the answers, for later use; not used yet. Not
+   found in this repository (any branch) on 2026-11-03: ask the owner where
+   it lives. The agreement search now runs on the Worker with Kimi
+   (KIMI_API_KEY); the comparison would tell whether another model answers
+   better or cheaper.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 

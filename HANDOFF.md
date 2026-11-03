@@ -172,7 +172,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
 - Open TODO items: rest tracker (TODO #8), reset tracker (#9) and expanded
-  Call Board information (#10) (owner, 2026-11-03: housekeeping, details to ask), home turn worked out better (tabled, owner 2026-11-03: he
+  Call Board information (#10) (owner, 2026-11-03: housekeeping, details to ask),
+  API key tester (#11: compare AI keys on the same agreement question; where
+  the tester lives is unknown), home turn worked out better (tabled, owner 2026-11-03: he
   was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
@@ -209,8 +211,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Worker" (Workers Paid, KIMI_API_KEY secret from Render, re-paste, laptop
   upload). **Live and verified 2026-11-03**: /api/status ready 31,698
   passages, PDFs served, a real question answered by Kimi with citations.
-  Reminder set for 2026-11-23 to suspend the Render service (then delete it
-  and any Render Blueprint).
+  Owner **suspended Render** 2026-11-03. Reminder 2026-11-23: delete the
+  Render service and any Render Blueprint.
 
 - 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
   A pool turn, and it goes spare it should show the actual turn going out
