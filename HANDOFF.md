@@ -181,7 +181,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   alternation stays); option 29 CC box takes CO / EN (not needed: 29 already
   lists both crafts). ❓ Pool S5 / direction W for Garnet not confirmed by
   the owner: check the first run's log for "skipped Garnet line-up 41".
-  ❓ Trip time Garnet→Sarnia and rest rule for an estimate not answered yet.
+  Trip time / rest estimate: owner "won't matter, but if you need to assume
+  a time 8 is a safe number" (8 h): not built; spare or not still waits
+  until they're off duty.
 
 - 2026-11-03: **JUOD bumped back onto S501 CO** (owner: "I am not on duty at
   garnet … I wasn't working 501"): (1) the name code's Work history counts a
