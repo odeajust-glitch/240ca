@@ -2096,7 +2096,11 @@ source().then(async (src) => {
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const rows = [];
     const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
-    if (h.down) row('Down alert', `sent ${ago(h.down.alerted)}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
+    // The Worker's 10-minute timer (owner, 2026-11-03: the 30 min ntfy never came).
+    const W = h.watch;
+    row('Worker timer', W ? `ran ${ago(W.at)}; ntfy topic ${W.ntfy ? 'set' : 'NOT set (no 30 min message)'}; push key ${W.push ? 'set' : 'NOT set (no phone alerts)'}` : 'never ran: no Cron Trigger on the Worker?', !W || now - W.at > 25 * 60000 || !W.ntfy || !W.push);
+    if (h.down && h.down.ownerPushed) row('Your phones told it was down', `${ago(h.down.ownerPushed)}${h.down.ownerPhones ? ` (${h.down.ownerPhones.sent} sent)` : ''}`, true);
+    if (h.down) row('Down alert', `${h.down.alerted ? `sent ${ago(h.down.alerted)}` : `down since ${ago(h.down.since)}`}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
     if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
     row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
     if (L.signIn) {

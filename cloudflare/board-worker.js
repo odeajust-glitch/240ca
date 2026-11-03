@@ -104,7 +104,15 @@ async function subscribe(request, env) {
 // know if the board tracker has been down for more than 3 hours") a phone
 // alert to every phone with turn alerts after PUSH_DOWN_MINUTES (default
 // 180), and "back" to them too, when the VAPID_KEYS secret is set (the
-// laptop's BoardChecker\push-keys.json, pasted whole).
+// laptop's BoardChecker\push-keys.json, pasted whole). The owner's own
+// phones (owner, 2026-11-03: "a page notification like everyone gets at 3
+// hours, but just to me") hear it after OWNER_DOWN_MINUTES (default 60): the
+// phones following the OWNER_CODE person (default JUOD), as on the site.
+// Each run also leaves status/watch.json, so Page Health shows the timer runs.
+async function personHashOf(code) {
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`240ca-person:${String(code).toUpperCase()}`));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
 async function watchChecker(env) {
   const idx = await env.SITE.get('data/index.json');
   if (!idx) return;
@@ -113,15 +121,29 @@ async function watchChecker(env) {
   const mins = Math.round((Date.now() - at) / 60000);
   const limit = Number(env.DOWN_MINUTES) || 30;
   const pushLimit = Number(env.PUSH_DOWN_MINUTES) || 180;
+  const ownerLimit = Number(env.OWNER_DOWN_MINUTES) || 60;
+  const ownerTag = `@${await personHashOf(env.OWNER_CODE || 'JUOD')}`;
+  const owners = (sub) => (sub.turns || []).includes(ownerTag);
+  await env.SITE.put('status/watch.json', JSON.stringify({ at: Date.now(), mins, ntfy: !!env.NTFY_TOPIC, push: !!env.VAPID_KEYS }));
   const o = await env.SITE.get('status/down.json');
   let down = null;
   if (o) { try { down = JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { down = {}; } }
   const when = new Date(at).toLocaleString('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', month: 'short', day: 'numeric' });
   const say = (title, body) => (env.NTFY_TOPIC ? fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body, headers: { Title: title, Priority: 'high' } }) : null);
   const save = (d) => env.SITE.put('status/down.json', JSON.stringify(d));
-  if (mins >= limit && !down) {
+  if (mins >= Math.min(limit, ownerLimit) && !down) {
+    down = { since: at, alerted: null };
+    await save(down);
+  }
+  if (down && !down.alerted && mins >= limit) {
+    down.alerted = Date.now();
     await say('Board checker is down', `No board check since ${when} (${mins} min). The laptop may be off, stuck, or waiting for a Microsoft sign-in.`);
-    down = { since: at, alerted: Date.now() };
+    await save(down);
+  }
+  if (down && mins >= ownerLimit && mins < pushLimit && !down.ownerPushed && env.VAPID_KEYS) {
+    down.ownerPushed = Date.now();
+    await save(down);
+    down.ownerPhones = await pushAll(env, { title: 'Board checker down', body: `No board check since ${when} (${Math.floor(mins / 60)} h). The laptop may be off, stuck, or waiting for a Microsoft sign-in.`, tag: 'board-down', url: './#current' }, { only: owners });
     await save(down);
   }
   if (down && mins >= pushLimit && !down.pushed && env.VAPID_KEYS) {
@@ -132,9 +154,11 @@ async function watchChecker(env) {
     down.phones = await pushAll(env, { title: 'Board checker down', body: `No board check since ${when} (${h} h). The board and turn alerts are out of date; check CATS yourself.`, tag: 'board-down', url: './#current' });
     await save(down);
   }
-  if (mins < limit && down) {
-    await say('Board checker is back', `Checking again (last check ${when}).`);
-    if (down.pushed && env.VAPID_KEYS) await pushAll(env, { title: 'Board checker back', body: `Checking CATS again (last check ${when}). Turn alerts are back on.`, tag: 'board-down', url: './#current' });
+  if (mins < Math.min(limit, ownerLimit) && down) {
+    if (down.alerted) await say('Board checker is back', `Checking again (last check ${when}).`);
+    const back = { title: 'Board checker back', body: `Checking CATS again (last check ${when}). Turn alerts are back on.`, tag: 'board-down', url: './#current' };
+    if (down.pushed && env.VAPID_KEYS) await pushAll(env, back);
+    else if (down.ownerPushed && env.VAPID_KEYS) await pushAll(env, back, { only: owners });
     await env.SITE.delete('status/down.json');
   }
 }
@@ -180,7 +204,7 @@ async function vapidFor(endpoint, keys, signer, cache, subject) {
   return v;
 }
 // Every phone with turn alerts (subs/), one message each. → { sent, failed, dropped }.
-async function pushAll(env, message, { fetchImpl = fetch } = {}) {
+async function pushAll(env, message, { fetchImpl = fetch, only = null } = {}) {
   const out = { sent: 0, failed: 0, dropped: 0 };
   let keys;
   try { keys = JSON.parse(env.VAPID_KEYS); } catch { return { ...out, error: 'VAPID_KEYS is not the push-keys.json text' }; }
@@ -201,7 +225,7 @@ async function pushAll(env, message, { fetchImpl = fetch } = {}) {
         const sub = JSON.parse(typeof g.text === 'function' ? await g.text() : g.body);
         let host = '';
         try { host = new URL(sub.endpoint).hostname; } catch { /* checked below */ }
-        if (!PUSH_HOSTS.some((re) => re.test(host)) || !sub.keys) continue;
+        if (!PUSH_HOSTS.some((re) => re.test(host)) || !sub.keys || (only && !only(sub))) continue;
         const res = await fetchImpl(sub.endpoint, {
           method: 'POST',
           headers: { 'content-encoding': 'aes128gcm', 'content-type': 'application/octet-stream', ttl: String(6 * 3600), urgency: 'high',
@@ -304,8 +328,8 @@ async function whoami(request, env) {
 async function healthFor(request, env) {
   if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
   const read = async (k) => { const o = await env.SITE.get(k); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
-  const [laptop, down] = await Promise.all([read('status/health.json'), read('status/down.json')]);
-  return json({ laptop, down });
+  const [laptop, down, watch] = await Promise.all([read('status/health.json'), read('status/down.json'), read('status/watch.json')]);
+  return json({ laptop, down, watch });
 }
 
 export default {

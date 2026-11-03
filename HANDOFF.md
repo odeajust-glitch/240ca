@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: 2026-11-03 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything) · 169 tests (`npm test`).
+everything) · 175 tests (`npm test`).
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -49,7 +49,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Tell him to open it fresh in Notepad and check for a word only the new
   version has (an old open Notepad bit him twice), or use GitHub's "Copy raw file".
 - Worker variables: `NTFY_TOPIC`, `DOWN_MINUTES` (30), `OWNER_KEY` (secret,
-  set 2026-11-02), `OWNER_EMAIL` (unused while Access is off). Cron */10.
+  set 2026-11-02), `VAPID_KEYS` (secret, set 2026-11-03),
+  `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD), `PUSH_DOWN_MINUTES` (180),
+  `OWNER_EMAIL` (unused while Access is off). Cron */10 (needed for every
+  down alert; Page Health → Worker timer shows whether it runs).
 
 ## What it does now (one line each; details in the archive and the code)
 
@@ -133,6 +136,18 @@ node scripts/board-watchdog.js --me SR03 --every 5
   down 3 h+ (built; owner adds the VAPID_KEYS secret).
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **Down 1 h → only the owner's phones** (owner: "a page
+  notification like everyone gets at 3 hours, but just to me"). Worker
+  watchChecker: the owner = subs whose turns include `@` + personHash of
+  OWNER_CODE (default JUOD; hashed in the Worker with the people.js salt);
+  at OWNER_DOWN_MINUTES (60), below 3 h, pushAll(..., { only }) once
+  (down.ownerPushed/ownerPhones); "back" to them only if the 3 h push never
+  went. down.json is now made at min(DOWN_MINUTES, OWNER_DOWN_MINUTES) with
+  `alerted` = when the ntfy went (null until then). Every run writes
+  status/watch.json { at, mins, ntfy, push } → Page Health "Worker timer"
+  (owner said the 30-min ntfy never arrives: ❓ check the Cron Trigger and
+  NTFY_TOPIC there).
 
 - 2026-11-03: **Down 3 h+ → every phone** (owner: go ahead). Worker
   watchChecker: status/down.json made at DOWN_MINUTES regardless of ntfy;

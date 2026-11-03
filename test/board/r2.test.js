@@ -203,7 +203,7 @@ test('the Worker gives the health line only to the owner', async () => {
   const as = (email) => worker.fetch(new Request('https://board.x.workers.dev/health', { headers: email ? { 'cf-access-authenticated-user-email': email } : {} }), env);
   let res = await as('odeajust@gmail.com');
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { laptop: { lastCheck: 1, phones: 4 }, down: { since: 1, alerted: 2 } });
+  assert.deepEqual(await res.json(), { laptop: { lastCheck: 1, phones: 4 }, down: { since: 1, alerted: 2 }, watch: null });
   assert.equal((await as('someone@else.ca')).status, 404);
   assert.equal((await as(null)).status, 404);
   assert.equal((await worker.fetch(new Request('https://board.x.workers.dev/health', { headers: { 'cf-access-authenticated-user-email': 'odeajust@gmail.com' } }), { ...env, OWNER_EMAIL: '' })).status, 404);
@@ -333,6 +333,58 @@ test('the Worker pushes "down 3 h" and "back" to every phone, readable by the ph
     assert.deepEqual(sent.map((x) => x.url), ['https://ntfy.sh/me', 'https://fcm.googleapis.com/fcm/send/phone1']);
     assert.equal(open(sent[1].init.body).title, 'Board checker back');
     assert.ok(!store.has('status/down.json'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+// Owner, 2026-11-03: "a page notification like everyone gets at 3 hours, but
+// just to me": after 1 h, only the phones following JUOD; "back" to them too.
+test('the Worker pushes "down 1 h" only to the owner\'s phones', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const { loadOrCreateKeys } = require('../../lib/board/webpush');
+  const { personHash } = require('../../lib/board/people');
+  const keys = loadOrCreateKeys(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vk-')), 'push-keys.json'));
+  const phone = (name, turns) => {
+    const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+    return JSON.stringify({ endpoint: `https://fcm.googleapis.com/fcm/send/${name}`, keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: crypto.randomBytes(16).toString('base64url') }, turns });
+  };
+  const store = new Map([['subs/a.json', phone('mine', ['SR03', `@${personHash('JUOD')}`])], ['subs/b.json', phone('theirs', ['SR03', `@${personHash('EN03')}`])]]);
+  const setIndex = (minsAgo) => store.set('data/index.json', JSON.stringify({ generatedAt: new Date(Date.now() - minsAgo * 60000).toISOString() }));
+  const obj = (k) => store.has(k) && { text: async () => store.get(k), json: async () => JSON.parse(store.get(k)), httpEtag: '"e"', writeHttpMetadata: () => {} };
+  const env = { VAPID_KEYS: JSON.stringify(keys), SITE: {
+    get: async (k) => obj(k) || null, head: async (k) => obj(k) || null, put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    list: async ({ prefix }) => ({ objects: [...store.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })), truncated: false }),
+  } };
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => { sent.push(String(url).split('/').pop()); return { ok: true, status: 201 }; };
+  const run = async () => { let p; await worker.scheduled({}, env, { waitUntil: (x) => { p = x; } }); await p; };
+  try {
+    setIndex(40); await run();
+    assert.deepEqual(sent, []); // 40 min: no phones (and no ntfy topic set)
+    assert.equal(JSON.parse(store.get('status/watch.json')).ntfy, false); // Page Health: the timer ran
+    setIndex(65); await run(); await run();
+    assert.deepEqual(sent, ['mine']); // 1 h: only the owner's phone, once
+    assert.deepEqual(JSON.parse(store.get('status/down.json')).ownerPhones, { sent: 1, failed: 0, dropped: 0 });
+    sent.length = 0;
+    setIndex(185); await run();
+    assert.deepEqual(sent.sort(), ['mine', 'theirs']); // 3 h: everyone
+    sent.length = 0;
+    setIndex(2); await run();
+    assert.deepEqual(sent.sort(), ['mine', 'theirs']); // back: everyone told it was down
+    // Back before 3 h: only the owner hears "back".
+    sent.length = 0;
+    setIndex(70); await run();
+    setIndex(2); await run();
+    assert.deepEqual(sent, ['mine', 'mine']);
+    assert.ok(!store.has('status/down.json'));
+    // Someone else as the owner (OWNER_CODE).
+    sent.length = 0;
+    env.OWNER_CODE = 'en03';
+    setIndex(70); await run();
+    assert.deepEqual(sent, ['theirs']);
   } finally {
     globalThis.fetch = realFetch;
   }

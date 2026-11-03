@@ -167,3 +167,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Phone alert to everyone when the checker is down 3 h+**, and
   "back" when it recovers, sent by the Worker (needs the VAPID_KEYS secret
   once; CLOUDFLARE.md).
+- 2026-11-03: **Down 1 h → just the owner's phones** (the phones following
+  👤 JUOD; OWNER_DOWN_MINUTES / OWNER_CODE), "back" to them too; Page Health
+  **Worker timer** line (last run, ntfy topic set, push key set).

@@ -220,3 +220,14 @@ board checker's own key, so it needs a copy of it, once:
 Treat that key like a password: it's what lets alerts reach the phones. It
 stays only on the laptop and in this Cloudflare secret. `PUSH_DOWN_MINUTES`
 (a Text variable) changes the 3 hours (180).
+
+**Just you, after 1 hour** (owner, 2026-11-03: "like everyone gets at 3
+hours, but just to me"): the same phone alert goes after 1 hour only to the
+phones following the person **JUOD** (turn alerts on with 👤 JUOD), and
+"back" to them if it recovers before 3 hours. Text variables:
+`OWNER_DOWN_MINUTES` (default 60), `OWNER_CODE` (default JUOD).
+
+**Is the timer running?** Page Health → **Worker timer**: when the Worker last
+woke up (every 10 minutes when the Cron Trigger is there), and whether the
+ntfy topic and the VAPID key are set. "never ran" → add the Cron Trigger
+(section 8).
