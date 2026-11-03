@@ -265,6 +265,10 @@ an S5 vacancy (site.js `s5Turn`) stays as a cross-check.
   it still misses, look for "In Toronto filling in:" in the window.
 - Alert log review (owner pasted 25th–31st): "ordered" + "time change" for
   the same train in one check → only "ordered" now (phoneEvents).
+- **Keep the Render relay** (owner, 2026-11-03: "I am using the app"): the
+  laptop's push to Render (BOARD_RELAY_URL + BOARD_KEY, lib/board/relay.js
+  pushCheck, "Sent to your phone.") feeds the RailroadTracker app's Board
+  tab. Don't suggest removing it.
 - Runaround log (owner, 2026-11-02: "just start the log. All boards. No
   notifications until we know it's working"): insights runLogCheck keeps,
   per train not on duty yet, the order at the latest check (Sarnia line-up
