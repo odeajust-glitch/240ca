@@ -920,14 +920,14 @@ function onDuty(s) {
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
-// Yard jobs on duty (owner, 2026-10-24), taken as 8 h long.
+// Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
 function yardJobs(s) {
   if (!(s.yardJobs || []).length) return '';
   const rows = s.yardJobs.map((j) => `<tr${marked(j.job) || markedIn(j.crew) ? ' class="hit"' : ''}><td class="num">${esc(j.onDuty || '—')}</td>
     <td><b class="num">${markTurn(j.job)}</b><div class="crew mono">${markTurn(j.crew)}</div></td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
   return `<section class="sheet" id="sec-yard"><header><h2>Yard jobs · on duty</h2><span class="meta">${s.yardJobs.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>Job · crew</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="foot">Off duty is a guess: 8 h after on duty.</div></section>`;
+    <div class="foot">Off duty: 8 hours after on duty, 12 hours in the tower (YSBY).</div></section>`;
 }
 
 // The jobs going spare: the terminal line-up, vacancies only (option 5).
