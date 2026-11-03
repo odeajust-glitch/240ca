@@ -907,6 +907,7 @@ function dot(status) {
 let RESETS = null;
 let resetsAsked = '';
 const resetKey = (t) => (/^S5\d{2}$/.test(t.turn) && t.craft ? `${t.turn}-${t.craft === 'CO' ? 'CO' : 'EN'}` : t.turn);
+const resetText = (r) => (r.left < 0 ? `reset overdue (was needed by ${r.dueText})` : `reset needed by ${r.dueText}`);
 function resetFor(s, t) {
   const r = RESETS && RESETS.taken === s.taken && RESETS.turns ? RESETS.turns[resetKey(t)] : null;
   return r && r.level ? r : null;
@@ -917,7 +918,7 @@ function paintResets() {
     tr.classList.toggle('reset-y', !!r && r.level === 'yellow');
     tr.classList.toggle('reset-r', !!r && r.level === 'red');
     const cell = tr.querySelector('.rdue');
-    if (cell) cell.textContent = r && r.level ? `reset needed by ${r.dueText}` : '';
+    if (cell) cell.textContent = r && r.level ? resetText(r) : '';
   });
 }
 function askResets(s) {
@@ -935,7 +936,7 @@ function pools(s, pi) {
     const r = resetFor(s, t);
     const cls = [marked(t.turn) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? `reset needed by ${esc(r.dueText)}` : ''}</span></td></tr>`;
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>`;
   }).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';

@@ -230,6 +230,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: reset tracker fixed after its first real run (nearly every
+  turn red "due 25th"): checks before 2026-11-03 kept no train with each
+  name, so trips now also come from the person's own turn's Call Board
+  trains while they held it (collect turnTrips; not a job a spare filled
+  in, `filled` from backfill); a long stretch off gives its latest reset
+  (naturalReset); one name code on two turns at once = two people, worked
+  out per person on their turn (onTurn). FORMAT 20. On the owner's data
+  (sim from the site's day files): JUOD due 10th 0755 as CATS; 5 red
+  (SR11 overdue since 2nd 0559: worked every day since 26th), 3 yellow.
+  Overdue reads "reset overdue (was needed by …)".
 - 2026-11-03: checker window no longer prints WHEN YOU GO / "Your answer
   changed" / the beep (owner: "we don't need to track myself in cmd, it
   works great on the site"; formatReport hideMe). History .txt unchanged.

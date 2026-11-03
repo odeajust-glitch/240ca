@@ -58,18 +58,40 @@ test('his week: resets where CATS logged them, next one due 7 days on', () => {
   assert.deepEqual(r.resets.filter((x) => x.at > t(24, 0)).map((x) => `${fmt(x.at)} ${x.kind}`), ['26th 0559 natural', '3rd 0755 natural']);
   assert.equal(fmt(r.due), '10th 0755');
   // Not close: no colour.
-  assert.equal(R.byTurn({ me: r }, people, t(3, 933)).SR03.level, '');
+  assert.equal(R.byTurn(acc, people, t(3, 933)).SR03.level, '');
+  assert.equal(R.byTurn(acc, people, t(3, 933)).SR03.dueText, '10th 0755');
 });
 
 test('yellow 2 days before the reset is needed, red 24 h before; none once put on one', () => {
-  const people = { me: [{ turn: 'SR03', own: true, from: '2026-10-26 0000', to: '2026-10-31 1200' }] };
-  const r = { last: { at: t(26, 559) }, due: t(26, 559) + 7 * 1440, ahead: null };
-  assert.equal(R.byTurn({ me: r }, people, t(31, 1200)).SR03.level, 'yellow'); // due 2nd 0559: 42 h
-  people.me[0].to = '2026-10-30 1200';
-  assert.equal(R.byTurn({ me: r }, people, t(30, 1200)).SR03.level, ''); // 66 h
-  people.me[0].to = '2026-11-01 2000';
-  assert.equal(R.byTurn({ me: r }, people, t(1, 2000)).SR03.level, 'red'); // 10 h
-  assert.equal(R.byTurn({ me: { ...r, ahead: { at: t(3, 559) } } }, people, t(1, 2000)).SR03.level, '');
+  // Off since 24th 0220 (reset 26th 0559), then a night yard job every night.
+  const acc = R.empty();
+  acc.since = t(24, 220); acc.last = t(1, 2000);
+  acc.trips.me = Object.fromEntries([26, 27, 28, 29, 30, 31].map((d) => [`Y/${d}`, { train: 'YSTY01', on: t(d, 2200), job: 'SR03', first: t(d, 2200), last: t(d, 2300), yard: true }]));
+  const people = (to) => ({ me: [{ turn: 'SR03', own: true, from: '2026-10-24 0300', to }] });
+  const at = (p, now) => R.byTurn(acc, p, now).SR03;
+  assert.equal(at(people('2026-10-30 1200'), t(30, 1200)).level, ''); // due 2nd 0559: 66 h
+  assert.equal(at(people('2026-10-31 1200'), t(31, 1200)).level, 'yellow'); // 42 h
+  assert.equal(at(people('2026-11-01 2000'), t(1, 2000)).level, 'red'); // 10 h
+  assert.equal(at(people('2026-11-01 2000'), t(1, 2000)).dueText, '2nd 0559');
+  // Put on a reset (rest until 3rd 0559 on his turn): no colour.
+  acc.manual.SR03 = { [t(3, 559)]: t(1, 1900) };
+  assert.equal(at(people('2026-11-01 2000'), t(1, 2000)).level, '');
+});
+
+// One name code on two turns at once = two people (owner's data: SR11 and
+// SB06): each turn gets only its own person's trains.
+test('a name code on two turns at once is two people', () => {
+  const acc = R.empty();
+  acc.since = t(24, 220); acc.last = t(1, 2000);
+  acc.turnTrips = {
+    SR11: Object.fromEntries([26, 27, 28, 29, 30, 31].map((d) => [`A/${d}`, { train: `A ${d}`, on: t(d, 2200), job: 'SR11', first: t(d, 2100), last: t(d, 2300) }])),
+    SB06: { 'B/30': { train: 'B 30', on: t(30, 1200), job: 'SB06', first: t(30, 1100), last: t(30, 1700) } },
+  };
+  const people = { x: [{ turn: 'SR11', own: true, from: '2026-10-24 0300', to: '2026-11-01 2000' }, { turn: 'SB06', own: true, from: '2026-10-24 0300', to: '2026-11-01 2000' }] };
+  const turns = R.byTurn(acc, people, t(1, 2000));
+  assert.equal(turns.SR11.level, 'red');
+  assert.equal(turns.SB06.level, ''); // off since the 30th: reset 1st 0559
+  assert.equal(turns.SB06.dueText, '8th 0559');
 });
 
 test('manual reset: a 0559 rest or hold on their own turn', () => {
@@ -99,4 +121,31 @@ test('collect: trips by name code from the Call Board, REST and 0559 holds per t
   assert.ok(acc.rest['S501-CO'][t(28, 1500)]);
   assert.ok(acc.manual.SR05[t(29, 559)]);
   assert.equal(acc.bunk.SD13[t(28, 100)], t(28, 100));
+});
+
+// Before 2026-11-03 the checks kept no train with each name: a person's
+// trips come from their own turn's trains while they held it, except a job
+// a spare filled in on (owner's real data: everyone came out "due 25th").
+test('trips from the turn they held; a spare filling in is not theirs', () => {
+  const { acc, people } = week();
+  acc.turnTrips = { SR03: acc.trips.me };
+  acc.trips = {};
+  // A spare worked SR03 on this one while he was off.
+  acc.turnTrips.SR03[`X1 25/${t(25, 1200)}`] = { train: 'X1 25', on: t(25, 1200), job: 'SR03', first: t(25, 1000), last: t(25, 2000) };
+  acc.filled = { [`X1 25/${t(25, 1200)}`]: ['SR03'] };
+  const r = R.finish(acc, people, t(3, 933)).me;
+  assert.equal(r.duty.length, 7);
+  assert.ok(!r.duty.some((d) => d.train === 'X1 25'));
+  assert.equal(fmt(r.due), '10th 0755');
+  // A long stretch off keeps the reset fresh: off since 16th, now 3rd 0933.
+  assert.equal(fmt(R.naturalReset(at(2026, 10, 16, 0, 0), t(3, 933))), '3rd 0559');
+});
+
+test('collect: each turn\'s trains, and jobs a spare filled in', () => {
+  const acc = R.empty();
+  const input = { callBoard: [{ symbol: 'A42431', originDay: '03', onDuty: t(3, 1000), crew: [{ craft: 'EN', turn: 'S104' }, { craft: 'CO', turn: 'SA07' }] },
+    { symbol: 'L50231', originDay: '03', onDuty: t(3, 400), crew: [{ craft: 'EN', turn: 'S502' }] }] };
+  R.collect(acc, input, [], t(3, 1010), [{ train: 'A42431 03', craft: 'EN', job: 'S104', turn: 'B108' }]);
+  assert.deepEqual(Object.keys(acc.turnTrips).sort(), ['S104', 'S502-EN', 'SA07']);
+  assert.deepEqual(acc.filled[`A42431 03/${t(3, 1000)}`], ['S104']);
 });
