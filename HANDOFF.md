@@ -200,8 +200,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   per address in ask/rl/, daily counts in ask/stats/), /api/sources,
   /api/status, /api/stats?key= (STATS_KEY or OWNER_KEY). The site build
   adds agreements.html (public/index.html), viewer.html, stats.html,
-  grievance.html (href="/" → agreements.html), pdfjs/, vendor/jszip/; board.html
-  has an "Agreements" link. Tried in Chromium against the Worker code with a
+  grievance.html (href="/" → /#agreements), pdfjs/, vendor/jszip/. Then (owner:
+  "make it … an integrated part of the site") the search is the board page's
+  **Agreements tab** (public/board-ask.js, mode 'ask', #agreements, board's
+  look, dark mode); agreements.html only forwards to /#agreements. Tried in Chromium against the Worker code with a
   stand-in Kimi. ❓ Owner's steps: CLOUDFLARE.md "Agreement search on the
   Worker" (Workers Paid, KIMI_API_KEY secret from Render, re-paste, laptop
   upload). Cancel Render only after a real question works.
