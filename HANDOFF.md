@@ -120,8 +120,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
-- Open TODO items: runaround log alerts / claims, Turn History step 2,
-  calendar export, 18.6(b) rep alert, My week for everyone (JUOD only now),
+- Open TODO items: runaround log alerts / claims, Turn History housekeeping
+  (later), 18.6(b) rep alert as an email (skipped for now), My week for
+  everyone (JUOD only now); calendar export taken off (owner, 2026-11-03),
   "missing from option 5" jobs, phone alert to everyone when down 3 h+
   (needs Worker web push + a VAPID key secret).
 

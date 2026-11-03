@@ -7,18 +7,21 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 1. **Runaround log: check it on real runs**, then decide on alerts (to the
    passed-over turn? the rep?), claim time limits and an evidence page.
-2. **Turn History redesign, step 2.** Step 1 ("Work history" first) is done;
-   owner said more changes may follow.
-3. **Calendar export (#3)** (not picked on 2026-10-22, still on the list).
-4. **Article 18.6(b) rep alert (#4)** (not picked on 2026-10-22, still on
-   the list).
-5. **My week for everyone:** the Sunday alert goes only to phones following
+2. **Turn History housekeeping** (owner, 2026-11-03: "we will get back to it
+   later"). Was "redesign, step 2".
+3. **Article 18.6(b) rep alert, as an email** (owner, 2026-11-03: skipped for
+   now; when it's built, an email notification rather than a phone alert).
+4. **My week for everyone:** the Sunday alert goes only to phones following
    JUOD for now; open it up if the owner likes it.
-6. **Analytics: anything more?** The owner's picks are built (see "Done");
+5. **Jobs missing from option 5:** jobs the order says go spare that CATS's
+   option 5 doesn't list (not tracked yet; see 2026-11-03 note).
+6. **Phone alert to everyone when the checker is down 3 h+** (the banner is
+   done; needs Worker web push + a VAPID key secret).
+7. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
-per week per person (A7).
+per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
