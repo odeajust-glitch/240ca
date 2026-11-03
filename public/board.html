@@ -560,6 +560,13 @@
   .pickturn button { margin: 4px 6px 0 0; padding: 4px 10px; min-height: 34px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font: 600 14px/1 var(--mono); }
   .pickturn button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .vt { color: var(--amber); font: 600 13px/1 var(--mono); }
+  tr.reset-y td { background: var(--amber-tint); }
+  tr.reset-r td { background: var(--stop-tint); }
+  tr.reset-y td:first-child { box-shadow: inset 4px 0 0 var(--amber); }
+  tr.reset-r td:first-child { box-shadow: inset 4px 0 0 var(--stop); }
+  .rdue { display: block; font-size: 12px; color: var(--soft); }
+  .rdue:empty { display: none; }
+  tr.reset-r .rdue { color: var(--stop); font-weight: 600; }
   :root[data-theme="retro"] .vt { background: #ffff00; color: #000000; padding: 1px 3px; }
   .moves { margin: 4px 0 0; padding-left: 16px; font: 12.5px/1.5 var(--mono); }
   table.orders td details summary { cursor: pointer; }
@@ -894,12 +901,42 @@ function dot(status) {
   if (/rest|hold/.test(status)) return 'wait';
   return '';
 }
+// The reset tracker (owner, 2026-11-03): a turn whose person needs a
+// Transport Canada reset within 2 days is yellow, within 24 h red. Worked
+// out for the newest check only (data/resets.json); older boards uncoloured.
+let RESETS = null;
+let resetsAsked = '';
+const resetKey = (t) => (/^S5\d{2}$/.test(t.turn) && t.craft ? `${t.turn}-${t.craft === 'CO' ? 'CO' : 'EN'}` : t.turn);
+function resetFor(s, t) {
+  const r = RESETS && RESETS.taken === s.taken && RESETS.turns ? RESETS.turns[resetKey(t)] : null;
+  return r && r.level ? r : null;
+}
+function paintResets() {
+  document.querySelectorAll('tr[data-rturn]').forEach((tr) => {
+    const r = RESETS && RESETS.taken === tr.dataset.rtaken && RESETS.turns ? RESETS.turns[tr.dataset.rturn] : null;
+    tr.classList.toggle('reset-y', !!r && r.level === 'yellow');
+    tr.classList.toggle('reset-r', !!r && r.level === 'red');
+    const cell = tr.querySelector('.rdue');
+    if (cell) cell.textContent = r && r.level ? `reset needed by ${r.dueText}` : '';
+  });
+}
+function askResets(s) {
+  if (RESETS && RESETS.taken >= s.taken) return;
+  if (resetsAsked === s.taken) return;
+  resetsAsked = s.taken;
+  getJSON('data/resets.json').then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
+}
 function pools(s, pi) {
   if (!s.pools.length) return '';
   const p = s.pools[pi] || s.pools[0];
+  askResets(s);
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
-  const rows = p.turns.map((t) => `<tr${marked(t.turn) ? ' class="hit"' : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}</td></tr>`).join('');
+  const rows = p.turns.map((t) => {
+    const r = resetFor(s, t);
+    const cls = [marked(t.turn) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
+    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? `reset needed by ${esc(r.dueText)}` : ''}</span></td></tr>`;
+  }).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
   // Spareboards (owner, 2026-10-28): anyone who only shows with VIEW TIME

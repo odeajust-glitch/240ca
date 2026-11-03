@@ -33,20 +33,19 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    (off duty at Toronto → on duty home, the Reference tab's penalty table,
    public/board-ref.js penalty). An estimate to check a claim against.
 
-8. **Rest tracker** (owner, 2026-11-03: "add rest tracker to our house
-   keeping list"). Track each spare's rest/available time so the runaround
-   log can tell why a turn was passed over: e.g. DHT040B 31 (31st 0900,
-   call ~0700): B111 was first on the conductor slow board but B133 (fast
-   board 001) went. Owner: B111 "might have not had enough time to take a
-   train or dead head, but had enough time for a yard shift so they were
-   passed over" (the time left before something else, e.g. their own job or
-   a rest limit, fits a yard shift but not a road trip). Come back to the
-   DHT040B case with it. Also: the runaround log showed B111's fast-board
-   spot (pos 004) instead of the slow board it was expected from (pos 001).
+8. **Rest / reset tracker: check it on real runs** (built 2026-11-03, see
+   "Done"). Then: notification rules (owner: "we can set rules for
+   notifications after"), maybe Person search / Analytics views, and the
+   hours limits (60 h / 7 days, 192 h / 28 days; owner: "too hard to pass",
+   not tracked for now). **Saved question (owner: "save your question …
+   see if it gets answered once we do the rest tracker"):** DHT040B 31
+   (31st 0900, call ~0700): B111 was first on the conductor slow board but
+   B133 (fast board 001) went; owner: B111 "might have not had enough time
+   to take a train or dead head, but had enough time for a yard shift".
+   Look at B111's reset due time then: a reset needed before a road trip
+   would end fits that. Also: the runaround log showed B111's fast-board
+   spot (pos 004) instead of the slow board (fixed 2026-11-03).
 
-9. **Reset tracker** (owner, 2026-11-03: "add … to housekeeping"). Details
-   to come from the owner: what a reset is to track (when a turn resets,
-   how long, against which rule) and where to show it.
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
    a tester was built to ask several AI keys/models the same question about
    the agreement and compare the answers, for later use; not used yet. Not
@@ -276,3 +275,16 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   their own, TEMP VCNY skipped (seen where they're working). Person
   search's Status adds "Crews in town (pool): vacancy (off the turn)",
   "day off", "on rest until …" etc. Nothing else new on the site.
+- 2026-11-03: **Reset tracker** (TODO #8 rest tracker + #9 reset tracker;
+  owner: "we can't see when someone else needs to be reset … they usually
+  don't do it until they are going to call the job, then the next person
+  gets an unexpected call"). Per person (name code): duty periods from the
+  Call Board and yard jobs, off duty from the Toronto bunkhouse (REST − 8 h)
+  or the home REST (− 10 h, or − 24 h when booked 24 h), resets natural
+  (32 h off + two free nights 00:00–05:59, at whichever comes later) or
+  manual (rest / hold until 0559). Checked against the owner's CATS
+  "EMPLOYEE TIME ON DUTY LOG" (PSTS05Y): off-duty times to the minute,
+  RESETSYS 26th 0559 and RESETM32 3rd 0754. On the boards: a turn whose
+  person needs a reset within 2 days is yellow, within 24 h red, with
+  "reset needed by …" (owner). Rules: data/rest_rules.pdf (10.1 reset
+  break within any 7 days). Code: lib/board/resets.js, data/resets.json.

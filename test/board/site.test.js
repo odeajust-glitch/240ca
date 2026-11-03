@@ -40,6 +40,10 @@ test('site: builds a day file per day, newest day first in the index', () => {
   // Newest check read, changed or not: the open page moves "Last checked" on.
   assert.strictEqual(index.checked, '2026-10-15 0820'); // the unchanged 0820 check
   assert.ok(fs.existsSync(path.join(out, 'index.html')));
+  // The reset tracker (owner, 2026-11-03): worked out for the newest check.
+  const resets = JSON.parse(fs.readFileSync(path.join(out, 'data/resets.json'), 'utf8'));
+  assert.strictEqual(resets.taken, '2026-10-15 0815');
+  assert.strictEqual(typeof resets.turns, 'object');
   assert.match(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8'), /Disallow: \//);
   // The agreement search moved here from Render (owner, 2026-11-03).
   for (const f of ['agreements.html', 'board-ask.js', 'viewer.html', 'stats.html', 'grievance.html', 'vendor/jszip/jszip.min.js', 'pdfjs/pdf.min.mjs', 'pdfjs/pdf.worker.min.mjs']) assert.ok(fs.existsSync(path.join(out, f)), f);

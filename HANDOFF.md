@@ -7,24 +7,24 @@ Last updated: 2026-11-03 (crews in town session) · Branch:
 
 ## ▶ Next session
 
-**Next: TODO #8 rest tracker** (owner's order). #10 (expanded Call Board)
-is done: the checker pages through the whole CREWS IN TOWN list (Call Board
-pages 5–29 of 29; later pages labelled `crewsInTown`) and summary.js reads
-it (screens.js parseCrewsInTown → `summary.crewsInTown` [{ pool, crews:
-[{ pos, craft, turn, status rested/rest/hold/open/other, until }] }]).
-Owner: read every page; **not shown on the site, behind the scenes only**
-(use it in the rest tracker). "**HT 1104 0635" = hold until 11/04 0635
-(owner). Pages 8–10 seen too (trainees TT/ET, VACANCY, TEMP VCNY, OFF,
-yard jobs "YARD : XSAS01 …" with name-only crew lines). **People:** owner,
-"anything past the crews in town shows people on their actual home turns":
-board-auto reads those pages unmasked in memory (townPages →
-parseCrewsInTownNames) and adds name-code sightings (own turn / yard job;
-TEMP = not own; TEMP VCNY skipped). Not fed into turn-holders.json.
-Snapshot `town` (site.js townStatus, FORMAT 18) → Person search Status
-"Crews in town (pool): …". The laptop needs `git pull` + restart. Tests
-use made-up names: never copy names from the owner's screenshots into the
-repo.
-#8 rest tracker (DHT040B 31 case, see TODO), then #9, #11, #6 and the older
+**Reset tracker built (TODO #8 + #9, 2026-11-03), waiting for real runs.**
+lib/board/resets.js: per person (name-code hash), from every day file's
+`resets` (collect per check: trips by name code with their Call Board
+train / yard job, every board's REST, 0559 rests/holds, bunkhouse REST)
+→ site.js writes data/resets.json { taken, turns: { turn: { level
+red/yellow, dueText, due, last, ahead } } } for the newest check; the
+Current tab's pools/spareboards colour rows (board.html RESETS,
+paintResets). Model checked against the owner's CATS PSTS05Y log (see
+resets.js header): reset = later of off + 32 h and 05:59 on the second
+free night; due = last reset + 7 days; yellow ≤ 2 days, red ≤ 24 h
+(owner). Home off duty = REST − 10 h (− 24 h if booked 24 h). Owner: the
+7-day reset is what matters; 60 h / 192 h not tracked ("too hard to
+pass"); notifications later. FORMAT 19. **Saved question** (TODO #8):
+DHT040B 31 / B111, look at it with the tracker once it has run.
+Before: #10 crews in town done (behind the scenes + Person search status);
+the laptop needs `git pull` + restart.
+
+Next after checking it: #11, #6 and the older
 ones. Show options with a recommendation, then build. Before changing a tab,
 search the archive for why it is the way it is.
 
@@ -216,8 +216,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
   N people read." in the log; pages 7 and 11–29 not seen yet (other pool
   names may come through masked as AAAA). Check a person search (JUOD)
   shows the "Crews in town" line.
-- Open TODO items: rest tracker (TODO #8), reset tracker (#9) (owner,
-  2026-11-03: housekeeping, details to ask),
+- ❓ Reset tracker on real data: after the pull, data/resets.json should
+  list turns; compare a few people's "reset needed by" with CATS PSTS05Y
+  (the owner's own). Wrong if trips are missed (checker down, a name not
+  read on the Call Board) or the window starts mid-week.
+- Open TODO items: reset tracker notifications (#8),
   API key tester (#11: compare AI keys on the same agreement question; where
   the tester is in the owner's claude.ai chat, link in TODO #11; he pastes
   the code when it's time), DHT040B 31 runaround (waits for #8), home turn worked out better (tabled, owner 2026-11-03: he
@@ -227,6 +230,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03 (reset tracker): owner's CATS "EMPLOYEE TIME ON DUTY LOG"
+  (PSTS05Y: on/off duty per trip, RESETMNL / RESETSYS / RESETM32 lines,
+  7DY TOT, 28DY TOT, 7DY RESET) used as the answer key; built
+  lib/board/resets.js + board colours. Owner chose: per person, 7-day
+  reset only, yellow 2 days / red 24 h, alerts later.
 - 2026-11-03 (crews in town session): owner put #10 (expanded Call Board)
   before #8 (rest tracker). Checker reads past CREWS IN TOWN to the last
   page (board-auto.js Call Board loop, up to 40 more pages; trouble there
