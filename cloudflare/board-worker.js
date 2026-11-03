@@ -30,6 +30,12 @@
 //
 // Down 3 h+ (owner, 2026-11-03): see watchChecker; needs the VAPID_KEYS secret.
 //
+// RailroadTracker relay (owner, 2026-11-03: moved off Render): the laptop
+// POSTs each check to /api/board, the app GETs /api/board/latest, both with
+// "Authorization: Bearer <BOARD_KEY>" (a Worker secret, the laptop's
+// BOARD_KEY). Only the newest check is kept (R2 relay/board-latest.json),
+// never served as a file. Without BOARD_KEY both answer 404, as on Render.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -240,6 +246,77 @@ async function pushAll(env, message, { fetchImpl = fetch, only = null } = {}) {
   return out;
 }
 
+// --- RailroadTracker relay (same checks as lib/board/relay.js on Render) ---
+const RELAY_KEY = 'relay/board-latest.json';
+const MAX_REPORT_CHARS = 20000;
+const MAX_LINES = 200;
+const RELAY_STATES = ['linedUp', 'waiting', 'comingHome', 'notFound'];
+const isLines = (v) => Array.isArray(v) && v.length <= MAX_LINES && v.every((l) => typeof l === 'string' && l.length <= 500);
+const isShort = (v) => typeof v === 'string' && v.length <= 40;
+const isLocalTime = (v) => typeof v === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(v);
+function validateMine(m) {
+  if (m == null) return { mine: null };
+  if (typeof m !== 'object' || !isShort(m.turn) || !RELAY_STATES.includes(m.state)) return { error: 'mine must have a turn and a known state.' };
+  const out = { turn: m.turn, state: m.state };
+  if (m.state === 'linedUp') {
+    if (!isShort(m.train) || !isShort(m.status) || !isLocalTime(m.callAt) || !isLocalTime(m.onDutyAt)) return { error: 'mine: a lined-up turn needs train, status, callAt and onDutyAt.' };
+    Object.assign(out, { train: m.train, status: m.status, deadhead: !!m.deadhead, callAt: m.callAt, onDutyAt: m.onDutyAt });
+  } else if (m.state === 'comingHome') {
+    if (!isShort(m.train)) return { error: 'mine: coming home needs the train.' };
+    out.train = m.train;
+  } else if (m.state === 'waiting') {
+    if (!Array.isArray(m.ahead) || m.ahead.length > MAX_LINES || !m.ahead.every(isShort)) return { error: 'mine.ahead must be a list of turns.' };
+    if (m.myRestUntil != null && !isLocalTime(m.myRestUntil)) return { error: 'mine.myRestUntil must be a local time.' };
+    Object.assign(out, { ahead: m.ahead, myRestUntil: m.myRestUntil ?? null });
+  }
+  return { mine: out };
+}
+function validateCheck(body) {
+  if (!body || typeof body !== 'object') return { error: 'Body must be a JSON object.' };
+  const { checkedAt, me, report, changes, myAnswerChanged } = body;
+  if (typeof checkedAt !== 'string' || Number.isNaN(Date.parse(checkedAt))) return { error: 'checkedAt must be an ISO time.' };
+  if (!isLines(me)) return { error: 'me must be a list of lines.' };
+  if (typeof report !== 'string' || report.length > MAX_REPORT_CHARS) return { error: 'report must be text.' };
+  if (changes != null && !isLines(changes)) return { error: 'changes must be a list of lines.' };
+  const { mine, error } = validateMine(body.mine);
+  if (error) return { error };
+  return { check: { checkedAt: new Date(checkedAt).toISOString(), me, report, changes: changes || [], myAnswerChanged: !!myAnswerChanged, mine } };
+}
+// The bearer key, compared without giving away how much of it matched.
+function bearerMatches(request, want) {
+  want = String(want || '');
+  const m = /^Bearer (.+)$/.exec(request.headers.get('authorization') || '');
+  const got = m ? m[1] : '';
+  if (!want || got.length !== want.length) return false;
+  let diff = 0;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
+  return diff === 0;
+}
+async function relay(request, env, url) {
+  if (!bearerMatches(request, env.BOARD_KEY)) return json({ error: 'Not found.' }, 404);
+  if (url.pathname === '/api/board/latest') {
+    if (request.method !== 'GET' && request.method !== 'HEAD') return json({ error: 'GET only' }, 405);
+    const o = await env.SITE.get(RELAY_KEY);
+    if (!o) return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+    return new Response(typeof o.text === 'function' ? await o.text() : o.body, { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  }
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  const text = await request.text();
+  if (text.length > 100000) return json({ error: 'too big' }, 413);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ error: 'Body must be a JSON object.' }, 400); }
+  const { check, error } = validateCheck(body);
+  if (error) return json({ error }, 400);
+  // An older check arriving late (laptop retry) mustn't replace a newer one.
+  const o = await env.SITE.get(RELAY_KEY);
+  let latest = null;
+  if (o) { try { latest = JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { latest = null; } }
+  if (latest && Date.parse(latest.checkedAt) > Date.parse(check.checkedAt)) return json({ ok: true, checkedAt: latest.checkedAt });
+  const saved = { ...check, receivedAt: new Date().toISOString() };
+  await env.SITE.put(RELAY_KEY, JSON.stringify(saved), { httpMetadata: { contentType: 'application/json' } });
+  return json({ ok: true, checkedAt: saved.checkedAt });
+}
+
 const torontoDay = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
 const STATS_DAYS = 30;
 
@@ -345,6 +422,7 @@ export default {
     }
     if (url.pathname === '/stats/days') return (await isOwner(request, env)) ? statsDays(env) : json({ error: 'not found' }, 404);
     if (url.pathname === '/whoami') return whoami(request, env);
+    if (url.pathname === '/api/board' || url.pathname === '/api/board/latest') return relay(request, env, url);
     if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
@@ -360,7 +438,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });

@@ -389,3 +389,30 @@ test('the Worker pushes "down 1 h" only to the owner\'s phones', async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+// Owner, 2026-11-03: the RailroadTracker relay moved from Render to the Worker.
+test('the Worker relays the latest board check to the app, with the key', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map();
+  const obj = (k) => store.has(k) && { httpEtag: '"e"', writeHttpMetadata: () => {}, body: store.get(k), text: async () => store.get(k) };
+  const env = { BOARD_KEY: 'k'.repeat(24), SITE: { get: async (k) => obj(k) || null, head: async (k) => obj(k) || null, put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); } } };
+  const call = (p, init = {}, key = env.BOARD_KEY) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, { ...init, headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' } }), env);
+  const check = { checkedAt: '2026-11-03T10:00:00Z', me: ['SR03: 5th up'], report: 'text', changes: [], mine: { turn: 'SR03', state: 'waiting', ahead: ['SR05'], myRestUntil: null }, extra: 'dropped' };
+  assert.equal((await call('/api/board/latest')).status, 204);
+  let res = await call('/api/board', { method: 'POST', body: JSON.stringify(check) });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { ok: true, checkedAt: '2026-11-03T10:00:00.000Z' });
+  const latest = await (await call('/api/board/latest')).json();
+  assert.equal(latest.mine.turn, 'SR03');
+  assert.equal(latest.extra, undefined);
+  // An older check arriving late doesn't replace it.
+  await call('/api/board', { method: 'POST', body: JSON.stringify({ ...check, checkedAt: '2026-11-03T09:00:00Z', me: ['old'] }) });
+  assert.deepEqual((await (await call('/api/board/latest')).json()).me, ['SR03: 5th up']);
+  // Wrong key, no key on the Worker, or a bad check.
+  assert.equal((await call('/api/board/latest', {}, 'wrong')).status, 404);
+  assert.equal((await worker.fetch(new Request('https://board.x.workers.dev/api/board/latest', { headers: { authorization: 'Bearer x' } }), { ...env, BOARD_KEY: '' })).status, 404);
+  assert.equal((await call('/api/board', { method: 'POST', body: JSON.stringify({ ...check, me: 'nope' }) })).status, 400);
+  // Never served as a file.
+  assert.equal((await worker.fetch(new Request('https://board.x.workers.dev/relay/board-latest.json'), env)).status, 404);
+});

@@ -231,3 +231,19 @@ phones following the person **JUOD** (turn alerts on with 👤 JUOD), and
 woke up (every 10 minutes when the Cron Trigger is there), and whether the
 ntfy topic and the VAPID key are set. "never ran" → add the Cron Trigger
 (section 8).
+
+## RailroadTracker relay on the Worker (2026-11-03, moved off Render)
+
+The laptop sends each check to `POST /api/board` and the app reads
+`GET /api/board/latest`, both with `Authorization: Bearer <BOARD_KEY>`.
+Only the newest check is kept, in R2 `relay/board-latest.json` (never served
+as a file; the site mirror leaves `relay/` alone).
+
+1. Cloudflare → Workers & Pages → board → Settings → Variables and Secrets →
+   Add → type **Secret**, name `BOARD_KEY`, value = the laptop's `BOARD_KEY`
+   (from `BoardChecker\.env`). Deploy.
+2. Re-paste `cloudflare/board-worker.js` (Edit code → Ctrl+A, Ctrl+V → Deploy).
+3. Laptop `BoardChecker\.env`: `BOARD_RELAY_URL=https://board.sarniaboard.workers.dev`,
+   then restart the checker.
+4. RailroadTracker app → Board tab → Automatic board check → Server address
+   `https://board.sarniaboard.workers.dev` (same key) → Save.

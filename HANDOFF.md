@@ -132,9 +132,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   state zip (14 kept) + finished history days; never `.env` or names.json.
   Restore steps in docs/board-checker/CLOUDFLARE.md.
 - **RailroadTracker relay: keep it** (owner, 2026-11-03: "I am using the
-  app"): each check also goes to Render (`BOARD_RELAY_URL` + `BOARD_KEY`,
-  `lib/board/relay.js` pushCheck) for the app's Board tab. Don't suggest
-  removing it.
+  app"): each check also goes to the relay (`BOARD_RELAY_URL` + `BOARD_KEY`,
+  `lib/board/relay.js` pushCheck) for the app's Board tab; moving from
+  Render to the Worker (2026-11-03). Don't suggest removing it.
 
 ## Rules settled with the owner (don't re-litigate)
 
@@ -176,6 +176,19 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **Moving off Render (owner: "I pay 7$ for the render … do
+  option 3 and move the relay for the app as well"; $5 Cloudflare Workers
+  plan OK; order: relay first, then the agreement search).** Step 1 done in
+  code: the Worker serves `POST /api/board` + `GET /api/board/latest`
+  (Bearer BOARD_KEY secret, R2 relay/board-latest.json, same checks as
+  relay.js; r2.js keeps relay/). Owner's steps: CLOUDFLARE.md "RailroadTracker
+  relay on the Worker". The app (repo odeajust-glitch/RailroadTracker, branch
+  board-relay) has the server address as a setting (Board tab → Automatic
+  board check), so no app code change; branch board-shifts reads the board
+  site directly and has no relay. ❓ Which app build is on his phone.
+  Step 2 (search: D1 full-text + R2 PDFs + Kimi from the Worker) next.
+  Don't cancel Render until both are verified.
 
 - 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
   A pool turn, and it goes spare it should show the actual turn going out
