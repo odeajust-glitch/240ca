@@ -16,7 +16,8 @@ red/yellow, dueText, due, last, ahead } } } for the newest check; the
 Current tab's pools/spareboards colour rows (board.html RESETS,
 paintResets). Model checked against the owner's CATS PSTS05Y log (see
 resets.js header): reset = later of off + 32 h and 05:59 on the second
-free night; due = last reset + 7 days; yellow ≤ 2 days, red ≤ 24 h
+free night; due = first on duty after it + 7 days (owner, ❓ to confirm
+with CATS 7DY RESET); yellow ≤ 2 days, red ≤ 24 h
 (owner). Home off duty = REST − 10 h (− 24 h if booked 24 h). Owner: the
 7-day reset is what matters; 60 h / 192 h not tracked ("too hard to
 pass"); notifications later. FORMAT 19. **Saved question** (TODO #8):
@@ -230,6 +231,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: reset due = 7 days after the first time on duty after the
+  last reset (owner: "I think the 7 days start when I go onduty, we can
+  check that when I get called tonight for 502"); off since the reset =
+  nothing due. ❓ Confirm with his CATS PSTS05Y "7DY RESET" field after his
+  L502 call tonight (screenshot). Sim on the site's data: 2 red (SR11
+  overdue, SD11), 3 yellow (SR06, SD07, SR02).
 - 2026-11-03: reset tracker fixed after its first real run (nearly every
   turn red "due 25th"): checks before 2026-11-03 kept no train with each
   name, so trips now also come from the person's own turn's Call Board
