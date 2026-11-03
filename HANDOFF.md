@@ -175,6 +175,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Runaround log fixes** (owner: "I want to fix a few things"):
+  passed-over turn "** goes spare" with no return or a return after the call
+  → explained (insights.js why). More to come from the owner.
+
 - 2026-11-03: **My week for a person: only while on the turn** (owner: JUOD
   shown S501's L50231 02 / L50131 02 calls twice and runaround L50231 01
   from before he was on S501). board-week.js weekSummary `spans` (people

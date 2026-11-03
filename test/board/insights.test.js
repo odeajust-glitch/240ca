@@ -269,3 +269,14 @@ test('insights: jobs missing from option 5', () => {
   const quick = Insights.finish(Insights.collect([snaps[0], { ...snaps[3], taken: '2026-11-02 1220' }])).catsMissing;
   assert.equal(quick.length, 0);
 });
+
+// Owner, 2026-11-03: SD01 "** goes spare, return 2nd 2359" passed on DHT024B 02 isn't a runaround.
+test('insights: runaround log, ** goes spare until after the call is explained', () => {
+  const lineRow = { train: 'DHT024B 02', order: '2nd 0900', call: '2nd 0700', status: 'ORD', crew: { co: 'SR03', en: 'SD01' }, rules: 'Chain Gang: SR03 + SD01' };
+  const snap0 = (st) => ({ taken: '2026-11-02 0646', lineup: [lineRow], pools: [{ name: 'SD · engineers', turns: [{ pos: '001', turn: 'SD01', status: st }] }, { name: 'Chain Gang (SR) · conductors', turns: [{ pos: '001', turn: 'SR03', status: 'available' }] }] });
+  const went = { taken: '2026-11-02 0653', lineup: [], onDuty: [{ train: 'DHT024B 02', onDuty: '2nd 0900', crew: 'EN SD02 · CO SR03' }] };
+  const r = (st) => Insights.finish(Insights.collect([snap0(st), went])).runLog.find((x) => x.passed === 'SD01');
+  assert.equal(r('** goes spare, return 2nd 2359').result, 'explained');
+  // Back before the call: still a likely runaround.
+  assert.equal(r('** goes spare, return 2nd 0500').result, 'likely');
+});
