@@ -289,7 +289,8 @@ async function askOwner(page, s) {
   const cmd = Remote.commandTopic();
   if (!topic || !cmd || assignmentMode() === null) return null;
   const pg = await readPage(catsFrame(page));
-  const msg = CatsAsk.questionMessage({ text: pg.words, boxes: pg.boxes, topic: cmd });
+  const waitMin = Stuck.askWait(process.env) / 60000;
+  const msg = CatsAsk.questionMessage({ text: pg.words, boxes: pg.boxes, topic: cmd, waitMin, fallback: Stuck.fallbackAnswer(process.env) });
   const rec = await saveQuestion(page, pg.text, 'Sent to your ntfy; waiting for your answer.');
   const headers = { Title: msg.title, Priority: 'urgent', Tags: 'question' };
   if (msg.actions) headers.Actions = msg.actions;
@@ -300,8 +301,8 @@ async function askOwner(page, s) {
     writeAlertsLog(new Map([['CATS is asking you (the page sent to ntfy)', { turn: 'YOU', kind: 'ntfy', phones: ok ? 1 : 0, failed: ok ? 0 : 1 }]]));
   } catch { /* ok stays false */ }
   if (!ok) { console.log('  (the CATS page couldn\'t be sent to your phone)'); noteAnswer(rec, 'Not sent: ntfy didn\'t answer.'); return null; }
-  console.log(`\x07[${stamp()}] CATS is showing a page it can't get past. Sent it to your phone (ntfy): answer there${msg.actions ? ' (Y / N buttons)' : ''}, or deal with it here. Waiting up to 30 minutes.`);
-  return { at: Date.now(), since: Math.floor(Date.now() / 1000) - 1, seq: s.seq, boxes: pg.boxes, rec, polled: 0 };
+  console.log(`\x07[${stamp()}] CATS is showing a page it can't get past. Sent it to your phone (ntfy): answer there${msg.actions ? ' (Y / N buttons)' : ''}, or deal with it here. Waiting up to ${waitMin} minutes.`);
+  return { at: Date.now(), since: Math.floor(Date.now() / 1000) - 1, seq: s.seq, boxes: pg.boxes, yn: CatsAsk.yesNo(pg.words), waitMin, rec, polled: 0 };
 }
 
 // The owner's reply, typed in. True when it did something.
@@ -1231,11 +1232,28 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
     if (q) {
       if (kind !== 'cats' || s.seq !== q.seq) {
         q = null;
-      } else if (Date.now() - q.at > Stuck.ASK_WAIT) {
-        console.log(`[${stamp()}] No answer from your phone in 30 minutes; trying to get past it again.`);
-        noteAnswer(q.rec, 'No answer in 30 minutes.');
+      } else if (Date.now() - q.at > q.waitMin * 60000) {
+        // No answer (phone off at work?): force through. A yes-or-no page
+        // gets the fallback answer; any other page the reload steps.
+        const fb = Stuck.fallbackAnswer(process.env);
+        const i = q.yn && fb ? Stuck.answerBox(q.boxes) : -1;
+        const asked = q;
         q = null;
         stuckSince = Date.now();
+        if (i >= 0) {
+          await fill(page, { [i]: fb });
+          const did = `No answer from your phone in ${asked.waitMin} minutes: typed ${fb} itself, then pressed Enter`;
+          console.log(`[${stamp()}] ${did}.`);
+          noteAnswer(asked.rec, `${did}.`);
+          alertPhone(`Board checker: ${did} on the CATS page.`);
+          try { await press(page, 'Enter'); } catch (err) { if (!(err instanceof OffRoute)) throw err; }
+          t.asks = Stuck.MAX.asks; // forced through: don't ask about it again in this wait
+          continue;
+        }
+        console.log(`[${stamp()}] No answer from your phone in ${asked.waitMin} minutes; forcing past it (Enter, F3, reload CATS).`);
+        noteAnswer(asked.rec, `No answer in ${asked.waitMin} minutes: reloading CATS.`);
+        alertPhone(`Board checker: no answer in ${asked.waitMin} minutes; it's reloading CATS to get past the page.`);
+        Object.assign(t, { enter: 0, keys: 0, asks: Stuck.MAX.asks });
       } else if (Date.now() - q.polled > 10000) {
         q.polled = Date.now();
         if (await checkReply(page, q)) { q = null; continue; }

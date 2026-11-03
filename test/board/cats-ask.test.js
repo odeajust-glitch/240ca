@@ -17,6 +17,9 @@ test('the ntfy message has the page, the boxes, and Y / N buttons for a yes-or-n
   assert.equal(other.actions, null);
   assert.match(other.body, /^CATS is showing this[\s\S]*Box 1: empty\n\nReply in the ntfy app/);
   assert.ok(A.questionMessage({ text: 'x'.repeat(5000), boxes: [], topic: 't' }).body.length < 3400);
+  assert.match(m.body, /No answer in 15 minutes: it types N itself\.$/);
+  assert.match(A.questionMessage({ text: 'X (Y/N)', boxes, topic: 't', waitMin: 5, fallback: null }).body, /No answer in 5 minutes: it goes back to reloading CATS\.$/);
+  assert.match(other.body, /No answer in 15 minutes: it goes back to reloading CATS\.$/);
 });
 
 test('the owner\'s reply becomes what to type and which key to press', () => {

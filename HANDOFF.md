@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: 2026-11-03 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything) · 185 tests (`npm test`).
+everything) · 186 tests (`npm test`).
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -76,8 +76,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (ntfy http actions posting to the command topic); his reply on the
   "signin" topic (Y, 2=Y, 1=45, 3=Y, F3, ENTER; lib/board/cats-ask.js,
   remote.js readReplies) is typed in. The question right away; other pages
-  after Enter + F3 (3 min). Nothing else tried while waiting (30 min, then
-  the reload steps; 2 asks per wait; heartbeat 'signin' = 45 min). Y / N
+  after Enter + F3 (3 min). Nothing else tried while waiting. **No answer**
+  in BOARD_ASK_WAIT_MINUTES (15; owner: "force its way thru … incase my
+  phone is off due to being at work"): a yes/no page gets
+  BOARD_ASSIGNMENT_FALLBACK (**N**; Y / off), any other page the Enter / F3 /
+  reload / fresh-Edge steps; ntfy says which. 2 asks per wait; heartbeat
+  'signin' = 45 min. Y / N
   modes type that; off leaves it. Every page saved (words + boxes + picture,
   BoardChecker\assignment-questions\, last 20 → Page Health). **Y means
   the owner has to call in**: never default to Y.

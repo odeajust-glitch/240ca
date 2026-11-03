@@ -180,3 +180,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   pages it can't get past before the main menu. Every page saved (words +
   picture): Page Health and BoardChecker\assignment-questions.
   BOARD_ASSIGNMENT_ANSWER: ask (default) / Y / N / off.
+  No answer in 15 minutes (phone off at work): it types N itself on a yes/no
+  page, or forces past any other page (Enter, F3, reload, fresh Edge), and
+  tells you (BOARD_ASK_WAIT_MINUTES, BOARD_ASSIGNMENT_FALLBACK).

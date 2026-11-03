@@ -82,3 +82,15 @@ test('a CATS page still there after the keys goes to the owner, and nothing else
   assert.equal(S.nextStep('cats', { ...base, stuckFor: 3 * min, canAsk: false }), 'wait'); // no ntfy: the old steps
   assert.equal(S.nextStep('other', { ...base, stuckFor: 3 * min }), 'wait'); // only CATS pages
 });
+
+// Owner, 2026-11-03: "If I dont respond … have it try to 'force' its way thru
+// after a certain time incase my phone is off due to being at work".
+test('no answer: 15 minutes by default, then N (never Y unless set)', () => {
+  assert.equal(S.askWait({}), 15 * min);
+  assert.equal(S.askWait({ BOARD_ASK_WAIT_MINUTES: '5' }), 5 * min);
+  assert.equal(S.askWait({ BOARD_ASK_WAIT_MINUTES: '90' }), 40 * min); // under the watchdog's 45
+  assert.equal(S.askWait({ BOARD_ASK_WAIT_MINUTES: '0' }), 15 * min);
+  assert.equal(S.fallbackAnswer({}), 'N');
+  assert.equal(S.fallbackAnswer({ BOARD_ASSIGNMENT_FALLBACK: 'y' }), 'Y');
+  assert.equal(S.fallbackAnswer({ BOARD_ASSIGNMENT_FALLBACK: 'off' }), null);
+});
