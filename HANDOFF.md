@@ -189,8 +189,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   **Fixed: trains worked filling in on another turn** missing from the
   person view (owner: DRDI vs B126; E27861 27 / Z14931 28 working SR07):
   personHistory takes them from their own turn's record, and the copy not
-  "worked by" someone else wins. ❓ Same short Changes for a turn search?
-  (not asked yet; Turn History housekeeping still on the TODO).
+  "worked by" someone else wins. Then (owner): turn searches get the short
+  Changes too, and Orders / Rest / Goes spare fold into "More detail"
+  (details.moredet, closed). Held-away time + penalty miles in Work history:
+  TODO #7 (later).
 
 - 2026-11-03: **L502 alternates** (owner: "S501 should work it, it
   alternates"; at 0420 the site gave L50231 04 to S502, which had just taken

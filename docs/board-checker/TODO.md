@@ -26,6 +26,11 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    Reference tab), keep the last home turn while displaced, and say why
    they're off it.
 
+7. **Held-away time and penalty miles in Work history** (owner, 2026-11-03:
+   later). Each trip home from Toronto: "Held 14:21 → 81.56 penalty miles"
+   (off duty at Toronto → on duty home, the Reference tab's penalty table,
+   public/board-ref.js penalty). An estimate to check a claim against.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
@@ -206,3 +211,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   Eastern Canada, Mac Yard / B.I.T. Yard / Malport track lengths (search a
   track), and the held-away penalty table with a calculator (type the time
   held, or off-duty and on-duty times).
+- 2026-11-03: **Turn History tidied**: a turn search also gets the short
+  Changes list (button for every check); Orders, Rest and Goes spare folded
+  into "More detail" (closed), on turn and name code searches.

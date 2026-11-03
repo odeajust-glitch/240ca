@@ -384,6 +384,9 @@
   .work table { table-layout: fixed; }
   .work td, .work th { overflow-wrap: anywhere; }
   .work td .num { white-space: normal; }
+  /* Orders / Rest / Goes spare, folded away (owner, 2026-11-03) */
+  .moredet { border-top: 1px solid var(--rule-soft); }
+  .moredet > summary { cursor: pointer; padding: 12px 14px; font: 600 14px/1.3 var(--body); color: var(--accent); }
   /* Reference tab */
   .refsec { border-bottom: 1px solid var(--rule-soft); padding: 0 14px; }
   .refsec > summary { cursor: pointer; padding: 14px 0; font: 600 15px/1.3 var(--body); }
@@ -986,8 +989,8 @@ function turnPanel(s) {
     <div id="alertnote" class="alertnote" hidden></div>
     <div id="worklog" class="work"></div>
     <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
-    <div><h3>Changes <span class="muted">(that lasted 30 m or more)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
-    <div class="tp tp3" id="turnmore"></div></section>`;
+    <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
+    <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
 }
 // A time that opens that snapshot.
 // One date style (owner, 2026-11-03): "28th 0120", like the rest of the site.
@@ -2583,10 +2586,10 @@ source().then(async (src) => {
       const hb = document.getElementById('turnhist');
       if (!hb || want !== focus) return;
       const hist = all[BoardTurns.splitCraft(want).base];
-      const h = turnHistory(hist, s.taken);
+      const h = turnHistory(hist, s.taken, { summary: true });
       hb.innerHTML = h.changes;
       const more = document.getElementById('turnmore');
-      if (more) more.innerHTML = h.more;
+      if (more) { more.innerHTML = h.more; document.getElementById('turnmorebox').hidden = !h.more; }
       const work = document.getElementById('worklog');
       if (work && hist) { work.innerHTML = workHistory(hist, want); wireWork(work, hist, want); }
       else if (work) work.innerHTML = workHistory(null, want);
@@ -2653,7 +2656,7 @@ source().then(async (src) => {
       <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
       <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
       <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
-      <div class="tp tp3">${h.more}</div></section>`;
+      ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
     wireWork(box.querySelector('#worklog'), rec, cur.turn);
