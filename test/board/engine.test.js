@@ -700,3 +700,17 @@ test('L502: ** beside a hold turn that ends before the call is not spare (owner,
   const late = s5.map((x) => (x.craft === 'CO' && x.turn === 'S501' ? { ...x, statusUntil: at(2026, 11, 4, 3, 0) } : x));
   assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5: late }).predictions.find((x) => x.symbol === 'L50231').spare, true);
 });
+
+// Owner, 2026-11-03: an A (or B) train with a make-up placeholder on it
+// shows the A turn going out, spare; not MU01.
+test('A train with an MU placeholder on it: the A turn goes spare', () => {
+  const now = at(2026, 10, 25, 9, 0);
+  const a = (turn, pos, extra = {}) => ({ craft: 'CO', turn, terminal: 0, pos, restUntil: null, statusUntil: null, ...extra });
+  const lineup = [{ order: at(2026, 10, 25, 11, 0), symbol: 'A42431', trainNo: 'A42431', originDay: '25', status: 'ORD', deadhead: false, trnCrew: '45SASA0' }];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], sdHome: [], s1Home: [], s3Home: [],
+    aHome: [a('MU01', 999, { working: true, workingOn: 'A42431' }), a('SA02', 1), a('SA03', 2)], lineup });
+  const p = r.predictions.find((x) => x.symbol === 'A42431');
+  assert.equal(p.pool, 'A');
+  assert.deepEqual([p.turn, p.spare, !!p.known], ['SA02', true, false]);
+  assert.match(p.reason, /MU01 \(a make-up placeholder\) is on it, so SA02's train goes spare/);
+});

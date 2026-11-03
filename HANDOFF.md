@@ -151,6 +151,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - A/B slots per road day: first 3 after 0459 → A, next 2 → B; called trains
   count first.
 - Rows with TV beside a name don't count as that person's turn.
+- MU turns are placeholders, not in any pool. An A/B train with MU on it:
+  the A/B turn goes spare and is shown (not Chain Gang, SD or 501/502).
 - Stale train: still planned 15 min+ past its call; pauses when the plan
   moves later.
 
@@ -174,6 +176,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **MU placeholder on an A/B train** (owner: "if its expecting an
+  A pool turn, and it goes spare it should show the actual turn going out
+  still, same with B pool. the rule doesnt apply to chain gang, sd, or 502";
+  "an MU turn is not a chain gang turn, its a placeholder turn"): engine
+  skips the called-crew shortcut when the called turn is MU on an A/B train;
+  the A/B queue's turn is shown, spare. Runaround log: MU on a train whose
+  turn went spare isn't a 'turn' runaround. Old out-of-sequence entries
+  (A42431 25, Z14891 24, M39491 24) keep the predictions saved then.
 
 - 2026-11-03: **Runaround log fixes** (owner: "I want to fix a few things"):
   passed-over turn "** goes spare" with no return or a return after the call
