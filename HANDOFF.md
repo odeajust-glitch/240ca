@@ -173,6 +173,18 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **JUOD bumped back onto S501 CO** (owner: "I am not on duty at
+  garnet … I wasn't working 501"): (1) the name code's Work history counts a
+  train only if it went on duty while they were on that turn (personHistory
+  `theirs`: onDutySeen inside the stretch); (2) sightings now carry craft
+  (pool rows) and the Call Board train (board-auto sight), site.js writes
+  people.json `now` {taken, seen:[{h, turn, craft, train}]}; the page's
+  Person.factsFor shows a followed person only their craft on 501/502 and
+  Call Board trains only with their name on (newest check only; needs the
+  laptop on this code). ❓ Rests from a shared turn aren't split by craft yet
+  (JUOD sees S501 EN's "rest until 3rd 1500"). ❓ At 0518 CATS showed S501 CO
+  marked ** → the site says the conductor goes spare on L50231 04: ask.
+
 - 2026-11-03: **Predicted crew, scored better** (owner, option 3): the
   Order summary story shows the last prediction (minutes before the call,
   nearly always right) plus "right since … (x before on duty)" and the

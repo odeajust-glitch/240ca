@@ -1012,7 +1012,11 @@ function personHistory(stretches, all) {
     if (!r) continue;
     const tag = (x) => ({ ...x, turn: e.turn });
     rec.changes.push(...r.changes.filter((c) => within(c.taken, e)).map(tag));
-    rec.orders.push(...r.orders.filter((o) => within(o.first, e) || within(o.last, e) || within(o.onDutySeen, e)).map(tag));
+    // A train that went on duty counts only if it went while they were on
+    // that turn (owner, 2026-11-03: JUOD bumped back onto S501 was shown
+    // working L50131 02, which went on duty at Garnet hours before).
+    const theirs = (o) => (o.onDuty ? within(o.onDutySeen, e) : within(o.first, e) || within(o.last, e));
+    rec.orders.push(...r.orders.filter(theirs).map(tag));
     rec.rests.push(...r.rests.filter((x) => within(x.seen, e)).map(tag));
     rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
   }
@@ -1025,7 +1029,7 @@ function personHistory(stretches, all) {
     for (const t of ownTurns) {
       const r = all[t];
       if (!r) continue;
-      rec.orders.push(...r.orders.filter((o) => o.job === e.turn && (within(o.first, e) || within(o.last, e) || within(o.onDutySeen, e))).map((x) => ({ ...x, turn: t })));
+      rec.orders.push(...r.orders.filter((o) => o.job === e.turn && (o.onDuty ? within(o.onDutySeen, e) : within(o.first, e) || within(o.last, e))).map((x) => ({ ...x, turn: t })));
     }
   }
   const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
@@ -1752,9 +1756,10 @@ const Person = (() => {
   };
   let data = null;
   let all = {}; // the last people.json read, for away()
+  let nowSeen = null; // people.json "now": the newest check's craft / Call Board train per person
   // A failed fetch (phone signal) isn't kept: the next paint tries again.
   const load = () => data || (data = fetch('data/people.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then((d) => (all = d.people || {})).catch(() => { data = null; return {}; }));
+    .then((d) => { nowSeen = d.now || null; return (all = d.people || {}); }).catch(() => { data = null; return {}; }));
   // Off the turn they were last seen on (owner, 2026-10-30: "it should say
   // I'm not found since there is a new person on SR03"): someone else seen
   // on it as their own turn since, or not seen anywhere for GONE_MIN while
@@ -1792,6 +1797,20 @@ const Person = (() => {
     hash,
     away,
     takenSince,
+    // A followed person's facts for a turn (owner, 2026-11-03: JUOD back on
+    // S501 CO was shown on duty on L50131 at Garnet, which the previous
+    // holder was working): on 501/502 only their craft, and Call Board
+    // trains only when their name is on one. Needs the newest check
+    // (people.json "now", from a laptop with this code); else the turn's.
+    factsFor(s, h, turn) {
+      const key = String(h || '').replace(/^@/, '');
+      const me = nowSeen && s && nowSeen.taken === s.taken ? nowSeen.seen.filter((x) => x.h === key && x.turn === turn) : null;
+      if (!me) return BoardTurns.facts(s, turn);
+      const craft = (me.find((x) => x.craft) || {}).craft;
+      const f = BoardTurns.facts(s, BoardTurns.SHARED.test(turn) && craft ? `${turn}-${craft === 'CO' ? 'CO' : 'EN'}` : turn);
+      const trains = new Set(me.map((x) => x.train).filter(Boolean));
+      return f.filter((x) => x.kind !== 'onDuty' || x.yard || trains.has(x.train));
+    },
     // The site published newer checks: read people.json again next time.
     reset() { data = null; },
     // A followed person ('@' + hash) → the turns they were seen on, or null.
@@ -2322,7 +2341,7 @@ source().then(async (src) => {
       const gone = isPerson(entry) && personGone[entry];
       if (!turn && gone) return `<li><b class="num">${esc(label(entry))}</b><div>Not found on a turn now. Last seen on <b>${esc(gone.turn)}</b> until ${esc(dt(gone.to))}${gone.why === 'taken' ? `; someone else is on ${esc(gone.turn)} now` : ''}.</div><div class="muted">Alerts start again when they're seen on a turn of their own.</div></li>`;
       if (!turn) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Not seen on a turn in the saved checks yet.</div></li>`;
-      const f = BoardTurns.facts(s, turn);
+      const f = isPerson(entry) ? Person.factsFor(s, entry, turn) : BoardTurns.facts(s, turn);
       const where = spareBoardsLine(s, f).filter((x) => !LINED.has(x.kind)).map((x) => x.text);
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
@@ -2644,7 +2663,7 @@ source().then(async (src) => {
     // Status (owner, 2026-11-03): where they are now: rest, hold, position,
     // out working, Toronto… from the newest check; or why they aren't seen.
     let status;
-    const factList = (turn) => { const f = BoardTurns.facts(s, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
+    const factList = (turn) => { const f = Person.factsFor(s, hash, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
     if (live) {
       const lead = cur.own ? `On <b class="num">${esc(cur.turn)}</b>.` : `Filling in on <b class="num">${esc(cur.turn)}</b>${home ? ` (home turn ${esc(home.turn)})` : ''}.`;
       status = `<p>${lead}</p>${factList(cur.turn) || '<p class="muted">Nothing else on the board about it in the newest check.</p>'}`;

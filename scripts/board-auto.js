@@ -605,17 +605,22 @@ async function runRoute(page, opts = {}) {
   // The hidden search (lib/board/people.js): who was on which turn this
   // check, as a hash of the person's code + the turn. No names, no codes.
   const seen = new Map();
-  const sight = (code, turn, own) => {
+  // craft: EN/CO where the screen shows it (501/502 is one number, two
+  // turns); train: the Call Board train their name is on (owner, 2026-11-03:
+  // JUOD bumped back onto S501 CO was shown "on duty on L50131", the train
+  // the previous holder was still working).
+  const sight = (code, turn, own, extra = {}) => {
     if (!code || !turn) return;
     const h = People.personHash(code);
     codeByHash.set(h, code); // memory only: the owner's "who gets alerts"
     const k = `${h}/${turn}`;
-    seen.set(k, { h, turn, own: own || (seen.get(k) || {}).own || false });
+    const was = seen.get(k) || {};
+    seen.set(k, { h, turn, own: own || was.own || false, ...(extra.craft || was.craft ? { craft: extra.craft || was.craft } : {}), ...(extra.train || was.train ? { train: extra.train || was.train } : {}) });
   };
   // A name with TV beside it is on another turn for now (owner, 2026-10-26:
   // "it's supposed to ignore it if it has a TV beside the name"): not a sighting.
-  for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own);
-  for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job);
+  for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own, { craft: b.craft });
+  for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job, { craft: t.craft, train: t.train });
   for (const y of yardNames) sight(y.code, y.job, false);
   // In the Toronto bunkhouse under a turn (their own or one they're covering).
   for (const b of bunkNames) sight(b.code, b.turn, knownPeople.get(b.key) === b.turn);

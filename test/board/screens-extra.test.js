@@ -118,7 +118,7 @@ test('yard crews matched to turns by name, in memory only', () => {
   assert.deepEqual(people, [
     { key: 'DESCHENES/M', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
     { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
-    { key: 'ROBBINS/M', turn: 'MU01', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
+    { key: 'ROBBINS/M', turn: 'MU01', craft: 'EN', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
   ]);
 });
 
