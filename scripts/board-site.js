@@ -1,6 +1,6 @@
 // Builds the line-up snapshot website from the saved board checks and,
-// with --deploy, publishes it (Cloudflare R2 when the R2_ settings are in
-// .env, else Netlify). board-auto.js does this by itself; run this to
+// with --deploy, publishes it to Cloudflare R2 (the R2_ settings in .env).
+// board-auto.js does this by itself; run this to
 // publish by hand or to test the settings.
 //
 //   node scripts/board-site.js            build into BoardChecker\site

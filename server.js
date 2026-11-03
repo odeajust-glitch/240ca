@@ -26,7 +26,7 @@ const app = express();
 // address for everyone and the rate limit would be shared globally.
 app.set('trust proxy', 1);
 app.use(express.json());
-app.use(hideBoardSite); // the line-up website is on Netlify only
+app.use(hideBoardSite); // the line-up website is on Cloudflare only
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Cost protection for the paid Kimi calls behind /api/ask.

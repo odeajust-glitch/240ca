@@ -30,11 +30,9 @@
 // 240ca server so the RailroadTracker app on your phone shows it.
 //
 // With R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in
-// .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), or
-// else NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID, the line-up snapshot website
-// (lib/board/site.js) is rebuilt from history\ and published after a check
-// that changed, at most every BOARD_SITE_EVERY minutes (default 15 on
-// Cloudflare, 90 on Netlify).
+// .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
+// line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
+// published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
 const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE } = require('../lib/board/paths');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -596,11 +594,11 @@ async function publishSite(changed) {
     return;
   }
   site.warned = false;
-  if (!settings.r2 && !(settings.token && settings.siteId)) return;
-  // On Cloudflare an upload is free, so every check goes out, changed or not:
-  // the page's "Last checked … ago" then stays fresh while the board sits
-  // unchanged (owner, 2026-10-22). Netlify charges per deploy: changes only.
-  if (changed || settings.r2) site.due = true;
+  if (!settings.r2) return;
+  // An upload is free, so every check goes out, changed or not: the page's
+  // "Last checked … ago" then stays fresh while the board sits unchanged
+  // (owner, 2026-10-22).
+  site.due = true;
   if (!site.due) return;
   if (Date.now() - site.lastAt < every * 60000) {
     const next = new Date(site.lastAt + every * 60000).toLocaleTimeString('en-CA', { hour12: false, hour: '2-digit', minute: '2-digit' });

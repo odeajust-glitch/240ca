@@ -68,9 +68,10 @@ code expects; if you pick others, use yours in the `.env` too.
    R2_ACCESS_KEY_ID=
    R2_SECRET_ACCESS_KEY=
    ```
-   Save. With these four, the site goes to Cloudflare instead of Netlify and
-   updates after every check, changed or not (`BOARD_SITE_EVERY=N` for a
-   gap of N minutes). The Netlify lines can stay; they're ignored.
+   Save. With these four, the site goes to Cloudflare and updates after
+   every check, changed or not (`BOARD_SITE_EVERY=N` for a gap of N
+   minutes). Any old NETLIFY_ lines aren't used any more (2026-11-03); you
+   can delete them.
 3. Publish once by hand to test:
    ```
    node scripts/board-site.js --deploy
@@ -92,8 +93,8 @@ the list never gets a code. The Article 18.6(b) names still need the
 Old link (owner, 2026-10-22): boardtestsa.netlify.app redirects here. It
 holds one `_redirects` file, uploaded by hand (Netlify → Deploys → drag the
 folder), with the line `/*  https://board.sarniaboard.workers.dev/:splat  301!`.
-Keep that Netlify site, and keep NETLIFY_ lines out of .env so the checker
-never publishes over it.
+Keep that Netlify site for the redirect. The checker no longer publishes to
+Netlify at all (taken out 2026-11-03), so it can't overwrite it.
 
 ## 7. Turn alerts on phones (owner, 2026-10-22)
 In **Find a turn**, a turn's panel has **🔔 Get alerts**: that phone then

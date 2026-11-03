@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { buildSite, deploySite, snapshotOf, torontoCrews, crewsOnTheWay, whenYouGo } = require('../../lib/board/site');
+const { buildSite, snapshotOf, torontoCrews, crewsOnTheWay, whenYouGo } = require('../../lib/board/site');
 const BoardTurns = require('../../public/board-turns');
 const BoardTrains = require('../../public/board-trains');
 
@@ -74,37 +74,6 @@ test('site: days outside the window come off', () => {
   assert.ok(!fs.existsSync(path.join(out, 'data/2026-10-14.json')));
   const index = JSON.parse(fs.readFileSync(path.join(out, 'data/index.json'), 'utf8'));
   assert.deepStrictEqual(index.days.map((d) => d.day), ['2026-10-15']);
-});
-
-test('site: deploy sends every file digest and uploads only what Netlify asks for', async () => {
-  const { hist, out } = makeHistory();
-  buildSite({ historyDir: hist, outDir: out, days: 0 });
-  const calls = [];
-  const fakeFetch = async (url, opts) => {
-    calls.push({ url, opts });
-    if (opts.method === 'POST') {
-      const files = JSON.parse(opts.body).files;
-      return { ok: true, json: async () => ({ id: 'dep1', ssl_url: 'https://x.netlify.app', required: [files['/data/index.json']] }) };
-    }
-    return { ok: true };
-  };
-  const sent = await deploySite({ dir: out, siteId: 'site1', token: 'tok', fetchImpl: fakeFetch });
-  assert.deepStrictEqual(sent, { ok: true, uploaded: 1, url: 'https://x.netlify.app' });
-  const posted = JSON.parse(calls[0].opts.body).files;
-  assert.deepStrictEqual(Object.keys(posted).sort(), ['/board-analytics.js', '/board-icon-180.png', '/board-icon-192.png', '/board-icon-512.png', '/board-names.js', '/board-trains.js', '/board-turns.js', '/data/2026-10-14.json', '/data/2026-10-15.json', '/data/analytics.json', '/data/archive.json', '/data/index.json', '/data/people.json', '/data/trains.json', '/data/turns.json', '/data/whengo.json', '/grievance.js', '/grievance_template.odt', '/index.html', '/jszip.min.js', '/manifest.webmanifest', '/robots.txt', '/sw.js']);
-  assert.match(calls[0].url, /\/sites\/site1\/deploys$/);
-  assert.strictEqual(calls[0].opts.headers.Authorization, 'Bearer tok');
-  assert.match(calls[1].url, /\/deploys\/dep1\/files\/data\/index\.json$/);
-});
-
-test('site: a refused token is reported, not thrown', async () => {
-  const { hist, out } = makeHistory();
-  buildSite({ historyDir: hist, outDir: out, days: 0 });
-  const sent = await deploySite({ dir: out, siteId: 's', token: 'bad', fetchImpl: async () => ({ ok: false, status: 401 }) });
-  assert.strictEqual(sent.ok, false);
-  assert.match(sent.message, /NETLIFY_AUTH_TOKEN/);
-  const down = await deploySite({ dir: out, siteId: 's', token: 't', fetchImpl: async () => { throw new Error('offline'); } });
-  assert.deepStrictEqual(down, { ok: false, message: 'offline' });
 });
 
 test('turns: where a turn shows up in one snapshot', () => {

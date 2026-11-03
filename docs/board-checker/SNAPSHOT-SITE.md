@@ -1,5 +1,9 @@
 # Line-up snapshot website: setting up the board-checker laptop
 
+> **Out of date (2026-11-03).** The site moved to Cloudflare (2026-10-22) and
+> Netlify publishing was taken out of the checker (2026-11-03). Use
+> [CLOUDFLARE.md](CLOUDFLARE.md). Kept for history only.
+
 The board checker saves every check in `C:\Users\<you>\BoardChecker\history`.
 With the steps below it also turns those into the line-up snapshot website and
 publishes it to Netlify (site **boardtestsa**, https://boardtestsa.netlify.app)

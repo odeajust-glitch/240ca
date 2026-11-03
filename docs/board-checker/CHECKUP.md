@@ -38,7 +38,9 @@ the owner; nothing here has been changed yet.
 - [ ] **#3** (one update covers everything): nothing to do; drop.
 
 ## 2026-10-24: Netlify usage (#13)
-- [ ] Netlify → the team's **Usage** / billing page: how many deploys / credits
+- [x] Not needed: the site moved to Cloudflare, and Netlify publishing was
+  taken out (2026-11-03).
+- [ ] ~~Netlify → the team's **Usage** / billing page: how many deploys / credits
   the snapshot site used in its first week (about 16 uploads a day at most).
   If it's heading over the plan, raise `BOARD_SITE_EVERY` in
   `BoardChecker\.env`.
