@@ -1486,7 +1486,15 @@ async function main() {
         const sent = await pushCheck({ ...relay, check });
         console.log(sent.ok ? `[${stamp()}] Sent to your phone.` : `[${stamp()}] Not sent to your phone: ${sent.message}`);
       }
-      await publishSite(first || changed || torontoChanged);
+      // The website goes up in the background (owner, 2026-11-03: "the
+      // checker is taking too long … its getting stuck here"): a slow upload
+      // no longer holds up the next check. One at a time; a check that
+      // finds one still going leaves it be (the next one sends the newest).
+      if (!site.busy) {
+        site.busy = publishSite(first || changed || torontoChanged)
+          .catch((err) => console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`))
+          .finally(() => { site.busy = null; });
+      } else console.log(`  (snapshot website: the last upload is still going; this check goes with the next one)`);
       await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || []);
       await backupLaptop();
       await sendWeekly();

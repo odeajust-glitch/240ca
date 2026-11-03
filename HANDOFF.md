@@ -231,6 +231,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: website publish runs in the background (board-auto.js
+  site.busy; owner: "the checker is taking too long … it needs to update
+  the site its getting stuck here"); one upload at a time. First live
+  reset run after the fixes (1027 check): red SR11, SD11 (+ yard jobs
+  YFLS01, YBHS31, YSBY06: not shown on the boards; ❓ yard jobs' days off
+  may not be counted right), yellow SR06, SD07, SR02 (+ XSAS03/05, YMPS31).
 - 2026-11-03: reset due = 7 days after the first time on duty after the
   last reset (owner: "I think the 7 days start when I go onduty, we can
   check that when I get called tonight for 502"); off since the reset =
