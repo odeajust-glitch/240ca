@@ -1007,7 +1007,7 @@ function turnPanel(s) {
 const stampBtn = (taken) => `<button type="button" data-taken="${esc(taken)}">${esc(dt(taken))}</button>`;
 // A person's history (hidden search): each turn's history, only while they
 // were on it, put together and marked with the turn.
-function personHistory(stretches, all) {
+function personHistory(stretches, all, myCraft = null) {
   const within = (t, e) => t && t >= e.from && t <= e.to;
   const rec = { changes: [], orders: [], rests: [], spares: [] };
   for (const e of stretches) {
@@ -1020,7 +1020,11 @@ function personHistory(stretches, all) {
     // working L50131 02, which went on duty at Garnet hours before).
     const theirs = (o) => (o.onDuty ? within(o.onDutySeen, e) : within(o.first, e) || within(o.last, e));
     rec.orders.push(...r.orders.filter(theirs).map(tag));
-    rec.rests.push(...r.rests.filter((x) => within(x.seen, e)).map(tag));
+    // 501/502: only their craft's rests (owner, 2026-11-03), when known: the
+    // stretch's craft, or for the newest stretch the newest check's.
+    const newest = !stretches.some((x) => x.turn === e.turn && x.to > e.to);
+    const craft = e.craft || (newest && BoardTurns.SHARED.test(e.turn) && myCraft ? myCraft(e.turn) : '');
+    rec.rests.push(...r.rests.filter((x) => within(x.seen, e) && (!craft || !x.craft || x.craft === craft)).map(tag));
     rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
   }
   // Filling in on another turn (owner, 2026-11-03: DRDI on SR07 showed no
@@ -1805,6 +1809,12 @@ const Person = (() => {
     // holder was working): on 501/502 only their craft, and Call Board
     // trains only when their name is on one. Needs the newest check
     // (people.json "now", from a laptop with this code); else the turn's.
+    // Their craft on a 501/502 turn in the newest check ('' = not known).
+    craftNow(h, turn) {
+      const key = String(h || '').replace(/^@/, '');
+      const me = nowSeen ? nowSeen.seen.find((x) => x.h === key && x.turn === turn && x.craft) : null;
+      return me ? (me.craft === 'CO' ? 'CO' : 'EN') : '';
+    },
     factsFor(s, h, turn) {
       const key = String(h || '').replace(/^@/, '');
       const me = nowSeen && s && nowSeen.taken === s.taken ? nowSeen.seen.filter((x) => x.h === key && x.turn === turn) : null;
@@ -2619,7 +2629,10 @@ source().then(async (src) => {
     src.turns().then((all) => {
       const hb = document.getElementById('turnhist');
       if (!hb || want !== focus) return;
-      const hist = all[BoardTurns.splitCraft(want).base];
+      const { base: wantBase, craft: wantCraft } = BoardTurns.splitCraft(want);
+      // S501-CO / S501-EN: only that craft's rests (owner, 2026-11-03).
+      const raw = all[wantBase];
+      const hist = raw && wantCraft ? { ...raw, rests: raw.rests.filter((x) => !x.craft || x.craft === (wantCraft === 'CO' ? 'CO' : 'EN')) } : raw;
       const h = turnHistory(hist, s.taken, { summary: true });
       hb.innerHTML = h.changes;
       const more = document.getElementById('turnmore');
@@ -2677,7 +2690,7 @@ source().then(async (src) => {
     } else {
       status = `<p>Last seen filling in on <b class="num">${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.</p>`;
     }
-    const rec = personHistory(list, all);
+    const rec = personHistory(list, all, (turn) => Person.craftNow(hash, turn));
     const h = turnHistory(rec, s.taken, { summary: true });
     const prev = focus;
     focus = live ? cur.turn : '';

@@ -157,7 +157,10 @@
           const rest = /(rest until|hold turn until) (\S+ \d{4})/.exec(x.text);
           if (rest) {
             const kind = rest[1] === 'rest until' ? 'Rest' : 'Hold turn';
-            if (!r.rests.some((y) => y.until === rest[2] && y.kind === kind)) r.rests.push({ kind, until: rest[2], seen: s.taken, where: x.kind === 'bunkhouse' ? 'Toronto bunkhouse' : (x.pool || '').replace(/ ·.*/, '') });
+            // craft: 501/502 is one number, two turns (owner, 2026-11-03: JUOD
+            // on S501 CO was shown the engineer's rest).
+            const craft = x.kind === 'pool' && x.craft ? (x.craft === 'CO' ? 'CO' : 'EN') : '';
+            if (!r.rests.some((y) => y.until === rest[2] && y.kind === kind && (y.craft || '') === craft)) r.rests.push({ kind, until: rest[2], seen: s.taken, where: x.kind === 'bunkhouse' ? 'Toronto bunkhouse' : (x.pool || '').replace(/ ·.*/, ''), ...(craft ? { craft } : {}) });
           }
           const spare = x.kind === 'pool' && /goes spare|B0/.test(x.status) ? x.status
             : x.kind === 'lineup' && /goes spare/.test(x.text) ? `its train ${x.train} goes spare to the spareboard`

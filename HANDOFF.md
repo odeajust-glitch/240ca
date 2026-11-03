@@ -193,8 +193,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   people.json `now` {taken, seen:[{h, turn, craft, train}]}; the page's
   Person.factsFor shows a followed person only their craft on 501/502 and
   Call Board trains only with their name on (newest check only; needs the
-  laptop on this code). ❓ Rests from a shared turn aren't split by craft yet
-  (JUOD sees S501 EN's "rest until 3rd 1500"). ❓ At 0518 CATS showed S501 CO
+  laptop on this code). Then rests split by craft: board-turns history
+  rests get craft on 501/502; people stretches keep craft (addSightings);
+  personHistory / a S501-CO turn search show only that craft's rests. ❓ At 0518 CATS showed S501 CO
   marked ** → the site says the conductor goes spare on L50231 04: ask.
 
 - 2026-11-03: **Predicted crew, scored better** (owner, option 3): the
