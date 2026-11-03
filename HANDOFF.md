@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: 2026-11-03 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything) · 179 tests (`npm test`).
+everything) · 181 tests (`npm test`).
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -70,6 +70,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (twice), then exit 3 → fresh Edge. Never while on Microsoft or the CATS
   sign-on (a person may be needed). Saves what it was on (stuck-screen.json,
   or signin-stuck.json + .png) and tells the owner's ntfy once.
+  **"Do you wish to place on another assignment?" (Y/N)**: answered with
+  BOARD_ASSIGNMENT_ANSWER (Y default, N, off) the moment it shows (in
+  waitForMainMenu, clearMessages, toMainMenu); the page's words + boxes
+  and a picture saved first (BoardChecker\assignment-questions\, last 20
+  in assignment-questions.json → Page Health). **Y means the owner has to
+  call in**: his choice (2026-11-03); don't change the default.
 - **Microsoft sign-in:** filled from `.env`, approval on his phone. Fresh
   sign-in only on R / phone "signin" (ntfy). Reminders 12 h and 2 h before
   the ~24 h runs out (`lib/board/signin.js` reminderDue; BOARD_MS_SIGNIN_HOURS).
@@ -142,6 +148,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
   down 3 h+ (built; owner adds the VAPID_KEYS secret).
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **"Another assignment?" answered Y** (owner: the stuck page was
+  CATS asking "Do you wish to place on another assignment?", Y or N; "answers
+  y … Once I … bypass it … it doesn't pop up anymore"; then "if you answer Y
+  i have to call in. Can you have it record whats on the page"). signin-stuck
+  isAssignmentQuestion (/ANOTHER ASSIGNMENT…?/ + a box), answerBox (1-letter
+  box, the only box, first empty), addQuestion. Tested in Chromium on a fake
+  question screen. ❓ Not seen on real CATS yet: check the first saved page.
 
 - 2026-11-03: **Stuck before the CATS main menu** (owner: "stuck at a
   notification page … trying to sign into cats"): signin-stuck.js

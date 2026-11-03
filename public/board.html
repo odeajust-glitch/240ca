@@ -149,6 +149,7 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) .htable td.warn { color: #ff8a80; } }
   .healthpage .hbody { padding: 4px 14px 10px; font-size: 14px; }
   .healthpage .sentlist { max-height: none; padding: 0 14px; font-size: 13px; }
+  .healthpage .qtext { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.4 ui-monospace, Consolas, monospace; margin: 4px 0 8px; }
   .healthpage .visits { max-height: 320px; overflow-y: auto; }
   .healthpage .nocount { display: flex; align-items: center; gap: 8px; min-height: 36px; }
   .healthpage .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
@@ -2124,9 +2125,13 @@ source().then(async (src) => {
     // What was sent, for whom (the laptop's alerts log, newest first).
     const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
     const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
+    // CATS's "Do you wish to place on another assignment?" pages, word for
+    // word, as the checker answered them (owner, 2026-11-03).
+    const Q = L.questions || [];
+    const questions = Q.length ? `<section class="sheet"><header><h2>CATS "another assignment?" questions</h2><span class="meta">answered by the checker, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · answered <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
-      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${who}${sent}
+      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;

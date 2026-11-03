@@ -174,3 +174,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   then F3, then reload CATS after 5 min (twice), then a fresh Edge; saves what
   the page was and sends your ntfy once. Next: teach it the real notice
   page once the owner shows how he gets past it.
+- 2026-11-03: **CATS "Do you wish to place on another assignment?"** answered
+  Y automatically (BOARD_ASSIGNMENT_ANSWER: Y / N / off); the page is saved
+  first (words + picture) for you to review: Page Health and
+  BoardChecker\assignment-questions.

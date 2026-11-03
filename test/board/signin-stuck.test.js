@@ -45,3 +45,29 @@ test('a page that isn\'t CATS: no keys, a reload after 5 minutes', () => {
   assert.equal(S.describe('other', ''), 'a blank or error page');
   assert.doesNotMatch(S.describe('cats', 'x'), /x/);
 });
+
+// Owner, 2026-11-03: "Do you wish to place on another assignment?" Y or N.
+test('the "another assignment" question is spotted and answered in the right box', () => {
+  const scr = (text, n = 1) => ({ seq: '3', text, textInputs: Array(n).fill('x') });
+  assert.ok(S.isAssignmentQuestion(scr('MESSAGE DO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT? (Y/N)')));
+  assert.ok(S.isAssignmentQuestion(scr('Do you wish to place on another assignment ?')));
+  assert.ok(!S.isAssignmentQuestion(scr('DO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT?', 0))); // no box to answer in
+  assert.ok(!S.isAssignmentQuestion(scr('MAIN MENU MILEAGE')));
+  assert.ok(!S.isAssignmentQuestion(null));
+  assert.equal(S.assignmentAnswer({}), 'Y');
+  assert.equal(S.assignmentAnswer({ BOARD_ASSIGNMENT_ANSWER: ' n ' }), 'N');
+  assert.equal(S.assignmentAnswer({ BOARD_ASSIGNMENT_ANSWER: 'off' }), null);
+  assert.equal(S.answerBox([{ maxLength: 8, value: '' }, { maxLength: 1, value: '' }]), 1);
+  assert.equal(S.answerBox([{ maxLength: 8, value: 'SA' }]), 0);
+  assert.equal(S.answerBox([{ maxLength: 8, value: '45' }, { maxLength: 8, value: '' }]), 1);
+  assert.equal(S.answerBox([{ maxLength: 8, value: '45' }, { maxLength: 8, value: 'SA' }]), -1);
+});
+
+test('the question page is kept for the owner, newest first, the last 20', () => {
+  let list = [];
+  for (let i = 0; i < 25; i++) list = S.addQuestion(list, { at: i, answer: 'Y', text: `JOB ${i}   \n\n\n\nDO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT?  ` });
+  assert.equal(list.length, S.KEEP_QUESTIONS);
+  assert.equal(list[0].at, 24);
+  assert.equal(list[0].text, 'JOB 24\n\nDO YOU WISH TO PLACE ON ANOTHER ASSIGNMENT?');
+  assert.equal(S.addQuestion(null, { at: 1, answer: 'N', text: 'x'.repeat(5000) })[0].text.length, 3000);
+});
