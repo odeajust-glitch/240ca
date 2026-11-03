@@ -41,6 +41,7 @@ const SignIn = require('../lib/board/signin');
 const Health = require('../lib/board/health');
 const Backup = require('../lib/board/backup');
 const Remote = require('../lib/board/remote');
+const Stuck = require('../lib/board/signin-stuck');
 const TurnAlerts = require('../lib/board/alerts');
 // For scripts/board-watchdog.js: what it's doing, so it can tell stuck from busy.
 const { beat } = require('../lib/board/watchdog');
@@ -1081,29 +1082,81 @@ function nap(ms) {
   });
 }
 
+// What it was stuck on before the main menu, kept on the laptop only: a
+// CATS screen masked (stuck-screen.json), any other page as its address,
+// title and a picture (signin-stuck.json / .png), so the route can be
+// taught about it (owner, 2026-11-03).
+async function saveSignInStuck(page, kind) {
+  if (kind === 'cats') return saveStuckScreen(page);
+  try {
+    const u = new URL(page.url());
+    const file = path.join(OUT_DIR, 'signin-stuck.json');
+    fs.writeFileSync(file, JSON.stringify({ at: new Date().toISOString(), address: `${u.origin}${u.pathname}`, title: await page.title().catch(() => '') }, null, 2));
+    await page.screenshot({ path: path.join(OUT_DIR, 'signin-stuck.png') }).catch(() => {});
+    console.log(`  Saved what it was stuck on: ${path.relative(process.cwd(), file)} and signin-stuck.png`);
+  } catch { /* mid-navigation; nothing to save */ }
+}
+
 async function waitForMainMenu(page, prompt, state = 'signin') {
   heartbeat(state);
   console.log(prompt);
-  let otherSince = null; // when a CATS screen that isn't the menu showed up
-  let rounds = 0;
+  // Stuck before the main menu (lib/board/signin-stuck.js): Enter, F3,
+  // reload CATS, then a fresh Edge. Never while Microsoft or the CATS
+  // sign-on is waiting on a person.
+  const t = { stuckFor: 0, enter: 0, keys: 0, reloads: 0, restarted: false };
+  let stuckSince = null;
+  let told = false;
   for (;;) {
     if (await fixFramedLogin(page)) continue;
     await microsoftStep(page);
     const s = await screenState(page);
-    if (s && is.mainMenu(s)) { microsoftDone(); return; }
-    // Signed in (by hand or not) but stuck on a message: clear it with Enter
-    // once it's sat there a few seconds (at most twice per sign-in).
-    if (s && s.seq !== null && !is.signOn(s)) {
-      otherSince ??= Date.now();
-      if (Date.now() - otherSince > 3000 && rounds < 2) {
-        rounds++;
-        console.log(`[${stamp()}] Clearing CATS messages with Enter…`);
-        await clearMessages(page);
-        otherSince = null;
+    const kind = Stuck.kindOf({ s, onMicrosoft: onMicrosoft(page), isMenu: !!s && is.mainMenu(s), isSignOn: !!s && is.signOn(s) });
+    if (kind === 'menu') { microsoftDone(); return; }
+    if (Stuck.waiting(kind)) stuckSince = null;
+    else stuckSince ??= Date.now();
+    t.stuckFor = stuckSince ? Date.now() - stuckSince : 0;
+    const step = Stuck.nextStep(kind, t);
+    if (step === 'enter') {
+      t.enter++;
+      console.log(`[${stamp()}] Clearing CATS messages with Enter…`);
+      await clearMessages(page);
+      continue;
+    }
+    if (step === 'keys') {
+      t.keys++;
+      console.log(`[${stamp()}] Still not at the CATS main menu: trying F3…`);
+      try {
+        await press(page, 'F3');
+      } catch (err) {
+        if (/^No F3 key/.test(err.message)) await press(page, 'Enter').catch(() => {});
+      }
+      continue;
+    }
+    if (step === 'reload' || step === 'restart') {
+      const what = Stuck.describe(kind, await page.title().catch(() => ''));
+      health.lastProblem = { at: Date.now(), text: `Stuck before the CATS main menu on ${what}` };
+      await saveSignInStuck(page, kind);
+      if (!told) {
+        told = true;
+        await alertPhone(`Board checker stuck before the CATS main menu on ${what}; it's reloading CATS.`);
+      }
+      if (step === 'reload') {
+        t.reloads++;
+        console.log(`[${stamp()}] Stuck for 5 minutes on ${what}: reloading CATS (${t.reloads} of ${Stuck.MAX.reloads})…`);
+        await goto(page, catsUrl);
+        Object.assign(t, { enter: 0, keys: 0 });
+        stuckSince = null;
         continue;
       }
-    } else {
-      otherSince = null;
+      t.restarted = true;
+      if (process.env.BOARD_WATCHDOG) {
+        console.log(`[${stamp()}] Still stuck on ${what} after reloading CATS: closing Edge so the watchdog starts it fresh.`);
+        await alertPhone(`Board checker still stuck on ${what}: starting Edge fresh.`);
+        await Promise.race([page.context().close().catch(() => {}), sleep(15000)]);
+        process.exit(3);
+      }
+      console.log(`\x07[${stamp()}] Still stuck on ${what}. Get it to the CATS main menu by hand, or close Edge and start the checker again.`);
+      continue;
     }
     if (s && is.signOn(s) && autoSignOn) {
       try {
@@ -1273,4 +1326,4 @@ if (require.main === module) {
 }
 
 // For trying the Microsoft steps against a fake sign-in page.
-module.exports = { microsoftStep, microsoftDone, clearSignInCookies };
+module.exports = { microsoftStep, microsoftDone, clearSignInCookies, waitForMainMenu };

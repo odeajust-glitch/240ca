@@ -170,3 +170,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Down 1 h → just the owner's phones** (the phones following
   👤 JUOD; OWNER_DOWN_MINUTES / OWNER_CODE), "back" to them too; Page Health
   **Worker timer** line (last run, ntfy topic set, push key set).
+- 2026-11-03: **Stuck between the sign-in and the CATS main menu**: Enter,
+  then F3, then reload CATS after 5 min (twice), then a fresh Edge; saves what
+  the page was and sends your ntfy once. Next: teach it the real notice
+  page once the owner shows how he gets past it.

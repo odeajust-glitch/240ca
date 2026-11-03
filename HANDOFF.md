@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: 2026-11-03 · Branch: **`claude/vigilant-planck-zawrj4`** (has
-everything) · 175 tests (`npm test`).
+everything) · 179 tests (`npm test`).
 
 **Running to-do list (owner's): [docs/board-checker/TODO.md](docs/board-checker/TODO.md).**
 Add every new ask there; move it to "Done" when finished.
@@ -64,6 +64,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
+  **Stuck before the main menu** (`lib/board/signin-stuck.js`, in
+  waitForMainMenu): on a CATS screen that isn't the menu, Enter (3 s, twice),
+  F3 (1 min, twice); on that or a non-CATS page for 5 min, reload CATS
+  (twice), then exit 3 → fresh Edge. Never while on Microsoft or the CATS
+  sign-on (a person may be needed). Saves what it was on (stuck-screen.json,
+  or signin-stuck.json + .png) and tells the owner's ntfy once.
 - **Microsoft sign-in:** filled from `.env`, approval on his phone. Fresh
   sign-in only on R / phone "signin" (ntfy). Reminders 12 h and 2 h before
   the ~24 h runs out (`lib/board/signin.js` reminderDue; BOARD_MS_SIGNIN_HOURS).
@@ -136,6 +142,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
   down 3 h+ (built; owner adds the VAPID_KEYS secret).
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **Stuck before the CATS main menu** (owner: "stuck at a
+  notification page … trying to sign into cats"): signin-stuck.js
+  kindOf/nextStep (above). Tested in Chromium on a fake notice that only F3
+  clears. ❓ The owner will describe the real screen and how he gets past it;
+  teach that screen its own step then (add a kind/step, don't widen the
+  generic one). Ask for: a phone photo, whether it's inside the CATS box or a
+  whole web page, and exactly what he clicks/types.
 
 - 2026-11-03: **Down 1 h → only the owner's phones** (owner: "a page
   notification like everyone gets at 3 hours, but just to me"). Worker
