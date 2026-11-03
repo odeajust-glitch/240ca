@@ -217,3 +217,5 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Snapshots: pick an hour, then a time.** The day's hours
   (00–23) as buttons, then just that hour's checks, so the list isn't a
   day's worth of times to scroll through.
+- 2026-11-03: Snapshots hours read 0000–2300; **Order summary tiles removed**
+  (the numbers are still in Analytics).

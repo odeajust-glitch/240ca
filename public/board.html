@@ -545,7 +545,7 @@
     .rail h2 { display: none; }
     .rail .same { display: none; }
     .rail ol { display: flex; flex-wrap: wrap; gap: 6px; border-left: 0; padding-bottom: 4px; }
-    .hours { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .hours { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .rail .day { display: none; }
     .daypick { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
     .rail .d, .rail .n { display: none; } /* the Day box has the date; just the times here */
@@ -1695,30 +1695,7 @@ function ordersView(all, day, openId, find, from = 'all') {
         <label for="ofind">Find a train<input id="ofind" placeholder="e.g. M30241 15" value="${esc(find)}" autocomplete="off" spellcheck="false"></label>
       </div>
     </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${done.length} <small>/ ${rows.length}</small></div><div class="l">Went on duty (of trains due)</div></div>
-      <div class="stat"><div class="v">${avg == null ? '—' : esc(dur(avg))}</div><div class="l">Average off, first plan vs on duty</div></div>
-      <div class="stat"><div class="v"><span class="offv ok">${green}</span> <small>·</small> <span class="offv warn">${yellow}</span> <small>·</small> <span class="offv bad">${red}</span></div><div class="l">First plan vs on duty: under 30 m · 30 m–1 h 56 m · beyond</div></div>
-      <div class="stat ${changed ? 'alert' : ''}"><div class="v">${changed}</div><div class="l">Order times changed after ordering</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.round(tod.reduce((a, b) => a + b, 0) / tod.length))) : '—'}</div><div class="l">Average time on duty, Sarnia to Toronto</div></div>
-      <div class="stat"><div class="v">${tod.length ? esc(dur(Math.max(...tod))) : '—'}</div><div class="l">Longest time on duty</div></div>
-      <div class="stat ${flagged.some((r) => r.flag === 'nonSarnia') ? 'alert' : ''}"><div class="v">${flagged.filter((r) => r.flag === 'nonSarnia').length}</div><div class="l">Non-Sarnia Crew (Toronto)</div></div>
-      <div class="stat"><div class="v">${flagged.filter((r) => r.flag === 'possible').length}</div><div class="l">Possible non-Sarnia crew or cancelled</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${dhGone(rows).length}</div><div class="l">Deadheads never called (this day)</div></div>
-      <div class="stat"><div class="v">${dhGone(week).length}</div><div class="l">Deadheads never called, last 7 days</div></div>
-      <div class="stat"><div class="v">${rows.filter((r) => r.deadhead).length}</div><div class="l">Deadheads on the line-ups (this day)</div></div>
-      <div class="stat"><div class="v"><small>${dhGone(week).length ? esc(dhGone(week).slice(0, 4).map((r) => r.id).join(', ')) : '—'}</small></div><div class="l">Latest never called</div></div>
-    </div>
-    <div class="strip">
-      <div class="stat"><div class="v">${pct(acc.co)} <small>${acc.co.hit} / ${acc.co.n}</small></div><div class="l">Conductor predicted right (this day)</div></div>
-      <div class="stat"><div class="v">${pct(acc.en)} <small>${acc.en.hit} / ${acc.en.n}</small></div><div class="l">Engineer predicted right (this day)</div></div>
-      <div class="stat"><div class="v">${pct(acc.wco)} <small>${acc.wco.hit} / ${acc.wco.n}</small></div><div class="l">Conductor right, last 7 days</div></div>
-      <div class="stat"><div class="v">${pct(acc.wen)} <small>${acc.wen.hit} / ${acc.wen.n}</small></div><div class="l">Engineer right, last 7 days</div></div>
-    </div>
+    <!-- Tiles removed (owner, 2026-11-03: "remove all the tiles on the order summary tab"); the numbers are in Analytics. -->
     <section class="sheet"><header><h2>Trains · ${esc(w.day)}</h2><span class="meta">tap a train for its full story</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>First seen</th><th>First plan</th><th>First order</th><th>Order changes</th><th>On duty (actual)</th><th>Off from plan</th><th>Off from order</th><th>Off duty (Toronto)</th><th>Time on duty</th></tr></thead>
       <tbody>${body}</tbody></table></div>
@@ -2256,7 +2233,7 @@ source().then(async (src) => {
   function renderRail(hour) {
     railHour = hour;
     const hours = [...new Set(list.map(hourOf))].sort();
-    document.getElementById('hours').innerHTML = hours.map((h) => `<button type="button" data-h="${h}" aria-pressed="${h === hour}">${h}</button>`).join('');
+    document.getElementById('hours').innerHTML = hours.map((h) => `<button type="button" data-h="${h}" aria-pressed="${h === hour}">${h}00</button>`).join('');
     document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).filter(([s]) => hourOf(s) === hour).reverse().map(([s, i]) => {
       const w = when(s.taken);
       const same = s.sameUntil ? `<span class="same">same until ${esc(when(s.sameUntil).time)}</span>` : '';
