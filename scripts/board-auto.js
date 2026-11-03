@@ -698,6 +698,8 @@ function answer(summary, me, nowOverride) {
   let prev = null;
   try { prev = JSON.parse(fs.readFileSync(LAST_FILE, 'utf8')); } catch { /* first check */ }
   const text = formatReport(result, input.seen, { changes: { prev, cur } });
+  // The checker window: the same without WHEN YOU GO (owner, 2026-11-03: the site does that).
+  const screenText = formatReport(result, input.seen, { changes: { prev, cur }, hideMe: true });
   fs.writeFileSync(LAST_FILE, JSON.stringify(cur, null, 2));
   const myAnswerChanged = !!prev && prev.me.join('\n') !== cur.me.join('\n');
   // The working behind each train, kept with the snapshot.
@@ -706,7 +708,7 @@ function answer(summary, me, nowOverride) {
   // Toronto (bunkhouse + Mac yard line-up) isn't in the Sarnia report, so it
   // gets its own fingerprint: a change there also updates the website.
   const toronto = JSON.stringify({ b: input.bunkhouse, m: input.macLineup.map((t) => [t.symbol, t.originDay, t.order, t.status]) });
-  return { text, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
+  return { text, screenText, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
     callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
       spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, fillIns }), lineupRead: !!input.seen.lineup };
@@ -1464,10 +1466,10 @@ async function main() {
       const summary = await runRoute(page, { ...poolOpts, names });
       health.lastCheck = Date.now();
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
-      const { text, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
+      const { text, screenText, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
-      console.log(`${myAnswerChanged ? '\x07' : ''}\n${text}`);
+      console.log(`\n${screenText}`);
       try {
         saveSnapshot(summary, { text, detailed });
         pruneHistory();

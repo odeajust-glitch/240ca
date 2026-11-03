@@ -226,6 +226,10 @@ test('report leads with when the owner goes to work (2026-10-15 run)', () => {
   assert.match(text, /the 1st Chain Gang train or deadhead after that if it's called before 16th 0559 \(SR05 on hold turn\)/);
   assert.match(text, /Called after 16th 0559: the 2nd one/);
   assert.match(text, /Your own rest is up at 15th 1015/);
+  // The checker window leaves it out (owner, 2026-11-03: the site does it).
+  const screen = formatReport(runBoardCheck({ ...input, me: 'SR03' }), input.seen, { hideMe: true });
+  assert.doesNotMatch(screen, /WHEN YOU GO|Your own rest/);
+  assert.match(screen, /^Board check as of /);
 });
 
 test('owner on a line-up train gets call and on-duty times', () => {
