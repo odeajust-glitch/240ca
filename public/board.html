@@ -1371,7 +1371,7 @@ function anaRunarounds({ runarounds }) {
 // errors in CATS"): each train and job CATS listed under the wrong turn, how
 // long it showed, who CATS's list would have called, whether CATS fixed it
 // before the train went, and the crew that went (who was right).
-function anaCats({ catsErrors = [] }) {
+function anaCats({ catsErrors = [], catsMissing = [] }) {
   const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
   const result = (r) => (r.fixed ? `<span class="offv ok">CATS fixed it</span><div class="crew">${esc(dt(r.fixed))}</div>`
     : r.onDuty ? '<span class="offv bad">Still wrong when it went</span>' : '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>');
@@ -1396,7 +1396,24 @@ function anaCats({ catsErrors = [] }) {
   return `<p class="anote">CATS's jobs going spare (option 5) checked against the order: a job CATS lists under a turn the order doesn't have on that train. The site's Jobs Going Spare shows the corrected list; the spare CATS's list would call is told it's the wrong turn. A one-check blip isn't counted. Tap a time to open that snapshot.</p>
     <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
     <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
-    <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>`;
+    <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>
+    ${catsMissingView(catsMissing)}`;
+}
+// Missing from option 5 (owner, 2026-11-03): the order says the job goes
+// spare, option 5 doesn't list it for 30 min or more.
+function catsMissingView(rows) {
+  const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
+  const later = rows.filter((r) => r.listedAt).length;
+  const list = rows.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Train</th><th>Job going spare</th><th>Missing from</th><th>For</th><th>Then</th><th>Crew that went</th></tr></thead><tbody>${[...rows].reverse().slice(0, 80).map((r) => `<tr class="nolink">
+      <td class="num stick"><b>${esc(r.train)}</b><div class="crew">${r.craft === 'EN' ? 'Engineer' : 'Conductor'}${r.order ? ` · ${esc(r.order)}` : ''}</div></td>
+      <td class="num"><button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button> (spare)</td>
+      <td class="num">${stampBtn(r.first)}</td><td class="num"><b>${long(r.minutes)}</b></td>
+      <td>${r.listedAt ? `<span class="offv warn">CATS listed it</span><div class="crew">${esc(dt(r.listedAt))}</div>` : r.ended ? '<span class="offv ok">No longer going spare</span>' : '<span class="offv bad">Still not listed</span>'}</td>
+      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">not on duty yet</span>'}</td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">No jobs missing from option 5 in the dates picked.</p>';
+  return `<section class="sheet"><header><h2>Missing from option 5</h2><span class="meta">the order says it goes spare; CATS doesn't list it</span></header>
+    <p class="anote" style="margin:10px 14px">A job the line-up's order says goes spare (the "(spare)" turn) that option 5 didn't list for 30 min or more. CATS is often a little slow, so "CATS listed it" shows when it caught up.</p>
+    <div class="strip">${anaTile(rows.length, 'Jobs missing 30 min+', rows.length > 0)}${anaTile(later, 'CATS listed them later')}${anaTile(rows.filter((r) => !r.listedAt && r.onDuty).length, 'Never listed before the train went')}</div>${list}</section>`;
 }
 // My week (owner, 2026-11-03): each turn or person followed on this phone,
 // one week at a time (public/board-week.js, the same summary the Sunday
@@ -2755,7 +2772,7 @@ source().then(async (src) => {
   // Opens on the last 90 days, so only those archive months load (F7).
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], runLog: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [] };
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -2774,7 +2791,7 @@ source().then(async (src) => {
     const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
     const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
     for (const p of parts.filter(Boolean)) {
-      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'stale', 'runLog']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'catsMissing', 'stale', 'runLog']) out[k] = out[k].concat(p[k] || []);
       for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
     }
     return out;
@@ -2818,7 +2835,7 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== 'analytics') return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], stale: [], runLog: [], ...(found || {}) };
+    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
     // anything in both once (BoardAnalytics.joinOld, the archive's copy).
     const { joinOld } = BoardAnalytics;
@@ -2831,6 +2848,7 @@ source().then(async (src) => {
     const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
+    const catsMissing = joinOld('catsMissing', arch.catsMissing || [], found.catsMissing).filter((r) => inDates(r.first));
     const runLog = joinOld('runLog', arch.runLog || [], found.runLog).filter((r) => inDates(r.seen));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
@@ -2875,7 +2893,7 @@ source().then(async (src) => {
         }
         if (mode !== 'analytics') return;
       }
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, stale, runLog, weeks });
+      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];

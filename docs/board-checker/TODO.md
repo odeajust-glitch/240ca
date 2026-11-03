@@ -13,11 +13,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    now; when it's built, an email notification rather than a phone alert).
 4. **My week for everyone:** the Sunday alert goes only to phones following
    JUOD for now; open it up if the owner likes it.
-5. **Jobs missing from option 5:** jobs the order says go spare that CATS's
-   option 5 doesn't list (not tracked yet; see 2026-11-03 note).
-6. **Phone alert to everyone when the checker is down 3 h+** (the banner is
+5. **Phone alert to everyone when the checker is down 3 h+** (the banner is
    done; needs Worker web push + a VAPID key secret).
-7. **Analytics: anything more?** The owner's picks are built (see "Done");
+6. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
@@ -165,3 +163,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   followed on the phone, Sunday to Saturday: trips, time on duty, holds,
   rests, calls vs the one slept on, runarounds, stale trains, CATS errors),
   and a Sunday 9 AM alert with last week's summary, JUOD only for now.
+- 2026-11-03: **Missing from option 5** tracked in Analytics → CATS errors:
+  jobs the order says go spare that option 5 didn't list for 30 min or more,
+  whether CATS listed them later, and the crew that went.

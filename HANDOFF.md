@@ -128,6 +128,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Missing from option 5** (owner: "yes add it, 30 minutes is
+  fine"): insights missingCheck: a line-up job marked "(goes spare" (crew
+  co/en in the row's rules) with no option 5 job for that train and craft
+  (vacanciesCats, else vacancies), only in checks that read option 5
+  (`screens` has 'terminal'); kept when missing 30 min+ (MISSING_MIN),
+  listedAt when CATS catches up, ended when the order stops saying spare,
+  Call Board crew. → analytics `catsMissing`, archived; shown under
+  Analytics → CATS errors. Tracking only, no alerts.
+
 - 2026-11-03: **My week** (owner: page + Sunday alert, "only works for JUOD
   first. If it's nice we can push it out"). public/board-week.js (shared by
   page and laptop): weekOf / weekBefore (Sun–Sat), personRec (moved from the

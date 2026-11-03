@@ -249,3 +249,23 @@ test('insights: runaround log against the order at the last check before', () =>
   const late = Insights.finish(Insights.collect([snaps[0], { ...snaps[1], taken: '2026-11-02 1700' }])).runLog;
   assert.equal(late.find((r) => r.train === 'M38261 02').result, 'possible');
 });
+
+// Owner, 2026-11-03: jobs the order says go spare that option 5 doesn't
+// list ("30 minutes is fine"), with CATS listing it later and the crew.
+test('insights: jobs missing from option 5', () => {
+  const row = { train: 'E27861 02', order: '2nd 1920', call: '2nd 1705', status: 'PLN', crew: { co: 'SR05', en: 'SD01' }, rules: 'Chain Gang: SR05 + SD01 (goes spare)' };
+  const snaps = [
+    { taken: '2026-11-02 1200', screens: ['terminal'], lineup: [row], vacanciesCats: [] },
+    { taken: '2026-11-02 1210', screens: [], lineup: [row] }, // option 5 not read: says nothing
+    { taken: '2026-11-02 1215', screens: ['terminal'], lineup: [row], vacanciesCats: [], sameUntil: '2026-11-02 1240' },
+    { taken: '2026-11-02 1245', screens: ['terminal'], lineup: [row], vacanciesCats: [{ train: 'E27861', cc: 'EN', turn: 'SD01' }] },
+    { taken: '2026-11-02 1730', screens: ['terminal'], lineup: [], onDuty: [{ train: 'E27861 02', onDuty: '2nd 1705', crew: 'EN SD01 · CO SR05' }] },
+  ];
+  const m = Insights.finish(Insights.collect(snaps)).catsMissing;
+  assert.equal(m.length, 1);
+  assert.deepEqual([m[0].train, m[0].craft, m[0].turn, m[0].first, m[0].listedAt, m[0].minutes, m[0].crew],
+    ['E27861 02', 'EN', 'SD01', '2026-11-02 1200', '2026-11-02 1245', 45, 'EN SD01 · CO SR05']);
+  // Listed within 30 min: just CATS being slow, not counted.
+  const quick = Insights.finish(Insights.collect([snaps[0], { ...snaps[3], taken: '2026-11-02 1220' }])).catsMissing;
+  assert.equal(quick.length, 0);
+});
