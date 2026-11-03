@@ -430,10 +430,11 @@ async function runRoute(page, opts = {}) {
     if (m && +m[1] >= +m[2]) break;
     if (parsed.crewsInTown || /CREWS\s*IN\s*TOWN/.test(shown)) {
       // The crews in town (TODO #10, owner 2026-11-03): page on to the end
-      // of the list too, those pages labelled for the loader. A problem
+      // of the list too (pages 5–29 of 29 in his screenshots), those pages
+      // labelled for the loader. A problem
       // here only shortens the list; the check goes on.
       try {
-        for (let more = 0; more < 15; more++) {
+        for (let more = 0; more < 40; more++) {
           const pg = /PAGE (\d+) OF (\d+)/.exec((await screenState(page)).text);
           if (!pg || +pg[1] >= +pg[2]) break;
           expect(await press(page, 'F8'), is.callBoardList, 'next crews in town page');

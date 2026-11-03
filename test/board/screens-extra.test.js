@@ -395,32 +395,63 @@ test('spareboard VIEW TIME: who left the board in the last 10 minutes', () => {
   assert.equal(BoardTurns.facts(s, 'EN04').filter((x) => x.kind === 'pool').length, 0);
 });
 
-// TODO #10 (owner, 2026-11-03: "keep reading the crews in town"): the lines
-// under the heading are kept (masked) until a real crew's line is seen.
-test('crews in town: none, and lines kept across pages', () => {
-  const first = S.parseCrewsInTown(grid(yardPage));
-  assert.deepEqual([first.started, first.none, first.lines], [true, true, ['POOL: S1/SA C+C AAAAAA/AAAAAA']]);
-  // Before the heading nothing is taken; a continuation page is all list.
-  assert.equal(S.parseCrewsInTown(grid(yardPage.slice(0, 5))).started, false);
-  const next = S.parseCrewsInTown(grid([
-    '26/10/24-   351                        CN  RAIL                     PAGE  006  OF  006',
-    '          CO   SMITH+      J   JOHN     SA05      1430  24',
-  ]), true);
-  assert.equal(next.lines.length, 1);
-  assert.match(next.lines[0], /SA05 1430 24$/);
-  assert.doesNotMatch(next.lines[0], /SMITH/); // masked, as saved
+// TODO #10: the crews in town, laid out as in the owner's screenshots
+// (Call Board pages 5 and 6 of 29, 2026-11-03 0910); made-up names.
+const town5 = [
+  '26/11/03-   910                       CN  RAIL                      PAGE  005  OF  029',
+  '                                       SARNIA',
+  '                                 CALL  BOARD  REPORT                    CNP27N',
+  'CREWS  IN  TOWN',
+  'POOL:  S1/SA  C+C                         RESTED/STATUS',
+  '         <<    NO  CREWS  IN  TOWN    >>',
+  'POOL:  S3/SB  C+C                         RESTED/STATUS',
+  '         <<    NO  CREWS  IN  TOWN    >>',
+  'POOL:  CO  "A"POOL                        RESTED/STATUS',
+  '01  CO  SA02  DOE*+      (NET)J   JOHN    ** RESTED  **',
+  '02  CO  SA03  ROE*+(NET)      M   MIKE    ** RESTED  **',
+  '03  CO  SA04  PARK+       (NT)TW  TOM     ** RESTED  **',
+  'POOL:  CO  "B"POOL                        RESTED/STATUS',
+  '01  CO  SB03  EXAMPLE*+(NET)KYLE          ** RESTED  **',
+  '    TT  SB99  <<  OPEN  TURN  >>',
+  '02  CO  SB04  SAMPLE*+   (NET)M   MATTHEW ** RESTED  **',
+  '         ENTER=INQ\\RESTART       F3=EXIT       F7=PAGEUP       F8=PAGEDN',
+];
+const town6 = [
+  '26/11/03-   910                       CN  RAIL                      PAGE  006  OF  029',
+  '                                 CALL  BOARD  REPORT                    CNP27N',
+  'CREWS  IN  TOWN',
+  '    TT  SB02  <<  OPEN  TURN  >>',
+  '03  CO  SB05  TESTER*+(NET)S      SAM     26/11/03-1815',
+  '04  CO  SB06  BROOK*+    (NET)C   CARL    ** RESTED  **',
+  'POOL:  DRAG  POOL                         RESTED/STATUS',
+  '01  EN  SD05  WHITE*+         S   SEAN    ** RESTED  **',
+  '05  EN  SD07  EAST*+          J   JORDAN    **HT  1104  0635',
+  '07  EN  SD11  NORTH*+         M   MARTIN    26/11/04-0215',
+  'POOL:  SDM  POOL                          RESTED/STATUS',
+  '         ENTER=INQ\\RESTART       F3=EXIT       F7=PAGEUP       F8=PAGEDN',
+];
+const now3 = at(2026, 11, 3, 9, 10);
+
+test('crews in town: pools, turns and rested / rest until / hold / open, over two pages', () => {
+  const pools = S.parseCrewsInTown([grid(town5), grid(town6)], now3);
+  assert.deepEqual(pools.map((p) => [p.pool, p.crews.length]), [['S1/SA C+C', 0], ['S3/SB C+C', 0], ['CO A POOL', 3], ['CO B POOL', 6], ['DRAG POOL', 3], ['SDM POOL', 0]]);
+  const b = pools[3].crews.map((c) => `${c.pos ?? '--'} ${c.craft} ${c.turn} ${c.status}${c.until != null ? ` ${fmt(c.until)}` : ''}`);
+  assert.deepEqual(b, ['1 CO SB03 rested', '-- TT SB99 open', '2 CO SB04 rested', '-- TT SB02 open', '3 CO SB05 rest 3rd 1815', '4 CO SB06 rested']);
+  const d = pools[4].crews.map((c) => `${c.turn} ${c.status}${c.until != null ? ` ${fmt(c.until)}` : ''}`);
+  assert.deepEqual(d, ['SD05 rested', 'SD07 hold 4th 0635', 'SD11 rest 4th 0215']);
+  // Never a name, even unmasked.
+  assert.doesNotMatch(JSON.stringify(S.parseCrewsInTown([grid(town5, false), grid(town6, false)], now3)), /DOE|TESTER|JORDAN|SAM\b/);
+  // Pages before the list, or no list at all: null.
+  assert.equal(S.parseCrewsInTown([grid(yardPage.slice(0, 5))], now), null);
+  assert.deepEqual(S.parseCrewsInTown([grid(yardPage)], now), [{ pool: 'S1/SA C+C', crews: [] }]);
 });
 
-test('crews in town: loadSummary joins the Call Board page and the pages after it', () => {
+test('crews in town: loadSummary reads the Call Board page and the labelled pages after it', () => {
   const { loadSummary } = require('../../lib/board/summary');
   const raw = (lines) => lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${maskTokenWith(m[0], BOARD_WORDS)}`)].join(' | '));
-  const top = yardPage.slice(0, -1).map((l, i) => (i === 0 ? l.replace('005  OF  031', '005  OF  006') : l));
-  const s = loadSummary({ screens: [
-    { screenGrid: raw(['26/10/24-   351   CALL  BOARD   PAGE  005  OF  006', ...top.slice(1)]) },
-    { label: 'crewsInTown', screenGrid: raw(['26/10/24-   351   CALL  BOARD   PAGE  006  OF  006', '          CO   SMITH+      J   JOHN     SA05      1430  24']) },
-  ] }, { now });
+  const s = loadSummary({ screens: [{ screenGrid: raw(town5) }, { label: 'crewsInTown', screenGrid: raw(town6) }] }, { now: now3 });
   assert.equal(s.seen.crewsInTown, true);
-  assert.equal(s.crewsInTown.none, false);
-  assert.equal(s.crewsInTown.lines.length, 2);
-  assert.equal(s.seen.callBoardPages, 1);
+  assert.equal(s.seen.callBoardPages, 0);
+  assert.deepEqual(s.crewsInTown.map((p) => p.crews.length), [0, 0, 3, 6, 3, 0]);
+  assert.equal(s.crewsInTown[4].crews[1].status, 'hold');
 });

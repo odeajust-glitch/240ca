@@ -8,13 +8,16 @@ Last updated: 2026-11-03 (crews in town session) · Branch:
 ## ▶ Next session
 
 **In progress: TODO #10, expanded Call Board** (owner's order: #10 first,
-then **#8 rest tracker**). Step 1 is pushed: the checker now pages through
-the whole CREWS IN TOWN list (pages labelled `crewsInTown`) and the loader
-keeps its lines as masked text (`summary.crewsInTown` = { none, lines },
-`seen.crewsInTown`; screens.js parseCrewsInTown). **Waiting on the owner's
-2–3 screenshots** of the list with crews on it; then write the real reader
-(pool, craft, turn, rested time / status, never names) and ask how the site
-shows it. The laptop needs a `git pull` + restart to start reading the list.
+then **#8 rest tracker**). Pushed: the checker pages through the whole
+CREWS IN TOWN list (Call Board pages 5–29 of 29; later pages labelled
+`crewsInTown`) and summary.js reads it (screens.js parseCrewsInTown →
+`summary.crewsInTown` [{ pool, crews: [{ pos, craft, turn, status
+rested/rest/hold/open/other, until }] }], `seen.crewsInTown`). New safe
+words in capture.js BOARD_WORDS (RESTED, OPEN, TOWN, DRAG, SDM, …). **Not
+on the site yet.** Open questions to the owner: "**HT 1104 0635" (read as
+hold until 11/04 0635), what pages 7–29 hold, extra time per check, how to
+show it. The laptop needs `git pull` + restart. Tests use made-up names:
+never copy names from the owner's screenshots into the repo.
 Then #8 rest tracker (DHT040B 31 case, see TODO), #9, #11, #6 and the older
 ones. Show options with a recommendation, then build. Before changing a tab,
 search the archive for why it is the way it is.
@@ -215,8 +218,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 - 2026-11-03 (crews in town session): owner put #10 (expanded Call Board)
   before #8 (rest tracker). Checker reads past CREWS IN TOWN to the last
-  page (board-auto.js Call Board loop; trouble there only shortens the
-  list); summary.js keeps the lines. Not shown on the site yet. Tests: run
+  page (board-auto.js Call Board loop, up to 40 more pages; trouble there
+  only shortens the list); reader written from his two screenshots (pages
+  5 and 6). Not shown on the site yet. Tests: run
   `npm ci` first in a fresh container (jszip etc.), then 207 pass.
 - 2026-11-03 (housekeeping session; every note in the archive's "Later
   notes"): L502 alternation + Garnet line-up; Worker timer fixed (wasn't

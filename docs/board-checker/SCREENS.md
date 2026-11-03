@@ -37,8 +37,16 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   lines `FO  DESCHENES+  M  MATTHEW` with **no turn**. "CREWS IN TOWN" is a
   line of its own, then `POOL: S1/SA C+C  RESTED/STATUS`. Since 2026-11-03
   (TODO #10) the checker pages on to the last page through the crews in town
-  (those pages labelled `crewsInTown`); screens.js parseCrewsInTown keeps the
-  lines as masked text until a real crew's line is seen. On duty taken as
+  (those pages labelled `crewsInTown`). Owner's screenshots (2026-11-03
+  0910): the list is **pages 5–29 of 29**, every page starts with CREWS IN
+  TOWN, then `POOL: <name>  RESTED/STATUS` per pool (S1/SA C+C, S3/SB C+C,
+  CO "A"POOL, CO "B"POOL, DRAG POOL, SDM POOL, …) and rows
+  `01 CO SA02 <name> ** RESTED **`, `03 CO SB05 <name> 26/11/03-1815`
+  (rest until), `05 EN SD07 <name> **HT 1104 0635` (hold turn, read as
+  11/04 0635 ❓), `TT SB99 << OPEN TURN >>`, `<< NO CREWS IN TOWN >>`. A
+  pool runs on to the next page without its heading. screens.js
+  parseCrewsInTown → summary `crewsInTown` [{ pool, crews: [{ pos, craft,
+  turn, status rested/rest/hold/open/other, until, text }] }]. On duty taken as
   **8 h**. To know whose turn is on a yard job, board-auto.js reads the yard
   jobs and every board (pools, spareboards, 29) unmasked **in memory**,
   matches surname + first initial, and saves only `yardCrew: [{ job, craft,
