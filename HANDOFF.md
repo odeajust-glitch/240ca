@@ -231,6 +231,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: spareboards' B0 reads "B0: working another job" (owner, EN10:
+  "Don't need to put that it goes spare"); pools keep "…, goes spare if
+  called" (view.js gangStatus spareboard option).
 - 2026-11-03: Toronto trains gone from 41 without reaching the Call Board:
   red "Non-Sarnia Crew" only if no rested crew AND no Sarnia crew was
   predicted for it; a predicted crew (owner: M38331 03, SD09 + SR07) →
