@@ -156,3 +156,16 @@ test('collect: each turn\'s trains, and jobs a spare filled in', () => {
   assert.deepEqual(Object.keys(acc.turnTrips).sort(), ['S104', 'S502-EN', 'SA07']);
   assert.deepEqual(acc.filled[`A42431 03/${t(3, 1000)}`], ['S104']);
 });
+
+// Owner, 2026-11-03: "anyone on a regular yard job should be reset cause
+// they have set days off. Its the people on the boards that matter."
+test('regular yard jobs are left out', () => {
+  const acc = R.empty();
+  acc.since = t(24, 220); acc.last = t(2, 800);
+  acc.trips.y = Object.fromEntries([26, 27, 28, 29, 30, 31, 1].map((d) => [`Y/${d}`, { train: 'YFLS01', on: t(d, 2200), job: 'YFLS01', first: t(d, 2200), last: t(d, 2300), yard: true }]));
+  acc.trips.b = { ...acc.trips.y };
+  const people = { y: [{ turn: 'YFLS01', own: true, from: '2026-10-24 0300', to: '2026-11-02 0800' }], b: [{ turn: 'B111', own: true, from: '2026-10-24 0300', to: '2026-11-02 0800' }] };
+  const turns = R.byTurn(acc, people, t(2, 800));
+  assert.equal(turns.YFLS01, undefined);
+  assert.equal(turns.B111.level, 'red');
+});
