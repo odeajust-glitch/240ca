@@ -133,8 +133,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Restore steps in docs/board-checker/CLOUDFLARE.md.
 - **RailroadTracker relay: keep it** (owner, 2026-11-03: "I am using the
   app"): each check also goes to the relay (`BOARD_RELAY_URL` + `BOARD_KEY`,
-  `lib/board/relay.js` pushCheck) for the app's Board tab; moving from
-  Render to the Worker (2026-11-03). Don't suggest removing it.
+  `lib/board/relay.js` pushCheck) for the app's Board tab; on the Worker
+  now (2026-11-03). Not configured on the laptop: the app reads the board
+  site directly.
 
 ## Rules settled with the owner (don't re-litigate)
 
@@ -186,7 +187,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   relay on the Worker". The app (repo odeajust-glitch/RailroadTracker, branch
   board-relay) has the server address as a setting (Board tab → Automatic
   board check), so no app code change; branch board-shifts reads the board
-  site directly and has no relay. ❓ Which app build is on his phone.
+  site directly and has no relay. **The laptop has no BOARD_KEY /
+  BOARD_RELAY_URL** (checked 2026-11-03): the relay was never in use; the app
+  reads the board site. Nothing to move for the app; the Worker relay stays
+  off (404) unless a BOARD_KEY secret is added.
   Step 2 (search: D1 full-text + R2 PDFs + Kimi from the Worker) next.
   Don't cancel Render until both are verified.
 
