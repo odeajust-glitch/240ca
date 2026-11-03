@@ -440,3 +440,13 @@ test('R2 syncPrefixes tries a dropped connection again, then says which file', a
   assert.equal(r.ok, false);
   assert.match(r.message, /uploading search\/c\.json: fetch failed \(ETIMEDOUT\)/);
 });
+
+test('R2 publish tries a dropped connection again', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2-site-'));
+  fs.writeFileSync(path.join(dir, 'index.html'), '<p>new</p>');
+  const bucket = fakeBucket({});
+  let drops = 3;
+  const flaky = async (url, opts = {}) => { if (drops-- > 0) throw new TypeError('fetch failed', { cause: { code: 'ETIMEDOUT' } }); return bucket.fetchImpl(url, opts); };
+  const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
+  assert.deepEqual(await deployR2({ dir, r2, fetchImpl: flaky, wait: async () => {} }), { ok: true, uploaded: 1, removed: 0 });
+});
