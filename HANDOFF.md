@@ -177,7 +177,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
   left to me): board-ref.js (copied by site.js, in relay SITE_ONLY), #ref.
   Held-away penalty formula checked against the sheet (test/board/ref.test.js).
   B.I.T.: newer sheet's PAD 010–120 = older sheet's Y217, Y240–Y250 (same
-  lengths). C yard has no CO45. Lengths shown as posted (no units on the sheet).
+  lengths; owner confirmed the PAD names are correct). C yard has no CO45. Lengths shown as posted (no units on the sheet).
 
 - 2026-11-03: **Turn History, name code (person search) cleanup** (owner's
   picks): Home turn = latest spot the tracker has them; Status = where they
