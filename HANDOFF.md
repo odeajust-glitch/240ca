@@ -168,7 +168,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
-- Open TODO items: home turn worked out better (tabled, owner 2026-11-03: he
+- Open TODO items: rest tracker (TODO #8, next housekeeping), home turn worked out better (tabled, owner 2026-11-03: he
   was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
@@ -177,7 +177,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 - 2026-11-03: **Runaround log fixes** (owner: "I want to fix a few things"):
   passed-over turn "** goes spare" with no return or a return after the call
-  → explained (insights.js why). More to come from the owner.
+  → explained (insights.js why). DHT040B 31 (B111 slow 001 passed, B133
+  went): owner says not a runaround (not enough time for a road trip, enough
+  for a yard shift); tabled for the **rest tracker** (TODO #8).
 
 - 2026-11-03: **My week for a person: only while on the turn** (owner: JUOD
   shown S501's L50231 02 / L50131 02 calls twice and runaround L50231 01

@@ -31,6 +31,17 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    (off duty at Toronto → on duty home, the Reference tab's penalty table,
    public/board-ref.js penalty). An estimate to check a claim against.
 
+8. **Rest tracker** (owner, 2026-11-03: "add rest tracker to our house
+   keeping list"). Track each spare's rest/available time so the runaround
+   log can tell why a turn was passed over: e.g. DHT040B 31 (31st 0900,
+   call ~0700): B111 was first on the conductor slow board but B133 (fast
+   board 001) went. Owner: B111 "might have not had enough time to take a
+   train or dead head, but had enough time for a yard shift so they were
+   passed over" (the time left before something else, e.g. their own job or
+   a rest limit, fits a yard shift but not a road trip). Come back to the
+   DHT040B case with it. Also: the runaround log showed B111's fast-board
+   spot (pos 004) instead of the slow board it was expected from (pos 001).
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
