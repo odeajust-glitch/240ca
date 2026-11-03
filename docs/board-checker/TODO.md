@@ -290,8 +290,9 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-03: **Reset alerts.** When the person projected for a train or
   spare job may be put on a mandatory reset at the call, whoever would get
   it instead is told: "SB04 needs a reset by … and is likely to be put on
-  it when called for M38261 03 … B111 is next for it" (under 24 h left at
-  the call), or a heads-up at 24–48 h (pools only). Chain Gang / SD /
+  it when called for M38261 03 … B111 is next for it" (under 35 h left at
+  the call: a road job needs ~35 h, owner), or a heads-up at 35–48 h
+  (pools only); a spare on a yard job: before the 8 h (YSBY 12 h) shift ends. Chain Gang / SD /
   spareboards: the next person; A/B/S1/S3: the spare who'd fill the job.
   Once per train. Phone option "would get a train or job because someone
   may be put on a mandatory reset" (on by default).

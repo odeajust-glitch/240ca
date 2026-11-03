@@ -22,8 +22,10 @@ test('Chain Gang: the next turn in line is told (real 2026-10-15 check)', () => 
   assert.match(events[0].text, /^SR09 needs a reset by .* likely to be put on it when called for M39671 14 .* SR03 is next for it/);
   // Once per train.
   assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 10 * H } }, now: input.now, told }).events.length, 0);
-  // 24–48 h at the call: a heads-up. 48 h+: nothing. Already on a reset: nothing.
-  assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 30 * H } }, now: input.now }).events[0].level, 'could');
+  // A road job needs ~35 h (owner): 34 h left is still "likely"; 35–48 h a
+  // heads-up; 48 h+ nothing; already on a reset: nothing.
+  assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 34 * H } }, now: input.now }).events[0].level, 'will');
+  assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 40 * H } }, now: input.now }).events[0].level, 'could');
   assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 50 * H } }, now: input.now }).events.length, 0);
   assert.equal(RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 10 * H, ahead: job.call } }, now: input.now }).events.length, 0);
 });
@@ -41,7 +43,7 @@ test('B pool: the spare who would fill the job is told', () => {
   const now = call - 6 * H;
   const will = RA.resetEvents({ input, result: bTrain(false), run, resets: { SB04: { due: call + 20 * H } }, now });
   assert.deepEqual(will.events.map((e) => [e.turn, e.level]), [['B111', 'will']]);
-  const could = RA.resetEvents({ input, result: bTrain(false), run, resets: { SB04: { due: call + 30 * H } }, now });
+  const could = RA.resetEvents({ input, result: bTrain(false), run, resets: { SB04: { due: call + 40 * H } }, now });
   assert.deepEqual(could.events.map((e) => [e.turn, e.level]), [['B111', 'could']]);
   assert.match(could.events[0].text, /^Heads-up: SB04 has under 48 h before a reset/);
 });
@@ -65,4 +67,13 @@ test('a reset scenario puts that turn (that craft on 501/502) on rest for 32 h',
   assert.equal(a.chainGangHome[0].restUntil, 1000 + 32 * H);
   const b = RA.withReset(input, 'S501-CO', 1000);
   assert.deepEqual(b.s5.map((t) => t.restUntil), [1000 + 32 * H, undefined]);
+});
+
+test('a spare on a road job: likely reset under 35 h at the call (owner)', () => {
+  const input = { spareboards: boards, vacancies: [] };
+  const run = (i) => (i.spareboards.coSlow[0].restUntil ? bTrain(true) : bTrain(true));
+  // SB04 goes spare anyway: B111 fills it. B111 needed by call + 30 h: not enough for a road job.
+  const e = RA.resetEvents({ input, result: bTrain(true), run, resets: { B111: { due: call + 30 * H } }, now: call - H }).events;
+  assert.deepEqual(e.map((x) => [x.turn, x.about, x.level]), [['B133', 'B111', 'will']]);
+  assert.equal(RA.resetEvents({ input, result: bTrain(true), run, resets: { B111: { due: call + 36 * H } }, now: call - H }).events.length, 0);
 });
