@@ -230,6 +230,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: checker window no longer prints WHEN YOU GO / "Your answer
+  changed" / the beep (owner: "we don't need to track myself in cmd, it
+  works great on the site"; formatReport hideMe). History .txt unchanged.
 - 2026-11-03: after the reset tracker pull (FORMAT 19 redoes every day
   file, ~3 MB each) the upload timed out ("The operation was aborted due
   to timeout", plus ntfy ETIMEDOUT: slow laptop connection); it caught up
