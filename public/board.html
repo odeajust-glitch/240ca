@@ -2636,7 +2636,7 @@ source().then(async (src) => {
     } else if (home) {
       const gone = Person.away(home, hash);
       const since = gone === 'taken' ? Person.takenSince(home, hash) : '';
-      status = `<p>Not seen on the board since <b>${esc(dt(cur.to))}</b>${cur.turn !== home.turn ? ` (${esc(cur.turn)})` : ''}.${since ? ` Someone else has been on ${esc(home.turn)} since ${esc(dt(since))}.` : ''}</p><p class="muted">Booked off, on a job the board doesn't show, or their name wasn't read.</p>`;
+      status = `<p>Not seen on the board since <b>${esc(dt(cur.to))}</b>${cur.turn !== home.turn ? ` (${esc(cur.turn)})` : ''}.${since ? ` Someone else has been on ${esc(home.turn)} since ${esc(dt(since))}.` : ''}</p><p class="muted">Displaced (To Place in CATS), booked off, on a job the board doesn't show, or their name wasn't read. They show up again as soon as their name is on a board (owner, 2026-11-03).</p>`;
     } else {
       status = `<p>Last seen filling in on <b class="num">${esc(cur.turn)}</b>, ${esc(dt(cur.to))}.</p>`;
     }
