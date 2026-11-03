@@ -16,6 +16,16 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 5. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
+6. **Home turn: a better way to work it out** (owner, 2026-11-03: "expand
+   how to determine home position … as more information and checks get
+   added"; tabled for now). Today the name code's Home turn is just the
+   latest board spot their name was seen on (Person search), so being
+   displaced (To Place), filling in on another turn, or a name not read
+   all look the same ("not seen"). Ideas when it's picked up: read a CATS
+   screen that lists To Place / status codes (status letters are on the
+   Reference tab), keep the last home turn while displaced, and say why
+   they're off it.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 

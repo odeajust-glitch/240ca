@@ -166,7 +166,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - ❓ Not yet seen on real CATS: VIEW TIME box, mid-call hold, CATS option 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
-- Open TODO items: runaround log alerts / claims, Turn History housekeeping
+- Open TODO items: home turn worked out better (tabled, owner 2026-11-03: he
+  was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
