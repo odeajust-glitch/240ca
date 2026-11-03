@@ -1309,7 +1309,7 @@ function story(r) {
   }
   sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
   if (r.flag === 'deadhead') sum.push(`<span class="chg">${esc(FLAG_TEXT.deadhead)}</span>: left the ${r.from === 'mac' ? 'Toronto' : 'Sarnia'} line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later.`);
-  else if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? 'no rested Sarnia crew was in the bunkhouse' : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
+  else if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? `no rested Sarnia crew was in the bunkhouse${r.flag === 'possible' && r.predicted ? `, but ${esc([r.predicted.en, r.predicted.co].filter(Boolean).join(' + '))} ${r.predicted.en && r.predicted.co ? 'were' : 'was'} predicted for it, so it may have been cancelled` : ''}` : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
   return `<tr class="story"><td colspan="10"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
 }
 

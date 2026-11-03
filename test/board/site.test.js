@@ -356,6 +356,10 @@ test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/y
   assert.strictEqual(rows['Q13931 17'].flag, 'nonSarnia');
   // Z14931 left at 1800 with SD11/SR05 rested in the bunkhouse → yellow.
   assert.strictEqual(rows['Z14931 17'].flag, 'possible');
+  // No rested crew, but a Sarnia crew was predicted for it (owner, 2026-11-03:
+  // M38331 03 with SD09 + SR07): possibly cancelled too → yellow.
+  const withPred = snaps.map((s) => ({ ...s, macLineup: s.macLineup.map((t) => (t.train === 'Q13931 17' ? { ...t, pred: { co: 'SR07', en: 'SD09' } } : t)) }));
+  assert.strictEqual(Object.fromEntries(T.summarize(T.track(withPred)).map((r) => [r.id, r]))['Q13931 17'].flag, 'possible');
   // Not flagged until 30 minutes have passed without a Call Board sighting.
   const early = Object.fromEntries(T.summarize(T.track(snaps.slice(0, 4))).map((r) => [r.id, r]));
   assert.strictEqual(early['Z14931 17'].flag, null);

@@ -231,6 +231,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: Toronto trains gone from 41 without reaching the Call Board:
+  red "Non-Sarnia Crew" only if no rested crew AND no Sarnia crew was
+  predicted for it; a predicted crew (owner: M38331 03, SD09 + SR07) →
+  yellow "Possible Non-Sarnia Crew or Train Cancelled" (board-trains.js flagOf).
 - 2026-11-03: **reset alerts** (lib/board/reset-alerts.js; board-auto
   resetEventsNow, reads site\data\resets.json from this check): for each
   projected train/job, if its person's reset is needed (owner: "road jobs need about 35

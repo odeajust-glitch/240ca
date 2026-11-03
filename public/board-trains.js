@@ -173,7 +173,11 @@
     if (!r.gone || r.onDuty || off(r.gone, lastTaken) < FLAG_WAIT) return null;
     if (r.deadhead) return 'deadhead';
     if (r.from !== 'mac') return null;
-    return r.avail === 0 ? 'nonSarnia' : 'possible';
+    // A Sarnia crew predicted for it (resting or on the way: owner,
+    // 2026-11-03, M38331 03 with SD09 + SR07) means it may just have been
+    // cancelled: possible, not certain.
+    const sarniaCrew = !!(r.predicted && (r.predicted.co || r.predicted.en));
+    return r.avail === 0 && !sarniaCrew ? 'nonSarnia' : 'possible';
   }
 
   // 14-hour rule (Article 18.6(b)): from off duty in Toronto to the
