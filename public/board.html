@@ -1933,16 +1933,20 @@ function heldView(all, openKey, lastTaken, names, namesState) {
     : namesState === 'unlocked'
       ? `<div class="unlock">Crew names unlocked on this device. <button type="button" id="nforget">Forget the passcode</button></div>`
       : '';
-  const done = rows.filter((r) => !r.stillHeld).length;
+  // Two tiles (owner, 2026-11-03): crews held 14 h+ in the last 7 days
+  // (going off duty in Toronto then; still held counts), and that out of
+  // every Toronto stay with a known off-duty time in those 7 days.
+  const since = lastTaken ? callBefore(lastTaken, 7 * 24 * 60) : '';
+  const inWeek = (r) => r.offDuty && (!since || r.offDuty >= since);
+  const week = rows.filter(inWeek);
+  const stays = all.filter((r) => r.heldMin != null && inWeek(r));
   return `
     <div class="ohead">
       <div><div class="sec-title" style="margin-bottom:6px">14-hour rule · Article 18.6(b)</div><div class="when">Held in Toronto 14 h+</div></div>
     </div>
-    <div class="strip">
-      <div class="stat ${done ? 'alert' : ''}"><div class="v">${done}</div><div class="l">Trips home 14 h or more after going off duty</div></div>
-      <div class="stat"><div class="v">${rows.length - done}</div><div class="l">Still in the bunkhouse past 14 h${lastTaken ? ` (as of ${esc(dt(lastTaken))})` : ''}</div></div>
-      <div class="stat"><div class="v">${all.filter((r) => r.heldMin != null).length}</div><div class="l">Toronto stays with a known off-duty time</div></div>
-      <div class="stat"><div class="v">${rows.length ? esc(dur(Math.max(...rows.map((r) => r.heldMin)))) : '—'}</div><div class="l">Longest held</div></div>
+    <div class="strip two">
+      <div class="stat ${week.length ? 'alert' : ''}"><div class="v">${week.length}</div><div class="l">Crews violated in the last 7 days</div></div>
+      <div class="stat"><div class="v">${stays.length ? `${Math.round((100 * week.length) / stays.length)}% <small>${week.length} / ${stays.length}</small>` : '—'}</div><div class="l">Percentage of crews violated (of Toronto stays, last 7 days)</div></div>
     </div>
     ${unlock}
     <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to write the grievance</span></header>

@@ -223,3 +223,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   Order summary shows how early the prediction was right ("right since …")
   and what it predicted 8 h before the call, when people go to sleep;
   Analytics → Predictions scores that 8-hour prediction too.
+- 2026-11-03: **Article 18.6(b): two tiles** instead of four: crews violated
+  (held 14 h+) in the last 7 days, and the percentage of Toronto stays that
+  were violations in those 7 days.

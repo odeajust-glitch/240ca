@@ -180,7 +180,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   each ✓/✗. board-trains.js predHit: coSince/enSince, early {taken, co, en,
   coHit, enHit} or {none, first}. Analytics → Predictions: "right 8 h before
   the call" tiles. Only trains tracked with this code have it. Also: Order
-  summary tiles removed (owner), Snapshots hours 0000–2300.
+  summary tiles removed (owner), Snapshots hours 0000–2300. Article 18.6(b):
+  two tiles (owner): crews violated last 7 days (off duty in Toronto in the
+  7 days before the newest check, still-held counts) and % of Toronto stays
+  (heldMin known) in those 7 days.
 
 - 2026-11-03: **Snapshots: hours first** (owner: "organize the times … not
   making the page massive"): #hours (the day's hours with checks), then only
