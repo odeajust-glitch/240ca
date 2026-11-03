@@ -230,6 +230,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: after the reset tracker pull (FORMAT 19 redoes every day
+  file, ~3 MB each) the upload timed out ("The operation was aborted due
+  to timeout", plus ntfy ETIMEDOUT: slow laptop connection); it caught up
+  a few files per check. r2.js deployR2 now allows 60 s + 60 s per MB (up
+  to 5 min) per file and tries a timed-out file twice more.
 - 2026-11-03 (reset tracker): owner's CATS "EMPLOYEE TIME ON DUTY LOG"
   (PSTS05Y: on/off duty per trip, RESETMNL / RESETSYS / RESETM32 lines,
   7DY TOT, 28DY TOT, 7DY RESET) used as the answer key; built

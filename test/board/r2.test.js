@@ -450,3 +450,24 @@ test('R2 publish tries a dropped connection again', async () => {
   const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
   assert.deepEqual(await deployR2({ dir, r2, fetchImpl: flaky, wait: async () => {} }), { ok: true, uploaded: 1, removed: 0 });
 });
+
+// 2026-11-03: every day file redone at once on a slow connection timed out
+// at 60 s; a timed-out upload is tried again (signed afresh).
+test('R2 publish tries a timed-out upload again', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2-slow-'));
+  fs.writeFileSync(path.join(dir, 'index.html'), '<p>page</p>');
+  const bucket = fakeBucket();
+  let fails = 1;
+  const slow = async (url, opts = {}) => {
+    if (opts.method === 'PUT' && fails-- > 0) { const e = new Error('The operation was aborted due to timeout'); e.name = 'TimeoutError'; throw e; }
+    return bucket.fetchImpl(url, opts);
+  };
+  const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
+  assert.deepEqual(await deployR2({ dir, r2, fetchImpl: slow, wait: async () => {} }), { ok: true, uploaded: 1, removed: 0 });
+  // Timing out every time: reported (not thrown), naming the file.
+  fails = 100;
+  fs.writeFileSync(path.join(dir, 'index.html'), '<p>new</p>');
+  const r = await deployR2({ dir, r2, fetchImpl: slow, wait: async () => {} });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /index\.html; 0 files uploaded before it/);
+});
