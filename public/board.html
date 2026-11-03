@@ -1210,8 +1210,16 @@ function story(r) {
     const said = [p.en, p.co].filter(Boolean).join(' + ');
     const h = r.predHit;
     const mark = (ok) => (ok == null ? ' <span class="muted">(not predicted)</span>' : ok ? ' <span class="ok">✓</span>' : ' <span class="bad">✗</span>');
-    sum.push(h ? `Predicted crew (as of ${esc(dt(p.taken))}): <b>${esc(said)}</b>; went: <b>${esc([h.actual.en, h.actual.co].filter(Boolean).join(' + ') || '—')}</b>. Conductor${mark(h.co)} · engineer${mark(h.en)}`
+    // How early it was right, and the prediction 8 h before the call
+    // (owner, 2026-11-03: the last one, minutes before the call, is nearly
+    // always right).
+    const since = (k, lbl) => (h && h[k] && h[`${k}Since`] ? `${lbl} right since ${esc(dt(h[`${k}Since`]))}${h[`${k}Lead`] != null ? ` (${esc(dur(h[`${k}Lead`]))} before on duty${h[`${k}FromStart`] ? ', from the first prediction' : ''})` : ''}` : '');
+    const sinceTxt = [since('co', 'Conductor'), since('en', 'engineer')].filter(Boolean).join(' · ');
+    sum.push(h ? `Last prediction (${esc(dt(p.taken))}): <b>${esc(said)}</b>; went: <b>${esc([h.actual.en, h.actual.co].filter(Boolean).join(' + ') || '—')}</b>. Conductor${mark(h.co)} · engineer${mark(h.en)}${sinceTxt ? `<br><span class="muted">${sinceTxt}.</span>` : ''}`
       : `Predicted crew (as of ${esc(dt(p.taken))}): <b>${esc(said)}</b>; not on duty yet.`);
+    const e = h && h.early;
+    if (e && e.none) sum.push(`8 h before the call: <span class="muted">no prediction yet (first one ${esc(dt(e.first))}).</span>`);
+    else if (e) sum.push(`8 h before the call (${esc(dt(e.taken))}): <b>${esc([e.en, e.co].filter(Boolean).join(' + '))}</b>. Conductor${mark(e.coHit)} · engineer${mark(e.enHit)}`);
   }
   sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
   if (r.flag === 'deadhead') sum.push(`<span class="chg">${esc(FLAG_TEXT.deadhead)}</span>: left the ${r.from === 'mac' ? 'Toronto' : 'Sarnia'} line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later.`);
@@ -1636,8 +1644,13 @@ function anaPred({ runs }) {
   const series = (k, who) => colChart(`${who} predicted right, per day`, days.filter((d) => d[k].n).map((d) => ({ label: weekLabel(d.day), value: pctOf(d[k]),
     tip: `${weekLabel(d.day)}: ${pctOf(d[k])}% (${d[k].hit} of ${d[k].n})` })), { max: 100, unit: '%', every: Math.max(1, Math.ceil(days.length / 6)) });
   const pct = (x) => (x.n ? `${pctOf(x)}% <small>${x.hit} / ${x.n}</small>` : '—');
-  return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
+  // The prediction 8 h before the call (owner, 2026-11-03): a fairer score
+  // than the last one, minutes before the call. Only trains checked since then.
+  const early = (k) => { const v = runs.map((r) => (r.ran && r.predHit && r.predHit.early && !r.predHit.early.none ? r.predHit.early[k + 'Hit'] : null)).filter((x) => x != null); return { hit: v.filter(Boolean).length, n: v.length }; };
+  const noneYet = runs.filter((r) => r.ran && r.predHit && r.predHit.early && r.predHit.early.none).length;
+  return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty, and the one 8 h before the call, when people go to sleep) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
     <div class="strip">${anaTile(pct(st.pred.co), 'Conductor predicted right')}${anaTile(pct(st.pred.en), 'Engineer predicted right')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${leadNote(lead.co)}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${leadNote(lead.en)}`)}</div>
+    <div class="strip three">${anaTile(pct(early('co')), 'Conductor right 8 h before the call')}${anaTile(pct(early('en')), 'Engineer right 8 h before the call')}${anaTile(noneYet, 'No prediction yet 8 h before the call')}</div>
     ${days.length ? `<section class="sheet"><header><h2>Day by day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${series('co', 'Conductor')}${series('en', 'Engineer')}</div></section>` : '<p class="empty">No predictions scored in the dates picked yet.</p>'}`;
 }
 

@@ -173,6 +173,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Predicted crew, scored better** (owner, option 3): the
+  Order summary story shows the last prediction (minutes before the call,
+  nearly always right) plus "right since … (x before on duty)" and the
+  prediction **8 h before the call** (on duty − 10 h, when people sleep),
+  each ✓/✗. board-trains.js predHit: coSince/enSince, early {taken, co, en,
+  coHit, enHit} or {none, first}. Analytics → Predictions: "right 8 h before
+  the call" tiles. Only trains tracked with this code have it. Also: Order
+  summary tiles removed (owner), Snapshots hours 0000–2300.
+
 - 2026-11-03: **Snapshots: hours first** (owner: "organize the times … not
   making the page massive"): #hours (the day's hours with checks), then only
   that hour's checks (renderRail / railHour; show() switches the hour; an

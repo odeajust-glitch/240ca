@@ -219,3 +219,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   day's worth of times to scroll through.
 - 2026-11-03: Snapshots hours read 0000–2300; **Order summary tiles removed**
   (the numbers are still in Analytics).
+- 2026-11-03: **Predicted crew, scored better.** A train's story on the
+  Order summary shows how early the prediction was right ("right since …")
+  and what it predicted 8 h before the call, when people go to sleep;
+  Analytics → Predictions scores that 8-hour prediction too.

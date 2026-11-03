@@ -296,9 +296,9 @@ test('site: when do I go, for every turn the newest check can answer', () => {
 // Owner, 2026-10-22: how often the predicted crew was right.
 test('orders: predicted crew is scored against who went on duty', () => {
   const r = { onDuty: '2026-10-22 1445', crew: 'EN SD05 · CO SR07', predicted: { co: 'SR03', en: 'SD05', taken: '2026-10-22 1200' } };
-  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' }, coLead: null, enLead: 165, coFromStart: false, enFromStart: true });
+  assert.deepStrictEqual(BoardTrains.predHit(r), { co: false, en: true, actual: { co: 'SR07', en: 'SD05' }, coLead: null, enLead: 165, coFromStart: false, enFromStart: true, coSince: null, enSince: '2026-10-22 1200', early: null });
   assert.equal(BoardTrains.predHit({ ...r, onDuty: null }), null);
-  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: '2026-10-22 1400' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' }, coLead: 45, enLead: null, coFromStart: true, enFromStart: false });
+  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: '', taken: '2026-10-22 1400' } }), { co: true, en: null, actual: { co: 'SR07', en: 'SD05' }, coLead: 45, enLead: null, coFromStart: true, enFromStart: false, coSince: '2026-10-22 1400', enSince: null, early: null });
   // Tracked from the line-up rows' predictions, the last one before on duty.
   const st = BoardTrains.track([
     { taken: '2026-10-22 1100', screens: ['lineup'], lineup: [{ train: 'M38261 22', status: 'PLN', order: '22nd 1500', pred: { co: 'SR03', en: 'SD05' } }], onDuty: [] },
@@ -312,6 +312,12 @@ test('orders: predicted crew is scored against who went on duty', () => {
   // Right since (owner, 2026-10-26): SR07 from 1300, SD05 from the first check.
   assert.deepStrictEqual([row.predHit.coLead, row.predHit.enLead, row.predHit.coFromStart, row.predHit.enFromStart], [105, 225, false, true]);
   assert.strictEqual(row.predLog, undefined); // kept out of trains.json
+  // 8 h before the call (on duty 1445 → 0445): no prediction yet (first at 1100).
+  assert.deepStrictEqual(row.predHit.early, { none: true, first: '2026-10-22 1100' });
+  // With a log from the night before: the one in force at 0445 is scored (owner, 2026-11-03).
+  const log = [{ taken: '2026-10-22 0100', co: 'SR03', en: 'SD05' }, { taken: '2026-10-22 0500', co: 'SR07', en: 'SD05' }];
+  assert.deepStrictEqual(BoardTrains.predHit({ ...r, predicted: { co: 'SR07', en: 'SD05', taken: '2026-10-22 1400' }, predLog: log }).early,
+    { taken: '2026-10-22 0100', co: 'SR03', en: 'SD05', coHit: false, enHit: true });
 });
 
 test('orders: time on duty from the bunkhouse rest; Toronto trains flagged red/yellow', () => {

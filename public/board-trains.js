@@ -158,6 +158,8 @@
 
   // Minutes late (+) or early (−); null when either end is unknown.
   const off = (from, to) => (from && to ? toMin(to) - toMin(from) : null);
+  // 8 h before the call, the call 2 h before on duty.
+  const EARLY_MIN = 10 * 60;
 
   // The finished list, one row per train, newest first, each with the day it
   // belongs to: its on-duty date, or (not on duty yet) its latest order/plan.
@@ -211,7 +213,17 @@
     };
     const lead = (k) => (since(k) ? off(since(k), r.onDuty) : null);
     const fromStart = (k) => !!since(k) && (!(r.predLog || []).length || since(k) === r.predLog[0].taken);
-    return { co: hit('co'), en: hit('en'), actual, coLead: lead('co'), enLead: lead('en'), coFromStart: fromStart('co'), enFromStart: fromStart('en') };
+    // The prediction 8 h before the call (call = on duty − 2 h), when people
+    // go to sleep (owner, 2026-11-03, option 3): the one in force then, or
+    // none yet. Scored like the last one.
+    const log = r.predLog || [];
+    const ref = toMin(r.onDuty) - EARLY_MIN;
+    const atRef = [...log].reverse().find((x) => toMin(x.taken) <= ref) || null;
+    const early = log.length ? (atRef
+      ? { taken: atRef.taken, co: atRef.co, en: atRef.en, coHit: atRef.co && actual.co ? atRef.co === actual.co : null, enHit: atRef.en && actual.en ? atRef.en === actual.en : null }
+      : { none: true, first: log[0].taken }) : null;
+    return { co: hit('co'), en: hit('en'), actual, coLead: lead('co'), enLead: lead('en'), coFromStart: fromStart('co'), enFromStart: fromStart('en'),
+      coSince: since('co'), enSince: since('en'), early };
   }
 
   function summarize(state) {
