@@ -394,3 +394,33 @@ test('spareboard VIEW TIME: who left the board in the last 10 minutes', () => {
   assert.equal(BoardTurns.facts(s, 'EN07').filter((x) => x.kind === 'pool').length, 1);
   assert.equal(BoardTurns.facts(s, 'EN04').filter((x) => x.kind === 'pool').length, 0);
 });
+
+// TODO #10 (owner, 2026-11-03: "keep reading the crews in town"): the lines
+// under the heading are kept (masked) until a real crew's line is seen.
+test('crews in town: none, and lines kept across pages', () => {
+  const first = S.parseCrewsInTown(grid(yardPage));
+  assert.deepEqual([first.started, first.none, first.lines], [true, true, ['POOL: S1/SA C+C AAAAAA/AAAAAA']]);
+  // Before the heading nothing is taken; a continuation page is all list.
+  assert.equal(S.parseCrewsInTown(grid(yardPage.slice(0, 5))).started, false);
+  const next = S.parseCrewsInTown(grid([
+    '26/10/24-   351                        CN  RAIL                     PAGE  006  OF  006',
+    '          CO   SMITH+      J   JOHN     SA05      1430  24',
+  ]), true);
+  assert.equal(next.lines.length, 1);
+  assert.match(next.lines[0], /SA05 1430 24$/);
+  assert.doesNotMatch(next.lines[0], /SMITH/); // masked, as saved
+});
+
+test('crews in town: loadSummary joins the Call Board page and the pages after it', () => {
+  const { loadSummary } = require('../../lib/board/summary');
+  const raw = (lines) => lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${maskTokenWith(m[0], BOARD_WORDS)}`)].join(' | '));
+  const top = yardPage.slice(0, -1).map((l, i) => (i === 0 ? l.replace('005  OF  031', '005  OF  006') : l));
+  const s = loadSummary({ screens: [
+    { screenGrid: raw(['26/10/24-   351   CALL  BOARD   PAGE  005  OF  006', ...top.slice(1)]) },
+    { label: 'crewsInTown', screenGrid: raw(['26/10/24-   351   CALL  BOARD   PAGE  006  OF  006', '          CO   SMITH+      J   JOHN     SA05      1430  24']) },
+  ] }, { now });
+  assert.equal(s.seen.crewsInTown, true);
+  assert.equal(s.crewsInTown.none, false);
+  assert.equal(s.crewsInTown.lines.length, 2);
+  assert.equal(s.seen.callBoardPages, 1);
+});

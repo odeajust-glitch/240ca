@@ -35,7 +35,10 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   Yard jobs start with Y. Owner's screenshot (page 5 of 31):
   `YPRS60  REL#2 TU/WE OFF  ON DUTY AT: SARNIA  26/10/23 2245`, then crew
   lines `FO  DESCHENES+  M  MATTHEW` with **no turn**. "CREWS IN TOWN" is a
-  line of its own, then `POOL: S1/SA C+C  RESTED/STATUS`. On duty taken as
+  line of its own, then `POOL: S1/SA C+C  RESTED/STATUS`. Since 2026-11-03
+  (TODO #10) the checker pages on to the last page through the crews in town
+  (those pages labelled `crewsInTown`); screens.js parseCrewsInTown keeps the
+  lines as masked text until a real crew's line is seen. On duty taken as
   **8 h**. To know whose turn is on a yard job, board-auto.js reads the yard
   jobs and every board (pools, spareboards, 29) unmasked **in memory**,
   matches surname + first initial, and saves only `yardCrew: [{ job, craft,

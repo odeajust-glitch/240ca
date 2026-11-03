@@ -427,7 +427,24 @@ async function runRoute(page, opts = {}) {
     }
     const shown = (await screenState(page)).text;
     const m = /PAGE (\d+) OF (\d+)/.exec(shown);
-    if (parsed.crewsInTown || /CREWS\s*IN\s*TOWN/.test(shown) || (m && +m[1] >= +m[2])) break;
+    if (m && +m[1] >= +m[2]) break;
+    if (parsed.crewsInTown || /CREWS\s*IN\s*TOWN/.test(shown)) {
+      // The crews in town (TODO #10, owner 2026-11-03): page on to the end
+      // of the list too, those pages labelled for the loader. A problem
+      // here only shortens the list; the check goes on.
+      try {
+        for (let more = 0; more < 15; more++) {
+          const pg = /PAGE (\d+) OF (\d+)/.exec((await screenState(page)).text);
+          if (!pg || +pg[1] >= +pg[2]) break;
+          expect(await press(page, 'F8'), is.callBoardList, 'next crews in town page');
+          await capture('crewsInTown');
+        }
+      } catch (err) {
+        if (err instanceof NeedSignIn) throw err;
+        console.log(`  (crews in town list cut short: ${err.message})`);
+      }
+      break;
+    }
     expect(await press(page, 'F8'), is.callBoardList, 'next Call Board page');
   }
 

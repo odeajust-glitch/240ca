@@ -1,19 +1,22 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-11-03 (end of the housekeeping session) · Branch:
+Last updated: 2026-11-03 (crews in town session) · Branch:
 **`claude/vigilant-planck-zawrj4`** (has everything) · 205 tests (`npm test`).
 **The laptop runs at least `a9f02e2`** (pulled 2026-11-03; ask him to
 `git pull` again: later commits are notes and the API-key TODO only).
 
 ## ▶ Next session
 
-Nothing is half-built. Ask the owner what he wants next; his to-do list has
-these waiting (details to ask before building): **#8 rest tracker** (helps
-the runaround log: DHT040B 31), **#9 reset tracker**, **#10 expanded Call
-Board information**, **#11 API key tester** (compare AI models on
-agreement questions he knows the answers to; the tester is in his claude.ai
-chat, he pastes it), #6 home turn worked out better, and the older ones.
-Show options with a recommendation, then build. Before changing a tab,
+**In progress: TODO #10, expanded Call Board** (owner's order: #10 first,
+then **#8 rest tracker**). Step 1 is pushed: the checker now pages through
+the whole CREWS IN TOWN list (pages labelled `crewsInTown`) and the loader
+keeps its lines as masked text (`summary.crewsInTown` = { none, lines },
+`seen.crewsInTown`; screens.js parseCrewsInTown). **Waiting on the owner's
+2–3 screenshots** of the list with crews on it; then write the real reader
+(pool, craft, turn, rested time / status, never names) and ask how the site
+shows it. The laptop needs a `git pull` + restart to start reading the list.
+Then #8 rest tracker (DHT040B 31 case, see TODO), #9, #11, #6 and the older
+ones. Show options with a recommendation, then build. Before changing a tab,
 search the archive for why it is the way it is.
 
 **2026-11-23 reminder (scheduled in that session):** the owner deletes the
@@ -210,6 +213,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03 (crews in town session): owner put #10 (expanded Call Board)
+  before #8 (rest tracker). Checker reads past CREWS IN TOWN to the last
+  page (board-auto.js Call Board loop; trouble there only shortens the
+  list); summary.js keeps the lines. Not shown on the site yet. Tests: run
+  `npm ci` first in a fresh container (jszip etc.), then 207 pass.
 - 2026-11-03 (housekeeping session; every note in the archive's "Later
   notes"): L502 alternation + Garnet line-up; Worker timer fixed (wasn't
   deployed); person search (home turn, status, craft, own trains only);
