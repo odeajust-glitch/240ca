@@ -280,3 +280,17 @@ test('insights: runaround log, ** goes spare until after the call is explained',
   // Back before the call: still a likely runaround.
   assert.equal(r('** goes spare, return 2nd 0500').result, 'likely');
 });
+
+// Owner, 2026-11-03: DHT040B 31 showed B111 at the fast board (004); the
+// deadhead was expected from the slow board, where B111 was 001.
+test('insights: runaround log shows the board the spare was expected from', () => {
+  const lineRow = { train: 'DHT040B 31', order: '31st 0900', call: '31st 0700', status: 'ORD', crew: { co: 'SR08', en: 'SD09' }, rules: 'Chain Gang: SR08 (goes spare → spareboard) + SD09' };
+  const snaps = [
+    { taken: '2026-10-31 0643', lineup: [lineRow], vacancies: [{ train: 'DHT040B', at: '31st 0900', cc: 'CO', turn: 'SR08', fill: { turn: 'B111', board: 'Conductor slow board', call: '31st 0700' } }],
+      pools: [{ name: 'Conductor fast board', turns: [{ pos: '001', turn: 'B133', status: 'available' }, { pos: '004', turn: 'B111', status: 'available' }] },
+        { name: 'Conductor slow board', turns: [{ pos: '001', turn: 'B111', status: 'available' }, { pos: '010', turn: 'B133', status: 'available' }] }] },
+    { taken: '2026-10-31 0652', lineup: [], onDuty: [{ train: 'DHT040B 31', onDuty: '31st 0900', crew: 'EN SD09 · CO SR08', backfill: [{ craft: 'CO', job: 'SR08', turn: 'B133' }] }] },
+  ];
+  const r = Insights.finish(Insights.collect(snaps)).runLog.find((x) => x.passed === 'B111');
+  assert.deepEqual([r.board, r.passedPos], ['Conductor slow board', '001']);
+});
