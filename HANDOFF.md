@@ -170,6 +170,19 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Turn History, name code (person search) cleanup** (owner's
+  picks): Home turn = latest spot the tracker has them; Status = where they
+  are now (BoardTurns.facts, or "not seen since … / someone else on SR03
+  since …", Person.takenSince); Turns seen on = own board spots only (jobs
+  worked are the Work history); Changes = short version (changeSummary:
+  no position steps / predicted-train flips) + "Show every check" button;
+  dates "28th 0120" everywhere (stampBtn); long train names wrap.
+  **Fixed: trains worked filling in on another turn** missing from the
+  person view (owner: DRDI vs B126; E27861 27 / Z14931 28 working SR07):
+  personHistory takes them from their own turn's record, and the copy not
+  "worked by" someone else wins. ❓ Same short Changes for a turn search?
+  (not asked yet; Turn History housekeeping still on the TODO).
+
 - 2026-11-03: **L502 alternates** (owner: "S501 should work it, it
   alternates"; at 0420 the site gave L50231 04 to S502, which had just taken
   L50231 03 to Garnet, "goes spare" both). engine.js s5Order: home and not

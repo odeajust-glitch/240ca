@@ -187,3 +187,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   alternate: the crew bringing L501 home gets the next L502 (the site had
   given it to the crew that just left for Garnet). Whether they go spare
   shows once they're off duty.
+- 2026-11-03: **Name code search cleaned up** (Turn History): Home turn
+  (latest spot), Status (where they are now), Turns seen on (only their own
+  board spots), a short Changes list with a button for every check, one date
+  style (28th 0120). Fixed: trains worked while filling in on another turn
+  (DRDI on SR07) were missing from the name code's Work history.

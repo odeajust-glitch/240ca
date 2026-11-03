@@ -996,13 +996,26 @@ function personHistory(stretches, all) {
     rec.rests.push(...r.rests.filter((x) => within(x.seen, e)).map(tag));
     rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
   }
+  // Filling in on another turn (owner, 2026-11-03: DRDI on SR07 showed no
+  // trains, B126 did): the train is kept on their own turn's record as
+  // "working SR07", and on SR07's as worked by someone else. Take it from
+  // their own turn while they were seen on that job.
+  const ownTurns = [...new Set(stretches.filter((e) => e.own).map((e) => e.turn))];
+  for (const e of stretches.filter((x) => !x.own)) {
+    for (const t of ownTurns) {
+      const r = all[t];
+      if (!r) continue;
+      rec.orders.push(...r.orders.filter((o) => o.job === e.turn && (within(o.first, e) || within(o.last, e) || within(o.onDutySeen, e))).map((x) => ({ ...x, turn: t })));
+    }
+  }
   const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
   rec.changes.sort(by('taken'));
   rec.orders.sort(by('first'));
   rec.rests.sort(by('seen'));
   rec.spares.sort(by('seen'));
   rec.changes = rec.changes.map((c) => ({ ...c, text: `${c.turn}: ${c.text}` }));
-  rec.orders = rec.orders.filter((o, i, a) => a.findIndex((x) => x.train === o.train) === i).map((o) => ({ ...o, train: `${o.train} (${o.turn})` }));
+  // One row per train; the copy they worked (not "worked by" someone else) wins.
+  rec.orders = rec.orders.filter((o, i, a) => a.findIndex((x) => x.train === o.train && (!x.workedBy || a.every((y) => y.train !== o.train || y.workedBy))) === i).map((o) => ({ ...o, train: `${o.train} (${o.turn})` }));
   rec.rests = rec.rests.map((x) => ({ ...x, where: [x.turn, x.where].filter(Boolean).join(', ') }));
   rec.spares = rec.spares.map((x) => ({ ...x, text: `${x.turn}: ${x.text}` }));
   return rec;
