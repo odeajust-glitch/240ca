@@ -1275,8 +1275,8 @@ function anaTiles(st, kind) {
       ${tile(d(st.held.avg), `Average time held in Toronto bunkhouse${st.held.n ? ` (${st.held.n})` : ''}`)}
       ${tile(st.held.over14, 'Held 14 h or more in Toronto', st.held.over14 > 0)}</div>
     <div class="strip">
-      ${tile(d(st.offPlan.avg), `Average off, first plan vs on duty${st.offPlan.n ? ` (${st.offPlan.late} late, ${st.offPlan.early} early)` : ''}`)}
-      ${tile(d(st.offOrder.avg), 'Average off, first order vs on duty')}
+      ${tile(d(st.offPlan.avg), `First plan vs actual on duty: apart on average${st.offPlan.n ? ` (${st.offPlan.late} went later, ${st.offPlan.early} went earlier)` : ''}`)}
+      ${tile(d(st.offOrder.avg), 'First order vs actual on duty: apart on average')}
       ${tile(st.orderChanged, 'Order time changed after ordering')}
       ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${pctOf(st.pred.en)}%` : ''}`)}</div>`;
 }
