@@ -173,6 +173,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-03: **Snapshots: hours first** (owner: "organize the times … not
+  making the page massive"): #hours (the day's hours with checks), then only
+  that hour's checks (renderRail / railHour; show() switches the hour; an
+  hour opens its first check). Phone: times only, wrapping, no date.
+
 - 2026-11-03: **Reference tab** (owner: "general useful information", name
   left to me): board-ref.js (copied by site.js, in relay SITE_ONLY), #ref.
   Held-away penalty formula checked against the sheet (test/board/ref.test.js).

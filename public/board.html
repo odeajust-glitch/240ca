@@ -244,6 +244,11 @@
   .rail .n { display: block; font-size: 12px; color: var(--soft); }
   .rail .day { font: 600 12px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 12px 0 4px 14px; }
   .rail .day:first-child { padding-top: 2px; }
+  /* Hours first, then that hour's checks (owner, 2026-11-03: the day's
+     ~190 checks made the page huge). */
+  .hours { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin-bottom: 10px; }
+  .rail .hours button { width: auto; margin: 0; padding: 6px 0; text-align: center; border: 1px solid var(--rule); border-radius: 4px; background: var(--sheet); font: 600 13px/1 var(--mono); color: var(--ink); }
+  .rail .hours button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
   /* Header of the chosen snapshot + summary strip */
   .head { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -265,7 +270,7 @@
   .tocurrent, .newer button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 7px 14px; min-height: 36px; font: 600 13.5px/1 var(--body); cursor: pointer; }
   .newer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--accent); background: var(--accent-tint); font-size: 14px; }
   /* Current: the newest snapshot only; the turn search stays, the list goes. */
-  body.current .rail h2, body.current .rail .daypick, body.current #rail { display: none; }
+  body.current .rail h2, body.current .rail .daypick, body.current #rail, body.current #hours { display: none; }
 
   .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); background: var(--sheet); margin-bottom: 22px; }
   .strip.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -539,10 +544,11 @@
     .rail { position: static; }
     .rail h2 { display: none; }
     .rail .same { display: none; }
-    .rail ol { display: flex; gap: 8px; overflow-x: auto; border-left: 0; padding-bottom: 4px; }
+    .rail ol { display: flex; flex-wrap: wrap; gap: 6px; border-left: 0; padding-bottom: 4px; }
+    .hours { grid-template-columns: repeat(8, minmax(0, 1fr)); }
     .rail .day { display: none; }
     .daypick { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
-    .rail .d { display: block; }
+    .rail .d, .rail .n { display: none; } /* the Day box has the date; just the times here */
     .rail button { border: 1px solid var(--rule); border-radius: 4px; margin: 0; padding: 6px 12px; white-space: nowrap; background: var(--sheet); }
     .rail button[aria-current="true"] { border-color: var(--accent); }
     .rail .t { font-size: 16px; }
@@ -590,6 +596,7 @@
     </div>
     <h2>Snapshots</h2>
     <label class="daypick" for="day"><span>Day</span><select id="day"></select></label>
+    <div id="hours" class="hours" role="group" aria-label="Hour"></div>
     <ol id="rail"></ol>
   </nav>
   <main id="view"><p class="empty">Loading snapshots…</p></main>
@@ -2237,13 +2244,24 @@ source().then(async (src) => {
     day = d;
     daySel.value = d;
     list = await src.load(d);
-    document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).reverse().map(([s, i]) => {
+    railHour = null;
+    const i = typeof pick === 'string' ? list.findIndex((s) => s.taken === pick) : pick;
+    show(i >= 0 && i < list.length ? i : list.length - 1);
+  }
+
+  // The day's checks by hour (owner, 2026-11-03): the hours that have
+  // checks, then only that hour's checks, newest first.
+  let railHour = null;
+  const hourOf = (s) => s.taken.slice(11, 13);
+  function renderRail(hour) {
+    railHour = hour;
+    const hours = [...new Set(list.map(hourOf))].sort();
+    document.getElementById('hours').innerHTML = hours.map((h) => `<button type="button" data-h="${h}" aria-pressed="${h === hour}">${h}</button>`).join('');
+    document.getElementById('rail').innerHTML = list.map((s, i) => [s, i]).filter(([s]) => hourOf(s) === hour).reverse().map(([s, i]) => {
       const w = when(s.taken);
       const same = s.sameUntil ? `<span class="same">same until ${esc(when(s.sameUntil).time)}</span>` : '';
       return `<li><button data-i="${i}"><span class="d">${esc(w.day)}</span><span class="t">${esc(w.time)}</span><span class="n">${s.lineup.length} trains</span>${same}</button></li>`;
     }).join('');
-    const i = typeof pick === 'string' ? list.findIndex((s) => s.taken === pick) : pick;
-    show(i >= 0 && i < list.length ? i : list.length - 1);
   }
 
   // Earlier/Later run across days.
@@ -2697,6 +2715,7 @@ source().then(async (src) => {
     const dayIdx = src.days.indexOf(day);
     const atOldest = i === 0 && dayIdx === src.days.length - 1;
     const atNewest = i === list.length - 1 && dayIdx === 0;
+    if (hourOf(s) !== railHour) renderRail(hourOf(s));
     document.querySelectorAll('#rail button').forEach((b) => b.setAttribute('aria-current', +b.dataset.i === i));
     try { history.replaceState(null, '', mode === 'current' ? '#current' : '#' + slug(s.taken)); } catch (e) { /* not allowed in some frames */ }
     // The newest snapshot is the current board until the next change; its
@@ -3088,6 +3107,11 @@ source().then(async (src) => {
   modeHealth.onclick = () => setMode('health');
   modeRef.onclick = () => setMode('ref');
 
+  // An hour: its first check.
+  document.getElementById('hours').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-h]');
+    if (b) show(list.findIndex((s) => hourOf(s) === b.dataset.h));
+  });
   document.getElementById('rail').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-i]');
     if (b) show(+b.dataset.i);
