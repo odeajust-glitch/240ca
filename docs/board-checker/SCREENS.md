@@ -44,9 +44,19 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   `01 CO SA02 <name> ** RESTED **`, `03 CO SB05 <name> 26/11/03-1815`
   (rest until), `05 EN SD07 <name> **HT 1104 0635` (hold turn until
   11/04 0635, owner), `TT SB99 << OPEN TURN >>`, `<< NO CREWS IN TOWN >>`. A
-  pool runs on to the next page without its heading. screens.js
+  pool runs on to the next page without its heading. Pages 8–10 (owner's
+  screenshots): pools 1ST MANIF, 2ND MANDIF, 3RD MANIFE, *330 ASGN,
+  502/501 PL, WORKTRAIN; rows with no position and TT / ET = trainees
+  (owner); `<< VACANCY >>` = holder off the turn, `<<TEMP VCNY>>` = holder
+  working another job for now, `*** OFF ***` = day off (owner); yard jobs
+  as `YARD : XSAS01 REL#1 TH/FR OFF  RESTED/STATUS` with crew lines of
+  craft + name only (`TEMP FO …` = a temporary fill-in). Owner: "anything
+  past the crews in town shows people on their actual home turns" (the
+  yard jobs on duty above it may be someone filling in). screens.js
   parseCrewsInTown → summary `crewsInTown` [{ pool, crews: [{ pos, craft,
-  turn, status rested/rest/hold/open/other, until, text }] }]. On duty taken as
+  turn, status rested/rest/hold/vacancy/tempVacancy/off/open/other, until,
+  trainee, temp }] }]; parseCrewsInTownNames (unmasked, in memory) → name
+  codes for the people sightings. On duty taken as
   **8 h**. To know whose turn is on a yard job, board-auto.js reads the yard
   jobs and every board (pools, spareboards, 29) unmasked **in memory**,
   matches surname + first initial, and saves only `yardCrew: [{ job, craft,

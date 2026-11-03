@@ -14,8 +14,16 @@ it (screens.js parseCrewsInTown → `summary.crewsInTown` [{ pool, crews:
 [{ pos, craft, turn, status rested/rest/hold/open/other, until }] }]).
 Owner: read every page; **not shown on the site, behind the scenes only**
 (use it in the rest tracker). "**HT 1104 0635" = hold until 11/04 0635
-(owner). The laptop needs `git pull` + restart. Tests use made-up names:
-never copy names from the owner's screenshots into the repo.
+(owner). Pages 8–10 seen too (trainees TT/ET, VACANCY, TEMP VCNY, OFF,
+yard jobs "YARD : XSAS01 …" with name-only crew lines). **People:** owner,
+"anything past the crews in town shows people on their actual home turns":
+board-auto reads those pages unmasked in memory (townPages →
+parseCrewsInTownNames) and adds name-code sightings (own turn / yard job;
+TEMP = not own; TEMP VCNY skipped). Not fed into turn-holders.json.
+Snapshot `town` (site.js townStatus, FORMAT 18) → Person search Status
+"Crews in town (pool): …". The laptop needs `git pull` + restart. Tests
+use made-up names: never copy names from the owner's screenshots into the
+repo.
 #8 rest tracker (DHT040B 31 case, see TODO), then #9, #11, #6 and the older
 ones. Show options with a recommendation, then build. Before changing a tab,
 search the archive for why it is the way it is.
@@ -204,8 +212,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   check, stale trains, runaround log, the watchdog's Edge clean-up (Windows),
   Toronto fill-ins kept while read in the bunkhouse.
 - ❓ Crews in town on real CATS: the first checks after the pull should
-  show `seen.crewsInTown` and pools in the history .json; pages 7–29 not
-  seen yet (other pool names may come through masked as AAAA).
+  show `seen.crewsInTown`, pools in the history .json and "Crews in town:
+  N people read." in the log; pages 7 and 11–29 not seen yet (other pool
+  names may come through masked as AAAA). Check a person search (JUOD)
+  shows the "Crews in town" line.
 - Open TODO items: rest tracker (TODO #8), reset tracker (#9) (owner,
   2026-11-03: housekeeping, details to ask),
   API key tester (#11: compare AI keys on the same agreement question; where

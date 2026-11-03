@@ -388,6 +388,7 @@ async function runRoute(page, opts = {}) {
   };
   const boardNames = []; // this check's people on boards, under their own turn
   const bunkNames = []; // the bunkhouse, by name: checked against own turns at the end
+  const townPages = []; // the crews in town, unmasked, in memory: people on their home turns
   const learn = async () => {
     const rows = await unmaskedRows();
     if (!rows) return;
@@ -424,6 +425,7 @@ async function runRoute(page, opts = {}) {
     {
       const rows = await unmaskedRows();
       if (rows) { yardNames.push(...S.parseYardCrewNames(rows)); trainNames.push(...S.parseTrainCrewNames(rows)); }
+      if (rows && parsed.crewsInTown) townPages.push(rows);
     }
     const shown = (await screenState(page)).text;
     const m = /PAGE (\d+) OF (\d+)/.exec(shown);
@@ -439,6 +441,8 @@ async function runRoute(page, opts = {}) {
           if (!pg || +pg[1] >= +pg[2]) break;
           expect(await press(page, 'F8'), is.callBoardList, 'next crews in town page');
           await capture('crewsInTown');
+          const rows = await unmaskedRows();
+          if (rows) townPages.push(rows);
         }
       } catch (err) {
         if (err instanceof NeedSignIn) throw err;
@@ -658,6 +662,18 @@ async function runRoute(page, opts = {}) {
   for (const y of yardNames) sight(y.code, y.job, false);
   // In the Toronto bunkhouse under a turn (their own or one they're covering).
   for (const b of bunkNames) sight(b.code, b.turn, knownPeople.get(b.key) === b.turn);
+  // The crews in town (owner, 2026-11-03: "anything past the crews in town
+  // shows people on their actual home turns"; the yard jobs on duty above
+  // it may be someone filling in): their own turn or yard job. Trainees
+  // (TT/ET) on the turn they're on; a TEMP fill-in isn't on their own;
+  // TEMP VCNY = working another job for now, seen there instead (like TV).
+  const town = S.parseCrewsInTownNames(townPages);
+  for (const n of town) {
+    if (n.status === 'tempVacancy') continue;
+    const craft = n.craft === 'TT' ? 'CO' : n.craft === 'ET' ? 'EN' : n.craft;
+    sight(n.code, n.turn || n.job, !n.temp, { craft });
+  }
+  if (town.length) console.log(`  Crews in town: ${town.length} people read.`);
   return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };
 }
 

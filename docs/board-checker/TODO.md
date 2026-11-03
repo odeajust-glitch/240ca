@@ -24,7 +24,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    all look the same ("not seen"). Ideas when it's picked up: read a CATS
    screen that lists To Place / status codes (status letters are on the
    Reference tab), keep the last home turn while displaced, and say why
-   they're off it.
+   they're off it. **Partly done 2026-11-03** via the crews in town (see
+   "Done"): booked-off / vacancy / day off people now show on their home
+   turn with why.
 
 7. **Held-away time and penalty miles in Work history** (owner, 2026-11-03:
    later). Each trip home from Toronto: "Held 14:21 → 81.56 penalty miles"
@@ -265,3 +267,12 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   0635, owner), open turn. Owner's choices: read every page (the extra
   time per check is fine); **not shown on the site**, used behind the
   scenes (first by the rest tracker, #8).
+- 2026-11-03: **Home turn from the crews in town** (part of #6; owner:
+  "anything past the crews in town shows people on their actual home
+  turns … a good way to check and see where people are"). The checker
+  reads the names on those pages in memory and keeps only name codes:
+  each person is seen on their own turn (or yard job, e.g. XSAS02) every
+  check, trainees (TT/ET) on the turn they're on, a TEMP fill-in not as
+  their own, TEMP VCNY skipped (seen where they're working). Person
+  search's Status adds "Crews in town (pool): vacancy (off the turn)",
+  "day off", "on rest until …" etc. Nothing else new on the site.

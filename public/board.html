@@ -2720,9 +2720,16 @@ source().then(async (src) => {
     // out working, Toronto… from the newest check; or why they aren't seen.
     let status;
     const factList = (turn) => { const f = Person.factsFor(s, hash, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
+    // Crews in town (owner, 2026-11-03: people there are on their actual
+    // home turns): that turn's RESTED/STATUS line(s), their craft only on 501/502.
+    const townLine = (turn) => {
+      const craft = Person.craftNow(hash, turn);
+      const rows = (s.town || []).filter((x) => x.turn === turn && (!craft || !/^S5\d{2}$/.test(turn) || x.craft === craft));
+      return rows.length ? `<p>Crews in town (${esc(rows[0].pool)}): ${rows.map((x) => esc(x.text)).join('; ')}.</p>` : '';
+    };
     if (live) {
       const lead = cur.own ? `On <b class="num">${esc(cur.turn)}</b>.` : `Filling in on <b class="num">${esc(cur.turn)}</b>${home ? ` (home turn ${esc(home.turn)})` : ''}.`;
-      status = `<p>${lead}</p>${factList(cur.turn) || '<p class="muted">Nothing else on the board about it in the newest check.</p>'}`;
+      status = `<p>${lead}</p>${townLine(cur.turn)}${factList(cur.turn) || '<p class="muted">Nothing else on the board about it in the newest check.</p>'}`;
     } else if (home) {
       const gone = Person.away(home, hash);
       const since = gone === 'taken' ? Person.takenSince(home, hash) : '';

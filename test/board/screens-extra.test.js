@@ -446,6 +446,68 @@ test('crews in town: pools, turns and rested / rest until / hold / open, over tw
   assert.deepEqual(S.parseCrewsInTown([grid(yardPage)], now), [{ pool: 'S1/SA C+C', crews: [] }]);
 });
 
+// Pages 8–10 laid out as in the owner's screenshots (made-up names):
+// trainees, vacancies, other pools, 501/502 and the yard jobs.
+const town8 = [
+  '26/11/03-   910                       CN  RAIL                      PAGE  008  OF  029',
+  '                                 CALL  BOARD  REPORT                    CNP27N',
+  'CREWS  IN  TOWN',
+  '         <<    NO  CREWS  IN  TOWN    >>',
+  'POOL:  1ST  MANIF                         RESTED/STATUS',
+  '01  EN  S105  HILL*+          TR  TREVOR   ** RESTED  **',
+  '    ET  S102  DALE*+          J   JIMMY    <<  VACANCY  >>',
+  '02  EN  S106  GOOD*+          C   CHRIS    ** RESTED  **',
+  'POOL:  *330  ASGN                         RESTED/STATUS',
+  '         <<    NO  CREWS  IN  TOWN    >>',
+  'POOL:  502/501  PL                        RESTED/STATUS',
+  '01  EN  S501  STONE*+         C   CHAD     26/11/03-1500',
+  '    CO  S501  RIVER+          J   JUSTIN   ** RESTED  **',
+  '    TT  S501  BROOKE+         W   WAYNE    26/11/03-1500',
+  'YARD  :  XSAS01   REL#1   TH/FR   OFF     RESTED/STATUS',
+  '      TT   <<  OPEN  TURN  >>              <<TEMP  VCNY>>',
+  '      FO   LAKE*+    (NET)  C   CLAYTON  <<  VACANCY  >>',
+  '      S1   FIELD*+(NET)        PAUL     <<TEMP  VCNY>>',
+  'YARD  :  XSAS03   REL#3   MO/TU   OFF     RESTED/STATUS',
+  '      FO   MEADOW+         J   JEREMY    ***  OFF  ***',
+  'TEMP  FO   BROOKS+         D   DRAKE     ** RESTED  **',
+  '      S1   GROVE+          T   TRISTAN   26/11/03-0953',
+  '         ENTER=INQ\\RESTART       F3=EXIT       F7=PAGEUP       F8=PAGEDN',
+];
+
+test('crews in town: trainees, vacancies, 501/502 and yard jobs', () => {
+  const pools = S.parseCrewsInTown([grid(town8)], now3);
+  assert.deepEqual(pools.map((p) => p.pool), ['1ST MANIF', '*330 ASGN', '502/501 PL', 'YARD XSAS01', 'YARD XSAS03']);
+  const line = (c) => `${c.pos ?? '--'} ${c.craft} ${c.turn ?? '-'} ${c.status}${c.until != null ? ` ${fmt(c.until)}` : ''}${c.trainee ? ' trainee' : ''}${c.temp ? ' temp' : ''}`;
+  assert.deepEqual(pools[0].crews.map(line), ['1 EN S105 rested', '-- ET S102 vacancy trainee', '2 EN S106 rested']);
+  assert.deepEqual(pools[2].crews.map(line), ['1 EN S501 rest 3rd 1500', '-- CO S501 rested', '-- TT S501 rest 3rd 1500 trainee']);
+  assert.deepEqual([pools[3].yard, pools[3].notes], ['XSAS01', 'REL#1 TH/FR OFF']);
+  assert.deepEqual(pools[3].crews.map(line), ['-- TT - open', '-- FO - vacancy', '-- S1 - tempVacancy']);
+  assert.deepEqual(pools[4].crews.map(line), ['-- FO - off', '-- FO - rested temp', '-- S1 - rest 3rd 0953']);
+  // Unmasked, in memory: name codes with their turn or yard job.
+  const names = S.parseCrewsInTownNames([grid(town8, false)], now3);
+  assert.deepEqual(names.map((n) => `${n.code} ${n.turn || n.job} ${n.craft} ${n.status}`), [
+    'TRHI S105 EN rested', 'JIDA S102 ET vacancy', 'CHGO S106 EN rested', 'CHST S501 EN rest', 'JURI S501 CO rested', 'WABR S501 TT rest',
+    'CLLA XSAS01 FO vacancy', 'PAFI XSAS01 S1 tempVacancy', 'JEME XSAS03 FO off', 'DRBR XSAS03 FO rested', 'TRGR XSAS03 S1 rest',
+  ]);
+  // Masked as saved: day-off pairs and status words kept, names not.
+  const masked = grid(town8).map((r) => r.text).join('\n');
+  assert.match(masked, /TH\/FR/);
+  assert.match(masked, /TEMP\s+VCNY/);
+  assert.doesNotMatch(masked, /MEADOW|CLAYTON|TRISTAN/);
+});
+
+test('crews in town: the snapshot keeps each turn\'s status, no names', () => {
+  const { townStatus } = require('../../lib/board/site');
+  const town = townStatus(S.parseCrewsInTown([grid(town8)], now3));
+  assert.deepEqual(town.map((t) => `${t.turn} ${t.craft} ${t.text}`), [
+    'S105 EN EN: rested', 'S102 EN ET trainee: vacancy (off the turn)', 'S106 EN EN: rested',
+    'S501 EN EN: on rest until 3rd 1500', 'S501 CO CO: rested', 'S501 CO TT trainee: on rest until 3rd 1500',
+    'XSAS01 FO FO: vacancy (off the turn)', 'XSAS01 S1 S1: temporary vacancy (working another job for now)',
+    'XSAS03 FO FO: day off', 'XSAS03 FO FO (temporary): rested', 'XSAS03 S1 S1: on rest until 3rd 0953',
+  ]);
+  assert.equal(townStatus(null).length, 0);
+});
+
 test('crews in town: loadSummary reads the Call Board page and the labelled pages after it', () => {
   const { loadSummary } = require('../../lib/board/summary');
   const raw = (lines) => lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${maskTokenWith(m[0], BOARD_WORDS)}`)].join(' | '));
