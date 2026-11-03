@@ -583,6 +583,36 @@ test('L502: the first crew up on 501/502, each craft spare when it can\'t be cal
   assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup }).predictions[0].turn, undefined);
 });
 
+// Owner, 2026-11-03: "S501 should work it, it alternates". At 0420 S502
+// had just taken L50231 03 to Garnet and S501 was bringing L50131 02 home;
+// the site gave L50231 04 to S502 (both "out working → goes spare").
+test('L502 alternates: the crew bringing L501 home takes the next one', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 11, 3, 4, 20);
+  const l502 = (day, h) => ({ symbol: 'L50231', trainNo: 'L502', originDay: day, order: at(2026, 11, +day, h, 0), status: 'PLN', deadhead: false, engCrew: '45SAS50', trnCrew: '45SAS50' });
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const s5 = [
+    row('EN', 'S502', { working: true, workingOn: 'L50231' }), row('CO', 'S502', { working: true, workingOn: 'L50231' }),
+    row('EN', 'S501', { terminal: 1, working: true, workingOn: 'L50131' }), row('CO', 'S501', { terminal: 1, working: true, workingOn: 'L50131' }),
+  ];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4), l502('05', 4)], s5 });
+  const [a, b] = r.predictions.filter((x) => x.symbol === 'L50231');
+  assert.deepEqual([a.turn, a.spare, a.engineer, a.engineerSpare], ['S501', false, 'S501', false]);
+  // Still on duty on L501: spare or not can't be told yet (owner, 2026-11-03).
+  assert.equal(require('../../lib/board/view').goesTo(a), "S5: S501 + S501 (spare or not: known once they're off duty)");
+  assert.match(a.reason, /alternates.*S501.*bring L501 home.*known once S501 is off duty/);
+  // Off duty in Sarnia, resting past the call: the conductor goes spare.
+  const home = s5.map((x) => (x.turn === 'S501' ? { ...x, terminal: 0, working: false, workingOn: null, restUntil: x.craft === 'CO' ? at(2026, 11, 4, 3, 0) : null } : x));
+  const h = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4)], s5: home }).predictions.find((x) => x.symbol === 'L50231');
+  assert.equal(require('../../lib/board/view').goesTo(h), 'S5: S501 (goes spare) + S501');
+  // The one after goes back to S502 (home by then).
+  assert.equal(b.turn, 'S502');
+  // Already called for this L502 (ordered): that crew keeps it.
+  const ord = { ...l502('03', 4), order: at(2026, 11, 3, 5, 0), status: 'ORD' };
+  const c = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [ord], s5 }).predictions.find((x) => x.symbol === 'L50231');
+  assert.deepEqual([c.turn, c.known], ['S502', true]);
+});
+
 // Owner, 2026-10-28 12:39: SA08 at 999 "out working on M30241" (the
 // morning's M30241 26, gone from the Call Board) was put on M30241 27,
 // planned for 0331 the next night. A planned train 12 h out can't have a

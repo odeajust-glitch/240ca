@@ -183,3 +183,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   No answer in 15 minutes (phone off at work): it types N itself on a yes/no
   page, or forces past any other page (Enter, F3, reload, fresh Edge), and
   tells you (BOARD_ASK_WAIT_MINUTES, BOARD_ASSIGNMENT_FALLBACK).
+- 2026-11-03: **Fixed: L502 to the wrong crew.** The two 501/502 crews
+  alternate: the crew bringing L501 home gets the next L502 (the site had
+  given it to the crew that just left for Garnet). Whether they go spare
+  shows once they're off duty.

@@ -138,7 +138,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 - Option 5 (jobs going spare) can be wrong; **the order the site works out is
   right** (2026-11-02, E27861 02: CATS listed SA09, the order had SR05).
-- L502 = the first crew up on option 29.
+- L502: the two 501/502 crews **alternate** (owner, 2026-11-03): the crew
+  bringing L501 home takes the next L502; spare or not is only known once
+  they're off duty.
 - Toronto: PLN train → next crew in bunkhouse order even if resting; ORD →
   next crew rested by the call; none rested → possible Toronto South crew.
   Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h.
@@ -171,6 +173,17 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-03: **L502 alternates** (owner: "S501 should work it, it
+  alternates"; at 0420 the site gave L50231 04 to S502, which had just taken
+  L50231 03 to Garnet, "goes spare" both). engine.js s5Order: home and not
+  out on a 502 → coming home on L501 / at Garnet → out on a 502; each later
+  L502 the next crew; a crew called for this L502 keeps it. Still on duty on
+  L501 → "spare or not: known once they're off duty" (owner). Worker timer:
+  Cron Trigger is there and the deployed code has watch.json; owner
+  re-clicked Deploy, ❓ check Page Health again (still "never ran" → look at
+  the Worker's cron logs). Site readable from this session now
+  (board.sarniaboard.workers.dev allowed).
 
 - 2026-11-03: **"Another assignment?" answered Y** (owner: the stuck page was
   CATS asking "Do you wish to place on another assignment?", Y or N; "answers
