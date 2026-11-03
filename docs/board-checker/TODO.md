@@ -42,6 +42,12 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    DHT040B case with it. Also: the runaround log showed B111's fast-board
    spot (pos 004) instead of the slow board it was expected from (pos 001).
 
+9. **Reset tracker** (owner, 2026-11-03: "add … to housekeeping"). Details
+   to come from the owner: what a reset is to track (when a turn resets,
+   how long, against which rule) and where to show it.
+10. **Expanded Call Board information** (owner, 2026-11-03). Details to come
+   from the owner: what more of the Call Board (option 6) to read or show.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
