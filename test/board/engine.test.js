@@ -603,7 +603,7 @@ test('L502 alternates: the crew bringing L501 home takes the next one', () => {
   const b0 = s5.map((x) => (x.turn === 'S501' && x.craft === 'EN' ? { ...x, st: 'B0' } : x));
   const pb = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4)], s5: b0 }).predictions.find((x) => x.symbol === 'L50231');
   assert.deepEqual([pb.turn, pb.spare, pb.engineerSpare, pb.s5Pending], ['S501', false, false, true]);
-  assert.equal(require('../../lib/board/view').goesTo(a), "S5: S501 + S501 (spare or not: known once they're off duty)");
+  assert.equal(require('../../lib/board/view').goesTo(a), 'S5: S501 + S501');
   assert.match(a.reason, /alternates.*S501.*bring L501 home.*known once S501 is off duty/);
   // Off duty in Sarnia, resting past the call: the conductor goes spare.
   const home = s5.map((x) => (x.turn === 'S501' ? { ...x, terminal: 0, working: false, workingOn: null, restUntil: x.craft === 'CO' ? at(2026, 11, 4, 3, 0) : null } : x));

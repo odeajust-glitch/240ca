@@ -216,7 +216,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   L50231 03 to Garnet, "goes spare" both). engine.js s5Order: home and not
   out on a 502 → coming home on L501 / at Garnet → out on a 502; each later
   L502 the next crew; a crew called for this L502 keeps it. Still on duty on
-  L501 → "spare or not: known once they're off duty" (owner). **Worker
+  L501 → shows plain "S501 + S501"; the why says spare or not is known once
+  they're off duty (owner). **Worker
   timer fixed**: the new code was in the editor but not deployed; after
   Deploy, Page Health: "ran 1 min ago; ntfy topic set; push key set". Site readable from this session now
   (board.sarniaboard.workers.dev allowed).
