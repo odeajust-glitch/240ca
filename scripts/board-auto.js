@@ -49,7 +49,7 @@ const ResetAlerts = require('../lib/board/reset-alerts');
 const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
-const { listSubscriptions, deleteObject } = require('../lib/board/r2');
+const { listSubscriptions, deleteObject, retryingFetch } = require('../lib/board/r2');
 const { loadNames, recordNames, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -874,6 +874,7 @@ async function backupLaptop() {
 // reset deadlines the site build just worked out (site\data\resets.json),
 // only when they're from this check (within 30 min).
 const RESET_TOLD_FILE = path.join(DATA_DIR, 'reset-alerts-told.json');
+const PENDING_ALERTS_FILE = path.join(DATA_DIR, 'alerts-pending.json');
 function resetEventsNow(ctx) {
   try {
     if (!ctx) return [];
@@ -896,7 +897,12 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
   if (!settings.r2) return;
   const turned = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead, now });
   const { told, held } = turned;
-  const events = [...turned.events, ...extra];
+  // Alerts a check couldn't send (owner's laptop, 2026-11-04: "Turn alerts
+  // not sent: fetch failed") go with the next check, up to 30 min old:
+  // { at, event, phone } (phone: just that phone; none: everyone following).
+  const pending = (TurnAlerts.loadTold(PENDING_ALERTS_FILE) || []).filter((p) => Date.now() - p.at < 30 * 60000);
+  const nextPending = [];
+  const events = [...turned.events, ...extra, ...pending.filter((p) => !p.phone).map((p) => p.event)];
   if (held.length) console.log(`  Holding line-up alerts mid-call: ${held.join(', ')}.`);
   // Followed people: their own turn now (owner, 2026-10-25).
   const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
@@ -904,7 +910,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
   try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
   try {
     // Every check: a phone's time alerts depend on its own last-told call.
-    const subs = await listSubscriptions(settings.r2);
+    const subs = await listSubscriptions(settings.r2, retryingFetch(fetch));
     health.phones = subs.length;
     health.subscribers = Health.subscribersOf(subs, personTurns, codeByHash);
     if (!subs.length) return;
@@ -921,7 +927,8 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       const s = TurnAlerts.expandPhone(sub0, personTurns);
       const mine = TurnAlerts.phoneEvents(events, s, states, bases[s.key], { lineupRead, now, held });
       nextBases[s.key] = mine.base;
-      for (const e of mine.events) {
+      const owed = pending.filter((p) => p.phone === s.key);
+      for (const { event: e, at } of [...owed, ...mine.events.map((event) => ({ event, at: Date.now() }))]) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
         const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0 };
         log.set(e.text, l);
@@ -929,6 +936,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
         if (r.ok) { sent++; said.add(e.text); continue; }
         if (r.gone) { await deleteObject(settings.r2, s.key); delete nextBases[s.key]; dropped++; break; }
         errors.add(r.message);
+        nextPending.push({ at, phone: s.key, event: e }); // that phone, next check
       }
     }
     try { TurnAlerts.saveTold(PHONES_FILE, nextBases); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
@@ -937,7 +945,13 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       console.log(`[${stamp()}] Turn alerts: ${sent} sent${dropped ? `, ${dropped} unsubscribed phone(s) dropped` : ''}${errors.size ? `, failed: ${[...errors].join('; ')}` : ''}.${said.size ? ` (${[...said].join(' | ')})` : ''}`);
     }
   } catch (err) {
-    console.log(`[${stamp()}] Turn alerts not sent: ${err.message}`);
+    // Couldn't reach Cloudflare at all: everything goes with the next check.
+    const firstAt = new Map(pending.map((p) => [p.event, p.at]));
+    nextPending.length = 0;
+    nextPending.push(...events.map((event) => ({ at: firstAt.get(event) || Date.now(), event })), ...pending.filter((p) => p.phone));
+    console.log(`[${stamp()}] Turn alerts not sent: ${err.message}${events.length ? `; ${events.length} kept for the next check` : ''}`);
+  } finally {
+    try { TurnAlerts.saveTold(PENDING_ALERTS_FILE, nextPending); } catch { /* next time */ }
   }
 }
 

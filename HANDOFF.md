@@ -233,6 +233,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: turn alerts no longer lost on a dropped connection ("Turn
+  alerts not sent: fetch failed"): the phone list is fetched with
+  retryingFetch; alerts that couldn't go (whole send, or one phone) are
+  kept in BoardChecker\alerts-pending.json and sent with the next check,
+  up to 30 min old (board-auto sendTurnAlerts).
 - 2026-11-04: **Claude Opus in the Agreements tab** (owner: "I like opus
   answers"; chose "Kimi first, Opus on demand" and "my answers just with
   Opus"). Worker streamClaude / streamDeep: the slow tier and the
@@ -247,7 +252,6 @@ node scripts/board-watchdog.js --me SR03 --every 5
   tester from claude.ai is in tools/ca-model-compare (Netlify site, not part
   of the board site); Kimi + Claude Haiku / Sonnet / Opus on the whole
   Agreement 4.16 + addendum. Not deployed yet; see TODO #11.
-
 - 2026-11-04: owner's phone messages (Microsoft number, sign-in, CATS
   pages, stuck) retried ~2 min per route in the background
   (lib/board/owner-notify.js; board-auto alertPhone / pushOwner); the
