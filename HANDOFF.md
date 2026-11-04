@@ -80,7 +80,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   version has (an old open Notepad bit him twice), or use GitHub's "Copy raw file".
 - Worker variables: `NTFY_TOPIC`, `DOWN_MINUTES` (30), `OWNER_KEY` (secret,
   set 2026-11-02), `VAPID_KEYS` (secret, set 2026-11-03), `KIMI_API_KEY`
-  (secret, set 2026-11-03), `ANTHROPIC_API_KEY` (secret, ❓ not set yet:
+  (secret, set 2026-11-03), `ANTHROPIC_API_KEY` (secret, ❓ not set yet; the key expires
+  2026-12-31 22:00, calendar reminder set:
   Opus deeper answers, 2026-11-04), `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD),
   `PUSH_DOWN_MINUTES` (180), `OWNER_EMAIL` (unused while Access is off);
   optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `CLAUDE_MODEL`, `BOARD_KEY`
