@@ -279,9 +279,14 @@ Opus fails before writing anything, Kimi's slow model answers as before.
 1. Worker secret (Settings → Variables and Secrets → Add → **Secret**):
    name `ANTHROPIC_API_KEY`, value: the key from console.anthropic.com →
    API Keys (the tester's key works, or make one called `board site`).
-2. Optional variables: `CLAUDE_MODEL_DEEP` (members' deeper answers,
+2. **Change the models yourself:** Page Health → **Agreement search
+   models** (your questions / members' first answer / members' deeper
+   search) → pick → **Save**; used from the next question, no re-paste.
+   **Back to the usual** returns to the variables below or the defaults.
+   Optional variables (the "usual"): `CLAUDE_MODEL_DEEP` (members' deeper answers,
    default `claude-sonnet-5-5`; `claude-haiku-5-5` is cheaper still) and
-   `CLAUDE_MODEL` (the owner's, default `claude-opus-5-5`).
+   `CLAUDE_MODEL` (the owner's, default `claude-opus-5-5`), `KIMI_MODEL_FAST` (members'
+   first answer, default `kimi-k2.6`).
 3. Re-paste `cloudflare/board-worker.js` and Deploy.
 4. In console.anthropic.com → Settings → Limits, set a monthly spend
    limit as a safety cap. A Sonnet answer costs about 3–5¢, an Opus one 5–10¢.

@@ -99,8 +99,8 @@ test('ask: escalates when the fast answer could not find it; PDFs get page links
     globalThis.fetch = kimi.fetchImpl;
     const post = (body, ip = '9.9.9.9') => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': ip } }), env, { waitUntil: () => {} });
     const ev = await readAll(await post({ question: 'rest hours conductor' }));
-    assert.deepEqual(ev.map((e) => e.type).filter((t, i, a) => a.indexOf(t) === i), ['citations', 'chunk', 'escalating', 'model', 'done']);
-    assert.equal(ev.find((e) => e.type === 'model').label, 'Kimi'); // no ANTHROPIC_API_KEY: Kimi's slow model
+    assert.deepEqual(ev.map((e) => e.type).filter((t, i, a) => a.indexOf(t) === i), ['citations', 'model', 'chunk', 'escalating', 'done']);
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi', 'Kimi']); // no ANTHROPIC_API_KEY: Kimi's slow model
     assert.equal(ev.filter((e) => e.type === 'citations')[1].citations.length, 24);
     assert.equal(kimi.calls[0].thinking.type, 'disabled'); // fast tier
     assert.equal(kimi.calls[1].model, 'kimi-k3');
@@ -152,7 +152,7 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     assert.match(claude.calls[0].body.system, /ONLY the excerpts/);
     assert.match(claude.calls[0].body.messages[0].content, /Question: rest hours conductor$/);
     assert.equal((claude.calls[0].body.messages[0].content.match(/^\[\d+\] \(/gm) || []).length, 24);
-    assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Sonnet');
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi', 'Claude Sonnet']);
     assert.match(answer(ev), /Opus answer/);
     // A member's "Try a deeper search": Sonnet, no Kimi.
     claude = fakeClaude(); kimi = fakeKimi(['x']);
@@ -170,6 +170,29 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     assert.equal(claude.calls[0].body.model, 'claude-opus-5-5');
     assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Opus');
     assert.ok(!ev.find((e) => e.type === 'done').canEscalate);
+    // Page Health: the owner picks the models; members can't see or change them.
+    const models = (method, body, key = 'owner-key-0123456789') => worker.fetch(new Request('https://board.x.workers.dev/health/models', { method, body: body && JSON.stringify(body), headers: { 'x-owner-key': key } }), env);
+    assert.equal((await models('GET', null, 'nope')).status, 404);
+    assert.equal((await models('POST', { owner: 'claude-haiku-5-5' }, 'nope')).status, 404);
+    let m = await (await models('GET')).json();
+    assert.deepEqual(m.current, { owner: 'claude-opus-5-5', first: 'kimi-k2.6', deep: 'claude-sonnet-5-5' });
+    assert.equal((await models('POST', { deep: 'gpt-9' })).status, 400);
+    m = await (await models('POST', { owner: 'claude-sonnet-5-5', first: 'claude-haiku-5-5', deep: 'kimi-k3' })).json();
+    assert.deepEqual(m.current, { owner: 'claude-sonnet-5-5', first: 'claude-haiku-5-5', deep: 'kimi-k3' });
+    // The owner's question now goes to Sonnet; a member's first answer to Haiku, deeper to Kimi K3.
+    claude = fakeClaude(); kimi = fakeKimi(['I could not find it.']);
+    globalThis.fetch = route(claude, kimi);
+    await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
+    assert.equal(claude.calls[0].body.model, 'claude-sonnet-5-5');
+    claude = fakeClaude({ text: 'I could not find it in the excerpts.' }); kimi = fakeKimi(['Kimi deep.']);
+    globalThis.fetch = route(claude, kimi);
+    ev = await readAll(await post({ question: 'held away from the terminal' }));
+    assert.equal(claude.calls[0].body.model, 'claude-haiku-5-5');
+    assert.equal(kimi.calls[0].model, 'kimi-k3');
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Haiku', 'Kimi']);
+    // Back to the usual.
+    m = await (await models('POST', { owner: 'default', first: 'default', deep: 'default' })).json();
+    assert.deepEqual(m.current, { owner: 'claude-opus-5-5', first: 'kimi-k2.6', deep: 'claude-sonnet-5-5' });
     // A wrong key is a member: Kimi first.
     claude = fakeClaude(); kimi = fakeKimi(['Kimi answer [1].']);
     globalThis.fetch = route(claude, kimi);

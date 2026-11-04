@@ -16,7 +16,8 @@ Pushover, Agreements tab owner key).
    it). Then on his phone (owner key saved) a question should be headed
    "Claude Opus"; a member's "Try a deeper search" "Claude Sonnet".
    Steps: CLOUDFLARE.md "Claude for deeper answers". Members stay on
-   Sonnet (owner, 2026-11-04: "keep the deeper search at sonnet").
+   Sonnet (owner, 2026-11-04: "keep the deeper search at sonnet"); he can
+   change any of the three on Page Health → Agreement search models.
 3. Model tester: Netlify → Add new project → Import from GitHub, base
    directory `tools/ca-model-compare` (TODO #11 has the settings), keys
    MOONSHOT_API_KEY / ANTHROPIC_API_KEY / TEST_PASSWORD set by him. Empty
@@ -253,6 +254,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **search models chosen on Page Health** (owner: "so I can
+  change the model the search uses myself in page health"): section
+  "Agreement search models", three roles (owner / members' first /
+  members' deeper), choices Opus, Sonnet, Haiku, Kimi K2.6, Kimi K3.
+  Worker GET/POST /health/models (owner only), R2 ask/models.json (ask/
+  is never served), saved choice > variable > default; streamModel picks
+  Claude or Kimi per role (Claude failing first → Kimi). Every answer now
+  sends a `model` event (heading on the page, members' first answer too).
 - 2026-11-04: turn alerts no longer lost on a dropped connection ("Turn
   alerts not sent: fetch failed"): the phone list is fetched with
   retryingFetch; alerts that couldn't go (whole send, or one phone) are

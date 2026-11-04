@@ -2326,6 +2326,7 @@ source().then(async (src) => {
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
+      <section class="sheet"><header><h2>Agreement search models</h2><span class="meta">which AI answers in the Agreements tab</span></header><div class="hbody" id="hmodels"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
@@ -2333,6 +2334,33 @@ source().then(async (src) => {
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
+    // Agreement search models (owner, 2026-11-04: "so I can change the model
+    // the search uses myself in page health"): saved on the Worker
+    // (/health/models), used from the next question on.
+    const mbox = document.getElementById('hmodels');
+    const showModels = (m, note) => {
+      if (!mbox.isConnected) return;
+      const opt = (role) => m.choices.map((c) => `<option value="${esc(c.id)}"${m.current[role] === c.id ? ' selected' : ''}>${esc(c.label)} · ${esc(c.cost)}</option>`).join('');
+      mbox.innerHTML = `<table class="htable"><tbody>${Object.entries(m.roles).map(([role, label]) => `<tr><th>${esc(label)}</th><td><select data-role="${esc(role)}">${opt(role)}</select></td></tr>`).join('')}</tbody></table>
+        <p><button type="button" class="linkbtn" id="msave">Save</button> · <button type="button" class="linkbtn" id="mreset">Back to the usual (Opus / Kimi K2.6 / Sonnet)</button> <span class="muted" id="mnote">${esc(note || '')}</span></p>
+        ${m.anthropicKey ? '' : '<p class="warn">ANTHROPIC_API_KEY isn\'t set in Cloudflare yet: a Claude choice answers with Kimi until it is.</p>'}
+        <p class="muted">"Members' deeper search" also answers when the first answer can't find it. If a Claude model fails, Kimi answers instead. Prices are per answer, roughly.</p>`;
+      const post = async (body, done) => {
+        document.getElementById('mnote').textContent = 'Saving…';
+        try {
+          const r = await fetch('health/models', { method: 'POST', cache: 'no-store', headers: { 'content-type': 'application/json', ...OwnerKey.headers() }, body: JSON.stringify(body) });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || r.status);
+          showModels(d, done);
+        } catch (err) { document.getElementById('mnote').textContent = `Not saved (${err.message || err}).`; }
+      };
+      document.getElementById('msave').onclick = () => post(Object.fromEntries([...mbox.querySelectorAll('select')].map((x) => [x.dataset.role, x.value])), 'Saved: used from the next question.');
+      document.getElementById('mreset').onclick = () => post(Object.fromEntries(Object.keys(m.roles).map((r) => [r, 'default'])), 'Back to the usual.');
+    };
+    fetch('health/models', { cache: 'no-store', headers: OwnerKey.headers() })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'the Worker needs the new code (re-paste it)' : r.status))))
+      .then((m) => showModels(m))
+      .catch((err) => { if (mbox.isConnected) mbox.innerHTML = `<p class="muted">Can't load the models: ${esc(err.message || err)}.</p>`; });
     // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
     // and phones per day, from the Worker (owner only).
     const box = document.getElementById('hvisits');

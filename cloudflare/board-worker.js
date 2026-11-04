@@ -46,7 +46,10 @@
 // searches from Sonnet (owner, 2026-11-04: "a cheaper anthropic model";
 // CLAUDE_MODEL_DEEP variable, else claude-sonnet-5-5), the owner's from Opus
 // (CLAUDE_MODEL, else claude-opus-5-5); Kimi's slow model if that key is
-// missing or Claude fails before answering. GET /api/sources,
+// missing or Claude fails before answering. The owner picks the three
+// models on Page Health (owner, 2026-11-04: "so I can change the model the
+// search uses myself"): GET/POST /health/models, kept in R2
+// ask/models.json; a saved choice beats the variables. GET /api/sources,
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
@@ -528,16 +531,53 @@ async function streamClaude(env, { question, chunks, names, model, onToken, sign
   }
   return full;
 }
-// The deeper answer: Claude (Opus for the owner, Sonnet for members), or
-// Kimi's slow model if there's no Anthropic key or Claude fails before
-// writing anything.
+// The models the search can use, chosen on Page Health (owner only).
+const MODEL_CHOICES = [
+  { id: 'claude-opus-5-5', label: 'Claude Opus', cost: 'about 5–10¢' },
+  { id: 'claude-sonnet-5-5', label: 'Claude Sonnet', cost: 'about 3–5¢' },
+  { id: 'claude-haiku-5-5', label: 'Claude Haiku', cost: 'well under 1¢' },
+  { id: 'kimi-k2.6', label: 'Kimi K2.6 (quick)', cost: 'under 1¢' },
+  { id: 'kimi-k3', label: 'Kimi K3 (careful)', cost: 'about 1¢' },
+];
+const MODEL_ROLES = { owner: 'Your questions', first: "Members' first answer", deep: "Members' deeper search" };
+const MODELS_KEY = 'ask/models.json';
+function modelDefaults(env) {
+  return { owner: env.CLAUDE_MODEL || 'claude-opus-5-5', first: env.KIMI_MODEL_FAST || 'kimi-k2.6', deep: env.CLAUDE_MODEL_DEEP || 'claude-sonnet-5-5' };
+}
+// Saved choices (Page Health) over the variables over the defaults.
+async function searchModels(env) {
+  const saved = (await readJson(env, MODELS_KEY)) || {};
+  const out = modelDefaults(env);
+  for (const role of Object.keys(MODEL_ROLES)) if (MODEL_CHOICES.some((c) => c.id === saved[role])) out[role] = saved[role];
+  return out;
+}
+async function modelsApi(request, env) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  if (request.method === 'POST') {
+    let body;
+    try { body = JSON.parse(await request.text()); } catch { return json({ error: 'Bad request' }, 400); }
+    const saved = (await readJson(env, MODELS_KEY)) || {};
+    for (const role of Object.keys(MODEL_ROLES)) {
+      if (body[role] == null) continue;
+      if (body[role] === 'default') delete saved[role];
+      else if (MODEL_CHOICES.some((c) => c.id === body[role])) saved[role] = body[role];
+      else return json({ error: `Unknown model for ${MODEL_ROLES[role]}` }, 400);
+    }
+    saved.at = Date.now();
+    await env.SITE.put(MODELS_KEY, JSON.stringify(saved));
+  }
+  return json({ roles: MODEL_ROLES, choices: MODEL_CHOICES, current: await searchModels(env), defaults: modelDefaults(env), anthropicKey: !!env.ANTHROPIC_API_KEY, kimiKey: !!env.KIMI_API_KEY });
+}
+const modelLabel = (model) => { const c = MODEL_CHOICES.find((x) => x.id === model); if (c) return c.label.replace(/ \(.*\)$/, ''); if (/^claude-/.test(model)) return claudeLabel(model); return 'Kimi'; };
+// One answer from the chosen model. A Claude model that fails before
+// writing anything (no key, an error) hands over to Kimi (the quick one for
+// a first answer, the careful one for a deeper answer).
 const claudeLabel = (model) => { const m = /(opus|sonnet|haiku|fable)/i.exec(model); return m ? `Claude ${m[1][0].toUpperCase()}${m[1].slice(1).toLowerCase()}` : 'Claude'; };
-async function streamDeep(env, { question, chunks, names, onToken, signal, fetchImpl, send, owner }) {
-  if (env.ANTHROPIC_API_KEY) {
+async function streamModel(env, model, { question, chunks, names, onToken, signal, fetchImpl, send, fast }) {
+  if (/^claude-/.test(model) && env.ANTHROPIC_API_KEY) {
     let wrote = false;
-    const model = owner ? (env.CLAUDE_MODEL || 'claude-opus-5-5') : (env.CLAUDE_MODEL_DEEP || 'claude-sonnet-5-5');
     try {
-      await send({ type: 'model', label: claudeLabel(model) });
+      await send({ type: 'model', label: modelLabel(model) });
       return await streamClaude(env, { question, chunks, names, model, signal, fetchImpl,
         onToken: (t) => { wrote = true; return onToken(t); } });
     } catch (err) {
@@ -545,8 +585,9 @@ async function streamDeep(env, { question, chunks, names, onToken, signal, fetch
       console.log(`Claude failed, Kimi instead: ${err.message}`);
     }
   }
+  const kimi = /^claude-/.test(model) ? (fast ? 'kimi-k2.6' : (env.KIMI_MODEL_SLOW || 'kimi-k3')) : model;
   await send({ type: 'model', label: 'Kimi' });
-  return streamKimi(env, { question, chunks, names, model: env.KIMI_MODEL_SLOW || 'kimi-k3', fast: false, onToken, signal, fetchImpl });
+  return streamKimi(env, { question, chunks, names, model: kimi, fast, onToken, signal, fetchImpl });
 }
 
 const sha16 = async (text) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -643,18 +684,19 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
         url: c.url || (list.pdfs.includes(c.source) && /^\d+$/.test(String(c.page)) ? `/docs/${c.source}.pdf#page=${c.page}` : null) })) });
       await cite(chunks);
       const onToken = (text) => send({ type: 'chunk', text });
-      const deepOpts = { question, names, onToken, signal: abort.signal, fetchImpl, send, owner };
+      const models = await searchModels(env);
+      const base = { question, names, onToken, signal: abort.signal, fetchImpl, send };
       if (slow) {
-        await streamDeep(env, { ...deepOpts, chunks });
+        await streamModel(env, owner ? models.owner : models.deep, { ...base, chunks, fast: false });
         await send({ type: 'done' });
         return;
       }
-      const first = await streamKimi(env, { question, chunks, names, model: env.KIMI_MODEL_FAST || 'kimi-k2.6', fast: true, onToken, signal: abort.signal, fetchImpl });
+      const first = await streamModel(env, models.first, { ...base, chunks, fast: true });
       if (NOT_FOUND_PATTERN.test(first)) {
         await send({ type: 'escalating' });
         const deep = await searchShards(env, question, { topK: TOP_K_DEEP, ...opts });
         await cite(deep);
-        await streamDeep(env, { ...deepOpts, chunks: deep });
+        await streamModel(env, models.deep, { ...base, chunks: deep, fast: false });
         await send({ type: 'done', escalated: true });
       } else {
         await send({ type: 'done', canEscalate: true });
@@ -789,6 +831,7 @@ export default {
     if (url.pathname === '/whoami') return whoami(request, env);
     if (url.pathname === '/api/board' || url.pathname === '/api/board/latest') return relay(request, env, url);
     if (url.pathname === '/health') return healthFor(request, env);
+    if (url.pathname === '/health/models') return modelsApi(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);
