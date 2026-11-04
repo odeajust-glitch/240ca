@@ -221,3 +221,18 @@ test('next reset as CATS shows it: 7 days after the first shift, less a minute',
   assert.equal(fmt(r.last.at), '3rd 0755');
   assert.equal(fmt(r.due), '11th 0244');
 });
+
+// Owner's SR11, 2026-11-04: one code on SR01, SB03, SA07, SB06 and SR11 for
+// days at a time: several people. Only SR11's own stretch counts, and the
+// time before it isn't known (no made-up reset from someone else's trips).
+test('a code on two turns for hours at a time: only that turn, nothing before', () => {
+  const acc = R.empty();
+  acc.since = t(24, 0); acc.last = t(4, 1641);
+  acc.turnTrips = { SB06: { b: { train: 'B 30', on: t(30, 1200), job: 'SB06', first: t(30, 1100), last: t(30, 2000) } },
+    SR11: { s: { train: 'S 03', on: t(3, 100), job: 'SR11', first: t(3, 0), last: t(3, 800) } } };
+  const people = { x: [{ turn: 'SB06', own: true, from: '2026-10-26 1200', to: '2026-11-04 1641' }, { turn: 'SR11', own: true, from: '2026-11-02 1454', to: '2026-11-04 1641' }] };
+  assert.equal(R.byTurn(acc, people, t(4, 1641)).SR11, undefined);
+  // A bump seen on both turns for 40 min is one person (owner's SR03 → S501).
+  const one = { me: [{ turn: 'SR03', own: true, from: '2026-10-24 0300', to: '2026-10-25 1400' }, { turn: 'S501', craft: 'CO', own: true, from: '2026-10-25 1320', to: '2026-10-25 1400' }] };
+  assert.equal(R.onTurn(one.me, {}, 'SR03').shared, false);
+});
