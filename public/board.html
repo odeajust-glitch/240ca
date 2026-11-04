@@ -145,6 +145,11 @@
   .htable th, .htable td { text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .htable th { width: 34%; color: var(--soft); font-weight: 500; }
   .htable td.warn { color: #b3261e; font-weight: 600; }
+  .qday { display: block; margin: 4px 0 8px; font-size: 14px; }
+  .qitem { border-bottom: 1px solid var(--rule); padding: 8px 0; }
+  .qitem summary { cursor: pointer; }
+  .qtext1 { display: block; margin-top: 2px; }
+  .qbody { white-space: pre-wrap; font-size: 14px; line-height: 1.45; }
   .hsub { margin: 14px 0 4px; font-size: 13px; color: var(--soft); font-weight: 600; }
   .hhist { font-size: 13px; }
   .hhist th, .hhist td { padding: 6px 8px; width: auto; }
@@ -616,7 +621,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2279,6 +2284,7 @@ source().then(async (src) => {
     try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
     healthData = h;
     document.getElementById('modeHealth').hidden = !h;
+    document.getElementById('modeReview').hidden = !h;
     // A key saved on this phone that the site doesn't take: say so in Settings (owner, 2026-11-02).
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !h);
@@ -2298,60 +2304,18 @@ source().then(async (src) => {
   }
   const noCountSaved = () => { try { return localStorage.getItem('boardNoCount') === '1'; } catch (e) { return false; } };
   const healthClock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-  // The Page Health tab: everything the laptop and the Worker know.
-  async function renderHealth() {
+  // Search Review tab (owner, 2026-11-04: "move Agreement search models
+  // from page health tab to another tab … it will have the options there
+  // and the questions. make it so i can only see this tab, like the page
+  // health"): the models, AI spending, and the questions and answers kept
+  // 60 days. Shown only when the Worker accepts the owner key.
+  async function renderReview() {
     const view = document.getElementById('view');
-    const h = healthData;
-    if (!h) { view.innerHTML = '<p class="empty">Page Health is only for the owner.</p>'; return; }
-    if (!h.laptop) { view.innerHTML = '<p class="empty">Waiting for the laptop\'s first update with the new code (restart the checker after pulling).</p>'; return; }
-    const L = h.laptop;
-    const now = Date.now();
-    const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
-    const rows = [];
-    const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
-    // The Worker's 10-minute timer (owner, 2026-11-03: the 30 min ntfy never came).
-    const W = h.watch;
-    row('Worker timer', W ? `ran ${ago(W.at)}; ntfy topic ${W.ntfy ? 'set' : 'NOT set (no 30 min message)'}; push key ${W.push ? 'set' : 'NOT set (no phone alerts)'}` : 'never ran: no Cron Trigger on the Worker?', !W || now - W.at > 25 * 60000 || !W.ntfy || !W.push);
-    if (h.down && h.down.ownerPushed) row('Your phones told it was down', `${ago(h.down.ownerPushed)}${h.down.ownerPhones ? ` (${h.down.ownerPhones.sent} sent)` : ''}`, true);
-    if (h.down) row('Down alert', `${h.down.alerted ? `sent ${ago(h.down.alerted)}` : `down since ${ago(h.down.since)}`}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
-    if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
-    row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
-    if (L.signIn) {
-      const left = L.signIn.endsAt - now;
-      row('Microsoft sign-in', `${ago(L.signIn.lastAt)}; runs out ~${healthClock(L.signIn.endsAt)} (${left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now'})`, left < 2 * 3600000);
-    }
-    const r = L.restarts || { count: 0 };
-    row('Watchdog restarts today', `${r.count}${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`, r.count > 0);
-    if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
-    if (L.phones != null) row('Phones getting alerts', String(L.phones));
-    row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
-    if (L.version) row('Code version', L.version);
-    row('Health sent', ago(L.at));
-    // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
-    // name code (known once they're seen on a board) and their turn now.
-    const S = L.subscribers;
-    const who = S && S.phones ? `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${S.phones} phone${S.phones === 1 ? '' : 's'}</span></header><div class="hbody">
-      ${S.turns.length ? `<p><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
-      ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
-      <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
-    // What was sent, for whom (the laptop's alerts log, newest first).
-    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
-    const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
-    // CATS's "Do you wish to place on another assignment?" pages, word for
-    // word, as the checker answered them (owner, 2026-11-03).
-    const Q = L.questions || [];
-    const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
-    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
-      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
-      <section class="sheet"><header><h2>AI spending</h2><span class="meta">Agreements tab</span></header><div class="hbody" id="hspend"><p class="muted">Loading…</p></div></section>
+    if (!healthData) { view.innerHTML = '<p class="empty">Search Review is only for the owner.</p>'; return; }
+    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Search Review <span class="muted">(only you see this)</span></h1>
+      <section class="sheet"><header><h2>Questions asked</h2><span class="meta">kept 60 days, newest first</span></header><div class="hbody" id="hquestions"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Agreement search models</h2><span class="meta">which AI answers in the Agreements tab</span></header><div class="hbody" id="hmodels"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
-      <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
-        <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
-        <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
-    // Kept as the plain '1' the visit counter (Settings script) reads.
-    document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
-    document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
+      <section class="sheet"><header><h2>AI spending</h2><span class="meta">Agreements tab</span></header><div class="hbody" id="hspend"><p class="muted">Loading…</p></div></section></div>`;
     // AI spending (owner, 2026-11-04: "the api balances in the page health
     // section"): Kimi's balance live from Moonshot; Claude has no balance
     // lookup for a normal key, so the site's own answers are added up.
@@ -2403,6 +2367,88 @@ source().then(async (src) => {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'the Worker needs the new code (re-paste it)' : r.status))))
       .then((m) => showModels(m))
       .catch((err) => { if (mbox.isConnected) mbox.innerHTML = `<p class="muted">Can't load the models: ${esc(err.message || err)}.</p>`; });
+    // Questions and answers (owner, 2026-11-04: "record what questions are
+    // being asked and what answers are being given, so I can review them").
+    const qbox = document.getElementById('hquestions');
+    const clock = (ms) => new Date(ms).toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const dayName = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+    const showDay = async (d) => {
+      const list = qbox.querySelector('.qlist');
+      list.innerHTML = '<p class="muted">Loading…</p>';
+      try {
+        const r = await fetch(`health/questions?day=${encodeURIComponent(d)}`, { cache: 'no-store', headers: OwnerKey.headers() });
+        if (!r.ok) throw new Error(r.status);
+        const entries = ((await r.json()).entries || []).slice().reverse();
+        if (!list.isConnected) return;
+        list.innerHTML = entries.map((e) => `<details class="qitem"><summary><span class="meta">${esc(clock(e.at))} · ${e.owner ? '<b>You</b>' : 'Member'}${e.deeper ? ' · deeper search' : ''}${e.escalated ? ' · retried deeper' : ''}${e.error ? ' · <span class="warn">error</span>' : ''}</span> <span class="qtext1">${esc(e.question)}</span></summary>
+          ${e.answers.map((a) => `<div class="qans"><div class="askdiv">${esc(a.label || 'Answer')}</div><div class="qbody">${esc(a.text)}</div></div>`).join('')}${e.error ? `<p class="warn">${esc(e.error)}</p>` : ''}</details>`).join('') || '<p class="muted">None that day.</p>';
+      } catch (err) { list.innerHTML = `<p class="muted">Can't load that day (${esc(err.message || err)}).</p>`; }
+    };
+    fetch('health/questions', { cache: 'no-store', headers: OwnerKey.headers() })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'the Worker needs the new code (re-paste it)' : r.status))))
+      .then((q) => {
+        if (!qbox.isConnected) return;
+        if (!q.days.length) { qbox.innerHTML = '<p class="muted">No questions saved yet. They appear here from the first question after the Worker is updated.</p>'; return; }
+        qbox.innerHTML = `<label class="qday">Day <select>${q.days.map((x) => `<option value="${esc(x.day)}">${esc(dayName(x.day))} (${x.n})</option>`).join('')}</select></label><div class="qlist"></div>
+          <p class="muted">Tap a question for the answers, each headed with the model that wrote it. A member's "Try a deeper search" is its own entry. No names or addresses are kept.</p>`;
+        const sel = qbox.querySelector('select');
+        sel.onchange = () => showDay(sel.value);
+        showDay(sel.value);
+      })
+      .catch((err) => { if (qbox.isConnected) qbox.innerHTML = `<p class="muted">Can't load the questions: ${esc(err.message || err)}.</p>`; });
+  }
+  // The Page Health tab: everything the laptop and the Worker know.
+  async function renderHealth() {
+    const view = document.getElementById('view');
+    const h = healthData;
+    if (!h) { view.innerHTML = '<p class="empty">Page Health is only for the owner.</p>'; return; }
+    if (!h.laptop) { view.innerHTML = '<p class="empty">Waiting for the laptop\'s first update with the new code (restart the checker after pulling).</p>'; return; }
+    const L = h.laptop;
+    const now = Date.now();
+    const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
+    const rows = [];
+    const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
+    // The Worker's 10-minute timer (owner, 2026-11-03: the 30 min ntfy never came).
+    const W = h.watch;
+    row('Worker timer', W ? `ran ${ago(W.at)}; ntfy topic ${W.ntfy ? 'set' : 'NOT set (no 30 min message)'}; push key ${W.push ? 'set' : 'NOT set (no phone alerts)'}` : 'never ran: no Cron Trigger on the Worker?', !W || now - W.at > 25 * 60000 || !W.ntfy || !W.push);
+    if (h.down && h.down.ownerPushed) row('Your phones told it was down', `${ago(h.down.ownerPushed)}${h.down.ownerPhones ? ` (${h.down.ownerPhones.sent} sent)` : ''}`, true);
+    if (h.down) row('Down alert', `${h.down.alerted ? `sent ${ago(h.down.alerted)}` : `down since ${ago(h.down.since)}`}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
+    if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
+    row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
+    if (L.signIn) {
+      const left = L.signIn.endsAt - now;
+      row('Microsoft sign-in', `${ago(L.signIn.lastAt)}; runs out ~${healthClock(L.signIn.endsAt)} (${left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now'})`, left < 2 * 3600000);
+    }
+    const r = L.restarts || { count: 0 };
+    row('Watchdog restarts today', `${r.count}${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`, r.count > 0);
+    if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
+    if (L.phones != null) row('Phones getting alerts', String(L.phones));
+    row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
+    if (L.version) row('Code version', L.version);
+    row('Health sent', ago(L.at));
+    // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
+    // name code (known once they're seen on a board) and their turn now.
+    const S = L.subscribers;
+    const who = S && S.phones ? `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${S.phones} phone${S.phones === 1 ? '' : 's'}</span></header><div class="hbody">
+      ${S.turns.length ? `<p><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
+      ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
+      <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
+    // What was sent, for whom (the laptop's alerts log, newest first).
+    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
+    const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
+    // CATS's "Do you wish to place on another assignment?" pages, word for
+    // word, as the checker answered them (owner, 2026-11-03).
+    const Q = L.questions || [];
+    const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
+    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
+      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
+      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
+      <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
+        <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
+        <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
+    // Kept as the plain '1' the visit counter (Settings script) reads.
+    document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
+    document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
     // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
     // and phones per day, from the Worker (owner only).
     const box = document.getElementById('hvisits');
@@ -2989,6 +3035,7 @@ source().then(async (src) => {
   const modeHeld = document.getElementById('modeHeld');
   const modeAna = document.getElementById('modeAna');
   const modeHealth = document.getElementById('modeHealth');
+  const modeReview = document.getElementById('modeReview');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
   // Agreements tab (owner, 2026-11-03): the agreement search, in this page (board-ask.js).
@@ -3008,7 +3055,7 @@ source().then(async (src) => {
   }
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'ref' || mode === 'ask');
+    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -3018,10 +3065,12 @@ source().then(async (src) => {
     modeHeld.setAttribute('aria-pressed', mode === 'held');
     modeAna.setAttribute('aria-pressed', mode === 'analytics');
     modeHealth.setAttribute('aria-pressed', mode === 'health');
+    modeReview.setAttribute('aria-pressed', mode === 'review');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
     if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
+    else if (mode === 'review') renderReview();
     else if (mode === 'held') renderHeld();
     else if (mode === 'analytics') renderAnalytics();
     else if (mode === 'ref') renderRef();
@@ -3328,6 +3377,7 @@ source().then(async (src) => {
   modeHeld.onclick = () => setMode('held');
   modeAna.onclick = () => setMode('analytics');
   modeHealth.onclick = () => setMode('health');
+  modeReview.onclick = () => setMode('review');
   modeRef.onclick = () => setMode('ref');
   modeAsk.onclick = () => setMode('ask');
 

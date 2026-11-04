@@ -19,6 +19,7 @@
         <label for="askq" class="asklbl">Ask a question about the collective agreements, the rules or CROA awards</label>
         <div class="askrow"><textarea id="askq" maxlength="500" rows="2" placeholder="e.g. How long can I be held at the away-from-home terminal?"></textarea><button type="button" id="askgo" class="askbtn">Ask</button></div>
         <p class="muted askhint">Answers come only from the documents below, with the page for every point. A search aid, not legal advice: for a grievance or claim, confirm with your Local Chairperson.</p>
+        <p class="muted askhint">Questions and answers are kept for 60 days to check the answers are right. Don't include names or personal details.</p>
       </section>
       <div class="askload" hidden><span class="askspin"></span> Searching the documents…</div>
       <section class="sheet askans" hidden><div class="askanswer"></div><button type="button" class="askdeep" hidden>Try a deeper search</button></section>

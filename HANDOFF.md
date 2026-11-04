@@ -19,7 +19,7 @@ turn-alert resend, Pushover all running); later commits need `git pull`
    "Claude Opus"; a member's "Try a deeper search" "Claude Sonnet".
    Steps: CLOUDFLARE.md "Claude for deeper answers". Members stay on
    Sonnet (owner, 2026-11-04: "keep the deeper search at sonnet"); he can
-   change any of the three on Page Health → Agreement search models.
+   change any of the three on the Search Review tab (owner-only).
 3. Model tester: Netlify → Add new project → Import from GitHub, base
    directory `tools/ca-model-compare` (TODO #11 has the settings), keys
    MOONSHOT_API_KEY / ANTHROPIC_API_KEY / TEST_PASSWORD set by him. Empty
@@ -269,6 +269,18 @@ node scripts/board-watchdog.js --me SR03 --every 5
   turn's while they were on it, "L50231 04 (S501 · TT)" + a "TT trainee"
   chip, whole crew under Worked with; no holder's rests (owner: "log what
   turn they are working and indicate it's a TT turn").
+- 2026-11-04: **Search Review tab** (owner-only, shown like Page Health
+  when the Worker accepts the owner key; owner: "move Agreement search
+  models from page health tab to another tab … the options there and the
+  questions"): Questions asked, Agreement search models, AI spending
+  (the last two moved off Page Health). **Questions and answers are now
+  kept** (owner, 2026-11-04: to review real questions before changing
+  models; chose: members told on the Agreements tab, 60 days, his own
+  too, marked "You"): Worker askLog → R2 ask/log/YYYY-MM-DD.json (the
+  question as typed, each answer with its model label, deeper /
+  retried flags; no address, no name); pruneAskLog on the 10-min timer
+  deletes days 61–67 back; GET /health/questions[?day=] owner only. The
+  old "no question kept" (from Render) no longer holds.
 - 2026-11-04: **Page Health → AI spending** (owner: "the api balances in
   the page health section", then "a usage history"): Kimi balance live
   (Moonshot GET /v1/users/me/balance with KIMI_API_KEY; address not

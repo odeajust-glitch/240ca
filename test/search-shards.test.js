@@ -249,3 +249,44 @@ test('Page Health spending: Kimi balance, Claude cost, usage history', async () 
     assert.equal(e.claude.month.n, 2);
   } finally { globalThis.fetch = real; }
 });
+
+test('Search Review: questions and answers kept 60 days, owner only', async () => {
+  const chunks = corpus();
+  const worker = await loadWorker();
+  const { env, store } = envWith(buildShards(chunks, SOURCES, { buckets: 16, perFile: 50 }));
+  Object.assign(env, { ANTHROPIC_API_KEY: 'anthropic-test', OWNER_KEY: 'owner-key-0123456789' });
+  const real = globalThis.fetch;
+  const owner = { 'x-owner-key': 'owner-key-0123456789' };
+  const post = (body, headers = {}) => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': '6.6.6.6', ...headers } }), env, { waitUntil: () => {} });
+  const get = (q, headers = owner) => worker.fetch(new Request(`https://board.x.workers.dev/health/questions${q}`, { headers }), env);
+  try {
+    globalThis.fetch = route(fakeClaude({ text: 'Sonnet says [2].' }), fakeKimi(['I could not find it in the excerpts.']));
+    await readAll(await post({ question: '  rest hours conductor ' }));
+    globalThis.fetch = route(fakeClaude({ text: 'Opus says [1].' }), fakeKimi(['x']));
+    await readAll(await post({ question: 'held away from the terminal' }, owner));
+    assert.equal((await get('', {})).status, 404);
+    const list = await (await get('')).json();
+    assert.equal(list.keepDays, 60);
+    assert.equal(list.days.length, 1);
+    assert.equal(list.days[0].n, 2);
+    const day = await (await get(`?day=${list.days[0].day}`)).json();
+    const [m, o] = day.entries;
+    assert.equal(m.question, 'rest hours conductor');
+    assert.equal(m.owner, false);
+    assert.equal(m.escalated, true);
+    assert.deepEqual(m.answers.map((a) => [a.label, a.text]), [['Kimi', 'I could not find it in the excerpts.'], ['Claude Sonnet', 'Sonnet says [2].']]);
+    assert.equal(o.owner, true);
+    assert.deepEqual(o.answers.map((a) => a.label), ['Claude Opus']);
+    // Nothing about who asked.
+    assert.ok(!JSON.stringify(day).includes('6.6.6.6'));
+    assert.equal((await get('?day=../x')).status, 400);
+    // The timer deletes days past 60.
+    const old = new Date(Date.now() - 62 * 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+    store.set(`ask/log/${old}.json`, '{"entries":[]}');
+    let p; await worker.scheduled({}, env, { waitUntil: (x) => { p = x; } }); await p;
+    assert.ok(!store.has(`ask/log/${old}.json`));
+    assert.ok(store.has(`ask/log/${list.days[0].day}.json`));
+    // Never served as a file.
+    assert.equal((await worker.fetch(new Request(`https://board.x.workers.dev/ask/log/${list.days[0].day}.json`), env)).status, 404);
+  } finally { globalThis.fetch = real; }
+});

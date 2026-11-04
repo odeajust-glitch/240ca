@@ -279,7 +279,7 @@ Opus fails before writing anything, Kimi's slow model answers as before.
 1. Worker secret (Settings → Variables and Secrets → Add → **Secret**):
    name `ANTHROPIC_API_KEY`, value: the key from console.anthropic.com →
    API Keys (the tester's key works, or make one called `board site`).
-2. **Change the models yourself:** Page Health → **Agreement search
+2. **Change the models yourself:** the **Search Review** tab → **Agreement search
    models** (your questions / members' first answer / members' deeper
    search) → pick → **Save**; used from the next question, no re-paste.
    **Back to the usual** returns to the variables below or the defaults.

@@ -51,7 +51,8 @@
 // search uses myself"): GET/POST /health/models, kept in R2
 // ask/models.json; a saved choice beats the variables. GET /health/spend:
 // Kimi's live balance and what the site's Claude answers cost (R2
-// ask/spend/). GET /api/sources,
+// ask/spend/). GET /health/questions[?day=]: the questions and answers kept
+// 60 days for review (R2 ask/log/). GET /api/sources,
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
@@ -684,6 +685,41 @@ async function spendApi(request, env, { fetchImpl = fetch, now = Date.now() } = 
     history, kimi: await kimiBalance(env, fetchImpl), anthropicKey: !!env.ANTHROPIC_API_KEY });
 }
 
+// Questions and answers kept for review (owner, 2026-11-04: "record what
+// questions are being asked and what answers are being given, so I can
+// review them and change the model"). Owner chose: members are told on the
+// Agreements tab, kept 60 days, members' and his own (marked). No address,
+// no name: only the question as typed, which documents, and each answer
+// with the model that wrote it. R2 ask/log/YYYY-MM-DD.json, one file a day.
+const ASK_LOG_DAYS = 60;
+async function askLog(env, entry, now = Date.now()) {
+  if (!entry.question || !entry.answers.some((a) => a.text)) return;
+  const key = `ask/log/${torontoDay(now)}.json`;
+  const day = (await readJson(env, key)) || { entries: [] };
+  day.entries.push({ at: now, ...entry });
+  await env.SITE.put(key, JSON.stringify(day));
+}
+// Days past 60 are deleted by the 10-minute timer (a few days back, so a
+// missed day still goes).
+async function pruneAskLog(env, now = Date.now()) {
+  for (let i = ASK_LOG_DAYS + 1; i <= ASK_LOG_DAYS + 7; i++) await env.SITE.delete(`ask/log/${torontoDay(now - i * 86400000)}.json`);
+}
+async function questionsApi(request, env, now = Date.now()) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  const want = new URL(request.url).searchParams.get('day');
+  if (want) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(want)) return json({ error: 'Bad day' }, 400);
+    return json({ day: want, entries: ((await readJson(env, `ask/log/${want}.json`)) || { entries: [] }).entries });
+  }
+  const days = [];
+  for (let i = 0; i < ASK_LOG_DAYS; i++) {
+    const d = torontoDay(now - i * 86400000);
+    const f = await readJson(env, `ask/log/${d}.json`);
+    if (f && f.entries.length) days.push({ day: d, n: f.entries.length });
+  }
+  return json({ keepDays: ASK_LOG_DAYS, days });
+}
+
 const sha16 = async (text) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 const readJson = async (env, key) => { const o = await env.SITE.get(key); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
 // 10 questions per 5 minutes per address (cost protection, as on Render).
@@ -700,7 +736,8 @@ async function askAllowed(env, ip, now = Date.now()) {
   return true;
 }
 // Per day: questions answered and how many different people (an opaque
-// daily hash, as on Render: no address, no question kept).
+// daily hash, as on Render: no address). The question and its answers are
+// kept 60 days for the owner to review (askLog below).
 async function askCount(env, ip, now = Date.now()) {
   const day = torontoDay(now);
   const key = `ask/stats/${day}.json`;
@@ -755,7 +792,15 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
   const writer = writable.getWriter();
   const enc = new TextEncoder();
   const abort = new AbortController();
-  const send = (obj) => writer.write(enc.encode(JSON.stringify(obj) + '\n')).catch(() => abort.abort());
+  // What this question got, for the owner's review (askLog).
+  const entry = { question: String(question).trim(), owner, deeper: tier === 'slow' && !owner, answers: [] };
+  const send = (obj) => {
+    if (obj.type === 'model') entry.answers.push({ label: obj.label, text: '' });
+    else if (obj.type === 'chunk') { if (!entry.answers.length) entry.answers.push({ label: '', text: '' }); entry.answers[entry.answers.length - 1].text += obj.text; }
+    else if (obj.type === 'escalating') entry.escalated = true;
+    else if (obj.type === 'error') entry.error = obj.error;
+    return writer.write(enc.encode(JSON.stringify(obj) + '\n')).catch(() => abort.abort());
+  };
   const work = (async () => {
     try {
       let sources = list.defaults;
@@ -799,6 +844,7 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
       if (!abort.signal.aborted) await send({ type: 'error', error: err.message });
     } finally {
       await writer.close().catch(() => {});
+      await askLog(env, entry).catch((err) => console.log(`question not logged: ${err.message}`));
     }
   })();
   if (ctx && ctx.waitUntil) ctx.waitUntil(work);
@@ -899,7 +945,7 @@ async function healthFor(request, env) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(watchChecker(env));
+    ctx.waitUntil(Promise.all([watchChecker(env), pruneAskLog(env).catch(() => {})]));
   },
 
   async fetch(request, env, ctx) {
@@ -927,6 +973,7 @@ export default {
     if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/health/models') return modelsApi(request, env);
     if (url.pathname === '/health/spend') return spendApi(request, env);
+    if (url.pathname === '/health/questions') return questionsApi(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);
