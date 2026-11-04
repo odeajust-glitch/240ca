@@ -288,7 +288,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
   on S501-TT; back home 30 min grace, then let go (crews in town shows them
   again if still training); 4 days max unseen. Call Board names now read
   TT crew lines (parseTrainCrewNames TRAIN_CRAFT). Applied in board-auto
-  before saveSnapshot (summary.people).
+  before saveSnapshot (summary.people). ❓ First real test: WADE (TT on
+  S501) should be picked up from the Call Board at L50131 04's on-duty
+  (4th ~2130 at Garnet) and then show as S501 · TT; he isn't on the Garnet
+  board (31) or 501/502 (29) (owner, 2026-11-04). Garnet line-up 41 works
+  with station only (L50131 04 ORD 4th 2130 read at 1203).
 - 2026-11-04: re-auth from the phone without the ntfy app (owner: "Can I
   use pushover to do my reauth"): Pushover can't send back, so a link to
   ntfy's GET publish (https://ntfy.sh/<signin topic>/publish?message=signin)
