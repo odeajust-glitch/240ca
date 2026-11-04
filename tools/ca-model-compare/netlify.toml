@@ -1,0 +1,6 @@
+[build]
+  publish = "public"
+
+[functions]
+  # Bundle the agreement text with the function so it can be read at runtime.
+  included_files = ["agreement.txt"]

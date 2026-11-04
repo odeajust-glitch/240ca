@@ -231,6 +231,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: Pushover works (owner: both findstr ok, test message came
+  through on Pushover). **API key tester (TODO #11)** started: owner's
+  tester from claude.ai is in tools/ca-model-compare (Netlify site, not part
+  of the board site); Kimi + Claude Haiku / Sonnet / Opus on the whole
+  Agreement 4.16 + addendum. Not deployed yet; see TODO #11.
+
 - 2026-11-04: owner's phone messages (Microsoft number, sign-in, CATS
   pages, stuck) retried ~2 min per route in the background
   (lib/board/owner-notify.js; board-auto alertPhone / pushOwner); the

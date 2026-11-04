@@ -54,15 +54,16 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    (phone-test: ntfy and Pushover both sent): trial ends about 2026-12-04.
 
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
-   a tester was built to ask several AI keys/models the same question about
-   the agreement and compare the answers, for later use; not used yet. Not
-   in this repository: it was built in the owner's claude.ai chat
-   https://claude.ai/chat/cab5e05d-70a6-4580-8036-3bb18c6049a8 (a Claude
-   Code session can't open it: ask the owner to paste the tester's code or
-   files when it's time). How (owner): ask questions he already knows the answer to,
-   to see which model gives the most accurate answers. The agreement search now runs on the Worker with Kimi
-   (KIMI_API_KEY); the comparison would tell whether another model answers
-   better or cheaper.
+   ask several models the same agreement question he already knows the
+   answer to and see which is most accurate. 2026-11-04: the owner chose to
+   use his tester as built (option B, a separate Netlify site, the whole
+   agreement given to every model) rather than build it into the Worker.
+   Now in **tools/ca-model-compare/** with Agreement 4.16 + addendum book as
+   agreement.txt; cards: Kimi (kimi-k2.6, thinking off), Claude Haiku,
+   Sonnet, Opus 5.5 (owner's pick). Keys: MOONSHOT_API_KEY, ANTHROPIC_API_KEY
+   (he's getting one at console.anthropic.com), TEST_PASSWORD, set by him in
+   Netlify. Suggested later: a free Google Gemini key as another company.
+   ❓ Deploy to a new Netlify site, then his scored results.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
