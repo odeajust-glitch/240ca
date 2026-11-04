@@ -290,8 +290,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (on duty YYMMDD HHMM), INT-TERMINAL, MILES, DUTY (HHMM on duty; N/A =
   still on duty). Off duty = ODT + DUTY. Row colours just alternate. Plan:
   read S1/1 and S5 with start = yesterday about hourly; resets.js offDuty
-  uses it first. ❓ Waiting for the owner: menu / option number, paging
-  (F8?), HOME/AWAY for S5.
+  uses it first. **Built 2026-11-04** (owner: main menu 3 → 7, F8 to page):
+  board-auto fillByLabel + hourly read (assignReadAt) of S1 and S5 (both
+  HOME/AWAY 1 ❓ for S5), label assignHistory; screens.js
+  parseAssignHistory; summary assignHistory; resets.js acc.offs → offDuty
+  'history' (exact, before bunkhouse/REST/estimates). Masking keeps
+  2[4-9]MMDD dates. ❓ First real read: window says "skipped assignment
+  history …" if a box label or the screen isn't found.
 - 2026-11-04: **possible resets** (owner: off at 2355 gave a reset, after
   0000 it would have needed another night; "mark those as possible
   resets"; he has a way to find specific trains' off-duty times for later

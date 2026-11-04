@@ -544,3 +544,26 @@ test('Call Board names: a TT on a train crew is read (made-up name)', () => {
   ], false);
   assert.deepEqual(S.parseTrainCrewNames(rows).map((x) => `${x.craft} ${x.job} ${x.code}`), ['CO S501 JURI', 'TT S501 WABR']);
 });
+
+// Owner's screenshot, 2026-11-04 (3 → 7, PSTS17A, S1 / HOME/AWAY 1).
+const assignPage = [
+  'DIST:  45  SUB-DIST:  SA          ASSIGNMENT HISTORY                       PSTS17A',
+  '     POOL OR YD/LO:  S1                HOME/AWAY:  1           START  DATE:  261103',
+  '        ASSIGNMENT:              (FOR  A  SPECIFIC  JOB)',
+  'X    TRAIN ID      ODT-DATE/TIME     INT-TERMINAL       MILES       DUTY      MISC',
+  '     Q13931   03   261103   0230     TORONTO            17800       0910',
+  '    RM30241   01   261103   0500     TORONTO            01200       0230',
+  '    DHT100B   03   261103   1100     TORONTO            20500       0300',
+  '     Z14931   03   261103   1700     TORONTO            17800       0815',
+  '     M30131   04   261104   1015     TORONTO            18900       N/A',
+  '          VALID  HOME   AWAY  CODES  ==>  0  =HOME,  1=>5  =AWAY',
+];
+
+test('assignment history: on duty + hours on duty = exact off duty (masked as saved)', () => {
+  const rows = S.parseAssignHistory(grid(assignPage));
+  assert.equal(S.isAssignHistory(grid(assignPage).map((r) => r.text).join('\n')), true);
+  assert.deepEqual(rows.map((r) => `${r.train} ${fmt(r.on)} ${r.duty} ${r.off == null ? '-' : fmt(r.off)}`), [
+    'Q13931 03 3rd 0230 550 3rd 1140', 'RM30241 01 3rd 0500 150 3rd 0730', 'DHT100B 03 3rd 1100 180 3rd 1400',
+    'Z14931 03 3rd 1700 495 4th 0115', 'M30131 04 4th 1015 - -',
+  ]);
+});

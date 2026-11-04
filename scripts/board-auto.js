@@ -351,6 +351,30 @@ async function clearMessages(page, max = 5) {
 
 // menu: the main-menu choice, 3 = Train Service (most screens), 1 = Engine
 // Service (owner, 2026-10-24: engineer spareboards 1 → 19 / 17).
+// Boxes found by the label left of them on the same line (owner's
+// assignment history screen has them over three lines): { 'HOME/AWAY': '1' }.
+async function fillByLabel(page, values) {
+  const frame = catsFrame(page);
+  return frame.evaluate((vals) => {
+    const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const boxes = [...document.querySelectorAll('input[type=text]')].filter(visible);
+    const texts = [];
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) texts.push(n);
+    const missing = [];
+    for (const [label, v] of Object.entries(vals)) {
+      const node = texts.find((n) => n.textContent.replace(/\s+/g, ' ').includes(label));
+      if (!node) { missing.push(label); continue; }
+      const range = document.createRange(); range.selectNodeContents(node);
+      const lr = range.getBoundingClientRect();
+      const box = boxes.filter((b) => { const r = b.getBoundingClientRect(); return Math.abs((r.top + r.bottom) / 2 - (lr.top + lr.bottom) / 2) < 12 && r.left >= lr.right - 4; })
+        .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)[0];
+      if (box) box.value = v; else missing.push(label);
+    }
+    return missing;
+  }, values);
+}
+
 async function chooseFromMenus(page, option, menu = 3) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: String(menu) });
@@ -374,6 +398,7 @@ async function chooseFromMenus(page, option, menu = 3) {
 // what counts as someone's own turn (lib/board/holders.js). A name on two
 // turns of the same kind is left unmatched.
 let holders = null;
+let assignReadAt = 0; // the assignment history (3 → 7) is read about once an hour
 const knownPeople = {
   get: (key) => Holders.turnOf(holders || (holders = Holders.loadHolders(HOLDERS_FILE)), key),
 };
@@ -556,6 +581,37 @@ async function runRoute(page, opts = {}) {
   } catch (err) {
     if (err instanceof NeedSignIn) throw err;
     console.log(`  (skipped Garnet line-up 41: ${err.message})`);
+  }
+
+  // Assignment history (3 → 7; owner, 2026-11-04): each train's on duty and
+  // hours on duty, so the exact off duty for the reset tracker. S1 = Sarnia,
+  // S5 = 502/501; HOME/AWAY 1 = trips coming home (tying up in Toronto is
+  // exact from the bunkhouse already); from yesterday. About once an hour.
+  if (Date.now() - assignReadAt > 55 * 60000) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: '2-digit', month: '2-digit', day: '2-digit' })
+      .formatToParts(new Date(Date.now() - 864e5)).map((x) => [x.type, x.value]));
+    const start = `${p.year}${p.month}${p.day}`;
+    let read = 0;
+    for (const loc of ['S1', 'S5']) {
+      try {
+        let a = await chooseFromMenus(page, 7);
+        const missing = (await fillByLabel(page, { 'POOL OR YD/LO': loc, 'HOME/AWAY': '1', 'START DATE': start, 'ASSIGNMENT:': '' })).filter((x) => x !== 'ASSIGNMENT:');
+        if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
+        a = await press(page, 'Enter');
+        if (!S.isAssignHistory(a.text)) throw new Error('not the assignment history screen');
+        for (let pageNo = 0; pageNo < 8; pageNo++) {
+          await capture('assignHistory');
+          read++;
+          const next = await press(page, 'F8').catch(() => null);
+          if (!next || !S.isAssignHistory(next.text) || next.text === a.text) break;
+          a = next;
+        }
+      } catch (err) {
+        if (err instanceof NeedSignIn) throw err;
+        console.log(`  (skipped assignment history ${loc} (3 → 7): ${err.message})`);
+      }
+    }
+    if (read) assignReadAt = Date.now();
   }
 
   // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and

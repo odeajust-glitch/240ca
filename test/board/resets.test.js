@@ -260,3 +260,13 @@ test('a reset that hangs on an estimated off duty near midnight is possible', ()
   assert.deepEqual([est.turn.dueText, est.turn.laterText, est.turn.possibleText, est.turn.level], ['2nd 2044', '11th 0244', '3rd 0745', 'red']);
   assert.deepEqual(est.all.filter((x) => x.at > '2026-10-25').map((x) => `${x.at} ${x.possible ? 'possible' : 'sure'}`), ['2026-10-26 0559 sure', est.all[est.all.length - 1].at + ' possible']);
 });
+
+test('off duty from CATS\'s assignment history comes first, and is exact', () => {
+  const acc = R.empty();
+  R.collect(acc, { assignHistory: [{ train: 'Z14931 01', on: t(1, 1645), off: t(1, 2355) }] }, [], t(2, 100));
+  // Call Board alone would say 2nd 0015; the history says 1st 2355.
+  assert.deepEqual(R.offDuty({ train: 'Z14931 01', on: t(1, 1645), last: t(2, 45), job: 'SR03' }, 'SR03', acc), { off: t(1, 2355), how: 'history' });
+  // Merged across days too.
+  const all = R.merge(R.empty(), acc);
+  assert.equal(R.offDuty({ train: 'Z14931 01', on: t(1, 1650), last: t(2, 45), job: 'SR03' }, 'SR03', all).how, 'history');
+});
