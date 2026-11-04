@@ -296,3 +296,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   spareboards: the next person; A/B/S1/S3: the spare who'd fill the job.
   Once per train. Phone option "would get a train or job because someone
   may be put on a mandatory reset" (on by default).
+- 2026-11-04: **Garnet line-up · L501 home** on the Current tab (like
+  Toronto line-up · Mac yard): the next L501 out of Garnet, the crew in
+  Garnet that takes it (only ever one: the 501/502 crew that took L502
+  out), their rest and the call (order − 2 h). That crew's phones get
+  lined up home from Garnet, ordered, time change and the reminder.

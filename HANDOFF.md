@@ -231,6 +231,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **Garnet line-up · L501 home** section on the Current tab
+  (board.html garnet(); snapshot garnetHome) and alerts for the crew in
+  Garnet (lined up home from Garnet / ordered / time / reminder; alerts.js,
+  before the Sarnia line-up). Owner: only ever one crew in Garnet, the
+  501/502 crew that took L502 out, bringing the next L501 home; call =
+  order − 2 h. toronto.js garnetHome.
 - 2026-11-04: owner on S501 (CO). Alerts for 501/502 fixed: a person
   followed by name code on a 501/502 turn is S501-CO / S501-EN
   (updatePersonTurns, craft from the sighting); own mandatory reset now on

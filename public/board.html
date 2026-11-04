@@ -840,6 +840,25 @@ function lineup(s) {
 // Toronto (Mac yard): the westbound line-up with the bunkhouse crew predicted
 // for each train, first crew home on the first train (owner, 2026-10-17),
 // skipping crews still on rest at the call (owner, 2026-10-22).
+// Garnet line-up · L501 home (owner, 2026-11-04: "like the Toronto Line up
+// - Mac Yard, but showing the jobs home from garnet"). One crew is ever in
+// Garnet: the 501/502 crew that took L502 out brings the next L501 home.
+function garnet(s) {
+  const g = s.garnetHome;
+  const read = (s.screens || []).includes('garnetLineup');
+  if (!g && !read) return '';
+  const head = '<header><h2>Garnet line-up · L501 home</h2></header>';
+  if (!g) return `<section class="sheet" id="sec-garnet">${head}<p class="empty">No L501 planned out of Garnet in the next 24 h.</p></section>`;
+  const c = g.crew;
+  const rest = !c ? '' : !c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`;
+  const crew = c ? `<b class="num">${markTurn(c.turn)}</b> <span class="muted">${esc(c.crafts)}</span><div class="crew">${rest} · call ~${esc(g.call)}</div>`
+    : '<span class="muted">no crew read on the Garnet board (31)</span>';
+  return `<section class="sheet" id="sec-garnet">${head}
+    <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Crew in Garnet</th></tr></thead><tbody>
+    <tr${c && marked(c.turn) ? ' class="hit"' : ''}><td class="num">${esc(g.order)}</td><td><span class="st ${esc(g.status)}">${esc(g.status)}</span></td><td><b class="num">${esc(g.train)}</b></td><td>${crew}</td></tr></tbody></table></div>
+    <div class="foot">Garnet's line-up (option 41, station 47956) and the Garnet board (31). Only one crew is ever in Garnet: the 501/502 crew that took L502 out brings the next L501 home. Call = order − 2 h.</div></section>`;
+}
+
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
@@ -2854,7 +2873,7 @@ source().then(async (src) => {
       ${newerBar}
       ${strip(s)}
       <div class="grid">
-        <div class="col">${lineup(s)}${toronto(s)}${changes(s)}</div>
+        <div class="col">${lineup(s)}${toronto(s)}${garnet(s)}${changes(s)}</div>
         <div class="col">${flags(s)}${pools(s, poolTab)}${vacancies(s)}${onDuty(s)}${yardJobs(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;

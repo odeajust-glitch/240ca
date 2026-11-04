@@ -668,3 +668,21 @@ test('S501: followed by name code as S501-CO; own reset; plain S501 gets both', 
   assert.equal(phoneEvents(ev, { turns: ['S501'], prefs: {} }, {}, { __welcomed: ['S501'] }, {}).events.filter((e) => e.kind === 'resetAhead').length, 1);
   assert.equal(phoneEvents(ev, { turns: ['S502'], prefs: {} }, {}, { __welcomed: ['S502'] }, {}).events.length, 0);
 });
+
+// Owner, 2026-11-04: the one crew in Garnet brings the next L501 home;
+// call = order − 2 h; alerts like the Toronto bunkhouse's train home.
+test('Garnet: the crew there is lined up home on the next L501', () => {
+  const { garnetHome } = require('../../lib/board/toronto');
+  const { turnStates, turnEvents } = require('../../lib/board/alerts');
+  const lineup = [{ symbol: 'L50131', originDay: '04', status: 'PLN', order: 2000 }, { symbol: 'L50131', originDay: '05', status: 'PLN', order: 3500 }];
+  const board = [{ turn: 'S501', craft: 'EN', pos: 1, restUntil: 1700 }, { turn: 'S501', craft: 'CO', pos: 1, restUntil: 1750 }];
+  const g = garnetHome(lineup, board);
+  assert.deepEqual([g.train.originDay, g.call, g.crew.turn, g.crew.en, g.crew.co, g.crew.restUntil], ['04', 1880, 'S501', true, true, 1750]);
+  assert.equal(garnetHome([], board), null);
+  const st = turnStates({ predictions: [], now: 1000 }, [], { garnetLineup: lineup, garnet: board });
+  assert.equal(st['S501-CO'].lineup.home, 'Garnet');
+  assert.equal(st['S501-CO'].lineup.call, 1880);
+  const { events } = turnEvents({}, st, { lineupRead: true, now: 1000 });
+  const e = events.find((x) => x.turn === 'S501-CO' && x.kind === 'lineup');
+  assert.match(e.text, /^S501-CO lined up home from Garnet: L50131 04/);
+});
