@@ -265,6 +265,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   trainee slot the turn crew's lined up / ordered / time / on duty / rescue,
   never the holder's reset or position. Person search: "S501 · TT
   (trainee)", the turn's facts; crews-in-town line keeps trainee rows apart.
+  Work history (board.html personHistory): a trainee slot's trains are the
+  turn's while they were on it, "L50231 04 (S501 · TT)" + a "TT trainee"
+  chip, whole crew under Worked with; no holder's rests (owner: "log what
+  turn they are working and indicate it's a TT turn").
 - 2026-11-04: **search models chosen on Page Health** (owner: "so I can
   change the model the search uses myself in page health"): section
   "Agreement search models", three roles (owner / members' first /
