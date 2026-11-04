@@ -269,6 +269,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
   turn's while they were on it, "L50231 04 (S501 · TT)" + a "TT trainee"
   chip, whole crew under Worked with; no holder's rests (owner: "log what
   turn they are working and indicate it's a TT turn").
+- 2026-11-04: Call Board trains now read a conductor trainee (owner:
+  L50231 04 "TT DEMARS … S501" missing; line-up showed "EN S501 · CO
+  S501"): screens.js TRAIN_CRAFT adds TT for train crews (ET was already
+  read); parseCallBoardNames unchanged (a trainee's name isn't the
+  turn's). Trainees never count as the CO / EN: site.js en fallback,
+  insights crewOf, alerts on-duty loop skip TT / ET. Needs laptop pull.
 - 2026-11-04: **search models chosen on Page Health** (owner: "so I can
   change the model the search uses myself in page health"): section
   "Agreement search models", three roles (owner / members' first /

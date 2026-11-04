@@ -517,3 +517,21 @@ test('crews in town: loadSummary reads the Call Board page and the labelled page
   assert.deepEqual(s.crewsInTown.map((p) => p.crews.length), [0, 0, 3, 6, 3, 0]);
   assert.equal(s.crewsInTown[4].crews[1].status, 'hold');
 });
+
+test('Call Board: a conductor trainee (TT) is part of the train\'s crew', () => {
+  // Owner, 2026-11-04: L50231 04 showed "EN S501 · CO S501" without the TT.
+  const p = S.parseCallBoardPage(grid([
+    '26/11/04-   201                        CN  RAIL                     PAGE  001  OF  029',
+    'L50231 04  ON DUTY AT: SARNIA       26/11/04  0245',
+    '           EN  STUBBS*+     C   CHAD       S501',
+    '           CO  O\'DEA+       J   JUSTIN     S501',
+    '           TT  DEMARS+      W   WAYNE      S501',
+  ]), now);
+  assert.deepEqual(p.trains[0].crew.map((c) => `${c.craft} ${c.turn}`), ['EN S501', 'CO S501', 'TT S501']);
+  // Names stay the turn's own crew only.
+  assert.deepEqual(S.parseCallBoardNames(grid([
+    'L50231 04  ON DUTY AT: SARNIA       26/11/04  0245',
+    '           CO  O\'DEA+       J   JUSTIN     S501',
+    '           TT  DEMARS+      W   WAYNE      S501',
+  ], false))[0].crew.map((c) => c.craft), ['CO']);
+});
