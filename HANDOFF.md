@@ -80,9 +80,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
   version has (an old open Notepad bit him twice), or use GitHub's "Copy raw file".
 - Worker variables: `NTFY_TOPIC`, `DOWN_MINUTES` (30), `OWNER_KEY` (secret,
   set 2026-11-02), `VAPID_KEYS` (secret, set 2026-11-03), `KIMI_API_KEY`
-  (secret, set 2026-11-03), `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD),
+  (secret, set 2026-11-03), `ANTHROPIC_API_KEY` (secret, ❓ not set yet:
+  Opus deeper answers, 2026-11-04), `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD),
   `PUSH_DOWN_MINUTES` (180), `OWNER_EMAIL` (unused while Access is off);
-  optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `BOARD_KEY`
+  optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `CLAUDE_MODEL`, `BOARD_KEY`
   (relay, unused). Cron */10 (Page Health → Worker timer: runs, checked
   2026-11-03). **Workers Paid plan** ($5/mo, needed by the search).
 - **Agreement search documents:** after adding or changing a PDF in `data\`:
@@ -231,6 +232,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **Claude Opus in the Agreements tab** (owner: "I like opus
+  answers"; chose "Kimi first, Opus on demand" and "my answers just with
+  Opus"). Worker streamClaude / streamDeep: the slow tier and the
+  could-not-find retry use Opus (24 passages); a request with the right
+  x-owner-key (board-ask.js sends OwnerKey's) is always slow → Opus. Kimi
+  k3 if no ANTHROPIC_API_KEY or Opus fails before its first word. NDJSON
+  event `model` names who answers (shown above the answer). Steps:
+  CLOUDFLARE.md "Claude Opus for deeper answers". ❓ Owner adds the secret
+  and re-pastes the Worker.
 - 2026-11-04: Pushover works (owner: both findstr ok, test message came
   through on Pushover). **API key tester (TODO #11)** started: owner's
   tester from claude.ai is in tools/ca-model-compare (Netlify site, not part

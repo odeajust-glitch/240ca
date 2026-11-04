@@ -48,6 +48,20 @@ function fakeKimi(answers) {
   };
   return { calls, fetchImpl };
 }
+// Claude stand-in: Anthropic's streaming events, or an error status.
+function fakeClaude({ text = 'Opus answer [1].', status = 200 } = {}) {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, headers: opts.headers, body: JSON.parse(opts.body) });
+    if (status !== 200) return new Response('{"error":{"message":"nope"}}', { status });
+    const ev = (o) => `event: ${o.type}\ndata: ${JSON.stringify(o)}\n\n`;
+    return new Response(ev({ type: 'message_start' }) + ev({ type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: '' } })
+      + ev({ type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text } }) + ev({ type: 'message_delta', delta: { stop_reason: 'end_turn' } }) + ev({ type: 'message_stop' }), { status: 200 });
+  };
+  return { calls, fetchImpl };
+}
+// Sends Claude's URL to one stand-in, everything else (Kimi) to the other.
+const route = (claude, kimi) => async (url, opts) => (String(url).includes('anthropic') ? claude.fetchImpl : kimi.fetchImpl)(url, opts);
 const readAll = async (res) => (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
 
 test('search: the Worker finds the same passages as SearchIndex', async () => {
@@ -85,7 +99,8 @@ test('ask: escalates when the fast answer could not find it; PDFs get page links
     globalThis.fetch = kimi.fetchImpl;
     const post = (body, ip = '9.9.9.9') => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': ip } }), env, { waitUntil: () => {} });
     const ev = await readAll(await post({ question: 'rest hours conductor' }));
-    assert.deepEqual(ev.map((e) => e.type).filter((t, i, a) => a.indexOf(t) === i), ['citations', 'chunk', 'escalating', 'done']);
+    assert.deepEqual(ev.map((e) => e.type).filter((t, i, a) => a.indexOf(t) === i), ['citations', 'chunk', 'escalating', 'model', 'done']);
+    assert.equal(ev.find((e) => e.type === 'model').label, 'Kimi'); // no ANTHROPIC_API_KEY: Kimi's slow model
     assert.equal(ev.filter((e) => e.type === 'citations')[1].citations.length, 24);
     assert.equal(kimi.calls[0].thinking.type, 'disabled'); // fast tier
     assert.equal(kimi.calls[1].model, 'kimi-k3');
@@ -113,5 +128,58 @@ test('ask: escalates when the fast answer could not find it; PDFs get page links
     // Sources and status.
     assert.equal((await (await worker.fetch(new Request('https://board.x.workers.dev/api/sources'), env)).json()).sources.length, SOURCES.length);
     assert.deepEqual(await (await worker.fetch(new Request('https://board.x.workers.dev/api/status'), env)).json(), { ready: true, chunkCount: chunks.length });
+  } finally { globalThis.fetch = real; }
+});
+
+test('ask: Claude Opus for deeper answers and the owner; Kimi if Opus fails', async () => {
+  const chunks = corpus();
+  const worker = await loadWorker();
+  const { env } = envWith(buildShards(chunks, SOURCES, { buckets: 16, perFile: 50 }));
+  Object.assign(env, { ANTHROPIC_API_KEY: 'anthropic-test', OWNER_KEY: 'owner-key-0123456789' });
+  const real = globalThis.fetch;
+  const post = (body, headers = {}) => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': `7.7.7.${Math.random()}`, ...headers } }), env, { waitUntil: () => {} });
+  const answer = (ev) => ev.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+  try {
+    // A member: Kimi first; "could not find" goes to Opus with more passages.
+    let claude = fakeClaude();
+    let kimi = fakeKimi(['I could not find it in the excerpts.']);
+    globalThis.fetch = route(claude, kimi);
+    let ev = await readAll(await post({ question: 'rest hours conductor' }));
+    assert.equal(kimi.calls.length, 1);
+    assert.equal(claude.calls.length, 1);
+    assert.equal(claude.calls[0].body.model, 'claude-opus-5-5');
+    assert.equal(claude.calls[0].headers['x-api-key'], 'anthropic-test');
+    assert.match(claude.calls[0].body.system, /ONLY the excerpts/);
+    assert.match(claude.calls[0].body.messages[0].content, /Question: rest hours conductor$/);
+    assert.equal((claude.calls[0].body.messages[0].content.match(/^\[\d+\] \(/gm) || []).length, 24);
+    assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Opus');
+    assert.match(answer(ev), /Opus answer/);
+    // A member's "Try a deeper search": Opus, no Kimi.
+    claude = fakeClaude(); kimi = fakeKimi(['x']);
+    globalThis.fetch = route(claude, kimi);
+    ev = await readAll(await post({ question: 'rest hours conductor', tier: 'slow' }));
+    assert.equal(kimi.calls.length, 0);
+    assert.equal(claude.calls.length, 1);
+    // The owner (right key): straight to Opus, nothing more to escalate.
+    claude = fakeClaude(); kimi = fakeKimi(['x']);
+    globalThis.fetch = route(claude, kimi);
+    ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
+    assert.equal(kimi.calls.length, 0);
+    assert.equal(claude.calls.length, 1);
+    assert.ok(!ev.find((e) => e.type === 'done').canEscalate);
+    // A wrong key is a member: Kimi first.
+    claude = fakeClaude(); kimi = fakeKimi(['Kimi answer [1].']);
+    globalThis.fetch = route(claude, kimi);
+    ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456788' }));
+    assert.equal(claude.calls.length, 0);
+    assert.ok(ev.find((e) => e.type === 'done').canEscalate);
+    // Opus refuses the request outright (bad key): Kimi's slow model answers.
+    claude = fakeClaude({ status: 401 }); kimi = fakeKimi(['Kimi deep answer.']);
+    globalThis.fetch = route(claude, kimi);
+    ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
+    assert.equal(kimi.calls[0].model, 'kimi-k3');
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Opus', 'Kimi']);
+    assert.match(answer(ev), /Kimi deep answer/);
+    assert.ok(!ev.some((e) => e.type === 'error'));
   } finally { globalThis.fetch = real; }
 });

@@ -40,7 +40,11 @@
 // streams an answer (NDJSON, as server.js did) from the passages the search
 // finds in R2 search/ (built and uploaded by scripts/search-upload.js on the
 // laptop) and Moonshot's Kimi (secret KIMI_API_KEY; KIMI_MODEL_FAST /
-// KIMI_MODEL_SLOW variables, else kimi-k2.6 / kimi-k3). GET /api/sources,
+// KIMI_MODEL_SLOW variables, else kimi-k2.6 / kimi-k3). Deeper answers
+// (owner, 2026-11-04: "Kimi first, Opus on demand"; his own questions "just
+// with Opus") come from Claude Opus (secret ANTHROPIC_API_KEY; CLAUDE_MODEL
+// variable, else claude-opus-5-5), Kimi's slow model if that key is missing
+// or Claude fails before answering. GET /api/sources,
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
@@ -472,6 +476,74 @@ async function streamKimi(env, { question, chunks, names, model, fast, onToken, 
   return full;
 }
 
+// Claude (owner, 2026-11-04, after comparing models in tools/ca-model-compare:
+// "I like opus answers"): the same instructions and excerpts as Kimi. Streams
+// text_delta events; retries a 429 / 5xx / 529 before the first token.
+// fallbacks "default": if Opus declines a question, Anthropic answers it
+// with another Claude model in the same call.
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+async function streamClaude(env, { question, chunks, names, model, onToken, signal, fetchImpl = fetch }) {
+  if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on the Worker.');
+  const [sys, user] = kimiMessages(question, chunks, names);
+  const body = JSON.stringify({ model, max_tokens: 8000, stream: true, system: sys.content,
+    messages: [{ role: 'user', content: user.content }], output_config: { effort: 'medium' }, fallbacks: 'default' });
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    const timeout = AbortSignal.timeout(120000);
+    try {
+      res = await fetchImpl(CLAUDE_API_URL, { method: 'POST', body,
+        headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+        signal: signal && AbortSignal.any ? AbortSignal.any([signal, timeout]) : timeout });
+    } catch (err) {
+      if (timeout.aborted && !(signal && signal.aborted)) throw new Error('Claude did not respond within 120 seconds.');
+      throw err;
+    }
+    if (res.ok) break;
+    const text = await res.text();
+    if (!(res.status === 429 || res.status >= 500) || attempt === 3) throw new Error(`Claude API error ${res.status}: ${text.slice(0, 300)}`);
+    const advised = Number(res.headers.get('retry-after')) || 0;
+    await new Promise((r) => setTimeout(r, Math.min(advised ? advised * 1000 : 1000 * 2 ** attempt, 8000) * (0.5 + Math.random() / 2)));
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let full = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith('data:')) continue;
+      let e;
+      try { e = JSON.parse(t.slice(5).trim()); } catch { continue; /* a partial line */ }
+      if (e.type === 'content_block_delta' && e.delta && e.delta.type === 'text_delta' && e.delta.text) { full += e.delta.text; await onToken(e.delta.text); }
+      else if (e.type === 'message_delta' && e.delta && e.delta.stop_reason === 'refusal' && !full) throw new Error('Claude declined this question.');
+      else if (e.type === 'error') throw new Error(`Claude error: ${(e.error && e.error.message) || 'unknown'}`);
+    }
+  }
+  return full;
+}
+// The deeper answer: Claude Opus, or Kimi's slow model if there's no
+// Anthropic key or Claude fails before writing anything.
+async function streamDeep(env, { question, chunks, names, onToken, signal, fetchImpl, send }) {
+  if (env.ANTHROPIC_API_KEY) {
+    let wrote = false;
+    try {
+      await send({ type: 'model', label: 'Claude Opus' });
+      return await streamClaude(env, { question, chunks, names, model: env.CLAUDE_MODEL || 'claude-opus-5-5', signal, fetchImpl,
+        onToken: (t) => { wrote = true; return onToken(t); } });
+    } catch (err) {
+      if (wrote || (signal && signal.aborted)) throw err;
+      console.log(`Claude failed, Kimi instead: ${err.message}`);
+    }
+  }
+  await send({ type: 'model', label: 'Kimi' });
+  return streamKimi(env, { question, chunks, names, model: env.KIMI_MODEL_SLOW || 'kimi-k3', fast: false, onToken, signal, fetchImpl });
+}
+
 const sha16 = async (text) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 const readJson = async (env, key) => { const o = await env.SITE.get(key); if (!o) return null; try { return JSON.parse(typeof o.text === 'function' ? await o.text() : o.body); } catch { return null; } };
 // 10 questions per 5 minutes per address (cost protection, as on Render).
@@ -535,6 +607,7 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   if (!(await askAllowed(env, ip))) return new Response('Too many questions in a short time — please wait a few minutes and try again.', { status: 429 });
   await askCount(env, ip);
+  const owner = keyMatches(request, env);
 
   const names = Object.fromEntries(list.sources.map((x) => [x.id, x.name]));
   const all = list.sources.map((x) => x.id);
@@ -555,24 +628,30 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
       }
       if (sources.length === all.length) sources = null;
       const opts = { sources, dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null, dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null };
-      const slow = tier === 'slow';
+      // The owner's own questions (owner key on his phone) go straight to the
+      // deeper search and Claude Opus (owner, 2026-11-04).
+      const slow = tier === 'slow' || owner;
       const chunks = await searchShards(env, question, { topK: slow ? TOP_K_DEEP : TOP_K, ...opts });
       if (!chunks || !chunks.length) { await send({ type: 'chunk', text: 'No matching passages were found in the selected document(s) for this question.' }); await send({ type: 'done', citations: [] }); return; }
       const cite = (cs) => send({ type: 'citations', citations: cs.map((c) => ({ source: c.source, page: c.page, snippet: c.text.slice(0, 220), fullText: c.text,
         url: c.url || (list.pdfs.includes(c.source) && /^\d+$/.test(String(c.page)) ? `/docs/${c.source}.pdf#page=${c.page}` : null) })) });
       await cite(chunks);
-      const FAST = env.KIMI_MODEL_FAST || 'kimi-k2.6';
-      const SLOW = env.KIMI_MODEL_SLOW || 'kimi-k3';
       const onToken = (text) => send({ type: 'chunk', text });
-      const first = await streamKimi(env, { question, chunks, names, model: slow ? SLOW : FAST, fast: !slow, onToken, signal: abort.signal, fetchImpl });
-      if (!slow && NOT_FOUND_PATTERN.test(first)) {
+      const deepOpts = { question, names, onToken, signal: abort.signal, fetchImpl, send };
+      if (slow) {
+        await streamDeep(env, { ...deepOpts, chunks });
+        await send({ type: 'done' });
+        return;
+      }
+      const first = await streamKimi(env, { question, chunks, names, model: env.KIMI_MODEL_FAST || 'kimi-k2.6', fast: true, onToken, signal: abort.signal, fetchImpl });
+      if (NOT_FOUND_PATTERN.test(first)) {
         await send({ type: 'escalating' });
         const deep = await searchShards(env, question, { topK: TOP_K_DEEP, ...opts });
         await cite(deep);
-        await streamKimi(env, { question, chunks: deep, names, model: SLOW, fast: false, onToken, signal: abort.signal, fetchImpl });
+        await streamDeep(env, { ...deepOpts, chunks: deep });
         await send({ type: 'done', escalated: true });
       } else {
-        await send({ type: 'done', canEscalate: !slow });
+        await send({ type: 'done', canEscalate: true });
       }
     } catch (err) {
       if (!abort.signal.aborted) await send({ type: 'error', error: err.message });

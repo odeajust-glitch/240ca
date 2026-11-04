@@ -114,7 +114,9 @@
       run.textContent += t;
     };
     try {
-      const r = await fetch('api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...q, tier }) });
+      // The owner key (board.html OwnerKey) gets the owner's questions answered by Claude Opus.
+      const owner = typeof OwnerKey !== 'undefined' ? OwnerKey.headers() : {};
+      const r = await fetch('api/ask', { method: 'POST', headers: { 'content-type': 'application/json', ...owner }, body: JSON.stringify({ ...q, tier }) });
       if (!r.ok) {
         const msg = r.status === 429 ? await r.text() : ((await r.json().catch(() => ({}))).error || 'Something went wrong.');
         error(msg);
@@ -134,10 +136,14 @@
           try { e = JSON.parse(line); } catch (x) { continue; }
           if (e.type === 'citations') cites(e.citations || []);
           else if (e.type === 'chunk') {
-            if (note) { note.className = 'askdiv'; note.textContent = 'Deeper search'; note = null; }
+            if (note) { note.className = 'askdiv'; note.textContent = 'Deeper search' + (note.dataset.label ? ` · ${note.dataset.label}` : ''); note = null; }
             box.querySelector('.askload').hidden = true;
             box.querySelector('.askans').hidden = false;
             text(e.text);
+          } else if (e.type === 'model') {
+            // Which model writes the answer that follows (Claude Opus, or Kimi if Opus is unavailable).
+            if (note) note.dataset.label = e.label;
+            else { const d = document.createElement('div'); d.className = 'askdiv'; d.textContent = e.label; ans.appendChild(d); box.querySelector('.askans').hidden = false; run = null; }
           } else if (e.type === 'escalating') {
             run = null;
             note = addNote('That didn\'t find it: searching more thoroughly, this takes a bit longer…');
