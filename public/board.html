@@ -1937,8 +1937,13 @@ const Person = (() => {
       const me = nowSeen ? nowSeen.seen.find((x) => x.h === key && x.turn === turn && x.craft) : null;
       return me ? (me.craft === 'CO' ? 'CO' : 'EN') : '';
     },
-    factsFor(s, h, turn) {
+    factsFor(s, h, turn0) {
       const key = String(h || '').replace(/^@/, '');
+      // A trainee's slot (S501-TT; owner, 2026-11-04): the turn's facts,
+      // the conductor's side for TT, the engineer's for ET.
+      const tm = /^([A-Z][A-Z0-9]\d{2})-(TT|ET)$/.exec(turn0 || '');
+      if (tm) return BoardTurns.facts(s, BoardTurns.SHARED.test(tm[1]) ? `${tm[1]}-${tm[2] === 'TT' ? 'CO' : 'EN'}` : tm[1]);
+      const turn = turn0;
       const me = nowSeen && s && nowSeen.taken === s.taken ? nowSeen.seen.filter((x) => x.h === key && x.turn === turn) : null;
       if (!me) return BoardTurns.facts(s, turn);
       const craft = (me.find((x) => x.craft) || {}).craft;
@@ -2540,7 +2545,7 @@ source().then(async (src) => {
   const personCands = {}; // a followed code matching more than one turn now: those turns
   const personGone = {}; // a followed code off the turn it was last seen on: that sighting
   const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : BoardTurns.splitCraft(t).base);
-  const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${personNow[t]})` : ''}` : t.replace(/-(EN|CO)$/, ' $1'));
+  const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${String(personNow[t]).replace(/-(TT|ET)$/, ' · $1')})` : ''}` : t.replace(/-(EN|CO)$/, ' $1').replace(/-(TT|ET)$/, ' · $1'));
   async function refreshPersons() {
     let changed = false;
     for (const t of tracked().filter(isPerson)) {
