@@ -537,7 +537,7 @@ const MODEL_CHOICES = [
   { id: 'claude-sonnet-5-5', label: 'Claude Sonnet', cost: 'about 3–5¢' },
   { id: 'claude-haiku-5-5', label: 'Claude Haiku', cost: 'well under 1¢' },
   { id: 'kimi-k2.6', label: 'Kimi K2.6 (quick)', cost: 'under 1¢' },
-  { id: 'kimi-k3', label: 'Kimi K3 (careful)', cost: 'about 1¢' },
+  { id: 'kimi-k3', label: 'Kimi K3 (careful)', cost: 'about 5–6¢' },
 ];
 const MODEL_ROLES = { owner: 'Your questions', first: "Members' first answer", deep: "Members' deeper search" };
 const MODELS_KEY = 'ask/models.json';
