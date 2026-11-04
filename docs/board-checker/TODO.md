@@ -63,7 +63,11 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    Sonnet, Opus 5.5 (owner's pick). Keys: MOONSHOT_API_KEY, ANTHROPIC_API_KEY
    (he's getting one at console.anthropic.com), TEST_PASSWORD, set by him in
    Netlify. Suggested later: a free Google Gemini key as another company.
-   ❓ Deploy to a new Netlify site, then his scored results.
+   Netlify project **ca-model-compare** created 2026-11-04 (empty: the
+   container can't reach Netlify's upload host). Owner links it to this
+   repo (branch claude/vigilant-planck-zawrj4, base directory
+   tools/ca-model-compare) and adds the keys himself.
+   ❓ Linked and keys in? Then his scored results.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
