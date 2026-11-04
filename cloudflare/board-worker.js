@@ -590,7 +590,7 @@ async function streamModel(env, model, { question, chunks, names, onToken, signa
   if (/^claude-/.test(model) && env.ANTHROPIC_API_KEY) {
     let wrote = false;
     try {
-      await send({ type: 'model', label: modelLabel(model) });
+      await send({ type: 'model', label: modelLabel(model), model });
       return await streamClaude(env, { question, chunks, names, model, signal, fetchImpl,
         onToken: (t) => { wrote = true; return onToken(t); } });
     } catch (err) {
@@ -599,7 +599,7 @@ async function streamModel(env, model, { question, chunks, names, onToken, signa
     }
   }
   const kimi = /^claude-/.test(model) ? (fast ? 'kimi-k2.6' : (env.KIMI_MODEL_SLOW || 'kimi-k3')) : model;
-  await send({ type: 'model', label: 'Kimi' });
+  await send({ type: 'model', label: 'Kimi', model: kimi });
   return streamKimi(env, { question, chunks, names, model: kimi, fast, onToken, signal, fetchImpl });
 }
 
@@ -689,8 +689,8 @@ async function spendApi(request, env, { fetchImpl = fetch, now = Date.now() } = 
 // questions are being asked and what answers are being given, so I can
 // review them and change the model"). Owner chose: members are told on the
 // Agreements tab, kept 60 days, members' and his own (marked). No address,
-// no name: only the question as typed, which documents, and each answer
-// with the model that wrote it. R2 ask/log/YYYY-MM-DD.json, one file a day.
+// no name: only the question as typed, the documents searched and the ones
+// the passages came from, and each answer with the model that wrote it. R2 ask/log/YYYY-MM-DD.json, one file a day.
 const ASK_LOG_DAYS = 60;
 async function askLog(env, entry, now = Date.now()) {
   if (!entry.question || !entry.answers.some((a) => a.text)) return;
@@ -795,7 +795,12 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
   // What this question got, for the owner's review (askLog).
   const entry = { question: String(question).trim(), owner, deeper: tier === 'slow' && !owner, answers: [] };
   const send = (obj) => {
-    if (obj.type === 'model') entry.answers.push({ label: obj.label, text: '' });
+    if (obj.type === 'model') entry.answers.push({ label: obj.label, model: obj.model, text: '' });
+    else if (obj.type === 'citations') {
+      // The documents the passages handed to the model came from.
+      const used = entry.used || (entry.used = []);
+      for (const c of obj.citations || []) { const n = names[c.source] || c.source; if (!used.includes(n)) used.push(n); }
+    }
     else if (obj.type === 'chunk') { if (!entry.answers.length) entry.answers.push({ label: '', text: '' }); entry.answers[entry.answers.length - 1].text += obj.text; }
     else if (obj.type === 'escalating') entry.escalated = true;
     else if (obj.type === 'error') entry.error = obj.error;
@@ -811,6 +816,10 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
         if (conflict) { await send({ type: 'chunk', text: `${names[conflict[0]]} can't be searched together with ${names[conflict[1]]}. Deselect one of them.` }); await send({ type: 'done', citations: [] }); return; }
         sources = valid;
       }
+      // Which documents were searched: what the person picked, or the usual set.
+      entry.searched = sources.map((id) => names[id] || id);
+      // The page always sends its ticked list: "picked" = not the usual set.
+      entry.picked = !(sources.length === list.defaults.length && sources.every((id) => list.defaults.includes(id)));
       if (sources.length === all.length) sources = null;
       const opts = { sources, dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null, dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null };
       // The owner's own questions (owner key on his phone) go straight to the

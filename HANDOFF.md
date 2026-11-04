@@ -277,10 +277,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
   kept** (owner, 2026-11-04: to review real questions before changing
   models; chose: members told on the Agreements tab, 60 days, his own
   too, marked "You"): Worker askLog → R2 ask/log/YYYY-MM-DD.json (the
-  question as typed, each answer with its model label, deeper /
+  question as typed, each answer with its model label and exact model
+  name, the documents searched (`searched`, `picked` = not the usual
+  set) and the documents the passages came from (`used`), deeper /
   retried flags; no address, no name); pruneAskLog on the 10-min timer
   deletes days 61–67 back; GET /health/questions[?day=] owner only. The
-  old "no question kept" (from Render) no longer holds.
+  old "no question kept" (from Render) no longer holds. Agreements tab
+  has a tip under the question box (owner: better answers when the search
+  is narrowed to one agreement) with a link that opens Documents to search.
 - 2026-11-04: **Page Health → AI spending** (owner: "the api balances in
   the page health section", then "a usage history"): Kimi balance live
   (Moonshot GET /v1/users/me/balance with KIMI_API_KEY; address not

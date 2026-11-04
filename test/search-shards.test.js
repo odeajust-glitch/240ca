@@ -274,8 +274,19 @@ test('Search Review: questions and answers kept 60 days, owner only', async () =
     assert.equal(m.question, 'rest hours conductor');
     assert.equal(m.owner, false);
     assert.equal(m.escalated, true);
-    assert.deepEqual(m.answers.map((a) => [a.label, a.text]), [['Kimi', 'I could not find it in the excerpts.'], ['Claude Sonnet', 'Sonnet says [2].']]);
+    assert.deepEqual(m.answers.map((a) => [a.label, a.model, a.text]), [['Kimi', 'kimi-k2.6', 'I could not find it in the excerpts.'], ['Claude Sonnet', 'claude-sonnet-5-5', 'Sonnet says [2].']]);
+    // The documents searched (the usual set here) and the ones the passages came from.
+    assert.ok(m.searched.length > 0);
+    assert.equal(m.picked, false);
+    assert.ok(m.used.length > 0 && m.used.every((n) => m.searched.includes(n)));
     assert.equal(o.owner, true);
+    // Picked one document: recorded as picked, and only that one searched.
+    globalThis.fetch = route(fakeClaude(), fakeKimi(['x']));
+    await readAll(await post({ question: 'held away from the terminal', sources: ['croa'] }, owner));
+    const picked = (await (await get(`?day=${list.days[0].day}`)).json()).entries[2];
+    assert.equal(picked.picked, true);
+    assert.equal(picked.searched.length, 1);
+    assert.deepEqual(picked.used, picked.searched);
     assert.deepEqual(o.answers.map((a) => a.label), ['Claude Opus']);
     // Nothing about who asked.
     assert.ok(!JSON.stringify(day).includes('6.6.6.6'));

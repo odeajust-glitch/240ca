@@ -149,6 +149,8 @@
   .qitem { border-bottom: 1px solid var(--rule); padding: 8px 0; }
   .qitem summary { cursor: pointer; }
   .qtext1 { display: block; margin-top: 2px; }
+  .qmeta { font-size: 13px; margin: 6px 0; }
+  .qmodel { text-transform: none; letter-spacing: 0; font-weight: 400; }
   .qbody { white-space: pre-wrap; font-size: 14px; line-height: 1.45; }
   .hsub { margin: 14px 0 4px; font-size: 13px; color: var(--soft); font-weight: 600; }
   .hhist { font-size: 13px; }
@@ -409,6 +411,8 @@
   .askbtn { flex: none; background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); border-radius: 4px; padding: 0 18px; font: 600 15px/1 var(--body); cursor: pointer; }
   .askbtn:disabled { opacity: 0.5; cursor: default; }
   .askhint { font-size: 12.5px; margin: 10px 0 0; }
+  .asktip { font-size: 13.5px; margin: 10px 0 0; padding: 8px 10px; border-left: 3px solid var(--rule); }
+  .asktip .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
   .askload[hidden], .askans[hidden], .askcites[hidden], .askdeep[hidden], .askdates[hidden] { display: none; }
   .askload { display: flex; gap: 8px; align-items: center; color: var(--soft); margin: 0 2px 14px; font-size: 14px; }
   .askspin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: askspin 0.8s linear infinite; vertical-align: -2px; }
@@ -2381,7 +2385,8 @@ source().then(async (src) => {
         const entries = ((await r.json()).entries || []).slice().reverse();
         if (!list.isConnected) return;
         list.innerHTML = entries.map((e) => `<details class="qitem"><summary><span class="meta">${esc(clock(e.at))} · ${e.owner ? '<b>You</b>' : 'Member'}${e.deeper ? ' · deeper search' : ''}${e.escalated ? ' · retried deeper' : ''}${e.error ? ' · <span class="warn">error</span>' : ''}</span> <span class="qtext1">${esc(e.question)}</span></summary>
-          ${e.answers.map((a) => `<div class="qans"><div class="askdiv">${esc(a.label || 'Answer')}</div><div class="qbody">${esc(a.text)}</div></div>`).join('')}${e.error ? `<p class="warn">${esc(e.error)}</p>` : ''}</details>`).join('') || '<p class="muted">None that day.</p>';
+          <p class="qmeta">${e.searched ? `<b>Searched:</b> ${esc(e.searched.join(', '))} <span class="muted">(${e.picked ? 'picked by them' : 'the usual set'})</span><br>` : ''}${e.used && e.used.length ? `<b>Passages from:</b> ${esc(e.used.join(', '))}` : ''}</p>
+          ${e.answers.map((a) => `<div class="qans"><div class="askdiv">${esc(a.label || 'Answer')}${a.model ? ` <span class="qmodel">${esc(a.model)}</span>` : ''}</div><div class="qbody">${esc(a.text)}</div></div>`).join('')}${e.error ? `<p class="warn">${esc(e.error)}</p>` : ''}</details>`).join('') || '<p class="muted">None that day.</p>';
       } catch (err) { list.innerHTML = `<p class="muted">Can't load that day (${esc(err.message || err)}).</p>`; }
     };
     fetch('health/questions', { cache: 'no-store', headers: OwnerKey.headers() })
@@ -2390,7 +2395,7 @@ source().then(async (src) => {
         if (!qbox.isConnected) return;
         if (!q.days.length) { qbox.innerHTML = '<p class="muted">No questions saved yet. They appear here from the first question after the Worker is updated.</p>'; return; }
         qbox.innerHTML = `<label class="qday">Day <select>${q.days.map((x) => `<option value="${esc(x.day)}">${esc(dayName(x.day))} (${x.n})</option>`).join('')}</select></label><div class="qlist"></div>
-          <p class="muted">Tap a question for the answers, each headed with the model that wrote it. A member's "Try a deeper search" is its own entry. No names or addresses are kept.</p>`;
+          <p class="muted">Tap a question for the documents searched, where the passages came from, and the answers, each headed with the model that wrote it. A member's "Try a deeper search" is its own entry. No names or addresses are kept.</p>`;
         const sel = qbox.querySelector('select');
         sel.onchange = () => showDay(sel.value);
         showDay(sel.value);

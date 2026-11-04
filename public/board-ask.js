@@ -18,6 +18,7 @@
       <section class="sheet askq">
         <label for="askq" class="asklbl">Ask a question about the collective agreements, the rules or CROA awards</label>
         <div class="askrow"><textarea id="askq" maxlength="500" rows="2" placeholder="e.g. How long can I be held at the away-from-home terminal?"></textarea><button type="button" id="askgo" class="askbtn">Ask</button></div>
+        <p class="asktip"><b>Tip:</b> you get better answers when you pick just the agreement you need under <button type="button" class="linkbtn askpick">Documents to search</button> (for example only the Conductors agreement 4.16), instead of searching everything.</p>
         <p class="muted askhint">Answers come only from the documents below, with the page for every point. A search aid, not legal advice: for a grievance or claim, confirm with your Local Chairperson.</p>
         <p class="muted askhint">Questions and answers are kept for 60 days to check the answers are right. Don't include names or personal details.</p>
       </section>
@@ -33,6 +34,8 @@
     $('#askgo').onclick = ask;
     $('#askq').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } };
     $('.askdeep').onclick = deeper;
+    // The tip's link opens the document list and brings it into view.
+    $('.askpick').onclick = () => { const d = $('.asksrc'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     box.querySelectorAll('[data-pick]').forEach((b) => { b.onclick = () => pick(b.dataset.pick); });
     loadSources();
   }
