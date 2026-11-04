@@ -286,8 +286,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   sightings away / working now count as own when the holders file says
   that name holds the turn (board-auto sight, knownPeople). ❓ **Garnet
   line-up 41 (47956 W S5) has never returned a train** (0 checks read on
-  the 3rd and 4th): asked the owner what he types in option 41 to see L501
-  at Garnet (DIR, POOL) and whether the window says "skipped Garnet line-up 41".
+  the 3rd and 4th). Owner: "take out W S5 and 24": now station 47956 only,
+  DIR / POOL / hours cleared (CATS keeps Mac yard's W / S1 / 24 otherwise).
+  ❓ Check the next checks read L501 (snapshot screens has garnetLineup).
 - 2026-11-04: owner's PSTS05Y after his L502: **"7DY RESET: 261111 0244"**
   = first shift after the reset (L50231 04 on duty 4th 0245) + 7 days − 1
   min. resets.js due = back.on + WEEK − 1 (was + WEEK). 7DY TOT 33:33,

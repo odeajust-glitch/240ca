@@ -538,12 +538,14 @@ async function runRoute(page, opts = {}) {
     if (err instanceof NeedSignIn) throw err;
     console.log(`  (skipped Mac yard line-up 41: ${err.message})`);
   }
-  // 41 for Garnet (owner, 2026-11-03): station 47956, westbound, pool S5,
-  // 24 h ahead: when L501 is planned / ordered out of Garnet, i.e. when the
-  // 501/502 crew there comes home for the next L502.
+  // 41 for Garnet (owner, 2026-11-03): when L501 is planned / ordered out of
+  // Garnet, i.e. when the 501/502 crew there comes home for the next L502.
+  // Station 47956 only (owner, 2026-11-04: "take out W S5 and 24"; with them
+  // it never returned a train). CATS keeps the last 41's boxes (Mac yard's
+  // W / S1 / 24), so DIR, POOL and hours are cleared, not just left.
   try {
     expect(await chooseFromMenus(page, 41), is.lineup, 'Garnet line-up (41)');
-    await fill(page, { 0: '47956', 1: 'W', 2: 'S5', '-1': '24' });
+    await fill(page, { 0: '47956', 1: '', 2: '', '-1': '' });
     let g = expect(await press(page, 'Enter'), is.lineup, 'Garnet line-up');
     for (let pageNo = 0; pageNo < 3; pageNo++) {
       await capture('garnetLineup');
