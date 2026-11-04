@@ -100,10 +100,11 @@ test('ask: escalates when the fast answer could not find it; PDFs get page links
     const post = (body, ip = '9.9.9.9') => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': ip } }), env, { waitUntil: () => {} });
     const ev = await readAll(await post({ question: 'rest hours conductor' }));
     assert.deepEqual(ev.map((e) => e.type).filter((t, i, a) => a.indexOf(t) === i), ['citations', 'model', 'chunk', 'escalating', 'done']);
-    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi', 'Kimi']); // no ANTHROPIC_API_KEY: Kimi's slow model
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi K2.6', 'Kimi K2.6']); // no ANTHROPIC_API_KEY: Kimi K2.6 stands in
     assert.equal(ev.filter((e) => e.type === 'citations')[1].citations.length, 24);
-    assert.equal(kimi.calls[0].thinking.type, 'disabled'); // fast tier
-    assert.equal(kimi.calls[1].model, 'kimi-k3');
+    // Thinking stays on (its reasoning comes apart and isn't shown).
+    assert.equal(kimi.calls[0].thinking, undefined);
+    assert.equal(kimi.calls[1].model, 'kimi-k2.6');
     const c = ev.find((e) => e.type === 'citations').citations;
     assert.ok(c.some((x) => x.source === 'conductors' && x.url === `/docs/conductors.pdf#page=${x.page}`));
     assert.ok(c.filter((x) => x.source === 'croa').every((x) => /^http:\/\/croa\.com\//.test(x.url)));
@@ -152,7 +153,7 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     assert.match(claude.calls[0].body.system, /ONLY the excerpts/);
     assert.match(claude.calls[0].body.messages[0].content, /Question: rest hours conductor$/);
     assert.equal((claude.calls[0].body.messages[0].content.match(/^\[\d+\] \(/gm) || []).length, 24);
-    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi', 'Claude Sonnet']);
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Kimi K2.6', 'Claude Sonnet']);
     assert.match(answer(ev), /Opus answer/);
     // A member's "Try a deeper search": Sonnet, no Kimi.
     claude = fakeClaude(); kimi = fakeKimi(['x']);
@@ -189,7 +190,7 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     ev = await readAll(await post({ question: 'held away from the terminal' }));
     assert.equal(claude.calls[0].body.model, 'claude-haiku-5-5');
     assert.equal(kimi.calls[0].model, 'kimi-k3');
-    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Haiku', 'Kimi']);
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Haiku', 'Kimi K3']);
     // Kimi K3.1 Pro (owner, 2026-11-04) is a choice too.
     m = await (await models('POST', { deep: 'kimi-k3.1-pro' })).json();
     assert.equal(m.current.deep, 'kimi-k3.1-pro');
@@ -202,12 +203,16 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456788' }));
     assert.equal(claude.calls.length, 0);
     assert.ok(ev.find((e) => e.type === 'done').canEscalate);
-    // Claude refuses the request outright (bad key): Kimi's slow model answers.
+    // Claude refuses the request outright (bad key): Kimi K2.6 answers, and the page is told why.
     claude = fakeClaude({ status: 401 }); kimi = fakeKimi(['Kimi deep answer.']);
     globalThis.fetch = route(claude, kimi);
     ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
-    assert.equal(kimi.calls[0].model, 'kimi-k3');
-    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Opus', 'Kimi']);
+    assert.equal(claude.calls.length, 1); // a 401 isn't retried
+    assert.equal(kimi.calls[0].model, 'kimi-k2.6');
+    assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Opus', 'Kimi K2.6']);
+    const fb = ev.find((e) => e.type === 'fallback');
+    assert.equal(fb.from, 'Claude Opus');
+    assert.match(fb.reason, /401/);
     assert.match(answer(ev), /Kimi deep answer/);
     assert.ok(!ev.some((e) => e.type === 'error'));
   } finally { globalThis.fetch = real; }
@@ -274,7 +279,7 @@ test('Search Review: questions and answers kept 60 days, owner only', async () =
     assert.equal(m.question, 'rest hours conductor');
     assert.equal(m.owner, false);
     assert.equal(m.escalated, true);
-    assert.deepEqual(m.answers.map((a) => [a.label, a.model, a.text]), [['Kimi', 'kimi-k2.6', 'I could not find it in the excerpts.'], ['Claude Sonnet', 'claude-sonnet-5-5', 'Sonnet says [2].']]);
+    assert.deepEqual(m.answers.map((a) => [a.label, a.model, a.text]), [['Kimi K2.6', 'kimi-k2.6', 'I could not find it in the excerpts.'], ['Claude Sonnet', 'claude-sonnet-5-5', 'Sonnet says [2].']]);
     // The documents searched (the usual set here) and the ones the passages came from.
     assert.ok(m.searched.length > 0);
     assert.equal(m.picked, false);
@@ -299,5 +304,51 @@ test('Search Review: questions and answers kept 60 days, owner only', async () =
     assert.ok(store.has(`ask/log/${list.days[0].day}.json`));
     // Never served as a file.
     assert.equal((await worker.fetch(new Request(`https://board.x.workers.dev/ask/log/${list.days[0].day}.json`), env)).status, 404);
+  } finally { globalThis.fetch = real; }
+});
+
+test('ask: a 400 from Claude is asked again without fallbacks; Kimi\'s reasoning is never shown', async () => {
+  const chunks = corpus();
+  const worker = await loadWorker();
+  const { env, store } = envWith(buildShards(chunks, SOURCES, { buckets: 16, perFile: 50 }));
+  Object.assign(env, { ANTHROPIC_API_KEY: 'anthropic-test', OWNER_KEY: 'owner-key-0123456789' });
+  const real = globalThis.fetch;
+  const post = (body, headers = {}) => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': `5.5.5.${Math.random()}`, ...headers } }), env, { waitUntil: () => {} });
+  const answer = (ev) => ev.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
+  try {
+    // First call 400 (the fallbacks option refused), the second plain one answers.
+    const calls = [];
+    const ok = fakeClaude({ text: 'Opus answer.' });
+    globalThis.fetch = async (url, opts) => {
+      calls.push({ body: JSON.parse(opts.body), headers: opts.headers });
+      if (calls.length === 1) return new Response('{"error":{"message":"fallbacks: unknown"}}', { status: 400 });
+      return ok.fetchImpl(url, opts);
+    };
+    let ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].body.fallbacks, 'default');
+    assert.equal(calls[1].body.fallbacks, undefined);
+    assert.equal(calls[1].headers['anthropic-beta'], undefined);
+    assert.equal(answer(ev), 'Opus answer.');
+    assert.ok(!ev.some((e) => e.type === 'fallback'));
+    // Kimi (K3.1 Pro picked for the first answer) streams reasoning apart from the answer.
+    await worker.fetch(new Request('https://board.x.workers.dev/health/models', { method: 'POST', body: JSON.stringify({ first: 'kimi-k3.1-pro' }), headers: { 'x-owner-key': 'owner-key-0123456789' } }), env);
+    const kcalls = [];
+    globalThis.fetch = async (url, opts) => {
+      kcalls.push(JSON.parse(opts.body));
+      const d = (o) => `data: ${JSON.stringify({ choices: [{ delta: o }] })}\n\n`;
+      return new Response(d({ reasoning_content: 'I need craft response…' }) + d({ content: 'Clean answer [1].' }) + 'data: [DONE]\n\n', { status: 200 });
+    };
+    ev = await readAll(await post({ question: 'held away from the terminal' }));
+    assert.equal(kcalls[0].model, 'kimi-k3.1-pro');
+    assert.equal(kcalls[0].thinking, undefined);
+    assert.equal(answer(ev), 'Clean answer [1].');
+    assert.equal(ev.find((e) => e.type === 'model').label, 'Kimi K3.1 Pro');
+    // The fallback reason is kept with the question.
+    globalThis.fetch = route(fakeClaude({ status: 401 }), fakeKimi(['Kimi answer.']));
+    await readAll(await post({ question: 'rest hours conductor' }, { 'x-owner-key': 'owner-key-0123456789' }));
+    const day = [...store.keys()].find((k) => k.startsWith('ask/log/'));
+    const last = JSON.parse(store.get(day)).entries.pop();
+    assert.match(last.fallbacks[0], /^Claude Opus: Claude API error 401/);
   } finally { globalThis.fetch = real; }
 });

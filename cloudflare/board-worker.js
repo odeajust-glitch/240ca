@@ -443,7 +443,10 @@ function kimiMessages(question, chunks, names) {
 async function streamKimi(env, { question, chunks, names, model, fast, onToken, signal, fetchImpl = fetch }) {
   if (!env.KIMI_API_KEY) throw new Error('KIMI_API_KEY is not set on the Worker.');
   const body = JSON.stringify({ model, messages: kimiMessages(question, chunks, names), stream: true,
-    ...(/^kimi-k/.test(model) ? {} : { temperature: 0.2 }), ...(fast && /^kimi-k/.test(model) ? { thinking: { type: 'disabled' } } : {}) });
+    // Thinking stays on (owner, 2026-11-04: Kimi K3.1 Pro with thinking off
+    // wrote its reasoning into the answer). Kimi then sends its reasoning
+    // as reasoning_content, which is never shown; only content is.
+    ...(/^kimi-k/.test(model) ? {} : { temperature: 0.2 }) });
   let res;
   for (let attempt = 0; ; attempt++) {
     const timeout = AbortSignal.timeout(120000);
@@ -498,14 +501,19 @@ const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 async function streamClaude(env, { question, chunks, names, model, onToken, signal, fetchImpl = fetch }) {
   if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set on the Worker.');
   const [sys, user] = kimiMessages(question, chunks, names);
-  const body = JSON.stringify({ model, max_tokens: 8000, stream: true, system: sys.content,
-    messages: [{ role: 'user', content: user.content }], output_config: { effort: 'medium' }, fallbacks: 'default' });
+  // The refusal fallback (another Claude model answers if this one declines)
+  // is a newer option: if Anthropic refuses the request (400), it's asked
+  // again without it (owner, 2026-11-04: his first Opus question fell back
+  // to Kimi).
+  let plain = false;
+  const bodyOf = () => JSON.stringify({ model, max_tokens: 8000, stream: true, system: sys.content,
+    messages: [{ role: 'user', content: user.content }], output_config: { effort: 'medium' }, ...(plain ? {} : { fallbacks: 'default' }) });
   let res;
   for (let attempt = 0; ; attempt++) {
     const timeout = AbortSignal.timeout(120000);
+    const headers = { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', ...(plain ? {} : { 'anthropic-beta': 'server-side-fallback-2026-07-01' }) };
     try {
-      res = await fetchImpl(CLAUDE_API_URL, { method: 'POST', body,
-        headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      res = await fetchImpl(CLAUDE_API_URL, { method: 'POST', body: bodyOf(), headers,
         signal: signal && AbortSignal.any ? AbortSignal.any([signal, timeout]) : timeout });
     } catch (err) {
       if (timeout.aborted && !(signal && signal.aborted)) throw new Error('Claude did not respond within 120 seconds.');
@@ -513,6 +521,7 @@ async function streamClaude(env, { question, chunks, names, model, onToken, sign
     }
     if (res.ok) break;
     const text = await res.text();
+    if (res.status === 400 && !plain) { console.log(`Claude 400, asking again without fallbacks: ${text.slice(0, 300)}`); plain = true; continue; }
     if (!(res.status === 429 || res.status >= 500) || attempt === 3) throw new Error(`Claude API error ${res.status}: ${text.slice(0, 300)}`);
     const advised = Number(res.headers.get('retry-after')) || 0;
     await new Promise((r) => setTimeout(r, Math.min(advised ? advised * 1000 : 1000 * 2 ** attempt, 8000) * (0.5 + Math.random() / 2)));
@@ -596,11 +605,22 @@ async function streamModel(env, model, { question, chunks, names, onToken, signa
     } catch (err) {
       if (wrote || (signal && signal.aborted)) throw err;
       console.log(`Claude failed, Kimi instead: ${err.message}`);
+      await send({ type: 'fallback', from: modelLabel(model), reason: err.message });
     }
   }
-  const kimi = /^claude-/.test(model) ? (fast ? 'kimi-k2.6' : (env.KIMI_MODEL_SLOW || 'kimi-k3')) : model;
-  await send({ type: 'model', label: 'Kimi', model: kimi });
-  return streamKimi(env, { question, chunks, names, model: kimi, fast, onToken, signal, fetchImpl });
+  // Kimi K2.6 (thinking off) is the stand-in: the one the quick answers use.
+  const kimi = /^claude-/.test(model) ? 'kimi-k2.6' : model;
+  let wrote = false;
+  try {
+    await send({ type: 'model', label: modelLabel(kimi), model: kimi });
+    return await streamKimi(env, { question, chunks, names, model: kimi, fast, signal, fetchImpl, onToken: (t) => { wrote = true; return onToken(t); } });
+  } catch (err) {
+    if (wrote || kimi === 'kimi-k2.6' || (signal && signal.aborted)) throw err;
+    console.log(`${kimi} failed, Kimi K2.6 instead: ${err.message}`);
+    await send({ type: 'fallback', from: modelLabel(kimi), reason: err.message });
+    await send({ type: 'model', label: modelLabel('kimi-k2.6'), model: 'kimi-k2.6' });
+    return streamKimi(env, { question, chunks, names, model: 'kimi-k2.6', fast, onToken, signal, fetchImpl });
+  }
 }
 
 // What the site's own Claude answers cost (owner, 2026-11-04: "the api
@@ -803,6 +823,7 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
     }
     else if (obj.type === 'chunk') { if (!entry.answers.length) entry.answers.push({ label: '', text: '' }); entry.answers[entry.answers.length - 1].text += obj.text; }
     else if (obj.type === 'escalating') entry.escalated = true;
+    else if (obj.type === 'fallback') (entry.fallbacks || (entry.fallbacks = [])).push(`${obj.from}: ${obj.reason}`);
     else if (obj.type === 'error') entry.error = obj.error;
     return writer.write(enc.encode(JSON.stringify(obj) + '\n')).catch(() => abort.abort());
   };

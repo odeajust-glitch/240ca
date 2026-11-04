@@ -25,6 +25,17 @@ real site: the checks below.
    Claude today 1 answer; Kimi answers show $0 if Moonshot's stream has
    no token counts (then priced from nothing: look at it).
 4. Line-up: L50231 04 reads "EN S501 · CO S501 · TT S501".
+5. **Kimi's thinking leaked into an answer** (owner, 2026-11-04, incognito
+   = member, first answer set to Kimi K3.1 Pro): with `thinking:
+   disabled` it wrote its reasoning as the answer. Fixed: thinking is
+   never turned off now (reasoning comes as reasoning_content, not shown).
+   Also: a Claude 400 is asked again without `fallbacks` + beta header; a
+   failed Claude/Kimi sends a `fallback` event (page note, reason on the
+   owner's phone; kept in the question log, Search Review "fell back");
+   Claude's stand-in is Kimi K2.6; Kimi answers labelled with the model
+   (Kimi K2.6 / K3.1 Pro / K3). Suggested to him: first answer → Claude
+   Haiku in Search Review. ❓ Worker re-pasted + laptop pulled? Then check
+   a K3.1 Pro answer is clean (the first token may take longer: it thinks).
 
 Still open from earlier:
 1. Model tester: Netlify → Add new project → Import from GitHub, base

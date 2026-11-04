@@ -2384,9 +2384,9 @@ source().then(async (src) => {
         if (!r.ok) throw new Error(r.status);
         const entries = ((await r.json()).entries || []).slice().reverse();
         if (!list.isConnected) return;
-        list.innerHTML = entries.map((e) => `<details class="qitem"><summary><span class="meta">${esc(clock(e.at))} · ${e.owner ? '<b>You</b>' : 'Member'}${e.deeper ? ' · deeper search' : ''}${e.escalated ? ' · retried deeper' : ''}${e.error ? ' · <span class="warn">error</span>' : ''}</span> <span class="qtext1">${esc(e.question)}</span></summary>
+        list.innerHTML = entries.map((e) => `<details class="qitem"><summary><span class="meta">${esc(clock(e.at))} · ${e.owner ? '<b>You</b>' : 'Member'}${e.deeper ? ' · deeper search' : ''}${e.escalated ? ' · retried deeper' : ''}${e.error ? ' · <span class="warn">error</span>' : ''}${e.fallbacks ? ' · <span class="warn">fell back</span>' : ''}</span> <span class="qtext1">${esc(e.question)}</span></summary>
           <p class="qmeta">${e.searched ? `<b>Searched:</b> ${esc(e.searched.join(', '))} <span class="muted">(${e.picked ? 'picked by them' : 'the usual set'})</span><br>` : ''}${e.used && e.used.length ? `<b>Passages from:</b> ${esc(e.used.join(', '))}` : ''}</p>
-          ${e.answers.map((a) => `<div class="qans"><div class="askdiv">${esc(a.label || 'Answer')}${a.model ? ` <span class="qmodel">${esc(a.model)}</span>` : ''}</div><div class="qbody">${esc(a.text)}</div></div>`).join('')}${e.error ? `<p class="warn">${esc(e.error)}</p>` : ''}</details>`).join('') || '<p class="muted">None that day.</p>';
+          ${e.answers.map((a) => `<div class="qans"><div class="askdiv">${esc(a.label || 'Answer')}${a.model ? ` <span class="qmodel">${esc(a.model)}</span>` : ''}</div><div class="qbody">${esc(a.text)}</div></div>`).join('')}${e.error ? `<p class="warn">${esc(e.error)}</p>` : ''}${e.fallbacks ? `<p class="warn">Didn't answer: ${esc(e.fallbacks.join(' · '))}</p>` : ''}</details>`).join('') || '<p class="muted">None that day.</p>';
       } catch (err) { list.innerHTML = `<p class="muted">Can't load that day (${esc(err.message || err)}).</p>`; }
     };
     fetch('health/questions', { cache: 'no-store', headers: OwnerKey.headers() })

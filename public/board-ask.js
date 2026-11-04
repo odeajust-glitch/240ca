@@ -148,6 +148,15 @@
             // Which model writes the answer that follows (Claude Opus, or Kimi if Opus is unavailable).
             if (note) note.dataset.label = e.label;
             else { const d = document.createElement('div'); d.className = 'askdiv'; d.textContent = e.label; ans.appendChild(d); box.querySelector('.askans').hidden = false; run = null; }
+          } else if (e.type === 'fallback') {
+            // Claude (or the chosen Kimi) didn't answer: say so; the reason only on the owner's phone.
+            const owner = typeof OwnerKey !== 'undefined' && OwnerKey.has();
+            const d = document.createElement('div'); d.className = 'muted askfall';
+            d.textContent = `${e.from} wasn't available, so another model answered.${owner && e.reason ? ` (${e.reason})` : ''}`;
+            ans.appendChild(d); run = null;
+            // Its heading (already shown) is replaced by the one that answers.
+            const prev = d.previousElementSibling;
+            if (prev && prev.classList.contains('askdiv') && prev.textContent === e.from) prev.remove();
           } else if (e.type === 'escalating') {
             run = null;
             note = addNote('That didn\'t find it: searching more thoroughly, this takes a bit longer…');
