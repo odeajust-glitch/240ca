@@ -1241,9 +1241,19 @@ function watchPhone() {
     const r = await Remote.pollSignIn({ topic, since });
     busy = false;
     since = r.last;
-    if (r.error && !failing) console.log(`  (can't read sign-in requests from the phone: ${r.error}; still trying every minute)`);
-    if (!r.error && failing) console.log(`[${stamp()}] Reading sign-in requests from the phone again.`);
-    failing = !!r.error;
+    // Quiet about short blips (owner, 2026-11-04: the laptop's connection to
+    // ntfy drops for a minute now and then): only after 10 min of failing,
+    // and "again" only after that warning.
+    if (r.error) {
+      if (!failing) failing = { since: Date.now(), said: false };
+      if (!failing.said && Date.now() - failing.since >= 10 * 60000) {
+        failing.said = true;
+        console.log(`  (can't read sign-in requests from the phone for 10 min: ${r.error}; still trying every minute)`);
+      }
+    } else {
+      if (failing && failing.said) console.log(`[${stamp()}] Reading sign-in requests from the phone again.`);
+      failing = false;
+    }
     if (!r.asked || signInAsked || signingIn) return;
     signInAsked = true;
     console.log(`\n[${stamp()}] Your phone asked for a fresh Microsoft sign-in ${wake ? 'now' : 'after this check'}.`);
