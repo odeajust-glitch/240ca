@@ -58,6 +58,7 @@ const { describeFrame } = require('../lib/board/capture');
 const { parseGrid } = require('../lib/board/grid');
 const People = require('../lib/board/people');
 const OwnerNotify = require('../lib/board/owner-notify');
+const Trainees = require('../lib/board/trainees');
 const S = require('../lib/board/screens');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
@@ -887,6 +888,7 @@ async function backupLaptop() {
 // only when they're from this check (within 30 min).
 const RESET_TOLD_FILE = path.join(DATA_DIR, 'reset-alerts-told.json');
 const PENDING_ALERTS_FILE = path.join(DATA_DIR, 'alerts-pending.json');
+const TRAINEES_FILE = path.join(DATA_DIR, 'trainees.json');
 function resetEventsNow(ctx) {
   try {
     if (!ctx) return [];
@@ -1563,6 +1565,13 @@ async function main() {
       health.lastCheck = Date.now();
       fs.writeFileSync(path.join(OUT_DIR, 'auto-summary.json'), JSON.stringify(summary, null, 2));
       const { resetCtx, text, screenText, detailed, first, changed, me: meLines, mine, changes, myAnswerChanged, toronto, callBoard, alertStates, lineupRead, alertNow } = answer(summary, me, nowOverride);
+      // Trainees stay on their slot while their turn is away (owner,
+      // 2026-11-04; lib/board/trainees.js), before the check is saved.
+      try {
+        const kept = Trainees.keepTrainees(TurnAlerts.loadTold(TRAINEES_FILE) || {}, summary.people || [], resetCtx.input);
+        if (kept.add.length) summary.people = [...(summary.people || []), ...kept.add];
+        TurnAlerts.saveTold(TRAINEES_FILE, kept.memory);
+      } catch (err) { console.log(`  (trainees not kept: ${err.message})`); }
       const torontoChanged = toronto !== lastToronto;
       lastToronto = toronto;
       console.log(`\n${screenText}`);

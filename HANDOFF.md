@@ -281,6 +281,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **trainees stay on their slot while away** (owner: WADE "should
+  show him with me … stay on the turn till they get back to Sarnia"):
+  lib/board/trainees.js keepTrainees (BoardChecker\trainees.json): a
+  trainee not seen while the turn is away / working gets a kept sighting
+  on S501-TT; back home 30 min grace, then let go (crews in town shows them
+  again if still training); 4 days max unseen. Call Board names now read
+  TT crew lines (parseTrainCrewNames TRAIN_CRAFT). Applied in board-auto
+  before saveSnapshot (summary.people).
 - 2026-11-04: re-auth from the phone without the ntfy app (owner: "Can I
   use pushover to do my reauth"): Pushover can't send back, so a link to
   ntfy's GET publish (https://ntfy.sh/<signin topic>/publish?message=signin)

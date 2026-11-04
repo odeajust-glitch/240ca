@@ -535,3 +535,12 @@ test('Call Board: a conductor trainee (TT) is part of the train\'s crew', () => 
     '           TT  DEMARS+      W   WAYNE      S501',
   ], false))[0].crew.map((c) => c.craft), ['CO']);
 });
+
+test('Call Board names: a TT on a train crew is read (made-up name)', () => {
+  const rows = grid([
+    'L50231 04  ON DUTY AT: SARNIA       26/11/04  0245',
+    '           CO  RIVER+       J   JUSTIN     S501',
+    '           TT  BROOKE+      W   WAYNE      S501',
+  ], false);
+  assert.deepEqual(S.parseTrainCrewNames(rows).map((x) => `${x.craft} ${x.job} ${x.code}`), ['CO S501 JURI', 'TT S501 WABR']);
+});
