@@ -272,7 +272,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - 2026-11-04: **search models chosen on Page Health** (owner: "so I can
   change the model the search uses myself in page health"): section
   "Agreement search models", three roles (owner / members' first /
-  members' deeper), choices Opus, Sonnet, Haiku, Kimi K2.6, Kimi K3.
+  members' deeper), choices Opus, Sonnet, Haiku, Kimi K2.6, Kimi K3.1 Pro (added at the owner's ask), Kimi K3.
   Worker GET/POST /health/models (owner only), R2 ask/models.json (ask/
   is never served), saved choice > variable > default; streamModel picks
   Claude or Kimi per role (Claude failing first → Kimi). Every answer now

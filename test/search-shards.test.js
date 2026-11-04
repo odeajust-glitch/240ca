@@ -190,6 +190,9 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     assert.equal(claude.calls[0].body.model, 'claude-haiku-5-5');
     assert.equal(kimi.calls[0].model, 'kimi-k3');
     assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Haiku', 'Kimi']);
+    // Kimi K3.1 Pro (owner, 2026-11-04) is a choice too.
+    m = await (await models('POST', { deep: 'kimi-k3.1-pro' })).json();
+    assert.equal(m.current.deep, 'kimi-k3.1-pro');
     // Back to the usual.
     m = await (await models('POST', { owner: 'default', first: 'default', deep: 'default' })).json();
     assert.deepEqual(m.current, { owner: 'claude-opus-5-5', first: 'kimi-k2.6', deep: 'claude-sonnet-5-5' });
