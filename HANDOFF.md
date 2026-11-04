@@ -281,6 +281,17 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **next: exact off duty from CATS ASSIGNMENT HISTORY (PSTS17A)**
+  (owner's screenshot). Boxes: DIST 45, SUB-DIST SA, POOL OR YD/LO = a
+  *location* code (S1 = Sarnia, not the S1 pool; S5 = 502/501), HOME/AWAY
+  (0 home, 1 away; owner uses 1 = trains coming to Sarnia from Toronto,
+  since tying up in Toronto is already exact from the bunkhouse 28),
+  START DATE YYMMDD (any). Columns: TRAIN ID (+ day), ODT-DATE/TIME
+  (on duty YYMMDD HHMM), INT-TERMINAL, MILES, DUTY (HHMM on duty; N/A =
+  still on duty). Off duty = ODT + DUTY. Row colours just alternate. Plan:
+  read S1/1 and S5 with start = yesterday about hourly; resets.js offDuty
+  uses it first. ❓ Waiting for the owner: menu / option number, paging
+  (F8?), HOME/AWAY for S5.
 - 2026-11-04: **possible resets** (owner: off at 2355 gave a reset, after
   0000 it would have needed another night; "mark those as possible
   resets"; he has a way to find specific trains' off-duty times for later
