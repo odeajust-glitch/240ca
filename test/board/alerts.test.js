@@ -649,3 +649,22 @@ test('turn alerts: lined up for a stale train (past its call, not ordered)', () 
   assert.deepEqual(phoneEvents(shared, phone({}), {}, { __welcomed: ['SR05'] }, {}).events, []);
   assert.deepEqual(phoneEvents(shared, phone({ SR05: { stale: true } }), {}, { __welcomed: ['SR05'] }, {}).events.map((e) => e.kind), ['stale']);
 });
+
+// Owner on S501 CO (2026-11-04): 501/502 is one number, two turns.
+test('S501: followed by name code as S501-CO; own reset; plain S501 gets both', () => {
+  const { updatePersonTurns, phoneEvents, turnStates } = require('../../lib/board/alerts');
+  let people = updatePersonTurns({}, [{ h: 'me', turn: 'S501', own: true, craft: 'CO' }], 1);
+  assert.equal(people.me.turn, 'S501-CO');
+  // A sighting without the craft doesn't undo it.
+  people = updatePersonTurns(people, [{ h: 'me', turn: 'S501', own: true }], 2);
+  assert.equal(people.me.turn, 'S501-CO');
+  // Their own mandatory reset on 501/502 (rest until 0559), per craft.
+  const st = turnStates({ predictions: [], now: 0 }, [], { s5: [{ turn: 'S501', craft: 'CO', restUntil: 5 * 60 + 59 + 1440 }, { turn: 'S501', craft: 'EN', restUntil: null }] });
+  assert.equal(st['S501-CO'].reset, 5 * 60 + 59 + 1440);
+  assert.equal(st['S501-EN'].reset, null);
+  // A reset alert for S501-CO reaches a phone following S501-CO or plain S501.
+  const ev = [{ turn: 'S501-CO', kind: 'resetAhead', text: 'x' }];
+  assert.equal(phoneEvents(ev, { turns: ['S501-CO'], prefs: {} }, {}, { __welcomed: ['S501-CO'] }, {}).events.filter((e) => e.kind === 'resetAhead').length, 1);
+  assert.equal(phoneEvents(ev, { turns: ['S501'], prefs: {} }, {}, { __welcomed: ['S501'] }, {}).events.filter((e) => e.kind === 'resetAhead').length, 1);
+  assert.equal(phoneEvents(ev, { turns: ['S502'], prefs: {} }, {}, { __welcomed: ['S502'] }, {}).events.length, 0);
+});

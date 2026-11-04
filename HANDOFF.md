@@ -231,6 +231,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: owner on S501 (CO). Alerts for 501/502 fixed: a person
+  followed by name code on a 501/502 turn is S501-CO / S501-EN
+  (updatePersonTurns, craft from the sighting); own mandatory reset now on
+  501/502 too (turnStates pools.s5, per craft); a phone following plain
+  S501 gets S501-CO/EN events (phoneEvents). Not for 501/502 (by design):
+  position, ahead on/off rest, rescue, may be called.
 - 2026-11-03: spareboards' B0 reads "B0: working another job" (owner, EN10:
   "Don't need to put that it goes spare"); pools keep "…, goes spare if
   called" (view.js gangStatus spareboard option).
