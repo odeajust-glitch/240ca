@@ -1,11 +1,32 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-11-03 (crews in town session) · Branch:
-**`claude/vigilant-planck-zawrj4`** (has everything) · 205 tests (`npm test`).
-**The laptop runs at least `a9f02e2`** (pulled 2026-11-03; ask him to
-`git pull` again: later commits are notes and the API-key TODO only).
+Last updated: 2026-11-04 (end of the API key tester / Claude in the
+Agreements tab session; every other session closed by the owner) · Branch:
+**`claude/vigilant-planck-zawrj4`** (has everything) · 232 tests (`npm ci`
+then `npm test`). **The laptop runs at least `a9f02e2`**: it needs
+`git pull` + restart for everything below (resets, turn-alert resend,
+Pushover, Agreements tab owner key).
 
 ## ▶ Next session
+
+**Start by asking the owner which of these he has done** (none checked yet):
+1. Laptop: Ctrl+C, `git pull`, start the checker again (see Running it).
+2. Agreements tab with Claude: Cloudflare secret `ANTHROPIC_API_KEY` +
+   re-paste `cloudflare/board-worker.js` (check for `CLAUDE_MODEL_DEEP` in
+   it). Then on his phone (owner key saved) a question should be headed
+   "Claude Opus"; a member's "Try a deeper search" "Claude Sonnet".
+   Steps: CLOUDFLARE.md "Claude for deeper answers". Members stay on
+   Sonnet (owner, 2026-11-04: "keep the deeper search at sonnet").
+3. Model tester: Netlify → Add new project → Import from GitHub, base
+   directory `tools/ca-model-compare` (TODO #11 has the settings), keys
+   MOONSHOT_API_KEY / ANTHROPIC_API_KEY / TEST_PASSWORD set by him. Empty
+   project `ca-model-compare-empty` can be deleted. No Google/Gemini key yet.
+4. Anthropic console: monthly spend limit (suggested $20).
+
+Dates: Pushover trial ends ~2026-12-04 (TODO #12, compare routes); the
+Anthropic key expires **2026-12-31 22:00** (Google Calendar reminder set
+with the steps: replace it in Cloudflare and Netlify). Render deletion
+reminder 2026-11-23.
 
 **Reset tracker built (TODO #8 + #9, 2026-11-03), waiting for real runs.**
 lib/board/resets.js: per person (name-code hash), from every day file's
@@ -224,9 +245,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (the owner's own). Wrong if trips are missed (checker down, a name not
   read on the Call Board) or the window starts mid-week.
 - Open TODO items: reset tracker notifications (#8),
-  API key tester (#11: compare AI keys on the same agreement question; where
-  the tester is in the owner's claude.ai chat, link in TODO #11; he pastes
-  the code when it's time), DHT040B 31 runaround (waits for #8), home turn worked out better (tabled, owner 2026-11-03: he
+  API key tester (#11: in tools/ca-model-compare, waiting for his Netlify
+  import and scored results), DHT040B 31 runaround (waits for #8), home turn worked out better (tabled, owner 2026-11-03: he
   was displaced, To Place, and the site could only say "not seen"), runaround log alerts / claims, Turn History housekeeping
   (later), 18.6(b) rep alert as an email (skipped for now), My week for
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.

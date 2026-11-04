@@ -63,10 +63,14 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    Sonnet, Opus 5.5 (owner's pick). Keys: MOONSHOT_API_KEY, ANTHROPIC_API_KEY
    (he's getting one at console.anthropic.com), TEST_PASSWORD, set by him in
    Netlify. Suggested later: a free Google Gemini key as another company.
-   Netlify project **ca-model-compare** created 2026-11-04 (empty: the
-   container can't reach Netlify's upload host). Owner links it to this
-   repo (branch claude/vigilant-planck-zawrj4, base directory
-   tools/ca-model-compare) and adds the keys himself.
+   The container can't reach Netlify's upload host, so the owner imports
+   it: Netlify → Add new project → Import an existing project → GitHub →
+   odeajust-glitch/240ca; name `ca-model-compare`, branch
+   claude/vigilant-planck-zawrj4, base directory tools/ca-model-compare,
+   no build command, publish tools/ca-model-compare/public, functions
+   tools/ca-model-compare/netlify/functions; variables MOONSHOT_API_KEY,
+   ANTHROPIC_API_KEY, TEST_PASSWORD (he sets them). An empty project made
+   first was renamed `ca-model-compare-empty` (can be deleted).
    ❓ Linked and keys in? Then his scored results.
    Result so far (owner, 2026-11-04): "I like opus answers" → Opus now
    answers his own questions on the board site, Sonnet members' deeper searches
