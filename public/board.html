@@ -575,6 +575,8 @@
   .vt { color: var(--amber); font: 600 13px/1 var(--mono); }
   tr.wreset td { background: var(--go-tint); box-shadow: inset 4px 0 0 var(--go); }
   .resetlbl { color: var(--go); }
+  tr.wreset-p td { background: var(--amber-tint); box-shadow: inset 4px 0 0 var(--amber); }
+  tr.wreset-p .resetlbl { color: var(--amber); }
   tr.reset-y td { background: var(--amber-tint); }
   tr.reset-r td { background: var(--stop-tint); }
   tr.reset-y td:first-child { box-shadow: inset 4px 0 0 var(--amber); }
@@ -941,7 +943,7 @@ function dot(status) {
 let RESETS = null;
 let resetsAsked = '';
 const resetKey = (t) => (/^S5\d{2}$/.test(t.turn) && t.craft ? `${t.turn}-${t.craft === 'CO' ? 'CO' : 'EN'}` : t.turn);
-const resetText = (r) => (r.left < 0 ? `reset overdue (was needed by ${r.dueText})` : `reset needed by ${r.dueText}`);
+const resetText = (r) => `${r.left < 0 ? `reset overdue (was needed by ${r.dueText})` : `reset needed by ${r.dueText}`}${r.possible ? (r.laterText ? `, or ${r.laterText} if the possible reset ${r.possibleText} counts` : ` (after a possible reset ${r.possibleText})`) : ''}`;
 function resetFor(s, t) {
   const r = RESETS && RESETS.taken === s.taken && RESETS.turns ? RESETS.turns[resetKey(t)] : null;
   return r && r.level ? r : null;
@@ -1209,8 +1211,11 @@ function workHistory(rec, turnIn, resets = []) {
     const r = (rec.rests || []).filter((x) => x.seen > from && (!to || x.seen <= to));
     const got = (resets || []).filter((x) => x.at > from && (!to || x.at <= to));
     if (!r.length && !got.length) return '';
-    const reset = got.length ? `<b class="resetlbl">${got.map((x) => `Reset ${esc(dt(x.at))} (${x.kind === 'manual' ? 'put on a reset' : '32 h off, two nights'})`).join(' · ')}</b>${r.length ? ' · ' : ''}` : '';
-    return `<tr class="wrest${got.length ? ' wreset' : ''}"><td colspan="3"><span class="muted">${lbl}</span> ${reset}${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>`;
+    // A possible reset (off duty estimated near midnight; owner, 2026-11-04): amber.
+    const lbl1 = (x) => (x.possible ? `Possible reset ${esc(dt(x.at))} (off duty estimated near midnight)` : `Reset ${esc(dt(x.at))} (${x.kind === 'manual' ? 'put on a reset' : '32 h off, two nights'})`);
+    const reset = got.length ? `<b class="resetlbl">${got.map(lbl1).join(' · ')}</b>${r.length ? ' · ' : ''}` : '';
+    const sure = got.some((x) => !x.possible);
+    return `<tr class="wrest${got.length ? (sure ? ' wreset' : ' wreset wreset-p') : ''}"><td colspan="3"><span class="muted">${lbl}</span> ${reset}${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>`;
   };
   const restBefore = (i) => restLine(rows[i + 1] ? rows[i + 1].onDutySeen : '', rows[i].onDutySeen, 'Rest before it:');
   const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>

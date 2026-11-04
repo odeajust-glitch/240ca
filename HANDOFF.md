@@ -281,6 +281,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **possible resets** (owner: off at 2355 gave a reset, after
+  0000 it would have needed another night; "mark those as possible
+  resets"; he has a way to find specific trains' off-duty times for later
+  accuracy, ❓ ask about it). resets.js work(): an off duty that's only
+  estimated (Call Board − 30, yard length) where ±30 min changes the reset
+  → possible:true (incl. a reset only the earlier time would give). Latest
+  reset possible → board colour / alerts use the earlier deadline (if it
+  didn't count), text "…, or X if the possible reset Y counts"; Person
+  search line amber "Possible reset … (off duty estimated near midnight)".
+  Real data: 1 of 317 resets possible.
 - 2026-11-04: **shared name codes** (owner's SR11 "overdue since 2nd 1644"
   was wrong: one code seen on SR01, SB03, SA07, SB06, SR11 at once): resets.js
   onTurn treats a code on two turns together ≥ 6 h as shared → only that

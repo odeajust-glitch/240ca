@@ -236,3 +236,27 @@ test('a code on two turns for hours at a time: only that turn, nothing before', 
   const one = { me: [{ turn: 'SR03', own: true, from: '2026-10-24 0300', to: '2026-10-25 1400' }, { turn: 'S501', craft: 'CO', own: true, from: '2026-10-25 1320', to: '2026-10-25 1400' }] };
   assert.equal(R.onTurn(one.me, {}, 'SR03').shared, false);
 });
+
+// Owner, 2026-11-04: off at 2355 gave a reset (RESETM32 3rd 0754); after
+// 0000 it would have needed another night. With the off duty only an
+// estimate, that reset is "possible".
+test('a reset that hangs on an estimated off duty near midnight is possible', () => {
+  const run = (how) => {
+    const { acc, people } = week(); // his real week, Z14931 01 off 1st 2355
+    acc.last = t(4, 1116);
+    acc.trips.me.l = { train: 'L50231 04', on: t(4, 245), job: 'S501-CO', first: t(4, 100), last: t(4, 1100) };
+    if (how !== 'rest') delete acc.rest.SR03[t(2, 955)]; // only the Call Board: 2nd 0045 − 30 min = 0015
+    people.me = [{ turn: 'SR03', own: true, from: '2026-10-23 0000', to: '2026-11-02 2300' }, { turn: 'S501', craft: 'CO', own: true, from: '2026-11-03 0500', to: '2026-11-04 1116' }];
+    return { r: R.finish(acc, people, t(4, 1116)).me, turn: R.byTurn(acc, people, t(4, 1116))['S501-CO'], all: R.personResets(acc, people, t(4, 1116)).me };
+  };
+  // Exact (REST): a sure reset, needed by 11th 0244, as CATS.
+  const exact = run('rest');
+  assert.deepEqual([fmt(exact.r.last.at), exact.r.last.possible, exact.turn.dueText, exact.turn.possible], ['3rd 0755', undefined, '11th 0244', undefined]);
+  // Estimated (Call Board): possible; the board goes by the earlier deadline
+  // (26th 0559 reset, back 26th 2045 → 2nd 2044) and says the later one too.
+  // Estimated off 0015: 30 min earlier (2345) would give 3rd 0745.
+  const est = run('callboard');
+  assert.equal(est.r.last.possible, true);
+  assert.deepEqual([est.turn.dueText, est.turn.laterText, est.turn.possibleText, est.turn.level], ['2nd 2044', '11th 0244', '3rd 0745', 'red']);
+  assert.deepEqual(est.all.filter((x) => x.at > '2026-10-25').map((x) => `${x.at} ${x.possible ? 'possible' : 'sure'}`), ['2026-10-26 0559 sure', est.all[est.all.length - 1].at + ' possible']);
+});
