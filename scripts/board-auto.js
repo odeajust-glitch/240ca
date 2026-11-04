@@ -659,7 +659,10 @@ async function runRoute(page, opts = {}) {
   };
   // A name with TV beside it is on another turn for now (owner, 2026-10-26:
   // "it's supposed to ignore it if it has a TV beside the name"): not a sighting.
-  for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own, { craft: b.craft });
+  // Away from home (term 1, e.g. at Garnet) or out working: still their own
+  // turn when they're known to hold it (owner at Garnet, 2026-11-04: seen
+  // as "not their own" turn, so his alerts stopped after 30 min).
+  for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own || (b.from === 'pool' && knownPeople.get(b.key) === b.turn), { craft: b.craft });
   // A trainee (TT / ET) on a crew line rides with that turn: their own
   // trainee slot, S501-TT (owner, 2026-11-04: WADE, a TT on S501).
   for (const t of trainNames) {
