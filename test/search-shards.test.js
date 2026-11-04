@@ -131,7 +131,7 @@ test('ask: escalates when the fast answer could not find it; PDFs get page links
   } finally { globalThis.fetch = real; }
 });
 
-test('ask: Claude Opus for deeper answers and the owner; Kimi if Opus fails', async () => {
+test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi if Claude fails', async () => {
   const chunks = corpus();
   const worker = await loadWorker();
   const { env } = envWith(buildShards(chunks, SOURCES, { buckets: 16, perFile: 50 }));
@@ -140,32 +140,35 @@ test('ask: Claude Opus for deeper answers and the owner; Kimi if Opus fails', as
   const post = (body, headers = {}) => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': `7.7.7.${Math.random()}`, ...headers } }), env, { waitUntil: () => {} });
   const answer = (ev) => ev.filter((e) => e.type === 'chunk').map((e) => e.text).join('');
   try {
-    // A member: Kimi first; "could not find" goes to Opus with more passages.
+    // A member: Kimi first; "could not find" goes to Sonnet with more passages.
     let claude = fakeClaude();
     let kimi = fakeKimi(['I could not find it in the excerpts.']);
     globalThis.fetch = route(claude, kimi);
     let ev = await readAll(await post({ question: 'rest hours conductor' }));
     assert.equal(kimi.calls.length, 1);
     assert.equal(claude.calls.length, 1);
-    assert.equal(claude.calls[0].body.model, 'claude-opus-5-5');
+    assert.equal(claude.calls[0].body.model, 'claude-sonnet-5-5');
     assert.equal(claude.calls[0].headers['x-api-key'], 'anthropic-test');
     assert.match(claude.calls[0].body.system, /ONLY the excerpts/);
     assert.match(claude.calls[0].body.messages[0].content, /Question: rest hours conductor$/);
     assert.equal((claude.calls[0].body.messages[0].content.match(/^\[\d+\] \(/gm) || []).length, 24);
-    assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Opus');
+    assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Sonnet');
     assert.match(answer(ev), /Opus answer/);
-    // A member's "Try a deeper search": Opus, no Kimi.
+    // A member's "Try a deeper search": Sonnet, no Kimi.
     claude = fakeClaude(); kimi = fakeKimi(['x']);
     globalThis.fetch = route(claude, kimi);
     ev = await readAll(await post({ question: 'rest hours conductor', tier: 'slow' }));
     assert.equal(kimi.calls.length, 0);
     assert.equal(claude.calls.length, 1);
+    assert.equal(claude.calls[0].body.model, 'claude-sonnet-5-5');
     // The owner (right key): straight to Opus, nothing more to escalate.
     claude = fakeClaude(); kimi = fakeKimi(['x']);
     globalThis.fetch = route(claude, kimi);
     ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));
     assert.equal(kimi.calls.length, 0);
     assert.equal(claude.calls.length, 1);
+    assert.equal(claude.calls[0].body.model, 'claude-opus-5-5');
+    assert.equal(ev.find((e) => e.type === 'model').label, 'Claude Opus');
     assert.ok(!ev.find((e) => e.type === 'done').canEscalate);
     // A wrong key is a member: Kimi first.
     claude = fakeClaude(); kimi = fakeKimi(['Kimi answer [1].']);
@@ -173,7 +176,7 @@ test('ask: Claude Opus for deeper answers and the owner; Kimi if Opus fails', as
     ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456788' }));
     assert.equal(claude.calls.length, 0);
     assert.ok(ev.find((e) => e.type === 'done').canEscalate);
-    // Opus refuses the request outright (bad key): Kimi's slow model answers.
+    // Claude refuses the request outright (bad key): Kimi's slow model answers.
     claude = fakeClaude({ status: 401 }); kimi = fakeKimi(['Kimi deep answer.']);
     globalThis.fetch = route(claude, kimi);
     ev = await readAll(await post({ question: 'held away from the terminal' }, { 'x-owner-key': 'owner-key-0123456789' }));

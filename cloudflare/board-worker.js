@@ -42,9 +42,11 @@
 // laptop) and Moonshot's Kimi (secret KIMI_API_KEY; KIMI_MODEL_FAST /
 // KIMI_MODEL_SLOW variables, else kimi-k2.6 / kimi-k3). Deeper answers
 // (owner, 2026-11-04: "Kimi first, Opus on demand"; his own questions "just
-// with Opus") come from Claude Opus (secret ANTHROPIC_API_KEY; CLAUDE_MODEL
-// variable, else claude-opus-5-5), Kimi's slow model if that key is missing
-// or Claude fails before answering. GET /api/sources,
+// with Opus") come from Claude (secret ANTHROPIC_API_KEY): members' deeper
+// searches from Sonnet (owner, 2026-11-04: "a cheaper anthropic model";
+// CLAUDE_MODEL_DEEP variable, else claude-sonnet-5-5), the owner's from Opus
+// (CLAUDE_MODEL, else claude-opus-5-5); Kimi's slow model if that key is
+// missing or Claude fails before answering. GET /api/sources,
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
@@ -526,14 +528,17 @@ async function streamClaude(env, { question, chunks, names, model, onToken, sign
   }
   return full;
 }
-// The deeper answer: Claude Opus, or Kimi's slow model if there's no
-// Anthropic key or Claude fails before writing anything.
-async function streamDeep(env, { question, chunks, names, onToken, signal, fetchImpl, send }) {
+// The deeper answer: Claude (Opus for the owner, Sonnet for members), or
+// Kimi's slow model if there's no Anthropic key or Claude fails before
+// writing anything.
+const claudeLabel = (model) => { const m = /(opus|sonnet|haiku|fable)/i.exec(model); return m ? `Claude ${m[1][0].toUpperCase()}${m[1].slice(1).toLowerCase()}` : 'Claude'; };
+async function streamDeep(env, { question, chunks, names, onToken, signal, fetchImpl, send, owner }) {
   if (env.ANTHROPIC_API_KEY) {
     let wrote = false;
+    const model = owner ? (env.CLAUDE_MODEL || 'claude-opus-5-5') : (env.CLAUDE_MODEL_DEEP || 'claude-sonnet-5-5');
     try {
-      await send({ type: 'model', label: 'Claude Opus' });
-      return await streamClaude(env, { question, chunks, names, model: env.CLAUDE_MODEL || 'claude-opus-5-5', signal, fetchImpl,
+      await send({ type: 'model', label: claudeLabel(model) });
+      return await streamClaude(env, { question, chunks, names, model, signal, fetchImpl,
         onToken: (t) => { wrote = true; return onToken(t); } });
     } catch (err) {
       if (wrote || (signal && signal.aborted)) throw err;
@@ -629,7 +634,8 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
       if (sources.length === all.length) sources = null;
       const opts = { sources, dateFrom: typeof dateFrom === 'string' && dateFrom ? dateFrom : null, dateTo: typeof dateTo === 'string' && dateTo ? dateTo : null };
       // The owner's own questions (owner key on his phone) go straight to the
-      // deeper search and Claude Opus (owner, 2026-11-04).
+      // deeper search and Claude Opus (owner, 2026-11-04); members' deeper
+      // searches use Sonnet.
       const slow = tier === 'slow' || owner;
       const chunks = await searchShards(env, question, { topK: slow ? TOP_K_DEEP : TOP_K, ...opts });
       if (!chunks || !chunks.length) { await send({ type: 'chunk', text: 'No matching passages were found in the selected document(s) for this question.' }); await send({ type: 'done', citations: [] }); return; }
@@ -637,7 +643,7 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
         url: c.url || (list.pdfs.includes(c.source) && /^\d+$/.test(String(c.page)) ? `/docs/${c.source}.pdf#page=${c.page}` : null) })) });
       await cite(chunks);
       const onToken = (text) => send({ type: 'chunk', text });
-      const deepOpts = { question, names, onToken, signal: abort.signal, fetchImpl, send };
+      const deepOpts = { question, names, onToken, signal: abort.signal, fetchImpl, send, owner };
       if (slow) {
         await streamDeep(env, { ...deepOpts, chunks });
         await send({ type: 'done' });

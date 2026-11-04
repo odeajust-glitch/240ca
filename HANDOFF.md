@@ -84,7 +84,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
   2026-12-31 22:00, calendar reminder set:
   Opus deeper answers, 2026-11-04), `OWNER_DOWN_MINUTES` (60), `OWNER_CODE` (JUOD),
   `PUSH_DOWN_MINUTES` (180), `OWNER_EMAIL` (unused while Access is off);
-  optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `CLAUDE_MODEL`, `BOARD_KEY`
+  optional `STATS_KEY`, `KIMI_MODEL_FAST` / `KIMI_MODEL_SLOW`, `CLAUDE_MODEL` (owner, Opus), `CLAUDE_MODEL_DEEP` (members, Sonnet), `BOARD_KEY`
   (relay, unused). Cron */10 (Page Health → Worker timer: runs, checked
   2026-11-03). **Workers Paid plan** ($5/mo, needed by the search).
 - **Agreement search documents:** after adding or changing a PDF in `data\`:
@@ -240,12 +240,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
   up to 30 min old (board-auto sendTurnAlerts).
 - 2026-11-04: **Claude Opus in the Agreements tab** (owner: "I like opus
   answers"; chose "Kimi first, Opus on demand" and "my answers just with
-  Opus"). Worker streamClaude / streamDeep: the slow tier and the
-  could-not-find retry use Opus (24 passages); a request with the right
+  Opus"; then "make the deeper search a cheaper anthropic model": members'
+  deeper answers use Sonnet, CLAUDE_MODEL_DEEP). Worker streamClaude /
+  streamDeep: the slow tier and the could-not-find retry use Claude (24
+  passages); a request with the right
   x-owner-key (board-ask.js sends OwnerKey's) is always slow → Opus. Kimi
   k3 if no ANTHROPIC_API_KEY or Opus fails before its first word. NDJSON
   event `model` names who answers (shown above the answer). Steps:
-  CLOUDFLARE.md "Claude Opus for deeper answers". ❓ Owner adds the secret
+  CLOUDFLARE.md "Claude for deeper answers". ❓ Owner adds the secret
   and re-pastes the Worker.
 - 2026-11-04: Pushover works (owner: both findstr ok, test message came
   through on Pushover). **API key tester (TODO #11)** started: owner's

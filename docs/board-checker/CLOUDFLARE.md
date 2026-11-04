@@ -267,18 +267,21 @@ The Worker answers `/api/ask` from the index in R2 `search/` and the PDFs in
 5. Check: board site → Agreements → ask a question; tap a citation's PDF.
 6. Then cancel Render. The old onrender.com link stops working.
 
-### Claude Opus for deeper answers (2026-11-04)
+### Claude for deeper answers (2026-11-04)
 
 Members get Kimi's quick answer first; **Try a deeper search** (and the
-automatic retry when Kimi can't find it) is answered by **Claude Opus**.
-Questions from a phone with the owner key saved go straight to Opus. The
+automatic retry when Kimi can't find it) is answered by **Claude Sonnet**
+(owner: "a cheaper anthropic model"). Questions from a phone with the owner
+key saved go straight to **Claude Opus**. The
 answer is headed with the model's name. Without the secret below, or if
 Opus fails before writing anything, Kimi's slow model answers as before.
 
 1. Worker secret (Settings → Variables and Secrets → Add → **Secret**):
    name `ANTHROPIC_API_KEY`, value: the key from console.anthropic.com →
    API Keys (the tester's key works, or make one called `board site`).
-2. Optional variable `CLAUDE_MODEL` (default `claude-opus-5-5`).
+2. Optional variables: `CLAUDE_MODEL_DEEP` (members' deeper answers,
+   default `claude-sonnet-5-5`; `claude-haiku-5-5` is cheaper still) and
+   `CLAUDE_MODEL` (the owner's, default `claude-opus-5-5`).
 3. Re-paste `cloudflare/board-worker.js` and Deploy.
 4. In console.anthropic.com → Settings → Limits, set a monthly spend
-   limit as a safety cap. An Opus answer costs about 5–10¢.
+   limit as a safety cap. A Sonnet answer costs about 3–5¢, an Opus one 5–10¢.

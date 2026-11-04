@@ -69,8 +69,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    tools/ca-model-compare) and adds the keys himself.
    ❓ Linked and keys in? Then his scored results.
    Result so far (owner, 2026-11-04): "I like opus answers" → Opus now
-   answers deeper searches and his own questions on the board site
-   (CLOUDFLARE.md "Claude Opus for deeper answers").
+   answers his own questions on the board site, Sonnet members' deeper searches
+   (CLOUDFLARE.md "Claude for deeper answers").
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
