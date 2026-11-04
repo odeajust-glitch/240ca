@@ -573,6 +573,8 @@
   .pickturn button { margin: 4px 6px 0 0; padding: 4px 10px; min-height: 34px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font: 600 14px/1 var(--mono); }
   .pickturn button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .vt { color: var(--amber); font: 600 13px/1 var(--mono); }
+  tr.wreset td { background: var(--go-tint); box-shadow: inset 4px 0 0 var(--go); }
+  .resetlbl { color: var(--go); }
   tr.reset-y td { background: var(--amber-tint); }
   tr.reset-r td { background: var(--stop-tint); }
   tr.reset-y td:first-child { box-shadow: inset 4px 0 0 var(--amber); }
@@ -953,6 +955,8 @@ function paintResets() {
     if (cell) cell.textContent = r && r.level ? resetText(r) : '';
   });
 }
+// The resets file for Person search (each person's resets), loaded once.
+const loadResets = () => (RESETS ? Promise.resolve(RESETS) : getJSON('data/resets.json').then((r) => { if (r && r.turns) RESETS = r; return RESETS; }).catch(() => null));
 function askResets(s) {
   if (RESETS && RESETS.taken >= s.taken) return;
   if (resetsAsked === s.taken) return;
@@ -1188,7 +1192,9 @@ function worked(rec, turn = '') {
     .map((o) => ({ ...o, at: BoardTrains.resolve(o.onDutyAt, o.onDutySeen) || o.onDutySeen }))
     .sort((a, b) => (a.at < b.at ? 1 : -1));
 }
-function workHistory(rec, turnIn) {
+// resets (owner, 2026-11-04): this person's resets [{ at, kind }]; the rest
+// line where they got one is green and says so.
+function workHistory(rec, turnIn, resets = []) {
   const rows = worked(rec, turnIn);
   const turn = BoardTurns.splitCraft(turnIn).base;
   if (!rows.length) return '<h3>Work history</h3><p class="empty" style="padding:0 14px 10px">No trains worked in the saved checks.</p>';
@@ -1201,7 +1207,10 @@ function workHistory(rec, turnIn) {
   // since the latest train, at the top.
   const restLine = (from, to, lbl) => {
     const r = (rec.rests || []).filter((x) => x.seen > from && (!to || x.seen <= to));
-    return r.length ? `<tr class="wrest"><td colspan="3"><span class="muted">${lbl}</span> ${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>` : '';
+    const got = (resets || []).filter((x) => x.at > from && (!to || x.at <= to));
+    if (!r.length && !got.length) return '';
+    const reset = got.length ? `<b class="resetlbl">${got.map((x) => `Reset ${esc(dt(x.at))} (${x.kind === 'manual' ? 'put on a reset' : '32 h off, two nights'})`).join(' · ')}</b>${r.length ? ' · ' : ''}` : '';
+    return `<tr class="wrest${got.length ? ' wreset' : ''}"><td colspan="3"><span class="muted">${lbl}</span> ${reset}${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>`;
   };
   const restBefore = (i) => restLine(rows[i + 1] ? rows[i + 1].onDutySeen : '', rows[i].onDutySeen, 'Rest before it:');
   const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>
@@ -2880,6 +2889,7 @@ source().then(async (src) => {
   async function showPerson(code, s) {
     const box = document.getElementById('person');
     const list = await Person.find(code);
+    await loadResets();
     if (!box || focus !== code) return;
     if (!list) { box.innerHTML = '<p class="empty">Nothing found for that in the saved checks.</p>'; return; }
     const all = await src.turns().catch(() => ({}));
@@ -2937,7 +2947,7 @@ source().then(async (src) => {
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
       <div id="whengo" class="whengo" hidden></div>
-      <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>
+      <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [])}</div>
       <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
       <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;

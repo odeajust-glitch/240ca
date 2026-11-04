@@ -281,6 +281,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **shared name codes** (owner's SR11 "overdue since 2nd 1644"
+  was wrong: one code seen on SR01, SB03, SA07, SB06, SR11 at once): resets.js
+  onTurn treats a code on two turns together ≥ 6 h as shared → only that
+  turn's stretch, nothing known before (since). Bumps (SR03/S501 40 min)
+  stay one person. **Person search shows resets in green** (owner: "the rest
+  where they got their reset is a different color"): resets.json `people`
+  {hash: [{at, kind}]} (personResets); board.html workHistory restLine
+  "Reset 3rd 0755 (32 h off, two nights)" / "(put on a reset)", tr.wreset.
 - 2026-11-04: **trainees stay on their slot while away** (owner: WADE "should
   show him with me … stay on the turn till they get back to Sarnia"):
   lib/board/trainees.js keepTrainees (BoardChecker\trainees.json): a
