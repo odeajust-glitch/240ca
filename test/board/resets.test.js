@@ -64,7 +64,7 @@ test('his week: resets where CATS logged them, next one due 7 days after going b
   acc.trips.me[`L50231 04/${t(4, 200)}`] = { train: 'L50231 04', on: t(4, 200), job: 'SR03', first: t(4, 100), last: t(4, 300) };
   people.me[0].to = '2026-11-04 0300';
   const after = R.byTurn(acc, people, t(4, 300)).SR03;
-  assert.deepEqual([after.dueText, after.level], ['11th 0200', '']);
+  assert.deepEqual([after.dueText, after.level], ['11th 0159', '']); // CATS: a minute short of 7 days
 });
 
 test('yellow 2 days before the reset is needed, red 24 h before; none once put on one', () => {
@@ -78,7 +78,7 @@ test('yellow 2 days before the reset is needed, red 24 h before; none once put o
   assert.equal(at(people('2026-10-31 1200'), t(31, 1200)).level, ''); // 58 h
   assert.equal(at(people('2026-11-01 0400'), t(1, 400)).level, 'yellow'); // 42 h
   assert.equal(at(people('2026-11-02 0800'), t(2, 800)).level, 'red'); // 14 h
-  assert.equal(at(people('2026-11-02 0800'), t(2, 800)).dueText, '2nd 2200');
+  assert.equal(at(people('2026-11-02 0800'), t(2, 800)).dueText, '2nd 2159');
   // Put on a reset (rest until 3rd 0559 on his turn): no colour.
   acc.manual.SR03 = { [t(3, 559)]: t(2, 700) };
   assert.equal(at(people('2026-11-02 0800'), t(2, 800)).level, '');
@@ -185,7 +185,7 @@ test('trips filling in on another turn count for the spare', () => {
     { turn: 'S301', own: false, from: '2026-10-27 1522', to: '2026-10-28 1950' }, { turn: 'SD08', own: true, from: '2026-10-28 1958', to: '2026-10-28 2100' }] };
   const r = R.finish(acc, people, t(28, 2100)).c;
   assert.deepEqual(r.duty.map((d) => d.train), ['M38261 27', 'M39731 28']);
-  assert.equal(fmt(r.due), '3rd 1715'); // reset 27th 0559, back 27th 1715
+  assert.equal(fmt(r.due), '3rd 1714'); // reset 27th 0559, back 27th 1715
 });
 
 // Owner, 2026-11-04: WADE, a TT on S501, showed as S501's conductor.
@@ -205,4 +205,19 @@ test('a trainee rides on the turn\'s trains but never colours the holder\'s row'
   // The trainee's own work: the S501 conductor's trains while on it.
   const tt = R.finish(acc, people, t(2, 800)).tt;
   assert.deepEqual(tt.duty.map((d) => d.train), ['L 30', 'L 31', 'L 1']);
+});
+
+// The owner's CATS PSTS05Y, 2026-11-04 1116: RESETM32 3rd 0754, L50231 04
+// on duty 4th 0245 → "7DY RESET: 261111 0244".
+test('next reset as CATS shows it: 7 days after the first shift, less a minute', () => {
+  const acc = R.empty();
+  acc.since = t(1, 0); acc.last = t(4, 1116);
+  acc.trips.me = {
+    a: { train: 'Z14931 01', on: t(1, 1645), job: 'SR03', first: t(1, 1500), last: t(2, 25) },
+    b: { train: 'L50231 04', on: t(4, 245), job: 'S501-CO', first: t(4, 100), last: t(4, 1131) },
+  };
+  acc.rest.SR03 = { [t(2, 955)]: t(2, 30) };
+  const r = R.finish(acc, { me: [{ turn: 'SR03', own: true, from: '2026-11-01 0000', to: '2026-11-02 2300' }, { turn: 'S501', craft: 'CO', own: true, from: '2026-11-03 0500', to: '2026-11-04 1116' }] }, t(4, 1116)).me;
+  assert.equal(fmt(r.last.at), '3rd 0755');
+  assert.equal(fmt(r.due), '11th 0244');
 });

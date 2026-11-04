@@ -281,6 +281,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: owner's PSTS05Y after his L502: **"7DY RESET: 261111 0244"**
+  = first shift after the reset (L50231 04 on duty 4th 0245) + 7 days − 1
+  min. resets.js due = back.on + WEEK − 1 (was + WEEK). 7DY TOT 33:33,
+  28DY 130:04; L50231 04 off 4th 11:01.
 - 2026-11-04: **trainees** (owner: WADE, a TT on S501, showed as S501's
   conductor): a TT / ET (no position in crews in town, or a TT/ET crew line
   on the Call Board) is seen on its own slot S501-TT / S102-ET (board-auto
