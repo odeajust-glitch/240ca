@@ -660,7 +660,12 @@ async function runRoute(page, opts = {}) {
   // A name with TV beside it is on another turn for now (owner, 2026-10-26:
   // "it's supposed to ignore it if it has a TV beside the name"): not a sighting.
   for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own, { craft: b.craft });
-  for (const t of trainNames) sight(t.code, t.job, knownPeople.get(t.key) === t.job, { craft: t.craft, train: t.train });
+  // A trainee (TT / ET) on a crew line rides with that turn: their own
+  // trainee slot, S501-TT (owner, 2026-11-04: WADE, a TT on S501).
+  for (const t of trainNames) {
+    if (/^(TT|ET)$/.test(t.craft)) sight(t.code, `${t.job}-${t.craft}`, true, { train: t.train });
+    else sight(t.code, t.job, knownPeople.get(t.key) === t.job, { craft: t.craft, train: t.train });
+  }
   for (const y of yardNames) sight(y.code, y.job, false);
   // In the Toronto bunkhouse under a turn (their own or one they're covering).
   for (const b of bunkNames) sight(b.code, b.turn, knownPeople.get(b.key) === b.turn);
@@ -672,8 +677,10 @@ async function runRoute(page, opts = {}) {
   const town = S.parseCrewsInTownNames(townPages);
   for (const n of town) {
     if (n.status === 'tempVacancy') continue;
-    const craft = n.craft === 'TT' ? 'CO' : n.craft === 'ET' ? 'EN' : n.craft;
-    sight(n.code, n.turn || n.job, !n.temp, { craft });
+    // Trainees: their own slot beside the turn (S501-TT), never the holder's
+    // (owner, 2026-11-04: WADE showed as S501's conductor).
+    if (n.trainee && n.turn) { sight(n.code, `${n.turn}-${n.craft}`, true); continue; }
+    sight(n.code, n.turn || n.job, !n.temp, { craft: n.craft });
   }
   if (town.length) console.log(`  Crews in town: ${town.length} people read.`);
   return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };
@@ -895,6 +902,10 @@ function resetEventsNow(ctx) {
 async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = []) {
   const settings = siteSettings();
   if (!settings.r2) return;
+  // Followed people: their own turn now (owner, 2026-10-25); a trainee's
+  // slot (S501-TT) gets the turn crew's train alerts (owner, 2026-11-04).
+  const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
+  TurnAlerts.addTrainees(states, Object.values(personTurns).map((p) => p.turn));
   const turned = TurnAlerts.turnEvents(TurnAlerts.loadTold(TOLD_FILE), states, { lineupRead, now });
   const { told, held } = turned;
   // Alerts a check couldn't send (owner's laptop, 2026-11-04: "Turn alerts
@@ -904,8 +915,6 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
   const nextPending = [];
   const events = [...turned.events, ...extra, ...pending.filter((p) => !p.phone).map((p) => p.event)];
   if (held.length) console.log(`  Holding line-up alerts mid-call: ${held.join(', ')}.`);
-  // Followed people: their own turn now (owner, 2026-10-25).
-  const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
   try { TurnAlerts.saveTold(PERSON_TURNS_FILE, personTurns); } catch (err) { console.log(`  (followed people not saved: ${err.message})`); }
   try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
   try {

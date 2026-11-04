@@ -1,11 +1,13 @@
 # HANDOFF — read this before doing anything
 
 Last updated: 2026-11-04 (end of the API key tester / Claude in the
-Agreements tab session; every other session closed by the owner) · Branch:
+Agreements tab session; NOTE: the reset tracker / Garnet / trainees
+session (claude.ai session_01AP9cZud7gx8TSqRyscer6F) was still running in
+parallel on 2026-11-04 and rebased onto it) · Branch:
 **`claude/vigilant-planck-zawrj4`** (has everything) · 232 tests (`npm ci`
-then `npm test`). **The laptop runs at least `a9f02e2`**: it needs
-`git pull` + restart for everything below (resets, turn-alert resend,
-Pushover, Agreements tab owner key).
+then `npm test`). The laptop pulled `ae2d887` on 2026-11-04 (resets,
+turn-alert resend, Pushover all running); later commits need `git pull`
++ restart.
 
 ## ▶ Next session
 
@@ -254,6 +256,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **trainees** (owner: WADE, a TT on S501, showed as S501's
+  conductor): a TT / ET (no position in crews in town, or a TT/ET crew line
+  on the Call Board) is seen on its own slot S501-TT / S102-ET (board-auto
+  sight). Reset tracker: keyOf keeps TT/ET; a trainee's trips are the
+  turn's (conductor's for TT, engineer's for ET; resets.js tripsOf); never a
+  board colour (BOARD_TURN). Alerts: alerts.js addTrainees gives a followed
+  trainee slot the turn crew's lined up / ordered / time / on duty / rescue,
+  never the holder's reset or position. Person search: "S501 · TT
+  (trainee)", the turn's facts; crews-in-town line keeps trainee rows apart.
 - 2026-11-04: **search models chosen on Page Health** (owner: "so I can
   change the model the search uses myself in page health"): section
   "Agreement search models", three roles (owner / members' first /

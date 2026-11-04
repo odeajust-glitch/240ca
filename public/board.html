@@ -2774,6 +2774,11 @@ source().then(async (src) => {
 
   // The hidden search's answer: the turns this person was seen on, where
   // they are now, and their history across those turns. No name anywhere.
+  // A trainee's slot (S501-TT; owner, 2026-11-04): shown as "S501 · TT
+  // (trainee)"; its board facts are the turn's (conductor's side for TT).
+  const TRAINEE = /^([A-Z][A-Z0-9]\d{2})-(TT|ET)$/;
+  const slotLabel = (t) => { const m = TRAINEE.exec(t || ''); return m ? `${m[1]} · ${m[2]} (trainee)` : t; };
+  const slotTurn = (t) => { const m = TRAINEE.exec(t || ''); return !m ? t : /^S5\d{2}$/.test(m[1]) ? `${m[1]}-${m[2] === 'TT' ? 'CO' : 'EN'}` : m[1]; };
   async function showPerson(code, s) {
     const box = document.getElementById('person');
     const list = await Person.find(code);
@@ -2799,21 +2804,23 @@ source().then(async (src) => {
     const pickNow = cur && cur.own ? homes.filter((e) => e.turn === cur.turn).sort((a, b) => (a.to < b.to ? 1 : -1))[0] : null;
     const home = pickNow || [...homes].sort((a, b) => (a.to < b.to ? 1 : -1))[0] || null;
     const homeLive = !!home && home.to >= s.taken;
-    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(e.turn)}</b>${e === home && homeLive ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
+    const homeList = homes.length ? `<ul>${[...homes].reverse().map((e) => `<li>${stampBtn(e.from)}<span><b class="num">${esc(slotLabel(e.turn))}</b>${e === home && homeLive ? ' · <b>now</b>' : ''} · ${span(e)}</span></li>`).join('')}</ul>`
       : '<p class="empty" style="padding:0">Not seen on a board under a turn of their own yet.</p>';
     // Status (owner, 2026-11-03): where they are now: rest, hold, position,
     // out working, Toronto… from the newest check; or why they aren't seen.
     let status;
-    const factList = (turn) => { const f = Person.factsFor(s, hash, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
+    const factList = (turn0) => { const turn = slotTurn(turn0); const f = Person.factsFor(s, hash, turn); return f.length ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind] || ''}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>` : ''; };
     // Crews in town (owner, 2026-11-03: people there are on their actual
     // home turns): that turn's RESTED/STATUS line(s), their craft only on 501/502.
-    const townLine = (turn) => {
+    const townLine = (turn0) => {
+      const tm = TRAINEE.exec(turn0 || '');
+      const turn = tm ? tm[1] : turn0;
       const craft = Person.craftNow(hash, turn);
-      const rows = (s.town || []).filter((x) => x.turn === turn && (!craft || !/^S5\d{2}$/.test(turn) || x.craft === craft));
+      const rows = (s.town || []).filter((x) => x.turn === turn && (tm ? x.text.startsWith(`${tm[2]} trainee`) : !/trainee/.test(x.text) && (!craft || !/^S5\d{2}$/.test(turn) || x.craft === craft)));
       return rows.length ? `<p>Crews in town (${esc(rows[0].pool)}): ${rows.map((x) => esc(x.text)).join('; ')}.</p>` : '';
     };
     if (live) {
-      const lead = cur.own ? `On <b class="num">${esc(cur.turn)}</b>.` : `Filling in on <b class="num">${esc(cur.turn)}</b>${home ? ` (home turn ${esc(home.turn)})` : ''}.`;
+      const lead = cur.own ? `On <b class="num">${esc(slotLabel(cur.turn))}</b>.` : `Filling in on <b class="num">${esc(cur.turn)}</b>${home ? ` (home turn ${esc(slotLabel(home.turn))})` : ''}.`;
       status = `<p>${lead}</p>${townLine(cur.turn)}${factList(cur.turn) || '<p class="muted">Nothing else on the board about it in the newest check.</p>'}`;
     } else if (home) {
       const gone = Person.away(home, hash);
@@ -2829,7 +2836,7 @@ source().then(async (src) => {
     setMarks();
     box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
       ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
-      <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(home.turn)}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
+      <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
       <div id="whengo" class="whengo" hidden></div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn)}</div>

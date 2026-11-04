@@ -187,3 +187,22 @@ test('trips filling in on another turn count for the spare', () => {
   assert.deepEqual(r.duty.map((d) => d.train), ['M38261 27', 'M39731 28']);
   assert.equal(fmt(r.due), '3rd 1715'); // reset 27th 0559, back 27th 1715
 });
+
+// Owner, 2026-11-04: WADE, a TT on S501, showed as S501's conductor.
+test('a trainee rides on the turn\'s trains but never colours the holder\'s row', () => {
+  assert.equal(R.keyOf('S501', 'TT'), 'S501-TT');
+  assert.equal(R.keyOf('S102', 'ET'), 'S102-ET');
+  const acc = R.empty();
+  acc.since = t(24, 220); acc.last = t(2, 800);
+  acc.turnTrips = { 'S501-CO': Object.fromEntries([26, 27, 28, 29, 30, 31, 1].map((d) => [`L/${d}`, { train: `L ${d}`, on: t(d, 2200), job: 'S501-CO', first: t(d, 2100), last: t(d, 2300) }])) };
+  const people = {
+    me: [{ turn: 'S501', craft: 'CO', own: true, from: '2026-10-24 0300', to: '2026-11-02 0800' }],
+    tt: [{ turn: 'S501-TT', own: true, from: '2026-10-30 0300', to: '2026-11-02 0800' }],
+  };
+  const turns = R.byTurn(acc, people, t(2, 800));
+  assert.equal(turns['S501-CO'].h, 'me');
+  assert.equal(turns['S501-TT'], undefined); // not a board row
+  // The trainee's own work: the S501 conductor's trains while on it.
+  const tt = R.finish(acc, people, t(2, 800)).tt;
+  assert.deepEqual(tt.duty.map((d) => d.train), ['L 30', 'L 31', 'L 1']);
+});

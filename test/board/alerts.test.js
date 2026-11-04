@@ -686,3 +686,14 @@ test('Garnet: the crew there is lined up home on the next L501', () => {
   const e = events.find((x) => x.turn === 'S501-CO' && x.kind === 'lineup');
   assert.match(e.text, /^S501-CO lined up home from Garnet: L50131 04/);
 });
+
+test('a trainee\'s slot gets the turn crew\'s train alerts, not the holder\'s reset', () => {
+  const { addTrainees } = require('../../lib/board/alerts');
+  const lineup = { train: 'L50231 04', status: 'PLN', order: 400, call: 145, spare: false };
+  const states = { 'S501-CO': { lineup, onDuty: null, reset: 900, board: { pos: 1 } }, SR03: { lineup: { train: 'M1 04' }, reset: null } };
+  addTrainees(states, ['S501-TT', 'SR03-TT', 'S102-ET', 'SR05']);
+  assert.deepEqual([states['S501-TT'].lineup, states['S501-TT'].reset, states['S501-TT'].board], [lineup, null, null]);
+  assert.equal(states['SR03-TT'].lineup.train, 'M1 04');
+  assert.equal(states['S102-ET'], undefined); // S102 not in this check
+  assert.equal(states.SR05, undefined);
+});
