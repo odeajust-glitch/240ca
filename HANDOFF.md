@@ -5,26 +5,33 @@ Agreements tab session; NOTE: the reset tracker / Garnet / trainees
 session (claude.ai session_01AP9cZud7gx8TSqRyscer6F) was still running in
 parallel on 2026-11-04 and rebased onto it) · Branch:
 **`claude/vigilant-planck-zawrj4`** (has everything) · 232 tests (`npm ci`
-then `npm test`). The laptop pulled `ae2d887` on 2026-11-04 (resets,
-turn-alert resend, Pushover all running); later commits need `git pull`
-+ restart.
+then `npm test`; 237 now). **Owner, 2026-11-04 (late): laptop pulled
+`fc76d6c` and restarted; Worker re-pasted with ANTHROPIC_API_KEY set;
+Anthropic spend limit set** ("I've done that"). Not yet confirmed on the
+real site: the checks below.
 
 ## ▶ Next session
 
-**Start by asking the owner which of these he has done** (none checked yet):
-1. Laptop: Ctrl+C, `git pull`, start the checker again (see Running it).
-2. Agreements tab with Claude: Cloudflare secret `ANTHROPIC_API_KEY` +
-   re-paste `cloudflare/board-worker.js` (check for `CLAUDE_MODEL_DEEP` in
-   it). Then on his phone (owner key saved) a question should be headed
+**First ask the owner how these looked on the real site** (sent to him
+2026-11-04, after his first check with the new code):
+1. Search Review tab shows next to Page Health on his phone.
+2. Agreements tab: the tip under the question box; his question headed
    "Claude Opus"; a member's "Try a deeper search" "Claude Sonnet".
-   Steps: CLOUDFLARE.md "Claude for deeper answers". Members stay on
-   Sonnet (owner, 2026-11-04: "keep the deeper search at sonnet"); he can
-   change any of the three on the Search Review tab (owner-only).
-3. Model tester: Netlify → Add new project → Import from GitHub, base
+   Members stay on Sonnet (owner, 2026-11-04: "keep the deeper search at
+   sonnet"); he can change any of the three on the Search Review tab.
+3. Search Review: his question saved (You, documents searched, passages
+   from, the Opus answer); AI spending: Kimi balance a dollar amount (the
+   Moonshot balance address is unchecked: if "couldn't read it", fix it),
+   Claude today 1 answer; Kimi answers show $0 if Moonshot's stream has
+   no token counts (then priced from nothing: look at it).
+4. Line-up: L50231 04 reads "EN S501 · CO S501 · TT S501".
+
+Still open from earlier:
+1. Model tester: Netlify → Add new project → Import from GitHub, base
    directory `tools/ca-model-compare` (TODO #11 has the settings), keys
    MOONSHOT_API_KEY / ANTHROPIC_API_KEY / TEST_PASSWORD set by him. Empty
    project `ca-model-compare-empty` can be deleted. No Google/Gemini key yet.
-4. Anthropic console: monthly spend limit (suggested $20).
+2. (Anthropic spend limit: done, owner 2026-11-04.)
 
 Dates: Pushover trial ends ~2026-12-04 (TODO #12, compare routes); the
 Anthropic key expires **2026-12-31 22:00** (Google Calendar reminder set
