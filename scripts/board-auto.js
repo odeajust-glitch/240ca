@@ -57,6 +57,7 @@ const path = require('path');
 const { describeFrame } = require('../lib/board/capture');
 const { parseGrid } = require('../lib/board/grid');
 const People = require('../lib/board/people');
+const OwnerNotify = require('../lib/board/owner-notify');
 const S = require('../lib/board/screens');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
@@ -1102,22 +1103,45 @@ const MS_PASSWORD = process.env.MS_PASSWORD || null;
 let autoMsPassword = !!MS_PASSWORD;
 const ms = { seenAt: null, number: null, emailSent: false, passwordSent: false, kmsiAt: 0 };
 
-// Optional phone alert through ntfy.sh (BOARD_NTFY_TOPIC in .env, a topic
-// name only the owner knows), for when they're away from the laptop and
-// Microsoft shows a number to match. Never carries anything but that.
-async function alertPhone(text) {
+// The owner's own phone messages (sign-ins, CATS pages, stuck): ntfy.sh
+// (BOARD_NTFY_TOPIC in .env, a topic name only the owner knows), and
+// Pushover if set up (BOARD_PUSHOVER_TOKEN + BOARD_PUSHOVER_USER). Each is
+// tried again for ~2 min when the connection drops (owner, 2026-11-04: "when
+// I force a re auth I dont always get the number"), in the background so a
+// sign-in isn't held up. urgent (the Microsoft number): the site's own phone
+// alerts to the phones following the owner's name code too.
+function alertPhone(text, { urgent = false } = {}) {
   const topic = (process.env.BOARD_NTFY_TOPIC || '').trim();
-  if (!topic) return;
-  try {
-    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
-      method: 'POST', body: text, headers: { Title: 'Board checker', Priority: 'high' }, signal: AbortSignal.timeout(10000),
-    });
-    console.log(res.ok ? `[${stamp()}] Phone alert sent (ntfy).` : `  (phone alert not sent: ntfy answered ${res.status})`);
-    writeAlertsLog(new Map([[text, { turn: 'YOU', kind: 'ntfy', phones: res.ok ? 1 : 0, failed: res.ok ? 0 : 1 }]]));
-  } catch (err) {
-    console.log(`  (phone alert not sent: ${err.message})`);
-    writeAlertsLog(new Map([[text, { turn: 'YOU', kind: 'ntfy', phones: 0, failed: 1 }]]));
-  }
+  const pushover = { token: (process.env.BOARD_PUSHOVER_TOKEN || '').trim(), user: (process.env.BOARD_PUSHOVER_USER || '').trim() };
+  const routes = [];
+  if (topic) routes.push(['ntfy', () => OwnerNotify.sendNtfy(text, topic)]);
+  if (pushover.token && pushover.user) routes.push(['Pushover', () => OwnerNotify.sendPushover(text, pushover)]);
+  if (urgent) routes.push(['site alert', () => pushOwner(text)]);
+  // → a promise for all of them; callers don't wait (except before an exit).
+  return Promise.all(routes.map(([name, fn]) => OwnerNotify.withRetry(fn).then((r) => {
+      console.log(r.ok ? `[${stamp()}] Phone alert sent (${name}${r.tries > 1 ? `, after ${r.tries} tries` : ''}).` : `  (phone alert not sent by ${name}: ${r.message})`);
+      // One line per route in Page Health's alert log, so the Pushover trial
+      // can be judged against ntfy (owner, 2026-11-04: "see if its more
+      // workable"): which got through, and after how many tries.
+      const kind = { ntfy: 'ntfy', Pushover: 'pushover', 'site alert': 'ownerPush' }[name];
+      writeAlertsLog(new Map([[`${text}${r.tries > 1 ? ` (${r.ok ? `after ${r.tries} tries` : r.message})` : r.ok ? '' : ` (${r.message})`}`, { turn: 'YOU', kind, phones: r.ok ? (r.phones || 1) : 0, failed: r.ok ? 0 : 1 }]]));
+  }).catch(() => {})));
+}
+
+// The site's phone alerts to the owner's own phones (following their name
+// code: BOARD_OWNER_CODE, else the first of BOARD_WEEKLY_CODES, else JUOD).
+async function pushOwner(text) {
+  const settings = siteSettings();
+  if (!settings.r2) return { ok: false, message: 'Cloudflare not set up', final: true };
+  const code = ((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase();
+  const h = People.personHash(code);
+  const phones = (await listSubscriptions(settings.r2)).filter((x) => (x.turns || []).includes(`@${h}`));
+  if (!phones.length) return { ok: false, message: `no phone follows ${code}`, final: true };
+  const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
+  const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
+  let ok = 0;
+  for (const ph of phones) if ((await sendPush(ph, { title: 'Board checker', body: text, tag: 'signin', url: './#current' }, { keys, sub })).ok) ok++;
+  return ok ? { ok: true, phones: ok } : { ok: false, message: 'no phone took it' };
 }
 
 async function microsoftStep(page) {
@@ -1126,7 +1150,7 @@ async function microsoftStep(page) {
     ms.seenAt = Date.now();
     const since = SignIn.sinceLast(SignIn.loadState(SIGNIN_FILE));
     console.log(`\x07[${stamp()}] Microsoft is asking you to sign in${since ? ` (${since} since the last sign-in)` : ''}. Approve it in Authenticator.`);
-    await alertPhone('Microsoft sign-in for the board checker: approve it in Authenticator.');
+    alertPhone('Microsoft sign-in for the board checker: approve it in Authenticator.', { urgent: true });
   }
   // Only boxes really on screen count: CN's email page also carries a password
   // box moved off screen for password managers (owner, 2026-10-22: the
@@ -1143,7 +1167,12 @@ async function microsoftStep(page) {
     const q = (sel) => [...document.querySelectorAll(sel)].find(vis) || null;
     const mark = (el, name) => { if (el) el.setAttribute('data-board-fill', name); return !!el; };
     document.querySelectorAll('[data-board-fill]').forEach((el) => el.removeAttribute('data-board-fill'));
-    const num = q('#idRichContext_DisplaySign, #displaySign, [data-testid="displaySign"]');
+    // The number to match: the usual box, the "approve sign-in" (phone
+    // sign-in) box, or any DisplaySign box Microsoft uses (owner, 2026-11-04:
+    // the number didn't always come through).
+    const num = q('#idRichContext_DisplaySign, #idRemoteNGC_DisplaySign, #displaySign, [data-testid="displaySign"], [id$="DisplaySign"], .displaySign')
+      || [...document.querySelectorAll('div, span')].find((el) => vis(el) && el.children.length === 0 && /^\d{2,3}$/.test(el.textContent.trim())
+        && /enter the number|number shown|match the number/i.test(document.body.innerText)) || null;
     const email = q('input[name=loginfmt], input[type=email]');
     // Email first: on the email step a password box is never the one to fill.
     const password = email ? null : q('input[type=password]');
@@ -1160,7 +1189,7 @@ async function microsoftStep(page) {
   if (seen.number && seen.number !== ms.number) {
     ms.number = seen.number;
     console.log(`\n   >>> Microsoft's number: ${seen.number}  (enter it in Authenticator) <<<\n`);
-    await alertPhone(`Microsoft sign-in: enter ${seen.number} in Authenticator.`);
+    alertPhone(`Microsoft sign-in: enter ${seen.number} in Authenticator.`, { urgent: true });
   }
   if (seen.passwordError && autoMsPassword) {
     autoMsPassword = false;
@@ -1395,7 +1424,7 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
       await saveSignInStuck(page, kind);
       if (!told) {
         told = true;
-        await alertPhone(`Board checker stuck before the CATS main menu on ${what}; it's reloading CATS.`);
+        alertPhone(`Board checker stuck before the CATS main menu on ${what}; it's reloading CATS.`);
       }
       if (step === 'reload') {
         t.reloads++;
@@ -1408,7 +1437,7 @@ async function waitForMainMenu(page, prompt, state = 'signin') {
       t.restarted = true;
       if (process.env.BOARD_WATCHDOG) {
         console.log(`[${stamp()}] Still stuck on ${what} after reloading CATS: closing Edge so the watchdog starts it fresh.`);
-        await alertPhone(`Board checker still stuck on ${what}: starting Edge fresh.`);
+        await Promise.race([alertPhone(`Board checker still stuck on ${what}: starting Edge fresh.`), sleep(20000)]);
         await Promise.race([page.context().close().catch(() => {}), sleep(15000)]);
         process.exit(3);
       }
@@ -1478,7 +1507,7 @@ async function main() {
   listenForKeys();
   const commands = watchPhone();
   console.log(`Microsoft sign-in: email ${MS_EMAIL ? 'from .env' : 'typed by you'}, password ${MS_PASSWORD ? 'from .env' : 'typed by you'};`
-    + ` phone alerts ${(process.env.BOARD_NTFY_TOPIC || '').trim() ? 'on (ntfy)' : 'off (no BOARD_NTFY_TOPIC in .env)'}.`
+    + ` phone alerts ${(process.env.BOARD_NTFY_TOPIC || '').trim() ? 'on (ntfy' : 'off (no BOARD_NTFY_TOPIC in .env'}${(process.env.BOARD_PUSHOVER_TOKEN || '').trim() && (process.env.BOARD_PUSHOVER_USER || '').trim() ? ' + Pushover' : ''}).`
     + ` Press R for a fresh sign-in${commands ? `, or send "signin" to ntfy topic ${commands} from your phone` : ''}.`);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
@@ -1542,7 +1571,7 @@ async function main() {
       const remind = SignIn.reminderDue(signInState);
       if (remind) {
         console.log(`[${stamp()}] ${remind.text}`);
-        await alertPhone(remind.text);
+        alertPhone(remind.text);
         try { SignIn.saveState(SIGNIN_FILE, { ...signInState, remindedFor: signInState.lastAt, reminded: remind.reminded }); } catch { /* reminded again next check */ }
       }
     } catch (err) {

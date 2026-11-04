@@ -231,6 +231,17 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: owner's phone messages (Microsoft number, sign-in, CATS
+  pages, stuck) retried ~2 min per route in the background
+  (lib/board/owner-notify.js; board-auto alertPhone / pushOwner); the
+  sign-in ones also go as a site alert to phones following the owner's
+  code (BOARD_OWNER_CODE, else BOARD_WEEKLY_CODES' first, else JUOD);
+  Pushover optional (BOARD_PUSHOVER_TOKEN / BOARD_PUSHOVER_USER,
+  docs/board-checker/PUSHOVER.md; owner trying its 30-day free trial).
+  Number read from more Microsoft screens (idRemoteNGC_DisplaySign, …).
+  Each route logged apart in Page Health (Checker (ntfy) / (Pushover) /
+  (site alert)). Test: `node scripts/phone-test.js`. Window quiet about
+  ntfy blips under 10 min.
 - 2026-11-04: **Garnet line-up · L501 home** section on the Current tab
   (board.html garnet(); snapshot garnetHome) and alerts for the crew in
   Garnet (lined up home from Garnet / ordered / time / reminder; alerts.js,

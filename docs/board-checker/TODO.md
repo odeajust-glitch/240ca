@@ -45,6 +45,13 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    would end fits that. Also: the runaround log showed B111's fast-board
    spot (pos 004) instead of the slow board (fixed 2026-11-03).
 
+12. **Pushover trial** (owner, 2026-11-04: "free for 30 days then 5 dollars
+   per device … see if its more workable"). Set up per
+   docs/board-checker/PUSHOVER.md; near the end of the 30 days compare
+   Page Health's alert log: Checker (Pushover) vs Checker (ntfy) vs
+   Checker (site alert), which arrived and after how many tries. Then buy
+   it or remove the two .env lines.
+
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
    a tester was built to ask several AI keys/models the same question about
    the agreement and compare the answers, for later use; not used yet. Not
