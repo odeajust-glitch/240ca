@@ -55,8 +55,8 @@ function fakeClaude({ text = 'Opus answer [1].', status = 200 } = {}) {
     calls.push({ url, headers: opts.headers, body: JSON.parse(opts.body) });
     if (status !== 200) return new Response('{"error":{"message":"nope"}}', { status });
     const ev = (o) => `event: ${o.type}\ndata: ${JSON.stringify(o)}\n\n`;
-    return new Response(ev({ type: 'message_start' }) + ev({ type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: '' } })
-      + ev({ type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text } }) + ev({ type: 'message_delta', delta: { stop_reason: 'end_turn' } }) + ev({ type: 'message_stop' }), { status: 200 });
+    return new Response(ev({ type: 'message_start', message: { usage: { input_tokens: 10000, output_tokens: 1 } } }) + ev({ type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: '' } })
+      + ev({ type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text } }) + ev({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1000 } }) + ev({ type: 'message_stop' }), { status: 200 });
   };
   return { calls, fetchImpl };
 }
@@ -210,5 +210,42 @@ test('ask: Claude Sonnet for members\' deeper answers, Opus for the owner; Kimi 
     assert.deepEqual(ev.filter((e) => e.type === 'model').map((e) => e.label), ['Claude Opus', 'Kimi']);
     assert.match(answer(ev), /Kimi deep answer/);
     assert.ok(!ev.some((e) => e.type === 'error'));
+  } finally { globalThis.fetch = real; }
+});
+
+test('Page Health spending: Kimi balance, Claude cost, usage history', async () => {
+  const chunks = corpus();
+  const worker = await loadWorker();
+  const { env } = envWith(buildShards(chunks, SOURCES, { buckets: 16, perFile: 50 }));
+  Object.assign(env, { ANTHROPIC_API_KEY: 'anthropic-test', OWNER_KEY: 'owner-key-0123456789' });
+  const real = globalThis.fetch;
+  const owner = { 'x-owner-key': 'owner-key-0123456789' };
+  const post = (body, headers = {}) => worker.fetch(new Request('https://board.x.workers.dev/api/ask', { method: 'POST', body: JSON.stringify(body), headers: { 'cf-connecting-ip': `8.8.8.${Math.random()}`, ...headers } }), env, { waitUntil: () => {} });
+  try {
+    const claude = fakeClaude();
+    const kimi = fakeKimi(['I could not find it in the excerpts.']);
+    const balance = { status: 0, data: { available_balance: 12.5, voucher_balance: 2.5, cash_balance: 10 } };
+    globalThis.fetch = async (url, opts) => (String(url).includes('/users/me/balance') ? new Response(JSON.stringify(balance), { status: 200 })
+      : String(url).includes('anthropic') ? claude.fetchImpl(url, opts) : kimi.fetchImpl(url, opts));
+    await readAll(await post({ question: 'held away from the terminal' }, owner)); // Opus
+    await readAll(await post({ question: 'rest hours conductor' })); // Kimi, then Sonnet
+    const spend = (headers) => worker.fetch(new Request('https://board.x.workers.dev/health/spend', { headers }), env);
+    assert.equal((await spend({})).status, 404);
+    const d = await (await spend(owner)).json();
+    assert.deepEqual(d.kimi, { available: 12.5, voucher: 2.5, cash: 10 });
+    // 10,000 in + 1,000 out: Opus $0.04 + $0.02, Sonnet $0.02 + $0.01.
+    assert.equal(d.claude.month.n, 2);
+    assert.ok(Math.abs(d.claude.month.cost - 0.09) < 1e-9);
+    assert.ok(Math.abs(d.claude.today.cost - 0.09) < 1e-9);
+    assert.equal(d.all.month.n, 3); // + the Kimi answer (no token counts: counted, not priced)
+    assert.equal(d.history.length, 1);
+    assert.equal(d.history[0].questions, 2);
+    assert.equal(d.history[0].people, 2);
+    assert.deepEqual(d.history[0].models.map((m) => `${m.label} ${m.n}`).sort(), ['Claude Opus 1', 'Claude Sonnet 1', 'Kimi K2.6 1']);
+    // Moonshot down: the rest still shows.
+    globalThis.fetch = async () => new Response('nope', { status: 500 });
+    const e = await (await spend(owner)).json();
+    assert.match(e.kimi.error, /500/);
+    assert.equal(e.claude.month.n, 2);
   } finally { globalThis.fetch = real; }
 });

@@ -269,6 +269,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
   turn's while they were on it, "L50231 04 (S501 · TT)" + a "TT trainee"
   chip, whole crew under Worked with; no holder's rests (owner: "log what
   turn they are working and indicate it's a TT turn").
+- 2026-11-04: **Page Health → AI spending** (owner: "the api balances in
+  the page health section", then "a usage history"): Kimi balance live
+  (Moonshot GET /v1/users/me/balance with KIMI_API_KEY; address not
+  checked against Moonshot's docs: the container can't reach them);
+  Claude has no balance lookup for a normal key, so every answer's tokens
+  are priced (MODEL_PRICES, list rates) and counted per day per model in
+  R2 ask/spend/YYYY-MM.json (Kimi answers too; priced only if Moonshot's
+  stream carries usage). Last 30 days table: questions, people (ask/stats),
+  answers by model, cost. Worker GET /health/spend (owner only). Link to
+  console.anthropic.com → Billing for the real Claude credit.
 - 2026-11-04: Call Board trains now read a conductor trainee (owner:
   L50231 04 "TT DEMARS … S501" missing; line-up showed "EN S501 · CO
   S501"): screens.js TRAIN_CRAFT adds TT for train crews (ET was already

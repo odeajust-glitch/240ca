@@ -145,6 +145,10 @@
   .htable th, .htable td { text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
   .htable th { width: 34%; color: var(--soft); font-weight: 500; }
   .htable td.warn { color: #b3261e; font-weight: 600; }
+  .hsub { margin: 14px 0 4px; font-size: 13px; color: var(--soft); font-weight: 600; }
+  .hhist { font-size: 13px; }
+  .hhist th, .hhist td { padding: 6px 8px; width: auto; }
+  .hhist td:nth-child(2), .hhist td:nth-child(3), .hhist td:nth-child(5) { font-variant-numeric: tabular-nums; }
   :root[data-theme="dark"] .htable td.warn, :root[data-theme="tablet"] .htable td.warn { color: #ff8a80; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme]) .htable td.warn { color: #ff8a80; } }
   .healthpage .hbody { padding: 4px 14px 10px; font-size: 14px; }
@@ -2339,6 +2343,7 @@ source().then(async (src) => {
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
+      <section class="sheet"><header><h2>AI spending</h2><span class="meta">Agreements tab</span></header><div class="hbody" id="hspend"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Agreement search models</h2><span class="meta">which AI answers in the Agreements tab</span></header><div class="hbody" id="hmodels"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
@@ -2347,6 +2352,30 @@ source().then(async (src) => {
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
+    // AI spending (owner, 2026-11-04: "the api balances in the page health
+    // section"): Kimi's balance live from Moonshot; Claude has no balance
+    // lookup for a normal key, so the site's own answers are added up.
+    const sbox = document.getElementById('hspend');
+    const usd = (n) => `$${(n || 0).toFixed(2)}`;
+    fetch('health/spend', { cache: 'no-store', headers: OwnerKey.headers() })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'the Worker needs the new code (re-paste it)' : r.status))))
+      .then((d) => {
+        if (!sbox.isConnected) return;
+        const K = d.kimi || {};
+        const kimi = K.error ? `<span class="warn">couldn't read it (${esc(K.error)})</span>`
+          : `<b>${usd(K.available)}</b> left${K.voucher ? ` <span class="muted">(${usd(K.cash)} paid + ${usd(K.voucher)} vouchers)</span>` : ''}`;
+        const per = (x) => Object.values(x.models).map((m) => `${esc(m.label)} ${usd(m.cost)} (${m.n})`).join(' · ');
+        const C = d.claude;
+        const noKey = d.anthropicKey ? '' : " ANTHROPIC_API_KEY isn't set in Cloudflare yet.";
+        sbox.innerHTML = `<table class="htable"><tbody>
+          <tr><th>Kimi balance</th><td${!K.error && K.available < 2 ? ' class="warn"' : ''}>${kimi}</td></tr>
+          <tr><th>Claude this month</th><td><b>${usd(C.month.cost)}</b>, ${C.month.n} answer${C.month.n === 1 ? '' : 's'}${C.month.n ? ` <span class="muted">(${per(C.month)})</span>` : ''}</td></tr>
+          <tr><th>Claude today</th><td>${usd(C.today.cost)}, ${C.today.n} answer${C.today.n === 1 ? '' : 's'}</td></tr>
+          <tr><th>All AI this month</th><td>${usd(d.all.month.cost)}, ${d.all.month.n} answer${d.all.month.n === 1 ? '' : 's'}${d.all.month.n ? ` <span class="muted">(${per(d.all.month)})</span>` : ''}</td></tr></tbody></table>
+          ${(d.history || []).length ? `<h3 class="hsub">Usage, last 30 days</h3><table class="htable hhist"><thead><tr><th>Day</th><th>Questions</th><th>People</th><th>Answered by</th><th>Cost</th></tr></thead><tbody>${d.history.map((h) => `<tr><td>${esc(new Date(`${h.day}T12:00:00`).toLocaleDateString("en-CA", { month: "short", day: "numeric" }))}</td><td>${h.questions}</td><td>${h.people}</td><td>${h.models.map((m) => `${esc(m.label)} ${m.n}`).join(' · ') || '—'}</td><td>${usd(h.cost)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">No questions in the last 30 days yet.</p>'}
+          <p class="muted">A deeper search is a second answer to the same question, so answers can be more than questions. Amounts are the site's own answers priced at list rates (not the tester), an estimate; a Kimi answer without token counts is counted but not priced. Your actual Claude credit: <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener">console.anthropic.com → Billing</a>.${esc(noKey)}</p>`;
+      })
+      .catch((err) => { if (sbox.isConnected) sbox.innerHTML = `<p class="muted">Can't load spending: ${esc(err.message || err)}.</p>`; });
     // Agreement search models (owner, 2026-11-04: "so I can change the model
     // the search uses myself in page health"): saved on the Worker
     // (/health/models), used from the next question on.

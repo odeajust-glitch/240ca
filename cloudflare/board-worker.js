@@ -49,7 +49,9 @@
 // missing or Claude fails before answering. The owner picks the three
 // models on Page Health (owner, 2026-11-04: "so I can change the model the
 // search uses myself"): GET/POST /health/models, kept in R2
-// ask/models.json; a saved choice beats the variables. GET /api/sources,
+// ask/models.json; a saved choice beats the variables. GET /health/spend:
+// Kimi's live balance and what the site's Claude answers cost (R2
+// ask/spend/). GET /api/sources,
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
@@ -461,6 +463,7 @@ async function streamKimi(env, { question, chunks, names, model, fast, onToken, 
   const decoder = new TextDecoder();
   let buffer = '';
   let full = '';
+  let usage = null;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -473,11 +476,15 @@ async function streamKimi(env, { question, chunks, names, model, fast, onToken, 
       const payload = t.slice(5).trim();
       if (payload === '[DONE]') continue;
       try {
-        const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
+        const obj = JSON.parse(payload);
+        const u = obj.usage || obj.choices?.[0]?.usage;
+        if (u) usage = u;
+        const delta = obj.choices?.[0]?.delta?.content;
         if (delta) { full += delta; await onToken(delta); }
       } catch (err) { if (err && err.name === 'AbortError') throw err; /* a partial line */ }
     }
   }
+  await recordSpend(env, model, usage).catch((err) => console.log(`usage not kept: ${err.message}`));
   return full;
 }
 
@@ -513,6 +520,7 @@ async function streamClaude(env, { question, chunks, names, model, onToken, sign
   const decoder = new TextDecoder();
   let buffer = '';
   let full = '';
+  const usage = {};
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -524,11 +532,14 @@ async function streamClaude(env, { question, chunks, names, model, onToken, sign
       if (!t.startsWith('data:')) continue;
       let e;
       try { e = JSON.parse(t.slice(5).trim()); } catch { continue; /* a partial line */ }
+      if (e.type === 'message_start' && e.message && e.message.usage) Object.assign(usage, e.message.usage);
+      if (e.type === 'message_delta' && e.usage) Object.assign(usage, e.usage);
       if (e.type === 'content_block_delta' && e.delta && e.delta.type === 'text_delta' && e.delta.text) { full += e.delta.text; await onToken(e.delta.text); }
       else if (e.type === 'message_delta' && e.delta && e.delta.stop_reason === 'refusal' && !full) throw new Error('Claude declined this question.');
       else if (e.type === 'error') throw new Error(`Claude error: ${(e.error && e.error.message) || 'unknown'}`);
     }
   }
+  await recordSpend(env, model, usage).catch((err) => console.log(`spend not kept: ${err.message}`));
   return full;
 }
 // The models the search can use, chosen on Page Health (owner only).
@@ -589,6 +600,88 @@ async function streamModel(env, model, { question, chunks, names, onToken, signa
   const kimi = /^claude-/.test(model) ? (fast ? 'kimi-k2.6' : (env.KIMI_MODEL_SLOW || 'kimi-k3')) : model;
   await send({ type: 'model', label: 'Kimi' });
   return streamKimi(env, { question, chunks, names, model: kimi, fast, onToken, signal, fetchImpl });
+}
+
+// What the site's own Claude answers cost (owner, 2026-11-04: "the api
+// balances in the page health section"). Anthropic has no balance lookup
+// for a normal key, so each answer's tokens are priced here (list prices,
+// USD per 1M tokens) and added up per month in R2 ask/spend/YYYY-MM.json.
+// Kimi answers are counted the same way (usage history, owner 2026-11-04:
+// "so I can see how much is being used with questions"), priced when
+// Moonshot sends the token counts with the answer.
+const MODEL_PRICES = {
+  'claude-opus-5-5': { input: 4, output: 20 },
+  'claude-sonnet-5-5': { input: 2, output: 10 },
+  'claude-haiku-5-5': { input: 0.1, output: 0.5 },
+  'kimi-k2.6': { input: 0.95, output: 4 },
+  'kimi-k3.1-pro': { input: 2, output: 10 },
+  'kimi-k3': { input: 3, output: 15 },
+};
+// Anthropic's usage (input_tokens / output_tokens) or Moonshot's
+// (prompt_tokens / completion_tokens).
+function answerCost(model, u) {
+  const p = MODEL_PRICES[model];
+  if (!p || !u) return null;
+  const inTok = u.prompt_tokens != null ? u.prompt_tokens
+    : (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) * 0.1 + (u.cache_creation_input_tokens || 0) * 1.25;
+  const outTok = u.completion_tokens != null ? u.completion_tokens : u.output_tokens || 0;
+  if (!inTok && !outTok) return null;
+  return (inTok * p.input + outTok * p.output) / 1e6;
+}
+async function recordSpend(env, model, usage, now = Date.now()) {
+  const day = torontoDay(now);
+  const key = `ask/spend/${day.slice(0, 7)}.json`;
+  const was = (await readJson(env, key)) || { days: {} };
+  const d = was.days[day] || (was.days[day] = {});
+  const m = d[model] || (d[model] = { n: 0, cost: 0 });
+  const cost = answerCost(model, usage);
+  m.n += 1;
+  if (cost == null) m.unpriced = (m.unpriced || 0) + 1; else m.cost += cost;
+  await env.SITE.put(key, JSON.stringify(was));
+}
+// Kimi's balance, live from Moonshot with the Worker's Kimi key.
+async function kimiBalance(env, fetchImpl = fetch) {
+  if (!env.KIMI_API_KEY) return { error: 'KIMI_API_KEY is not set' };
+  try {
+    const r = await fetchImpl('https://api.moonshot.ai/v1/users/me/balance', { headers: { authorization: `Bearer ${env.KIMI_API_KEY}` }, signal: AbortSignal.timeout(10000) });
+    const d = await r.json().catch(() => ({}));
+    const b = d && d.data;
+    if (!r.ok || !b || b.available_balance == null) return { error: `Moonshot answered ${r.status}` };
+    return { available: +b.available_balance, voucher: +(b.voucher_balance || 0), cash: +(b.cash_balance || 0) };
+  } catch (err) { return { error: err.message }; }
+}
+const HISTORY_DAYS = 30;
+async function spendApi(request, env, { fetchImpl = fetch, now = Date.now() } = {}) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  const day = torontoDay(now);
+  const days = [];
+  for (let i = 0; i < HISTORY_DAYS; i++) days.push(torontoDay(now - i * 86400000));
+  const months = {};
+  for (const m of new Set(days.map((d) => d.slice(0, 7)))) months[m] = ((await readJson(env, `ask/spend/${m}.json`)) || { days: {} }).days;
+  const answersOf = (d) => months[d.slice(0, 7)][d] || {};
+  const claudeOnly = (o) => Object.fromEntries(Object.entries(o).filter(([m]) => /^claude-/.test(m)));
+  const sum = (list) => {
+    const out = { cost: 0, n: 0, models: {} };
+    for (const d of list) for (const [model, m] of Object.entries(d || {})) {
+      const o = out.models[model] || (out.models[model] = { label: modelLabel(model), cost: 0, n: 0 });
+      o.cost += m.cost; o.n += m.n; out.cost += m.cost; out.n += m.n;
+    }
+    return out;
+  };
+  const thisMonth = Object.values(months[day.slice(0, 7)] || {});
+  // Per day, newest first: questions asked, different people, answers by model.
+  const history = [];
+  for (const d of days) {
+    const q = (await readJson(env, `ask/stats/${d}.json`)) || { questions: 0, visitors: [] };
+    const a = sum([answersOf(d)]);
+    if (!q.questions && !a.n) continue;
+    history.push({ day: d, questions: q.questions || 0, people: (q.visitors || []).length, cost: a.cost,
+      models: Object.values(a.models).map((m) => ({ label: m.label, n: m.n, cost: m.cost })) });
+  }
+  return json({ month: day.slice(0, 7),
+    claude: { today: sum([claudeOnly(answersOf(day))]), month: sum(thisMonth.map(claudeOnly)) },
+    all: { today: sum([answersOf(day)]), month: sum(thisMonth) },
+    history, kimi: await kimiBalance(env, fetchImpl), anthropicKey: !!env.ANTHROPIC_API_KEY });
 }
 
 const sha16 = async (text) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
@@ -833,6 +926,7 @@ export default {
     if (url.pathname === '/api/board' || url.pathname === '/api/board/latest') return relay(request, env, url);
     if (url.pathname === '/health') return healthFor(request, env);
     if (url.pathname === '/health/models') return modelsApi(request, env);
+    if (url.pathname === '/health/spend') return spendApi(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);
