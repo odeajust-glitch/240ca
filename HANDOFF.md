@@ -281,6 +281,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: re-auth from the phone without the ntfy app (owner: "Can I
+  use pushover to do my reauth"): Pushover can't send back, so a link to
+  ntfy's GET publish (https://ntfy.sh/<signin topic>/publish?message=signin)
+  does it; printed by `node scripts/phone-test.js` for the home screen; the
+  12 h / 2 h sign-in reminders carry a "Sign in now" button (ntfy http
+  action) / link (Pushover url). owner-notify.js signinLink.
 - 2026-11-04: owner at Garnet: **his alerts stopped** (seen on S501 away,
   term 1 → own:false → updatePersonTurns dropped him after 30 min). Board
   sightings away / working now count as own when the holders file says

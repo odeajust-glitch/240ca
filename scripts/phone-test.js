@@ -6,6 +6,7 @@
 const { ENV_FILES } = require('../lib/board/paths');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const N = require('../lib/board/owner-notify');
+const Remote = require('../lib/board/remote');
 
 (async () => {
   const text = `Board checker test (${new Date().toLocaleTimeString('en-CA', { hour12: false })}): if you see this, phone messages work.`;
@@ -21,4 +22,8 @@ const N = require('../lib/board/owner-notify');
     const r = await N.withRetry(fn);
     console.log(r.ok ? `${name}: sent${r.tries > 1 ? ` (after ${r.tries} tries)` : ''}. Check your phone.` : `${name}: NOT sent (${r.message}).`);
   }
+  // A fresh Microsoft sign-in from the phone in one tap (owner, 2026-11-04):
+  // open this in the phone's browser, or save it to the home screen.
+  const cmd = Remote.commandTopic();
+  if (cmd) console.log(`\nOne-tap fresh sign-in (open on your phone, or Add to Home screen):\n  ${N.signinLink(cmd)}`);
 })();

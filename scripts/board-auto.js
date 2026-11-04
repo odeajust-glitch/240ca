@@ -1138,12 +1138,14 @@ const ms = { seenAt: null, number: null, emailSent: false, passwordSent: false, 
 // I force a re auth I dont always get the number"), in the background so a
 // sign-in isn't held up. urgent (the Microsoft number): the site's own phone
 // alerts to the phones following the owner's name code too.
-function alertPhone(text, { urgent = false } = {}) {
+function alertPhone(text, { urgent = false, signinButton = false } = {}) {
   const topic = (process.env.BOARD_NTFY_TOPIC || '').trim();
   const pushover = { token: (process.env.BOARD_PUSHOVER_TOKEN || '').trim(), user: (process.env.BOARD_PUSHOVER_USER || '').trim() };
   const routes = [];
-  if (topic) routes.push(['ntfy', () => OwnerNotify.sendNtfy(text, topic)]);
-  if (pushover.token && pushover.user) routes.push(['Pushover', () => OwnerNotify.sendPushover(text, pushover)]);
+  // signinButton: a "Sign in now" button / link (owner, 2026-11-04).
+  const signin = signinButton ? Remote.commandTopic() : null;
+  if (topic) routes.push(['ntfy', () => OwnerNotify.sendNtfy(text, topic, { signin })]);
+  if (pushover.token && pushover.user) routes.push(['Pushover', () => OwnerNotify.sendPushover(text, pushover, { signin })]);
   if (urgent) routes.push(['site alert', () => pushOwner(text)]);
   // → a promise for all of them; callers don't wait (except before an exit).
   return Promise.all(routes.map(([name, fn]) => OwnerNotify.withRetry(fn).then((r) => {
@@ -1599,7 +1601,7 @@ async function main() {
       const remind = SignIn.reminderDue(signInState);
       if (remind) {
         console.log(`[${stamp()}] ${remind.text}`);
-        alertPhone(remind.text);
+        alertPhone(remind.text, { signinButton: true });
         try { SignIn.saveState(SIGNIN_FILE, { ...signInState, remindedFor: signInState.lastAt, reminded: remind.reminded }); } catch { /* reminded again next check */ }
       }
     } catch (err) {

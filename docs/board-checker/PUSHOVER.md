@@ -69,3 +69,12 @@ it; if not, delete the two lines from `.env` and nothing else changes.
   number if wanted.
 - Code: `lib/board/owner-notify.js` (retries, ntfy, Pushover),
   `scripts/board-auto.js` `alertPhone` / `pushOwner`, `scripts/phone-test.js`.
+
+## A fresh Microsoft sign-in from the phone
+
+Pushover can't send anything back to the laptop, but a link can: opening
+`https://ntfy.sh/<your signin topic>/publish?message=signin` in the phone's
+browser sends "signin", exactly like typing it in the ntfy app.
+`node scripts/phone-test.js` prints the link; in Chrome on the phone, open
+it, then ⋮ → **Add to Home screen** for one-tap re-auth. The 12 h / 2 h
+sign-in reminders carry a **Sign in now** button (ntfy) / link (Pushover).

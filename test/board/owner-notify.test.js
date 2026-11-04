@@ -34,3 +34,16 @@ test('ntfy and Pushover requests', async () => {
   assert.equal((await N.sendPushover('x', { token: 'a', user: 'u' }, { fetchImpl: async () => ({ ok: false, status: 400 }) })).final, true);
   assert.equal((await N.sendPushover('x', { token: 'a', user: 'u' }, { fetchImpl: async () => ({ ok: false, status: 503 }) })).final, false);
 });
+
+test('a "Sign in now" button / link sends signin to the command topic', async () => {
+  const calls = [];
+  const fetchImpl = async (url, opts) => { calls.push({ url, opts }); return { ok: true, status: 200 }; };
+  await N.sendNtfy('Sign-in runs out in 2 h', 'topic', { fetchImpl, signin: 'topic-signin' });
+  assert.equal(calls[0].opts.headers.Actions, 'http, Sign in now, https://ntfy.sh/topic-signin, method=POST, body=signin, clear=true');
+  await N.sendPushover('Sign-in runs out in 2 h', { token: 'a', user: 'u' }, { fetchImpl, signin: 'topic-signin' });
+  const body = Object.fromEntries(calls[1].opts.body);
+  assert.deepEqual([body.url, body.url_title], ['https://ntfy.sh/topic-signin/publish?message=signin', 'Sign in now']);
+  // Without it: no button.
+  await N.sendNtfy('x', 'topic', { fetchImpl });
+  assert.equal(calls[2].opts.headers.Actions, undefined);
+});
