@@ -95,6 +95,13 @@ safety check: don't retry unless he explicitly asks.
 
 ## Running it
 
+**Remote access** (owner, 2026-11-04: "remote works great"): Chrome Remote
+Desktop on the laptop (name BoardChecker, his Google account + PIN), from
+his phone app or remotedesktop.google.com/access on any computer. He can
+fix things while away; steps can assume he's on that. The checker does
+NOT start on its own after a Windows restart (offered: a scheduled task
+at logon; not set up).
+
 Dedicated laptop: code `C:\BoardChecker-code`, data `C:\Users\odeaj\BoardChecker`
 (`.env` there).
 ```
