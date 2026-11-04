@@ -564,6 +564,6 @@ test('assignment history: on duty + hours on duty = exact off duty (masked as sa
   assert.equal(S.isAssignHistory(grid(assignPage).map((r) => r.text).join('\n')), true);
   assert.deepEqual(rows.map((r) => `${r.train} ${fmt(r.on)} ${r.duty} ${r.off == null ? '-' : fmt(r.off)}`), [
     'Q13931 03 3rd 0230 550 3rd 1140', 'RM30241 01 3rd 0500 150 3rd 0730', 'DHT100B 03 3rd 1100 180 3rd 1400',
-    'Z14931 03 3rd 1700 495 4th 0115', 'M30131 04 4th 1015 - -',
+    'Z14931 03 3rd 1700 495 4th 0115', 'M30131 04 4th 1015 null -', // N/A: still on duty
   ]);
 });
