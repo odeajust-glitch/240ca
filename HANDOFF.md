@@ -237,7 +237,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   sign-in ones also go as a site alert to phones following the owner's
   code (BOARD_OWNER_CODE, else BOARD_WEEKLY_CODES' first, else JUOD);
   Pushover optional (BOARD_PUSHOVER_TOKEN / BOARD_PUSHOVER_USER,
-  docs/board-checker/PUSHOVER.md; owner trying its 30-day free trial).
+  docs/board-checker/PUSHOVER.md; owner set it up 2026-11-04, both routes
+  tested OK; free trial ends ~2026-12-04: compare routes then, TODO #12).
   Number read from more Microsoft screens (idRemoteNGC_DisplaySign, …).
   Each route logged apart in Page Health (Checker (ntfy) / (Pushover) /
   (site alert)). Test: `node scripts/phone-test.js`. Window quiet about

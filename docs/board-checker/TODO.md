@@ -50,7 +50,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    docs/board-checker/PUSHOVER.md; near the end of the 30 days compare
    Page Health's alert log: Checker (Pushover) vs Checker (ntfy) vs
    Checker (site alert), which arrived and after how many tries. Then buy
-   it or remove the two .env lines.
+   it or remove the two .env lines. **Set up and tested 2026-11-04**
+   (phone-test: ntfy and Pushover both sent): trial ends about 2026-12-04.
 
 11. **Try the different AI API keys with the tester** (owner, 2026-11-03):
    a tester was built to ask several AI keys/models the same question about
