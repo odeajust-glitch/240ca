@@ -291,7 +291,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   before saveSnapshot (summary.people). ❓ First real test: WADE (TT on
   S501) should be picked up from the Call Board at L50131 04's on-duty
   (4th ~2130 at Garnet) and then show as S501 · TT; he isn't on the Garnet
-  board (31) or 501/502 (29) (owner, 2026-11-04). Garnet line-up 41 works
+  board (31) or 501/502 (29) (owner, 2026-11-04). Trainees never show on
+  the Garnet board (31) or the Toronto bunkhouse (28) (owner): only Sarnia's
+  crews in town and the Call Board's crew lines; away, they're kept. Garnet line-up 41 works
   with station only (L50131 04 ORD 4th 2130 read at 1203).
 - 2026-11-04: re-auth from the phone without the ntfy app (owner: "Can I
   use pushover to do my reauth"): Pushover can't send back, so a link to
