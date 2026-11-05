@@ -108,7 +108,7 @@ test('Call Board: yard jobs after the trains, stop at the crews in town', () => 
 
 test('yard crews matched to turns by name, in memory only', () => {
   const yard = S.parseYardCrewNames(grid(yardPage, false));
-  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key} ${y.code}`), ['YPRS60 FO DESCHENES/M MADE', 'YPRS60 S1 JOSEPH/B BRJO', 'YSBY04 YA ROBBINS/M MARO']);
+  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key} ${y.code}`), ['YPRS60 FO DESCHENES/M/MAT MADE', 'YPRS60 S1 JOSEPH/B/BRA BRJO', 'YSBY04 YA ROBBINS/M/MAR MARO']);
   const people = S.parseBoardNames(grid([
     '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST',
     'DESCHENES+     M    MATT   B138  001',
@@ -116,9 +116,9 @@ test('yard crews matched to turns by name, in memory only', () => {
     'EN MU01  1 999  ROBBINS*+        M  MARK   B0                                      L50131  23',
   ], false));
   assert.deepEqual(people, [
-    { key: 'DESCHENES/M', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
-    { key: 'JACOBSEN/N', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
-    { key: 'ROBBINS/M', turn: 'MU01', craft: 'EN', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
+    { key: 'DESCHENES/M/MAT', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
+    { key: 'JACOBSEN/N/NEI', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
+    { key: 'ROBBINS/M/MAR', turn: 'MU01', craft: 'EN', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
   ]);
 });
 
@@ -175,7 +175,7 @@ test('site snapshot and turn facts with the new screens', () => {
 // the Call Board under that job's turn; found by name, kept as turns only.
 test('spare person filling in: job turn vs their own turn', () => {
   const crew = S.parseTrainCrewNames(grid(yardPage, false));
-  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J', code: 'JOSM' }]);
+  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J/JOH', code: 'JOSM' }]);
   const BoardTurns = require('../../public/board-turns');
   const s = { onDuty: [{ train: 'M38261 23', station: 'SARNIA', onDuty: '24th 0145', crew: 'CO SR03', backfill: [{ craft: 'CO', job: 'SR03', turn: 'B138' }] }] };
   assert.deepEqual(BoardTurns.facts(s, 'B138').map((f) => f.text), ['On duty on M38261 23 at Sarnia, 24th 0145, working SR03 (CO)']);
@@ -274,19 +274,19 @@ test('jobs going spare: hold turns passed over; deadhead call', () => {
 test('turn holders: the rules, and no names in the file', () => {
   const H = require('../../lib/board/holders');
   const now = Date.UTC(2026, 9, 25);
-  let h = H.learn({}, [{ key: "O'DEA/J", turn: 'B119', own: true, from: 'spare' }], now);
-  assert.equal(H.turnOf(h, "O'DEA/J"), 'B119');
+  let h = H.learn({}, [{ key: "O'DEA/J/JUS", turn: 'B119', own: true, from: 'spare' }], now);
+  assert.equal(H.turnOf(h, "O'DEA/J/JUS"), 'B119');
   assert.ok(!JSON.stringify(h).includes('DEA'));
   // Away or working on the Chain Gang (covering a trip): still B119.
-  h = H.learn(h, [{ key: "O'DEA/J", turn: 'SR03', own: false, from: 'pool' }], now + 1);
-  assert.equal(H.turnOf(h, "O'DEA/J"), 'B119');
+  h = H.learn(h, [{ key: "O'DEA/J/JUS", turn: 'SR03', own: false, from: 'pool' }], now + 1);
+  assert.equal(H.turnOf(h, "O'DEA/J/JUS"), 'B119');
   // A temporary assignment: home on the Chain Gang, even if also on a spareboard list that check.
-  h = H.learn(h, [{ key: "O'DEA/J", turn: 'B119', own: true, from: 'spare' }, { key: "O'DEA/J", turn: 'SR03', own: true, from: 'pool' }], now + 2);
-  assert.equal(H.turnOf(h, "O'DEA/J"), 'SR03');
+  h = H.learn(h, [{ key: "O'DEA/J/JUS", turn: 'B119', own: true, from: 'spare' }, { key: "O'DEA/J/JUS", turn: 'SR03', own: true, from: 'pool' }], now + 2);
+  assert.equal(H.turnOf(h, "O'DEA/J/JUS"), 'SR03');
   // Two different spareboard turns in one check: unsure.
   assert.equal(H.turnOf(H.learn({}, [{ key: 'X/Y', turn: 'B1', own: true, from: 'spare' }, { key: 'X/Y', turn: 'B2', own: true, from: 'spare' }], now), 'X/Y'), null);
   // Forgotten after 90 days unseen.
-  assert.equal(H.turnOf(H.learn(h, [], now + 91 * 864e5), "O'DEA/J"), null);
+  assert.equal(H.turnOf(H.learn(h, [], now + 91 * 864e5), "O'DEA/J/JUS"), null);
 });
 
 // Owner, 2026-10-25: TV beside a name on a pool list: that turn is going
@@ -298,7 +298,7 @@ test('turn holders: TV on a pool row is not their own turn', () => {
   ], false));
   assert.deepEqual(people.map((p) => [p.turn, p.own, p.tv]), [['S501', false, true], ['SR03', true, false]]);
   const H = require('../../lib/board/holders');
-  assert.equal(H.turnOf(H.learn({}, people, 1), "O'DEA/J"), 'SR03');
+  assert.equal(H.turnOf(H.learn({}, people, 1), "O'DEA/J/JUS"), 'SR03');
 });
 
 // Owner's screenshot (29, 2026-10-25): TV in ST with RETN 0559 26 on S501;
@@ -316,7 +316,7 @@ test('501/502 as on the screen: TV going spare, a name with no initial', () => {
   assert.equal(fmt(t.statusUntil), '26th 0559');
   assert.equal(require('../../lib/board/view').gangStatus(t, now), 'TV (temporary vacancy): goes spare, holder back 26th 0559');
   const people = S.parseBoardNames(grid(lines, false));
-  assert.deepEqual(people.map((p) => [p.turn, p.key, p.own]), [['S501', 'STUBBS/C', true], ['S501', "O'DEA/J", false], ['S502', 'NITZ/C', true]]);
+  assert.deepEqual(people.map((p) => [p.turn, p.key, p.own]), [['S501', 'STUBBS/C/CHA', true], ['S501', "O'DEA/J/JUS", false], ['S502', 'NITZ/C/CHR', true]]);
 });
 
 // Owner's Chain Gang screenshot (2026-10-25): names with (NET), with no
@@ -329,7 +329,7 @@ test('Chain Gang names as on the screen', () => {
     'CO MU01  1 002  DE MAN+         M  MICHA                    1804 25',
   ], false));
   assert.deepEqual(people.map((p) => [p.turn, p.key, p.code, p.own]), [
-    ['SR08', 'WATTS/B', 'BRWA', true], ['SR03', "O'DEA/J", 'JUOD', true], ['SR05', 'GREYDANUS/G', 'GAGR', true], ['MU01', 'DE MAN/M', 'MIDE', false],
+    ['SR08', 'WATTS/B/BRA', 'BRWA', true], ['SR03', "O'DEA/J/JUS", 'JUOD', true], ['SR05', 'GREYDANUS/G/GAR', 'GAGR', true], ['MU01', 'DE MAN/M/MIC', 'MIDE', false],
   ]);
 });
 
@@ -574,4 +574,22 @@ test('assignment history: rows with the X box in front', () => {
   const rows = [{ text: '[] Q13931 03 261103 0230 TORONTO 17800 0910', cells: [] }, { text: '[] DHT115B 03 261104 0001 TORONTO 20500 0259', cells: [] },
     { text: 'X TRAIN ID AAA-AAAA/AAAA AAA-AAAAAAAA MILES DUTY AAAA', cells: [] }];
   assert.deepEqual(S.parseAssignHistory(rows).map((r) => `${r.train} ${fmt(r.off)}`), ['Q13931 03 3rd 1140', 'DHT115B 03 4th 0300']);
+});
+
+// Owner's screenshots, 2026-11-05: SD01's holder (WILSON D DONAL…) was put on
+// YEBS04, whose S1 is another WILSON D (DYLAN). Same surname and initial,
+// different first name: not the same person.
+test('names: same surname and initial, different first name, are two people', () => {
+  const H = require('../../lib/board/holders');
+  const board = S.parseBoardNames(grid(['EN SD01  0 002  WILSON*+         D  DONAL  **   **   2359 07'], false));
+  const holders = H.learn({}, board.map((b) => ({ ...b, own: true })), 1);
+  const yard = S.parseYardCrewNames(grid([
+    'YEBS04    REL #5 TUE/WED OFF   ON DUTY AT: SARNIA      26/11/05 0700',
+    '   EN  GOUGH*+        T  TIMOTHY',
+    '   ET  TAYLOR*+(NOXTRA)DW DONALD',
+    '   S1  WILSON+        D  DYLAN',
+  ], false));
+  const s1 = yard.find((y) => y.craft === 'S1');
+  assert.equal(H.turnOf(holders, s1.key), null);
+  assert.equal(H.turnOf(holders, board[0].key), 'SD01');
 });

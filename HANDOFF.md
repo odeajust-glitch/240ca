@@ -347,6 +347,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **Name matching uses the first name's first 3 letters too**
+  (screens.js nameKey: SURNAME/I/FIR): SD01's holder (WILSON D DONAL…) was
+  put on yard job YEBS04 whose S1 is WILSON D DYLAN (owner's CATS photos).
+  turn-holders.json relearns under the new keys from the boards (people
+  away or working match again once seen at home). SD02 on YPRS02 (while
+  SD02 shows 999 out on M39671) likely the same; owner to send page 4.
 - 2026-11-05 (1424 check): fixed **501/502 jobs counted twice** when option 5
   lists them (S5 jobs now get the line-up's trainDay; expectedJobs also
   matches by train + time) and **no turn free → a spare too** ("No Chain
