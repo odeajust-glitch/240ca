@@ -973,6 +973,16 @@ async function healthFor(request, env) {
   return json({ laptop, down, watch });
 }
 
+// The Notifications tab (owner, 2026-11-05): every alert sent in the last
+// 30 days with the logic behind it, from the laptop's status/alerts.json.
+// Owner only, like /health.
+async function alertsFor(request, env) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  const o = await env.SITE.get('status/alerts.json');
+  if (!o) return json({ from: null, alerts: [] });
+  try { return json(JSON.parse(typeof o.text === 'function' ? await o.text() : o.body)); } catch { return json({ from: null, alerts: [] }); }
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(Promise.all([watchChecker(env), pruneAskLog(env).catch(() => {})]));
@@ -1004,6 +1014,7 @@ export default {
     if (url.pathname === '/health/models') return modelsApi(request, env);
     if (url.pathname === '/health/spend') return spendApi(request, env);
     if (url.pathname === '/health/questions') return questionsApi(request, env);
+    if (url.pathname === '/health/alerts') return alertsFor(request, env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);

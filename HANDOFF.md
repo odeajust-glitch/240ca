@@ -53,6 +53,19 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    heads-up repeated as the projected train/time moved (EN03 told about
    SD02 ten times on the 4th, SR01 about SR04 six times). Now told once
    per turn + deadline + who's next + likely/heads-up.
+3d. **Notifications tab** (owner only, next to Page Health; owner
+   2026-11-05: "type in a turn and see exactly the notifications being
+   sent, then the logic behind it"): search by turn or name code, filter
+   by kind, "also alerts that mention it"; each alert has **Why** (its own
+   logic, saved from 2026-11-05: alerts.js lineupWhy / spare-fill why,
+   reset-alerts why) and **the rule** for its kind; a "How each alert
+   works" list. Data: BoardChecker\alerts-log.jsonl (new, with `why`) +
+   the Desktop "Board alerts.txt" → status/alerts.json (30 days,
+   health.js alertHistory) → **Worker /health/alerts** (owner only).
+   ❗ The owner must **re-paste the Worker** (cloudflare/board-worker.js)
+   and pull + restart the laptop; until the Worker is re-pasted the tab
+   shows Page Health's last 50 without the logic. Page Health's "Alerts
+   sent" list became a link to the tab.
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:

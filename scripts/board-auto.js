@@ -897,7 +897,15 @@ async function publishSite(changed) {
     // The owner's health line: on Cloudflare only, where the Worker keeps it
     // to the owner's email (status/ is never served as a file).
     const healthFile = path.join(dir, 'status', 'health.json');
-    if (settings.r2) { fs.mkdirSync(path.dirname(healthFile), { recursive: true }); fs.writeFileSync(healthFile, JSON.stringify(healthNow())); }
+    if (settings.r2) {
+      fs.mkdirSync(path.dirname(healthFile), { recursive: true });
+      fs.writeFileSync(healthFile, JSON.stringify(healthNow()));
+      // The Notifications tab (owner only, through the Worker's
+      // /health/alerts): every alert of the last 30 days with its logic.
+      // Only uploaded when it changed (an alert went out).
+      const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
+      fs.writeFileSync(path.join(dir, 'status', 'alerts.json'), JSON.stringify(Health.alertHistory(read(alertsLog()), read(ALERTS_JSON_LOG), { days: 30 })));
+    }
     else fs.rmSync(path.join(dir, 'status'), { recursive: true, force: true });
     const sent = await publishSiteDir(dir, settings);
     if (sent.ok) site.due = false;
@@ -1040,7 +1048,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       const owed = pending.filter((p) => p.phone === s.key);
       for (const { event: e, at } of [...owed, ...mine.events.map((event) => ({ event, at: Date.now() }))]) {
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
-        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0 };
+        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
         if (r.ok) l.phones++; else l.failed++;
         if (r.ok) { sent++; said.add(e.text); continue; }
@@ -1069,11 +1077,20 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
 // the Desktop (owner, 2026-10-25): when, turn, kind, how many phones, text.
 // The checker's own ntfy alerts to the owner go in too (turn YOU, kind ntfy).
 let logSaid = false;
+const ALERTS_JSON_LOG = path.join(OUT_DIR, 'alerts-log.jsonl');
 function writeAlertsLog(log) {
   if (!log.size) return;
   const file = alertsLog();
   const now = new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(',', '');
   const lines = [...log].map(([text, l]) => `${now}  ${l.turn.padEnd(6)}  ${String(l.kind).padEnd(9)}  ${l.phones} phone${l.phones === 1 ? '' : 's'}${l.failed ? `, ${l.failed} failed` : ''}  ${text}`);
+  // The same with the logic behind each (owner, 2026-11-05: the
+  // Notifications tab, "see exactly the notifications being sent, then the
+  // logic behind it"): one JSON line each, in BoardChecker.
+  try {
+    fs.appendFileSync(ALERTS_JSON_LOG, [...log].map(([text, l]) => JSON.stringify({ at: now, turn: l.turn, kind: l.kind, phones: l.phones, failed: l.failed || 0, text, ...(l.why ? { why: l.why } : {}) })).join('\n') + '\n');
+  } catch (err) {
+    console.log(`  (alerts: couldn't write ${ALERTS_JSON_LOG}: ${err.message})`);
+  }
   try {
     if (!fs.existsSync(file)) fs.writeFileSync(file, 'When              Turn    Alert      Sent to   Message\r\n');
     fs.appendFileSync(file, lines.join('\r\n') + '\r\n');

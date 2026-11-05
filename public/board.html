@@ -170,6 +170,22 @@
   .health .who summary { cursor: pointer; color: var(--accent); }
   .health .who div { margin: 2px 0 0 14px; }
   .health { overflow-wrap: anywhere; }
+  .notes .nform { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; }
+  .notes .nform input[type=text] { font: 600 16px var(--mono); text-transform: uppercase; width: 9em; padding: 6px 8px; }
+  .notes .nform select { font: inherit; padding: 6px; }
+  .notes .nsum { padding: 0 14px 8px; font-size: 13px; }
+  .notes .nday { font: 600 13px var(--display); letter-spacing: .04em; text-transform: uppercase; color: var(--soft); padding: 10px 14px 2px; }
+  .notes .nlist { list-style: none; margin: 0; padding: 0 14px 8px; }
+  .notes .nlist li { border-top: 1px solid var(--rule-soft); padding: 8px 0; }
+  .notes .nlist .meta { font-size: 12px; color: var(--soft); }
+  .notes .nlist .ntext { font-size: 14px; margin-top: 2px; }
+  .notes .nlist details { margin-top: 4px; font-size: 13px; }
+  .notes .nlist summary { cursor: pointer; color: var(--accent); }
+  .notes .why { margin: 6px 0 2px; padding: 8px 10px; background: var(--rule-soft); border-radius: 6px; overflow-wrap: anywhere; }
+  .notes .why p { margin: 0 0 6px; }
+  .notes .why p:last-child { margin: 0; }
+  .notes .rules dt { font-weight: 600; margin-top: 8px; }
+  .notes .rules dd { margin: 2px 0 0; font-size: 13px; }
   .sentlist { max-height: 340px; overflow-y: auto; margin: 4px 0 0; padding: 0; list-style: none; }
   .sentlist li { padding: 5px 0; border-bottom: 1px solid var(--rule); }
   .sentlist .meta { color: var(--soft); }
@@ -639,7 +655,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2438,6 +2454,7 @@ source().then(async (src) => {
     healthData = h;
     document.getElementById('modeHealth').hidden = !h;
     document.getElementById('modeReview').hidden = !h;
+    document.getElementById('modeNotes').hidden = !h;
     // A key saved on this phone that the site doesn't take: say so in Settings (owner, 2026-11-02).
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !h);
@@ -2454,6 +2471,7 @@ source().then(async (src) => {
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
     if (h && mode === 'health') renderHealth();
+    if (h && mode === 'notes' && !notesData) renderNotes();
   }
   const noCountSaved = () => { try { return localStorage.getItem('boardNoCount') === '1'; } catch (e) { return false; } };
   const healthClock = (ms) => new Date(ms).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
@@ -2462,6 +2480,98 @@ source().then(async (src) => {
   // and the questions. make it so i can only see this tab, like the page
   // health"): the models, AI spending, and the questions and answers kept
   // 60 days. Shown only when the Worker accepts the owner key.
+  // Notifications tab (owner, 2026-11-05: "make it its own tab and expand on
+  // it … type in a turn and see exactly the notifications being sent, then
+  // the logic behind it"). Owner only: the Worker's /health/alerts gives the
+  // last 30 days (the laptop's alerts logs); each alert's own "why" is kept
+  // from 2026-11-05 on, and every kind has its rule below.
+  const NOTE_KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', before: 'Reminder', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered', stand: 'Tracked', weekly: 'My week', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)' };
+  const NOTE_RULES = {
+    lineup: 'The board check works out who gets each train on the Sarnia line-up (A and B pools by road day, then the Chain Gang; engineers from SD, S1, S3; spareboards for jobs going spare, first in first out). When the train a turn is lined up for changes, its phones are told. A switch to another train waits one check (sent only if it\'s still there next check), and a train the turn was told about in the last 6 h isn\'t sent again unless it\'s now ordered.',
+    ordered: 'The line-up shows the train ORD (ordered). Once per train; if it\'s ordered with a new time, the time change isn\'t sent as well.',
+    time: 'The expected call of the train the turn is lined up for moved by at least the phone\'s setting (30 min unless changed) since the time the phone was last told.',
+    before: 'A reminder the phone asked for, a set number of minutes before the expected call. Once per train.',
+    onDuty: 'The Call Board shows the turn on duty on a train or job.',
+    position: 'The turn\'s position on its board at home changed. The alert says who went out or was placed ahead. Back on the board in Sarnia after a trip is sent too.',
+    aheadRest: 'Someone ahead of the turn on its board went on rest or a hold turn, so they\'re skipped for calls before then and this turn moves up.',
+    aheadBack: 'Someone ahead who was on rest or a hold turn is off it and back in line ahead of this turn.',
+    reset: 'The turn shows REST or a hold until 0559 on a board: CATS\'s manual mandatory reset.',
+    resetAhead: 'Someone ahead may be put on a mandatory 7-day reset when they\'re called (the reset tracker works out when each person needs one). Pools: under 35 h left at the call = likely; 35–48 h = heads-up. Spares: reset if the deadline falls before the job ends. The line-up is worked out again with that turn on a 32 h reset to see who\'d get the job instead; that person is told. Chain Gang / SD: the next turn that can work it, past ** turns. Once per reset.',
+    rescue: 'A rescue train (R…) showed on the line-up where this turn is waiting (Sarnia, or the Toronto line-up for crews in the bunkhouse). Once per train.',
+    mayCall: 'A call that may come early or from an unusual place: no engineer free on the slow board (SD may be called); no Toronto crew rested in time (Toronto South may get it); or a PL 24–36 h into a road trip that may send a job spare. Once per train.',
+    catsWrong: 'CATS\'s option 5 lists a job going spare that the order doesn\'t have (the order has a different turn on that train). The spare CATS\'s list would call is told it\'s the wrong turn. Once per listing.',
+    stale: 'The train is 15 min past its planned call and still not ordered (only for phones that turned this on).',
+    stand: 'Sent once when a phone starts following a turn or person: where it stands right now.',
+    weekly: 'My week, Sunday: the person\'s week of work.',
+    ntfy: 'The checker\'s own messages to you (CATS asking a question, Microsoft sign-in, stuck).', pushover: 'The checker\'s own messages to you, by Pushover.', ownerPush: 'The checker\'s own messages to you, by a site alert.',
+  };
+  let notesData = null;
+  const notesState = { turn: '', kind: '', mention: true };
+  async function renderNotes() {
+    const view = document.getElementById('view');
+    try { history.replaceState(null, '', '#notifications'); } catch (e) { /* not allowed in some frames */ }
+    if (!healthData) { view.innerHTML = '<p class="empty">Notifications is only for the owner.</p>'; return; }
+    view.innerHTML = '<div class="healthpage notes"><h1 class="hpt">Notifications <span class="muted">(only you see this)</span></h1><p class="muted">Loading…</p></div>';
+    if (!notesData) {
+      try {
+        const r = await fetch('health/alerts', { cache: 'no-store', headers: OwnerKey.headers() });
+        if (r.ok) notesData = await r.json();
+      } catch (e) { /* offline */ }
+      if (mode !== 'notes') return;
+    }
+    if (!notesData) {
+      // An older Worker without /health/alerts: Page Health's last 50.
+      const L = healthData.laptop || {};
+      notesData = { from: null, alerts: L.sent || [], old: true };
+    }
+    paintNotes();
+  }
+  function paintNotes() {
+    const view = document.getElementById('view');
+    const D = notesData;
+    const q = notesState.turn.trim().toUpperCase();
+    const base = (t) => String(t || '').replace(/-(CO|EN|TT|ET)$/, '');
+    const S0 = healthData.laptop && healthData.laptop.subscribers;
+    // A name code: alerts go out under the turn the person is on, so their
+    // turn now is searched too (earlier turns aren't known here).
+    const codeTurn = /^[A-Z]{4}$/.test(q) && S0 ? ((S0.people || []).find((p) => p.code === q) || {}).turn || null : null;
+    const own = (a) => !q || a.turn === q || base(a.turn) === q || (codeTurn && (a.turn === codeTurn || base(a.turn) === base(codeTurn)));
+    const mentions = (a) => q && new RegExp(`\\b${q.replace(/[^A-Z0-9]/g, '')}\\b`).test(a.text);
+    const rows = D.alerts.filter((a) => (own(a) || (notesState.mention && mentions(a))) && (!notesState.kind || a.kind === notesState.kind));
+    const counts = {};
+    for (const a of rows.filter(own)) counts[a.kind] = (counts[a.kind] || 0) + 1;
+    const S = S0;
+    const following = q && S ? (S.turns.find(([t]) => t === q || base(t) === q) || [null, 0])[1] : null;
+    const people = q && S ? S.people.filter((p) => p.code === q || (p.turn && base(p.turn) === q)) : [];
+    const byDay = new Map();
+    for (const a of rows.slice(0, 600)) { const d = a.at.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(a); }
+    const dayName = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+    const whyHtml = (a) => {
+      const own = a.why ? `<p><b>Why this one:</b> ${esc(a.why)}</p>` : `<p class="muted">${a.at < '2026-11-05' ? 'Sent before the logic was saved with each alert (from Nov 5).' : 'No details saved for this one.'}</p>`;
+      return `<div class="why">${own}<p><b>The rule:</b> ${esc(NOTE_RULES[a.kind] || 'No rule written for this kind yet.')}</p></div>`;
+    };
+    const list = [...byDay].map(([d, as]) => `<div class="nday">${esc(dayName(d))} · ${as.length}</div><ul class="nlist">${as.map((a) => `<li>
+      <div class="meta">${esc(a.at.slice(11))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(NOTE_KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}${q && !own(a) ? ' · <span class="muted">mentions it</span>' : ''}</div>
+      <div class="ntext">${esc(a.text)}</div>
+      <details><summary>Why</summary>${whyHtml(a)}</details></li>`).join('')}</ul>`).join('');
+    const kinds = [...new Set(D.alerts.map((a) => a.kind))].sort((a, b) => (NOTE_KINDS[a] || a).localeCompare(NOTE_KINDS[b] || b));
+    view.innerHTML = `<div class="healthpage notes"><h1 class="hpt">Notifications <span class="muted">(only you see this)</span></h1>
+      <section class="sheet"><header><h2>Alerts sent</h2><span class="meta">${D.old ? 'latest 50 (re-paste the Worker for 30 days)' : `last 30 days${D.from ? ` (from ${esc(dayName(D.from))})` : ''}`}, newest first</span></header>
+        <form class="nform" id="nform" autocomplete="off" onsubmit="return false">
+          <input type="text" id="nturn" placeholder="Turn or code" value="${esc(notesState.turn)}" aria-label="Turn or name code" maxlength="8">
+          <select id="nkind" aria-label="Kind"><option value="">Every kind</option>${kinds.map((k) => `<option value="${esc(k)}"${k === notesState.kind ? ' selected' : ''}>${esc(NOTE_KINDS[k] || k)}</option>`).join('')}</select>
+          <label><input type="checkbox" id="nmention"${notesState.mention ? ' checked' : ''}> Also alerts that mention it</label>
+        </form>
+        <div class="nsum">${q ? `<b>${esc(q)}</b>: ${rows.filter(own).length} sent to it${notesState.mention ? `, ${rows.filter((a) => !own(a)).length} more mention it` : ''}${Object.keys(counts).length ? ` (${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(NOTE_KINDS[k] || k)} ${n}`).join(', ')})` : ''}.${following != null ? ` Phones following ${esc(q)}: ${following}.` : ''}${codeTurn ? ` ${esc(q)} is on ${esc(codeTurn)} now: its alerts are included.` : ''}${people.length ? ` Followed by name code: ${people.map((p) => `${esc(p.code || '?')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}.` : ''}` : `${rows.length} alerts. Type a turn (SR03, B126, S501) or a name code to see only theirs.`}${rows.length > 600 ? ' Showing the newest 600.' : ''}</div>
+        ${list || '<p class="hbody muted">No alerts for that.</p>'}
+      </section>
+      <section class="sheet"><header><h2>How each alert works</h2></header><div class="hbody"><dl class="rules">${Object.keys(NOTE_RULES).map((k) => `<dt>${esc(NOTE_KINDS[k] || k)}</dt><dd>${esc(NOTE_RULES[k])}</dd>`).join('')}</dl>
+        <p class="muted">Phones are anonymous: an alert counts the phones it reached, not whose they are. The checker sends to a turn's phones and to phones following a person by name code (on the turn they're on now).</p></div></section></div>`;
+    const inp = document.getElementById('nturn');
+    inp.oninput = () => { notesState.turn = inp.value; const pos = inp.selectionStart; paintNotes(); const i2 = document.getElementById('nturn'); i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (e) { /* fine */ } };
+    document.getElementById('nkind').onchange = (e) => { notesState.kind = e.target.value; paintNotes(); };
+    document.getElementById('nmention').onchange = (e) => { notesState.mention = e.target.checked; paintNotes(); };
+  }
   async function renderReview() {
     const view = document.getElementById('view');
     if (!healthData) { view.innerHTML = '<p class="empty">Search Review is only for the owner.</p>'; return; }
@@ -2588,8 +2698,8 @@ source().then(async (src) => {
       ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
       <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
     // What was sent, for whom (the laptop's alerts log, newest first).
-    const KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', before: 'Reminder', stand: 'Tracked', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered' };
-    const sent = L.sent && L.sent.length ? `<section class="sheet"><header><h2>Alerts sent</h2><span class="meta">latest ${L.sent.length}, newest first</span></header><ul class="sentlist">${L.sent.map((a) => `<li><div class="meta">${esc(a.at.slice(5))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}</div><div>${esc(a.text)}</div></li>`).join('')}</ul></section>` : '';
+    // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
+    const sent = `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
     // CATS's "Do you wish to place on another assignment?" pages, word for
     // word, as the checker answered them (owner, 2026-11-03).
     const Q = L.questions || [];
@@ -2603,6 +2713,7 @@ source().then(async (src) => {
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
+    document.getElementById('tonotes').onclick = () => setMode('notes');
     // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
     // and phones per day, from the Worker (owner only).
     const box = document.getElementById('hvisits');
@@ -3234,6 +3345,7 @@ source().then(async (src) => {
   const modeAna = document.getElementById('modeAna');
   const modeHealth = document.getElementById('modeHealth');
   const modeReview = document.getElementById('modeReview');
+  const modeNotes = document.getElementById('modeNotes');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
   // Agreements tab (owner, 2026-11-03): the agreement search, in this page (board-ask.js).
@@ -3253,7 +3365,7 @@ source().then(async (src) => {
   }
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'ref' || mode === 'ask');
+    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -3264,11 +3376,13 @@ source().then(async (src) => {
     modeAna.setAttribute('aria-pressed', mode === 'analytics');
     modeHealth.setAttribute('aria-pressed', mode === 'health');
     modeReview.setAttribute('aria-pressed', mode === 'review');
+    modeNotes.setAttribute('aria-pressed', mode === 'notes');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
     if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
     else if (mode === 'review') renderReview();
+    else if (mode === 'notes') { notesData = null; renderNotes(); }
     else if (mode === 'held') renderHeld();
     else if (mode === 'analytics') renderAnalytics();
     else if (mode === 'ref') renderRef();
@@ -3579,6 +3693,7 @@ source().then(async (src) => {
   modeAna.onclick = () => setMode('analytics');
   modeHealth.onclick = () => setMode('health');
   modeReview.onclick = () => setMode('review');
+  modeNotes.onclick = () => setMode('notes');
   modeRef.onclick = () => setMode('ref');
   modeAsk.onclick = () => setMode('ask');
 
@@ -3606,16 +3721,18 @@ source().then(async (src) => {
   if (location.hash === '#week') ana.sec = 'week'; // the Sunday alert opens My week
   const wantRef = location.hash === '#ref';
   const wantAsk = location.hash === '#agreements';
+  const wantNotes = location.hash === '#notifications';
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
-  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk) setMode('current'); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk && !wantNotes) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
   else if (wantTurns) setMode('turns');
   else if (wantAna) setMode('analytics');
   else if (wantRef) setMode('ref');
   else if (wantAsk) setMode('ask');
+  else if (wantNotes) setMode('notes');
 
   // A newer board published while this page is open (live site only). On
   // the Current tab it loads by itself (owner, 2026-10-30: two phones showed
