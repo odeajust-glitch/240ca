@@ -338,6 +338,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   read every check (F8 through the pages), each line 24 h from the time
   shown, remembered until it ends (BoardChecker\days-off.json). A: a "Days
   off" list on the Current tab and "days off …" in each turn's status. B: a
-  turn off at the call is skipped (Chain Gang, SD) or goes spare (A/B,
-  S1/S3, 501/502); a spare off is passed over. C: the runaround log says
+  turn off at the call takes its train and goes spare (every pool, Chain
+  Gang and SD too: owner); a spare off is passed over. C: the runaround log says
   "explained: on days off". STAT and the A/U/X types: meaning not known yet.

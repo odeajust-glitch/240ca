@@ -201,9 +201,10 @@ node scripts/board-watchdog.js --me SR03 --every 5
 - **Days off** (option 4: nothing typed, F8 pages; `lib/board/daysoff.js`,
   parseDaysOff in screens.js): each line = 24 h off from the time shown
   (owner), remembered in BoardChecker\days-off.json until it ends (a line
-  may leave the "upcoming" list once it starts). Rows get `off`; the order
-  skips a Chain Gang/SD turn off at the call, an A/B/S1/S3/501-502 turn
-  goes spare, spares off are passed over; "days off …" in pool statuses;
+  may leave the "upcoming" list once it starts). Rows get `off`; a turn off at
+  the call takes its train and **goes spare, in every pool incl. Chain
+  Gang/SD** (owner: "it will go spare"; only the reset "what if" run skips
+  it, like **); spares off are passed over; "days off …" in pool statuses;
   Current tab "Days off" section; runaround log "explained". An ET/TT line
   is a trainee (their own slot): it doesn't take the turn's engineer off.
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):

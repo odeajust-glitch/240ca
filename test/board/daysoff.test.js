@@ -56,16 +56,17 @@ test('days off: 24 h from the time shown, remembered until they end', () => {
   assert.equal(DaysOff.merge(kept, [], at(2026, 11, 7, 0, 1)).length, 0);
 });
 
-test('days off: the Chain Gang turn off at the call is skipped; an A turn goes spare', () => {
+test('days off: a Chain Gang / SD turn off at the call takes it and goes spare (owner); an A turn too', () => {
   const off = [{ from: at(2026, 11, 6, 0, 1), until: at(2026, 11, 7, 0, 1) }];
   const gang = [
     { craft: 'CO', turn: 'SR10', terminal: 0, pos: 1, restUntil: null, statusUntil: null, off },
     { craft: 'CO', turn: 'SR02', terminal: 0, pos: 2, restUntil: null, statusUntil: null },
   ];
   const dh = (h) => ({ order: at(2026, 11, 6, h, 0), symbol: 'DHT999B', trainNo: 'DHT999', originDay: '06', status: 'PLN', deadhead: true });
-  const p = runBoardCheck({ now: NOW, callBoard: [], chainGangHome: gang, lineup: [dh(10)] }).predictions[0];
-  assert.equal(p.turn, 'SR02');
-  assert.match(p.reason, /SR10 on days off 6th 0001–7th 0001/);
+  const sd = [{ craft: 'EN', turn: 'SD01', terminal: 0, pos: 1, restUntil: null, statusUntil: null, off }, { craft: 'EN', turn: 'SD02', terminal: 0, pos: 2, restUntil: null, statusUntil: null }];
+  const p = runBoardCheck({ now: NOW, callBoard: [], chainGangHome: gang, sdHome: sd, lineup: [dh(10)] }).predictions[0];
+  assert.deepEqual([p.turn, p.spare, p.engineer, p.engineerSpare], ['SR10', true, 'SD01', true]);
+  assert.match(p.reason, /SR10 is on days off 6th 0001–7th 0001 at the call/);
   // Called before the days off start: SR10 goes.
   const early = { ...dh(1), order: at(2026, 11, 5, 23, 0), originDay: '05' };
   assert.equal(runBoardCheck({ now: NOW, callBoard: [], chainGangHome: gang, lineup: [early] }).predictions[0].turn, 'SR10');
