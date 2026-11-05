@@ -1242,7 +1242,7 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
     const from = before.length > 1 ? before[before.length - 2].at : '';
     return restLine(from, rows[i].onDutySeen, 'Rest before it:');
   };
-  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, ''))}</div>` : ''}</td>
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', '<br>(')}</div>` : ''}</td>
     <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
   return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
