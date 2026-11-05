@@ -268,3 +268,25 @@ test('S501: conductor and engineer alerts apart, marked; plain S501 gets each on
   assert.deepEqual(got(['S501-EN']), ['S501 engineer lined up: L50231 06 planned for 6th 0400, expected call 6th 0145.']);
   assert.deepEqual(got(['S501']).sort(), [...got(['S501-CO']), ...got(['S501-EN'])].sort());
 });
+
+// Owner's 1424 check, 2026-11-05: option 5 listed L50231's jobs (pool S5)
+// and the order had them too → B126 + B134 / EN09 + EN06 both lined up.
+// And X27691 04 "spareboard (no Chain Gang turn free) + SD04" had no spare.
+test('jobs going spare: option 5\'s 501/502 job not counted twice; no turn free → a spare too', () => {
+  const { spareJobs } = require('../../lib/board/spares');
+  const { turnStates, turnEvents } = require('../../lib/board/alerts');
+  const sb = (turn, pos) => ({ turn, pos, terminal: 0, working: false, st: null, rn: null, statusUntil: null, restUntil: null });
+  const now = at(2026, 11, 5, 14, 24);
+  const preds = [
+    { symbol: 'X27691', originDay: '04', order: at(2026, 11, 5, 22, 55), call: at(2026, 11, 5, 20, 40), status: 'PLN', pool: 'SR', turn: null, reason: 'A and B used up … No Chain Gang turn available → spareboard.', engineer: 'SD04' },
+    { symbol: 'L50231', originDay: '06', order: at(2026, 11, 6, 4, 0), call: at(2026, 11, 6, 1, 45), status: 'PLN', pool: 'S5', s5: true, turn: 'S501', spare: true, spareWhy: 'is on rest until 6th 0640', engineer: 'S501', engineerSpare: true, engineerSpareWhy: 'is on rest until 6th 0640' },
+  ];
+  const v = (cc) => ({ pos: 1, at: at(2026, 11, 6, 4, 0), status: 'PLANNED', train: 'L50231', yard: false, pool: 'S5', cc, turn: 'S501', st: '', returns: null });
+  const boards = { coSlow: [sb('B133', 1), sb('B126', 2), sb('B134', 3)], enSlow: [sb('EN09', 1), sb('EN06', 2)] };
+  const m = spareJobs(preds, [v('CO'), v('EN')], boards);
+  assert.deepEqual([...m].map(([t, j]) => [t, j.train, j.covers]), [['B133', 'X27691 04', ''], ['B126', 'L50231 06', 'S501'], ['EN09', 'L50231 06', 'S501']]);
+  const st = turnStates({ now, predictions: preds }, [], { vacancies: [v('CO'), v('EN')], spareboards: boards });
+  const ev = turnEvents({ x: {} }, st, { lineupRead: true, now }).events.filter((e) => e.kind === 'lineup');
+  assert.equal(ev.find((e) => e.turn === 'B133').text, 'B133 lined up: X27691 04 planned for 5th 2255, expected call 5th 2040. No Chain Gang conductor is free, so the conductor job is going spare: expect a call.');
+  assert.ok(!ev.some((e) => e.turn === 'B134' || e.turn === 'EN06'));
+});

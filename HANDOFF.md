@@ -347,6 +347,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05 (1424 check): fixed **501/502 jobs counted twice** when option 5
+  lists them (S5 jobs now get the line-up's trainDay; expectedJobs also
+  matches by train + time) and **no turn free → a spare too** ("No Chain
+  Gang conductor is free, so the conductor job is going spare: expect a
+  call."). Engineer card line: "The turn goes spare (marked **)."
+  names.test.js failed once and passed on re-runs (timing): watch it.
 - 2026-11-05: **S501 conductor / engineer tracked apart on the page** (owner):
   marks keep the craft (S501-CO); the 501/502 rows, "CO S501" in a crew and
   the first / second S501 in "S501 + S501" are picked out per craft
