@@ -347,6 +347,14 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **PL rules** (owner, daysoff.js plFor): on at the call → off;
+  a **yard job** running into the PL (8 h, YSBY 12 h) → that spare is passed
+  over (B119, yard 1600, PL 2200 → B105); a **road job** with the PL 24 h or
+  less after going on duty (call + 2 h) → goes spare 100% / spare passed
+  over; **24–36 h** → kept, but the person who'd take it if it went spare
+  is warned once ("you may be called for … SR10 has a PL @ 7th 1600 (30 h
+  after going on duty), so its conductor job may go spare"; kind mayCall).
+  A spare with a 24–36 h PL keeps the job; the next spare is warned.
 - 2026-11-05: **Spare told from the order** (owner: "SA09 has a PL and the
   job will be going spare … expect a call"; option 5 is sometimes missing
   jobs → surprise calls): every turn the order has going spare (any reason:

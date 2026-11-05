@@ -351,3 +351,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   calls"): from the order, not only once option 5 lists it, with why
   ("SA09 has a PL @ 6th 0001, so its conductor job is going spare: expect a
   call"). The open choice (a) from 2026-11-02, done.
+- 2026-11-05: **PL rules** (owner): a yard job that runs into a PL passes
+  that spare over (B119: yard 1600, PL 2200 → B105). Road jobs: the PL 24 h
+  or less after going on duty → goes spare 100%; 24–36 h → a warning to the
+  person who'd take the job if it went spare.
