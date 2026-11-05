@@ -987,13 +987,11 @@ function pools(s, pi) {
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
   // Spareboards (owner, 2026-10-28): anyone who only shows with VIEW TIME
   // (the check less 10 min) has that time in yellow beside their turn.
-  // 501/502: Garnet's line-up under it (owner, 2026-11-03): when L501 comes home.
-  const garnet = /^501\/502/.test(p.name) && (s.screens || []).includes('garnetLineup')
-    ? `<div class="away"><b>Garnet line-up (41)</b> ${(s.garnetLineup || []).length ? s.garnetLineup.map((t) => `${esc(t.train)} <span class="muted">${esc(t.status)} ${esc(t.order)}</span>`).join(' · ') : '<span class="muted">nothing planned in the next 24 h</span>'}</div>` : '';
+  // (The Garnet line-up line under 501/502 was taken out, owner 2026-11-05: its own Garnet section shows it.)
   const left = p.turns.some((t) => t.left) ? `<p class="anote" style="margin:10px 14px">A <span class="vt">${esc(p.viewTime || '')}</span> beside a turn: only on the board with VIEW TIME ${esc(p.viewTime || '')}.</p>` : '';
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
     <div class="tabs" role="tablist">${tabs}</div>
-    <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${garnet}${left}</section>`;
+    <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${left}</section>`;
 }
 
 function onDuty(s) {
