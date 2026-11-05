@@ -77,3 +77,26 @@ test('a spare on a road job: likely reset under 35 h at the call (owner)', () =>
   assert.deepEqual(e.map((x) => [x.turn, x.about, x.level]), [['B133', 'B111', 'will']]);
   assert.equal(RA.resetEvents({ input, result: bTrain(true), run, resets: { B111: { due: call + 36 * H } }, now: call - H }).events.length, 0);
 });
+
+// Owner, 2026-11-05 (SD02 on M39491 told EN03): on the Chain Gang / SD a
+// turn put on a reset doesn't take the train and go spare; the next turn
+// that can work it gets it, past ** turns, and only spare if no one can.
+test('Chain Gang reset: the next available turn, past ** turns', () => {
+  const base = loadSummary(JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15.json'), 'utf8')));
+  const run = (i) => runBoardCheck({ ...i, me: null });
+  // SR03 (after SR09) marked **: SR09 on a reset → not the spareboard, the
+  // turn after SR03 if one can work it; here none is, so it goes spare.
+  const star = (list, turn, extra = []) => [...list.map((t) => (t.turn === turn ? { ...t, st: '**' } : t)), ...extra];
+  const input = { ...base, chainGangHome: star(base.chainGangHome, 'SR03', [{ ...base.chainGangHome.find((t) => t.turn === 'SR03'), turn: 'SR10', pos: 6, st: '' }]) };
+  const result = run(input);
+  const job = [...RA.assignments(input, result).values()].find((a) => a.turn === 'SR09');
+  const { events } = RA.resetEvents({ input, result, run, resets: { SR09: { due: job.call + 10 * H } }, now: input.now });
+  assert.deepEqual(events.map((e) => [e.turn, e.about]), [['SR10', 'SR09']]);
+  // No one after the ** turn: it goes spare, to the spareboard.
+  const alone = { ...base, chainGangHome: star(base.chainGangHome, 'SR03') };
+  const r2 = run(alone);
+  const e2 = RA.resetEvents({ input: alone, result: r2, run, resets: { SR09: { due: job.call + 10 * H } }, now: alone.now }).events;
+  assert.ok(e2.length <= 1 && (!e2.length || !/^SR/.test(e2[0].turn)));
+  // The normal line-up is unchanged: a ** turn still takes its train and goes spare.
+  assert.equal(result.predictions.find((p) => p.turn === 'SR09').spare, false);
+});

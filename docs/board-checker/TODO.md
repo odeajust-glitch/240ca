@@ -314,6 +314,11 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   the call: a road job needs ~35 h, owner), or a heads-up at 35–48 h
   (pools only); a spare on a yard job: before the 8 h (YSBY 12 h) shift ends. Chain Gang / SD /
   spareboards: the next person; A/B/S1/S3: the spare who'd fill the job.
+  Chain Gang / SD (owner, 2026-11-05, after SD02 → EN03 past SD01 **): a
+  turn put on a reset doesn't take the train and go spare; the next turn
+  that can work it gets it, past ** / B0 turns, and it only goes spare if
+  no one after them is available (engine resetJob / firstCallable skipSpare;
+  the normal line-up still has ** turns take their train and go spare).
   Once per train. Phone option "would get a train or job because someone
   may be put on a mandatory reset" (on by default).
 - 2026-11-04: **Garnet line-up · L501 home** on the Current tab (like
