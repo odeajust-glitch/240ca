@@ -206,7 +206,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   Gang/SD** (owner: "it will go spare"; only the reset "what if" run skips
   it, like **); spares off are passed over; "days off …" in pool statuses;
   Current tab "Days off" section; runaround log "explained". An ET/TT line
-  is a trainee (their own slot): it doesn't take the turn's engineer off.
+  is a trainee (owner: their jobs never go spare, no one replaces them):
+  listed only, never put on a row.
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
@@ -309,9 +310,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 - ❓ **Days off (option 4)**, new 2026-11-05: first real run (see Start
   here). Owner "not sure" what STAT (A/B) and A/U/X mean: shown, not used.
-  Leave types other than OFF: "don't worry". ET = trainee (the trainees
-  work): their day off doesn't make the turn go spare; asked the owner to
-  confirm with the S104 ET example.
+  Leave types other than OFF: "don't worry". ET/TT = trainee, confirmed
+  (owner): a trainee's day off affects nothing.
 
 - **Worker:** the version with the agreement search is deployed (checked
   2026-11-03). ❓ Confirm the 30-min ntfy "down" arrives the next time the

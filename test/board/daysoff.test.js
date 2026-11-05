@@ -103,6 +103,10 @@ test('days off: put on the pool rows by turn and craft; shown in the status', ()
   const s104 = [{ turn: 'S104', craft: 'EN' }];
   DaysOff.attach(s104, s.daysOff, (r) => DaysOff.side(r.craft));
   assert.equal(s104[0].off, undefined);
+  // Not even on a trainee's own row (owner: they're never replaced).
+  const tt = [{ turn: 'S104', craft: 'ET' }];
+  DaysOff.attach(tt, s.daysOff, (r) => DaysOff.side(r.craft));
+  assert.equal(tt[0].off, undefined);
 });
 
 test('runaround log: a turn on days off at the call is explained', () => {

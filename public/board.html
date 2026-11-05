@@ -1008,11 +1008,11 @@ function daysOff(s) {
   const list = s.daysOff || [];
   const kind = { A: 'assigned', U: 'pool', X: 'X' };
   const rows = list.map((d) => `<tr${marked(d.turn) ? ' class="hit"' : ''}><td class="num">${esc(d.from)}</td><td class="num">${esc(d.until)}</td>
-    <td><b class="num">${markTurn(d.turn)}</b> <span class="chip">${esc(d.craft)}</span>${d.pool ? ` <span class="muted">${esc(d.pool)}</span>` : ''}${d.on ? ' <span class="chip">off now</span>' : ''}</td>
+    <td><b class="num">${markTurn(d.turn)}</b> <span class="chip">${esc(d.craft)}</span>${d.pool ? ` <span class="muted">${esc(d.pool)}</span>` : ''}${d.on ? ' <span class="chip">off now</span>' : ''}${/^(ET|TT)$/.test(d.craft) ? ' <span class="muted">trainee, no effect</span>' : ''}</td>
     <td class="muted">${esc([d.leave, kind[d.type] || d.type, d.stat].filter(Boolean).join(' · '))}</td></tr>`).join('');
   return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${list.length} coming</span></header>
     <div class="scroll"><table><thead><tr><th>From</th><th>Until</th><th>Turn</th><th>Type</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No upcoming days off.</td></tr>'}</tbody></table></div>
-    <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call still takes it and goes spare; a spare off then is passed over.</div></section>`;
+    <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call still takes it and goes spare; a spare off then is passed over. A trainee (ET / TT) off changes nothing: their jobs never go spare.</div></section>`;
 }
 
 // Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
