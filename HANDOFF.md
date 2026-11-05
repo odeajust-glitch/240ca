@@ -291,7 +291,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   still on duty). Off duty = ODT + DUTY. Row colours just alternate. Plan:
   read S1/1 and S5 with start = yesterday about hourly; resets.js offDuty
   uses it first. **Built 2026-11-04** (owner: main menu 3 → 7, F8 to page):
-  board-auto fillByLabel + hourly read (assignReadAt) of S1 and S5 (both
+  board-auto fillByLabel (only POOL and HOME/AWAY typed; owner: START DATE
+  etc. left as CATS has them) + hourly read (assignReadAt) of S1 and S5 (both
   HOME/AWAY 1 ❓ for S5), label assignHistory; screens.js
   parseAssignHistory; summary assignHistory; resets.js acc.offs → offDuty
   'history' (exact, before bunkhouse/REST/estimates). Masking keeps

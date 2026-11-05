@@ -586,16 +586,15 @@ async function runRoute(page, opts = {}) {
   // Assignment history (3 → 7; owner, 2026-11-04): each train's on duty and
   // hours on duty, so the exact off duty for the reset tracker. S1 = Sarnia,
   // S5 = 502/501; HOME/AWAY 1 = trips coming home (tying up in Toronto is
-  // exact from the bunkhouse already); from yesterday. About once an hour.
+  // exact from the bunkhouse already). Only those two boxes are typed in;
+  // START DATE and the rest are left as CATS has them (owner, 2026-11-04).
+  // About once an hour.
   if (Date.now() - assignReadAt > 55 * 60000) {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: '2-digit', month: '2-digit', day: '2-digit' })
-      .formatToParts(new Date(Date.now() - 864e5)).map((x) => [x.type, x.value]));
-    const start = `${p.year}${p.month}${p.day}`;
     let read = 0;
     for (const loc of ['S1', 'S5']) {
       try {
         let a = await chooseFromMenus(page, 7);
-        const missing = (await fillByLabel(page, { 'POOL OR YD/LO': loc, 'HOME/AWAY': '1', 'START DATE': start, 'ASSIGNMENT:': '' })).filter((x) => x !== 'ASSIGNMENT:');
+        const missing = await fillByLabel(page, { 'POOL OR YD/LO': loc, 'HOME/AWAY': '1' });
         if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
         a = await press(page, 'Enter');
         if (!S.isAssignHistory(a.text)) throw new Error('not the assignment history screen');
