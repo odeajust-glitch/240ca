@@ -587,6 +587,11 @@
   tr.reset-y td:first-child { box-shadow: inset 4px 0 0 var(--amber); }
   tr.reset-r td:first-child { box-shadow: inset 4px 0 0 var(--stop); }
   .rdue { display: block; font-size: 12px; color: var(--soft); }
+  /* The spare's job under their turn (owner, 2026-11-05: it pushed Status off a phone screen): wraps, body font. */
+  .jobline { font: 12px/1.35 var(--body); color: var(--soft); }
+  .jobline b { font-family: var(--mono); white-space: nowrap; color: var(--ink); }
+  tr.jobrow td { border-top: 0; padding-top: 0; }
+  .jobline .nw { white-space: nowrap; }
   .rdue:empty { display: none; }
   tr.reset-r .rdue { color: var(--stop); font-weight: 600; }
   :root[data-theme="retro"] .vt { background: #ffff00; color: #000000; padding: 1px 3px; }
@@ -980,8 +985,10 @@ function pools(s, pi) {
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
     const cls = [marked(t.turn) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
-    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}${t.job ? `<div class="crew">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` (${esc(t.job.covers)}'s job)` : ''} · call ~${esc(t.job.call)}</div>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>`;
+    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>${t.job
+      // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
+      ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2"><div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div></td></tr>` : ''}`;
   }).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
