@@ -281,6 +281,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **one-time backfill of off-duty times**: `node scripts/assign-backfill.js
+  2026-10-16` writes BoardChecker\assign-backfill.json; the running
+  checker's next check reads 3 → 7 with START DATE typed in too, S1 and S5,
+  F8 up to 150 pages (heartbeat each page), says "Assignment history
+  backfill from …", deletes the request. Saved with that check, so
+  resets.offs carries every train in the range.
 - 2026-11-04: **off duty in the Work history** (owner: "Can we start to add
   off duty times in turn history"): resets.js trainOffs → resets.json
   `offs` {train: {on, off, how}}; board.html offLine: "on duty 0245 · off

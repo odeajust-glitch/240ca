@@ -589,17 +589,22 @@ async function runRoute(page, opts = {}) {
   // exact from the bunkhouse already). Only those two boxes are typed in;
   // START DATE and the rest are left as CATS has them (owner, 2026-11-04).
   // About once an hour.
-  if (Date.now() - assignReadAt > 55 * 60000) {
+  // A one-time backfill asked for with scripts/assign-backfill.js: START DATE
+  // typed in too, and paged to the end (owner, 2026-11-04).
+  let assignFill = null;
+  try { assignFill = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'assign-backfill.json'), 'utf8')); } catch { /* none asked */ }
+  if (assignFill || Date.now() - assignReadAt > 55 * 60000) {
     let read = 0;
     for (const loc of ['S1', 'S5']) {
       try {
         let a = await chooseFromMenus(page, 7);
-        const missing = await fillByLabel(page, { 'POOL OR YD/LO': loc, 'HOME/AWAY': '1' });
+        const missing = await fillByLabel(page, { 'POOL OR YD/LO': loc, 'HOME/AWAY': '1', ...(assignFill ? { 'START DATE': assignFill.start } : {}) });
         if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
         a = await press(page, 'Enter');
         if (!S.isAssignHistory(a.text)) throw new Error('not the assignment history screen');
-        for (let pageNo = 0; pageNo < 8; pageNo++) {
+        for (let pageNo = 0; pageNo < (assignFill ? 150 : 8); pageNo++) {
           await capture('assignHistory');
+          if (assignFill) heartbeat('checking'); // a long backfill isn't "stuck" to the watchdog
           read++;
           const next = await press(page, 'F8').catch(() => null);
           if (!next || !S.isAssignHistory(next.text) || next.text === a.text) break;
@@ -615,7 +620,8 @@ async function runRoute(page, opts = {}) {
       // Say what was read (owner, 2026-11-04: no line meant no way to tell).
       const rows = screens.filter((x) => x.label === 'assignHistory').flatMap((x) => S.parseAssignHistory(parseGrid(x.screenGrid || [])));
       const uniq = new Map(rows.map((r) => [`${r.train}/${r.on}`, r]));
-      console.log(`  Assignment history (3 → 7): ${uniq.size} trains read, ${[...uniq.values()].filter((r) => r.off != null).length} with their off duty.`);
+      console.log(`  Assignment history${assignFill ? ` backfill from ${assignFill.start}` : ''} (3 → 7): ${uniq.size} trains read, ${[...uniq.values()].filter((r) => r.off != null).length} with their off duty.`);
+      if (assignFill) { try { fs.rmSync(path.join(DATA_DIR, 'assign-backfill.json')); } catch { /* gone */ } }
     }
   }
 
