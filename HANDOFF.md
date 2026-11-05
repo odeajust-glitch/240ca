@@ -9,6 +9,11 @@ be changing the checker now; if one is, only one may change it at a time.
 
 ## ▶ Start here (state at 2026-11-05)
 
+**Two Claude sessions changed the checker on 2026-11-05** (owner OK'd it):
+session_01AP9cZuN9352AvkVm7uMr1Z (days off, PL rules, spares) and
+session_01AP9cZud7gx8TSqRyscer6F (resets). Always `git pull` before a
+change and push small commits, so neither undoes the other.
+
 **Newest (2026-11-05, later session, claude.ai session_01AP9cZuN9352AvkVm7uMr1Z):
 upcoming days off (CATS 3 → 4) built, A + B + C** (owner: "do A, B and C").
 Not run on real CATS yet: after his pull, check the log has no "skipped
