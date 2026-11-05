@@ -1,8 +1,8 @@
 // Send a test alert to every phone following a name code or a turn, to check
 // a phone is set up (owner, 2026-11-04: "Can we push a notification to see
 // if it's his phone").
-//   node scripts/push-test.js WADE        (a name code)
-//   node scripts/push-test.js S501        (a turn)
+//   node scripts/alert-check.js WADE        (a name code)
+//   node scripts/alert-check.js S501        (a turn)
 const { ENV_FILES, PUSH_KEYS_FILE } = require('../lib/board/paths');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const config = require('../lib/board/config');
@@ -13,7 +13,7 @@ const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 
 (async () => {
   const want = String(process.argv[2] || '').trim().toUpperCase();
-  if (!want) { console.log('Use: node scripts/push-test.js WADE   (or a turn, e.g. S501)'); process.exit(1); }
+  if (!want) { console.log('Use: node scripts/alert-check.js WADE   (or a turn, e.g. S501)'); process.exit(1); }
   const settings = siteSettings();
   if (!settings.r2) { console.log('Cloudflare isn\'t set up in .env, so there are no phones to reach.'); process.exit(1); }
   const code = /^[A-Z]{4}$/.test(want) && !/\d/.test(want);
