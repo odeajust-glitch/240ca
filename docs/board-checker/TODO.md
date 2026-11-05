@@ -325,7 +325,7 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   code search shows each Toronto stay held 14 h+ on that crew: the
   conductor gets the grievance letter form filled in from the board (no
   name filled in for a name-code search), the engineer the details to file
-  with and a Copy button (no engineer letter template yet). Engineers are
-  not under Article 18.6(b) (owner, 2026-11-05): their details and heading
-  don't name it. **Waiting on the owner for the engineer template**, then
-  set up the engineer letter/info from it.
+  with and a Copy button. Engineers are not under Article 18.6(b) (owner,
+  2026-11-05): their details and heading don't name it. Done: the owner
+  says the details (turn, train out, off duty, train home, held) are
+  enough; no engineer template needed.

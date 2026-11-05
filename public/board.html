@@ -2231,7 +2231,7 @@ function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
       const out = box.querySelector('#g186box');
       if (role === 'EN') {
         const text = engineerDetails(r, turn);
-        out.innerHTML = `<div class="gform"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">There's no engineer letter template yet: these are the details to file with.</p><pre class="g186txt">${esc(text)}</pre><button type="button" class="g186copy">Copy</button></div>`;
+        out.innerHTML = `<div class="gform"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">The details to file with: tap Copy.</p><pre class="g186txt">${esc(text)}</pre><button type="button" class="g186copy">Copy</button></div>`;
         out.querySelector('.g186copy').onclick = async (e) => { try { await navigator.clipboard.writeText(text); e.target.textContent = '✓ Copied'; } catch (x) { /* select it by hand */ } };
         return;
       }
