@@ -2532,16 +2532,35 @@ source().then(async (src) => {
     const q = notesState.turn.trim().toUpperCase();
     const base = (t) => String(t || '').replace(/-(CO|EN|TT|ET)$/, '');
     const S0 = healthData.laptop && healthData.laptop.subscribers;
-    // A name code: alerts go out under the turn the person is on, so their
-    // turn now is searched too (earlier turns aren't known here).
-    const codeTurn = /^[A-Z]{4}$/.test(q) && S0 ? ((S0.people || []).find((p) => p.code === q) || {}).turn || null : null;
-    const own = (a) => !q || a.turn === q || base(a.turn) === q || (codeTurn && (a.turn === codeTurn || base(a.turn) === base(codeTurn)));
+    // A name code (owner, 2026-11-05: JUOD showed nothing): alerts go out
+    // under the turn the person is on, so it's the turns they held, from the
+    // Turn History sightings (people.json), each from when they were first
+    // seen on it until they were seen on another turn of their own.
+    if (isCode(q) && notesState.codeFor !== q) {
+      notesState.codeFor = q;
+      notesState.held = null;
+      Person.find(q).then((list) => {
+        const own = (list || []).filter((e) => e.own).sort((a, b) => (a.from < b.from ? -1 : 1));
+        const held = [];
+        for (const e of own) {
+          const last = held[held.length - 1];
+          if (last && last.turn === e.turn) continue;
+          if (last) last.to = e.from;
+          held.push({ turn: e.turn, from: e.from, to: null });
+        }
+        if (notesState.codeFor === q) { notesState.held = held; if (mode === 'notes') paintNotes(); }
+      });
+    }
+    const held = isCode(q) && notesState.codeFor === q ? notesState.held : null;
+    const stamp = (at) => at.replace(':', '');
+    const heldBy = (a) => held && held.some((h) => (a.turn === h.turn || base(a.turn) === base(h.turn)) && stamp(a.at) >= h.from && (!h.to || stamp(a.at) < h.to));
+    const own = (a) => !q || a.turn === q || base(a.turn) === q || heldBy(a);
     const mentions = (a) => q && new RegExp(`\\b${q.replace(/[^A-Z0-9]/g, '')}\\b`).test(a.text);
     const rows = D.alerts.filter((a) => (own(a) || (notesState.mention && mentions(a))) && (!notesState.kind || a.kind === notesState.kind));
     const counts = {};
     for (const a of rows.filter(own)) counts[a.kind] = (counts[a.kind] || 0) + 1;
     const S = S0;
-    const following = q && S ? (S.turns.find(([t]) => t === q || base(t) === q) || [null, 0])[1] : null;
+    const following = q && S ? (isCode(q) ? ((S.people || []).find((p) => p.code === q) || { phones: 0 }).phones : (S.turns.find(([t]) => t === q || base(t) === q) || [null, 0])[1]) : null;
     const people = q && S ? S.people.filter((p) => p.code === q || (p.turn && base(p.turn) === q)) : [];
     const byDay = new Map();
     for (const a of rows.slice(0, 600)) { const d = a.at.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(a); }
@@ -2562,7 +2581,7 @@ source().then(async (src) => {
           <select id="nkind" aria-label="Kind"><option value="">Every kind</option>${kinds.map((k) => `<option value="${esc(k)}"${k === notesState.kind ? ' selected' : ''}>${esc(NOTE_KINDS[k] || k)}</option>`).join('')}</select>
           <label><input type="checkbox" id="nmention"${notesState.mention ? ' checked' : ''}> Also alerts that mention it</label>
         </form>
-        <div class="nsum">${q ? `<b>${esc(q)}</b>: ${rows.filter(own).length} sent to it${notesState.mention ? `, ${rows.filter((a) => !own(a)).length} more mention it` : ''}${Object.keys(counts).length ? ` (${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(NOTE_KINDS[k] || k)} ${n}`).join(', ')})` : ''}.${following != null ? ` Phones following ${esc(q)}: ${following}.` : ''}${codeTurn ? ` ${esc(q)} is on ${esc(codeTurn)} now: its alerts are included.` : ''}${people.length ? ` Followed by name code: ${people.map((p) => `${esc(p.code || '?')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}.` : ''}` : `${rows.length} alerts. Type a turn (SR03, B126, S501) or a name code to see only theirs.`}${rows.length > 600 ? ' Showing the newest 600.' : ''}</div>
+        <div class="nsum">${q ? `<b>${esc(q)}</b>: ${rows.filter(own).length} sent to it${notesState.mention ? `, ${rows.filter((a) => !own(a)).length} more mention it` : ''}${Object.keys(counts).length ? ` (${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(NOTE_KINDS[k] || k)} ${n}`).join(', ')})` : ''}.${following != null ? ` Phones following ${esc(q)}: ${following}.` : ''}${isCode(q) ? (held == null ? ' Looking up their turns…' : held.length ? ` Alerts go out by turn, so these are the alerts for the turns ${esc(q)} held, while they held them: ${held.slice(-4).map((h) => `${esc(h.turn)} from ${esc(dt(h.from))}`).join(', ')}.` : ` ${esc(q)} hasn't been seen on a turn of their own in Turn History.`) : ''}${people.length ? ` Followed by name code: ${people.map((p) => `${esc(p.code || '?')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}.` : ''}` : `${rows.length} alerts. Type a turn (SR03, B126, S501) or a name code to see only theirs.`}${rows.length > 600 ? ' Showing the newest 600.' : ''}</div>
         ${list || '<p class="hbody muted">No alerts for that.</p>'}
       </section>
       <section class="sheet"><header><h2>How each alert works</h2></header><div class="hbody"><dl class="rules">${Object.keys(NOTE_RULES).map((k) => `<dt>${esc(NOTE_KINDS[k] || k)}</dt><dd>${esc(NOTE_RULES[k])}</dd>`).join('')}</dl>
