@@ -142,3 +142,35 @@ test('L502: the card says it goes spare; no alert until the crew is off duty in 
   assert.ok(!st['S502-CO'] || !st['S502-CO'].lineup);
   assert.ok(!st.S502 || !st.S502.lineup);
 });
+
+// Owner, 2026-11-05: "this person should get a notification that SA09 has a
+// PL and the job will be going spare and to expect a call" — before option 5
+// lists it ("sometimes these don't show and people get surprise calls").
+test('spare told from the order: SA09 has a PL, expect a call; once option 5 lists it, no second alert', () => {
+  const { turnStates, turnEvents } = require('../../lib/board/alerts');
+  const off = [{ from: at(2026, 11, 6, 0, 1), until: at(2026, 11, 7, 0, 1) }];
+  const now = at(2026, 11, 5, 7, 29);
+  const lineup = [{ order: at(2026, 11, 6, 5, 45), symbol: 'Z14891', trainNo: 'Z148', originDay: '05', status: 'PLN', deadhead: false }];
+  const aHome = [{ craft: 'CO', turn: 'SA09', terminal: 0, pos: 3, restUntil: null, statusUntil: null, off }];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], aHome, lineup }, { aTurnsPerDay: 3 });
+  const p = r.predictions[0];
+  assert.deepEqual([p.turn, p.spare, p.spareWhy], ['SA09', true, 'has a PL @ 6th 0001']);
+  const sb = (turn, pos) => ({ turn, pos, terminal: 0, working: false, st: null, rn: null, statusUntil: null, restUntil: null });
+  const spareboards = { coSlow: [sb('B130', 1), sb('B126', 2)] };
+  let st = turnStates(r, [], { vacancies: [], spareboards });
+  assert.equal(st.B130.lineup.train, 'Z14891 05');
+  const ev = turnEvents({}, st, { lineupRead: true, now });
+  const first = turnEvents(ev.told, turnStates(r, [], { vacancies: [], spareboards }), { lineupRead: true, now: now + 5 });
+  // First check learns the board (no prev = nothing sent); a fresh told with B130 unknown sends it.
+  const told = Object.fromEntries(Object.entries(ev.told).filter(([k]) => k !== 'B130'));
+  const sent = turnEvents(told, st, { lineupRead: true, now }).events.filter((e) => e.turn === 'B130');
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].text, /^B130 lined up: Z14891 05 planned for 6th 0545, expected call 6th 0330\. SA09 has a PL @ 6th 0001, so its conductor job is going spare: expect a call\.$/);
+  assert.ok(!first.events.some((e) => e.turn === 'B130'));
+  // Option 5 lists it later: same train for B130, no second alert.
+  const listed = [{ pos: 1, at: at(2026, 11, 6, 5, 45), status: 'PLANNED', train: 'Z14891', yard: false, pool: 'SA', cc: 'CO', turn: 'SA09', st: '', returns: null }];
+  st = turnStates(r, [], { vacancies: listed, spareboards });
+  assert.equal(st.B130.lineup.train, 'Z14891 05');
+  assert.ok(!st.B130.lineup.covers);
+  assert.ok(!turnEvents(ev.told, st, { lineupRead: true, now: now + 10 }).events.some((e) => e.turn === 'B130'));
+});

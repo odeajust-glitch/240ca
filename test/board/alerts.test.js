@@ -621,7 +621,7 @@ test('option 5 checked against the order: E27861 02, SA09 listed, SR05 in the or
     enSlow: [sb('EN10', 1, { rn: 'HT', statusUntil: at(2026, 11, 3, 1, 0) }), sb('EN12', 2, { rn: 'HT', statusUntil: at(2026, 11, 2, 19, 0) }), sb('EN04', 3)],
   } };
   const states = turnStates({ now, predictions: [e278] }, [], pools);
-  assert.equal(states.EN04.lineup.train, 'E27861');
+  assert.equal(states.EN04.lineup.train, 'E27861 02'); // the line-up's train, as the order names it
   assert.equal(states.EN04.lineup.order, at(2026, 11, 2, 19, 20)); // the line-up's time, not option 5's
   assert.ok(!states.B134.lineup); // no job for B134 on E27861
   let r = turnEvents({}, states, { lineupRead: true, now });

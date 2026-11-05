@@ -347,6 +347,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **Spare told from the order** (owner: "SA09 has a PL and the
+  job will be going spare … expect a call"; option 5 is sometimes missing
+  jobs → surprise calls): every turn the order has going spare (any reason:
+  PL, rest, hold, **, B0, MU) lines up the spare expected to cover it right
+  away (alerts.js `expected`, engine `spareWhy` / `engineerSpareWhy`):
+  "B130 lined up: Z14891 05 … SA09 has a PL @ 6th 0001, so its conductor
+  job is going spare: expect a call." When option 5 lists it, the same
+  train name (`trainDay`) means no second alert. Option-5 job alerts now
+  name the train with its day (E27861 02): a spare already told may get
+  one repeat after the pull. Not for an L502 whose crew is still out.
 - 2026-11-05: **L502 alerts held until the crew is off duty in Sarnia**
   (owner): a 501/502 crew out on a 502, at Garnet or bringing L501 home
   gets no "lined up" etc. for the next L502 (engine `s5Away`, alerts.js

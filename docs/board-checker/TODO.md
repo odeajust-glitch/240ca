@@ -346,3 +346,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   it's out on a 502, at Garnet or bringing L501 home. And the "when do I
   go" card now says when the train goes spare (S501 on rest until 6th 0640
   past L50231 06's 0145 call: "goes spare").
+- 2026-11-05: **The spare expected to cover a job going spare is told
+  right away** (owner: "sometimes these don't show and people get surprise
+  calls"): from the order, not only once option 5 lists it, with why
+  ("SA09 has a PL @ 6th 0001, so its conductor job is going spare: expect a
+  call"). The open choice (a) from 2026-11-02, done.
