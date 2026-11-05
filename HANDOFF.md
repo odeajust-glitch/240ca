@@ -285,6 +285,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
   WADE" to every phone following that code / turn and reports each (push
   host: fcm = Android/Chrome, web.push.apple.com = iPhone). Don't name a
   script *-test.js: node --test runs it (push-test.js broke the suite once).
+- 2026-11-05: engineers are not under 18.6(b); their details drop the article line and an engineer-only list is headed "Held in Toronto 14 h+". Waiting on the owner for the engineer template.
 - 2026-11-04: **Article 18.6(b) in Turn History** (owner: show it "when
   someone looks for their turn or uses their name code and they were the
   member of the crew. Just don't auto fill their name for the name code.

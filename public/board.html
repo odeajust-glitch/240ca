@@ -2216,7 +2216,10 @@ function held186(rows) {
       <div><b class="id">${esc(r.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.onDuty))} <span class="muted">· off duty Toronto ≈</span> ${esc(dt(r.offDuty))}</div>
       <div>${r.back ? `<span class="muted">Home on</span> <b class="id">${esc(r.back.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.back.onDuty))}` : '<span class="muted">Still in the bunkhouse</span>'}</div>
       <button type="button" class="g186" data-i="${i}">${role === 'CO' ? `Write the grievance (${esc(turn)})` : `Details to file (${esc(turn)})`}</button></div>`).join('');
-  return `<h3>Article 18.6(b) <span class="muted">(held in Toronto 14 h+ on this crew)</span></h3>
+  // Engineers: not Article 18.6(b) (that's the conductors' article); their
+  // own wording waits for the engineer template (owner, 2026-11-05).
+  const title = rows.some((x) => x.role === 'CO') ? 'Article 18.6(b)' : 'Held in Toronto 14 h+';
+  return `<h3>${title} <span class="muted">(held in Toronto 14 h+ on this crew)</span></h3>
     <div class="h186list">${body}</div>
     <div id="g186box"></div>`;
 }
