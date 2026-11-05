@@ -223,3 +223,20 @@ test('PL rules: a yard job running into the PL, road jobs within 24 h / 24–36 
   // 20 h: passed over.
   assert.equal(spareFills([job], { coSlow: [sb('B119', 1, { off: pl(7, 6) }), sb('B105', 2)] }).get(job).turn, 'B105');
 });
+
+// Owner, 2026-11-05: "yes add the reason" — the turn's own alert says why.
+test('the turn going spare is told why: PL, **, rest', () => {
+  const { turnStates, turnEvents } = require('../../lib/board/alerts');
+  const now = at(2026, 11, 5, 8, 7);
+  const off = [{ from: at(2026, 11, 6, 0, 1), until: at(2026, 11, 7, 0, 1) }];
+  const lineup = [{ order: at(2026, 11, 6, 5, 45), symbol: 'Z14891', trainNo: 'Z148', originDay: '05', status: 'PLN', deadhead: false },
+    { order: at(2026, 11, 5, 22, 55), symbol: 'X27691', trainNo: 'X276', originDay: '04', status: 'PLN', deadhead: false }];
+  const t = (craft, turn, pos, o = {}) => ({ craft, turn, terminal: 0, pos, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const ra = runBoardCheck({ now, callBoard: [], aHome: [t('CO', 'SA09', 1, { off })], s1Home: [t('EN', 'S102', 1)], chainGangHome: [], lineup: [lineup[0]] }, { aTurnsPerDay: 1, bTurnsPerDay: 0 });
+  const rs = runBoardCheck({ now, callBoard: [], chainGangHome: [t('CO', 'SR11', 1)], sdHome: [t('EN', 'SD01', 1, { st: '**', statusUntil: at(2026, 11, 7, 23, 59) })], lineup: [lineup[1]] }, { aTurnsPerDay: 0, bTurnsPerDay: 0 });
+  const ev = [ra, rs].flatMap((r) => turnEvents({ x: {} }, turnStates(r, []), { lineupRead: true, now }).events);
+  const text = (turn) => ev.find((e) => e.turn === turn && e.kind === 'lineup').text;
+  assert.equal(text('SA09'), 'SA09 lined up: Z14891 05 planned for 6th 0545, expected call 6th 0330. The turn goes spare (PL @ 6th 0001).');
+  assert.equal(text('SD01'), 'SD01 lined up: X27691 04 planned for 5th 2255, expected call 5th 2040. The turn goes spare (marked **).');
+  assert.equal(text('S102'), 'S102 lined up: Z14891 05 planned for 6th 0545, expected call 6th 0330.');
+});

@@ -347,6 +347,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: Turn alerts: "The turn goes spare (PL @ 6th 0001)." — the
+  reason in brackets, no "(spareboard covers)" (owner); cards the same.
 - 2026-11-05: **Reset alerts worked through in call order** (owner: "fix
   both"; reset-alerts.js resetEvents): a likely reset is kept for the jobs
   after it (one spare per job: B126, B134, B110, not B130 three times), and
