@@ -270,3 +270,10 @@ test('off duty from CATS\'s assignment history comes first, and is exact', () =>
   const all = R.merge(R.empty(), acc);
   assert.equal(R.offDuty({ train: 'Z14931 01', on: t(1, 1650), last: t(2, 45), job: 'SR03' }, 'SR03', all).how, 'history');
 });
+
+test('a rest shown while away (Garnet) is 8 h, like the bunkhouse', () => {
+  const acc = R.empty();
+  // Owner's CATS: L50231 04 on 4th 0245, off 1101; S501 at Garnet "rest until 4th 1901".
+  R.collect(acc, { s5: [{ turn: 'S501', craft: 'CO', terminal: 1, restUntil: t(4, 1901) }] }, [], t(4, 1131));
+  assert.deepEqual(R.offDuty({ train: 'L50231 04', on: t(4, 245), last: t(4, 1120), job: 'S501-CO' }, 'S501-CO', acc), { off: t(4, 1101), how: 'bunkhouse' });
+});

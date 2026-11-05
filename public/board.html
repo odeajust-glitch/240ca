@@ -1196,7 +1196,19 @@ function worked(rec, turn = '') {
 }
 // resets (owner, 2026-11-04): this person's resets [{ at, kind }]; the rest
 // line where they got one is green and says so.
-function workHistory(rec, turnIn, resets = []) {
+// offs (owner, 2026-11-04): each train's off duty { train: { on, off, how } }
+// from resets.json; shown beside "on duty", "~" when only an estimate.
+const offLine = (o, offs) => {
+  const x = offs[String(o.train || '').replace(/ \(.*$/, '')];
+  if (!x || !x.off) return '';
+  const [d1, t1] = [x.on, x.off].map((v) => v.replace(/[^0-9]/g, ''));
+  const mins = (v) => Date.UTC(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8), +v.slice(8, 10), +v.slice(10, 12)) / 60000;
+  const dur = mins(t1) - mins(d1);
+  const rough = /^(call board|yard)$/.test(x.how);
+  const same = x.off.slice(0, 10) === x.on.slice(0, 10);
+  return ` · off ${rough ? '~' : ''}${same ? x.off.slice(11) : dt(x.off)} (${rough ? '~' : ''}${Math.floor(dur / 60)} h ${String(dur % 60).padStart(2, '0')} m)`;
+};
+function workHistory(rec, turnIn, resets = [], offs = {}) {
   const rows = worked(rec, turnIn);
   const turn = BoardTurns.splitCraft(turnIn).base;
   if (!rows.length) return '<h3>Work history</h3><p class="empty" style="padding:0 14px 10px">No trains worked in the saved checks.</p>';
@@ -1218,7 +1230,7 @@ function workHistory(rec, turnIn, resets = []) {
     return `<tr class="wrest${got.length ? (sure ? ' wreset' : ' wreset wreset-p') : ''}"><td colspan="3"><span class="muted">${lbl}</span> ${reset}${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>`;
   };
   const restBefore = (i) => restLine(rows[i + 1] ? rows[i + 1].onDutySeen : '', rows[i].onDutySeen, 'Rest before it:');
-  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div></td>
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}${esc(offLine(o, offs))}</div></td>
     <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
   return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
@@ -2952,7 +2964,7 @@ source().then(async (src) => {
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
       <div id="whengo" class="whengo" hidden></div>
-      <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [])}</div>
+      <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
       <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
       <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;

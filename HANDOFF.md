@@ -281,6 +281,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **off duty in the Work history** (owner: "Can we start to add
+  off duty times in turn history"): resets.js trainOffs → resets.json
+  `offs` {train: {on, off, how}}; board.html offLine: "on duty 0245 · off
+  1101 (8 h 16 m)", "~" when estimated. Fixed: a REST shown while the turn
+  is away (term 1+, Garnet) is 8 h like the bunkhouse (L50231 04: rest
+  until 1901 → off 1101 as CATS; was 0901 with − 10 h).
 - 2026-11-04 19:03: laptop on c966799. Garnet reminder alert worked
   ("S501-CO: about 27 min to your expected call: L50131 04 … call 1930").
   One check: "crews in town list cut short: CATS did not answer within a
