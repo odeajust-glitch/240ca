@@ -2200,7 +2200,6 @@ function grievanceForm(r, pre = {}) {
 const isoOf = (st) => (st ? `${st.slice(0, 10)} ${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
 function engineerDetails(r, turn) {
   return [
-    'Article 18.6(b), Agreement 4.16: held at the away-from-home terminal (Toronto) 14 hours or more.',
     `Engineer turn: ${turn}${r.co ? ` (conductor ${r.co})` : ''}`,
     `Train to Toronto: ${r.id}, on duty Sarnia ${isoOf(r.onDuty)}`,
     `Off duty Toronto: ${isoOf(r.offDuty)} (worked out from the bunkhouse rest: check the time slip)`,
