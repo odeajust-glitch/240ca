@@ -204,7 +204,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   may leave the "upcoming" list once it starts). Rows get `off`; a turn off at
   the call takes its train and **goes spare, in every pool incl. Chain
   Gang/SD** (owner: "it will go spare"; only the reset "what if" run skips
-  it, like **); spares off are passed over; "days off …" in pool statuses;
+  it, like **); spares off are passed over; status "PL @ 6th 0001 · goes spare"
+  (owner's wording; "until …" once on), reasons say "PL @ …";
   Current tab "Days off" section; runaround log "explained". An ET/TT line
   is a trainee (owner: their jobs never go spare, no one replaces them):
   listed only, never put on a row.

@@ -66,7 +66,7 @@ test('days off: a Chain Gang / SD turn off at the call takes it and goes spare (
   const sd = [{ craft: 'EN', turn: 'SD01', terminal: 0, pos: 1, restUntil: null, statusUntil: null, off }, { craft: 'EN', turn: 'SD02', terminal: 0, pos: 2, restUntil: null, statusUntil: null }];
   const p = runBoardCheck({ now: NOW, callBoard: [], chainGangHome: gang, sdHome: sd, lineup: [dh(10)] }).predictions[0];
   assert.deepEqual([p.turn, p.spare, p.engineer, p.engineerSpare], ['SR10', true, 'SD01', true]);
-  assert.match(p.reason, /SR10 is on days off 6th 0001–7th 0001 at the call/);
+  assert.match(p.reason, /SR10 is PL @ 6th 0001 at the call → the turn goes out with a spareboard employee/);
   // Called before the days off start: SR10 goes.
   const early = { ...dh(1), order: at(2026, 11, 5, 23, 0), originDay: '05' };
   assert.equal(runBoardCheck({ now: NOW, callBoard: [], chainGangHome: gang, lineup: [early] }).predictions[0].turn, 'SR10');
@@ -74,7 +74,7 @@ test('days off: a Chain Gang / SD turn off at the call takes it and goes spare (
   const a = runBoardCheck({ now: NOW, callBoard: [], chainGangHome: [], aHome: [{ craft: 'CO', turn: 'SA09', terminal: 0, pos: 1, restUntil: null, statusUntil: null, off }],
     lineup: [{ order: at(2026, 11, 6, 10, 0), symbol: 'M30241', trainNo: 'M302', originDay: '06', status: 'PLN', deadhead: false }] }).predictions[0];
   assert.deepEqual([a.pool, a.turn, a.spare], ['A', 'SA09', true]);
-  assert.match(a.reason, /on days off/);
+  assert.match(a.reason, /It's PL @ 6th 0001 at the call/);
 });
 
 test('days off: a spare off at the call is passed over', () => {
@@ -83,7 +83,7 @@ test('days off: a spare off at the call is passed over', () => {
   const fills = spareFills([job], { coSlow: [{ turn: 'B111', pos: 1, off }, { turn: 'B133', pos: 2 }] });
   const f = fills.get(job);
   assert.equal(f.turn, 'B133');
-  assert.match(f.skipped[0], /B111 \(on days off/);
+  assert.match(f.skipped[0], /B111 \(PL @ 6th 0001\)/);
 });
 
 test('days off: put on the pool rows by turn and craft; shown in the status', () => {
@@ -93,8 +93,9 @@ test('days off: put on the pool rows by turn and craft; shown in the status', ()
   assert.equal(s.daysOff.length, 7); // 6 read + 1 remembered, still on
   assert.ok(s.daysOff.some((d) => d.turn === 'SR05'));
   const V = require('../../lib/board/view');
-  assert.equal(V.gangStatus({ turn: 'SR10', off: [{ from: at(2026, 11, 7, 0, 1), until: at(2026, 11, 8, 0, 1) }] }, NOW), 'days off 7th 0001–8th 0001');
-  assert.equal(V.gangStatus({ turn: 'SR05', off: [{ from: at(2026, 11, 5, 6, 0), until: at(2026, 11, 6, 6, 0) }] }, NOW), 'on days off until 6th 0600');
+  // Owner, 2026-11-05: "Can you have it say PL @ 6th 0001. Also show it going spare."
+  assert.equal(V.gangStatus({ turn: 'SA09', off: [{ from: at(2026, 11, 6, 0, 1), until: at(2026, 11, 7, 0, 1) }] }, NOW), 'PL @ 6th 0001 · goes spare');
+  assert.equal(V.gangStatus({ turn: 'SR05', off: [{ from: at(2026, 11, 5, 6, 0), until: at(2026, 11, 6, 6, 0) }] }, NOW), 'PL @ 5th 0600 · goes spare until 6th 0600');
   // Engineer days off don't touch the conductor row of the same turn.
   const rows = [{ turn: 'S106', craft: 'CO' }, { turn: 'S106', craft: 'EN' }];
   DaysOff.attach(rows, s.daysOff, (r) => DaysOff.side(r.craft));
@@ -114,10 +115,11 @@ test('runaround log: a turn on days off at the call is explained', () => {
   const snap0 = (st) => ({ taken: '2026-11-06 0646', lineup: [lineRow], pools: [{ name: 'Chain Gang (SR) · conductors', turns: [{ pos: '001', turn: 'SR10', status: st }] }, { name: 'SD · engineers', turns: [{ pos: '001', turn: 'SD01', status: 'available' }] }] });
   const went = { taken: '2026-11-06 0653', lineup: [], onDuty: [{ train: 'DHT024B 06', onDuty: '6th 0900', crew: 'EN SD01 · CO SR02' }] };
   const r = (st) => Insights.finish(Insights.collect([snap0(st), went])).runLog.find((x) => x.passed === 'SR10');
-  assert.equal(r('on days off until 7th 0001').result, 'explained');
-  assert.equal(r('days off 6th 0001–7th 0001').result, 'explained');
-  // Days off starting after the call: still a likely runaround.
-  assert.equal(r('days off 6th 1200–7th 1200').result, 'likely');
+  assert.equal(r('PL @ 6th 0001 · goes spare').result, 'explained');
+  assert.equal(r('PL @ 5th 1000 · goes spare until 6th 1000').result, 'explained');
+  // Days off starting after the call, or over before it: still a likely runaround.
+  assert.equal(r('PL @ 6th 1200 · goes spare').result, 'likely');
+  assert.equal(r('PL @ 5th 0600 · goes spare until 6th 0600').result, 'likely');
 });
 
 // Owner, 2026-11-05 (JUOD on S501 CO): S501 home, on rest until 6th 0640,
