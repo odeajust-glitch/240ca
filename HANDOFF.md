@@ -204,8 +204,8 @@ node scripts/board-watchdog.js --me SR03 --every 5
   may leave the "upcoming" list once it starts). Rows get `off`; the order
   skips a Chain Gang/SD turn off at the call, an A/B/S1/S3/501-502 turn
   goes spare, spares off are passed over; "days off …" in pool statuses;
-  Current tab "Days off" section; runaround log "explained". ET counts as
-  the engineer side (as option 5's CC already did).
+  Current tab "Days off" section; runaround log "explained". An ET/TT line
+  is a trainee (their own slot): it doesn't take the turn's engineer off.
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
@@ -308,8 +308,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 - ❓ **Days off (option 4)**, new 2026-11-05: first real run (see Start
   here). Owner "not sure" what STAT (A/B) and A/U/X mean: shown, not used.
-  Leave types other than OFF: "don't worry". Asked whether an ET line
-  (engineer trainee?) should mean the engineer turn is off (it does now).
+  Leave types other than OFF: "don't worry". ET = trainee (the trainees
+  work): their day off doesn't make the turn go spare; asked the owner to
+  confirm with the S104 ET example.
 
 - **Worker:** the version with the agreement search is deployed (checked
   2026-11-03). ❓ Confirm the 30-min ntfy "down" arrives the next time the

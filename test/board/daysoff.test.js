@@ -98,6 +98,10 @@ test('days off: put on the pool rows by turn and craft; shown in the status', ()
   const rows = [{ turn: 'S106', craft: 'CO' }, { turn: 'S106', craft: 'EN' }];
   DaysOff.attach(rows, s.daysOff, (r) => DaysOff.side(r.craft));
   assert.deepEqual(rows.map((r) => !!r.off), [false, true]);
+  // A trainee's day off (S104 ET) leaves S104's engineer working.
+  const s104 = [{ turn: 'S104', craft: 'EN' }];
+  DaysOff.attach(s104, s.daysOff, (r) => DaysOff.side(r.craft));
+  assert.equal(s104[0].off, undefined);
 });
 
 test('runaround log: a turn on days off at the call is explained', () => {
