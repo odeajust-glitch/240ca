@@ -281,6 +281,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04 19:03: laptop on c966799. Garnet reminder alert worked
+  ("S501-CO: about 27 min to your expected call: L50131 04 … call 1930").
+  One check: "crews in town list cut short: CATS did not answer within a
+  minute" (36 people read, usually ~90) ❓ watch if it repeats. Assignment
+  history now prints "Assignment history (3 → 7): N trains read, M with
+  their off duty" when read.
 - 2026-11-04: **next: exact off duty from CATS ASSIGNMENT HISTORY (PSTS17A)**
   (owner's screenshot). Boxes: DIST 45, SUB-DIST SA, POOL OR YD/LO = a
   *location* code (S1 = Sarnia, not the S1 pool; S5 = 502/501), HOME/AWAY

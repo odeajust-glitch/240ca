@@ -610,7 +610,13 @@ async function runRoute(page, opts = {}) {
         console.log(`  (skipped assignment history ${loc} (3 → 7): ${err.message})`);
       }
     }
-    if (read) assignReadAt = Date.now();
+    if (read) {
+      assignReadAt = Date.now();
+      // Say what was read (owner, 2026-11-04: no line meant no way to tell).
+      const rows = screens.filter((x) => x.label === 'assignHistory').flatMap((x) => S.parseAssignHistory(parseGrid(x.screenGrid || [])));
+      const uniq = new Map(rows.map((r) => [`${r.train}/${r.on}`, r]));
+      console.log(`  Assignment history (3 → 7): ${uniq.size} trains read, ${[...uniq.values()].filter((r) => r.off != null).length} with their off duty.`);
+    }
   }
 
   // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and
