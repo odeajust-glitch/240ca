@@ -321,3 +321,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   Garnet that takes it (only ever one: the 501/502 crew that took L502
   out), their rest and the call (order − 2 h). That crew's phones get
   lined up home from Garnet, ordered, time change and the reminder.
+- 2026-11-04: **Article 18.6(b) in Turn History.** A turn search or a name
+  code search shows each Toronto stay held 14 h+ on that crew: the
+  conductor gets the grievance letter form filled in from the board (no
+  name filled in for a name-code search), the engineer the details to file
+  with and a Copy button (no engineer letter template yet).

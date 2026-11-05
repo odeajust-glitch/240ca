@@ -281,6 +281,16 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: **Article 18.6(b) in Turn History** (owner: show it "when
+  someone looks for their turn or uses their name code and they were the
+  member of the crew. Just don't auto fill their name for the name code.
+  For engineers … the information they would need to file"). board.html
+  held186 / wireHeld186: turn search lists heldRows with co or en = the
+  turn (letter prefilled like the 18.6(b) tab, names if unlocked); name-code
+  search lists trips in their Work history where they were co or en
+  (trainees left out), letter with no name; engineer → details text + Copy
+  (no engineer template yet ❓ when the owner has one). Turn search's Work
+  history also shows off duty now.
 - 2026-11-04: assignment history read on the laptop (19:05, 19:23) but 0
   trains came out: real rows start with the X box saved as "[]"
   (`node scripts/assign-check.js` shows the saved page); parseAssignHistory

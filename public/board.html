@@ -574,6 +574,7 @@
   .pickturn button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .vt { color: var(--amber); font: 600 13px/1 var(--mono); }
   tr.wreset td { background: var(--go-tint); box-shadow: inset 4px 0 0 var(--go); }
+  .g186txt { white-space: pre-wrap; font: 13px/1.5 var(--mono); background: var(--sheet); border: 1px solid var(--rule); padding: 10px; border-radius: 6px; }
   .resetlbl { color: var(--go); }
   tr.wreset-p td { background: var(--amber-tint); box-shadow: inset 4px 0 0 var(--amber); }
   tr.wreset-p .resetlbl { color: var(--amber); }
@@ -1111,6 +1112,7 @@ function turnPanel(s) {
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
     <div id="worklog" class="work"></div>
+    <div id="held186" class="work"></div>
     <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
     <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
@@ -2180,6 +2182,55 @@ function grievanceForm(r, pre = {}) {
 }
 
 // Reads the open form; keeps the held time, file # and button current.
+// Article 18.6(b) in Turn History (owner, 2026-11-04: "can we have that show
+// up in turn history … when someone looks for their turn or uses their name
+// code and they were the member of the crew. Just don't auto fill their name
+// for the name code. For engineers … include the information they would need
+// to file the grievance"). rows: [{ r, role: 'CO' | 'EN' }].
+const isoOf = (st) => (st ? `${st.slice(0, 10)} ${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
+function engineerDetails(r, turn) {
+  return [
+    'Article 18.6(b), Agreement 4.16: held at the away-from-home terminal (Toronto) 14 hours or more.',
+    `Engineer turn: ${turn}${r.co ? ` (conductor ${r.co})` : ''}`,
+    `Train to Toronto: ${r.id}, on duty Sarnia ${isoOf(r.onDuty)}`,
+    `Off duty Toronto: ${isoOf(r.offDuty)} (worked out from the bunkhouse rest: check the time slip)`,
+    r.back ? `Train home: ${r.back.id}, on duty Toronto ${isoOf(r.back.onDuty)}` : 'Train home: none yet (still in the bunkhouse at the last check)',
+    `Held: ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}`,
+  ].join('\n');
+}
+function held186(rows) {
+  if (!rows.length) return '';
+  const body = rows.map(({ r, role, turn }, i) => `<tr class="h186" data-i="${i}">
+      <td class="num"><b class="id">${esc(r.id)}</b> <span class="crew">${esc(dt(r.onDuty))}</span></td>
+      <td class="num">≈ ${esc(dt(r.offDuty))}</td>
+      <td class="num">${r.back ? `<b class="id">${esc(r.back.id)}</b> <span class="crew">${esc(dt(r.back.onDuty))}</span>` : '<span class="muted">still in the bunkhouse</span>'}</td>
+      <td><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span></td>
+      <td><button type="button" class="g186" data-i="${i}">${role === 'CO' ? `Write the grievance (${esc(turn)})` : `Details to file (${esc(turn)})`}</button></td></tr>`).join('');
+  return `<h3>Article 18.6(b) <span class="muted">(held in Toronto 14 h+ on this crew)</span></h3>
+    <div class="scroll"><table class="orders"><thead><tr><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home · on duty</th><th>Held</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
+    <div id="g186box"></div>`;
+}
+// noNames: a name-code search; the letter's name is left for them to type.
+function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
+  box.querySelectorAll('button.g186').forEach((b) => {
+    b.onclick = () => {
+      const { r, role, turn } = rows[+b.dataset.i];
+      const out = box.querySelector('#g186box');
+      if (role === 'EN') {
+        const text = engineerDetails(r, turn);
+        out.innerHTML = `<div class="gform"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">There's no engineer letter template yet: these are the details to file with.</p><pre class="g186txt">${esc(text)}</pre><button type="button" class="g186copy">Copy</button></div>`;
+        out.querySelector('.g186copy').onclick = async (e) => { try { await navigator.clipboard.writeText(text); e.target.textContent = '✓ Copied'; } catch (x) { /* select it by hand */ } };
+        return;
+      }
+      const pre = noNames ? { gender: 'male' } : prefill(r, names);
+      out.innerHTML = `<div class="gform"><h3>Grievance · ${esc(r.co)} on ${esc(r.id)}</h3>${grievanceForm(r, pre)}</div>`;
+      const form = out.querySelector('form.gf');
+      if (form) wireGrievance(form, r.co);
+      out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+  });
+}
+
 function wireGrievance(form, turn) {
   const G = window.Grievance;
   const f = form.elements;
@@ -2875,6 +2926,16 @@ source().then(async (src) => {
         + (lines ? lines.map((l, i) => `<p>${i ? '' : '<b>'}${markTurn(l)}${i ? '' : '</b>'}</p>`).join('')
           : '<p>Not lined up on a train and not in the Sarnia Chain Gang line right now (working, away, or off), or not a turn the board checker follows.</p>');
     });
+    // Article 18.6(b) for this turn's crews (owner, 2026-11-04).
+    Promise.all([src.trains(), heldNames().catch(() => ({ names: null }))]).then(([trains, { names }]) => {
+      const box = document.getElementById('held186');
+      if (!box || want !== focus) return;
+      const base = BoardTurns.splitCraft(want).base;
+      const rows = heldRows(trains).filter((r) => r.co === base || r.en === base).map((r) => ({ r, role: r.co === base ? 'CO' : 'EN', turn: base }));
+      box.innerHTML = held186(rows);
+      wireHeld186(box, rows, { names });
+    }).catch(() => {});
+    loadResets();
     src.turns().then((all) => {
       const hb = document.getElementById('turnhist');
       if (!hb || want !== focus) return;
@@ -2887,7 +2948,7 @@ source().then(async (src) => {
       const more = document.getElementById('turnmore');
       if (more) { more.innerHTML = h.more; document.getElementById('turnmorebox').hidden = !h.more; }
       const work = document.getElementById('worklog');
-      if (work && hist) { work.innerHTML = workHistory(hist, want); wireWork(work, hist, want); }
+      if (work && hist) { work.innerHTML = workHistory(hist, want, [], (RESETS && RESETS.offs) || {}); wireWork(work, hist, want); }
       else if (work) work.innerHTML = workHistory(null, want);
       document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     }).catch(() => {
@@ -2965,12 +3026,24 @@ source().then(async (src) => {
         <div><h3>Status</h3>${status}</div></div>
       <div id="whengo" class="whengo" hidden></div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
+      <div id="held186" class="work"></div>
       <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
       <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
     wireWork(box.querySelector('#worklog'), rec, cur.turn);
+    // Article 18.6(b): Toronto stays held 14 h+ on a train they worked, as
+    // conductor or engineer; the name is never filled in for a name code.
+    src.trains().then((trains) => {
+      const hb = box.querySelector('#held186');
+      if (!hb || !box.isConnected) return;
+      const worked = new Map((rec.orders || []).filter((o) => !o.trainee).map((o) => [String(o.train).replace(/ \(.*$/, ''), String(o.turn || '').replace(/-(CO|EN)$/, '')]));
+      const rows = heldRows(trains).filter((r) => worked.has(r.id) && [r.co, r.en].includes(worked.get(r.id)))
+        .map((r) => ({ r, role: worked.get(r.id) === r.co ? 'CO' : 'EN', turn: worked.get(r.id) }));
+      hb.innerHTML = held186(rows);
+      wireHeld186(hb, rows, { noNames: true });
+    }).catch(() => {});
     box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     if (!live) return;
     box.querySelector('#turnalert').onclick = () => openTrack(cur.turn);
