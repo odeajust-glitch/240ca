@@ -1,16 +1,59 @@
 # HANDOFF — read this before doing anything
 
-Last updated: 2026-11-04 (end of the API key tester / Claude in the
-Agreements tab session; NOTE: the reset tracker / Garnet / trainees
-session (claude.ai session_01AP9cZud7gx8TSqRyscer6F) was still running in
-parallel on 2026-11-04 and rebased onto it) · Branch:
-**`claude/vigilant-planck-zawrj4`** (has everything) · 232 tests (`npm ci`
-then `npm test`; 237 now). **Owner, 2026-11-04 (late): laptop pulled
-`fc76d6c` and restarted; Worker re-pasted with ANTHROPIC_API_KEY set;
-Anthropic spend limit set** ("I've done that"). Not yet confirmed on the
-real site: the checks below.
+Last updated: **2026-11-05** (end of the reset tracker / trainees / Garnet /
+assignment history / alert-check session, claude.ai
+session_01AP9cZud7gx8TSqRyscer6F) · Branch:
+**`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 250 tests
+(`npm ci` then `npm test`, all pass). No other Claude session is known to
+be changing the checker now; if one is, only one may change it at a time.
 
-## ▶ Next session
+## ▶ Start here (state at 2026-11-05)
+
+**Laptop:** the owner has NOT yet pulled the last few commits (from
+`0a09803` on). First thing: have him `git pull` in `C:\BoardChecker-code`,
+Ctrl+C the checker and start it again, then reload the site on the phone
+(close the tab if it still shows the old page). The site's page
+(index.html) is copied from the laptop's `public/board.html` on every
+check, so nothing goes live until he pulls.
+
+Done in the last session (2026-11-05), to confirm on the real site/phone:
+1. **Engineers and 18.6(b):** engineers are NOT under Article 18.6(b)
+   (owner). Their details box has no article line; an engineer-only list in
+   Turn History is headed "Held in Toronto 14 h+". Owner: the details
+   (engineer turn + conductor, train to Toronto + on duty, off duty Toronto,
+   train home + on duty, held) "is enough": **no engineer template coming**.
+   The same engineer box + Copy is now also on the **Article 18.6(b) tab**,
+   under the conductor's grievance form when a crew is tapped
+   (board.html engineerBox / wireEngineerBox). ❓ Check it shows there.
+2. **Work history on a phone:** the hours worked moved under the off-duty
+   time ("off 27th 0005" / "(7 h 35 m)") so it no longer runs into "at
+   Toronto". ❓ Check.
+3. **Reset alerts, Chain Gang / SD** (owner): a turn put on a reset at the
+   call does not take the train and go spare; the job goes to the **next
+   turn that can work it, past ** / B0 turns**, and only spare if no one
+   after them is available. Example that triggered it: 4th 1944 check,
+   SD02 on M39491 (call 5th 0226) told EN03; should have been SD04 (SD11
+   hold, SD01 **). Only in the reset "what if" run (engine `resetJob`,
+   `firstCallable` skipSpare); the normal line-up still has a ** turn take
+   its train and go spare. ❓ Watch the next Chain Gang / SD reset alert.
+4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
+   sends "Test: CODE" to the phones following it, **skipping phones that
+   also follow the owner's code (JUOD)**; `--all` includes them. Worked:
+   WADE's phone and ERBR's phone both got it (2026-11-05).
+5. Owner asked why Chrome's lock menu had no "Permissions": Chrome only
+   lists a permission once the site has asked; that browser had never been
+   set up for alerts (🔔 Track / alerts → Allow).
+
+Still to watch on real runs (from 2026-11-03/04):
+- Reset alerts reaching the right people (A/B/S1/S3 → the spare who'd
+  fill it; spareboards → next spare; Chain Gang/SD as above).
+- Trainees (WADE on S501-TT): stays on the slot while away, alerts follow.
+- Crews-in-town list cut short when CATS is slow.
+- Saved question DHT040B 31 / B111 (TODO #8): look at it with the tracker.
+- Pushover trial ends ~2026-12-04 (TODO #12): ask the owner if Pushover
+  is the one that always arrives, then buy or remove it.
+
+## ▶ Older next-session notes (2026-11-04, the parallel API/Agreements session)
 
 **First ask the owner how these looked on the real site** (sent to him
 2026-11-04, after his first check with the new code):
@@ -295,7 +338,7 @@ node scripts/board-watchdog.js --me SR03 --every 5
   turn (letter prefilled like the 18.6(b) tab, names if unlocked); name-code
   search lists trips in their Work history where they were co or en
   (trainees left out), letter with no name; engineer → details text + Copy
-  (no engineer template yet ❓ when the owner has one). Turn search's Work
+  (owner 2026-11-05: no engineer template needed; not 18.6(b) for engineers). Turn search's Work
   history also shows off duty now.
 - 2026-11-04: assignment history read on the laptop (19:05, 19:23) but 0
   trains came out: real rows start with the X box saved as "[]"
