@@ -268,6 +268,7 @@
   .head .screens { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip { font-size: 12px; padding: 2px 8px; border-radius: 3px; background: var(--plan-tint); color: var(--soft); white-space: nowrap; }
   button.chip { border: 0; font-family: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  button.chip:disabled { cursor: default; text-decoration: none; opacity: .6; }
   .sheet.jumped { outline: 2px solid var(--soft); outline-offset: 2px; }
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
@@ -747,10 +748,12 @@ const JUMPS = { callBoard: { id: 'sec-callboard' }, chainGang: { id: 'sec-pools'
   lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' },
   coFast: { id: 'sec-pools', pool: 'Conductor fast' }, coSlow: { id: 'sec-pools', pool: 'Conductor slow' }, enFast: { id: 'sec-pools', pool: 'Engineer fast' },
   enSlow: { id: 'sec-pools', pool: 'Engineer slow' }, s5Pool: { id: 'sec-pools', pool: '501/502' }, garnet: { id: 'sec-pools', pool: 'Garnet' },
-  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' }, daysOff: { id: 'sec-daysoff' } };
+  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' }, daysOff: { id: 'sec-daysoff' },
+  // Owner, 2026-11-05: these were dead links. Crews in town is read at the end of the Call Board.
+  garnetLineup: { id: 'sec-garnet' }, crewsInTown: { id: 'sec-callboard' } };
 const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41', garnetLineup: 'Garnet line-up 41',
   coFast: 'Conductor fast 13', coSlow: 'Conductor slow 9', enFast: 'Engineer fast 19', enSlow: 'Engineer slow 17', terminal: 'Jobs going spare 5',
-  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs', daysOff: 'Days off 4' };
+  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs', daysOff: 'Days off 4', crewsInTown: 'Crews in town' };
 
 // "2026-10-15 0815" → parts for display.
 function when(taken) {
@@ -3156,6 +3159,11 @@ source().then(async (src) => {
     if (upd) upd.onclick = () => { location.hash = '#current'; location.reload(); };
     document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
     document.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; show(cur, true); }; });
+    // A chip whose section isn't on the page this check (nothing to show) isn't a link.
+    document.querySelectorAll('[data-jump]').forEach((b) => {
+      const j = JUMPS[b.dataset.jump];
+      if (j && !document.getElementById(j.id)) { b.disabled = true; b.title = 'Nothing to show for this screen on this check'; }
+    });
     document.querySelectorAll('[data-jump]').forEach((b) => { b.onclick = () => {
       const j = JUMPS[b.dataset.jump];
       if (j.pool) {
