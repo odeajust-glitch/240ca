@@ -355,3 +355,6 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   that spare over (B119: yard 1600, PL 2200 → B105). Road jobs: the PL 24 h
   or less after going on duty → goes spare 100%; 24–36 h → a warning to the
   person who'd take the job if it went spare.
+- 2026-11-05: **Reset alerts fixed** (owner): worked through in call order,
+  so each spare is told about one job, and a spare who'd need a reset too
+  is passed over to the next one who can work it.

@@ -100,3 +100,26 @@ test('Chain Gang reset: the next available turn, past ** turns', () => {
   // The normal line-up is unchanged: a ** turn still takes its train and goes spare.
   assert.equal(result.predictions.find((p) => p.turn === 'SR09').spare, false);
 });
+
+// Owner, 2026-11-05 ("fix both"): resets worked through in call order, so a
+// spare isn't told for three trains, and the person it lands on is checked
+// for their own reset (B130 needs one too → B126).
+test('reset alerts: one spare per job in call order; a spare needing a reset is passed', () => {
+  const now = at(2026, 11, 5, 12, 0);
+  const t = (craft, turn, pos, o = {}) => ({ craft, turn, terminal: 0, pos, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const sb = (turn, pos) => ({ turn, pos, terminal: 0, working: false, st: null, rn: null, statusUntil: null, restUntil: null });
+  const tr = (symbol, day, h, m = 0) => ({ symbol, trainNo: symbol.slice(0, -2), originDay: day, order: at(2026, 11, +day, h, m), status: 'PLN', deadhead: false });
+  const input = {
+    now, callBoard: [], yardJobs: [], vacancies: [], chainGangHome: [t('CO', 'SR03', 1)], sdHome: [], s3Home: [], s1Home: [],
+    aHome: [t('CO', 'SA05', 1)], bHome: [t('CO', 'SB02', 1)],
+    s5: [t('EN', 'S501', 1), t('CO', 'S501', 1), t('EN', 'S502', 2, { terminal: 1 }), t('CO', 'S502', 2, { terminal: 1 })],
+    lineup: [tr('L50231', '06', 4), tr('Z14891', '06', 5, 45), tr('M38261', '06', 9)],
+    spareboards: { coSlow: [sb('B130', 1), sb('B126', 2), sb('B134', 3), sb('B110', 4)] },
+  };
+  const run = (i) => runBoardCheck(i, { aTurnsPerDay: 1, bTurnsPerDay: 1 });
+  const due = (d, h) => ({ due: at(2026, 11, d, h, 0) });
+  const resets = { 'S501-CO': due(6, 12), SA05: due(6, 20), SB02: due(7, 0), B130: due(7, 8) };
+  const ev = RA.resetEvents({ input, result: run(input), resets, run, now }).events;
+  assert.deepEqual(ev.map((e) => [e.about, e.train, e.turn]), [['S501-CO', 'L50231 06', 'B126'], ['SA05', 'Z14891 06', 'B134'], ['SB02', 'M38261 06', 'B110']]);
+  assert.match(ev[0].text, /B130 would be next, but needs a reset by 7th 0800 too\. If so, B126 is next for it/);
+});

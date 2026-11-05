@@ -347,6 +347,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **Reset alerts worked through in call order** (owner: "fix
+  both"; reset-alerts.js resetEvents): a likely reset is kept for the jobs
+  after it (one spare per job: B126, B134, B110, not B130 three times), and
+  the person it lands on is checked for their own reset on that job (B130
+  needs one too → passed, "B130 would be next, but needs a reset by … too").
+  Heads-ups (35–48 h) are worked out on top, not kept. No spare left → no
+  alert (the Chain Gang "may be called" is separate).
 - 2026-11-05: **PL rules** (owner, daysoff.js plFor): on at the call → off;
   a **yard job** running into the PL (8 h, YSBY 12 h) → that spare is passed
   over (B119, yard 1600, PL 2200 → B105); a **road job** with the PL 24 h or
