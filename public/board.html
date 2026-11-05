@@ -747,10 +747,10 @@ const JUMPS = { callBoard: { id: 'sec-callboard' }, chainGang: { id: 'sec-pools'
   lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' },
   coFast: { id: 'sec-pools', pool: 'Conductor fast' }, coSlow: { id: 'sec-pools', pool: 'Conductor slow' }, enFast: { id: 'sec-pools', pool: 'Engineer fast' },
   enSlow: { id: 'sec-pools', pool: 'Engineer slow' }, s5Pool: { id: 'sec-pools', pool: '501/502' }, garnet: { id: 'sec-pools', pool: 'Garnet' },
-  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' } };
+  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' }, daysOff: { id: 'sec-daysoff' } };
 const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41', garnetLineup: 'Garnet line-up 41',
   coFast: 'Conductor fast 13', coSlow: 'Conductor slow 9', enFast: 'Engineer fast 19', enSlow: 'Engineer slow 17', terminal: 'Jobs going spare 5',
-  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs' };
+  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs', daysOff: 'Days off 4' };
 
 // "2026-10-15 0815" → parts for display.
 function when(taken) {
@@ -999,6 +999,20 @@ function onDuty(s) {
     <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+
+// Upcoming days off (option 4, owner 2026-11-05): 24 h from the time shown.
+// Turn and craft only, never names. A turn off at a call is skipped or goes spare.
+function daysOff(s) {
+  if (!(s.screens || []).includes('daysOff') && !(s.daysOff || []).length) return '';
+  const list = s.daysOff || [];
+  const kind = { A: 'assigned', U: 'pool', X: 'X' };
+  const rows = list.map((d) => `<tr${marked(d.turn) ? ' class="hit"' : ''}><td class="num">${esc(d.from)}</td><td class="num">${esc(d.until)}</td>
+    <td><b class="num">${markTurn(d.turn)}</b> <span class="chip">${esc(d.craft)}</span>${d.pool ? ` <span class="muted">${esc(d.pool)}</span>` : ''}${d.on ? ' <span class="chip">off now</span>' : ''}</td>
+    <td class="muted">${esc([d.leave, kind[d.type] || d.type, d.stat].filter(Boolean).join(' · '))}</td></tr>`).join('');
+  return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${list.length} coming</span></header>
+    <div class="scroll"><table><thead><tr><th>From</th><th>Until</th><th>Turn</th><th>Type</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No upcoming days off.</td></tr>'}</tbody></table></div>
+    <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call is skipped (Chain Gang, SD) or goes spare (A/B, S1/S3, 501/502); a spare off then is passed over.</div></section>`;
 }
 
 // Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
@@ -3127,7 +3141,7 @@ source().then(async (src) => {
       ${strip(s)}
       <div class="grid">
         <div class="col">${lineup(s)}${toronto(s)}${garnet(s)}${changes(s)}</div>
-        <div class="col">${flags(s)}${pools(s, poolTab)}${vacancies(s)}${onDuty(s)}${yardJobs(s)}${sequence(s)}</div>
+        <div class="col">${flags(s)}${pools(s, poolTab)}${vacancies(s)}${daysOff(s)}${onDuty(s)}${yardJobs(s)}${sequence(s)}</div>
       </div>
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
     tickAges();

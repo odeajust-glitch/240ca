@@ -337,3 +337,23 @@ ENG CRW TRN CRW`, ends with END OF FILE.
     train ID in **red**;
   - crews were available → **"Possible Non-Sarnia Crew or Train Cancelled"**,
     train ID in **yellow**.
+
+## Option 4: upcoming days off (owner, 2026-11-05)
+
+Train Service 3 → 4. Nothing to type (the ASSIGNMENT TYPE box A/U/X is left
+blank); F8 pages down. Title `UPCOMING DAYS OFF`, screen id PSTS02M.
+
+```
+MO/DY/TIME  DDSD  LEAVE-TYPE  STAT  NAME                    ASSIGNMENT
+11/06-0001  45SA  OFF               MARTIN*+   J  JIMMY     U-45SAS1S102ET
+11/06-0001  45SA  OFF         A     HAYNES*+   D  DEREK     A-45SAYSBY03YA
+11/07-0500  45SA  OFF         A     CROTEAU*+  PA PIERRE    U-45SAS1S104ET
+```
+
+- MO/DY/TIME: when the days off start. **24 h from that time** (owner).
+- ASSIGNMENT: type (A/U/X) - district (45SA) - pool + turn (S1 S102; a yard
+  job keeps its id, YSBY03) - craft (ET, EN, CO, YA).
+- STAT (A / B / blank) and the A/U/X types: meaning not known yet (owner
+  "not sure"); shown as is, not used.
+- Names are masked like every screen; only turn, craft and times are kept.
+  Parser: `lib/board/screens.js` parseDaysOff; the rest in `lib/board/daysoff.js`.

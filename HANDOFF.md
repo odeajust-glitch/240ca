@@ -3,11 +3,18 @@
 Last updated: **2026-11-05** (end of the reset tracker / trainees / Garnet /
 assignment history / alert-check session, claude.ai
 session_01AP9cZud7gx8TSqRyscer6F) · Branch:
-**`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 250 tests
+**`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 256 tests
 (`npm ci` then `npm test`, all pass). No other Claude session is known to
 be changing the checker now; if one is, only one may change it at a time.
 
 ## ▶ Start here (state at 2026-11-05)
+
+**Newest (2026-11-05, later session, claude.ai session_01AP9cZuN9352AvkVm7uMr1Z):
+upcoming days off (CATS 3 → 4) built, A + B + C** (owner: "do A, B and C").
+Not run on real CATS yet: after his pull, check the log has no "skipped
+Upcoming days off 4" and the Current tab shows the **Days off** section.
+Details under "What it does now". That session started from an old copy
+(f6c9036) and was rebased onto this work; check both features after the pull.
 
 **Laptop:** the owner has NOT yet pulled the last few commits (from
 `0a09803` on). First thing: have him `git pull` in `C:\BoardChecker-code`,
@@ -190,7 +197,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
   41, spareboards 13/9/19/17 (with VIEW TIME = now − 10 min, extras shown in
   yellow), 5 (jobs going spare), 29 (501/502), 31 (Garnet), Toronto
   bunkhouse 28 + Mac yard line-up 41 + **Garnet line-up 41** (47956 W S5:
-  L501 home). Engine: `lib/board/engine.js`.
+  L501 home) + **upcoming days off 4** (2026-11-05). Engine: `lib/board/engine.js`.
+- **Days off** (option 4: nothing typed, F8 pages; `lib/board/daysoff.js`,
+  parseDaysOff in screens.js): each line = 24 h off from the time shown
+  (owner), remembered in BoardChecker\days-off.json until it ends (a line
+  may leave the "upcoming" list once it starts). Rows get `off`; the order
+  skips a Chain Gang/SD turn off at the call, an A/B/S1/S3/501-502 turn
+  goes spare, spares off are passed over; "days off …" in pool statuses;
+  Current tab "Days off" section; runaround log "explained". ET counts as
+  the engineer side (as option 5's CC already did).
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
@@ -291,6 +306,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Waiting on the owner / to check on real runs
 
+- ❓ **Days off (option 4)**, new 2026-11-05: first real run (see Start
+  here). Owner "not sure" what STAT (A/B) and A/U/X mean: shown, not used.
+  Leave types other than OFF: "don't worry". Asked whether an ET line
+  (engineer trainee?) should mean the engineer turn is off (it does now).
+
 - **Worker:** the version with the agreement search is deployed (checked
   2026-11-03). ❓ Confirm the 30-min ntfy "down" arrives the next time the
   checker is down.
@@ -323,6 +343,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-05: **Upcoming days off** (option 3 → 4) added, A + B + C (see
+  "What it does now"). Tests: test/board/daysoff.test.js (owner's screenshot).
 
 - 2026-11-04: `node scripts/alert-check.js WADE` (or a turn) sends "Test:
   WADE" to every phone following that code / turn and reports each (push

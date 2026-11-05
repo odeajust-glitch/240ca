@@ -33,7 +33,8 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE } = require('../lib/board/paths');
+const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
 const RoadDays = require('../lib/board/roadday');
@@ -699,6 +700,21 @@ async function runRoute(page, opts = {}) {
     });
   }
 
+  // 4: upcoming days off (owner, 2026-11-05): nothing to type, F8 pages
+  // down. Names stay masked; only turn, craft and the start are kept.
+  await skip('Upcoming days off 4', async () => {
+    expect(await chooseFromMenus(page, 4), (x) => S.isDaysOff(x.text), 'Upcoming days off (4)');
+    let last = null;
+    for (let pageNo = 0; pageNo < 15; pageNo++) {
+      const grid = await capture('daysOff');
+      const rows = S.parseDaysOff(parseGrid(grid), Date.now() / 60000).map((x) => `${x.from}/${x.turn}/${x.craft}`).join(',');
+      if (!rows || rows === last) break; // an empty page, or F8 went no further
+      last = rows;
+      const next = await press(page, 'F8').catch(() => null);
+      if (!next || !S.isDaysOff(next.text)) break;
+    }
+  });
+
   await toMainMenu(page); // leave CATS ready for the next check
   // Whose turn is whose, from every board this check, all at once so the
   // rules decide (a Chain Gang assignment over a spareboard listing).
@@ -760,13 +776,20 @@ async function runRoute(page, opts = {}) {
     sight(n.code, n.turn || n.job, !n.temp, { craft: n.craft });
   }
   if (town.length) console.log(`  Crews in town: ${town.length} people read.`);
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()] };
+  // Days off seen in earlier checks, kept until each ends (a line can leave
+  // option 4's "upcoming" list once it starts): turn, craft, times only.
+  const daysOffKnown = DaysOff.load(DAYS_OFF_FILE);
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], ...(daysOffKnown.length ? { daysOffKnown } : {}) };
 }
 
 // The full view, plus what changed since the previous check (kept in
 // probe-out/last-check.json, so it carries over between runs).
 function answer(summary, me, nowOverride) {
   const input = loadSummary(summary, { now: nowOverride });
+  // Only after option 4 was read, so a skipped screen keeps what's remembered.
+  if (input.seen.daysOff || (input.daysOff || []).length) {
+    try { DaysOff.save(DAYS_OFF_FILE, input.daysOff); } catch (err) { console.log(`  (days off not saved: ${err.message})`); }
+  }
   // Trains earlier checks saw on duty still count toward their road day's
   // A/B trains once they leave the Call Board. First run: built from history\.
   const memory = RoadDays.remember(RoadDays.loadMemory(ROAD_DAYS_FILE) || RoadDays.seedFromHistory(HISTORY_DIR), input.callBoard, input.now);

@@ -334,3 +334,10 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   2026-11-05): their details and heading don't name it. Done: the owner
   says the details (turn, train out, off duty, train home, held) are
   enough; no engineer template needed.
+- 2026-11-05: **Upcoming days off** (CATS 3 → 4, owner: "do A, B and C"):
+  read every check (F8 through the pages), each line 24 h from the time
+  shown, remembered until it ends (BoardChecker\days-off.json). A: a "Days
+  off" list on the Current tab and "days off …" in each turn's status. B: a
+  turn off at the call is skipped (Chain Gang, SD) or goes spare (A/B,
+  S1/S3, 501/502); a spare off is passed over. C: the runaround log says
+  "explained: on days off". STAT and the A/U/X types: meaning not known yet.
