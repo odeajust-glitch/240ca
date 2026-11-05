@@ -25,7 +25,7 @@ test('turn alerts: lined up, ordered, on duty are shared news; nothing on the fi
   let told = r.told;
   assert.deepEqual(step(told, [pred({ call: at(2026, 10, 22, 14, 0) })]).events, []); // time is per phone
   r = step(told, [pred({ status: 'ORD', spare: true })]);
-  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245. The turn goes spare (spareboard covers).', 'SD05 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245.']);
+  assert.deepEqual(r.events.map((e) => e.text), ['SR03 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245. The turn goes spare.', 'SD05 ordered: M38261 22 ordered for 22nd 1500, expected call 22nd 1245.']);
   told = r.told;
   // A check that didn't read the line-up changes nothing.
   r = step(told, [], [], { lineupRead: false });
