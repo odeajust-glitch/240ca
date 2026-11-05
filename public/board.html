@@ -980,7 +980,7 @@ function pools(s, pi) {
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
     const cls = [marked(t.turn) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
-    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
+    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}${t.job ? `<div class="crew">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` (${esc(t.job.covers)}'s job)` : ''} · call ~${esc(t.job.call)}</div>` : ''}</td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>`;
   }).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)

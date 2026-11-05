@@ -240,3 +240,17 @@ test('the turn going spare is told why: PL, **, rest', () => {
   assert.equal(text('SD01'), 'SD01 lined up: X27691 04 planned for 5th 2255, expected call 5th 2040. The turn goes spare (marked **).');
   assert.equal(text('S102'), 'S102 lined up: Z14891 05 planned for 6th 0545, expected call 6th 0330.');
 });
+
+// Owner, 2026-11-05: "show the job they are lined into beside their turn".
+test('spareboards: each spare\'s job, from option 5 and from the order, in call order', () => {
+  const { spareJobs } = require('../../lib/board/spares');
+  const sb = (turn, pos) => ({ turn, pos, terminal: 0, working: false, st: null, rn: null, statusUntil: null, restUntil: null });
+  const preds = [
+    { symbol: 'L50231', originDay: '06', order: at(2026, 11, 6, 4, 0), call: at(2026, 11, 6, 1, 45), status: 'PLN', turn: 'S501', spare: true, spareWhy: 'is on rest until 6th 0640', engineer: 'S501', engineerSpare: true, engineerSpareWhy: 'is on rest until 6th 0640', s5: true },
+    { symbol: 'Z14891', originDay: '05', order: at(2026, 11, 6, 5, 45), call: at(2026, 11, 6, 3, 30), status: 'PLN', turn: 'SA09', spare: true, spareWhy: 'has a PL @ 6th 0001', engineer: 'S102' },
+  ];
+  const yard = { pos: 1, at: at(2026, 11, 5, 16, 0), status: 'PLANNED', train: 'YPRS02', yard: true, pool: 'YD', cc: 'CO', turn: 'YPRS02', st: '', returns: null };
+  const m = spareJobs(preds, [yard], { coFast: [sb('B119', 1)], coSlow: [sb('B130', 1), sb('B126', 2)], enSlow: [sb('EN09', 1)] });
+  assert.deepEqual([...m].map(([t, j]) => [t, j.train, fmt(j.call), j.covers]), [
+    ['B119', 'YPRS02', '5th 1400', 'YPRS02'], ['B130', 'L50231 06', '6th 0145', 'S501'], ['EN09', 'L50231 06', '6th 0145', 'S501'], ['B126', 'Z14891 05', '6th 0330', 'SA09']]);
+});

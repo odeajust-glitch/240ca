@@ -347,6 +347,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **Spareboards show each spare's job** under their turn (owner):
+  "→ Z14891 05 (SA09's job) · call ~6th 0330", from option 5 and the order
+  (spares.js spareJobs / expectedJobs, the same list the alerts use).
 - 2026-11-05: Turn alerts: "The turn goes spare (PL @ 6th 0001)." — the
   reason in brackets, no "(spareboard covers)" (owner); cards the same.
 - 2026-11-05: **Reset alerts worked through in call order** (owner: "fix
