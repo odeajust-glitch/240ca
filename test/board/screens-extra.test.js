@@ -567,3 +567,11 @@ test('assignment history: on duty + hours on duty = exact off duty (masked as sa
     'Z14931 03 3rd 1700 495 4th 0115', 'M30131 04 4th 1015 null -', // N/A: still on duty
   ]);
 });
+
+// The real page (owner's laptop, scripts/assign-check.js): each row starts
+// with the X box, saved as "[]".
+test('assignment history: rows with the X box in front', () => {
+  const rows = [{ text: '[] Q13931 03 261103 0230 TORONTO 17800 0910', cells: [] }, { text: '[] DHT115B 03 261104 0001 TORONTO 20500 0259', cells: [] },
+    { text: 'X TRAIN ID AAA-AAAA/AAAA AAA-AAAAAAAA MILES DUTY AAAA', cells: [] }];
+  assert.deepEqual(S.parseAssignHistory(rows).map((r) => `${r.train} ${fmt(r.off)}`), ['Q13931 03 3rd 1140', 'DHT115B 03 4th 0300']);
+});

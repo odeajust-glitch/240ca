@@ -281,6 +281,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-04: assignment history read on the laptop (19:05, 19:23) but 0
+  trains came out: real rows start with the X box saved as "[]"
+  (`node scripts/assign-check.js` shows the saved page); parseAssignHistory
+  strips it. ❓ The backfill asked at 19:33 saved no page: ask for the
+  checker window's "assignment history" line from that check.
 - 2026-11-04: **one-time backfill of off-duty times**: `node scripts/assign-backfill.js
   2026-10-16` writes BoardChecker\assign-backfill.json; the running
   checker's next check reads 3 → 7 with START DATE typed in too, S1 and S5,
