@@ -363,7 +363,11 @@ async function fillByLabel(page, values) {
     for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) texts.push(n);
     const missing = [];
     for (const [label, v] of Object.entries(vals)) {
-      const node = texts.find((n) => n.textContent.replace(/\s+/g, ' ').includes(label));
+      // CATS draws some labels word by word ("START" and "DATE:" apart; owner's
+      // laptop, 2026-11-04: "no box for START DATE"): then its last word alone.
+      const last = label.split(' ').pop().replace(/:$/, '');
+      const node = texts.find((n) => n.textContent.replace(/\s+/g, ' ').includes(label))
+        || texts.find((n) => n.textContent.trim().replace(/:$/, '') === last);
       if (!node) { missing.push(label); continue; }
       const range = document.createRange(); range.selectNodeContents(node);
       const lr = range.getBoundingClientRect();
