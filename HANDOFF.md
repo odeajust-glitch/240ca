@@ -48,6 +48,7 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    hold, SD01 **). Only in the reset "what if" run (engine `resetJob`,
    `firstCallable` skipSpare); the normal line-up still has a ** turn take
    its train and go spare. ❓ Watch the next Chain Gang / SD reset alert.
+3c. **Alert review** (docs/board-checker/ALERT-REVIEW-2026-11-05.md): catsWrong also once per CATS listing now (EN03 told 7 times about S108). Ask the owner if S108's job was real.
 3b. **Reset alerts once per reset** (owner's Board_alerts log): the same
    heads-up repeated as the projected train/time moved (EN03 told about
    SD02 ten times on the 4th, SR01 about SR04 six times). Now told once
