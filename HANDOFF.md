@@ -286,6 +286,9 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (`node scripts/assign-check.js` shows the saved page); parseAssignHistory
   strips it. The backfill failed with "no box for START DATE": CATS draws
   START and DATE: apart; fillByLabel falls back to the label's last word.
+  **Backfill done 2026-11-04 20:15**: 199 trains read (195 with off duty);
+  site offs: 188 from history, 160 bunkhouse, 13 rest, 30 estimates (was
+  64); Z14931 01 2355, Z14931 27 0040, M38331 29 0245 match the owner's CATS.
 - 2026-11-04: **one-time backfill of off-duty times**: `node scripts/assign-backfill.js
   2026-10-16` writes BoardChecker\assign-backfill.json; the running
   checker's next check reads 3 → 7 with START DATE typed in too, S1 and S5,
