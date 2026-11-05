@@ -347,6 +347,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **S501 conductor / engineer alerts apart** (owner): texts say
+  "S501 conductor" / "S501 engineer" (alerts.js crafted); a phone still on
+  plain "S501" gets each craft's alert once (no plain copy, time changes per
+  craft) and the page asks it once "Conductor / Engineer / Both, apart"
+  (board.html Alerts.replace). Tracking already asked for new phones.
 - 2026-11-05: **Spareboards show each spare's job** under their turn (owner):
   "→ Z14891 05 (SA09's job) · call ~6th 0330", from option 5 and the order
   (spares.js spareJobs / expectedJobs, the same list the alerts use).

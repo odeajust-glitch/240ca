@@ -254,3 +254,17 @@ test('spareboards: each spare\'s job, from option 5 and from the order, in call 
   assert.deepEqual([...m].map(([t, j]) => [t, j.train, fmt(j.call), j.covers]), [
     ['B119', 'YPRS02', '5th 1400', 'YPRS02'], ['B130', 'L50231 06', '6th 0145', 'S501'], ['EN09', 'L50231 06', '6th 0145', 'S501'], ['B126', 'Z14891 05', '6th 0330', 'SA09']]);
 });
+
+// Owner, 2026-11-05: "Can we separate the notifications for S501 conductor and engineer".
+test('S501: conductor and engineer alerts apart, marked; plain S501 gets each once', () => {
+  const { turnStates, turnEvents, phoneEvents } = require('../../lib/board/alerts');
+  const now = at(2026, 11, 5, 8, 7);
+  const p = { symbol: 'L50231', originDay: '06', order: at(2026, 11, 6, 4, 0), call: at(2026, 11, 6, 1, 45), status: 'PLN', s5: true,
+    turn: 'S501', spare: true, spareWhy: 'is on rest until 6th 0640', engineer: 'S501', engineerSpare: false };
+  const st = turnStates({ now, predictions: [p] }, []);
+  const shared = turnEvents({ x: {} }, st, { lineupRead: true, now }).events;
+  const got = (turns) => phoneEvents(shared, { turns, prefs: {} }, st, { __welcomed: turns }, { lineupRead: true, now }).events.map((e) => e.text);
+  assert.deepEqual(got(['S501-CO']), ['S501 conductor lined up: L50231 06 planned for 6th 0400, expected call 6th 0145. The turn goes spare (on rest until 6th 0640).']);
+  assert.deepEqual(got(['S501-EN']), ['S501 engineer lined up: L50231 06 planned for 6th 0400, expected call 6th 0145.']);
+  assert.deepEqual(got(['S501']).sort(), [...got(['S501-CO']), ...got(['S501-EN'])].sort());
+});

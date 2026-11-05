@@ -2082,6 +2082,12 @@ const Alerts = (() => {
     },
     // Keeps this turn's choices on the phone without sending them.
     keepPrefs(turn, p) { keepPrefs(turn, { ...prefs(turn), ...p }); },
+    // One followed turn swapped for others, keeping its choices (plain
+    // "S501" → "S501-CO" and/or "S501-EN", owner 2026-11-05).
+    async replace(turn, list) {
+      for (const x of list) keepPrefs(x, prefs(turn));
+      return save([...turns().filter((t) => t !== turn && !list.includes(t)), ...list]);
+    },
     async set(turn, on) {
       const now = turns();
       if (!on) return now.includes(turn) ? save(now.filter((t) => t !== turn)) : now;
@@ -2781,6 +2787,21 @@ source().then(async (src) => {
     document.getElementById('dlgcancel').onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; };
     dlg.querySelectorAll('[data-craft]').forEach((b) => { b.onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; then(`${turn}-${b.dataset.craft}`); }; });
   }
+  // Owner, 2026-11-05: S501's conductor and engineer alerts kept apart. A
+  // phone that followed plain "S501" (before the conductor / engineer
+  // question) got both; it's asked once which it wants.
+  Alerts.ready.then(() => {
+    const t = Alerts.turns().find((x) => BoardTurns.SHARED.test(x));
+    if (!t || Alerts.state(t) !== 'on' || !dlg.hidden) return;
+    dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>${esc(t)} alerts</h2></header>
+      <div class="alertnote">${esc(t)} is two turns with one number, and this phone gets the alerts for both. Which ones do you want?</div>
+      <div class="btns"><button type="button" class="ok" data-pick="CO">Conductor</button><button type="button" class="ok" data-pick="EN">Engineer</button><button type="button" data-pick="CO,EN">Both, apart</button></div></div>`;
+    dlg.hidden = false;
+    dlg.querySelectorAll('[data-pick]').forEach((b) => { b.onclick = async () => {
+      dlg.hidden = true; dlg.innerHTML = '';
+      try { await Alerts.replace(t, b.dataset.pick.split(',').map((c) => `${t}-${c}`)); } catch (e) { /* tried again next time the page opens */ }
+    }; });
+  });
   function openTrack(turnIn) {
     const turn = isPerson(turnIn) ? turnIn : clean(turnIn);
     if (!(isPerson(turn) || /^[A-Z0-9]{2,6}(-(EN|CO))?$/.test(turn)) || (!dlg.hidden && dlg.dataset.turn === turn)) return;
