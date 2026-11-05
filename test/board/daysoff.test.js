@@ -119,3 +119,24 @@ test('runaround log: a turn on days off at the call is explained', () => {
   // Days off starting after the call: still a likely runaround.
   assert.equal(r('days off 6th 1200–7th 1200').result, 'likely');
 });
+
+// Owner, 2026-11-05 (JUOD on S501 CO): S501 home, on rest until 6th 0640,
+// past L50231 06's call (6th 0145): "I won't work this and it will go
+// spare". The card says so; and no L502 alert while the crew is away.
+test('L502: the card says it goes spare; no alert until the crew is off duty in Sarnia', () => {
+  const { describeMe } = require('../../lib/board/report');
+  const { turnStates } = require('../../lib/board/alerts');
+  const now = at(2026, 11, 5, 7, 19);
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 1, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const s5 = [row('EN', 'S501', { restUntil: at(2026, 11, 6, 6, 40) }), row('CO', 'S501', { restUntil: at(2026, 11, 6, 6, 40) }),
+    row('EN', 'S502', { pos: 999, working: true, workingOn: 'L50231' }), row('CO', 'S502', { pos: 999, working: true, workingOn: 'L50231' })];
+  const l502 = (day, h) => ({ symbol: 'L50231', trainNo: 'L502', originDay: day, order: at(2026, 11, +day, h, 0), status: 'PLN', deadhead: false });
+  const lineup = [l502('06', 4), l502('07', 4)];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5, me: 'S501' });
+  assert.match(describeMe(r.me).join(' '), /L50231 06: called ~6th 0145.*Conductor on rest until 6th 0640 → goes spare; engineer on rest until 6th 0640 → goes spare/);
+  // L50231 07 goes to S502, out on a 502 to Garnet: not told yet. S501 (home) is.
+  const st = turnStates(r, [], { s5 });
+  assert.equal(st['S501-CO'].lineup.train, 'L50231 06');
+  assert.ok(!st['S502-CO'] || !st['S502-CO'].lineup);
+  assert.ok(!st.S502 || !st.S502.lineup);
+});

@@ -346,6 +346,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **L502 alerts held until the crew is off duty in Sarnia**
+  (owner): a 501/502 crew out on a 502, at Garnet or bringing L501 home
+  gets no "lined up" etc. for the next L502 (engine `s5Away`, alerts.js
+  skips it); they still get their L501 home. **"When do I go" cards say
+  "goes spare"** (owner: S501 on rest until 6th 0640 past L50231 06's call
+  0145): report.js spareNote, per craft on 501/502; also other pools.
 - 2026-11-05: **Upcoming days off** (option 3 → 4) added, A + B + C (see
   "What it does now"). Tests: test/board/daysoff.test.js (owner's screenshot).
 

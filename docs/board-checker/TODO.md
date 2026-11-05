@@ -341,3 +341,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   turn off at the call takes its train and goes spare (every pool, Chain
   Gang and SD too: owner); a spare off is passed over. C: the runaround log says
   "explained: on days off". STAT and the A/U/X types: meaning not known yet.
+- 2026-11-05: **L502: no alerts until the crew is back off duty in Sarnia**
+  (owner): the 501/502 crew lined up for the next L502 isn't told while
+  it's out on a 502, at Garnet or bringing L501 home. And the "when do I
+  go" card now says when the train goes spare (S501 on rest until 6th 0640
+  past L50231 06's 0145 call: "goes spare").

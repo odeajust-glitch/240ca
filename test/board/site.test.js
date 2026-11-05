@@ -294,7 +294,8 @@ test('site: when do I go, for every turn the newest check can answer', () => {
   const w = whenYouGo(JSON.parse(fixture('2026-10-15b.json')), null);
   assert.equal(w.taken, '2026-10-15 0815');
   assert.match(w.turns.SR03.join(' '), /^Not on the line-up yet .*Your own rest is up at 15th 1015/);
-  assert.deepStrictEqual(w.turns.SR04, ['E27861 15: called ~15th 1355, on duty 15th 1555 (planned, so times are estimates).']);
+  // SR04 is marked ** on that check: the card says it goes spare (owner, 2026-11-05).
+  assert.deepStrictEqual(w.turns.SR04, ['E27861 15: called ~15th 1355, on duty 15th 1555 (planned, so times are estimates). The turn goes spare (spareboard covers).']);
   assert.match(w.turns.SA07[0], /^A42431 15: called ~15th 0845/); // an A turn lined up
   assert.match(w.turns.SR12[0], /^On your way home on M38331 14 .*the site updates then\./);
   assert.ok(!('SR01' in w.turns)); // away in Toronto, not coming home yet: nothing to say
