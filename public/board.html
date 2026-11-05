@@ -2147,10 +2147,11 @@ function heldView(all, openKey, lastTaken, names, namesState) {
       <div class="stat"><div class="v">${stays.length ? `${Math.round((100 * week.length) / stays.length)}% <small>${week.length} / ${stays.length}</small>` : '—'}</div><div class="l">Percentage of crews violated (of Toronto stays, last 7 days)</div></div>
     </div>
     ${unlock}
-    <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to write the grievance</span></header>
+    <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew for the grievance and the engineer's details</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
       <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
       ${open ? `<div class="gform"><h3>Grievance · ${esc(open.co)} on ${esc(open.id)}</h3>${grievanceForm(open, prefill(open, names))}</div>` : ''}
+      ${open && open.en ? engineerBox(open, open.en) : ''}
       <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode; PINs aren't on CATS, so you type each one once and this device remembers it with Mr./Ms. The letter is made on this device.</div>
     </section>`;
 }
@@ -2207,6 +2208,13 @@ function engineerDetails(r, turn) {
     `Held: ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}`,
   ].join('\n');
 }
+// The engineer's details box with a Copy button (Turn History and the
+// Article 18.6(b) tab; owner, 2026-11-05: "this info is enough").
+const engineerBox = (r, turn) => `<div class="gform enbox"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">The details to file with: tap Copy.</p><pre class="g186txt">${esc(engineerDetails(r, turn))}</pre><button type="button" class="g186copy">Copy</button></div>`;
+function wireEngineerBox(box, r, turn) {
+  const b = box.querySelector('.g186copy');
+  if (b) b.onclick = async (e) => { try { await navigator.clipboard.writeText(engineerDetails(r, turn)); e.target.textContent = '✓ Copied'; } catch (x) { /* select it by hand */ } };
+}
 function held186(rows) {
   if (!rows.length) return '';
   // One block per stay, so it reads on a phone (owner's screenshot: a wide
@@ -2230,9 +2238,8 @@ function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
       const { r, role, turn } = rows[+b.dataset.i];
       const out = box.querySelector('#g186box');
       if (role === 'EN') {
-        const text = engineerDetails(r, turn);
-        out.innerHTML = `<div class="gform"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">The details to file with: tap Copy.</p><pre class="g186txt">${esc(text)}</pre><button type="button" class="g186copy">Copy</button></div>`;
-        out.querySelector('.g186copy').onclick = async (e) => { try { await navigator.clipboard.writeText(text); e.target.textContent = '✓ Copied'; } catch (x) { /* select it by hand */ } };
+        out.innerHTML = engineerBox(r, turn);
+        wireEngineerBox(out, r, turn);
         return;
       }
       const pre = noNames ? { gender: 'male' } : prefill(r, names);
@@ -3245,6 +3252,9 @@ source().then(async (src) => {
     if (forget) forget.onclick = () => { local.del(PASS_KEY); namesCache = null; renderHeld(); };
     try { history.replaceState(null, '', '#14h'); } catch (e) { /* not allowed in some frames */ }
     view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; renderHeld(); }; });
+    const openRow = heldRows(all).find((x) => heldKey(x) === heldOpen);
+    const enBox = view.querySelector('.enbox');
+    if (enBox && openRow) wireEngineerBox(enBox, openRow, openRow.en);
     const form = view.querySelector('form.gf');
     if (form) {
       const r = heldRows(all).find((x) => heldKey(x) === heldOpen);
