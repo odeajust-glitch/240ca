@@ -574,6 +574,9 @@
   .pickturn button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .vt { color: var(--amber); font: 600 13px/1 var(--mono); }
   tr.wreset td { background: var(--go-tint); box-shadow: inset 4px 0 0 var(--go); }
+  .h186list { display: grid; gap: 8px; padding: 0 14px 10px; }
+  .h186 { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; }
+  .h186 .g186 { justify-self: start; margin-top: 4px; }
   .g186txt { white-space: pre-wrap; font: 13px/1.5 var(--mono); background: var(--sheet); border: 1px solid var(--rule); padding: 10px; border-radius: 6px; }
   .resetlbl { color: var(--go); }
   tr.wreset-p td { background: var(--amber-tint); box-shadow: inset 4px 0 0 var(--amber); }
@@ -1231,8 +1234,15 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
     const sure = got.some((x) => !x.possible);
     return `<tr class="wrest${got.length ? (sure ? ' wreset' : ' wreset wreset-p') : ''}"><td colspan="3"><span class="muted">${lbl}</span> ${reset}${r.map((x) => `${esc(x.kind)} until <b>${esc(x.until)}</b>${x.where ? ` <span class="muted">(${esc(x.where)})</span>` : ''}`).join(' · ')}</td></tr>`;
   };
-  const restBefore = (i) => restLine(rows[i + 1] ? rows[i + 1].onDutySeen : '', rows[i].onDutySeen, 'Rest before it:');
-  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}${esc(offLine(o, offs))}</div></td>
+  // The oldest train: only the latest reset before it, not every one back
+  // to the start of the data (owner's SB04 screenshot, 2026-11-04).
+  const restBefore = (i) => {
+    if (rows[i + 1]) return restLine(rows[i + 1].onDutySeen, rows[i].onDutySeen, 'Rest before it:');
+    const before = (resets || []).filter((x) => x.at <= rows[i].onDutySeen);
+    const from = before.length > 1 ? before[before.length - 2].at : '';
+    return restLine(from, rows[i].onDutySeen, 'Rest before it:');
+  };
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, ''))}</div>` : ''}</td>
     <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
   return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
@@ -2200,14 +2210,15 @@ function engineerDetails(r, turn) {
 }
 function held186(rows) {
   if (!rows.length) return '';
-  const body = rows.map(({ r, role, turn }, i) => `<tr class="h186" data-i="${i}">
-      <td class="num"><b class="id">${esc(r.id)}</b> <span class="crew">${esc(dt(r.onDuty))}</span></td>
-      <td class="num">≈ ${esc(dt(r.offDuty))}</td>
-      <td class="num">${r.back ? `<b class="id">${esc(r.back.id)}</b> <span class="crew">${esc(dt(r.back.onDuty))}</span>` : '<span class="muted">still in the bunkhouse</span>'}</td>
-      <td><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span></td>
-      <td><button type="button" class="g186" data-i="${i}">${role === 'CO' ? `Write the grievance (${esc(turn)})` : `Details to file (${esc(turn)})`}</button></td></tr>`).join('');
+  // One block per stay, so it reads on a phone (owner's screenshot: a wide
+  // table's headings ran into each other).
+  const body = rows.map(({ r, role, turn }, i) => `<div class="h186">
+      <div><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span> held in Toronto</div>
+      <div><b class="id">${esc(r.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.onDuty))} <span class="muted">· off duty Toronto ≈</span> ${esc(dt(r.offDuty))}</div>
+      <div>${r.back ? `<span class="muted">Home on</span> <b class="id">${esc(r.back.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.back.onDuty))}` : '<span class="muted">Still in the bunkhouse</span>'}</div>
+      <button type="button" class="g186" data-i="${i}">${role === 'CO' ? `Write the grievance (${esc(turn)})` : `Details to file (${esc(turn)})`}</button></div>`).join('');
   return `<h3>Article 18.6(b) <span class="muted">(held in Toronto 14 h+ on this crew)</span></h3>
-    <div class="scroll"><table class="orders"><thead><tr><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home · on duty</th><th>Held</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
+    <div class="h186list">${body}</div>
     <div id="g186box"></div>`;
 }
 // noNames: a name-code search; the letter's name is left for them to type.
