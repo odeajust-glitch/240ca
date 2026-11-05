@@ -123,3 +123,19 @@ test('reset alerts: one spare per job in call order; a spare needing a reset is 
   assert.deepEqual(ev.map((e) => [e.about, e.train, e.turn]), [['S501-CO', 'L50231 06', 'B126'], ['SA05', 'Z14891 06', 'B134'], ['SB02', 'M38261 06', 'B110']]);
   assert.match(ev[0].text, /B130 would be next, but needs a reset by 7th 0800 too\. If so, B126 is next for it/);
 });
+
+// Owner's alert log, 2026-11-04: the same SD02 heads-up went to EN03 ten
+// times as the projected train changed. Once per reset now.
+test('told once per reset, even when the projected train changes', () => {
+  const input = { spareboards: boards, vacancies: [] };
+  const train = (symbol, ord) => ({ predictions: [{ symbol, originDay: '03', order: ord, call: ord - 2 * H, pool: 'B', turn: 'SB04', spare: false, engineer: 'S304', engineerSpare: false }] });
+  const resets = { SB04: { due: call + 40 * H } };
+  const first = RA.resetEvents({ input, result: train('M38261', order), run: () => ({ predictions: [{ ...train('M38261', order).predictions[0], spare: true }] }), resets, now: call - 6 * H });
+  assert.equal(first.events.length, 1);
+  const other = train('M39671', order + 30);
+  const again = RA.resetEvents({ input, result: other, run: () => ({ predictions: [{ ...other.predictions[0], spare: true }] }), resets, now: call - 5 * H, told: first.told });
+  assert.equal(again.events.length, 0);
+  // Now likely (under 35 h): told again.
+  const worse = RA.resetEvents({ input, result: other, run: () => ({ predictions: [{ ...other.predictions[0], spare: true }] }), resets: { SB04: { due: call + 20 * H } }, now: call - 5 * H, told: first.told });
+  assert.equal(worse.events.length, 1);
+});

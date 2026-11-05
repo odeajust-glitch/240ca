@@ -43,6 +43,10 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    hold, SD01 **). Only in the reset "what if" run (engine `resetJob`,
    `firstCallable` skipSpare); the normal line-up still has a ** turn take
    its train and go spare. ❓ Watch the next Chain Gang / SD reset alert.
+3b. **Reset alerts once per reset** (owner's Board_alerts log): the same
+   heads-up repeated as the projected train/time moved (EN03 told about
+   SD02 ten times on the 4th, SR01 about SR04 six times). Now told once
+   per turn + deadline + who's next + likely/heads-up.
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:
