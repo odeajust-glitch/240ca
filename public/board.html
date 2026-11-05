@@ -743,8 +743,16 @@ let focus = ''; // the turn open on the Turn History tab, e.g. "SR03"
 // Turns picked out on the page: the tracked turns on Current and Snapshots,
 // the Turn History turn there (owner, 2026-10-24: track several at once).
 let marks = [];
-const marked = (turn) => !!turn && marks.includes(turn);
-const markedIn = (text) => marks.some((m) => BoardTurns.turnIn(text, m));
+// 501/502 is two turns with one number (owner, 2026-11-05: "separate the
+// turns for S501 conductor and engineer so they aren't tracking together"):
+// a mark is "S501-CO" / "S501-EN", and only that craft is picked out where
+// the craft is known (the 501/502 board rows, "CO S501" in a crew).
+const SHARED5 = /^S5\d{2}$/;
+const crOf = (c) => (!c ? '' : c === 'CO' ? 'CO' : 'EN');
+const markBase = (m) => String(m).replace(/-(CO|EN)$/, '');
+const marked = (turn, craft) => !!turn && (marks.includes(turn)
+  || (SHARED5.test(turn) && (craft ? marks.includes(`${turn}-${crOf(craft)}`) : marks.some((m) => markBase(m) === turn))));
+const markedIn = (text) => marks.some((m) => BoardTurns.turnIn(text, markBase(m)));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Tapping a screen chip jumps to where that screen shows (owner, 2026-10-23):
 // the section's id, and for a pool screen which pool tab to open.
@@ -819,9 +827,21 @@ function poolChip(rules) {
 }
 // The marked turns, picked out in a line of text.
 function markTurn(text) {
-  const safe = esc(text);
+  let safe = esc(text);
   const ids = marks.filter((m) => /^[A-Z0-9]+$/.test(m));
-  return ids.length ? safe.replace(new RegExp(`(^|[^A-Z0-9])(${ids.join('|')})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>') : safe;
+  if (ids.length) safe = safe.replace(new RegExp(`(^|[^A-Z0-9])(${ids.join('|')})(?=[^A-Z0-9]|$)`, 'g'), '$1<mark class="t">$2</mark>');
+  // "S501-CO": the conductor's S501 only. In a crew ("EN S501 · CO S501") the
+  // one after CO; in "S501 + S501" (conductor + engineer) the first.
+  for (const m of marks.filter((x) => /^S5\d{2}-(CO|EN)$/.test(x))) {
+    const [base, craft] = m.split('-');
+    const crafts = craft === 'CO' ? 'CO' : 'EN|LE|ET';
+    const byCraft = new RegExp(`(^|[^A-Z0-9])((?:${crafts}) )(${base})(?=[^A-Z0-9]|$)`, 'g');
+    if (new RegExp(`(^|[^A-Z0-9])(CO|EN|LE|ET) ${base}(?=[^A-Z0-9]|$)`).test(safe)) { safe = safe.replace(byCraft, '$1$2<mark class="t">$3</mark>'); continue; }
+    let n = 0;
+    const two = (safe.match(new RegExp(`(^|[^A-Z0-9])${base}(?=[^A-Z0-9]|$)`, 'g')) || []).length === 2 && / \+ /.test(safe);
+    safe = safe.replace(new RegExp(`(^|[^A-Z0-9])(${base})(?=[^A-Z0-9]|$)`, 'g'), (all, a, b) => { const i = n++; return !two || i === (craft === 'CO' ? 0 : 1) ? `${a}<mark class="t">${b}</mark>` : all; });
+  }
+  return safe;
 }
 function ruleText(rules) {
   // No turn free, conductor or engineer: still an SR train with its chip,
@@ -984,7 +1004,7 @@ function pools(s, pi) {
   const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
-    const cls = [marked(t.turn) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
+    const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>${t.job
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
@@ -2668,7 +2688,8 @@ source().then(async (src) => {
   const personNow = {};
   const personCands = {}; // a followed code matching more than one turn now: those turns
   const personGone = {}; // a followed code off the turn it was last seen on: that sighting
-  const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : BoardTurns.splitCraft(t).base);
+  // "S501-CO" stays "S501-CO": the card, the "when it goes" and the marks are that craft's.
+  const nowTurn = (t) => (isPerson(t) ? personNow[t] || '' : t);
   const label = (t) => (isPerson(t) ? `👤 ${codes()[t] || 'person'}${personNow[t] ? ` (${String(personNow[t]).replace(/-(TT|ET)$/, ' · $1')})` : ''}` : t.replace(/-(EN|CO)$/, ' $1').replace(/-(TT|ET)$/, ' · $1'));
   async function refreshPersons() {
     let changed = false;
@@ -2708,7 +2729,7 @@ source().then(async (src) => {
       const lines = [...where.map((text) => ({ kind: 'status', text })), ...lined];
       const cands = isPerson(entry) ? personCands[entry] || [] : [];
       const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
-      return `<li data-sum="${esc(turn)}"><b class="num">${esc(isPerson(entry) ? label(entry) : turn)}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
+      return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
   }
@@ -2755,7 +2776,7 @@ source().then(async (src) => {
     whenGo().then((w) => {
       if (!w || summaryFor !== s) return;
       box.querySelectorAll('li[data-sum]').forEach((li) => {
-        const lines = w.turns && w.turns[li.dataset.sum];
+        const lines = w.turns && (w.turns[li.dataset.sum] || w.turns[li.dataset.sum.replace(/-(CO|EN)$/, '')]);
         const go = li.querySelector('.go');
         if (!lines || !go) return;
         go.textContent = lines[0];
@@ -2766,7 +2787,7 @@ source().then(async (src) => {
   }
   // Which turns the page picks out: Turn History's own turn there, the
   // tracked ones everywhere else.
-  const setMarks = () => { marks = mode === 'turns' ? (focus ? [BoardTurns.splitCraft(focus).base] : []) : tracked().map(nowTurn).filter(Boolean); };
+  const setMarks = () => { marks = mode === 'turns' ? (focus ? [focus] : []) : tracked().map(nowTurn).filter(Boolean); };
 
   // The box under "Find a turn" on Current/Snapshots: the turn's alert
   // choices, OK to track it (and get its alerts), Cancel, or stop tracking.
@@ -3136,7 +3157,7 @@ source().then(async (src) => {
     document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     setMarks();
     if (marks.length && !keepTab) {
-      const mine = s.pools.findIndex((q) => q.turns.some((t) => marked(t.turn)));
+      const mine = s.pools.findIndex((q) => q.turns.some((t) => marked(t.turn, t.craft)));
       if (mine >= 0) poolTab = mine;
     }
     const w = when(s.taken);

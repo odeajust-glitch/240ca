@@ -347,6 +347,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Latest (newest first; move older ones to the archive when this grows)
 
+- 2026-11-05: **S501 conductor / engineer tracked apart on the page** (owner):
+  marks keep the craft (S501-CO); the 501/502 rows, "CO S501" in a crew and
+  the first / second S501 in "S501 + S501" are picked out per craft
+  (board.html marked(turn, craft), markTurn); the tracking card uses
+  S501-CO's facts; whengo.json has S501-CO / S501-EN lines (site.js).
 - 2026-11-05: **S501 conductor / engineer alerts apart** (owner): texts say
   "S501 conductor" / "S501 engineer" (alerts.js crafted); a phone still on
   plain "S501" gets each craft's alert once (no plain copy, time changes per

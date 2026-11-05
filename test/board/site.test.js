@@ -464,3 +464,11 @@ test('Garnet line-up: read apart from Sarnia, shown under 501/502', () => {
   assert.strictEqual(shown.lineup.length, 9); // Sarnia's line-up untouched
   assert.deepStrictEqual(shown.garnetLineup, [{ train: 'L50131 15', status: 'ORD', order: '15th 2100' }]);
 });
+
+// Owner, 2026-11-05: S501's conductor and engineer tracked apart: "when do I
+// go" has a line for each craft.
+test('site: when do I go, 501/502 conductor and engineer apart', () => {
+  const fx = JSON.parse(fixture('2026-10-15b.json'));
+  const w = whenYouGo(fx, null);
+  for (const [k, v] of Object.entries(w.turns)) if (/^S5\d{2}-(CO|EN)$/.test(k)) assert.match(v[0], /^L50\d{3} \d{2}: called ~/);
+});
