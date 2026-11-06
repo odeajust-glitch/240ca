@@ -73,6 +73,13 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    once the earlier crew ties up and CATS still lists it, normal. In 8 days
    of checks it matched 3 jobs: YPRS60 4th 2245 FO + S1 (regular crew
    worked it) and YEBS30 29th 1600 FO (SB04 worked it: told at tie-up).
+3f. **L502 with a make-up crew** (owner 2026-11-06): S501 CO + EN both
+   went spare for L50231 06, MU01 took it, and S501 was still shown first
+   for the next L502. engine.js: while an MU crew is out on L502 / at
+   Garnet / bringing L501 home, it stands for the crew whose turn it was
+   (marked off on both crafts first, else the one not just back = least
+   rest, then position), so the other crew is next. ❓ Gap: once MU is home
+   and off, before the next L502 goes, the order falls back to position.
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:

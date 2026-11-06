@@ -718,3 +718,28 @@ test('A train with an MU placeholder on it: the A turn goes spare', () => {
   assert.deepEqual([p.turn, p.spare, !!p.known], ['SA02', true, false]);
   assert.match(p.reason, /MU01 \(a make-up placeholder\) is on it, so SA02's train goes spare/);
 });
+
+// Owner, 2026-11-06: S501 CO and EN both went spare for L50231 06 and MU01
+// took it; the site still had S501 first for the next L502. It alternates:
+// S502 (back from Garnet, on rest) is next.
+test('L502: a make-up crew working a 501/502 trip stands for the crew that went spare', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 11, 7, 7, 54);
+  const l502 = (day, h) => ({ symbol: 'L50231', trainNo: 'L502', originDay: day, order: at(2026, 11, +day, h, 0), status: 'PLN', deadhead: false, engCrew: '45SAS50', trnCrew: '45SAS50' });
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const s5 = [
+    row('EN', 'S501', { pos: 1 }), row('CO', 'S501', { pos: 1 }),
+    row('EN', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }), row('CO', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }),
+    row('EN', 'MU01', { working: true, workingOn: 'L50231' }), row('CO', 'MU01', { working: true, workingOn: 'L50231' }),
+  ];
+  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5 });
+  const p = r.predictions.find((x) => x.symbol === 'L50231');
+  assert.equal(p.turn, 'S502');
+  assert.match(p.reason, /MU01 is working S501's trip/);
+  // MU01 bringing L501 home: S501 still counts as away; S502 next.
+  const back = s5.map((x) => (x.turn === 'MU01' ? { ...x, workingOn: 'L50131' } : x));
+  assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5: back }).predictions.find((x) => x.symbol === 'L50231').turn, 'S502');
+  // No make-up crew out: as before (position).
+  const none = s5.filter((x) => x.turn !== 'MU01');
+  assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5: none }).predictions.find((x) => x.symbol === 'L50231').turn, 'S501');
+});
