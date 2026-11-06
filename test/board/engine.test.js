@@ -743,3 +743,22 @@ test('L502: a make-up crew working a 501/502 trip stands for the crew that went 
   const none = s5.filter((x) => x.turn !== 'MU01');
   assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5: none }).predictions.find((x) => x.symbol === 'L50231').turn, 'S501');
 });
+
+// Owner, 2026-11-06: the 501/502 board in L502 order, with the stand-in crew.
+test('501/502 board: next crew first, the make-up crew beside the crew whose trip it is', () => {
+  const { s5Board } = require('../../lib/board/site');
+  const { at } = require('../../lib/board/time');
+  const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
+  const s5 = [row('EN', 'S501', { pos: 1 }), row('CO', 'S501', { pos: 1 }),
+    row('EN', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }), row('CO', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }),
+    row('EN', 'MU01', { working: true, workingOn: 'L50231' }), row('CO', 'MU01', { working: true, workingOn: 'L50231' })];
+  const r = runBoardCheck({ now: at(2026, 11, 7, 7, 54), callBoard: [], chainGangHome: [], lineup: [], s5 });
+  assert.deepEqual(r.s5Order, [{ turn: 'S502', rank: 0 }, { turn: 'S501', rank: 2, mu: 'MU01' }]);
+  const rows = s5.map((t) => ({ pos: String(t.pos).padStart(3, '0'), turn: t.turn, craft: t.craft, status: 'available' }));
+  const out = s5Board(rows, r.s5Order, [{ job: 'MU01', craft: 'CO', turn: 'B133' }]);
+  assert.deepEqual(out.map((x) => `${x.turn} ${x.craft}`), ['S502 EN', 'S502 CO', 'S501 EN', 'S501 CO', 'MU01 EN', 'MU01 CO']);
+  assert.match(out[0].status, /next for L502/);
+  assert.match(out[2].status, /S501's trip worked by MU01/);
+  assert.match(out[5].status, /working S501's trip: B133 on it/);
+  assert.doesNotMatch(out[4].status, /on it/);
+});
