@@ -966,6 +966,46 @@ async function sendWeekly() {
   }
 }
 
+// "You were held 14 h+" (owner, 2026-11-06; lib/board/held-alerts.js): to
+// phones following the person by name code, once per trip, from the site
+// just built. The first run only looks back 2 days.
+const HELD_FILE = path.join(OUT_DIR, 'held-alerts.json');
+const HeldAlerts = require('../lib/board/held-alerts');
+async function sendHeldAlerts() {
+  const settings = siteSettings();
+  if (!settings.r2) return;
+  let state = {};
+  try { state = JSON.parse(fs.readFileSync(HELD_FILE, 'utf8')); } catch { /* first run */ }
+  const toStamp = (ms) => new Date(ms).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }).slice(0, 16).replace(':', '');
+  if (!state.since) state.since = toStamp(Date.now() - 2 * 86400000);
+  const read = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, 'site', 'data', f), 'utf8')); } catch { return {}; } };
+  try {
+    const subs = await listSubscriptions(settings.r2);
+    const wants = (s, h) => { const p = (s.prefs || {})[`@${h}`] || {}; return p.held !== false; };
+    const followed = new Set(subs.flatMap((s) => (s.turns || []).filter((t) => t.startsWith('@')).map((t) => t.slice(1)).filter((h) => wants(s, h))));
+    const { events, told } = HeldAlerts.heldEvents({ trains: read('trains.json').trains || [], people: read('people.json').people || {}, followed, told: state.told || {}, since: state.since });
+    if (events.length) {
+      const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
+      const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
+      const log = new Map();
+      for (const e of events) {
+        const l = { turn: e.turn, kind: 'held', phones: 0, failed: 0, why: `${e.turn} was on ${e.train} (seen on that turn on the board when it went on duty), held 14 h+ by the 18.6(b) tab's count. Sent to phones following that person's name code, once per trip.` };
+        for (const ph of subs.filter((s) => (s.turns || []).includes(`@${e.hash}`) && wants(s, e.hash))) {
+          const r = await sendPush(ph, { title: 'Held 14 h+', body: e.text, tag: `held-${e.train}`, url: './#14h' }, { keys, sub });
+          if (r.ok) l.phones++; else l.failed++;
+        }
+        log.set(e.text, l);
+        if (!l.phones && l.failed) delete told[e.key]; // try again next check
+      }
+      writeAlertsLog(log);
+      console.log(`[${stamp()}] Held 14 h+ alerts: ${events.map((e) => `${e.turn} (${e.train})`).join(', ')}.`);
+    }
+    fs.writeFileSync(HELD_FILE, JSON.stringify({ since: state.since, told }));
+  } catch (err) {
+    console.log(`  (held 14 h+ alerts not sent: ${err.message})`);
+  }
+}
+
 // The laptop's memory, backed up to the R2 bucket once a day after 03:00
 // (lib/board/backup.js; owner, 2026-11-02). Cloudflare only.
 const BACKUP_FILE = path.join(OUT_DIR, 'backup.json');
@@ -1714,6 +1754,7 @@ async function main() {
       await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx));
       await backupLaptop();
       await sendWeekly();
+      await sendHeldAlerts();
       retried = false;
       // The Microsoft sign-in runs out in 12 h, then 2 h: remind the phone
       // (owner, 2026-11-02; no automatic fresh sign-in any more).

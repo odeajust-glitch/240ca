@@ -91,6 +91,25 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    boxes" → the Current page shows just the box names with ▲ ▼, Reset,
    Done; kept in that browser (localStorage boardSectionOrder). On a wide
    screen each box stays in its column. board.html SECTIONS / sectionsGrid.
+3k. **Article 18.6(b) form** (owner 2026-11-06): the grievance letter and
+   its link are gone. The 18.6(b) tab and Turn History show a form
+   (conductor or engineer, name, PIN, train out (Toronto/Garnet) date +
+   ID + TS number, train home date + ID + TS number, additional info,
+   optional email for a copy): **Export (.txt)** or **Submit to the rep**.
+   Worker /api/held186 sends through a Google Apps Script on the owner's
+   Gmail (MAIL_SCRIPT_URL + MAIL_SCRIPT_KEY secrets; steps in
+   docs/board-checker/EMAIL.md), 30 a day. Page Health → "Article 18.6(b)
+   submissions": conductors' rep email, engineers' rep email, crew names
+   passcode (the owner key then opens the names) → R2 settings/held186.json.
+   ❗ Owner to do: re-paste the Worker, set up the Apps Script + the two
+   secrets, enter the rep emails. Until then Submit is off (Export works).
+3l. **"Held 14 h+" alert** (owner 2026-11-06): lib/board/held-alerts.js +
+   board-auto.js sendHeldAlerts after each site update: phones following a
+   person by name code, when a crew they were on (seen on that turn at the
+   train's on duty) was held 14 h+; once per trip (BoardChecker\held-alerts.json;
+   first run looks back 2 days). Tracking option "was held 14 h+" (persons
+   only); the Worker now keeps resetAhead and held prefs (it was dropping
+   resetAhead).
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:

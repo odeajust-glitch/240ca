@@ -2127,7 +2127,7 @@ const Alerts = (() => {
   const PREFS_KEY = 'alertPrefs';
   // What each turn's alerts cover on this phone (owner: e.g. only when it's
   // ordered, or only when the time moves by a chosen amount). time: minutes, 0 = never.
-  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, resetAhead: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 };
+  const DEFAULT = { lineup: true, ordered: true, onDuty: true, aheadRest: true, aheadBack: true, reset: true, resetAhead: true, held: true, position: true, rescue: true, mayCall: true, stale: false, time: 30, before: 0 };
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
@@ -2522,7 +2522,7 @@ source().then(async (src) => {
   // the logic behind it"). Owner only: the Worker's /health/alerts gives the
   // last 30 days (the laptop's alerts logs); each alert's own "why" is kept
   // from 2026-11-05 on, and every kind has its rule below.
-  const NOTE_KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', before: 'Reminder', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered', stand: 'Tracked', weekly: 'My week', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)' };
+  const NOTE_KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', before: 'Reminder', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered', stand: 'Tracked', weekly: 'My week', held: 'Held 14 h+', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)' };
   const NOTE_RULES = {
     lineup: 'The board check works out who gets each train on the Sarnia line-up (A and B pools by road day, then the Chain Gang; engineers from SD, S1, S3; spareboards for jobs going spare, first in first out). When the train a turn is lined up for changes, its phones are told. A switch to another train waits one check (sent only if it\'s still there next check), and a train the turn was told about in the last 6 h isn\'t sent again unless it\'s now ordered.',
     ordered: 'The line-up shows the train ORD (ordered). Once per train; if it\'s ordered with a new time, the time change isn\'t sent as well.',
@@ -2540,6 +2540,7 @@ source().then(async (src) => {
     stale: 'The train is 15 min past its planned call and still not ordered (only for phones that turned this on).',
     stand: 'Sent once when a phone starts following a turn or person: where it stands right now.',
     weekly: 'My week, Sunday: the person\'s week of work.',
+    held: 'Sent to phones following a person by name code when a crew they were on (seen on that turn when the train went on duty) was held 14 h or more at the away terminal, as the Article 18.6(b) tab counts it, so they can send it to their rep from that tab. Once per trip.',
     ntfy: 'The checker\'s own messages to you (CATS asking a question, Microsoft sign-in, stuck).', pushover: 'The checker\'s own messages to you, by Pushover.', ownerPush: 'The checker\'s own messages to you, by a site alert.',
   };
   let notesData = null;
@@ -3073,6 +3074,7 @@ source().then(async (src) => {
         ${box('position', 'changes board position')}${box('rescue', 'Rescue train appears in the lineup')}
         ${chain ? box('aheadRest', 'has someone ahead go on rest') + box('aheadBack', 'has someone ahead come off rest') : ''}
         ${/^(SD|SR)/.test(turn) || isPerson(turn) ? box('mayCall', 'may be called for a job going spare (no one free on the slow board)') : ''}
+        ${isPerson(turn) ? box('held', 'was held 14 h+ at the away terminal (to send it to the rep)') : ''}
         ${box('stale', 'is lined up for a train 15 min past its planned call and still not ordered')}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>
         <label>remind me <select data-k="before">${BEFORE.map(([m, l]) => `<option value="${m}" ${m === p.before ? 'selected' : ''}>${l}</option>`).join('')}</select> before the expected call</label></div>
