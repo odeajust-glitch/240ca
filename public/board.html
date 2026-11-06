@@ -173,6 +173,11 @@
   .notes .nform { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; }
   .notes .nform input[type=text] { font: 600 16px var(--mono); text-transform: uppercase; width: 9em; padding: 6px 8px; }
   .notes .nform select { font: inherit; padding: 6px; }
+  .notes .nform input#ntext { font: 15px var(--body, inherit); text-transform: none; width: 14em; flex: 1 1 12em; }
+  .notes .nkinds { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+  .notes .nkinds button { font: 13px inherit; padding: 5px 9px; border-radius: 14px; border: 1px solid var(--rule); background: none; color: inherit; cursor: pointer; }
+  .notes .nkinds button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg, #fff); }
+  .notes .nkinds button .n { opacity: .7; margin-left: 3px; }
   .notes .nsum { padding: 0 14px 8px; font-size: 13px; }
   .notes .nday { font: 600 13px var(--display); letter-spacing: .04em; text-transform: uppercase; color: var(--soft); padding: 10px 14px 2px; }
   .notes .nlist { list-style: none; margin: 0; padding: 0 14px 8px; }
@@ -2509,7 +2514,10 @@ source().then(async (src) => {
     ntfy: 'The checker\'s own messages to you (CATS asking a question, Microsoft sign-in, stuck).', pushover: 'The checker\'s own messages to you, by Pushover.', ownerPush: 'The checker\'s own messages to you, by a site alert.',
   };
   let notesData = null;
-  const notesState = { turn: '', kind: '', mention: true };
+  // Filters (owner, 2026-11-06: "add a filter for the search and the filter
+  // includes the type of notification"): turn or code, words in the
+  // message or its why, the types (one or several), and how far back.
+  const notesState = { turn: '', text: '', kinds: new Set(), days: 30, mention: true };
   async function renderNotes() {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#notifications'); } catch (e) { /* not allowed in some frames */ }
@@ -2559,7 +2567,14 @@ source().then(async (src) => {
     const heldBy = (a) => held && held.some((h) => (a.turn === h.turn || base(a.turn) === base(h.turn)) && stamp(a.at) >= h.from && (!h.to || stamp(a.at) < h.to));
     const own = (a) => !q || a.turn === q || base(a.turn) === q || heldBy(a);
     const mentions = (a) => q && new RegExp(`\\b${q.replace(/[^A-Z0-9]/g, '')}\\b`).test(a.text);
-    const rows = D.alerts.filter((a) => (own(a) || (notesState.mention && mentions(a))) && (!notesState.kind || a.kind === notesState.kind));
+    const since = notesState.days < 30 ? new Date(Date.now() - notesState.days * 86400000).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }).slice(0, 16) : '';
+    const words = notesState.text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const hasWords = (a) => !words.length || words.every((w) => `${a.text} ${a.why || ''} ${a.turn}`.toLowerCase().includes(w));
+    // Before the type filter: what the type buttons count.
+    const pool = D.alerts.filter((a) => (own(a) || (notesState.mention && mentions(a))) && (!since || a.at >= since) && hasWords(a));
+    const kindCount = {};
+    for (const a of pool) kindCount[a.kind] = (kindCount[a.kind] || 0) + 1;
+    const rows = pool.filter((a) => !notesState.kinds.size || notesState.kinds.has(a.kind));
     const counts = {};
     for (const a of rows.filter(own)) counts[a.kind] = (counts[a.kind] || 0) + 1;
     const S = S0;
@@ -2576,14 +2591,16 @@ source().then(async (src) => {
       <div class="meta">${esc(a.at.slice(11))} · <b>${esc(a.turn === 'YOU' ? 'You' : a.turn)}</b> · ${esc(NOTE_KINDS[a.kind] || a.kind)} · ${a.phones} phone${a.phones === 1 ? '' : 's'}${a.failed ? ` <span class="warn">${a.failed} failed</span>` : ''}${q && !own(a) ? ' · <span class="muted">mentions it</span>' : ''}</div>
       <div class="ntext">${esc(a.text)}</div>
       <details><summary>Why</summary>${whyHtml(a)}</details></li>`).join('')}</ul>`).join('');
-    const kinds = [...new Set(D.alerts.map((a) => a.kind))].sort((a, b) => (NOTE_KINDS[a] || a).localeCompare(NOTE_KINDS[b] || b));
+    const kinds = [...new Set([...D.alerts.map((a) => a.kind), ...notesState.kinds])].sort((a, b) => (kindCount[b] || 0) - (kindCount[a] || 0) || (NOTE_KINDS[a] || a).localeCompare(NOTE_KINDS[b] || b));
     view.innerHTML = `<div class="healthpage notes"><h1 class="hpt">Notifications <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>Alerts sent</h2><span class="meta">${D.old ? 'latest 50 (re-paste the Worker for 30 days)' : `last 30 days${D.from ? ` (from ${esc(dayName(D.from))})` : ''}`}, newest first</span></header>
         <form class="nform" id="nform" autocomplete="off" onsubmit="return false">
           <input type="text" id="nturn" placeholder="Turn or code" value="${esc(notesState.turn)}" aria-label="Turn or name code" maxlength="8">
-          <select id="nkind" aria-label="Kind"><option value="">Every kind</option>${kinds.map((k) => `<option value="${esc(k)}"${k === notesState.kind ? ' selected' : ''}>${esc(NOTE_KINDS[k] || k)}</option>`).join('')}</select>
+          <input type="text" id="ntext" placeholder="Search the messages (train, word)" value="${esc(notesState.text)}" aria-label="Search the messages">
+          <select id="ndays" aria-label="How far back">${[[1, 'Last 24 h'], [3, 'Last 3 days'], [7, 'Last 7 days'], [30, 'Last 30 days']].map(([d, l]) => `<option value="${d}"${d === notesState.days ? ' selected' : ''}>${l}</option>`).join('')}</select>
           <label><input type="checkbox" id="nmention"${notesState.mention ? ' checked' : ''}> Also alerts that mention it</label>
         </form>
+        <div class="nkinds" role="group" aria-label="Type of notification"><button type="button" data-kind="" aria-pressed="${!notesState.kinds.size}">Every type</button>${kinds.filter((k) => kindCount[k] || notesState.kinds.has(k)).map((k) => `<button type="button" data-kind="${esc(k)}" aria-pressed="${notesState.kinds.has(k)}">${esc(NOTE_KINDS[k] || k)}<span class="n">${kindCount[k] || 0}</span></button>`).join('')}</div>
         <div class="nsum">${q ? `<b>${esc(q)}</b>: ${rows.filter(own).length} sent to it${notesState.mention ? `, ${rows.filter((a) => !own(a)).length} more mention it` : ''}${Object.keys(counts).length ? ` (${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(NOTE_KINDS[k] || k)} ${n}`).join(', ')})` : ''}.${following != null ? ` Phones following ${esc(q)}: ${following}.` : ''}${isCode(q) ? (held == null ? ' Looking up their turns…' : held.length ? ` Alerts go out by turn, so these are the alerts for the turns ${esc(q)} held, while they held them: ${held.slice(-4).map((h) => `${esc(h.turn)} from ${esc(dt(h.from))}`).join(', ')}.` : ` ${esc(q)} hasn't been seen on a turn of their own in Turn History.`) : ''}${people.length ? ` Followed by name code: ${people.map((p) => `${esc(p.code || '?')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}.` : ''}` : `${rows.length} alerts. Type a turn (SR03, B126, S501) or a name code to see only theirs.`}${rows.length > 600 ? ' Showing the newest 600.' : ''}</div>
         ${list || '<p class="hbody muted">No alerts for that.</p>'}
       </section>
@@ -2591,7 +2608,14 @@ source().then(async (src) => {
         <p class="muted">Phones are anonymous: an alert counts the phones it reached, not whose they are. The checker sends to a turn's phones and to phones following a person by name code (on the turn they're on now).</p></div></section></div>`;
     const inp = document.getElementById('nturn');
     inp.oninput = () => { notesState.turn = inp.value; const pos = inp.selectionStart; paintNotes(); const i2 = document.getElementById('nturn'); i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (e) { /* fine */ } };
-    document.getElementById('nkind').onchange = (e) => { notesState.kind = e.target.value; paintNotes(); };
+    const keep = (id, set) => { const el = document.getElementById(id); el.oninput = () => { set(el.value); const pos = el.selectionStart; paintNotes(); const e2 = document.getElementById(id); e2.focus(); try { e2.setSelectionRange(pos, pos); } catch (e) { /* fine */ } }; };
+    keep('ntext', (v) => { notesState.text = v; });
+    document.getElementById('ndays').onchange = (e) => { notesState.days = +e.target.value; paintNotes(); };
+    view.querySelectorAll('.nkinds button').forEach((b) => { b.onclick = () => {
+      const k = b.dataset.kind;
+      if (!k) notesState.kinds.clear(); else if (notesState.kinds.has(k)) notesState.kinds.delete(k); else notesState.kinds.add(k);
+      paintNotes();
+    }; });
     document.getElementById('nmention').onchange = (e) => { notesState.mention = e.target.checked; paintNotes(); };
   }
   async function renderReview() {
