@@ -2388,10 +2388,13 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
       send.textContent = 'Sent';
       return;
     } catch (e) {
+      send.textContent = 'Submit to the rep';
+      update();
+      // After update(), which would clear it (owner, 2026-11-06: the button
+      // went grey, then back, with no reason shown).
       errEl.textContent = `Not sent: ${e.message}`;
+      return;
     }
-    send.textContent = 'Submit to the rep';
-    update();
   };
   if (!f.name.value) fillName();
   update();

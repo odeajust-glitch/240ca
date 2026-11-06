@@ -1034,11 +1034,23 @@ async function held186Submit(request, env) {
     res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: copy || '', replyTo: copy || '', subject, body }) });
   } catch (e) {
-    return json({ error: 'The email didn\'t go: try again, or export the text file.' }, 502);
+    return json({ error: `The email didn't go (couldn't reach the Google script: ${e.message}). Export the text file instead.` }, 502);
   }
+  // Why it didn't go, in words the owner can act on (owner, 2026-11-06:
+  // nothing arrived and the page said nothing).
+  const raw = await res.text().catch(() => '');
   let out = {};
-  try { out = await res.json(); } catch { out = {}; }
-  if (!res.ok || !out.ok) return json({ error: 'The email didn\'t go: try again, or export the text file.' }, 502);
+  try { out = JSON.parse(raw); } catch { out = null; }
+  if (!res.ok || !out || !out.ok) {
+    const why = !out
+      ? (/accounts\.google\.com|ServiceLogin|sign in/i.test(raw) ? 'Google asked to sign in: the script\'s "Who has access" must be Anyone'
+        : res.status === 404 ? 'Google says there\'s no script at that address: check MAIL_SCRIPT_URL is the Web app URL ending in /exec'
+          : /authoriz|permission/i.test(raw) ? 'the script isn\'t allowed to send email yet: run it once in the editor and allow it'
+            : `the Google script answered ${res.status} with a page, not a result`)
+      : out.error === 'key' ? 'the key in the script doesn\'t match MAIL_SCRIPT_KEY'
+        : `the Google script said: ${String(out.error || 'no').slice(0, 120)}`;
+    return json({ error: `The email didn't go: ${why}. Export the text file instead.` }, 502);
+  }
   await env.SITE.put(countKey, JSON.stringify({ n: count + 1 }), { httpMetadata: { contentType: 'application/json' } });
   return json({ ok: true, copy: !!copy });
 }

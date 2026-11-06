@@ -505,6 +505,11 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
     // A bad copy address is refused, nothing sent.
     assert.equal((await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'CO', name: 'Pat', text: 'x', copy: 'nope' }) })).status, 400);
     assert.equal(sent.length, 1);
+    // Why it didn't go, from what Google answered.
+    const why = async (resp) => { globalThis.fetch = async () => resp; return (await (await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'Pat', text: 'x' }) })).json()).error; };
+    assert.match(await why(new Response(JSON.stringify({ ok: false, error: 'key' }))), /key in the script doesn't match MAIL_SCRIPT_KEY/);
+    assert.match(await why(new Response('<html>Sign in - Google Accounts accounts.google.com</html>')), /Who has access" must be Anyone/);
+    assert.match(await why(new Response('<html>not found</html>', { status: 404 })), /MAIL_SCRIPT_URL/);
   } finally { globalThis.fetch = realFetch; }
   // No sender set up: says so.
   delete env.MAIL_SCRIPT_URL;
