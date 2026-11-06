@@ -1990,8 +1990,14 @@ function ordersView(all, day, openId, find, from = 'all') {
 // --- 14h: crews held in Toronto 14 hours or more (Article 18.6(b)) ----------
 
 const HELD_LIMIT = BoardTrains.HELD_LIMIT || 14 * 60;
-const heldRows = (all) => all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
-  .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
+// With the train home's off duty in Sarnia when the board saw it (the
+// 18.6(b) email lists it; owner, 2026-11-06).
+const heldRows = (all) => {
+  const byId = new Map(all.map((x) => [x.id, x]));
+  return all.filter((r) => r.heldMin != null && r.heldMin >= HELD_LIMIT)
+    .map((r) => (r.back && !r.back.offDuty && byId.get(r.back.id) && byId.get(r.back.id).offDuty ? { ...r, back: { ...r.back, offDuty: byId.get(r.back.id).offDuty } } : r))
+    .sort((a, b) => (a.offDuty < b.offDuty ? 1 : -1));
+};
 const heldKey = (r) => `${r.id} ${r.month}`;
 
 // A link straight to a turn or a train (owner, 2026-10-22): #turn=SR07,
@@ -2279,6 +2285,7 @@ const isoOf = (st) => (st ? `${st.slice(0, 10)} ${st.slice(11, 13)}:${st.slice(1
 // address" (conductors' or engineers' rep, set on Page Health; an optional
 // email for a copy). Replaces the grievance letter. craft: 'CO' | 'EN'.
 let HELD186_READY = null; // { CO, EN }: the Worker can send for that craft
+const hhmm = (st) => (st ? st.slice(11, 15) : '');
 function claimForm(r, craft, pre = {}) {
   const v = (x) => `value="${esc(x || '')}"`;
   const seg = (c, label, turn) => `<label><input type="radio" name="craft" value="${c}"${craft === c ? ' checked' : ''}${turn ? '' : ' disabled'}> ${label}${turn ? ` (${esc(turn)})` : ''}</label>`;
@@ -2291,15 +2298,16 @@ function claimForm(r, craft, pre = {}) {
         <label>Full name<input name="name" placeholder="First Last" ${v(pre.name)}></label>
         <label>PIN<input name="pin" inputmode="numeric" placeholder="123456" ${v(pre.pin)}></label>
       </fieldset>
-      <fieldset><legend>Train out</legend>
-        <label>To<select name="where"><option>Toronto</option><option${/^L50/.test(r.id) ? ' selected' : ''}>Garnet</option></select></label>
-        <label>Date<input type="date" name="outDate" ${v(dateOf(r.onDuty))}></label>
+      <fieldset><legend>Train out (to Toronto or Garnet)</legend>
         <label>Train ID<input name="outTrain" ${v(r.id)} placeholder="E27861 03"></label>
+        <label>On duty<span class="dt"><input type="date" name="outDate" ${v(dateOf(r.onDuty))}><input name="outOn" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(hhmm(r.onDuty))}></span></label>
+        <label>Off duty<span class="dt"><input type="date" name="outOffDate" ${v(dateOf(r.offDuty))}><input name="outOff" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(hhmm(r.offDuty))}></span></label>
         <label>TS number<input name="outTs" inputmode="numeric" placeholder="from your time slip"></label>
       </fieldset>
       <fieldset><legend>Train home</legend>
-        <label>Date<input type="date" name="homeDate" ${v(r.back && dateOf(r.back.onDuty))}></label>
         <label>Train ID<input name="homeTrain" ${v(r.back && r.back.id)} placeholder="Z14931 04"></label>
+        <label>On duty<span class="dt"><input type="date" name="homeDate" ${v(r.back && dateOf(r.back.onDuty))}><input name="homeOn" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(r.back && hhmm(r.back.onDuty))}></span></label>
+        <label>Off duty<span class="dt"><input type="date" name="homeOffDate" ${v(r.back && dateOf(r.back.offDuty))}><input name="homeOff" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(r.back && hhmm(r.back.offDuty))}></span></label>
         <label>TS number<input name="homeTs" inputmode="numeric" placeholder="from your time slip"></label>
       </fieldset>
     </div>
@@ -2311,20 +2319,27 @@ function claimForm(r, craft, pre = {}) {
       <button type="button" class="gen gsend" disabled>Submit to the rep</button></div>
   </form>`;
 }
+// The owner's layout (2026-11-06): each train as its own block, with on
+// and off duty times and dates and the TS number; the held time worked out
+// from the off duty out to the on duty home as typed (else the board's).
 function claimText(r, d) {
-  const title = d.craft === 'EN' ? 'Engineer: held at the away-from-home terminal 14 hours or more' : 'Article 18.6(b): held at the away-from-home terminal 14 hours or more';
+  const mins = (date, t) => (/^\d{4}-\d{2}-\d{2}$/.test(date || '') && /^\d{4}$/.test(t || '') ? Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), +t.slice(0, 2), +t.slice(2, 4)) / 60000 : null);
+  const a = mins(d.outOffDate, d.outOff);
+  const b = mins(d.homeDate, d.homeOn);
+  const held = a != null && b != null && b > a ? b - a : r.heldMin;
+  const train = (id, onDate, on, offDate, off, ts) => [id || '—', `On Duty - ${on || '—'}`, onDate || '—', `Off Duty - ${off || '—'}`, offDate || '—', `TS-${ts || '—'}`];
   return [
-    title,
-    '',
-    // Owner's layout, 2026-11-06: no "Craft:" or "Train to Toronto:" labels.
     `${d.craft === 'EN' ? 'Engineer' : 'Conductor'}${d.turn ? ` (turn ${d.turn})` : ''}`,
     `Name: ${d.name}`,
     `PIN: ${d.pin}`,
     '',
-    `${d.outTrain || '—'}, date ${d.outDate || '—'}, TS ${d.outTs || '—'}`,
-    `Train home: ${d.homeTrain || '—'}, date ${d.homeDate || '—'}, TS ${d.homeTs || '—'}`,
+    ...train(d.outTrain, d.outDate, d.outOn, d.outOffDate, d.outOff, d.outTs),
     '',
-    `From the board (check against the time slips): off duty at ${d.where} ≈ ${isoOf(r.offDuty)}${r.back ? `; on duty for the train home ${isoOf(r.back.onDuty)}` : ''}; held ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}.`,
+    ...train(d.homeTrain, d.homeDate, d.homeOn, d.homeOffDate, d.homeOff, d.homeTs),
+    '',
+    `held ${dur(held)}`,
+    '',
+    'Check Against Time Slips',
     ...(d.more ? ['', 'Additional information:', d.more] : []),
     '',
     'Sent from the Sarnia board site.',
@@ -2335,12 +2350,13 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
   const f = form.elements;
   const val = (n) => String(f[n].value || '').trim();
   const craftNow = () => (form.querySelector('input[name="craft"]:checked') || {}).value || 'CO';
-  const read = () => ({ craft: craftNow(), turn: craftNow() === 'EN' ? r.en : r.co, name: val('name'), pin: val('pin'), where: val('where'),
-    outDate: val('outDate'), outTrain: val('outTrain').toUpperCase(), outTs: val('outTs'), homeDate: val('homeDate'), homeTrain: val('homeTrain').toUpperCase(), homeTs: val('homeTs'),
+  const read = () => ({ craft: craftNow(), turn: craftNow() === 'EN' ? r.en : r.co, name: val('name'), pin: val('pin'),
+    outDate: val('outDate'), outOn: val('outOn'), outOffDate: val('outOffDate'), outOff: val('outOff'), outTrain: val('outTrain').toUpperCase(), outTs: val('outTs'),
+    homeDate: val('homeDate'), homeOn: val('homeOn'), homeOffDate: val('homeOffDate'), homeOff: val('homeOff'), homeTrain: val('homeTrain').toUpperCase(), homeTs: val('homeTs'),
     more: val('more'), copy: val('copy') });
   const send = form.querySelector('.gsend');
   const errEl = form.querySelector('.gerr');
-  const missing = (d) => [['name', 'name'], ['pin', 'PIN'], ['outTrain', 'train out'], ['outDate', 'date out'], ['outTs', 'TS number out'], ['homeTrain', 'train home'], ['homeDate', 'date home'], ['homeTs', 'TS number home']].filter(([k]) => !d[k]).map(([, l]) => l);
+  const missing = (d) => [['name', 'name'], ['pin', 'PIN'], ['outTrain', 'train out'], ['outDate', 'date out'], ['outOn', 'on duty time out'], ['outOff', 'off duty time out'], ['outOffDate', 'off duty date out'], ['outTs', 'TS number out'], ['homeTrain', 'train home'], ['homeDate', 'date home'], ['homeOn', 'on duty time home'], ['homeOff', 'off duty time home'], ['homeOffDate', 'off duty date home'], ['homeTs', 'TS number home']].filter(([k]) => !d[k]).map(([, l]) => l);
   function update() {
     const d = read();
     const ready = HELD186_READY && HELD186_READY[d.craft];
@@ -2364,6 +2380,7 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
     const t = e.target;
     if (t.name === 'name') { const known = people().byName[t.value.trim().toUpperCase()]; if (known && known.pin) f.pin.value = known.pin; }
     if (/Train$/.test(t.name)) t.value = t.value.toUpperCase();
+    if (/(On|Off)$/.test(t.name)) t.value = t.value.replace(/\D/g, '').slice(0, 4);
     update();
   });
   form.addEventListener('change', (e) => { if (e.target.name === 'craft') fillName(); update(); });
