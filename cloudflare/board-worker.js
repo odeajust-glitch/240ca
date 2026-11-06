@@ -986,6 +986,14 @@ async function healthFor(request, env) {
 // (secrets). 30 a day, for the owner's Gmail's sake.
 const HELD186_KEY = 'settings/held186.json';
 const HELD186_DAY_MAX = 30;
+// Per sender and per claim (owner, 2026-11-06: "limits the amount of
+// grievances that can be sent, just so no one spams the button"): 5 a day
+// from one address (kept as a hash, never the address), and the same
+// claim (craft + name + train out) once in 30 days.
+const HELD186_IP_MAX = 5;
+const HELD186_SENT_KEY = 'stats/held186/sent.json';
+const HELD186_SENT_DAYS = 30;
+const sha = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 const EMAIL_RE = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
 const mailReady = (env) => !!(env.MAIL_SCRIPT_URL && env.MAIL_SCRIPT_KEY);
 async function held186Ready(env) {
@@ -1024,10 +1032,18 @@ async function held186Submit(request, env) {
   const copy = String(b.copy || '').trim();
   if (!name || !body) return json({ error: 'Fill in your name.' }, 400);
   if (copy && !EMAIL_RE.test(copy)) return json({ error: 'Your email for a copy doesn\'t look right.' }, 400);
-  const day = torontoDay(Date.now());
+  const now = Date.now();
+  const day = torontoDay(now);
   const countKey = `stats/held186/${day}.json`;
-  const count = ((await readJson(env, countKey)) || { n: 0 }).n;
-  if (count >= HELD186_DAY_MAX) return json({ error: 'Too many sent today: export the text file and send it to your rep.' }, 429);
+  const today = (await readJson(env, countKey)) || { n: 0, ips: {} };
+  today.ips = today.ips || {};
+  if (today.n >= HELD186_DAY_MAX) return json({ error: 'Too many sent today: export the text file and send it to your rep.' }, 429);
+  const ip = await sha(`held186:${request.headers.get('cf-connecting-ip') || 'unknown'}`);
+  if ((today.ips[ip] || 0) >= HELD186_IP_MAX) return json({ error: `That's ${HELD186_IP_MAX} sent from here today, the most allowed: export the text file for any more.` }, 429);
+  const claim = await sha(`${craft}|${name.toLowerCase().replace(/\s+/g, ' ')}|${String(b.out || '').toUpperCase().replace(/\s+/g, ' ').trim()}`);
+  const sentAll = (await readJson(env, HELD186_SENT_KEY)) || {};
+  const sent = Object.fromEntries(Object.entries(sentAll).filter(([, at]) => now - at < HELD186_SENT_DAYS * 86400000));
+  if (sent[claim]) return json({ error: 'This one was already sent to the rep. If something changed, export the text file and send it yourself.' }, 409);
   const subject = `${craft === 'EN' ? 'Engineer' : 'Conductor'}: held 14 h+ at the away terminal · ${name} · ${String(b.out || '').slice(0, 20)}`;
   let res;
   try {
@@ -1051,7 +1067,11 @@ async function held186Submit(request, env) {
         : `the Google script said: ${String(out.error || 'no').slice(0, 120)}`;
     return json({ error: `The email didn't go: ${why}. Export the text file instead.` }, 502);
   }
-  await env.SITE.put(countKey, JSON.stringify({ n: count + 1 }), { httpMetadata: { contentType: 'application/json' } });
+  today.n += 1;
+  today.ips[ip] = (today.ips[ip] || 0) + 1;
+  sent[claim] = now;
+  await env.SITE.put(countKey, JSON.stringify(today), { httpMetadata: { contentType: 'application/json' } });
+  await env.SITE.put(HELD186_SENT_KEY, JSON.stringify(sent), { httpMetadata: { contentType: 'application/json' } });
   return json({ ok: true, copy: !!copy });
 }
 

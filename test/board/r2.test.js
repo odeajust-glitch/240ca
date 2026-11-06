@@ -505,6 +505,16 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
     // A bad copy address is refused, nothing sent.
     assert.equal((await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'CO', name: 'Pat', text: 'x', copy: 'nope' }) })).status, 400);
     assert.equal(sent.length, 1);
+    // The same claim again: refused, nothing sent (owner: no spamming).
+    r = await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'pat  DOE', out: 'e27861 03', text: 'details' }) });
+    assert.equal(r.status, 409);
+    assert.equal(sent.length, 1);
+    // 5 a day from one address.
+    const from = (i) => call('/api/held186', { method: 'POST', headers: { 'cf-connecting-ip': '203.0.113.9' }, body: JSON.stringify({ craft: 'CO', name: `Pat ${i}`, out: 'X1 01', text: 'x' }) });
+    for (let i = 0; i < 5; i++) assert.equal((await from(i)).status, 200);
+    assert.equal((await from(9)).status, 429);
+    assert.equal(sent.length, 6);
+    assert.ok(![...store.values()].some((v) => String(v).includes('203.0.113.9'))); // never the address itself
     // Why it didn't go, from what Google answered.
     const why = async (resp) => { globalThis.fetch = async () => resp; return (await (await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'Pat', text: 'x' }) })).json()).error; };
     assert.match(await why(new Response(JSON.stringify({ ok: false, error: 'key' }))), /key in the script doesn't match MAIL_SCRIPT_KEY/);
