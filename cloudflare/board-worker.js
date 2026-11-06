@@ -973,6 +973,75 @@ async function healthFor(request, env) {
   return json({ laptop, down, watch });
 }
 
+// Article 18.6(b) claims sent to the union rep (owner, 2026-11-06: "They
+// can either export this info as a text file or hit submit, and it will be
+// sent to the appropriate union rep email address"; "different email for
+// conductors and engineers. put an option on the page health page to input
+// and update the emails"; "an optional box to enter their email to get a
+// copy"). The rep addresses (and the crew-names passcode, so the owner key
+// unlocks the names) are kept in R2 settings/held186.json, set from Page
+// Health. The mail goes out through a Google Apps Script on the owner's
+// Gmail (docs/board-checker/EMAIL.md): MAIL_SCRIPT_URL + MAIL_SCRIPT_KEY
+// (secrets). 30 a day, for the owner's Gmail's sake.
+const HELD186_KEY = 'settings/held186.json';
+const HELD186_DAY_MAX = 30;
+const EMAIL_RE = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
+const mailReady = (env) => !!(env.MAIL_SCRIPT_URL && env.MAIL_SCRIPT_KEY);
+async function held186Ready(env) {
+  const s = (await readJson(env, HELD186_KEY)) || {};
+  return json({ CO: !!s.co && mailReady(env), EN: !!s.en && mailReady(env) });
+}
+async function held186Settings(request, env) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  const s = (await readJson(env, HELD186_KEY)) || {};
+  if (request.method === 'POST') {
+    let b = {};
+    try { b = await request.json(); } catch { return json({ error: 'not JSON' }, 400); }
+    for (const k of ['co', 'en']) {
+      if (b[k] === undefined) continue;
+      const v = String(b[k] || '').trim();
+      if (v && !EMAIL_RE.test(v)) return json({ error: `That doesn't look like an email address: ${v}` }, 400);
+      s[k] = v;
+    }
+    if (typeof b.namesPass === 'string' && b.namesPass) s.namesPass = b.namesPass.slice(0, 200);
+    if (b.clearNamesPass) delete s.namesPass;
+    await env.SITE.put(HELD186_KEY, JSON.stringify(s), { httpMetadata: { contentType: 'application/json' } });
+  }
+  return json({ co: s.co || '', en: s.en || '', namesPass: s.namesPass || '', mail: mailReady(env) });
+}
+async function held186Submit(request, env) {
+  const text0 = await request.text();
+  if (text0.length > 12000) return json({ error: 'Too long.' }, 413);
+  let b = {};
+  try { b = JSON.parse(text0); } catch { return json({ error: 'not JSON' }, 400); }
+  const craft = b.craft === 'EN' ? 'EN' : 'CO';
+  const s = (await readJson(env, HELD186_KEY)) || {};
+  const to = craft === 'EN' ? s.en : s.co;
+  if (!to || !mailReady(env)) return json({ error: 'Sending isn\'t set up yet: export the text file and send it to your rep.' }, 503);
+  const name = String(b.name || '').trim().slice(0, 80);
+  const body = String(b.text || '').slice(0, 8000);
+  const copy = String(b.copy || '').trim();
+  if (!name || !body) return json({ error: 'Fill in your name.' }, 400);
+  if (copy && !EMAIL_RE.test(copy)) return json({ error: 'Your email for a copy doesn\'t look right.' }, 400);
+  const day = torontoDay(Date.now());
+  const countKey = `stats/held186/${day}.json`;
+  const count = ((await readJson(env, countKey)) || { n: 0 }).n;
+  if (count >= HELD186_DAY_MAX) return json({ error: 'Too many sent today: export the text file and send it to your rep.' }, 429);
+  const subject = `${craft === 'EN' ? 'Engineer' : 'Conductor'}: held 14 h+ at the away terminal · ${name} · ${String(b.out || '').slice(0, 20)}`;
+  let res;
+  try {
+    res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: copy || '', replyTo: copy || '', subject, body }) });
+  } catch (e) {
+    return json({ error: 'The email didn\'t go: try again, or export the text file.' }, 502);
+  }
+  let out = {};
+  try { out = await res.json(); } catch { out = {}; }
+  if (!res.ok || !out.ok) return json({ error: 'The email didn\'t go: try again, or export the text file.' }, 502);
+  await env.SITE.put(countKey, JSON.stringify({ n: count + 1 }), { httpMetadata: { contentType: 'application/json' } });
+  return json({ ok: true, copy: !!copy });
+}
+
 // The Notifications tab (owner, 2026-11-05): every alert sent in the last
 // 30 days with the logic behind it, from the laptop's status/alerts.json.
 // Owner only, like /health.
@@ -1015,6 +1084,8 @@ export default {
     if (url.pathname === '/health/spend') return spendApi(request, env);
     if (url.pathname === '/health/questions') return questionsApi(request, env);
     if (url.pathname === '/health/alerts') return alertsFor(request, env);
+    if (url.pathname === '/health/held186') return held186Settings(request, env);
+    if (url.pathname === '/api/held186') return request.method === 'POST' ? held186Submit(request, env) : held186Ready(env);
     if (url.pathname === '/push/subscribe') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return subscribe(request, env);
@@ -1029,7 +1100,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/') || key.startsWith('search/') || key.startsWith('ask/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/') || key.startsWith('search/') || key.startsWith('ask/') || key.startsWith('settings/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });

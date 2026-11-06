@@ -471,3 +471,43 @@ test('R2 publish tries a timed-out upload again', async () => {
   assert.equal(r.ok, false);
   assert.match(r.message, /index\.html; 0 files uploaded before it/);
 });
+
+// Owner, 2026-11-06: Article 18.6(b) claims sent to the conductors' or the
+// engineers' rep, set on Page Health; a copy to the member if asked.
+test('the Worker sends a held claim to the right rep, settings owner only', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const store = new Map();
+  const KEY = 'k'.repeat(24);
+  const env = { OWNER_KEY: KEY, MAIL_SCRIPT_URL: 'https://script.google.com/macros/s/x/exec', MAIL_SCRIPT_KEY: 'mailkey', SITE: {
+    put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    head: async (k) => (store.has(k) ? { httpEtag: '"e"', writeHttpMetadata: () => {} } : null),
+    get: async (k) => (store.has(k) ? { body: store.get(k) } : null),
+  } };
+  const call = (p, init = {}) => worker.fetch(new Request(`https://board.x.workers.dev${p}`, init), env);
+  const owner = { 'x-owner-key': KEY, 'content-type': 'application/json' };
+  // Settings: not for anyone else.
+  assert.equal((await call('/health/held186')).status, 404);
+  assert.equal((await call('/health/held186', { method: 'POST', headers: owner, body: JSON.stringify({ co: 'not an email' }) })).status, 400);
+  let r = await call('/health/held186', { method: 'POST', headers: owner, body: JSON.stringify({ co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret' }) });
+  assert.deepEqual(await r.json(), { co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret', mail: true });
+  assert.equal((await call('/settings/held186.json')).status, 404);
+  assert.deepEqual(await (await call('/api/held186')).json(), { CO: true, EN: true });
+  // Submit: to the engineers' rep, a copy to the member.
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Response(JSON.stringify({ ok: true })); };
+  try {
+    r = await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'Pat Doe', out: 'E27861 03', text: 'details', copy: 'pat@example.com' }) });
+    assert.deepEqual(await r.json(), { ok: true, copy: true });
+    assert.deepEqual([sent[0].body.to, sent[0].body.cc, sent[0].body.key, sent[0].body.body], ['en.rep@example.com', 'pat@example.com', 'mailkey', 'details']);
+    assert.match(sent[0].body.subject, /^Engineer: held 14 h\+ .* Pat Doe · E27861 03/);
+    // A bad copy address is refused, nothing sent.
+    assert.equal((await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'CO', name: 'Pat', text: 'x', copy: 'nope' }) })).status, 400);
+    assert.equal(sent.length, 1);
+  } finally { globalThis.fetch = realFetch; }
+  // No sender set up: says so.
+  delete env.MAIL_SCRIPT_URL;
+  assert.deepEqual(await (await call('/api/held186')).json(), { CO: false, EN: false });
+  assert.equal((await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'CO', name: 'Pat', text: 'x' }) })).status, 503);
+});

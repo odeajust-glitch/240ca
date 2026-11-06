@@ -163,6 +163,8 @@
   .healthpage .qtext { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.4 ui-monospace, Consolas, monospace; margin: 4px 0 8px; }
   .healthpage .visits { max-height: 320px; overflow-y: auto; }
   .healthpage .nocount { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+  .h186form label { display: grid; gap: 4px; margin: 8px 0; }
+  .h186form input { font: inherit; padding: 6px 8px; max-width: 28em; }
   .healthpage .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
   tr.catswrong td { opacity: 0.75; }
   .stalechip { display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; background: #b3261e; color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
@@ -610,6 +612,9 @@
   .h186list { display: grid; gap: 8px; padding: 0 14px 10px; }
   .h186 { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; }
   .h186 .g186 { justify-self: start; margin-top: 4px; }
+  .claim .gwide { display: grid; gap: 4px; margin: 8px 0; }
+  .claim textarea { font: inherit; padding: 6px 8px; width: 100%; box-sizing: border-box; }
+  .claim .gok { color: var(--ok, #2e7d32); margin: 6px 0 0; width: 100%; }
   .g186txt { white-space: pre-wrap; font: 13px/1.5 var(--mono); background: var(--sheet); border: 1px solid var(--rule); padding: 10px; border-radius: 6px; }
   .resetlbl { color: var(--go); }
   tr.wreset-p td { background: var(--amber-tint); box-shadow: inset 4px 0 0 var(--amber); }
@@ -713,8 +718,6 @@
 <script src="board-week.js"></script>
 <script src="board-ref.js"></script>
 <script src="board-ask.js"></script>
-<script src="jszip.min.js"></script>
-<script src="grievance.js"></script>
 <script src="board-names.js"></script>
 <script>
 // The owner's key (owner, 2026-11-02: "leave the site open", so no email
@@ -2203,12 +2206,13 @@ function remember(turn, d, initials) {
 // Filled-in form values for a row: names from CATS (unlocked) first, else
 // the name last used for that turn on this device; PIN and Mr./Ms. from what
 // this device remembers for that name.
-function prefill(r, names) {
+function prefill(r, names, craft = 'CO') {
   const n = (names && names[heldKey(r)]) || {};
   const p = people();
-  const name = n.co || p.byTurn[r.co] || '';
+  const cats = craft === 'EN' ? n.en : n.co;
+  const name = cats || p.byTurn[craft === 'EN' ? r.en : r.co] || '';
   const known = p.byName[name.toUpperCase()] || {};
-  return { name, engineer: n.en || '', pin: known.pin || '', gender: known.gender || 'male', initials: known.initials || '', fromCats: !!n.co, turnOnly: !!n.turnOnly };
+  return { name, pin: known.pin || '', fromCats: !!cats, turnOnly: !!n.turnOnly };
 }
 
 // names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
@@ -2243,19 +2247,17 @@ function heldView(all, openKey, lastTaken, names, namesState) {
   return `
     <div class="ohead">
       <div><div class="sec-title" style="margin-bottom:6px">14-hour rule · Article 18.6(b)</div><div class="when">Held in Toronto 14 h+</div></div>
-      <div class="ctl"><a class="glink" href="grievance.html">Grievance letter for any crew ↗</a></div>
     </div>
     <div class="strip two">
       <div class="stat ${week.length ? 'alert' : ''}"><div class="v">${week.length}</div><div class="l">Crews violated in the last 7 days</div></div>
       <div class="stat"><div class="v">${stays.length ? `${Math.round((100 * week.length) / stays.length)}% <small>${week.length} / ${stays.length}</small>` : '—'}</div><div class="l">Percentage of crews violated (of Toronto stays, last 7 days)</div></div>
     </div>
     ${unlock}
-    <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew for the grievance and the engineer's details</span></header>
+    <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to file it</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
       <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
-      ${open ? `<div class="gform"><h3>Grievance · ${esc(open.co)} on ${esc(open.id)}</h3>${grievanceForm(open, prefill(open, names))}</div>` : ''}
-      ${open && open.en ? engineerBox(open, open.en) : ''}
-      <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode; PINs aren't on CATS, so you type each one once and this device remembers it with Mr./Ms. The letter is made on this device.</div>
+      ${open ? `<div class="gform"><h3>File it · ${esc(open.co)}${open.en ? ` + ${esc(open.en)}` : ''} on ${esc(open.id)}</h3>${claimForm(open, 'CO', prefill(open, names, 'CO'))}</div>` : ''}
+      <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode (the owner key opens them); PINs aren't on CATS, so you type each one once and this device remembers it. Submit sends it to the conductors' or the engineers' rep; Export saves it as a text file instead.</div>
     </section>`;
 }
 
@@ -2263,61 +2265,139 @@ function heldView(all, openKey, lastTaken, names, namesState) {
 const dateOf = (st) => (st ? st.slice(0, 10) : '');
 const timeOf = (st) => (st ? `${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
 
-function grievanceForm(r, pre = {}) {
-  if (!window.Grievance || !window.JSZip) return '<p class="gnote">The letter tools didn\'t load on this page, so grievances can\'t be written here right now.</p>';
-  const v = (x) => `value="${esc(x || '')}"`;
-  const fem = pre.gender === 'female';
-  const initials = pre.initials || (pre.name ? window.Grievance.extractInitials(pre.name) : '');
-  return `<form class="gf" autocomplete="off" onsubmit="return false">
-    <p class="gnote">Filled in from the board${pre.fromCats ? ', names from the Call Board' : ''}. Check every field, add anything missing, then generate. Nothing you type leaves this device.</p>
-    ${pre.turnOnly ? `<p class="gnote"><b>Names are the ones last seen on ${esc(r.co)}${r.en ? ` and ${esc(r.en)}` : ''}</b>, not read off this trip: if a spare worked it, change them.</p>` : ''}
-    <div class="ggrid">
-      <fieldset><legend>Conductor (${esc(r.co)})</legend>
-        <label>Full name<input name="name" placeholder="John Doe" ${v(pre.name)}></label>
-        <label>PIN<input name="pin" inputmode="numeric" placeholder="123456" ${v(pre.pin)}></label>
-        <label>File initials<input name="initials" maxlength="5" placeholder="JD" ${v(initials)}></label>
-        <div class="seg" role="radiogroup" aria-label="Gender"><label><input type="radio" name="gender" value="male"${fem ? '' : ' checked'}> Mr. / His</label><label><input type="radio" name="gender" value="female"${fem ? ' checked' : ''}> Ms. / Her</label></div>
-        <label>Engineer${r.en ? ` (${esc(r.en)})` : ''}, optional<input name="engineer" placeholder="R. Smith" ${v(pre.engineer)}></label>
-        <label>File letter<select name="letter">${'ABCDEFGHIJK'.split('').map((l) => `<option>${l}</option>`).join('')}</select></label>
-      </fieldset>
-      <fieldset><legend>Train to Toronto</legend>
-        <label>Train<input name="prevAssign" ${v(r.id)}></label>
-        <label>On duty (Sarnia)<span class="dt"><input type="date" name="prevOnDate" ${v(dateOf(r.onDuty))}><input name="prevOnTime" inputmode="numeric" maxlength="5" ${v(timeOf(r.onDuty))}></span></label>
-        <label>Off duty (Toronto)<span class="dt"><input type="date" name="prevOffDate" ${v(dateOf(r.offDuty))}><input name="prevOffTime" inputmode="numeric" maxlength="5" ${v(timeOf(r.offDuty))}></span></label>
-      </fieldset>
-      <fieldset><legend>Train home</legend>
-        <label>Train<input name="nextAssign" ${v(r.back && r.back.id)} placeholder="M39931 01"></label>
-        <label>On duty (Toronto)<span class="dt"><input type="date" name="nextOnDate" ${v(r.back && dateOf(r.back.onDuty))}><input name="nextOnTime" inputmode="numeric" maxlength="5" placeholder="05:00" ${v(r.back && timeOf(r.back.onDuty))}></span></label>
-      </fieldset>
-    </div>
-    <div class="gsum"><span>Held <b class="g-held">—</b></span><span>File # <b class="g-file">——</b></span><span class="gerr" role="alert"></span>
-      <button type="button" class="gen" disabled>Generate grievance (.odt)</button></div>
-  </form>`;
-}
-
-// Reads the open form; keeps the held time, file # and button current.
 // Article 18.6(b) in Turn History (owner, 2026-11-04: "can we have that show
 // up in turn history … when someone looks for their turn or uses their name
 // code and they were the member of the crew. Just don't auto fill their name
 // for the name code. For engineers … include the information they would need
 // to file the grievance"). rows: [{ r, role: 'CO' | 'EN' }].
 const isoOf = (st) => (st ? `${st.slice(0, 10)} ${st.slice(11, 13)}:${st.slice(13, 15)}` : '');
-function engineerDetails(r, turn) {
+// The 18.6(b) claim form (owner, 2026-11-06): "Name, pin, date, train id
+// to toronto (or garnet), ts number (they will need to provide this),
+// date, train id home, ts number for the train home, then box for any
+// additional information. They can either export this info as a text file
+// or hit submit, and it will be sent to the appropriate union rep email
+// address" (conductors' or engineers' rep, set on Page Health; an optional
+// email for a copy). Replaces the grievance letter. craft: 'CO' | 'EN'.
+let HELD186_READY = null; // { CO, EN }: the Worker can send for that craft
+function claimForm(r, craft, pre = {}) {
+  const v = (x) => `value="${esc(x || '')}"`;
+  const seg = (c, label, turn) => `<label><input type="radio" name="craft" value="${c}"${craft === c ? ' checked' : ''}${turn ? '' : ' disabled'}> ${label}${turn ? ` (${esc(turn)})` : ''}</label>`;
+  return `<form class="gf claim" autocomplete="off" onsubmit="return false">
+    <p class="gnote">Filled in from the board${pre.fromCats ? ', name from the Call Board' : ''}. Check every field and add your TS numbers (on your time slips).</p>
+    ${pre.turnOnly ? `<p class="gnote"><b>The name is the one last seen on that turn</b>, not read off this trip: if a spare worked it, change it.</p>` : ''}
+    <div class="seg" role="radiogroup" aria-label="Craft">${seg('CO', 'Conductor', r.co)}${seg('EN', 'Engineer', r.en)}</div>
+    <div class="ggrid">
+      <fieldset><legend>You</legend>
+        <label>Full name<input name="name" placeholder="First Last" ${v(pre.name)}></label>
+        <label>PIN<input name="pin" inputmode="numeric" placeholder="123456" ${v(pre.pin)}></label>
+      </fieldset>
+      <fieldset><legend>Train out</legend>
+        <label>To<select name="where"><option>Toronto</option><option${/^L50/.test(r.id) ? ' selected' : ''}>Garnet</option></select></label>
+        <label>Date<input type="date" name="outDate" ${v(dateOf(r.onDuty))}></label>
+        <label>Train ID<input name="outTrain" ${v(r.id)} placeholder="E27861 03"></label>
+        <label>TS number<input name="outTs" inputmode="numeric" placeholder="from your time slip"></label>
+      </fieldset>
+      <fieldset><legend>Train home</legend>
+        <label>Date<input type="date" name="homeDate" ${v(r.back && dateOf(r.back.onDuty))}></label>
+        <label>Train ID<input name="homeTrain" ${v(r.back && r.back.id)} placeholder="Z14931 04"></label>
+        <label>TS number<input name="homeTs" inputmode="numeric" placeholder="from your time slip"></label>
+      </fieldset>
+    </div>
+    <label class="gwide">Additional information<textarea name="more" rows="4" placeholder="Anything the rep should know"></textarea></label>
+    <p class="gnote">From the board (check it against your time slips): off duty ≈ ${esc(isoOf(r.offDuty))}${r.back ? `, on duty for the train home ${esc(isoOf(r.back.onDuty))}` : ''}; held ${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}.</p>
+    <label class="gwide">Your email for a copy (optional)<input type="email" name="copy" placeholder="you@example.com" autocomplete="email"></label>
+    <div class="gsum"><span class="gerr" role="alert"></span>
+      <button type="button" class="gexport">Export (.txt)</button>
+      <button type="button" class="gen gsend" disabled>Submit to the rep</button></div>
+  </form>`;
+}
+function claimText(r, d) {
+  const title = d.craft === 'EN' ? 'Engineer: held at the away-from-home terminal 14 hours or more' : 'Article 18.6(b): held at the away-from-home terminal 14 hours or more';
   return [
-    `Engineer turn: ${turn}${r.co ? ` (conductor ${r.co})` : ''}`,
-    `Train to Toronto: ${r.id}, on duty Sarnia ${isoOf(r.onDuty)}`,
-    `Off duty Toronto: ${isoOf(r.offDuty)} (worked out from the bunkhouse rest: check the time slip)`,
-    r.back ? `Train home: ${r.back.id}, on duty Toronto ${isoOf(r.back.onDuty)}` : 'Train home: none yet (still in the bunkhouse at the last check)',
-    `Held: ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}`,
+    title,
+    '',
+    `Craft: ${d.craft === 'EN' ? 'Engineer' : 'Conductor'}${d.turn ? ` (turn ${d.turn})` : ''}`,
+    `Name: ${d.name}`,
+    `PIN: ${d.pin}`,
+    '',
+    `Train to ${d.where}: ${d.outTrain || '—'}, date ${d.outDate || '—'}, TS ${d.outTs || '—'}`,
+    `Train home: ${d.homeTrain || '—'}, date ${d.homeDate || '—'}, TS ${d.homeTs || '—'}`,
+    '',
+    `From the board (check against the time slips): off duty at ${d.where} ≈ ${isoOf(r.offDuty)}${r.back ? `; on duty for the train home ${isoOf(r.back.onDuty)}` : ''}; held ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}.`,
+    ...(d.more ? ['', 'Additional information:', d.more] : []),
+    '',
+    'Sent from the Sarnia board site.',
   ].join('\n');
 }
-// The engineer's details box with a Copy button (Turn History and the
-// Article 18.6(b) tab; owner, 2026-11-05: "this info is enough").
-const engineerBox = (r, turn) => `<div class="gform enbox"><h3>Engineer · ${esc(turn)} on ${esc(r.id)}</h3><p class="gnote">The details to file with: tap Copy.</p><pre class="g186txt">${esc(engineerDetails(r, turn))}</pre><button type="button" class="g186copy">Copy</button></div>`;
-function wireEngineerBox(box, r, turn) {
-  const b = box.querySelector('.g186copy');
-  if (b) b.onclick = async (e) => { try { await navigator.clipboard.writeText(engineerDetails(r, turn)); e.target.textContent = '✓ Copied'; } catch (x) { /* select it by hand */ } };
+// names: unlocked names for the 18.6(b) tab (by heldKey), or null.
+function wireClaim(form, r, { names = null, noNames = false } = {}) {
+  const f = form.elements;
+  const val = (n) => String(f[n].value || '').trim();
+  const craftNow = () => (form.querySelector('input[name="craft"]:checked') || {}).value || 'CO';
+  const read = () => ({ craft: craftNow(), turn: craftNow() === 'EN' ? r.en : r.co, name: val('name'), pin: val('pin'), where: val('where'),
+    outDate: val('outDate'), outTrain: val('outTrain').toUpperCase(), outTs: val('outTs'), homeDate: val('homeDate'), homeTrain: val('homeTrain').toUpperCase(), homeTs: val('homeTs'),
+    more: val('more'), copy: val('copy') });
+  const send = form.querySelector('.gsend');
+  const errEl = form.querySelector('.gerr');
+  const missing = (d) => [['name', 'name'], ['pin', 'PIN'], ['outTrain', 'train out'], ['outDate', 'date out'], ['outTs', 'TS number out'], ['homeTrain', 'train home'], ['homeDate', 'date home'], ['homeTs', 'TS number home']].filter(([k]) => !d[k]).map(([, l]) => l);
+  function update() {
+    const d = read();
+    const ready = HELD186_READY && HELD186_READY[d.craft];
+    const miss = missing(d);
+    send.disabled = !ready || miss.length > 0;
+    errEl.textContent = HELD186_READY && !ready ? `Sending to the ${d.craft === 'EN' ? 'engineers\'' : 'conductors\''} rep isn't set up yet: export the text file instead.` : miss.length ? `Still needed: ${miss.join(', ')}.` : '';
+    return d;
+  }
+  // The name for the craft picked: from the Call Board (unlocked), else the
+  // name this device last used for that turn; the PIN this device remembers.
+  function fillName() {
+    if (noNames) return;
+    const c = craftNow();
+    const n = (names && names[heldKey(r)]) || {};
+    const turn = c === 'EN' ? r.en : r.co;
+    const name = (c === 'EN' ? n.en : n.co) || people().byTurn[turn] || '';
+    f.name.value = name;
+    f.pin.value = (people().byName[name.toUpperCase()] || {}).pin || '';
+  }
+  form.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.name === 'name') { const known = people().byName[t.value.trim().toUpperCase()]; if (known && known.pin) f.pin.value = known.pin; }
+    if (/Train$/.test(t.name)) t.value = t.value.toUpperCase();
+    update();
+  });
+  form.addEventListener('change', (e) => { if (e.target.name === 'craft') fillName(); update(); });
+  form.querySelector('.gexport').onclick = () => {
+    const d = update();
+    remember(d.turn, d, '');
+    const url = URL.createObjectURL(new Blob([claimText(r, d)], { type: 'text/plain' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `18.6b ${d.name || 'claim'} ${d.outTrain || r.id}.txt`.replace(/[^\w .()-]+/g, '') });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  };
+  send.onclick = async () => {
+    const d = update();
+    send.disabled = true;
+    send.textContent = 'Sending…';
+    try {
+      const res = await fetch('api/held186', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ craft: d.craft, name: d.name, out: d.outTrain, copy: d.copy, text: claimText(r, d) }) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.ok) throw new Error(out.error || `the site answered ${res.status}`);
+      remember(d.turn, d, '');
+      errEl.textContent = '';
+      form.querySelector('.gsum').insertAdjacentHTML('beforeend', `<p class="gok">✓ Sent to the ${d.craft === 'EN' ? 'engineers\'' : 'conductors\''} rep${out.copy ? `, a copy to ${esc(d.copy)}` : ''}.</p>`);
+      send.textContent = 'Sent';
+      return;
+    } catch (e) {
+      errEl.textContent = `Not sent: ${e.message}`;
+    }
+    send.textContent = 'Submit to the rep';
+    update();
+  };
+  if (!f.name.value) fillName();
+  update();
+  if (!HELD186_READY) fetch('api/held186', { cache: 'no-store' }).then((x) => (x.ok ? x.json() : { CO: false, EN: false })).catch(() => ({ CO: false, EN: false })).then((x) => { HELD186_READY = x; if (form.isConnected) update(); });
 }
+
 function held186(rows) {
   if (!rows.length) return '';
   // One block per stay, so it reads on a phone (owner's screenshot: a wide
@@ -2326,7 +2406,7 @@ function held186(rows) {
       <div><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span> held in Toronto</div>
       <div><b class="id">${esc(r.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.onDuty))} <span class="muted">· off duty Toronto ≈</span> ${esc(dt(r.offDuty))}</div>
       <div>${r.back ? `<span class="muted">Home on</span> <b class="id">${esc(r.back.id)}</b> <span class="muted">on duty</span> ${esc(dt(r.back.onDuty))}` : '<span class="muted">Still in the bunkhouse</span>'}</div>
-      <button type="button" class="g186" data-i="${i}">${role === 'CO' ? `Write the grievance (${esc(turn)})` : `Details to file (${esc(turn)})`}</button></div>`).join('');
+      <button type="button" class="g186" data-i="${i}">File it (${esc(turn)}${role === 'EN' ? ', engineer' : ''})</button></div>`).join('');
   // Engineers: not Article 18.6(b) (that's the conductors' article); their
   // own wording waits for the engineer template (owner, 2026-11-05).
   const title = rows.some((x) => x.role === 'CO') ? 'Article 18.6(b)' : 'Held in Toronto 14 h+';
@@ -2334,100 +2414,17 @@ function held186(rows) {
     <div class="h186list">${body}</div>
     <div id="g186box"></div>`;
 }
-// noNames: a name-code search; the letter's name is left for them to type.
+// noNames: a name-code search; the name is left for them to type.
 function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
   box.querySelectorAll('button.g186').forEach((b) => {
     b.onclick = () => {
-      const { r, role, turn } = rows[+b.dataset.i];
+      const { r, role } = rows[+b.dataset.i];
       const out = box.querySelector('#g186box');
-      if (role === 'EN') {
-        out.innerHTML = engineerBox(r, turn);
-        wireEngineerBox(out, r, turn);
-        return;
-      }
-      const pre = noNames ? { gender: 'male' } : prefill(r, names);
-      out.innerHTML = `<div class="gform"><h3>Grievance · ${esc(r.co)} on ${esc(r.id)}</h3>${grievanceForm(r, pre)}</div>`;
-      const form = out.querySelector('form.gf');
-      if (form) wireGrievance(form, r.co);
+      out.innerHTML = `<div class="gform"><h3>${role === 'EN' ? 'Held 14 h+' : 'Article 18.6(b)'} · ${esc(role === 'EN' ? r.en : r.co)} on ${esc(r.id)}</h3>${claimForm(r, role, noNames ? {} : prefill(r, names, role))}</div>`;
+      wireClaim(out.querySelector('form.claim'), r, { names, noNames });
       out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
   });
-}
-
-function wireGrievance(form, turn) {
-  const G = window.Grievance;
-  const f = form.elements;
-  const val = (n) => f[n].value.trim();
-  const read = () => {
-    const prevOn = G.parseParts(val('prevOnDate'), val('prevOnTime'));
-    return {
-      name: val('name'), pin: val('pin'), gender: form.querySelector('input[name="gender"]:checked').value,
-      prevAssign: val('prevAssign').toUpperCase(), nextAssign: val('nextAssign').toUpperCase(),
-      engineer: val('engineer') || null, prevOn,
-      prevOff: G.parseParts(val('prevOffDate'), val('prevOffTime')),
-      nextOn: G.parseParts(val('nextOnDate'), val('nextOnTime')),
-      fileNum: G.fileNumber(prevOn, val('initials'), f.letter.value),
-    };
-  };
-  const btn = form.querySelector('button.gen');
-  const errEl = form.querySelector('.gerr');
-  function update() {
-    const d = read();
-    const hrs = d.prevOff && d.nextOn ? G.hoursBetween(d.prevOff, d.nextOn) : null;
-    let err = '';
-    if (d.prevOn && d.prevOff && G.hoursBetween(d.prevOn, d.prevOff) <= 0) err = 'Off duty is before on duty.';
-    else if (hrs != null && hrs <= 0) err = 'The trip home is before off duty.';
-    else if (hrs != null && !G.grievable(hrs)) err = 'Under 14 hours: no grievance.';
-    errEl.textContent = err;
-    form.querySelector('.g-held').textContent = hrs != null && hrs > 0 ? G.durationLabel(hrs) : '—';
-    form.querySelector('.g-file').textContent = d.fileNum;
-    btn.disabled = !(d.name && d.pin && val('initials') && d.prevAssign && d.nextAssign && d.prevOn && hrs != null && !err);
-    return d;
-  }
-  form.addEventListener('input', (e) => {
-    const t = e.target;
-    if (t.name === 'name') {
-      f.initials.value = G.extractInitials(t.value);
-      // Someone this device has written for before: their PIN and Mr./Ms.
-      const known = people().byName[t.value.trim().toUpperCase()];
-      if (known) {
-        if (known.pin) f.pin.value = known.pin;
-        if (known.initials) f.initials.value = known.initials;
-        form.querySelector(`input[name="gender"][value="${known.gender === 'female' ? 'female' : 'male'}"]`).checked = true;
-      }
-    }
-    if (/Time$/.test(t.name)) {
-      let x = t.value.replace(/\D/g, '');
-      if (x.length > 2) x = `${x.slice(0, 2)}:${x.slice(2, 4)}`;
-      t.value = x;
-    }
-    if (/Assign$|^initials$/.test(t.name)) t.value = t.value.toUpperCase();
-    update();
-  });
-  form.addEventListener('change', update);
-  btn.onclick = async () => {
-    const d = update();
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-    try {
-      const res = await fetch('grievance_template.odt');
-      if (!res.ok) throw new Error(`the letter template didn't load (HTTP ${res.status})`);
-      const bytes = await G.buildOdt(window.JSZip, await res.arrayBuffer(), d, new Date());
-      remember(turn, d, val('initials'));
-      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.oasis.opendocument.text' }));
-      const a = Object.assign(document.createElement('a'), { href: url, download: G.odtFilename(d.name, d.nextOn) });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 8000);
-    } catch (e) {
-      errEl.textContent = `Couldn't make the letter: ${e.message}.`;
-    } finally {
-      btn.textContent = 'Generate grievance (.odt)';
-      update();
-    }
-  };
-  update();
 }
 
 async function source() {
@@ -2650,6 +2647,39 @@ source().then(async (src) => {
     }; });
     document.getElementById('nmention').onchange = (e) => { notesState.mention = e.target.checked; paintNotes(); };
   }
+  // Article 18.6(b) settings (owner, 2026-11-06: "put an option on the page
+  // health page to input and update the emails"): the conductors' and the
+  // engineers' rep, and the crew-names passcode so the owner key opens the
+  // names on any of the owner's devices. Kept by the Worker (R2 settings/).
+  async function paintHeldSettings() {
+    const box = document.getElementById('h186set');
+    if (!box) return;
+    let cur = null;
+    try { const r = await fetch('health/held186', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) cur = await r.json(); } catch (e) { /* offline */ }
+    if (!box.isConnected) return;
+    if (!cur) { box.innerHTML = '<p class="muted">Not available: re-paste the Worker (cloudflare/board-worker.js) to add these settings.</p>'; return; }
+    box.innerHTML = `<form id="h186form" autocomplete="off" onsubmit="return false" class="h186form">
+      <label>Conductors' rep email<input type="email" name="co" value="${esc(cur.co)}" placeholder="rep@example.com"></label>
+      <label>Engineers' rep email<input type="email" name="en" value="${esc(cur.en)}" placeholder="rep@example.com"></label>
+      <label>Crew names passcode <span class="muted">(${cur.namesPass ? 'saved: your owner key opens the names' : 'not saved'})</span><input type="password" name="namesPass" placeholder="${cur.namesPass ? 'leave blank to keep it' : 'the BOARD_NAMES_KEY passcode'}" autocomplete="new-password"></label>
+      <p><button type="submit" class="linkbtn" id="h186save">Save</button> <span id="h186msg" role="status"></span></p>
+      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>`;
+    const form = document.getElementById('h186form');
+    form.onsubmit = async () => {
+      const msg = document.getElementById('h186msg');
+      const body = { co: form.elements.co.value.trim(), en: form.elements.en.value.trim() };
+      if (form.elements.namesPass.value) body.namesPass = form.elements.namesPass.value;
+      msg.textContent = 'Saving…';
+      try {
+        const r = await fetch('health/held186', { method: 'POST', headers: { ...OwnerKey.headers(), 'content-type': 'application/json' }, body: JSON.stringify(body) });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(out.error || r.status);
+        msg.textContent = '✓ Saved';
+        HELD186_READY = null;
+        setTimeout(paintHeldSettings, 800);
+      } catch (e) { msg.textContent = `Not saved: ${e.message}`; }
+    };
+  }
   async function renderReview() {
     const view = document.getElementById('view');
     if (!healthData) { view.innerHTML = '<p class="empty">Search Review is only for the owner.</p>'; return; }
@@ -2784,7 +2814,8 @@ source().then(async (src) => {
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
-      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
+      <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
@@ -2792,6 +2823,7 @@ source().then(async (src) => {
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
     document.getElementById('tonotes').onclick = () => setMode('notes');
+    paintHeldSettings();
     // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
     // and phones per day, from the Worker (owner only).
     const box = document.getElementById('hvisits');
@@ -3552,7 +3584,12 @@ source().then(async (src) => {
     const locked = await src.names();
     if (!locked || !window.BoardNames || !window.crypto || !crypto.subtle) return { names: null, state: 'none' };
     if (namesCache) return { names: namesCache, state: 'unlocked' };
-    const pass = local.get(PASS_KEY);
+    let pass = local.get(PASS_KEY);
+    // The owner key opens them (owner, 2026-11-06: "make the names unlocked
+    // if you are using the owner's key"): the passcode saved on Page Health.
+    if (!pass && OwnerKey.has()) {
+      try { const r = await fetch('health/held186', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) pass = (await r.json()).namesPass || null; } catch (e) { /* not the owner, or offline */ }
+    }
     if (pass) {
       namesCache = await BoardNames.unlockNames(locked, pass).catch(() => null);
       if (!namesCache) local.del(PASS_KEY);
@@ -3586,13 +3623,10 @@ source().then(async (src) => {
     if (forget) forget.onclick = () => { local.del(PASS_KEY); namesCache = null; renderHeld(); };
     try { history.replaceState(null, '', '#14h'); } catch (e) { /* not allowed in some frames */ }
     view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; renderHeld(); }; });
-    const openRow = heldRows(all).find((x) => heldKey(x) === heldOpen);
-    const enBox = view.querySelector('.enbox');
-    if (enBox && openRow) wireEngineerBox(enBox, openRow, openRow.en);
-    const form = view.querySelector('form.gf');
+    const form = view.querySelector('form.claim');
     if (form) {
       const r = heldRows(all).find((x) => heldKey(x) === heldOpen);
-      wireGrievance(form, r && r.co);
+      wireClaim(form, r, { names });
       form.closest('.gform').scrollIntoView({ block: 'start' });
       if (!form.elements.name.value) form.elements.name.focus({ preventScroll: true });
     }
