@@ -186,6 +186,7 @@
   .notes .why p:last-child { margin: 0; }
   .notes .rules dt { font-weight: 600; margin-top: 8px; }
   .notes .rules dd { margin: 2px 0 0; font-size: 13px; }
+  tr.untied td { opacity: .6; }
   .sentlist { max-height: 340px; overflow-y: auto; margin: 4px 0 0; padding: 0; list-style: none; }
   .sentlist li { padding: 5px 0; border-bottom: 1px solid var(--rule); }
   .sentlist .meta { color: var(--soft); }
@@ -1092,10 +1093,12 @@ function vacancies(s) {
     const parts = [...rest, ...(b0.length ? [`${b0.length} on B0 (working)`] : [])];
     return ` · skipped: ${esc(parts.join(' · '))}`;
   }
+  // Option A (owner, 2026-11-05): the earlier shift's crew not tied up yet.
+  const untiedNote = (v) => (!v.untied ? '' : `<div class="crew"><span class="chip">probably not spare</span> The ${esc(v.train)} crew on duty ${esc(v.untied)} hasn't been tied up yet, so CATS lists the next shift open. No spare is lined up until they tie up and it's still listed.</div>`);
   const wrongNote = (v) => (!v.wrong ? '' : `<div class="crew"><span class="bad">Wrong turn:</span> the order has <b class="num">${markTurn(v.wrong.order)}</b> on ${esc(v.wrong.train)}${v.wrong.spare ? ` (going spare)` : ', so this job isn\'t going spare'}${v.fill && v.fill.turn ? `. ${esc(v.fill.turn)} is told it's the wrong turn.` : '.'}</div>`);
-  const rows = list.map((v) => `<tr class="${[marked(v.turn) || (v.fill && marked(v.fill.turn)) ? 'hit' : '', v.wrong ? 'catswrong' : ''].filter(Boolean).join(' ')}"><td class="num">${esc(v.at)}</td>
-    <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${wrongNote(v)}${fill(v)}</td>
-    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} <span class="spare">(spare)</span>${v.cats && !showCats ? `<div class="crew">CATS lists ${esc(v.cats)}</div>` : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
+  const rows = list.map((v) => `<tr class="${[marked(v.turn) || (v.fill && marked(v.fill.turn)) ? 'hit' : '', v.wrong ? 'catswrong' : '', v.untied ? 'untied' : ''].filter(Boolean).join(' ')}"><td class="num">${esc(v.at)}</td>
+    <td><b class="num">${esc(v.train)}</b><div class="crew">${esc(v.pool)} ${esc(v.cc)} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${wrongNote(v)}${untiedNote(v)}${fill(v)}</td>
+    <td class="num">${markTurn(v.turn)}${v.pool === 'S5' ? ` <span class="chip">${esc(v.cc === 'EN' ? 'EN' : 'CO')}</span>` : ''} ${v.untied ? '<span class="muted">(probably not)</span>' : '<span class="spare">(spare)</span>'}${v.cats && !showCats ? `<div class="crew">CATS lists ${esc(v.cats)}</div>` : ''}${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
   const tabs = tabbed ? `<div class="tabs" role="tablist"><button type="button" role="tab" data-vactab="fixed" aria-selected="${!showCats}">Corrected (by the order)</button><button type="button" role="tab" data-vactab="cats" aria-selected="${showCats}">As CATS shows${wrongs ? ` <span class="bad">· ${wrongs} wrong</span>` : ''}</button></div>` : '';
   const why = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}</span></header>${tabs}${why}

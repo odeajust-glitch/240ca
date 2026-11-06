@@ -66,6 +66,13 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    and pull + restart the laptop; until the Worker is re-pasted the tab
    shows Page Health's last 50 without the logic. Page Health's "Alerts
    sent" list became a link to the tab.
+3e. **Yard job "probably not spare"** (owner 2026-11-05, option A): a
+   yard job on option 5 with no ** whose earlier shift still shows on duty
+   (crew not tied up) → spares.js untiedEarlier / openJob: no spare lined
+   up, no alerts, shown greyed "probably not spare" on Jobs going spare;
+   once the earlier crew ties up and CATS still lists it, normal. In 8 days
+   of checks it matched 3 jobs: YPRS60 4th 2245 FO + S1 (regular crew
+   worked it) and YEBS30 29th 1600 FO (SB04 worked it: told at tie-up).
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:
