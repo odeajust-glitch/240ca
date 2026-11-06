@@ -2286,8 +2286,19 @@ const isoOf = (st) => (st ? `${st.slice(0, 10)} ${st.slice(11, 13)}:${st.slice(1
 // email for a copy). Replaces the grievance letter. craft: 'CO' | 'EN'.
 let HELD186_READY = null; // { CO, EN }: the Worker can send for that craft
 const hhmm = (st) => (st ? st.slice(11, 15) : '');
+// The train home's off duty in Sarnia (owner, 2026-11-06: "can you auto
+// fill the off duty time"): the reset tracker's list (resets.json offs:
+// exact from CATS's assignment history, else worked out), else the train's
+// own record.
+function homeOffOf(r) {
+  if (!r.back) return null;
+  const o = ((RESETS && RESETS.offs) || {})[r.back.id];
+  if (o && o.off) return { at: o.off, exact: o.how === 'history' };
+  return r.back.offDuty ? { at: r.back.offDuty, exact: false } : null;
+}
 function claimForm(r, craft, pre = {}) {
   const v = (x) => `value="${esc(x || '')}"`;
+  const homeOff = homeOffOf(r);
   const seg = (c, label, turn) => `<label><input type="radio" name="craft" value="${c}"${craft === c ? ' checked' : ''}${turn ? '' : ' disabled'}> ${label}${turn ? ` (${esc(turn)})` : ''}</label>`;
   return `<form class="gf claim" autocomplete="off" onsubmit="return false">
     <p class="gnote">Filled in from the board${pre.fromCats ? ', name from the Call Board' : ''}. Check every field and add your TS numbers (on your time slips).</p>
@@ -2307,7 +2318,7 @@ function claimForm(r, craft, pre = {}) {
       <fieldset><legend>Train home</legend>
         <label>Train ID<input name="homeTrain" ${v(r.back && r.back.id)} placeholder="Z14931 04"></label>
         <label>On duty<span class="dt"><input type="date" name="homeDate" ${v(r.back && dateOf(r.back.onDuty))}><input name="homeOn" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(r.back && hhmm(r.back.onDuty))}></span></label>
-        <label>Off duty<span class="dt"><input type="date" name="homeOffDate" ${v(r.back && dateOf(r.back.offDuty))}><input name="homeOff" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(r.back && hhmm(r.back.offDuty))}></span></label>
+        <label>Off duty<span class="dt"><input type="date" name="homeOffDate" ${v(homeOff && dateOf(homeOff.at))}><input name="homeOff" inputmode="numeric" maxlength="4" placeholder="HHMM" ${v(homeOff && hhmm(homeOff.at))}></span>${homeOff ? `<span class="muted">${homeOff.exact ? 'from CATS assignment history' : 'worked out by the board: check your slip'}</span>` : ''}</label>
         <label>TS number<input name="homeTs" inputmode="numeric" placeholder="from your time slip"></label>
       </fieldset>
     </div>
@@ -2438,7 +2449,8 @@ function held186(rows) {
 // noNames: a name-code search; the name is left for them to type.
 function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
   box.querySelectorAll('button.g186').forEach((b) => {
-    b.onclick = () => {
+    b.onclick = async () => {
+      await loadResets();
       const { r, role } = rows[+b.dataset.i];
       const out = box.querySelector('#g186box');
       out.innerHTML = `<div class="gform"><h3>${role === 'EN' ? 'Held 14 h+' : 'Article 18.6(b)'} · ${esc(role === 'EN' ? r.en : r.co)} on ${esc(r.id)}</h3>${claimForm(r, role, noNames ? {} : prefill(r, names, role))}</div>`;
@@ -3625,7 +3637,7 @@ source().then(async (src) => {
     let all;
     try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The 14h list isn\'t available right now.</p>'; return; }
     if (mode !== 'held') return;
-    const { names, state } = await heldNames();
+    const [{ names, state }] = await Promise.all([heldNames(), loadResets()]);
     if (mode !== 'held') return;
     view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null, names, state);
     const unlock = document.getElementById('unlock');
