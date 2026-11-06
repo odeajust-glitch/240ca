@@ -685,6 +685,19 @@ test('Garnet: the crew there is lined up home on the next L501', () => {
   const { events } = turnEvents({}, st, { lineupRead: true, now: 1000 });
   const e = events.find((x) => x.turn === 'S501-CO' && x.kind === 'lineup');
   assert.match(e.text, /^S501-CO lined up home from Garnet: L50131 04/);
+  // A stand-in crew (owner, 2026-11-06): spares working MU01's trip get it
+  // by their own turns, conductor and engineer apart.
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const fillIns = updateFillIns({}, { backfill: [{ train: 'L50231 06', craft: 'CO', job: 'MU01', turn: 'B133' }, { train: 'L50231 06', craft: 'EN', job: 'MU01', turn: 'EN07' }], now: 1000 });
+  assert.deepEqual(Object.keys(fillIns).sort(), ['MU01-CO', 'MU01-EN']);
+  const mu = board.map((x) => ({ ...x, turn: 'MU01' }));
+  const st2 = turnStates({ predictions: [], now: 1000 }, [], { garnetLineup: lineup, garnet: mu, fillIns });
+  assert.equal(st2.B133.lineup.train, 'L50131 04');
+  assert.equal(st2.EN07.lineup.train, 'L50131 04');
+  assert.match(st2.B133.lineup.why, /B133 is working MU01's conductor job/);
+  const ev2 = turnEvents({}, st2, { lineupRead: true, now: 1000 }).events.filter((x) => x.kind === 'lineup').map((x) => x.text);
+  assert.ok(ev2.some((t) => /^B133 lined up home from Garnet: L50131 04/.test(t)));
+  assert.ok(ev2.some((t) => /^EN07 lined up home from Garnet: L50131 04/.test(t)));
 });
 
 test('a trainee\'s slot gets the turn crew\'s train alerts, not the holder\'s reset', () => {

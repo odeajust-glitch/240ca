@@ -80,6 +80,11 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    (marked off on both crafts first, else the one not just back = least
    rest, then position), so the other crew is next. ❓ Gap: once MU is home
    and off, before the next L502 goes, the order falls back to position.
+3g. **Stand-in crew at Garnet** (owner 2026-11-06): fill-ins on 501/502
+   and MU turns are kept per craft (fillins.js keyOf: MU01-CO / MU01-EN);
+   the Garnet L501-home line-up / ordered / time / reminder alerts also go
+   to the spares working it, by their own turns (B133, EN07). Needs their
+   names read on the Call Board when the L502 left (the "Filling in:" line).
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:
