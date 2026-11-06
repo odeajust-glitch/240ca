@@ -2222,7 +2222,7 @@ function prefill(r, names, craft = 'CO') {
 }
 
 // names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
-function heldView(all, openKey, lastTaken, names, namesState) {
+function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') {
   const rows = heldRows(all);
   const body = rows.map((r) => {
     const key = heldKey(r);
@@ -2262,7 +2262,7 @@ function heldView(all, openKey, lastTaken, names, namesState) {
     <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to file it</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
       <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
-      ${open ? `<div class="gform"><h3>File it · ${esc(open.co)}${open.en ? ` + ${esc(open.en)}` : ''} on ${esc(open.id)}</h3>${claimForm(open, 'CO', prefill(open, names, 'CO'))}</div>` : ''}
+      ${open ? `<div class="gform"><h3>File it · ${esc(open.co)}${open.en ? ` + ${esc(open.en)}` : ''} on ${esc(open.id)}</h3>${claimForm(open, openCraft === 'EN' && open.en ? 'EN' : 'CO', prefill(open, names, openCraft === 'EN' && open.en ? 'EN' : 'CO'))}</div>` : ''}
       <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode (the owner key opens them); PINs aren't on CATS, so you type each one once and this device remembers it. Submit sends it to the conductors' or the engineers' rep; Export saves it as a text file instead.</div>
     </section>`;
 }
@@ -3611,6 +3611,19 @@ source().then(async (src) => {
     else if (list.length) show(cur);
   }
   let heldOpen = null;
+  let heldCraft = 'CO';
+  // From a "Held 14 h+" alert (owner, 2026-11-06): #14h=<train>|<month>|<CO/EN>
+  // opens that trip's form on the 18.6(b) tab.
+  function heldFromHash() {
+    const m = /^#14h=(.+)$/.exec(location.hash);
+    if (!m) return false;
+    const [id, month, role] = decodeURIComponent(m[1]).split('|');
+    if (!id || !month) return false;
+    heldOpen = `${id} ${month}`;
+    heldCraft = role === 'EN' ? 'EN' : 'CO';
+    return true;
+  }
+  window.addEventListener('hashchange', () => { if (heldFromHash()) setMode('held'); });
   // Crew names (data/names.json), unlocked with the passcode this device
   // remembers. A passcode that no longer works (changed on the laptop) is
   // dropped, so the box asks again.
@@ -3639,7 +3652,7 @@ source().then(async (src) => {
     if (mode !== 'held') return;
     const [{ names, state }] = await Promise.all([heldNames(), loadResets()]);
     if (mode !== 'held') return;
-    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null, names, state);
+    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null, names, state, heldCraft);
     const unlock = document.getElementById('unlock');
     if (unlock) {
       unlock.onsubmit = async (e) => {
@@ -3657,7 +3670,7 @@ source().then(async (src) => {
     const forget = document.getElementById('nforget');
     if (forget) forget.onclick = () => { local.del(PASS_KEY); namesCache = null; renderHeld(); };
     try { history.replaceState(null, '', '#14h'); } catch (e) { /* not allowed in some frames */ }
-    view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; renderHeld(); }; });
+    view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { heldOpen = heldOpen === tr.dataset.key ? null : tr.dataset.key; heldCraft = 'CO'; renderHeld(); }; });
     const form = view.querySelector('form.claim');
     if (form) {
       const r = heldRows(all).find((x) => heldKey(x) === heldOpen);
@@ -3937,7 +3950,7 @@ source().then(async (src) => {
   if (shared && shared[1] === 'turn') setFocus(decodeURIComponent(shared[2]));
   if (shared && shared[1] === 'train') order.find = decodeURIComponent(shared[2]).replace(/-/g, ' ');
   const wantOrders = location.hash === '#orders' || (shared && shared[1] === 'train');
-  const wantHeld = location.hash === '#14h';
+  const wantHeld = location.hash === '#14h' || heldFromHash();
   const wantAna = location.hash === '#analytics' || location.hash === '#week';
   if (location.hash === '#week') ana.sec = 'week'; // the Sunday alert opens My week
   const wantRef = location.hash === '#ref';

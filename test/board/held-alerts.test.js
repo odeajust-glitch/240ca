@@ -21,6 +21,8 @@ test('held 14 h+: phones following them by name code, once per trip', () => {
   assert.deepEqual(r.events.map((e) => [e.hash, e.turn]), [['aaaa', 'SB01'], ['bbbb', 'S301']]);
   assert.match(r.events[0].text, /^SB01: you were held 15 h 41 m at Toronto after M38261 05 \(off duty ≈ 6th 0019, Z14931 06 home on duty 6th 1600\)\. That's an Article 18\.6\(b\) violation/);
   assert.doesNotMatch(r.events[1].text, /18\.6\(b\) violation/); // engineers aren't under 18.6(b)
+  // Tapping it opens that trip's form, that craft.
+  assert.equal(r.events[1].url, `./#14h=${encodeURIComponent('M38261 05|2026-11|EN')}`);
   assert.equal(heldEvents({ trains: [row], people, followed: new Set(['aaaa']), now, told: r.told }).events.length, 0);
   // Not followed: nothing.
   assert.equal(heldEvents({ trains: [row], people, followed: new Set(), now }).events.length, 0);

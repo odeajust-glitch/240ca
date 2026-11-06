@@ -991,7 +991,7 @@ async function sendHeldAlerts() {
       for (const e of events) {
         const l = { turn: e.turn, kind: 'held', phones: 0, failed: 0, why: `${e.turn} was on ${e.train} (seen on that turn on the board when it went on duty), held 14 h+ by the 18.6(b) tab's count. Sent to phones following that person's name code, once per trip.` };
         for (const ph of subs.filter((s) => (s.turns || []).includes(`@${e.hash}`) && wants(s, e.hash))) {
-          const r = await sendPush(ph, { title: 'Held 14 h+', body: e.text, tag: `held-${e.train}`, url: './#14h' }, { keys, sub });
+          const r = await sendPush(ph, { title: 'Held 14 h+', body: e.text, tag: `held-${e.train}`, url: e.url || './#14h' }, { keys, sub });
           if (r.ok) l.phones++; else l.failed++;
         }
         log.set(e.text, l);
