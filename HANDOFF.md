@@ -87,6 +87,10 @@ Done in the last session (2026-11-05), to confirm on the real site/phone:
    the Garnet L501-home line-up / ordered / time / reminder alerts also go
    to the spares working it, by their own turns (B133, EN07). Needs their
    names read on the Call Board when the L502 left (the "Filling in:" line).
+3j. **Box order per phone** (owner 2026-11-06): ⚙ Settings → "Arrange the
+   boxes" → the Current page shows just the box names with ▲ ▼, Reset,
+   Done; kept in that browser (localStorage boardSectionOrder). On a wide
+   screen each box stays in its column. board.html SECTIONS / sectionsGrid.
 4. **Test alerts:** `node scripts/alert-check.js CODE` (name code or turn)
    sends "Test: CODE" to the phones following it, **skipping phones that
    also follow the owner's code (JUOD)**; `--all` includes them. Worked:

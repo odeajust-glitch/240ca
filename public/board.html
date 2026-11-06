@@ -316,6 +316,16 @@
   .stat.alert .v { color: var(--stop); }
 
   .grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  .secwrap { min-width: 0; }
+  .col.arrlist { gap: 8px; }
+  .arrlist .arrange { margin-bottom: 0; }
+  .arrange { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; margin-bottom: 6px; border: 1px dashed var(--accent); border-radius: 8px; font-size: 14px; }
+  .arrange button { font: 600 18px/1 inherit; min-width: 44px; min-height: 40px; margin-left: 6px; border: 1px solid var(--rule); border-radius: 8px; background: none; color: inherit; cursor: pointer; }
+  .arrange button:disabled { opacity: .3; cursor: default; }
+  .arrangebar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 13px; }
+  .arrangebar button { font: inherit; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 8px; background: none; color: inherit; cursor: pointer; margin-left: 6px; }
+  .arrangebar button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg, #fff); }
+  .arrangebar.on { position: sticky; top: 0; z-index: 5; background: var(--bg, #fff); padding: 8px 0; }
   .col { display: grid; gap: 22px; min-width: 0; }
   .sheet { background: var(--sheet); border: 1px solid var(--rule); min-width: 0; }
   .sheet > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid var(--rule); }
@@ -674,6 +684,9 @@
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
     </div>
     <p class="note" id="stynote"></p>
+    <h2>Current page</h2>
+    <p><button type="button" class="sty" id="arrangeopen" style="width:auto;padding:8px 12px">↕ Arrange the boxes</button></p>
+    <p class="note">Move the boxes on the Current page into the order you want. Kept on this phone only.</p>
     <p class="note" id="keynote" hidden></p>
   </div>
 </div>
@@ -734,12 +747,19 @@ const OwnerKey = (() => {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
     const now = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.querySelector('meta[name="theme-color"]').setAttribute('content', COLORS[now]);
-    box.querySelectorAll('button.sty').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
+    box.querySelectorAll('button.sty[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
     note.innerHTML = t ? 'Kept on this phone. <button type="button" id="styauto">Follow the phone\'s setting instead</button>' : 'Following the phone\'s light or dark setting. Pick one to keep it.';
     const auto = document.getElementById('styauto');
     if (auto) auto.onclick = () => { try { localStorage.removeItem('boardTheme'); } catch (e) { /* storage off */ } apply(''); };
   }
-  box.querySelectorAll('button.sty').forEach((b) => { b.onclick = () => { try { localStorage.setItem('boardTheme', b.dataset.theme); } catch (e) { /* storage off */ } apply(b.dataset.theme); }; });
+  // The Current page's box order (owner, 2026-11-06: "you can put the
+  // ability to edit in the setting icon"): the page itself does the moving.
+  document.getElementById('arrangeopen').onclick = () => {
+    box.hidden = true;
+    gear.setAttribute('aria-expanded', 'false');
+    window.dispatchEvent(new Event('board-arrange'));
+  };
+  box.querySelectorAll('button.sty[data-theme]').forEach((b) => { b.onclick = () => { try { localStorage.setItem('boardTheme', b.dataset.theme); } catch (e) { /* storage off */ } apply(b.dataset.theme); }; });
   // Visitors (owner, 2026-11-01, option B): this page counts itself once per
   // visit (a reload in the same tab, like the Current tab's own, doesn't),
   // and once a day per phone; only the two numbers reach the site
@@ -3319,6 +3339,81 @@ source().then(async (src) => {
     if (src.days.includes(d)) openDay(d, taken);
   }
 
+  // The boxes on the board, in an order each phone can change (owner,
+  // 2026-11-06: "make it so people can adjust the order boxes on the first
+  // page on their phone and it stays that way for the specific phone").
+  // Kept in this browser only (localStorage boardSectionOrder). On a wide
+  // screen each box stays in its column, in this order within it.
+  const SECTIONS = [
+    { k: 'lineup', name: 'Line-up', col: 1, html: (s) => lineup(s) },
+    { k: 'toronto', name: 'Toronto', col: 1, html: (s) => toronto(s) },
+    { k: 'garnet', name: 'Garnet', col: 1, html: (s) => garnet(s) },
+    { k: 'changes', name: 'Changes', col: 1, html: (s) => changes(s) },
+    { k: 'flags', name: 'To check', col: 2, html: (s) => flags(s) },
+    { k: 'pools', name: 'Pools', col: 2, html: (s) => pools(s, poolTab) },
+    { k: 'vacancies', name: 'Jobs going spare', col: 2, html: (s) => vacancies(s) },
+    { k: 'daysoff', name: 'Days off', col: 2, html: (s) => daysOff(s) },
+    { k: 'callboard', name: 'Call board', col: 2, html: (s) => onDuty(s) },
+    { k: 'yard', name: 'Yard jobs', col: 2, html: (s) => yardJobs(s) },
+    { k: 'sequence', name: 'Calling sequence', col: 2, html: (s) => sequence(s) },
+  ];
+  const ORDER_KEY = 'boardSectionOrder';
+  let arranging = false;
+  const savedOrder = () => { try { const o = JSON.parse(localStorage.getItem(ORDER_KEY) || 'null'); return Array.isArray(o) ? o : null; } catch (e) { return null; } };
+  function sectionOrder() {
+    const known = SECTIONS.map((x) => x.k);
+    const o = (savedOrder() || []).filter((k) => known.includes(k));
+    return [...o, ...known.filter((k) => !o.includes(k))];
+  }
+  const narrow = window.matchMedia ? window.matchMedia('(max-width: 1020px)') : { matches: true };
+  function sectionsGrid(s) {
+    const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
+    const order = sectionOrder();
+    const built = order.map((k) => ({ ...byK[k], body: byK[k].html(s) })).filter((x) => x.body);
+    const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arranging ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
+    // Arranging: just the names, a short list to move around.
+    if (arranging) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
+    if (narrow.matches) return `<div class="grid"><div class="col">${built.map(wrap).join('')}</div></div>`;
+    const c1 = built.filter((x) => x.col === 1);
+    const c2 = built.filter((x) => x.col === 2);
+    return `<div class="grid"><div class="col">${c1.map(wrap).join('')}</div><div class="col">${c2.map(wrap).join('')}</div></div>`;
+  }
+  function arrangeBar() {
+    if (mode !== 'current') return '';
+    return arranging
+      ? `<div class="arrangebar on"><span>Tap ▲ ▼ to move a box, then Done. Saved on this phone only.${narrow.matches ? '' : ' On a wide screen each box stays in its column.'}</span><span><button type="button" id="arrreset">Reset</button><button type="button" id="arrdone" class="primary">Done</button></span></div>`
+      : '';
+  }
+  function wireArrange() {
+    const done = document.getElementById('arrdone');
+    if (done) done.onclick = () => { arranging = false; show(cur, true); };
+    const reset = document.getElementById('arrreset');
+    if (reset) reset.onclick = () => { try { localStorage.removeItem(ORDER_KEY); } catch (e) { /* not kept */ } show(cur, true); };
+    document.querySelectorAll('.secwrap [data-move]').forEach((b) => { b.onclick = () => {
+      const k = b.closest('.secwrap').dataset.sec;
+      const dir = +b.dataset.move;
+      // Among the boxes showing now (on a wide screen, in the same column).
+      const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
+      const shown = [...b.closest('.col').querySelectorAll(':scope > .secwrap')].map((x) => x.dataset.sec).filter((x) => narrow.matches || byK[x].col === byK[k].col);
+      const other = shown[shown.indexOf(k) + dir];
+      if (!other) return;
+      const order = sectionOrder();
+      order.splice(order.indexOf(k), 1);
+      order.splice(order.indexOf(other) + (dir > 0 ? 1 : 0), 0, k);
+      try { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch (e) { /* not kept: this visit only */ }
+      show(cur, true);
+      const moved = document.querySelector(`.secwrap[data-sec="${k}"]`);
+      if (moved) moved.scrollIntoView({ block: 'nearest' });
+    }; });
+  }
+  // From ⚙ Settings → "Arrange the boxes".
+  window.addEventListener('board-arrange', () => {
+    arranging = true;
+    if (mode !== 'current') setMode('current'); else show(cur, true);
+    window.scrollTo({ top: document.getElementById('view').offsetTop - 10, behavior: 'smooth' });
+  });
+  if (narrow.addEventListener) narrow.addEventListener('change', () => { if (mode === 'current' || mode === 'snap') show(cur, true); });
+
   function show(i, keepTab) {
     cur = i;
     if (document.body.classList.contains('orders') || mode === 'turns') return;
@@ -3357,13 +3452,12 @@ source().then(async (src) => {
       </div>
       ${newerBar}
       ${strip(s)}
-      <div class="grid">
-        <div class="col">${lineup(s)}${toronto(s)}${garnet(s)}${changes(s)}</div>
-        <div class="col">${flags(s)}${pools(s, poolTab)}${vacancies(s)}${daysOff(s)}${onDuty(s)}${yardJobs(s)}${sequence(s)}</div>
-      </div>
+      ${arrangeBar()}
+      ${sectionsGrid(s)}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
     tickAges();
     paintTracked(s);
+    wireArrange();
     if (mode !== 'current') {
       document.getElementById('older').onclick = () => step(-1);
       document.getElementById('newer').onclick = () => step(1);
