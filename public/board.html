@@ -2316,11 +2316,12 @@ function claimText(r, d) {
   return [
     title,
     '',
-    `Craft: ${d.craft === 'EN' ? 'Engineer' : 'Conductor'}${d.turn ? ` (turn ${d.turn})` : ''}`,
+    // Owner's layout, 2026-11-06: no "Craft:" or "Train to Toronto:" labels.
+    `${d.craft === 'EN' ? 'Engineer' : 'Conductor'}${d.turn ? ` (turn ${d.turn})` : ''}`,
     `Name: ${d.name}`,
     `PIN: ${d.pin}`,
     '',
-    `Train to ${d.where}: ${d.outTrain || '—'}, date ${d.outDate || '—'}, TS ${d.outTs || '—'}`,
+    `${d.outTrain || '—'}, date ${d.outDate || '—'}, TS ${d.outTs || '—'}`,
     `Train home: ${d.homeTrain || '—'}, date ${d.homeDate || '—'}, TS ${d.homeTs || '—'}`,
     '',
     `From the board (check against the time slips): off duty at ${d.where} ≈ ${isoOf(r.offDuty)}${r.back ? `; on duty for the train home ${isoOf(r.back.onDuty)}` : ''}; held ${dur(r.heldMin)}${r.stillHeld ? ' so far' : ''}.`,
