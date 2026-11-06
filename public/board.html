@@ -1043,10 +1043,22 @@ function pools(s, pi) {
     <table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${left}</section>`;
 }
 
+// A make-up turn (MU01) isn't a real turn (owner, 2026-11-06): the spare
+// working it is shown in its place, not "filling in on MU01".
+const MU_TURN = /^MU\d+$/;
+function crewShown(t) {
+  const mu = (t.backfill || []).filter((b) => MU_TURN.test(b.job));
+  const crew = String(t.crew || '').split(' · ').map((c) => {
+    const [craft, turn] = c.split(' ');
+    const b = MU_TURN.test(turn || '') && mu.find((x) => x.job === turn && x.craft === craft);
+    return b ? `${craft} ${b.turn}` : c;
+  }).join(' · ');
+  return { crew, backfill: (t.backfill || []).filter((b) => !MU_TURN.test(b.job)) };
+}
 function onDuty(s) {
   if (!s.onDuty.length) return '';
-  const rows = s.onDuty.map((t) => `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`).join('');
+  const rows = s.onDuty.map((t0) => { const t = { ...t0, ...crewShown(t0) }; return `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
