@@ -710,3 +710,17 @@ test('a trainee\'s slot gets the turn crew\'s train alerts, not the holder\'s re
   assert.equal(states['S102-ET'], undefined); // S102 not in this check
   assert.equal(states.SR05, undefined);
 });
+
+// Owner, 2026-11-06: tapping an alert opens the box it's about.
+test('alert links: the box, the turn and the train', () => {
+  const { goLink } = require('../../lib/board/alerts');
+  const states = { SR03: { lineup: { train: 'M39671 03' }, onDuty: { train: 'M30241 05' } }, B136: { lineup: { train: 'YPRS60', job: true } }, 'S501-CO': { lineup: { train: 'L50131 07', home: 'Garnet' } } };
+  const dec = (u) => decodeURIComponent(u.replace('./#go=', ''));
+  assert.equal(dec(goLink({ turn: 'SR03', kind: 'lineup' }, states)), 'lineup|SR03|M39671 03');
+  assert.equal(dec(goLink({ turn: 'SR03', kind: 'position' }, states)), 'pools|SR03|');
+  assert.equal(dec(goLink({ turn: 'SR03', kind: 'onDuty' }, states)), 'callboard|SR03|M30241 05');
+  assert.equal(dec(goLink({ turn: 'B136', kind: 'lineup' }, states)), 'vacancies|B136|YPRS60');
+  assert.equal(dec(goLink({ turn: 'S501-CO', kind: 'time' }, states)), 'garnet|S501|L50131 07');
+  assert.equal(dec(goLink({ turn: 'EN03', kind: 'resetAhead', train: 'M39491 04' }, states)), 'lineup|EN03|M39491 04');
+  assert.equal(dec(goLink({ turn: 'B134', kind: 'catsWrong', text: 'B134: CATS shows you to work E27861 02 (filling …' }, states)), 'vacancies|B134|E27861 02');
+});

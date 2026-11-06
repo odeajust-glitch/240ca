@@ -294,6 +294,7 @@
   button.chip { border: 0; font-family: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
   button.chip:disabled { cursor: default; text-decoration: none; opacity: .6; }
   .sheet.jumped { outline: 2px solid var(--soft); outline-offset: 2px; }
+  .train.jumped, tr.jumped, li.jumped { outline: 2px solid var(--accent); outline-offset: -2px; }
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
   .steps button:disabled { opacity: 0.4; cursor: default; }
@@ -3406,6 +3407,35 @@ source().then(async (src) => {
     if (src.days.includes(d)) openDay(d, taken);
   }
 
+  // Tapping an alert (owner, 2026-11-06): #go=<section>|<turn>|<train>
+  // opens the Current page at that box, the train or turn highlighted.
+  let pendingGo = null;
+  function goFromHash() {
+    const m = /^#go=(.+)$/.exec(location.hash);
+    if (!m) return null;
+    const [sec, turn, train] = decodeURIComponent(m[1]).split('|');
+    return /^[a-z]+$/.test(sec || '') ? { sec, turn: turn || '', train: train || '' } : null;
+  }
+  function goTo(go) {
+    const box = document.getElementById(`sec-${go.sec}`) || document.getElementById('sec-lineup');
+    if (!box) return;
+    const words = (x) => new RegExp(`(^|\\W)${x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+')}(\\W|$)`);
+    // A cell or name that is the train / turn, then its row.
+    const find = (key) => { if (!key) return null; const hit = [...box.querySelectorAll('.sym, td, b, li')].find((x) => words(key).test(x.textContent.replace(/\s+/g, ' ').trim())); return hit ? hit.closest('.train, tr, li') || hit : null; };
+    const row = find(go.train) || find(go.turn);
+    const el = row || box;
+    el.scrollIntoView({ behavior: 'smooth', block: row ? 'center' : 'start' });
+    el.classList.add('jumped');
+    setTimeout(() => el.classList.remove('jumped'), 2500);
+  }
+  window.addEventListener('hashchange', () => {
+    const go = goFromHash();
+    if (!go) return;
+    pendingGo = go;
+    try { history.replaceState(null, '', '#current'); } catch (e) { /* not allowed in some frames */ }
+    if (mode === 'current' && list.length) show(list.length - 1); else setMode('current');
+  });
+
   // The boxes on the board, in an order each phone can change (owner,
   // 2026-11-06: "make it so people can adjust the order boxes on the first
   // page on their phone and it stays that way for the specific phone").
@@ -3485,6 +3515,12 @@ source().then(async (src) => {
     cur = i;
     if (document.body.classList.contains('orders') || mode === 'turns') return;
     const s = list[i];
+    // From an alert: its turn's board tab first (applied after drawing).
+    const go = mode === 'current' ? pendingGo : null;
+    if (go && go.sec === 'pools' && go.turn) {
+      const at = s.pools.findIndex((q) => q.turns.some((t) => t.turn === go.turn));
+      if (at >= 0) { poolTab = at; keepTab = true; }
+    }
     document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     setMarks();
     if (marks.length && !keepTab) {
@@ -3525,6 +3561,7 @@ source().then(async (src) => {
     tickAges();
     paintTracked(s);
     wireArrange();
+    if (go) { pendingGo = null; setTimeout(() => goTo(go), 50); }
     if (mode !== 'current') {
       document.getElementById('older').onclick = () => step(-1);
       document.getElementById('newer').onclick = () => step(1);
@@ -3956,6 +3993,7 @@ source().then(async (src) => {
   const wantRef = location.hash === '#ref';
   const wantAsk = location.hash === '#agreements';
   const wantNotes = location.hash === '#notifications';
+  pendingGo = goFromHash();
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }

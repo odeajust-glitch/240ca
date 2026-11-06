@@ -1087,7 +1087,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       nextBases[s.key] = mine.base;
       const owed = pending.filter((p) => p.phone === s.key);
       for (const { event: e, at } of [...owed, ...mine.events.map((event) => ({ event, at: Date.now() }))]) {
-        const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: './#current' }, { keys, sub });
+        const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: TurnAlerts.goLink(e, states) }, { keys, sub });
         const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
         if (r.ok) l.phones++; else l.failed++;
