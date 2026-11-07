@@ -76,6 +76,43 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
    answers his own questions on the board site, Sonnet members' deeper searches
    (CLOUDFLARE.md "Claude for deeper answers").
 
+13. **Real CATS verification: days off / PL** (carried forward 2026-11-07).
+    Check option 4 reads, 24 h memory, withdrawn future PLs, active PL retention,
+    <=24 h / 24–36 h road distinctions, yard overlap and trainee exclusions.
+    No first real run confirmed; more than 15 pages is a known reader limit.
+14. **Predicted spare jobs and notification routing** (carried forward 2026-11-07).
+    Match corrected/predicted lists, Filled by, spareboard job rows and later option 5;
+    verify first expect-a-call / PL warnings, dedupe, and ordered-out-of-sequence
+    trains notifying the next turn in CATS's ordered pool after e77e9ba.
+15. **Reset alerts: verify on real runs** (alongside #8, carried forward 2026-11-07).
+    Verify call-order allocation, replacement's own reset, Chain Gang/SD next callable
+    turn, one spare per job, latest per-reset dedupe and onBreak vs overdue.
+    DHT040B 31 / B111 remains unresolved; do not mark #8 complete from code alone.
+16. **Worker / phone rollout and held-away form setup** (carried forward 2026-11-07).
+    Confirm latest laptop pull/restart/phone page separately from Worker deployment.
+    Deploy Worker for Notifications Why/30-day history, resetAhead/held preferences,
+    held186 submission and model changes; verify form/engineer details/mobile layout.
+    Owner: Apps Script, MAIL_SCRIPT_URL / MAIL_SCRIPT_KEY, rep emails and names passcode
+    (EMAIL.md). Export works; Submit setup unconfirmed. Separate from deferred #3.
+17. **501/502, MU, Garnet and trainees** (carried forward 2026-11-07).
+    Verify alternation/MU craft stand-ins, fill-in alerts, L502 suppression while away,
+    station-only Garnet lineup and WADE S501-TT retention/alerts. Known gap: MU home/off
+    before next L502 falls back to position. Ask owner for SD02/YPRS02 Call Board page 4.
+18. **Outstanding owner decisions** (carried forward 2026-11-07).
+    Notify a spare when expected work disappears? Reset-aware Chain Gang/SD fallback
+    if spares run out? Require two stable checks for sleep prediction? Was S108 real?
+    Runaround alerts/claim evidence still #1; My week expansion #4 remains undecided.
+19. **Other live checks** (carried forward 2026-11-07).
+    VIEW TIME; mid-call hold; option 5; stale trains; runaround log; watchdog Windows
+    Edge cleanup; Toronto fill-ins; CATS Y/N buttons; Worker 30-min ntfy down alert;
+    crews-in-town truncation/unseen pages; Search Review/model labels/fallbacks,
+    clean Kimi answers/balance/usage, and names.test.js timing failure recurrence.
+20. **Recorded reminders / deadlines** (carried forward 2026-11-07).
+    November 23: before deleting suspended Render/Blueprint, check /api/status ready:true;
+    deletion not confirmed. Keep RailroadTracker support. About December 4: #12 trial
+    comparison. December 31 22:00: Anthropic key expiry (source time zone unspecified),
+    replace in Cloudflare and Netlify. Reminder existence/delivery not rechecked here.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
