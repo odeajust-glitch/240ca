@@ -12,7 +12,7 @@ test('timeline handles older, short-notice, taken-off and empty records honestly
  const old={...record,timelineChanges:undefined,timelineComplete:false,shifts:record.timelineChanges,firstSeen:'2026-11-07 2200'};
  assert.ok(A.renderCallTimeline(old).includes('earlier portion was not observed'));assert.ok(A.renderCallTimeline(old).includes('Older record'));
  const off={...old,takenOff:true,onDuty:'2026-11-07 2300'};assert.equal(T.fromMin(A.callTimeline(off).end),'2026-11-07 2300');assert.ok(A.renderCallTimeline(off).includes('Removed'));
- assert.equal(A.callTimeline({...record,noWindow:true}).block,null);
+ assert.ok(A.callTimeline({...record,noWindow:true}).block);
  assert.ok(!/NaN|Infinity/.test(A.renderCallTimeline({...record,call:record.expected,timelineChanges:[]})));
  assert.ok(A.renderCallTimeline({...record,turn:'<script>alert(1)</script>'}).includes('&lt;script&gt;'));
 });
@@ -20,4 +20,13 @@ test('timeline records changes before the eight-hour baseline without altering s
  const snap=(taken,call)=>({taken,lineup:[{train:'M1 08',call,crew:{co:'SR03'}}],onDuty:[],vacancies:[]});
  const st=I.collect([snap('2026-11-07 0900','8th 0400'),snap('2026-11-07 1200','8th 0145'),snap('2026-11-07 1745','8th 0145'),snap('2026-11-07 1900','8th 0045'),{taken:'2026-11-08 0100',lineup:[],onDuty:[{train:'M1 08',onDuty:'8th 0245',crew:'CO SR03'}]}]);
  const z=I.finish(st).sleep[0];assert.equal(z.timelineChanges.length,2);assert.equal(z.shifts.length,1);assert.equal(z.off,-60);assert.equal(z.timelineComplete,true);
+});
+
+test('axis starts at assignment, uses first plan and extends only for ordered later calls',()=>{
+ const z={...record,firstSeen:'2026-11-07 2200',expected:'2026-11-08 0300',call:'2026-11-08 0600',timelineChanges:[
+ {taken:'2026-11-07 2210',call:'2026-11-08 0215'},
+ {taken:'2026-11-07 2220',call:'2026-11-08 0246'},
+ {taken:'2026-11-07 2230',call:'2026-11-08 0600'}]};
+ let m=A.callTimeline(z);assert.equal(m.from,T.toMin(z.firstSeen));assert.equal(m.to,T.toMin(z.firstCall));assert.equal(m.expected,T.toMin(z.firstCall));assert.equal(m.markers.length,2);
+ z.timelineChanges[2].ordered=true;m=A.callTimeline(z);assert.equal(m.to,T.toMin('2026-11-08 0600'));
 });

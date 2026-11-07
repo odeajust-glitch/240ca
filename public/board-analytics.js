@@ -435,46 +435,53 @@
   // One horizontal railway-clock timeline. Keep the planning block fixed
   // at the baseline expected call; moving plans never rewrite that block.
   function callTimeline(z) {
-    const expected = T.toMin(z.expected);
+    const expected = T.toMin(z.firstCall || z.expected);
     const first = T.toMin(z.firstSeen);
     if (expected == null || first == null) return null;
     const changes = (z.timelineChanges || z.shifts || []).filter((x) => T.toMin(x.taken) != null && T.toMin(x.call) != null)
       .map((x) => ({ ...x, at: T.toMin(x.taken) })).sort((a, b) => a.at - b.at);
     const end = T.toMin(z.takenOff ? z.onDuty : z.call);
-    const block = z.noWindow ? null : { from: expected - 480, to: expected };
-    const points = [first, expected, ...(block ? [block.from] : []), ...(end == null ? [] : [end]), ...changes.flatMap((x) => [x.at, ...(x.ordered ? [T.toMin(x.call)] : [])])];
-    const from = Math.min(...points), to = Math.max(...points);
-    return { first, expected, block, end, changes, complete: z.timelineComplete === true, from, to: Math.max(from + 60, to) };
+    const block = { from: expected - 480, to: expected };
+    // The axis follows the original plan; only confirmed ordered call times extend it.
+    const from = first, to = Math.max(expected, ...changes.filter(c => c.ordered).map(c => T.toMin(c.call)));
+    let previous = T.toMin(z.firstCall || z.expected);
+    const markers = changes.filter(c => {
+      const current = T.toMin(c.call), significant = Math.abs(current - previous) > 30;
+      previous = current;
+      return significant && c.at >= from && c.at <= to;
+    });
+    return { first, expected, block, end, changes, markers, complete: z.timelineComplete === true, from, to: Math.max(from + 1, to) };
   }
+
   function renderCallTimeline(z) {
     const m = callTimeline(z);
     if (!m) return '<p class="anote">Not enough timestamps for a timeline.</p>';
     const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
     const stamp = (t) => T.fromMin(t);
     const label = (t) => { const s = stamp(t); return `${s.slice(5, 10)} ${s.slice(11)}`; };
-    const x = (t) => 45 + 670 * (t - m.from) / (m.to - m.from);
+    const x = (t) => 45 + 670 * (Math.max(m.from, Math.min(m.to, t)) - m.from) / (m.to - m.from);
     const marker = (t, y, text, colour) => `<line x1="${x(t)}" x2="${x(t)}" y1="${y + 5}" y2="100" stroke="${colour}" stroke-width="2"/><text x="${x(t)}" y="${y}" text-anchor="${x(t) < 180 ? 'start' : x(t) > 580 ? 'end' : 'middle'}" fill="${colour}">${e(text)}</text>`;
     const ticks = Array.from({ length: 6 }, (_, i) => m.from + Math.round((m.to - m.from) * i / 5));
     const band = m.block ? `<rect x="${x(m.block.from)}" y="64" width="${x(m.block.to) - x(m.block.from)}" height="30" fill="var(--go)" opacity="0.2"/><text x="${(x(m.block.from) + x(m.block.to)) / 2}" y="84" text-anchor="middle">8-hour planning window</text>` : '';
-    const segments = m.block ? [{ at: m.block.from, call: z.expected }, ...m.changes.filter(c => c.at >= m.block.from && c.at < m.block.to)].map((c, i, a) => {
+    const segments = m.block ? [{ at: Math.max(m.from, m.block.from), call: z.firstCall || z.expected }, ...m.changes.filter(c => c.at >= Math.max(m.from, m.block.from) && c.at < m.to)].map((c, i, a) => {
       const delta = Math.abs(T.toMin(c.call) - m.expected);
       const colour = delta === 0 ? 'var(--go)' : delta <= 60 ? 'var(--amber)' : 'var(--stop)';
-      const end = Math.min(m.block.to, a[i + 1]?.at ?? m.block.to);
+      const end = Math.min(m.to, a[i + 1]?.at ?? m.to);
       return `<rect x="${x(c.at)}" y="94" width="${Math.max(0, x(end) - x(c.at))}" height="12" fill="${colour}"><title>${delta} minutes from baseline expected call</title></rect>`;
     }).join('') : '';
     const orders = m.changes.filter(c => c.ordered).map(c => marker(c.at, 178, 'Ordered observed ' + label(c.at), 'var(--soft)') + marker(T.toMin(c.call), 196, 'Ordered call ' + label(T.toMin(c.call)), 'var(--amber)')).join('');
-    const changes = m.changes.map((c, i) => `<g><title>${e(`${c.taken}: expected call ${c.call}, ${c.train || ''}`)}</title><circle cx="${x(c.at)}" cy="100" r="5" fill="var(--amber)"/><text x="${x(c.at)}" y="${145 + (i % 2) * 18}" text-anchor="middle">${i + 1}</text></g>`).join('');
+    const changes = m.markers.map((c) => { const i = m.changes.indexOf(c); return `<g><title>${e(`${c.taken}: expected call ${c.call}, ${c.train || ''}`)}</title><circle cx="${x(c.at)}" cy="100" r="5" fill="var(--amber)"/><text x="${x(c.at)}" y="${145 + (i % 2) * 18}" text-anchor="middle">${i + 1}</text></g>`; }).join('');
     const endLabel = z.takenOff ? 'Removed' : 'Inferred call';
     const list = m.changes.map((c, i) => `<li><b>${i + 1}.</b> ${e(c.taken)} — expected call changed to <b>${e(c.call)}</b>${c.ordered ? ' · ORDERED observed' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
     return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.expectedTrain || z.train)}</b></p>
       <div class="call-timeline-scroll"><svg viewBox="0 0 760 215" role="img" aria-label="${e(`Call timeline for ${z.turn}: first seen ${stamp(m.first)}, baseline expected call ${stamp(m.expected)}${m.end == null ? '' : ', ' + endLabel.toLowerCase() + ' ' + stamp(m.end)}`)}" style="width:100%;min-width:680px;height:auto;font:12px sans-serif;color:var(--ink);fill:currentColor">
       ${band}<line x1="45" x2="715" y1="100" y2="100" stroke="currentColor"/>
       ${segments}${ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="100" y2="106" stroke="currentColor"/><text x="${x(t)}" y="124" text-anchor="middle">${e(label(t))}</text>`).join('')}
-      ${m.block ? marker(m.block.from, 42, 'Window starts ' + label(m.block.from), 'var(--accent)') : ''}
+      ${m.block && m.block.from >= m.from ? marker(m.block.from, 42, 'Window starts ' + label(m.block.from), 'var(--accent)') : ''}
       ${marker(m.first, 20, 'First seen ' + label(m.first), 'var(--soft)')}
       ${marker(m.expected, 42, 'Expected ' + label(m.expected), 'var(--accent)')}
-      ${m.end == null ? '' : marker(m.end, 58, endLabel + ' ' + label(m.end), 'var(--stop)')}${changes}${orders}</svg></div>
-      <p class="anote">Green: original expectation; yellow: changed up to one hour; red: changed over one hour, compared with the fixed baseline. Ordered markers mean first observed ordered by the checker; older history may lack order status. This shows planning opportunity, not measured sleep. Railway time. First seen: ${e(stamp(m.first))}${z.firstCall ? `; first expected call: ${e(z.firstCall)}` : ''}. ${m.block ? `Shaded window: ${e(stamp(m.block.from))} to ${e(stamp(m.block.to))}, eight hours before the baseline expected call. It stays fixed when the call changes.` : 'No eight-hour baseline was recorded; no planning block is drawn.'} ${m.block && m.first > m.block.from ? 'Tracking began after the shaded window started; the earlier portion was not observed.' : ''} Inferred call means on-duty time minus two hours.</p>
+      ${m.end == null || m.end > m.to || m.end < m.from ? '' : marker(m.end, 58, endLabel + ' ' + label(m.end), 'var(--stop)')}${changes}${orders}</svg></div>
+      <p class="anote">Green: original expectation; yellow: changed up to one hour; red: changed over one hour, compared with the fixed baseline. Ordered markers mean first observed ordered by the checker; older history may lack order status. This shows planning opportunity, not measured sleep. Railway time. First seen: ${e(stamp(m.first))}${z.firstCall ? `; first expected call: ${e(z.firstCall)}` : ''}. ${m.block ? `Shaded window: ${e(stamp(m.block.from))} to ${e(stamp(m.block.to))}, eight hours before the original first planned call. Graph markers show successive call-time changes greater than 30 minutes; the list retains every recorded change. The axis starts when the turn was first observed lined into a job and ends at the original planned call, extended only by a later ordered call. It stays fixed when the call changes.` : 'No eight-hour baseline was recorded; no planning block is drawn.'} ${m.block && m.first > m.block.from ? 'Tracking began after the shaded window started; the earlier portion was not observed.' : ''} Inferred call means on-duty time minus two hours.</p>
       ${list ? `<ol style="list-style:none;padding-left:0">${list}</ol>` : '<p class="anote">No saved call-time changes in this record.</p>'}
       ${m.complete ? '<p class="anote">Changes shown are the changes observed by the checker from first seen.</p>' : '<p class="anote">Older record: changes before the planning baseline may not have been saved.</p>'}</details>`;
   }
