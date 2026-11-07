@@ -118,6 +118,12 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-07: **Call stability timeline** from owner sketch: first seen,
+  fixed eight-hour block, saved call changes, inferred call/removal marker.
+  Full observed change history retained separately from existing scores.
+  Older archived records labelled incomplete; FORMAT 24 rebuilds raw history.
+  Local tests pass; laptop publication / real-site verification pending.
+
 - 2026-11-07: **S5 board-position correction** supersedes the dated anchor.
   First regular option-29 turn is next; MU does not affect order. Removed
   guessed MU ownership/status additions; craft eligibility unchanged.

@@ -608,6 +608,10 @@
   .when-detail table { width: 100%; margin-top: 10px; font-variant-numeric: tabular-nums; }
   .when-detail th, .when-detail td { padding: 8px 4px; text-align: right; }
   .when-detail th:first-child, .when-detail td:first-child { text-align: left; }
+  .call-timeline { padding: 8px 4px; white-space: normal; }
+  .call-timeline summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
+  .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
   .ctable summary { cursor: pointer; color: var(--soft); font-size: 12.5px; }
   .ctable table { margin-top: 4px; border-collapse: collapse; }
@@ -1942,7 +1946,7 @@ function sleepTable(list, showTurn) {
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num">${z.takenOff ? `<span class="offv warn">Taken off the line-up</span><div class="crew">last on it ${esc(dt(z.lastListed))}</div>`
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
-      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr>`;
+      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
   }).join('');
   return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Inferred call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }

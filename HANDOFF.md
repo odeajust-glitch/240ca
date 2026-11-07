@@ -55,7 +55,15 @@ regular turn on option 29 is next (owner). Use board position; MU is a system
 placeholder and never determines order. Remove inferred MU ownership and
 appended next/covered-trip status wording. PL/rest/hold remain per craft.
 FORMAT 23 refreshes cached predictions. Laptop rollout pending. The timeline
-graph from the owner's sketch remains pending while this correction is made.
+graph implementation is described below; publication remains pending.
+
+**Call stability timeline, 2026-11-07:** expandable per-record clock timeline
+matches the owner's sketch: first seen, saved change markers, fixed eight-hour
+block before baseline expected call, and separate inferred-call/removal marker.
+Changes from first seen are saved separately; existing scores/shift counts stay
+unchanged. Old archived records show a missing-history caveat. FORMAT 24 rebuilds
+retained raw checks. 275 board tests pass locally; laptop publication pending.
+No Worker change. This completes the previously pending timeline implementation.
 
 ## 2. Immediate next actions, in priority order
 
@@ -298,3 +306,5 @@ node scripts/board-watchdog.js --me SR03 --every 5
   [alert review](docs/board-checker/ALERT-REVIEW-2026-11-05.md), [Pushover](docs/board-checker/PUSHOVER.md).
 - The days-off session handoff was already folded in and deleted before this cleanup;
   its full folded contents remain in the snapshot. Older statuses are historical, not current instructions.
+
+Timeline colour: fixed baseline, green unchanged, yellow absolute call shift up to 60 minutes, red above 60. Order status is first observed ORD, not an exact CATS order timestamp. Older records may lack it. This measures planning opportunity, not actual sleep.
