@@ -39,6 +39,12 @@ Cache FORMAT 22 rebuilds saved site predictions. All 273 board tests pass;
 two unchanged agreement-search tests fail in the full suite. Built locally; laptop
 pull/restart/publish and real-CATS confirmation pending. No Worker change.
 
+**Analytics Overview, 2026-11-07:** additive default Analytics section with call
+stability, eight-hour craft prediction scores, Toronto holds and likely/possible
+calling events, linking to existing details. Shows actual on-duty train date span,
+sample counts and missing/ongoing-data caveats. Existing sections retained. Laptop
+pull/restart/publish and phone refresh pending; no Worker change.
+
 ## 2. Immediate next actions, in priority order
 
 1. Check current branch/head and [TODO](docs/board-checker/TODO.md) before editing;

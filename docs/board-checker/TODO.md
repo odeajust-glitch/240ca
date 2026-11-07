@@ -118,6 +118,10 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-07: **Analytics Overview** (owner approved): new default section with
+  four linked summaries and actual train-data dates; existing sections retained.
+  Implementation checked locally; laptop publication / phone verification pending.
+
 - 2026-11-07: **501/502 daily rotation** (owner: S501 tonight, alternates daily).
   Anchored to confirmed S501 Nov 4 / S502 Nov 5; L50231 08 is S501.
   MU is a placeholder, never an owned turn or source of daily order. Date-based

@@ -1659,14 +1659,42 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
+const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaTrains;
+  const body = { overview: anaHome, week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
 }
+// A starting point for Analytics; existing detail sections and calculations stay available.
+function anaHome({ runs = [], sleep = [], runLog = [] }) {
+  const calls = sleep.filter((z) => !z.takenOff && Number.isFinite(z.off));
+  const stable = calls.filter((z) => Math.abs(z.off) <= 30).length;
+  const score = (k) => {
+    const hits = runs.filter((r) => r.ran && r.predHit && r.predHit.early && !r.predHit.early.none)
+      .map((r) => r.predHit.early[k + 'Hit']).filter((x) => x != null);
+    return hits.length ? `${Math.round(100 * hits.filter(Boolean).length / hits.length)}% (${hits.filter(Boolean).length} of ${hits.length})` : 'Not enough data yet';
+  };
+  const held = runs.filter((r) => r.ran && !r.yard && Number.isFinite(r.heldMin));
+  const over = held.filter((r) => r.heldMin >= BoardTrains.HELD_LIMIT).length;
+  const ongoing = held.filter((r) => r.stillHeld).length;
+  const likely = runLog.filter((r) => r.result === 'likely').length;
+  const possible = runLog.filter((r) => r.result === 'possible').length;
+  const dates = runs.filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
+  const link = (sec, label) => `<button type="button" class="qbtn" data-sec="${sec}">${label} →</button>`;
+  const card = (title, content, note, sec, label) => `<div><h3>${title}</h3><p>${content}</p><p class="anote">${note}</p>${link(sec, label)}</div>`;
+  return `<section class="sheet"><header><h2>Overview</h2><span class="meta">Start here</span></header>
+    <div style="padding:12px 14px"><p><b>Actual train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'No on-duty trains recorded yet.'}</p>
+    <p class="anote">Summaries use the available records within your selected dates. Each tracker may cover a different span; gaps in checking and missing observations can affect the results.</p></div>
+    <div class="agrid">
+      ${card('Call stability', calls.length ? `<b>${Math.round(100 * stable / calls.length)}%</b> within 30 minutes (${stable} of ${calls.length})` : 'Not enough data yet', 'Expected versus inferred call time (on duty minus 2 hours). This measures call changes, not actual sleep. Taken-off waits are excluded.', 'sleep', 'View call stability details')}
+      ${card('Crew prediction eight hours ahead', `<b>Conductor:</b> ${score('co')}<br><b>Engineer:</b> ${score('en')}`, 'Compared with the crew that went. Missing eight-hour predictions are excluded from these percentages.', 'pred', 'View prediction details')}
+      ${card('Toronto holds', held.length ? `<b>${over} of ${held.length} recorded stays</b> reached 14 hours (${Math.round(100 * over / held.length)}%)` : 'No recorded hold times yet', `Unknown hold times are excluded.${ongoing ? ` Includes ${ongoing} ongoing ${ongoing === 1 ? 'stay' : 'stays'}, measured so far.` : ''}`, 'trains', 'View train and hold details')}
+      ${card('Calling events to review', `<b>${likely} likely</b> · <b>${possible} possible</b> runarounds`, 'These are events flagged for review, not confirmed findings. Explained events stay available in the detailed log.', 'runlog', 'Review the calling log')}
+    </div></section>`;
+}
+
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
   const groups = BoardAnalytics.byNumber(runs);
@@ -3790,7 +3818,7 @@ source().then(async (src) => {
   // within the dates picked. A name code is never put in the address bar or
   // kept on the phone.
   // Opens on the last 90 days, so only those archive months load (F7).
-  const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'trains', pool: 'SR' };
+  const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'overview', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
   const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [] };
   function anaDates() {
