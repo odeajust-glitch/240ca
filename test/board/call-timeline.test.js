@@ -30,3 +30,7 @@ test('axis starts at assignment, uses first plan and extends only for ordered la
  let m=A.callTimeline(z);assert.equal(m.from,T.toMin(z.firstSeen));assert.equal(m.to,T.toMin(z.firstCall));assert.equal(m.expected,T.toMin(z.firstCall));assert.equal(m.markers.length,2);
  z.timelineChanges[2].ordered=true;m=A.callTimeline(z);assert.equal(m.to,T.toMin('2026-11-08 0600'));
 });
+
+test('early call keeps green before call and red through original planned call',()=>{
+ const html=A.renderCallTimeline(record);assert.ok(html.includes('Early call to original planned call: 60 minutes'));assert.ok(html.includes('Early calls: green until'));
+});
