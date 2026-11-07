@@ -277,3 +277,15 @@ test('a rest shown while away (Garnet) is 8 h, like the bunkhouse', () => {
   R.collect(acc, { s5: [{ turn: 'S501', craft: 'CO', terminal: 1, restUntil: t(4, 1901) }] }, [], t(4, 1131));
   assert.deepEqual(R.offDuty({ train: 'L50231 04', on: t(4, 245), last: t(4, 1120), job: 'S501-CO' }, 'S501-CO', acc), { off: t(4, 1101), how: 'bunkhouse' });
 });
+
+// Owner, 2026-11-07: SD08 on a hold turn then a PL showed "reset overdue
+// (was needed by 6th 2029)"; off since before then, the break has begun.
+test('off since before the deadline: on a reset break, not overdue', () => {
+  const acc = R.empty();
+  acc.since = t(24, 220); acc.last = t(3, 1200);
+  acc.trips.me = Object.fromEntries([26, 27, 28, 29, 30, 31].map((d) => [`Y/${d}`, { train: 'YSTY01', on: t(d, 2200), job: 'SR03', first: t(d, 2200), last: t(d, 2300), yard: true }]));
+  const people = { me: [{ turn: 'SR03', own: true, from: '2026-10-24 0300', to: '2026-11-03 0000' }] };
+  // Needed by 2nd 2200; off since 1st 0600 (last yard job), so the reset counts at 3rd 0559.
+  const r = R.byTurn(acc, people, t(2, 2300)).SR03;
+  assert.deepEqual([r.level, r.onBreak, r.offText, r.resetText], ['', true, '1st 0600', '3rd 0559']);
+});

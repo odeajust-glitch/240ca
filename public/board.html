@@ -1024,7 +1024,7 @@ function dot(status) {
 let RESETS = null;
 let resetsAsked = '';
 const resetKey = (t) => (/^S5\d{2}$/.test(t.turn) && t.craft ? `${t.turn}-${t.craft === 'CO' ? 'CO' : 'EN'}` : t.turn);
-const resetText = (r) => `${r.left < 0 ? `reset overdue (was needed by ${r.dueText})` : `reset needed by ${r.dueText}`}${r.possible ? (r.laterText ? `, or ${r.laterText} if the possible reset ${r.possibleText} counts` : ` (after a possible reset ${r.possibleText})`) : ''}`;
+const resetText = (r) => (r.onBreak ? `on a reset break since ${r.offText} (counts at ${r.resetText} if not called before)` : '') || `${r.left < 0 ? `reset overdue (was needed by ${r.dueText})` : `reset needed by ${r.dueText}`}${r.possible ? (r.laterText ? `, or ${r.laterText} if the possible reset ${r.possibleText} counts` : ` (after a possible reset ${r.possibleText})`) : ''}`;
 function resetFor(s, t) {
   const r = RESETS && RESETS.taken === s.taken && RESETS.turns ? RESETS.turns[resetKey(t)] : null;
   return r && r.level ? r : null;

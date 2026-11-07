@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: **2026-11-07** (the days-off session's handoff folded in) ·
-Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 279
+Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 280
 tests (`npm ci` then `npm test`, all pass). Two Claude sessions changed the
 checker 2026-11-05 → 11-07 on this branch (owner OK'd it):
 session_01AP9cZud7gx8TSqRyscer6F (resets, 18.6(b) form, Notifications tab,
@@ -493,6 +493,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-07: **Reset "overdue" while off** (owner: SD08 on a hold turn +
+  PL showed "reset overdue (was needed by 6th 2029)"). resets.js work()
+  gives offSince / resetAt (firstReset: 32 h + two nights); byTurn: past
+  the deadline but off since before it → onBreak, no colour, page says "on
+  a reset break since … (counts at … if not called before)". Before the
+  deadline still yellow / red.
 
 - 2026-11-07: **Withdrawn PLs** (owner: SD08 withdrew a PL, the site still
   showed it). daysoff.js merge(…, wasRead): when option 4 was read, a
