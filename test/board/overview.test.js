@@ -12,7 +12,7 @@ test('overview: empty data is explicit; all four detail links work with existing
   assert.ok(!/NaN|Infinity/.test(out));
   for (const key of ['sleep', 'pred', 'trains', 'runlog']) assert.ok(out.includes(`data-sec="${key}"`));
   assert.ok(html.includes("sec: 'overview'"));
-  for (const label of ['My week','Trains','Turns side by side','Sleep','Runaround log','Out of sequence','Jobs going spare','CATS errors','Stale trains','Predictions']) assert.ok(html.includes(`'${label}'`));
+  for (const label of ['My week','Trains','Turns side by side','Call stability','Runaround log','Out of sequence','Jobs going spare','CATS errors','Stale trains','Predictions']) assert.ok(html.includes(`'${label}'`));
 });
 test('overview: fractions exclude unknowns; ongoing holds and unconfirmed events are labelled', () => {
   const out = ctx.anaHome({ runs: [

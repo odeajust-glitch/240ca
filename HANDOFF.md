@@ -45,6 +45,11 @@ calling events, linking to existing details. Shows actual on-duty train date spa
 sample counts and missing/ongoing-data caveats. Existing sections retained. Laptop
 pull/restart/publish and phone refresh pending; no Worker change.
 
+**Analytics label cleanup, 2026-11-07:** Sleep renamed Call stability; inferred
+calls/planning baseline, sample sizes, tracker coverage, unidentified spare-job
+fillers and ongoing/unknown holds labelled explicitly. Calculations, rules and
+alerts unchanged. Laptop publish/phone verification pending; no Worker change.
+
 ## 2. Immediate next actions, in priority order
 
 1. Check current branch/head and [TODO](docs/board-checker/TODO.md) before editing;

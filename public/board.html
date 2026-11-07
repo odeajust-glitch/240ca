@@ -1557,10 +1557,10 @@ function anaTiles(st, kind) {
       ${tile(d(st.timeOnDuty.avg), `Average time on duty, Sarnia to Toronto${st.timeOnDuty.n ? ` (${st.timeOnDuty.n})` : ''}`)}
       ${tile(d(st.timeOnDuty.max), 'Longest time on duty')}
       ${tile(d(st.held.avg), `Average time held in Toronto bunkhouse${st.held.n ? ` (${st.held.n})` : ''}`)}
-      ${tile(st.held.over14, 'Held 14 h or more in Toronto', st.held.over14 > 0)}</div>
+      ${tile(st.held.over14, `Recorded stays reaching 14 h+ (of ${st.held.n})`, st.held.over14 > 0)}</div><p class="anote">Hold statistics exclude unknown times and include ongoing stays measured so far. </p>
     <div class="strip">
       ${tile(d(st.offPlan.avg), `First plan vs actual on duty: apart on average${st.offPlan.n ? ` (${st.offPlan.late} went later, ${st.offPlan.early} went earlier)` : ''}`)}
-      ${tile(d(st.offOrder.avg), 'First order vs actual on duty: apart on average')}
+      ${tile(d(st.offOrder.avg), `First order vs actual on duty: average difference (${st.offOrder.n} comparisons)`)}
       ${tile(st.orderChanged, 'Order time changed after ordering')}
       ${tile(pct(st.pred.co), `Conductor predicted right${st.pred.en.n ? ` · engineer ${pctOf(st.pred.en)}%` : ''}`)}</div>`;
 }
@@ -1659,13 +1659,15 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Sleep'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
+const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['runlog', 'Runaround log'], ['runarounds', 'Out of sequence'], ['spare', 'Jobs going spare'], ['cats', 'CATS errors'], ['stale', 'Stale trains'], ['pred', 'Predictions']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
   const body = { overview: anaHome, week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
-  return intro + `<section class="sheet secpick">${tabs}</section>` + body(o);
+  const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
+  const coverage = o.sec === 'overview' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
+  return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
 function anaHome({ runs = [], sleep = [], runLog = [] }) {
@@ -1714,7 +1716,7 @@ function anaTrains({ runs }) {
     <section class="sheet"><header><h2>Breakdown</h2><span class="meta">tap a train number or turn to look it up</span></header><div class="agrid">
       ${anaList('Trains that ran most', st.numbers, 'train')}${anaList('Conductors, most trains', st.conductors, 'turn')}${anaList('Pools that took them', st.pools)}${anaWeek(st)}${anaFlags(st)}</div></section>
     <section class="sheet"><header><h2>Least reliable trains</h2><span class="meta">first plan vs on duty, average either way</span></header>${a8}</section>
-    <section class="sheet"><header><h2>Never ran, by train number</h2><span class="meta">left the line-up without showing on the Call Board ${BoardTrains.FLAG_WAIT} min later</span></header>
+    <section class="sheet"><header><h2>Not observed on duty, by train number</h2><span class="meta">left the line-up without being observed on the Call Board ${BoardTrains.FLAG_WAIT} min later</span></header>
     <p class="anote" style="margin:10px 14px">Cancelled or on duty between checks: a Sarnia train, or a Toronto train while rested Sarnia crews waited. Non-Sarnia crew: a Toronto train that left with no rested Sarnia crew in the bunkhouse. Deadheads are their own column.</p>${a13}</section>`;
 }
 // A3: every turn in a pool, side by side.
@@ -1903,10 +1905,10 @@ function anaSpare({ spareJobs }) {
   const latest = [...spareJobs].reverse().slice(0, 40);
   const list = latest.length ? `<div class="scroll"><table class="orders"><thead><tr><th>First listed</th><th>Job</th><th>Pool</th><th>Turn</th><th>Expected to fill</th><th>Filled by</th></tr></thead><tbody>${latest.map((j) => `<tr class="nolink">
       <td class="num">${stampBtn(j.first)}</td><td class="num"><b>${esc(j.train)}</b>${j.yard ? ' <span class="chip">yard</span>' : ''}</td><td>${esc(`${j.pool || ''} ${j.cc || ''}`.trim())}</td><td class="num">${esc(j.turn || '')}</td>
-      <td class="num">${esc(j.predicted || '—')}</td><td class="num">${j.filledBy ? `<b>${esc(j.filledBy)}</b>${j.predicted ? (j.predicted === j.filledBy ? ' <span class="ok">✓</span>' : ' <span class="bad">✗</span>') : ''}` : '<span class="muted">not seen</span>'}</td></tr>`).join('')}</tbody></table></div>`
+      <td class="num">${esc(j.predicted || '—')}</td><td class="num">${j.filledBy ? `<b>${esc(j.filledBy)}</b>${j.predicted ? (j.predicted === j.filledBy ? ' <span class="ok">✓</span>' : ' <span class="bad">✗</span>') : ''}` : '<span class="muted">filler not identified</span>'}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No jobs going spare in the dates picked.</p>';
-  return `<p class="anote">Jobs on the vacancy list (option 5, yardmaster jobs left out). "Filled by" is the spare person seen on the Call Board working that job's turn; jobs filled where the board checker couldn't match a name show "not seen".</p>
-    <div class="strip">${anaTile(st.n, 'Jobs going spare')}${anaTile(st.perDay.length ? (st.n / st.perDay.length).toFixed(1) : '—', 'Average per day (days with any)')}${anaTile(`${st.filled} <small>/ ${st.n}</small>`, 'Seen filled')}${anaTile(st.predicted.n ? `${pctOf(st.predicted)}% <small>${st.predicted.hit} / ${st.predicted.n}</small>` : '—', 'Expected spare turn was the one')}</div>
+  return `<p class="anote">Jobs on the vacancy list (option 5, yardmaster jobs left out). "Filled by" is the spare person seen on the Call Board working that job's turn; a missing match means the filler was not identified, not that the job went unfilled.</p>
+    <div class="strip">${anaTile(st.n, 'Jobs going spare')}${anaTile(st.perDay.length ? (st.n / st.perDay.length).toFixed(1) : '—', 'Average per calendar day between first and last listed job')}${anaTile(`${st.filled} <small>/ ${st.n}</small>`, 'Filler identified (of listed jobs)')}${anaTile(st.predicted.n ? `${pctOf(st.predicted)}% <small>${st.predicted.hit} / ${st.predicted.n}</small>` : '—', 'Expected filler matched (of comparable identified jobs)')}</div>
     <section class="sheet"><header><h2>Per day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${chart}</div></section>
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${anaList('Filled by, most often', st.filledBy, 'turn')}${anaList('Jobs by pool', st.byPool)}</div></section>
     <section class="sheet"><header><h2>Latest</h2><span class="meta">newest first</span></header>${list}</section>`;
@@ -1920,19 +1922,19 @@ function sleepCell(off) {
   if (!off) return '<span class="offv ok">on time</span>';
   return `<span class="offv ${band}">${esc(dur(off))} ${off < 0 ? 'earlier' : 'later'}</span>`;
 }
-const SLEEP_NOTE = 'They go to sleep once the expected call is 8 h away (the check where it first showed 8 h or less). The real call is on duty − 2 h. The gap is the time between the call they slept on and the real call: within 30 min green, within an hour yellow, more than that red. Taken off the line-up after going to sleep ends that wait (counted on its own); the next line-up starts a new one.';
+const SLEEP_NOTE = 'Call stability compares the expected call at the planning baseline (the first check showing 8 h or less to call) with an inferred call: recorded on-duty time minus 2 h. Short-notice cases can start with less than 8 h available. This does not record actual phone calls or sleep. Within 30 min is green, over 30 min to 1 h yellow, and over 1 h red. Removal from the line-up ends that wait and is counted separately. Samples reflect observed records; checking gaps may affect results.';
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
-  return `<div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Green: called within 30 min of what they slept on')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, 'Yellow: 30 min to 1 h off')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'Red: more than 1 h off', st.bad > 0)}${anaTile(durOr(st.avg), 'Average gap between the call they slept on and the real call (earlier or later)')}</div>
-    <div class="strip">${anaTile(st.earlier, 'Called more than 30 min earlier than they slept on', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Called more than 30 min later than they slept on')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
-    <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Times the expected call moved after they went to sleep (average)')}${anaTile(st.short, 'Short notice: lined up under 8 h before the call')}${anaTile(st.takenOff, 'Taken off the line-up after going to sleep (not in the gaps above)', st.takenOff > 0)}</div>`;
+  return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs inferred call (earlier or later)')}</div>
+    <div class="strip">${anaTile(st.earlier, 'Inferred call more than 30 min earlier than expected', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Inferred call more than 30 min later than expected')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
+    <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Expected-call changes after the planning baseline (average)')}${anaTile(st.short, 'Lined up less than 8 h before the inferred call')}${anaTile(st.takenOff, 'Removed after the planning baseline (excluded from call differences)', st.takenOff > 0)}</div>`;
 }
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
   if (!list.length) return '<p class="empty">No calls tracked in the dates picked yet. A call counts once the turn was on a line-up (or expected to fill a job going spare) before it went on duty.</p>';
   const rows = [...list].reverse().slice(0, 200).map((z) => {
     const moves = (z.shifts || []).map((x) => `<li>${esc(dt(x.taken))}: call ${esc(dt(x.call))}${x.train !== z.expectedTrain ? ` (${esc(x.train)})` : ''}</li>`).join('');
-    const start = z.noWindow ? '<span class="muted">never 8 h out before the call</span>'
+    const start = z.noWindow ? '<span class="muted">no eight-hour baseline recorded</span>'
       : `${esc(dt(z.sleepAt))}${z.short ? ` <span class="chip">short notice ${esc(dur(z.notice))}</span>` : ''}`;
     return `<tr class="nolink">${showTurn ? `<td class="num"><button type="button" class="qbtn" data-q="${esc(z.turn)}" data-kind="turn">${esc(z.turn)}</button></td>` : ''}
       <td class="num">${start}</td>
@@ -1942,9 +1944,9 @@ function sleepTable(list, showTurn) {
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
       <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr>`;
   }).join('');
-  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Went to sleep (check)</th><th>Call they slept on</th><th>Then the call moved</th><th>Actual call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Inferred call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-const sleepSection = (list) => `<section class="sheet"><header><h2>Sleep tracker</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
+const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
     <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
 function anaSleepAll({ sleep }) {
   const st = BoardAnalytics.sleepStats(sleep);
@@ -1972,8 +1974,8 @@ function anaPred({ runs }) {
   // than the last one, minutes before the call. Only trains checked since then.
   const early = (k) => { const v = runs.map((r) => (r.ran && r.predHit && r.predHit.early && !r.predHit.early.none ? r.predHit.early[k + 'Hit'] : null)).filter((x) => x != null); return { hit: v.filter(Boolean).length, n: v.length }; };
   const noneYet = runs.filter((r) => r.ran && r.predHit && r.predHit.early && r.predHit.early.none).length;
-  return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty, and the one 8 h before the call, when people go to sleep) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
-    <div class="strip">${anaTile(pct(st.pred.co), 'Conductor predicted right')}${anaTile(pct(st.pred.en), 'Engineer predicted right')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${leadNote(lead.co)}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${leadNote(lead.en)}`)}</div>
+  return `<p class="anote">The crew the site predicted for each line-up train (the last prediction before it went on duty, and the one 8 h before the call, the planning baseline) against who the Call Board shows went. "Right since" is how long before going on duty the prediction settled on the right crew and stayed there.</p>
+    <div class="strip">${anaTile(pct(st.pred.co), 'Conductor correct at last prediction')}${anaTile(pct(st.pred.en), 'Engineer correct at last prediction')}${anaTile(durOr(lead.co.avg), `Conductor right since, on average${leadNote(lead.co)}`)}${anaTile(durOr(lead.en.avg), `Engineer right since, on average${leadNote(lead.en)}`)}</div>
     <div class="strip three">${anaTile(pct(early('co')), 'Conductor right 8 h before the call')}${anaTile(pct(early('en')), 'Engineer right 8 h before the call')}${anaTile(noneYet, 'No prediction yet 8 h before the call')}</div>
     ${days.length ? `<section class="sheet"><header><h2>Day by day</h2><span class="meta">tap a column for its number</span></header><div class="agrid wide">${series('co', 'Conductor')}${series('en', 'Engineer')}</div></section>` : '<p class="empty">No predictions scored in the dates picked yet.</p>'}`;
 }

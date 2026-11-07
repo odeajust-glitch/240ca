@@ -118,6 +118,10 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-07: **Clearer Analytics labels**: Call stability, inferred call times,
+  sample counts, available dates, unidentified fillers and hold caveats;
+  calculations unchanged. Local checks complete; live publication pending.
+
 - 2026-11-07: **Analytics Overview** (owner approved): new default section with
   four linked summaries and actual train-data dates; existing sections retained.
   Implementation checked locally; laptop publication / phone verification pending.
