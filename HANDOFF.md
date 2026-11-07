@@ -9,6 +9,10 @@ be changing the checker now; if one is, only one may change it at a time.
 
 ## ▶ Start here (state at 2026-11-05)
 
+**Read first: [docs/board-checker/HANDOFF-2026-11-07-days-off-session.md](docs/board-checker/HANDOFF-2026-11-07-days-off-session.md)**
+(the days-off / PL / spares session's full handoff, up to `e77e9ba`). Fold it
+into this file, then delete it.
+
 **Two Claude sessions changed the checker on 2026-11-05** (owner OK'd it):
 session_01AP9cZuN9352AvkVm7uMr1Z (days off, PL rules, spares) and
 session_01AP9cZud7gx8TSqRyscer6F (resets). Always `git pull` before a
