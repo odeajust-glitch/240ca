@@ -34,3 +34,9 @@ test('axis starts at assignment, uses first plan and extends only for ordered la
 test('early call keeps green before call and red through original planned call',()=>{
  const html=A.renderCallTimeline(record);assert.ok(html.includes('Early call to original planned call: 60 minutes'));assert.ok(html.includes('Early calls: green until'));
 });
+test('original-plan summary uses first call, excludes removals and caps lost window',()=>{
+ const z={...record,expected:'2026-11-08 0800'};
+ const st=A.planReliability([{...z,call:z.firstCall},{...z,call:'2026-11-07 1600'},{...z,call:'2026-11-08 0600'},{...z,takenOff:true},{call:z.call}]);
+ assert.equal(st.rows.length,3);assert.equal(st.stable.length,1);assert.equal(st.early.length,1);assert.equal(st.late.length,1);assert.equal(st.lost,480);assert.equal(st.excluded,2);
+ assert.equal(A.planReliability([]).lost,null);
+});

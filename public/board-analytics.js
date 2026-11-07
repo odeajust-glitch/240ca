@@ -434,6 +434,26 @@
 
   // One horizontal railway-clock timeline. Keep the planning block fixed
   // at the baseline expected call; moving plans never rewrite that block.
+  function planReliability(list) {
+    const rows = list.filter(z => !z.takenOff && T.toMin(z.firstCall) != null && T.toMin(z.call) != null)
+      .map(z => {
+        const planned = T.toMin(z.firstCall), actual = T.toMin(z.call);
+        let previous = planned, changes = 0;
+        for (const c of [...(z.timelineChanges || z.shifts || [])].sort((a,b) => String(a.taken).localeCompare(String(b.taken)))) {
+          const next = T.toMin(c.call), at = T.toMin(c.taken);
+          if (next == null || at == null) continue;
+          if (at >= planned - 480 && at <= planned && Math.abs(next - previous) > 30) changes++;
+          previous = next;
+        }
+        return { ...z, planGap: actual - planned, planLost: Math.min(480, Math.max(0, planned - actual)), planChanges: changes };
+      });
+    const early = rows.filter(z => z.planGap < 0);
+    return { rows, stable: rows.filter(z => Math.abs(z.planGap) <= 30), early: rows.filter(z => z.planGap < -60),
+      late: rows.filter(z => z.planGap > 60), earlyAll: early,
+      lost: early.length ? early.reduce((a,z) => a + z.planLost, 0) / early.length : null,
+      changed: rows.filter(z => z.planChanges > 0), excluded: list.length - rows.length };
+  }
+
   function callTimeline(z) {
     const expected = T.toMin(z.firstCall || z.expected);
     const first = T.toMin(z.firstSeen);
@@ -488,7 +508,7 @@
       ${m.complete ? '<p class="anote">Changes shown are the changes observed by the checker from first seen.</p>' : '<p class="anote">Older record: changes before the planning baseline may not have been saved.</p>'}</details>`;
   }
 
-  const api = { callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
+  const api = { planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
     sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

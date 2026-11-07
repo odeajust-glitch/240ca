@@ -1927,6 +1927,21 @@ function sleepCell(off) {
   return `<span class="offv ${band}">${esc(dur(off))} ${off < 0 ? 'earlier' : 'later'}</span>`;
 }
 const SLEEP_NOTE = 'Call stability compares the expected call at the planning baseline (the first check showing 8 h or less to call) with an inferred call: recorded on-duty time minus 2 h. Short-notice cases can start with less than 8 h available. This does not record actual phone calls or sleep. Within 30 min is green, over 30 min to 1 h yellow, and over 1 h red. Removal from the line-up ends that wait and is counted separately. Samples reflect observed records; checking gaps may affect results.';
+function planSummary(list) {
+  const st = BoardAnalytics.planReliability(list), n = st.rows.length;
+  const group = (label, rows, value) => `<details><summary><b>${value}</b> · ${label} (${rows.length} records)</summary>${sleepTable(rows, true)}${rows.length > 200 ? '<p class="anote">Showing the latest 200 matching records; totals include all matching records.</p>' : ''}</details>`;
+  const pc = rows => n ? `${Math.round(100 * rows.length / n)}%` : '—';
+  return `<section class="sheet"><header><h2>How reliable was my eight-hour plan?</h2></header><div style="padding:14px">
+    <p class="anote">Original plan = first saved expected call, as in the timeline. ${n} eligible call records; ${st.excluded} removed or missing-time records excluded. Calls are inferred from on-duty time minus 2 h; these are records, not unique people or measured sleep.</p>
+    ${group('Within 30 minutes of original plan', st.stable, pc(st.stable))}
+    ${group('More than 1 hour early', st.early, pc(st.early))}
+    ${group('More than 1 hour late', st.late, pc(st.late))}
+    ${group('Average planned window lost among early calls', st.earlyAll, st.lost == null ? '—' : dur(Math.round(st.lost)))}
+    <p class="anote">Lost time is the early-call overlap with the original eight-hour window, capped at 8 h per early call. Late calls do not cancel early losses.</p>
+    ${group('Records with saved changes greater than 30 minutes during the original window', st.changed, `${st.rows.reduce((a,z) => a + z.planChanges, 0)} changes`)}
+    <p class="anote">Open a number for its records and timelines. Older history may omit changes; saved change counts can be incomplete. Each timeline detail lists its recorded changes. Existing baseline statistics below use their separately labelled planning baseline.</p>
+    </div></section>`;
+}
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
   return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs inferred call (earlier or later)')}</div>
@@ -1946,12 +1961,12 @@ function sleepTable(list, showTurn) {
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num">${z.takenOff ? `<span class="offv warn">Taken off the line-up</span><div class="crew">last on it ${esc(dt(z.lastListed))}</div>`
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
-      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
+      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
   }).join('');
   return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Inferred call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
-    <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
+    <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
 function anaSleepAll({ sleep }) {
   const st = BoardAnalytics.sleepStats(sleep);
   const turns = BoardAnalytics.sleepByTurn(sleep).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn));
@@ -1959,7 +1974,7 @@ function anaSleepAll({ sleep }) {
       <td class="num stick"><button type="button" class="qbtn" data-q="${esc(t.turn)}" data-kind="turn">${esc(t.turn)}</button></td><td class="num"><b>${t.n}</b></td>
       <td class="num"><span class="offv ok">${t.ok}</span></td><td class="num"><span class="offv warn">${t.warn}</span></td><td class="num"><span class="offv bad">${t.bad}</span></td>
       <td class="num">${durOr(t.avg)}</td><td class="num">${t.earlier} · ${t.later}</td><td class="num">${t.short}</td><td class="num">${t.takenOff}</td></tr>`).join('')}</tbody></table></div>` : '';
-  return `<p class="anote">${SLEEP_NOTE}</p>${sleepTiles(st)}
+  return `<p class="anote">${SLEEP_NOTE}</p>${planSummary(sleep)}${sleepTiles(st)}
     ${table ? `<section class="sheet"><header><h2>By turn</h2><span class="meta">most red first · tap a turn for its calls</span></header>${table}</section>` : ''}
     <section class="sheet"><header><h2>Latest calls</h2><span class="meta">newest first</span></header>${sleepTable(sleep, true)}</section>`;
 }
