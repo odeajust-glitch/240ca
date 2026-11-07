@@ -724,7 +724,7 @@ test('A train with an MU placeholder on it: the A turn goes spare', () => {
 // S502 (back from Garnet, on rest) is next.
 test('L502: a make-up crew working a 501/502 trip stands for the crew that went spare', () => {
   const { at } = require('../../lib/board/time');
-  const now = at(2026, 11, 7, 7, 54);
+  const now = at(2026, 11, 6, 7, 54);
   const l502 = (day, h) => ({ symbol: 'L50231', trainNo: 'L502', originDay: day, order: at(2026, 11, +day, h, 0), status: 'PLN', deadhead: false, engCrew: '45SAS50', trnCrew: '45SAS50' });
   const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
   const s5 = [
@@ -732,16 +732,16 @@ test('L502: a make-up crew working a 501/502 trip stands for the crew that went 
     row('EN', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }), row('CO', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }),
     row('EN', 'MU01', { working: true, workingOn: 'L50231' }), row('CO', 'MU01', { working: true, workingOn: 'L50231' }),
   ];
-  const r = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5 });
+  const r = runBoardCheck({ now, callBoard: [{ symbol: 'L50231', trainNo: 'L502', originDay: '06', onDuty: at(2026, 11, 6, 3, 0), station: 'SARNIA', crew: [{ craft: 'CO', turn: 'MU01' }, { craft: 'EN', turn: 'MU01' }] }], chainGangHome: [], lineup: [l502('07', 4)], s5 });
   const p = r.predictions.find((x) => x.symbol === 'L50231');
   assert.equal(p.turn, 'S502');
   assert.match(p.reason, /MU01 is working S501's trip/);
   // MU01 bringing L501 home: S501 still counts as away; S502 next.
   const back = s5.map((x) => (x.turn === 'MU01' ? { ...x, workingOn: 'L50131' } : x));
-  assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5: back }).predictions.find((x) => x.symbol === 'L50231').turn, 'S502');
-  // No make-up crew out: as before (position).
+  assert.equal(runBoardCheck({ now, callBoard: [{ symbol: 'L50231', trainNo: 'L502', originDay: '06', onDuty: at(2026, 11, 6, 3, 0), station: 'SARNIA', crew: [{ craft: 'CO', turn: 'MU01' }, { craft: 'EN', turn: 'MU01' }] }], chainGangHome: [], lineup: [l502('07', 4)], s5: back }).predictions.find((x) => x.symbol === 'L50231').turn, 'S502');
+  // No make-up crew out: the dated rotation remains, regardless of position.
   const none = s5.filter((x) => x.turn !== 'MU01');
-  assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('08', 4)], s5: none }).predictions.find((x) => x.symbol === 'L50231').turn, 'S501');
+  assert.equal(runBoardCheck({ now, callBoard: [{ symbol: 'L50231', trainNo: 'L502', originDay: '06', onDuty: at(2026, 11, 6, 3, 0), station: 'SARNIA', crew: [{ craft: 'CO', turn: 'MU01' }, { craft: 'EN', turn: 'MU01' }] }], chainGangHome: [], lineup: [l502('07', 4)], s5: none }).predictions.find((x) => x.symbol === 'L50231').turn, 'S502');
 });
 
 // Owner, 2026-11-06: the 501/502 board in L502 order, with the stand-in crew.
@@ -752,7 +752,7 @@ test('501/502 board: next crew first, the make-up crew beside the crew whose tri
   const s5 = [row('EN', 'S501', { pos: 1 }), row('CO', 'S501', { pos: 1 }),
     row('EN', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }), row('CO', 'S502', { pos: 2, restUntil: at(2026, 11, 7, 6, 55) }),
     row('EN', 'MU01', { working: true, workingOn: 'L50231' }), row('CO', 'MU01', { working: true, workingOn: 'L50231' })];
-  const r = runBoardCheck({ now: at(2026, 11, 7, 7, 54), callBoard: [], chainGangHome: [], lineup: [], s5 });
+  const r = runBoardCheck({ now: at(2026, 11, 6, 7, 54), callBoard: [{ symbol: 'L50231', trainNo: 'L502', originDay: '06', onDuty: at(2026, 11, 6, 3, 0), station: 'SARNIA', crew: [{ craft: 'CO', turn: 'MU01' }, { craft: 'EN', turn: 'MU01' }] }], chainGangHome: [], lineup: [{ symbol: 'L50231', trainNo: 'L502', originDay: '07', order: at(2026, 11, 7, 4, 0), status: 'PLN', deadhead: false }], s5 });
   assert.deepEqual(r.s5Order, [{ turn: 'S502', rank: 0 }, { turn: 'S501', rank: 2, mu: 'MU01' }]);
   const rows = s5.map((t) => ({ pos: String(t.pos).padStart(3, '0'), turn: t.turn, craft: t.craft, status: 'available' }));
   const out = s5Board(rows, r.s5Order, [{ job: 'MU01', craft: 'CO', turn: 'B133' }]);
@@ -762,6 +762,7 @@ test('501/502 board: next crew first, the make-up crew beside the crew whose tri
   assert.match(out[5].status, /working S501's trip: B133 on it/);
   assert.doesNotMatch(out[4].status, /on it/);
 });
+
 
 // Owner, 2026-11-07: A42431 07 ORD for A (45SASA0) as a 4th A of the road
 // day (M39491 06 SA02, M30241 05 SA03, Z14891 06 SA04 on duty): "Ordered

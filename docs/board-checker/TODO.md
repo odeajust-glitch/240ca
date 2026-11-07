@@ -96,8 +96,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
     (EMAIL.md). Export works; Submit setup unconfirmed. Separate from deferred #3.
 17. **501/502, MU, Garnet and trainees** (carried forward 2026-11-07).
     Verify alternation/MU craft stand-ins, fill-in alerts, L502 suppression while away,
-    station-only Garnet lineup and WADE S501-TT retention/alerts. Known gap: MU home/off
-    before next L502 falls back to position. Ask owner for SD02/YPRS02 Call Board page 4.
+    station-only Garnet lineup and WADE S501-TT retention/alerts. Daily rotation fix built 2026-11-07; verify it survives MU home/off
+    and checker restart on real runs (deployment pending). Ask owner for SD02/YPRS02 Call Board page 4.
 18. **Outstanding owner decisions** (carried forward 2026-11-07).
     Notify a spare when expected work disappears? Reset-aware Chain Gang/SD fallback
     if spares run out? Require two stable checks for sleep prediction? Was S108 real?
@@ -117,6 +117,13 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-07: **501/502 daily rotation** (owner: S501 tonight, alternates daily).
+  Anchored to confirmed S501 Nov 4 / S502 Nov 5; L50231 08 is S501.
+  MU is a placeholder, never an owned turn or source of daily order. Date-based
+  assignments stay stable through rest/PL, MU changes, restart and month rollover;
+  craft availability and spare jobs stay separate. FORMAT 22 refreshes site caches.
+  Implementation verified locally; live CATS/laptop rollout remains open under #17.
 
 - 2026-11-07: **Analytics → When summaries** (owner approved): three-hour busiest
   windows with counts/bars, hourly detail, collapsed weekly activity (calendar-day rate

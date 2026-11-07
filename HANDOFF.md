@@ -30,6 +30,15 @@ hourly detail, and collapsed weekly activity / Toronto hold tables. Percentages 
 unknown hold times; ongoing stays included and labelled. Built and checked locally;
 laptop pull/restart/publish + phone refresh still required. No Worker change.
 
+**501/502 fix, 2026-11-07:** daily rotation anchored to S501's confirmed L502
+on 2026-11-04 (S502 Nov 5); L50231 08 belongs to S501. Use the train's service
+identity/date, not rest/PL/position or the number of trains currently visible.
+MU is a system placeholder, not a person's owned turn; dated replacement-trip
+labels do not control rotation. Availability/goes-spare remains per craft.
+Cache FORMAT 22 rebuilds saved site predictions. All 273 board tests pass;
+two unchanged agreement-search tests fail in the full suite. Built locally; laptop
+pull/restart/publish and real-CATS confirmation pending. No Worker change.
+
 ## 2. Immediate next actions, in priority order
 
 1. Check current branch/head and [TODO](docs/board-checker/TODO.md) before editing;
@@ -58,7 +67,7 @@ laptop pull/restart/publish + phone refresh still required. No Worker change.
   checks for sleep predictions; runaround alerts/recipients, claim limits/evidence page.
 - Owner evidence requested: was S108's job real? Send Call Board page 4 for the SD02 /
   YPRS02 name-match issue. STAT A/B and A/U/X meanings remain unknown and unused;
-  other leave types were deferred (“don't worry”). MU order after returning home remains a gap.
+  other leave types were deferred (“don't worry”). MU tags no longer determine the daily rotation (see the dated fix above).
 - **2026-11-23:** historical reminder to delete suspended Render service/Blueprint;
   check `/api/status` is `ready:true` first. No deletion confirmed. Keep RailroadTracker support.
 - **About 2026-12-04:** Pushover trial ends; compare arrival/retries across Pushover,
@@ -176,10 +185,12 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   later lists it → no duplicate alert (S5 also gets lineup day). Yard option-5 job without
   `**` while prior shift still on duty → grey “probably not spare”, no spare/alerts;
   normal if CATS still lists it after tie-up. Spareboard B0 says “working another job”.
-- **501/502 / MU / Garnet:** alternate; an MU out on L502/at Garnet/returning L501
-  stands for crew whose trip it was: both crafts marked off first, otherwise least rest
-  (not just back), then position. Other crew next. Once MU home/off, order falls back
-  to position: known gap, not a new settled rule. Only one crew at Garnet, returning L501;
+- **501/502 / MU / Garnet:** S501/S502 alternate daily from the confirmed dated
+  anchor above. MU is an unowned system placeholder; a dated replacement-trip
+  label never determines order. The old marked-off / least-rest / position guesses
+  and MU-home fallback are superseded (exact history remains in the snapshot).
+  Availability/goes-spare is per craft after choosing the scheduled turn.
+  Only one crew at Garnet, returning L501;
   call = order −2 h. Keep MU/fill-ins per craft; Garnet alerts also reach working spares
   by own turns, requiring their names from departing Call Board. L502 alerts held until
   crew off duty in Sarnia; L501 home alerts continue. CO/EN alerts labelled separately;
