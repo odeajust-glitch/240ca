@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: **2026-11-07** (the days-off session's handoff folded in) ·
-Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 278
+Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 279
 tests (`npm ci` then `npm test`, all pass). Two Claude sessions changed the
 checker 2026-11-05 → 11-07 on this branch (owner OK'd it):
 session_01AP9cZud7gx8TSqRyscer6F (resets, 18.6(b) form, Notifications tab,
@@ -493,6 +493,12 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-07: **Withdrawn PLs** (owner: SD08 withdrew a PL, the site still
+  showed it). daysoff.js merge(…, wasRead): when option 4 was read, a
+  remembered PL not started yet and no longer listed is dropped. Started
+  ones still kept. ❓ If option 4 ever has more than 15 pages, later lines
+  would be dropped too (board-auto reads 15 at most).
 
 - 2026-11-07 (session_01AP9cZsY4Xp5amwxCuhWG6g): **Jobs going spare →
   "Predicted jobs going spare"** under the corrected list (owner: "based on

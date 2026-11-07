@@ -290,3 +290,15 @@ test('jobs going spare: option 5\'s 501/502 job not counted twice; no turn free 
   assert.equal(ev.find((e) => e.turn === 'B133').text, 'B133 lined up: X27691 04 planned for 5th 2255, expected call 5th 2040. No Chain Gang conductor is free, so the conductor job is going spare: expect a call.');
   assert.ok(!ev.some((e) => e.turn === 'B134' || e.turn === 'EN06'));
 });
+
+// Owner, 2026-11-07: SD08 withdrew a PL by phone; CATS stopped listing it
+// but the site still showed it.
+test('days off: a PL gone from option 4 before it starts was withdrawn', () => {
+  const read = [{ from: at(2026, 11, 8, 0, 1), turn: 'SD08', craft: 'EN' }];
+  const kept = DaysOff.merge([], read, NOW);
+  const later = at(2026, 11, 7, 12, 0);
+  assert.equal(DaysOff.merge(kept, [], later, true).length, 0); // read, not listed: withdrawn
+  assert.equal(DaysOff.merge(kept, [], later, false).length, 1); // option 4 not read: kept
+  assert.equal(DaysOff.merge(kept, read, later, true).length, 1); // still listed
+  assert.equal(DaysOff.merge(kept, [], at(2026, 11, 8, 6, 0), true).length, 1); // started: kept
+});
