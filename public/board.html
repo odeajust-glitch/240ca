@@ -616,6 +616,9 @@
   .claim .gwide { display: grid; gap: 4px; margin: 8px 0; }
   .claim textarea { font: inherit; padding: 6px 8px; width: 100%; box-sizing: border-box; }
   .claim .gok { color: var(--ok, #2e7d32); margin: 6px 0 0; width: 100%; }
+  .heldtop { margin: 8px 0 12px; padding: 10px 12px; border: 1px solid var(--bad, #b3261e); border-left-width: 4px; border-radius: 6px; background: color-mix(in srgb, var(--bad, #b3261e) 10%, transparent); }
+  .heldtop .hrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .heldtop button { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--bad, #b3261e); background: none; color: inherit; cursor: pointer; }
   .g186txt { white-space: pre-wrap; font: 13px/1.5 var(--mono); background: var(--sheet); border: 1px solid var(--rule); padding: 10px; border-radius: 6px; }
   .resetlbl { color: var(--go); }
   tr.wreset-p td { background: var(--amber-tint); box-shadow: inset 4px 0 0 var(--amber); }
@@ -1213,6 +1216,7 @@ function turnPanel(s) {
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
   return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+    <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
     <div id="worklog" class="work"></div>
@@ -2447,6 +2451,21 @@ function held186(rows) {
     <div class="h186list">${body}</div>
     <div id="g186box"></div>`;
 }
+// At the top of a turn or name-code search (owner, 2026-11-06: "add the
+// 14 hr violation so someone sees it if they search their turn or name
+// code"): the last 30 days' held trips, each with a button that opens its
+// form in the list below. box: the search result; rows as held186's.
+function heldBanner(box, rows) {
+  const top = box.querySelector('#held186top');
+  if (!top) return;
+  const since = new Date(Date.now() - 30 * 86400000).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }).slice(0, 16).replace(':', '');
+  const recent = rows.map((x, i) => ({ ...x, i })).filter(({ r }) => !r.offDuty || r.offDuty >= since).slice(0, 3);
+  top.hidden = !recent.length;
+  if (!recent.length) return;
+  top.innerHTML = `<b>⚠ Held 14 h+ at the away terminal</b>${recent.map(({ r, role, i }) => `<div class="hrow"><span><b class="num">${esc(r.id)}</b> · ${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''} · off duty ${esc(dt(r.offDuty))}</span><button type="button" data-held="${i}">File it${role === 'EN' ? ' (engineer)' : ''}</button></div>`).join('')}`;
+  top.querySelectorAll('[data-held]').forEach((b) => { b.onclick = () => { const btn = box.querySelector(`button.g186[data-i="${b.dataset.held}"]`); if (btn) btn.click(); }; });
+}
+
 // noNames: a name-code search; the name is left for them to type.
 function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
   box.querySelectorAll('button.g186').forEach((b) => {
@@ -3274,6 +3293,7 @@ source().then(async (src) => {
       const rows = heldRows(trains).filter((r) => r.co === base || r.en === base).map((r) => ({ r, role: r.co === base ? 'CO' : 'EN', turn: base }));
       box.innerHTML = held186(rows);
       wireHeld186(box, rows, { names });
+      heldBanner(document.getElementById('turnpanel') || box.closest('.turnpanel') || document, rows);
     }).catch(() => {});
     loadResets();
     src.turns().then((all) => {
@@ -3364,6 +3384,7 @@ source().then(async (src) => {
       ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
+      <div id="held186top" class="heldtop" hidden></div>
       <div id="whengo" class="whengo" hidden></div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
       <div id="held186" class="work"></div>
@@ -3383,6 +3404,7 @@ source().then(async (src) => {
         .map((r) => ({ r, role: worked.get(r.id) === r.co ? 'CO' : 'EN', turn: worked.get(r.id) }));
       hb.innerHTML = held186(rows);
       wireHeld186(hb, rows, { noNames: true });
+      heldBanner(box, rows);
     }).catch(() => {});
     box.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     if (!live) return;
