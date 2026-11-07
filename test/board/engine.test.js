@@ -762,3 +762,28 @@ test('501/502 board: next crew first, the make-up crew beside the crew whose tri
   assert.match(out[5].status, /working S501's trip: B133 on it/);
   assert.doesNotMatch(out[4].status, /on it/);
 });
+
+// Owner, 2026-11-07: A42431 07 ORD for A (45SASA0) as a 4th A of the road
+// day (M39491 06 SA02, M30241 05 SA03, Z14891 06 SA04 on duty): "Ordered
+// trains should move the notification to the next person who would go".
+test('an ordered train goes by the pool CATS ordered it for; B slots stay for the next trains', () => {
+  const { at } = require('../../lib/board/time');
+  const now = at(2026, 11, 7, 8, 33);
+  const board = (symbol, od, h, m, co, en) => ({ symbol, trainNo: symbol.slice(0, -2), originDay: od, station: 'SARNIA', onDuty: at(2026, 11, 7, h, m), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const t = (craft, turn, pos) => ({ craft, turn, terminal: 0, pos, working: false, st: null, rn: null, statusUntil: null, restUntil: null });
+  const r = runBoardCheck({ now, seenSince: at(2026, 11, 6, 0, 0),
+    callBoard: [board('M39491', '06', 6, 0, 'SA02', 'S104'), board('M30241', '05', 8, 25, 'SA03', 'S105'), board('Z14891', '06', 10, 20, 'SA04', 'S106')],
+    chainGangHome: [t('CO', 'SR02', 1)], aHome: [t('CO', 'SA05', 1)], bHome: [t('CO', 'SB05', 1), t('CO', 'SB06', 2)],
+    s1Home: [t('EN', 'S107', 1)], s3Home: [t('EN', 'S305', 1), t('EN', 'S306', 2)],
+    lineup: [
+      { order: at(2026, 11, 7, 11, 0), symbol: 'A42431', trainNo: 'A424', originDay: '07', status: 'ORD', deadhead: false, trnCrew: '45SASA0' },
+      { order: at(2026, 11, 7, 15, 0), symbol: 'M38261', trainNo: 'M382', originDay: '07', status: 'PLN', deadhead: false },
+      { order: at(2026, 11, 7, 15, 10), symbol: 'E27861', trainNo: 'E278', originDay: '07', status: 'PLN', deadhead: false },
+    ] });
+  const p = (sym) => r.predictions.find((x) => x.symbol === sym);
+  assert.deepEqual([p('A42431').pool, p('A42431').turn, p('A42431').engineer], ['A', 'SA05', 'S107']);
+  assert.match(p('A42431').reason, /^CATS has it ordered for A \(the sequence says B\); going by the order\./);
+  assert.deepEqual([p('M38261').pool, p('M38261').turn], ['B', 'SB05']);
+  assert.deepEqual([p('E27861').pool, p('E27861').turn], ['B', 'SB06']);
+  assert.ok(r.flags.some((f) => /A42431 07 .* is ordered for A but the sequence says B/.test(f.text)));
+});

@@ -356,6 +356,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Rules settled with the owner (don't re-litigate)
 
+- **An ordered train goes by the pool CATS ordered it for** (owner,
+  2026-11-07: "Ordered trains should move the notification to the next
+  person who would go since sometimes their planned trains don't always go
+  when they say"): A42431 07 ORD for A as a 4th A → the next A turn and S1,
+  not the sequence's B; it takes an A slot, so the B slots stay for the next
+  trains; the "ordered for A but the sequence says B" flag stays.
+
 - Option 5 (jobs going spare) can be wrong; **the order the site works out is
   right** (2026-11-02, E27861 02: CATS listed SA09, the order had SR05).
 - L502: the two 501/502 crews **alternate** (owner, 2026-11-03): the crew
