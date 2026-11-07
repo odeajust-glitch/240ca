@@ -16,6 +16,13 @@ test('a yard job listed only because the earlier crew is not tied up: probably n
   assert.equal(S.untiedEarlier(job({ st: '**' }), earlier), null);
   // The same shift on duty is "on duty already", not this.
   assert.equal(S.untiedEarlier(job(), [{ job: 'YPRS60', onDuty: at(2026, 11, 4, 22, 45) }]), null);
+  // Crews in town: still "status not known" (working) → still untied; every
+  // FO there with a real status (owner, 2026-11-07: YEBS30's FO on a day
+  // off, the temporary FO on a hold turn) → tied up, a normal spare job.
+  const town = (crews) => [{ pool: 'YARD YPRS60', yard: 'YPRS60', crews }];
+  assert.ok(S.untiedEarlier(job(), earlier, town([{ craft: 'FO', status: 'other' }, { craft: 'S1', status: 'rest' }])));
+  assert.equal(S.untiedEarlier(job(), earlier, town([{ craft: 'FO', status: 'off' }, { craft: 'FO', status: 'hold', temp: true }])), null);
+  assert.equal(S.openJob(job(), earlier, [], town([{ craft: 'FO', status: 'rest' }])), true);
   // No spare is lined up for it.
   const boards = { coFast: [{ turn: 'B136', pos: 1, terminal: 0, working: false }] };
   assert.equal(S.spareJobs([], [job()], boards, earlier, []).size, 0);

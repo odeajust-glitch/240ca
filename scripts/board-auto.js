@@ -823,7 +823,7 @@ function answer(summary, me, nowOverride) {
     callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home, s5: input.s5,
       garnet: input.garnet, garnetLineup: input.seen.garnetLineup ? input.garnetLineup : null,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
-      spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, fillIns }), lineupRead: !!input.seen.lineup };
+      spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, crewsInTown: input.seen.crewsInTown ? input.crewsInTown : null, fillIns }), lineupRead: !!input.seen.lineup };
 }
 let lastToronto = null;
 
