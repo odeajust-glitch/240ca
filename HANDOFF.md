@@ -1,7 +1,7 @@
 # HANDOFF — read this before doing anything
 
 Last updated: **2026-11-07** (the days-off session's handoff folded in) ·
-Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 277
+Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 278
 tests (`npm ci` then `npm test`, all pass). Two Claude sessions changed the
 checker 2026-11-05 → 11-07 on this branch (owner OK'd it):
 session_01AP9cZud7gx8TSqRyscer6F (resets, 18.6(b) form, Notifications tab,
@@ -440,6 +440,11 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Waiting on the owner / to check on real runs
 
+- ❓ **Predicted jobs going spare** (2026-11-07, needs `git pull` + restart,
+  no Worker re-paste): check on real runs that they match what CATS lists
+  later; ask whether he wants anything more (the spare is already told
+  through the 2026-11-05 "expect a call" alerts).
+
 - ❓ First "expect a call" alerts to spares (B126, EN01, EN09 …) and the
   24–36 h PL warnings: check the Notifications tab.
 - ❓ After `e77e9ba`: the next ordered-out-of-sequence train should go to
@@ -488,6 +493,15 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-07 (session_01AP9cZsY4Xp5amwxCuhWG6g): **Jobs going spare →
+  "Predicted jobs going spare"** under the corrected list (owner: "based on
+  anything showing on the corrected train line up thats not showing
+  there"). Snapshot `vacanciesPredicted` (+ `option5Read`) = spares.js
+  expectedJobs; site.js now fills option 5's and the predicted jobs
+  together in call order (same as alerts and the spareboards' "lined
+  into"), so "Filled by" agrees everywhere. Page only, no new alerts.
+  This session started from the old copy (f6c9036); redone on `2aa6688`.
 
 - 2026-11-07: folded docs/board-checker/HANDOFF-2026-11-07-days-off-session.md
   (session_01AP9cZuN9352AvkVm7uMr1Z, 2026-11-05 → 11-07, last commit

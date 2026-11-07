@@ -358,3 +358,8 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 - 2026-11-05: **Reset alerts fixed** (owner): worked through in call order,
   so each spare is told about one job, and a spare who'd need a reset too
   is passed over to the next one who can work it.
+- 2026-11-07: **Predicted jobs going spare** (owner: "have it show
+  Predicted jobs going spare, and thats based on anything showing on the
+  corrected train line up thats not showing there"): Current → Jobs going
+  spare, under the corrected list, each with why it goes spare and the
+  spare expected to fill it.

@@ -593,3 +593,16 @@ test('names: same surname and initial, different first name, are two people', ()
   assert.equal(H.turnOf(holders, s1.key), null);
   assert.equal(H.turnOf(holders, board[0].key), 'SD01');
 });
+
+// Owner, 2026-11-07: "Predicted jobs going spare … based on anything showing
+// on the corrected train line up that's not showing there".
+test('jobs going spare: predicted jobs from the corrected line-up', () => {
+  const { snapshotOf } = require('../../lib/board/site');
+  const base = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  const { shown } = snapshotOf(base);
+  // The line-up has SB02 (M38261 15) and SR04 (E27861 15) going spare; option 5 wasn't read.
+  assert.deepEqual(shown.lineup.filter((t) => /goes spare/.test(t.rules)).map((t) => t.train), ['M38261 15', 'E27861 15']);
+  assert.deepEqual(shown.vacanciesPredicted.map((v) => [v.trainDay, v.cc, v.turn, v.pool, v.predicted, v.why]),
+    [['M38261 15', 'CO', 'SB02', 'SB', true, 'is on rest until 15th 2300'], ['E27861 15', 'CO', 'SR04', 'SR', true, 'is marked **']]);
+  assert.equal(shown.option5Read, false);
+});
