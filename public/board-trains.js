@@ -130,26 +130,31 @@
       if (wasRead(s, 'bunkhouse')) state.inBunkhouse = (s.bunkhouse || []).map((c) => c.co).filter(Boolean);
       // A Sarnia crew in the Mac bunkhouse: off duty = REST − 8 h. Their
       // train is the latest one they went on duty on before that.
-      for (const c of s.bunkhouse || []) {
-        if (!c.rested || !c.en || !c.co) continue;
-        const offAt = fromMin(toMin(resolve(c.rested, s.taken)) - REST_MIN);
-        const open = Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty && r.station !== 'TORONTO'
-          && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
-        const newest = (list) => list.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
-        let r = newest(open.filter((x) => crewHas(x.crew, c.en) && crewHas(x.crew, c.co)));
-        // Only one of the two matches (owner, 2026-11-07: M39671 04 left
-        // Sarnia as CO SA08 + EN S302, but in Toronto it was SB02 + S302, a
-        // spare on SB02's job): the one train with that engineer (or that
-        // conductor) on duty in the last 24 h. The Toronto conductor turn is
-        // kept for the trip home (heldOf).
-        if (!r) {
-          const one = (turn) => { const l = open.filter((x) => crewHas(x.crew, turn)); return l.length === 1 ? l[0] : null; };
-          r = one(c.en) || one(c.co);
-          if (r && !crewHas(r.crew, c.co)) r.awayCo = c.co;
-        }
+      // Exact matches (both turns) first, then the fallback for the rest.
+      const bunk = (s.bunkhouse || []).filter((c) => c.rested && c.en && c.co)
+        .map((c) => ({ c, offAt: fromMin(toMin(resolve(c.rested, s.taken)) - REST_MIN) }));
+      const openFor = (offAt) => Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty && r.station !== 'TORONTO'
+        && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
+      const newest = (list) => list.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
+      const setOff = (r, c, offAt) => { r.offDuty = offAt; r.events.push({ taken: s.taken, kind: 'offDuty', at: offAt, crew: `${c.en} + ${c.co}` }); };
+      const left = [];
+      for (const { c, offAt } of bunk) {
+        const r = newest(openFor(offAt).filter((x) => crewHas(x.crew, c.en) && crewHas(x.crew, c.co)));
+        if (r) setOff(r, c, offAt); else left.push({ c, offAt });
+      }
+      // Only one of the two matches (owner, 2026-11-07: M39671 04 left
+      // Sarnia as CO SA08 + EN S302, but in Toronto it was SB02 + S302, a
+      // spare on SB02's job): the one train in the last 24 h with that
+      // engineer as its engineer (or that conductor as its conductor, never
+      // a trainee riding along). The Toronto conductor turn is kept for the
+      // trip home (heldOf), which must have that engineer too.
+      for (const { c, offAt } of left) {
+        const open = openFor(offAt);
+        const one = (craft, turn) => { const l = open.filter((x) => turnOf(x.crew, craft) === turn); return l.length === 1 ? l[0] : null; };
+        const r = one('EN', c.en) || one('LE', c.en) || one('CO', c.co);
         if (!r) continue;
-        r.offDuty = offAt;
-        r.events.push({ taken: s.taken, kind: 'offDuty', at: offAt, crew: `${c.en} + ${c.co}` });
+        if (turnOf(r.crew, 'CO') !== c.co) { r.awayCo = c.co; r.awayEn = c.en; }
+        setOff(r, c, offAt);
       }
       // Gone from the line-up without reaching the Call Board: note it once.
       for (const [key, r] of Object.entries(state.trains)) {
@@ -204,7 +209,7 @@
     const co = r.awayCo || turnOf(r.crew, 'CO');
     if (!co) return {};
     const back = Object.values(state.toronto || {})
-      .filter((t) => t.onDuty > r.offDuty && off(r.offDuty, t.onDuty) <= HOME_WITHIN && crewHas(t.crew, co))
+      .filter((t) => t.onDuty > r.offDuty && off(r.offDuty, t.onDuty) <= HOME_WITHIN && crewHas(t.crew, co) && (!r.awayEn || crewHas(t.crew, r.awayEn)))
       .sort((a, b) => (a.onDuty < b.onDuty ? -1 : 1))[0] || null;
     if (back) return { co, en: turnOf(r.crew, 'EN'), back, heldMin: off(r.offDuty, back.onDuty) };
     if ((state.inBunkhouse || []).includes(co) && off(r.offDuty, state.lastTaken) <= HOME_WITHIN) {
