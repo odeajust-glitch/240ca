@@ -1,17 +1,19 @@
 # HANDOFF — read this before doing anything
 
-Last updated: **2026-11-05** (end of the reset tracker / trainees / Garnet /
-assignment history / alert-check session, claude.ai
-session_01AP9cZud7gx8TSqRyscer6F) · Branch:
-**`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 256 tests
-(`npm ci` then `npm test`, all pass). No other Claude session is known to
-be changing the checker now; if one is, only one may change it at a time.
+Last updated: **2026-11-07** (the days-off session's handoff folded in) ·
+Branch: **`claude/vigilant-planck-zawrj4`** (has everything; no PR) · 277
+tests (`npm ci` then `npm test`, all pass). Two Claude sessions changed the
+checker 2026-11-05 → 11-07 on this branch (owner OK'd it):
+session_01AP9cZud7gx8TSqRyscer6F (resets, 18.6(b) form, Notifications tab,
+crews in town) and session_01AP9cZuN9352AvkVm7uMr1Z (days off, PL rules,
+spares). Always `git pull` before a change and push small commits.
 
 ## ▶ Start here (state at 2026-11-05)
 
-**Read first: [docs/board-checker/HANDOFF-2026-11-07-days-off-session.md](docs/board-checker/HANDOFF-2026-11-07-days-off-session.md)**
-(the days-off / PL / spares session's full handoff, up to `e77e9ba`). Fold it
-into this file, then delete it.
+**Laptop:** the owner had pulled up to at least `d8f105b` (2026-11-05).
+Changes since (days-off session up to `e77e9ba`, ordered trains; this
+session's 18.6(b) / alerts / yard fixes) need `git pull` + restart. Ask him
+for `git log --oneline -1`.
 
 **Two Claude sessions changed the checker on 2026-11-05** (owner OK'd it):
 session_01AP9cZuN9352AvkVm7uMr1Z (days off, PL rules, spares) and
@@ -279,7 +281,41 @@ node scripts/board-watchdog.js --me SR03 --every 5
   (owner's wording; "until …" once on), reasons say "PL @ …";
   Current tab "Days off" section; runaround log "explained". An ET/TT line
   is a trainee (owner: their jobs never go spare, no one replaces them):
-  listed only, never put on a row.
+  listed only, never put on a row. Screen PSTS02M "UPCOMING DAYS OFF":
+  MO/DY-TIME, DDSD, LEAVE-TYPE, STAT, NAME, ASSIGNMENT (`U-45SAS1S102ET` =
+  type U, district 45SA, pool S1, turn S102, craft ET); masking allows the
+  date and the assignment (capture.js). The Days off section shows only
+  **From** and **Turn** (craft chip, "off now"): the owner had Until / Type /
+  pool / trainee notes taken out. Memory passed in each summary as
+  `daysOffKnown`; rows get `off: [{ from, until }]` (daysoff.js attach).
+- **Spares told from the order, not only option 5** (owner: "sometimes these
+  don't show and people get surprise calls"; spares.js expectedJobs /
+  spareJobs, alerts.js): every job the order has going spare (PL, rest, hold,
+  **, B0, MU, or no turn free) lines up the spare expected to cover it at
+  once: "B126 lined up: Z14891 05 … SA09 has a PL @ 6th 0001, so its
+  conductor job is going spare: expect a call." Spares in call order, each
+  used once; when option 5 lists the job later it's the same `trainDay`
+  ("L50231 06"), so no second alert (501/502 option-5 jobs get the line-up's
+  day too). Engine gives the reason per craft: `spareWhy` /
+  `engineerSpareWhy`.
+- **Spareboards show each spare's job** (owner): a line under the turn
+  (`tr.jobrow`, its own row so Status stays on a phone screen): "→ L50231 06
+  (S501's job) · call ~6th 0145", from `spareJobs` (same list as the alerts).
+- **501/502 conductor and engineer apart:** alerts separate and labelled
+  ("S501 conductor …", never "S501-CO"); a phone on plain "S501" gets each
+  craft's alert once and the page asks it once (Conductor / Engineer / Both;
+  board.html `Alerts.replace`); page tracking per craft (`marked(turn,
+  craft)`, `markTurn`; the card uses S501-CO's facts); whengo.json has
+  S501-CO / S501-EN. **L502 alerts held** until the crew is back off duty in
+  Sarnia (engine `s5Away`); they still get their L501 home. The Garnet
+  line-up line under the 501/502 board is gone (its own section shows it).
+- **Reset alerts in call order** (owner: "fix both"): a likely reset is kept
+  for the jobs after it, so each spare is told about one job; the person it
+  lands on is checked for their own reset ("B130 would be next, but needs a
+  reset by 7th 0800 too. If so, B126 is next for it."); heads-ups (35–48 h)
+  worked out on top, not kept; no spare left → no reset alert.
+- **Screen chips:** "Garnet line-up 41" and "Road jobs" jump to their
+  sections; a chip with nothing to show that check is greyed, not a link.
 - **Watchdog** (`scripts/board-watchdog.js`, `lib/board/watchdog.js`):
   restarts a stuck checker and its Edge; 'unstick' (reloading CATS) gets 10
   min; a check failing again after a reload exits code 3 → fresh Edge.
@@ -360,6 +396,23 @@ node scripts/board-watchdog.js --me SR03 --every 5
 
 ## Rules settled with the owner (don't re-litigate)
 
+- **PL rules** (daysoff.js plFor / offAt / maybeOff), measured from going on
+  duty (call + 2 h) to the PL's start: already on at the call → off; a **yard
+  job** (8 h; YSBY 12 h) running into the PL → that spare is passed over
+  (B119, yard 1600, PL 2200 → B105); a **road job** with the PL **24 h or
+  less** after on duty → the turn takes its train and **goes spare, 100%**,
+  every pool incl. Chain Gang/SD (owner: "this is wrong, it will go spare"
+  about skipping), a spare is passed over; PL **24–36 h** after → the turn
+  keeps it and whoever would take it if it went spare is warned once (kind
+  `mayCall`: "B119: you may be called for … SR10 has a PL @ 7th 1600 (30 h
+  after going on duty), so its conductor job may go spare"); a spare with a
+  24–36 h PL keeps the job and the next spare is warned. Only the reset
+  "what if" run skips a PL turn, like **.
+- **A days-off line is 24 h from the time shown**; a trainee's (ET/TT) line
+  changes nothing.
+- **Alert wording:** "The turn goes spare (PL @ 6th 0001)." with the reason in
+  brackets; "(spareboard covers)" dropped (cards the same).
+
 - **An ordered train goes by the pool CATS ordered it for** (owner,
   2026-11-07: "Ordered trains should move the notification to the next
   person who would go since sometimes their planned trains don't always go
@@ -386,6 +439,17 @@ node scripts/board-watchdog.js --me SR03 --every 5
   moves later.
 
 ## Waiting on the owner / to check on real runs
+
+- ❓ First "expect a call" alerts to spares (B126, EN01, EN09 …) and the
+  24–36 h PL warnings: check the Notifications tab.
+- ❓ After `e77e9ba`: the next ordered-out-of-sequence train should go to
+  CATS's pool; check the alert went to that pool's turn.
+- **Offered, not answered** (days-off session): tell a spare when the job
+  they were told to expect goes away ("B126: Z14891 05 no longer goes
+  spare"); the reset alert falling back to the next Chain Gang / SD turn
+  when the spareboard runs out (the Chain Gang "may be called" isn't
+  reset-aware).
+- `names.test.js` failed once and passed on re-runs (timing): watch it.
 
 - ❓ **Days off (option 4)**, new 2026-11-05: first real run (see Start
   here). Owner "not sure" what STAT (A/B) and A/U/X mean: shown, not used.
@@ -424,6 +488,13 @@ node scripts/board-watchdog.js --me SR03 --every 5
   everyone (JUOD only now). Full list: docs/board-checker/TODO.md.
 
 ## Latest (newest first; move older ones to the archive when this grows)
+
+- 2026-11-07: folded docs/board-checker/HANDOFF-2026-11-07-days-off-session.md
+  (session_01AP9cZuN9352AvkVm7uMr1Z, 2026-11-05 → 11-07, last commit
+  `e77e9ba`) into this file and deleted it: days off 4, PL rules, spares from
+  the order, spareboard job lines, 501/502 apart + L502 alerts held, reset
+  alerts in call order, name matching (SURNAME/I/FIR), ordered trains by
+  CATS's pool. Tests for it: test/board/daysoff.test.js.
 
 - 2026-11-05: **Name matching uses the first name's first 3 letters too**
   (screens.js nameKey: SURNAME/I/FIR): SD01's holder (WILSON D DONAL…) was
