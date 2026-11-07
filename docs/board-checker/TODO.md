@@ -118,6 +118,12 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-07: **Analytics → When summaries** (owner approved): three-hour busiest
+  windows with counts/bars, hourly detail, collapsed weekly activity (calendar-day rate
+  and partial-coverage labels), and Toronto holds as count/share of recorded stays.
+  Ongoing stays included and labelled; unknown times excluded. Implementation/tests
+  complete; live deployment awaits laptop pull/restart/publish and phone refresh.
+
 - 2026-10-26: **Analytics tab**, first version. Search a train number
   (`148` = every x148xx xx: M14831 26, Q14821 03, …; `M148` = only M148s;
   `M14831 26` = that train), a turn (`SR03`, `S501-CO`) or a name code

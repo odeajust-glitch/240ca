@@ -140,3 +140,54 @@ test('analytics: spreadsheet quotes commas and quotes', () => {
   assert.match(head, /^On duty,Train,Number,/);
   assert.match(line, /^2026-10-20 05:00,M14831 20,148,Sarnia,.*"EN SD07 · CO ""SR03"", x"/);
 });
+
+test('when summary: three-hour windows include midnight and 2359, exclude unrun trains', () => {
+  const s = A.whenSummary([
+    { ran: true, at: '2026-11-01 0000' }, { ran: true, at: '2026-11-01 0259' },
+    { ran: true, at: '2026-11-01 0300' }, { ran: true, at: '2026-11-01 2359' },
+    { ran: false, at: '2026-11-01 0400' },
+  ]);
+  assert.deepStrictEqual(s.windows.map((w) => w.n), [2, 1, 0, 0, 0, 0, 0, 1]);
+  assert.strictEqual(s.total, 4);
+  assert.deepStrictEqual(A.whenSummary([]).weeks, []);
+});
+
+test('when summary: partial weeks, empty middle weeks and recorded-stay denominators', () => {
+  const s = A.whenSummary([
+    { ran: true, at: '2026-10-21 1200', heldMin: 840 },
+    { ran: true, at: '2026-10-21 1300', heldMin: 0 },
+    { ran: true, at: '2026-10-21 1400', heldMin: null },
+    { ran: true, at: '2026-10-22 1200', heldMin: 900, stillHeld: true },
+    { ran: true, at: '2026-11-03 1200' },
+  ]);
+  assert.deepStrictEqual(s.weeks.map((w) => w.n), [4, 0, 1]);
+  assert.deepStrictEqual(s.weeks.map((w) => w.days), [4, 7, 3]);
+  assert.deepStrictEqual(s.weeks.map((w) => w.partial), [true, false, true]);
+  assert.strictEqual(s.weeks[0].perDay, 1);
+  assert.strictEqual(s.weeks[0].held, 2);
+  assert.strictEqual(s.weeks[0].stays, 3);
+  assert.strictEqual(s.weeks[0].percent, 67);
+  assert.strictEqual(s.weeks[0].ongoing, 1);
+  assert.strictEqual(s.weeks[2].percent, null);
+});
+
+test('When view: compact summaries keep detail collapsed and show missing stays clearly', () => {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const html = fs.readFileSync(require.resolve('../../public/board.html'), 'utf8');
+  const source = html.slice(html.indexOf('function anaCharts(runs)'), html.indexOf('// Every run, newest first;'));
+  const ctx = { BoardAnalytics: A, esc: String, weekLabel: String, plural: (n, one) => `${n} ${one}${n === 1 ? '' : 's'}` };
+  vm.createContext(ctx); vm.runInContext(source, ctx);
+  for (const runs of [[], [{ ran: true, at: '2026-11-07 1200' }]]) {
+    const out = ctx.anaCharts(runs);
+    for (const label of ['Busiest times', 'Hourly detail', 'Weekly activity', 'Toronto holds']) assert.ok(out.includes(label));
+    assert.strictEqual((out.match(/<details /g) || []).length, 3);
+    assert.ok(!/<details[^>]*\bopen\b/.test(out));
+    assert.ok(!/NaN|Infinity|cplot/.test(out));
+  }
+  const unknown = ctx.anaCharts([{ ran: true, at: '2026-11-07 1200' }]);
+  assert.ok(unknown.includes('No recorded stays'));
+  const held = ctx.anaCharts([{ ran: true, at: '2026-11-07 1200', heldMin: 840 }]);
+  assert.ok(held.includes('1 of 1 stays'));
+  assert.ok(held.includes('100%'));
+});

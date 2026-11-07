@@ -195,6 +195,25 @@
     return out;
   }
 
+  // Calendar-day rates cover the observed span, not seven days for edge weeks.
+  // Missing held times are unknown, never zero-length stays.
+  function whenSummary(runs) {
+    const hours = byHour(runs);
+    const windows = Array.from({ length: 8 }, (_, i) => ({ hour: i * 3, n: hours.slice(i * 3, i * 3 + 3).reduce((a, b) => a + b, 0) }));
+    const ran = runs.filter((r) => r.ran && r.at);
+    const dates = ran.map((r) => r.at.slice(0, 10)).sort();
+    const day = (d) => Date.parse(d + 'T00:00:00Z') / 864e5;
+    const weeks = byWeek(runs).map((w) => {
+      const start = Math.max(day(w.week), day(dates[0]));
+      const end = Math.min(day(w.week) + 6, day(dates[dates.length - 1]));
+      const days = end - start + 1;
+      const stays = ran.filter((r) => r.at.slice(0, 10) >= w.week && day(r.at.slice(0, 10)) <= day(w.week) + 6 && Number.isFinite(r.heldMin) && r.heldMin >= 0);
+      const held = stays.filter((r) => r.heldMin >= T.HELD_LIMIT).length;
+      return { ...w, days, perDay: w.n / days, partial: start === day(dates[0]) || end === day(dates[dates.length - 1]), stays: stays.length, held, ongoing: stays.filter((r) => r.stillHeld).length, percent: stays.length ? Math.round(100 * held / stays.length) : null };
+    });
+    return { hours, windows, weeks, total: ran.length };
+  }
+
   // A2: time from one train (or yard job) on duty to the next.
   function between(runs) {
     const at = runs.filter((r) => r.ran && r.at).map((r) => T.toMin(r.at)).sort((a, b) => a - b);
@@ -414,7 +433,7 @@
   }
 
   const api = { trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
-    inRange, byHour, byWeek, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
+    inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
     sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;

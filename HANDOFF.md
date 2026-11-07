@@ -25,6 +25,11 @@ recorded dates, not confirmation of today's deployment. Backlog: [TODO](docs/boa
 | Worker deployment | Agreement search verified deployed November 3; later Notifications/form/preferences/model changes still need confirmation or deployment. |
 | Real CATS validation | Some earlier features have real-run evidence; checks in section 4 remain open. |
 
+**Site update, 2026-11-07:** Analytics → When now uses three-hour busiest-time bars,
+hourly detail, and collapsed weekly activity / Toronto hold tables. Percentages exclude
+unknown hold times; ongoing stays included and labelled. Built and checked locally;
+laptop pull/restart/publish + phone refresh still required. No Worker change.
+
 ## 2. Immediate next actions, in priority order
 
 1. Check current branch/head and [TODO](docs/board-checker/TODO.md) before editing;
