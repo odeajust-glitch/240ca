@@ -3399,9 +3399,11 @@ source().then(async (src) => {
     src.trains().then((trains) => {
       const hb = box.querySelector('#held186');
       if (!hb || !box.isConnected) return;
-      const worked = new Map((rec.orders || []).filter((o) => !o.trainee).map((o) => [String(o.train).replace(/ \(.*$/, ''), String(o.turn || '').replace(/-(CO|EN)$/, '')]));
-      const rows = heldRows(trains).filter((r) => worked.has(r.id) && [r.co, r.en].includes(worked.get(r.id)))
-        .map((r) => ({ r, role: worked.get(r.id) === r.co ? 'CO' : 'EN', turn: worked.get(r.id) }));
+      // The turn they worked: a spare's job (B126 working SB02), else their own.
+      const worked = new Map((rec.orders || []).filter((o) => !o.trainee).map((o) => [String(o.train).replace(/ \(.*$/, ''), String(o.job || o.turn || '').replace(/-(CO|EN)$/, '')]));
+      const coOut = (r) => (/(?:^|· )CO (\S+)/.exec(r.crew || '') || [])[1];
+      const rows = heldRows(trains).filter((r) => worked.has(r.id) && [r.co, r.en, coOut(r)].includes(worked.get(r.id)))
+        .map((r) => ({ r, role: worked.get(r.id) === r.en ? 'EN' : 'CO', turn: worked.get(r.id) === r.en ? r.en : r.co }));
       hb.innerHTML = held186(rows);
       wireHeld186(hb, rows, { noNames: true });
       heldBanner(box, rows);

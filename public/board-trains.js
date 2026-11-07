@@ -133,9 +133,20 @@
       for (const c of s.bunkhouse || []) {
         if (!c.rested || !c.en || !c.co) continue;
         const offAt = fromMin(toMin(resolve(c.rested, s.taken)) - REST_MIN);
-        const mine = Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty
-          && crewHas(r.crew, c.en) && crewHas(r.crew, c.co) && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
-        const r = mine.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
+        const open = Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty && r.station !== 'TORONTO'
+          && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
+        const newest = (list) => list.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
+        let r = newest(open.filter((x) => crewHas(x.crew, c.en) && crewHas(x.crew, c.co)));
+        // Only one of the two matches (owner, 2026-11-07: M39671 04 left
+        // Sarnia as CO SA08 + EN S302, but in Toronto it was SB02 + S302, a
+        // spare on SB02's job): the one train with that engineer (or that
+        // conductor) on duty in the last 24 h. The Toronto conductor turn is
+        // kept for the trip home (heldOf).
+        if (!r) {
+          const one = (turn) => { const l = open.filter((x) => crewHas(x.crew, turn)); return l.length === 1 ? l[0] : null; };
+          r = one(c.en) || one(c.co);
+          if (r && !crewHas(r.crew, c.co)) r.awayCo = c.co;
+        }
         if (!r) continue;
         r.offDuty = offAt;
         r.events.push({ taken: s.taken, kind: 'offDuty', at: offAt, crew: `${c.en} + ${c.co}` });
@@ -188,7 +199,9 @@
   const turnOf = (crew, craft) => { const m = new RegExp(`(?:^|· )${craft} (\\S+)`).exec(crew || ''); return m ? m[1] : null; };
   function heldOf(r, state) {
     if (!r.offDuty || noOffDuty(r)) return {};
-    const co = turnOf(r.crew, 'CO');
+    // The conductor turn in Toronto (and home), when it isn't the one that
+    // left Sarnia (a spare on another job: awayCo, set above).
+    const co = r.awayCo || turnOf(r.crew, 'CO');
     if (!co) return {};
     const back = Object.values(state.toronto || {})
       .filter((t) => t.onDuty > r.offDuty && off(r.offDuty, t.onDuty) <= HOME_WITHIN && crewHas(t.crew, co))
