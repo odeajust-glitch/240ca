@@ -118,6 +118,11 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-07: **S5 board-position correction** supersedes the dated anchor.
+  First regular option-29 turn is next; MU does not affect order. Removed
+  guessed MU ownership/status additions; craft eligibility unchanged.
+  Implementation verified locally; laptop publication pending.
+
 - 2026-11-07: **Clearer Analytics labels**: Call stability, inferred call times,
   sample counts, available dates, unidentified fillers and hold caveats;
   calculations unchanged. Local checks complete; live publication pending.

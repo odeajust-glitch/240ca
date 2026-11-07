@@ -50,6 +50,13 @@ calls/planning baseline, sample sizes, tracker coverage, unidentified spare-job
 fillers and ongoing/unknown holds labelled explicitly. Calculations, rules and
 alerts unchanged. Laptop publish/phone verification pending; no Worker change.
 
+**S5 correction, 2026-11-07 (supersedes earlier daily-anchor fix):** the first
+regular turn on option 29 is next (owner). Use board position; MU is a system
+placeholder and never determines order. Remove inferred MU ownership and
+appended next/covered-trip status wording. PL/rest/hold remain per craft.
+FORMAT 23 refreshes cached predictions. Laptop rollout pending. The timeline
+graph from the owner's sketch remains pending while this correction is made.
+
 ## 2. Immediate next actions, in priority order
 
 1. Check current branch/head and [TODO](docs/board-checker/TODO.md) before editing;
@@ -196,11 +203,10 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   later lists it → no duplicate alert (S5 also gets lineup day). Yard option-5 job without
   `**` while prior shift still on duty → grey “probably not spare”, no spare/alerts;
   normal if CATS still lists it after tie-up. Spareboard B0 says “working another job”.
-- **501/502 / MU / Garnet:** S501/S502 alternate daily from the confirmed dated
-  anchor above. MU is an unowned system placeholder; a dated replacement-trip
-  label never determines order. The old marked-off / least-rest / position guesses
-  and MU-home fallback are superseded (exact history remains in the snapshot).
-  Availability/goes-spare is per craft after choosing the scheduled turn.
+- **501/502 / MU / Garnet:** regular board position determines the next turn
+  (owner correction, 2026-11-07). The dated daily anchor is superseded. MU is an
+  unowned placeholder; no inferred MU trip assignment or rest-based reordering.
+  Availability/goes-spare remains per craft after selecting the regular turn.
   Only one crew at Garnet, returning L501;
   call = order −2 h. Keep MU/fill-ins per craft; Garnet alerts also reach working spares
   by own turns, requiring their names from departing Call Board. L502 alerts held until
