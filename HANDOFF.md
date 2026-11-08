@@ -552,3 +552,9 @@ Overview display only; underlying detail pages, collection/calculations and noti
 unchanged. Syntax, public/Test rendering, destination/isolation checks and 26 site/
 filing tests pass. Pull/restart/publication/phone verification pending; no Worker update.
 This supersedes Analytics Overview's awaiting-promotion status in the session handoff.
+
+Session handoff refreshed — 2026-11-08 evening: [latest continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md)
+records promotion commit 751e7e4 from the separate review session. Do not duplicate
+its work. Original review sequence after Overview: Assignment errors, Call stability,
+Stale trains, filters; first verify promoted work and reconcile that session's results.
+Two S5 engine audit defects remain open. Documentation-only update; no live verification.

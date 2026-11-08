@@ -620,3 +620,9 @@ shared Test preview remains. Prior wait-for-approval requirement satisfied for
 Analytics Overview only. S5 Why approval and two S5 defects remain outstanding.
 Verify production mobile layout and all seven destinations after laptop publication.
 26 site/filing tests plus syntax/rendering checks pass; no Worker update.
+
+Review coordination — 2026-11-08 evening: 751e7e4 promotes reviewed Current,
+Analytics and Article 18.6(b) previews from another session. Do not repeat promotion.
+[Updated handoff](HANDOFF-2026-11-08-SESSION.md) records original review queue and
+verification needs; inspect fresh head/session results. Two S5 audit defects remain
+open. This documentation update establishes no live verification or task closure.

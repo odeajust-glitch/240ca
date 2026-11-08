@@ -1,5 +1,76 @@
 # Railway board session handoff — November 8, 2026
 
+## Latest continuation — November 8, 2026, evening
+
+Supersedes pending-promotion statements below; earlier detail is preserved.
+Source inspected: `751e7e4ff4a9e6ecc78ea8764b63303ccef172a8`. No fresh live inspection in this documentation task.
+
+### What we were doing and what is now committed
+
+- Review the site tab by tab; every new change must go to owner-only Test before
+  publication, then require Justin's approval to promote.
+- Current collapsible headers and Analytics Overview were approved and promoted.
+  Overview commit: f422385a85df906f93c4d3b440b429c090e9aded.
+- A separate review session added shared Call stability counts (164603d), centered
+  mobile buttons (69dde2d), Assignment errors/Sarnia summary/held stays/stale train
+  previews (a2963e3), and Test Collapsed labels (fa1a1df).
+- **That session advanced the branch during this handoff:** commit
+  751e7e4ff4a9e6ecc78ea8764b63303ccef172a8, “Promote reviewed Current, Analytics
+  and Article 18.6(b) previews”, modifies public/board.html.
+  Do not repeat that promotion. Read its diff and the separate review result before
+  continuing. Source promotion is confirmed; publication/phone verification is not.
+- This handoff changes documentation only, preserving application work from both
+  sessions. Do not interpret older “regular page unchanged” notes as current status.
+
+### According to our original plan, what was next?
+
+1. **Verify the freshly promoted changes**, using displayed update/check timestamps.
+   Check the existing review's results before repeating work.
+2. **Assignment errors was next after Overview:** inspect the now-existing improvements
+   first, then remaining duplicate/grouping/count issues and misleading fixed statuses.
+   Each finding should show what happened, why it was wrong, who/job was affected,
+   evidence and whether correction is confirmed. Investigate the empty “Runarounds by
+   pool and turn” panel from actual schema/data; do not invent counts.
+3. **Call stability:** clearer early/on-time/late summaries, matching sample counts
+   and missing-data caveats. Shared-count work already exists; do not rebuild it.
+4. **Stale trains:** distinguish waiting from completed cases, duration and outcome.
+   Existing preview/promotion work must be reviewed before proposing more.
+5. **Consistent filters:** date, full train ID, turn and name code where appropriate.
+
+This is a review queue, not blanket authorization to publish further changes.
+Coordinate with the separate session, which may have already reviewed/promoted parts.
+
+### Separate correctness priority still open
+
+The S5 audit found two reproducible engine defects:
+- Future ordered L502 can inherit the prior dated trip's crew through symbol-only matching.
+- One working craft row can falsely confirm both conductor and engineer.
+
+See [audit](S5-CYCLE-AUDIT-2026-11-08.md) and authoritative [TODO](TODO.md).
+Last recorded combined test run: **123 passes, 2 known TODO failures**.
+The cycle inputs are reconstructed; bundled raw CATS fixtures have no S5 rows.
+No fix for these defects is established by a UI promotion; keep open until fixed
+and tested with dated/per-craft evidence. Any changed behavior must follow Test-first
+review, without sending test notifications or changing settled railway rules.
+
+Owner's S5 Why preference: selected crew plus the other crew's status (in Garnet /
+on L501), without other trains. Read current source before assuming preview status.
+Engineer details/Copy-only restriction is superseded: engineers may use shared form.
+
+### Deployment and verification limits
+
+- GitHub source promotion confirmed by commit above; latest laptop SHA unknown.
+- Owner previously reported a pull; latest restart/publication/phone refresh unknown.
+- Last browser evidence in this thread: **Updated Nov 8 13:59 / check 13:57**,
+  then still old S501 for L50231 09. This is historical, not a fresh site observation.
+- No Worker deployed, checker restarted or notification sent for this handoff.
+- Keep older Worker/email/subscriber, PL/days-off, reset, spare-job, historical-data,
+  owner decisions and deadline tasks open unless independently verified.
+- Preserve all rules in root HANDOFF and original archives. No backlog closure here.
+
+---
+
+
 Read this first for the latest session state, then [root HANDOFF](../../HANDOFF.md)
 for all settled rules and [TODO](TODO.md) for the authoritative backlog.
 This supplements existing documentation; it does not replace historical evidence.
