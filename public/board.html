@@ -1869,7 +1869,9 @@ function analyticsOverviewGuide({ preview = false } = {}) {
       const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group).map(([key,label]) => {
         const [,question,description] = descriptions[key];
         return '<article class="overview-guide-card"><h3>' + esc(label) + '</h3><p><b>' + esc(question) +
-          '</b></p><p>' + esc(description) + '</p><button type="button" class="qbtn" data-overview-open="' + esc(key) +
+          '</b></p><p>' + esc(description) + '</p>' +
+          (preview && key === 'sleep' ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '') +
+          '<button type="button" class="qbtn" data-overview-open="' + esc(key) +
           '">Open ' + esc(label) + ' →</button></article>';
       }).join('');
       return '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>';
@@ -4056,6 +4058,21 @@ source().then(async (src) => {
       view.querySelectorAll('[data-overview-open]').forEach(button => {
         button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; setMode('analytics'); };
       });
+      const count = view.querySelector('[data-test-call-count]');
+      const range = anaDates();
+      try {
+        const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
+        if (!count.isConnected || version !== testRenderVersion) return;
+        if (!live && !archive?.sleep?.length) throw new Error('Call records unavailable');
+        const stats = BoardAnalytics.sleepStats(callRecordsInRange(archive, live, range));
+        const result = stats.n
+          ? Math.round(100 * stats.ok / stats.n) + '% within 30 minutes of the planning baseline (' + stats.ok + ' of ' + stats.n + ' scored calls).'
+          : 'No scored calls in this date range.';
+        const dates = range.from || range.to ? [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') : 'all saved dates';
+        count.textContent = result + ' Analytics dates: ' + dates + '. Excluded: ' + stats.takenOff + ' removed waits and ' + stats.excluded + ' historical train/trip mismatches.';
+      } catch (e) {
+        if (count.isConnected) count.textContent = 'Call records could not be loaded. Reopen Test to retry.';
+      }
       return;
     }
     view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Loading the latest saved board…</p>';
@@ -4281,6 +4298,12 @@ source().then(async (src) => {
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'overview', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
   const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [] };
+  function callRecordsInRange(archive, live, range) {
+    return BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []).filter(record => {
+      const day = (record.onDuty || '').slice(0, 10);
+      return day && (!range.from || day >= range.from) && (!range.to || day <= range.to);
+    });
+  }
   function anaDates() {
     if (ana.range === 'all') return {};
     if (ana.range === 'custom') return { from: ana.from, to: ana.to };
@@ -4398,7 +4421,7 @@ source().then(async (src) => {
     const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
     const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
-    const sleep = joinOld('sleep', arch.sleep, found.sleep).filter((z) => inDates(z.onDuty));
+    const sleep = callRecordsInRange(arch, found, range);
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
     const catsMissing = joinOld('catsMissing', arch.catsMissing || [], found.catsMissing).filter((r) => inDates(r.first));
