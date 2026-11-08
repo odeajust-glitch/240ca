@@ -32,7 +32,7 @@ test('axis starts at assignment, uses first plan and extends only for ordered la
 });
 
 test('early call keeps green before call and red through original planned call',()=>{
- const html=A.renderCallTimeline(record);assert.ok(html.includes('Called 1h 0m early'));assert.ok(html.includes('var(--stop)'));assert.ok(!html.includes('min-width:680px'));
+ const html=A.renderCallTimeline(record);assert.ok(html.includes('Called 1h 0m early'));assert.ok(html.includes('#000000'));assert.ok(html.includes('Lost Sleep: 1h 0m'));assert.ok(!html.includes('min-width:680px'));
 });
 test('original-plan summary uses first call, excludes removals and caps lost window',()=>{
  const z={...record,expected:'2026-11-08 0800'};
