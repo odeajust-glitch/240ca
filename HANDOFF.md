@@ -414,3 +414,12 @@ older record lacks ordered markers. Removed records are not shown as called.
 This is call-plan displacement, not measured sleep or the separate collector's
 15-minute stale-train threshold. Shared renderer covers Analytics, Turn History
 and owner Test. Ten timeline tests pass; live verification pending. No Worker change.
+
+Owner Test preview replacement — 2026-11-08: owner declined promotion of the
+trip cards. Removed the isolated card preview and its styling from Test; regular
+Turn History stays unchanged. Test still defaults to JUOD and supports name codes
+and turns, now showing condensed history-note changes with full train ids.
+Unchanged statuses and position-only changes are folded into the complete original
+notes disclosure; each displayed change can expand its original note and snapshot.
+Raw saved history and calculations remain unchanged. Syntax and sample rendering
+checks pass; laptop publication/owner visual review pending. No Worker change.

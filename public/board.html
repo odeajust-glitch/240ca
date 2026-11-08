@@ -378,20 +378,12 @@
   .screen-links button { min-height: 44px; white-space: normal; }
   .screens:has(.screen-group) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .off-heading { margin: 12px 14px 6px; font-size: 14px; }
-  /* Owner Test only: regular Turn History table keeps its existing layout. */
-  .test-preview .scroll { overflow: visible; }
-  .test-preview table, .test-preview tbody { display: block; width: 100%; }
-  .test-preview thead { display: none; }
-  .test-preview .wrow { display: grid; grid-template-columns: minmax(0,1fr); padding: 14px; margin: 10px 0; border: 1px solid var(--rule-soft); border-radius: 8px; cursor: pointer; }
-  .test-preview .wrow:focus { outline: 2px solid var(--accent); }
-  .test-preview .wrow td { display: block; border: 0; padding: 5px 0; white-space: normal; overflow-wrap: anywhere; }
-  .test-preview .wrow td:nth-child(2) { order: -1; font-size: 17px; }
-  .test-preview .wrow td:first-child::before { content: "Actual call: "; color: var(--soft); }
-  .test-preview .wrow td:last-child::before { content: "Worked with: "; color: var(--soft); }
-  .test-preview .wrow::after { content: "▸ Call timeline and trip details"; color: var(--accent); font-size: 13px; padding-top: 8px; }
-  .test-preview .wrow.open::after { content: "▾ Call timeline and trip details"; }
-  .test-preview .wrest, .test-preview .wdet, .test-preview .wrest td, .test-preview .wdet td { display: block; white-space: normal; }
-  .test-preview .wdet { padding: 10px; border-left: 3px solid var(--accent); }
+  /* Isolated owner preview: condensed history notes. */
+  .test-notes-list { padding: 0; list-style: none; }
+  .test-notes-list > li { padding: 12px 0; border-bottom: 1px solid var(--rule-soft); overflow-wrap: anywhere; }
+  .test-notes-list ul { padding-left: 20px; margin: 6px 0; }
+  .test-notes-list summary { cursor: pointer; color: var(--accent); }
+  .test-notes-full { white-space: normal; overflow-wrap: anywhere; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -3877,6 +3869,31 @@ source().then(async (src) => {
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
     window.BoardRef.render(view, refState);
   }
+  // Owner preview only: show changed notes rather than repeating the whole
+  // status. All original observations remain in the full-history disclosure.
+  function previewHistoryNotes(rec) {
+    const changes = (rec && rec.changes) || [];
+    if (!changes.length) return '<p class="anote">No saved history for this lookup.</p>';
+    const parts = (value) => [...new Set(String(value || '').split(' · ').map((part) =>
+      part.replace(/,? position \d{3}\b/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean))];
+    const events = [];
+    let previous = [];
+    for (const entry of changes) {
+      const current = parts(entry.text);
+      const added = current.filter((part) => !previous.includes(part));
+      const removed = previous.filter((part) => !current.includes(part));
+      if (added.length || removed.length) events.push({ ...entry, added, removed });
+      previous = current;
+    }
+    const list = events.slice().reverse().map((entry) => '<li><b>' + esc(dt(entry.taken)) + '</b>' +
+      (entry.added.length ? '<ul>' + entry.added.map((part) => '<li>' + markTurn(part) + '</li>').join('') + '</ul>' : '<p class="anote">Previous note no longer shown in this check.</p>') +
+      '<details><summary>Full note for this check</summary><p class="test-notes-full">' + markTurn(entry.text) + '</p>' +
+      (entry.removed.length ? '<p class="anote">No longer shown: ' + entry.removed.map(esc).join(' · ') + '</p>' : '') + stampBtn(entry.taken) + '</details></li>').join('');
+    const full = changes.slice().reverse().map((entry) => '<li>' + stampBtn(entry.taken) + '<span>' + markTurn(entry.text) + '</span></li>').join('');
+    return '<h3>What changed</h3><p class="anote">' + events.length + ' meaningful updates from ' + changes.length + ' recorded notes. Repeated status and position-only changes are tucked away.</p><ol class="test-notes-list">' + list + '</ol>' +
+      '<details><summary>Every original recorded note (' + changes.length + ')</summary><div class="hist test-notes-full"><ul>' + full + '</ul></div></details>';
+  }
+
   const testPreview = { turn: 'JUOD' };
   async function renderTest() {
     const view = document.getElementById('view');
@@ -3886,8 +3903,8 @@ source().then(async (src) => {
     }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
     const want = testPreview.turn;
-    view.innerHTML = '<h2>Test</h2><p class="anote"><b>Preview only — mobile Turn History cards.</b> The regular Turn History is unchanged. These cards use saved board data; opening them does not send alerts or change assignments.</p>' +
-      '<label for="test-turn">Preview turn or name code</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="Name code or turn" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-preview"><p class="anote">Loading saved trips…</p></div>';
+    view.innerHTML = '<h2>Test</h2><p class="anote"><b>Preview only — simpler history notes.</b> The regular Turn History is unchanged. This example shows changes without repeating every unchanged status. Full original notes remain available.</p>' +
+      '<label for="test-turn">Preview turn or name code</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="Name code or turn" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-notes-preview"><p class="anote">Loading saved history…</p></div>';
     const go = () => {
       const turn = clean(document.getElementById('test-turn').value);
       if ((!isCode(turn) && !/^[A-Z][A-Z0-9]{1,4}\d{2}(?:-(?:CO|EN))?$/.test(turn)) || BoardTurns.PLACEHOLDER.test(turn)) return;
@@ -3902,21 +3919,9 @@ source().then(async (src) => {
         src.turns(), person ? Person.find(want) : null, person ? Person.hash(want) : null
       ]);
       if (mode !== 'test' || testPreview.turn !== want || !healthData || !OwnerKey.has()) return;
-      let rec, workTurn = want;
+      let rec;
       if (person) {
         rec = stretches && personHistory(stretches, all, (turn) => Person.craftNow(hash, turn));
-        // Keep shared S5 timeline lookup craft-specific in this preview.
-        if (rec) rec.orders = rec.orders.map((o) => {
-          if (!BoardTurns.SHARED.test(o.turn)) return o;
-          const seen = o.onDutySeen || o.first;
-          const held = (stretches || []).filter((e) => e.turn === o.turn && seen >= e.from && seen <= e.to);
-          const crafts = [...new Set(held.map((e) => e.craft || (!(stretches || []).some((x) => x.turn === e.turn && x.to > e.to) ? Person.craftNow(hash, e.turn) : '')).filter(Boolean))];
-          if (crafts.length !== 1) return o;
-          const craft = crafts[0] === 'CO' ? 'CO' : 'EN';
-          if (o.crew && !BoardTurns.crewHasCraft(o.crew, o.turn, craft)) return null;
-          return { ...o, train: o.train.replace(/ \([^)]*\)$/, ' (' + o.turn + '-' + craft + ')') };
-        }).filter(Boolean);
-        workTurn = ''; // Personal history retains only trips observed while holding each turn.
       } else {
         const { base, craft } = BoardTurns.splitCraft(want);
         const raw = all[base];
@@ -3926,19 +3931,9 @@ source().then(async (src) => {
       }
       const box = document.getElementById('test-work');
       if (!box) return;
-      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal trip preview' : '') + '</h3>' + workHistory(rec, workTurn, [], (RESETS && RESETS.offs) || {});
-      box.querySelectorAll('tr.wrow').forEach((row) => {
-        row.setAttribute('tabindex', '0'); row.setAttribute('role', 'button'); row.setAttribute('aria-expanded', 'false');
-        row.setAttribute('aria-label', 'Open trip call timeline');
-      });
-      wireWork(box, rec, workTurn);
-      box.querySelectorAll('tr.wrow').forEach((row) => {
-        const open = row.onclick;
-        row.onclick = () => {
-          open();
-          box.querySelectorAll('tr.wrow').forEach((x) => x.setAttribute('aria-expanded', String(x.classList.contains('open'))));
-        };
-        row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
+      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal history preview' : '') + '</h3>' + previewHistoryNotes(rec);
+      box.querySelectorAll('button[data-taken]').forEach((button) => {
+        button.onclick = () => jumpTo(button.dataset.taken);
       });
     } catch (e) {
       const box = document.getElementById('test-work');
