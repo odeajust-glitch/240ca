@@ -490,3 +490,14 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   departure with the same printed identity excluded a current lineup row; current
   lineup now supersedes that memory without double counting. Current confirmed
   Call Board crews remain factual. Regression passes, real CATS verification open.
+
+### Targeted rescue heads-ups — 2026-11-08 (open real-run verification)
+
+- Verify Toronto 41975 rescue heads-ups go only to bunkhouse crews, with fill-in
+  mapping retained. Verify Sarnia rescues notify their selected/possible crew and
+  anyone whose next train/spare job changes, excluding unaffected pools/turns.
+- With/without comparison uses exact symbol + train date and the same departure
+  memory as the main engine. Check covering spares, depleted spareboard backups,
+  PL warnings, multiple rescues, unread screens and repeat suppression on real CATS.
+- Targeted automated alert/engine/spare tests pass; no actual notifications sent.
+  Keep this item open until laptop publication and actual recipient evidence confirm.

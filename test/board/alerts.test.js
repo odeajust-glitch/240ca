@@ -286,7 +286,7 @@ test('turn alerts: rescue trains, Sarnia board vs bunkhouse', () => {
   const train = (symbol, o = {}) => ({ symbol, originDay: '23', status: 'PLN', order: at(2026, 10, 23, 14, 0), deadhead: false, ...o });
   const gang = [row('SR03', 1), row('SR07', 2, { working: true, workingOn: 'M38261' })];
   const bunk = [{ pos: 1, co: 'SR12', en: 'SD04' }];
-  const states = (lineup, macLineup) => turnStates({ now, predictions: [] }, [], { chainGang: gang, sd: [], lineup, macLineup, bunkhouse: bunk });
+  const states = (lineup, macLineup) => turnStates({ now, predictions: (lineup || []).filter(x => /^R/.test(x.symbol)).map(x => pred({...x, turn: 'SR03', engineer: null, call: x.order - 135})) }, [], { chainGang: gang, sd: [], lineup, macLineup, bunkhouse: bunk });
   let r = turnEvents({}, states([train('M38261')], [train('M30131')]), { lineupRead: true });
   // RM383 shows in Sarnia, RQ148 in Toronto.
   r = turnEvents(r.told, states([train('M38261'), train('RM38321')], [train('M30131'), train('RQ14891', { status: 'ORD' })]), { lineupRead: true });
@@ -723,4 +723,37 @@ test('alert links: the box, the turn and the train', () => {
   assert.equal(dec(goLink({ turn: 'S501-CO', kind: 'time' }, states)), 'garnet|S501|L50131 07');
   assert.equal(dec(goLink({ turn: 'EN03', kind: 'resetAhead', train: 'M39491 04' }, states)), 'lineup|EN03|M39491 04');
   assert.equal(dec(goLink({ turn: 'B134', kind: 'catsWrong', text: 'B134: CATS shows you to work E27861 02 (filling …' }, states)), 'vacancies|B134|E27861 02');
+});
+
+test('Sarnia rescue heads-up reaches assigned and displaced crews, not unchanged turns', () => {
+  const { runBoardCheck } = require('../../lib/board/engine');
+  const now = at(2026, 11, 8, 6, 0);
+  const co = (turn, pos) => ({craft:'CO',turn,pos,terminal:0});
+  const en = (turn, pos) => ({craft:'EN',turn,pos,terminal:0});
+  const train = (symbol, day, hour) => ({symbol, trainNo:symbol.slice(0,-2),originDay:day,order:at(2026,11,8,hour,0),status:'PLN',deadhead:false});
+  const rescue = train('RM39491','08',9);
+  const lineup = [rescue,train('M38261','08',10)];
+  const input = {now,seenSince:now-1440,callBoard:[],lineup,
+    chainGangHome:[co('SR01',1)],sdHome:[en('SD01',1)],
+    aHome:[co('SA01',1),co('SA02',2),co('SA03',3)],s1Home:[en('S101',1),en('S102',2),en('S103',3)],
+    bHome:[co('SB01',1)],s3Home:[en('S301',1)],vacancies:[]};
+  const pools = {predictionInput:input,chainGang:input.chainGangHome,sd:input.sdHome,a:input.aHome,b:input.bHome,
+    s1:input.s1Home,s3:input.s3Home,lineup,vacancies:[],macLineup:[],bunkhouse:[{co:'SR99',en:'SD99'}]};
+  const states = turnStates(runBoardCheck(input), [], pools);
+  const recipients = Object.entries(states).filter(([,s]) => (s.rescue || []).some(r=>r.id==='RM39491 08')).map(([t])=>t).sort();
+  assert.deepEqual(recipients,['S101','S102','SA01','SA02']);
+  assert.equal((states.SR99.rescue || []).length,0);
+});
+
+test('spare-only rescue heads-up reaches covering spares and displaced spare work, not whole pools', () => {
+  const { runBoardCheck } = require('../../lib/board/engine');
+  const now=at(2026,11,8,6,0), order=at(2026,11,8,9,0);
+  const rescue={symbol:'RQ13931',trainNo:'RQ139',originDay:'08',order,status:'ORD',deadhead:false};
+  const spare=(turn,pos)=>({turn,pos,working:false});
+  const vacancies=['CO','EN'].map(cc=>({train:rescue.symbol,at:order,cc,turn:'',yard:false,status:'ORDERED'}));
+  const input={now,callBoard:[],lineup:[rescue],chainGangHome:[],sdHome:[],vacancies,
+    spareboards:{coSlow:[spare('B101',1),spare('B102',2)],enSlow:[spare('EN01',1),spare('EN02',2)]}};
+  const states=turnStates(runBoardCheck(input),[],{predictionInput:input,lineup:input.lineup,vacancies,
+    spareboards:input.spareboards,chainGang:[],sd:[],macLineup:[],bunkhouse:[]});
+  assert.deepEqual(Object.entries(states).filter(([,s])=>(s.rescue||[]).length).map(([t])=>t).sort(),['B101','EN01']);
 });

@@ -385,3 +385,13 @@ the regular Turn History UI remains unchanged. Future candidate layouts belong i
 Test until Justin approves promotion. Opening previews does not change assignments
 or send notifications. Pull/restart/publication and owner-phone visual verification
 remain pending; no Worker changes.
+
+Rescue heads-up targeting — owner correction, 2026-11-08: Toronto option 41975
+rescues notify only crews waiting in the bunkhouse. Sarnia rescue heads-ups go
+to predicted/possible assignees and turns whose expected train/job changes because
+of that rescue, not every home board. Compare the full current assignment states
+against the same check rerun without that exact rescue (symbol + originDay),
+including spare coverage, backup and PL warnings; keep other rescues and actual
+Call Board evidence. Existing rescue preference and deduplication remain. No real
+notification tests were sent. Laptop pull/restart, live recipients and delivery
+verification remain pending; no Worker change.

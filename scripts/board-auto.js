@@ -821,6 +821,7 @@ function answer(summary, me, nowOverride) {
   const resetCtx = { input, result, run: (inp) => runBoardCheck({ ...inp, departed: RoadDays.departed(memory, inp.callBoard), seenSince: memory.since, me: null }) };
   return { resetCtx, text, screenText, detailed, first: !prev, changed: lines.length > 2, me: cur.me, mine: mineForPhone(result.me), changes: lines.filter((l) => l), myAnswerChanged, toronto,
     callBoard: input.callBoard, alertNow: input.now, alertStates: TurnAlerts.turnStates(result, input.callBoard, { chainGang: input.chainGangHome, sd: input.sdHome, a: input.aHome, b: input.bHome, s1: input.s1Home, s3: input.s3Home, s5: input.s5,
+      predictionInput: { ...input, departed: RoadDays.departed(memory, input.callBoard), seenSince: memory.since },
       garnet: input.garnet, garnetLineup: input.seen.garnetLineup ? input.garnetLineup : null,
       lineup: input.seen.lineup ? input.lineup : null, macLineup: input.seen.macLineup ? input.macLineup : null, bunkhouse: input.seen.bunkhouse ? input.bunkhouse : null, backfill: summary.backfill || [],
       spareboards: input.spareboards, vacancies: input.seen.terminal ? input.vacancies : null, yardJobs: input.yardJobs, crewsInTown: input.seen.crewsInTown ? input.crewsInTown : null, fillIns }), lineupRead: !!input.seen.lineup };
