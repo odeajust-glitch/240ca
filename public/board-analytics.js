@@ -474,38 +474,33 @@
   }
 
   function renderCallTimeline(z) {
+    // Some older records remained open across later trips. Do not display those changes.
+    const cutoff = T.toMin(z.onDuty);
+    z = { ...z, timelineChanges: (z.timelineChanges || z.shifts || []).filter(c => cutoff == null || T.toMin(c.taken) <= cutoff) };
     const m = callTimeline(z);
-    if (!m) return '<p class="anote">Not enough timestamps for a timeline.</p>';
-    const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
-    const stamp = (t) => T.fromMin(t);
-    const label = (t) => { const s = stamp(t); return `${s.slice(5, 10)} ${s.slice(11)}`; };
-    const x = (t) => 45 + 670 * (Math.max(m.from, Math.min(m.to, t)) - m.from) / (m.to - m.from);
-    const marker = (t, y, text, colour) => `<line x1="${x(t)}" x2="${x(t)}" y1="${y + 5}" y2="100" stroke="${colour}" stroke-width="2"/><text x="${x(t)}" y="${y}" text-anchor="${x(t) < 180 ? 'start' : x(t) > 580 ? 'end' : 'middle'}" fill="${colour}">${e(text)}</text>`;
-    const ticks = Array.from({ length: 6 }, (_, i) => m.from + Math.round((m.to - m.from) * i / 5));
-    const band = m.block ? `<rect x="${x(m.block.from)}" y="64" width="${x(m.block.to) - x(m.block.from)}" height="30" fill="var(--go)" opacity="0.2"/><text x="${(x(m.block.from) + x(m.block.to)) / 2}" y="84" text-anchor="middle">8-hour planning window</text>` : '';
-    const earlyCall = !z.takenOff && m.end != null && m.end < m.expected;
-    const earlySegments = earlyCall ? `<rect x="${x(Math.max(m.from, m.block.from))}" y="94" width="${Math.max(0, x(m.end) - x(Math.max(m.from, m.block.from)))}" height="12" fill="var(--go)"/><rect x="${x(Math.max(m.from, m.end))}" y="94" width="${Math.max(0, x(m.expected) - x(Math.max(m.from, m.end)))}" height="12" fill="var(--stop)"><title>Early call to original planned call: ${m.expected - m.end} minutes</title></rect>` : '';
-    const segments = earlyCall ? earlySegments : m.block ? [{ at: Math.max(m.from, m.block.from), call: z.firstCall || z.expected }, ...m.changes.filter(c => c.at >= Math.max(m.from, m.block.from) && c.at < m.to)].map((c, i, a) => {
-      const delta = Math.abs(T.toMin(c.call) - m.expected);
-      const colour = delta === 0 ? 'var(--go)' : delta <= 60 ? 'var(--amber)' : 'var(--stop)';
-      const end = Math.min(m.to, a[i + 1]?.at ?? m.to);
-      return `<rect x="${x(c.at)}" y="94" width="${Math.max(0, x(end) - x(c.at))}" height="12" fill="${colour}"><title>${delta} minutes from baseline expected call</title></rect>`;
-    }).join('') : '';
-    const orders = m.changes.filter(c => c.ordered).map(c => marker(c.at, 178, 'Ordered observed ' + label(c.at), 'var(--soft)') + marker(T.toMin(c.call), 196, 'Ordered call ' + label(T.toMin(c.call)), 'var(--amber)')).join('');
-    const changes = m.markers.map((c) => { const i = m.changes.indexOf(c); return `<g><title>${e(`${c.taken}: expected call ${c.call}, ${c.train || ''}`)}</title><circle cx="${x(c.at)}" cy="100" r="5" fill="var(--amber)"/><text x="${x(c.at)}" y="${145 + (i % 2) * 18}" text-anchor="middle">${i + 1}</text></g>`; }).join('');
-    const endLabel = z.takenOff ? 'Removed' : 'Inferred call';
-    const list = m.changes.map((c, i) => `<li><b>${i + 1}.</b> ${e(c.taken)} — expected call changed to <b>${e(c.call)}</b>${c.ordered ? ' · ORDERED observed' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
-    return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.expectedTrain || z.train)}</b></p>
-      <div class="call-timeline-scroll"><svg viewBox="0 0 760 215" role="img" aria-label="${e(`Call timeline for ${z.turn}: first seen ${stamp(m.first)}, baseline expected call ${stamp(m.expected)}${m.end == null ? '' : ', ' + endLabel.toLowerCase() + ' ' + stamp(m.end)}`)}" style="width:100%;min-width:680px;height:auto;font:12px sans-serif;color:var(--ink);fill:currentColor">
-      ${band}<line x1="45" x2="715" y1="100" y2="100" stroke="currentColor"/>
-      ${segments}${ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="100" y2="106" stroke="currentColor"/><text x="${x(t)}" y="124" text-anchor="middle">${e(label(t))}</text>`).join('')}
-      ${m.block && m.block.from >= m.from ? marker(m.block.from, 42, 'Window starts ' + label(m.block.from), 'var(--accent)') : ''}
-      ${marker(m.first, 20, 'First seen ' + label(m.first), 'var(--soft)')}
-      ${marker(m.expected, 42, 'Expected ' + label(m.expected), 'var(--accent)')}
-      ${m.end == null || m.end > m.to || m.end < m.from ? '' : marker(m.end, 58, endLabel + ' ' + label(m.end), 'var(--stop)')}${changes}${orders}</svg></div>
-      <p class="anote">Early calls: green until the inferred call, then red until the original planned call. Otherwise green: original expectation; yellow: changed up to one hour; red: changed over one hour, compared with the fixed baseline. Ordered markers mean first observed ordered by the checker; older history may lack order status. This shows planning opportunity, not measured sleep. Railway time. First seen: ${e(stamp(m.first))}${z.firstCall ? `; first expected call: ${e(z.firstCall)}` : ''}. ${m.block ? `Shaded window: ${e(stamp(m.block.from))} to ${e(stamp(m.block.to))}, eight hours before the original first planned call. Graph markers show successive call-time changes greater than 30 minutes; the list retains every recorded change. The axis starts when the turn was first observed lined into a job and ends at the original planned call, extended only by a later ordered call. It stays fixed when the call changes.` : 'No eight-hour baseline was recorded; no planning block is drawn.'} ${m.block && m.first > m.block.from ? 'Tracking began after the shaded window started; the earlier portion was not observed.' : ''} Inferred call means on-duty time minus two hours.</p>
-      ${list ? `<ol style="list-style:none;padding-left:0">${list}</ol>` : '<p class="anote">No saved call-time changes in this record.</p>'}
-      ${m.complete ? '<p class="anote">Changes shown are the changes observed by the checker from first seen.</p>' : '<p class="anote">Older record: changes before the planning baseline may not have been saved.</p>'}</details>`;
+    if (!m) return '<p class="anote">No saved timeline.</p>';
+    const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    const fmt = t => { const s = T.fromMin(t); return s.slice(5,10) + ' ' + s.slice(11); };
+    const duration = n => `${Math.floor(Math.abs(n)/60)}h ${Math.round(Math.abs(n)%60)}m`;
+    const x = t => 4 + 92 * Math.max(0, Math.min(1, (t-m.from)/(m.to-m.from)));
+    const gap = m.end == null ? null : m.end-m.expected;
+    const result = z.takenOff ? 'Removed from lineup' : gap == null ? 'Call time unavailable' : gap < 0 ? `Called ${duration(gap)} early (short of plan)` : gap > 0 ? `Called ${duration(gap)} past planned time` : 'Called at planned time';
+    const visible = m.changes.filter(c => c.at <= m.to);
+    const lastChange = visible.filter(c => m.end == null || c.at <= m.end).at(-1);
+    const stable = m.end == null ? null : Math.max(0, m.end - (lastChange ? lastChange.at : m.first));
+    const rect = (a,b,colour) => `<rect x="${x(a)}%" y="20" width="${Math.max(0,x(b)-x(a))}%" height="16" fill="${colour}"/>`;
+    const begin = Math.max(m.from,m.block.from);
+    let bands = rect(begin,m.expected,'var(--go)');
+    if (!z.takenOff && gap < 0) bands += rect(Math.max(begin,m.end),m.expected,'var(--stop)');
+    if (!z.takenOff && gap > 0) bands += rect(m.expected,m.end,gap<=60?'var(--amber)':'var(--stop)');
+    const markers = m.markers.map(c => `<circle cx="${x(c.at)}%" cy="28" r="4" fill="var(--ink)"><title>${e(fmt(c.at))}: call ${e(c.call)}</title></circle>`).join('');
+    const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
+    return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b><br><strong>${e(result)}</strong></p>
+      <div class="timeline-facts"><span>First lined: <b>${e(fmt(m.first))}</b></span><span>Green starts: <b>${e(fmt(m.block.from))}</b></span><span>Original call: <b>${e(fmt(m.expected))}</b></span><span>${z.takenOff ? 'Removed' : 'Inferred call'}: <b>${m.end == null ? '—' : e(fmt(m.end))}</b></span></div>
+      <svg width="100%" height="60" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
+      <p class="anote">${m.markers.length} changes over 30 min · ${stable == null ? '—' : duration(stable)} since last saved change before call.</p>
+      <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
+      <details><summary>About this timeline</summary><p class="anote">Green is the original eight-hour plan. An early call leaves red through the planned call; a late call extends yellow up to one hour, red beyond. Dots mark successive changes over 30 minutes. Calls are inferred from on-duty minus two hours; ordering times are first observed, not exact. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'} ${m.first > m.block.from ? 'Tracking began after the green window started.' : ''}</p></details></details>`;
   }
 
   const api = { planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,

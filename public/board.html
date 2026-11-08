@@ -368,6 +368,10 @@
   td { padding: 7px 14px; border-top: 1px solid var(--rule-soft); vertical-align: top; }
   td.num, td .num { white-space: nowrap; }
   .scroll { overflow-x: auto; }
+  .call-timeline { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+  .timeline-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .timeline-events { padding-left: 20px; white-space: normal; }
+  .timeline-events li { margin: 8px 0; }
   .tabs { display: flex; gap: 2px; padding: 8px 14px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
   .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 8px 8px; cursor: pointer; font-size: 13.5px; color: var(--soft); }
   .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
