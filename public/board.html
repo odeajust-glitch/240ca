@@ -1348,7 +1348,7 @@ function flags(s) {
     <ul class="flags">${s.flags.map((f) => `<li>${esc(f)}</li>`).join('')}</ul></section>`;
 }
 
-function strip(s) {
+function strip(s, preview = false) {
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   // From the spareboards, fast and slow together (owner, 2026-10-24):
   // available to work now / on the board. — when the boards weren't read.
@@ -1362,7 +1362,7 @@ function strip(s) {
     return `${free} <small>/ ${turns.size}</small>`;
   };
   return `<div class="strip three">
-    <div class="stat"><div class="v">${s.lineup.length} <small>/ ${ord} ORD</small></div><div class="l">Trains on the line-up</div></div>
+    <div class="stat"><div class="v">${s.lineup.length} <small>${preview ? (s.lineup.length === 1 ? 'train' : 'trains') + ' · ' + ord + ' ordered' : '/ ' + ord + ' ORD'}</small></div><div class="l">${preview ? 'Sarnia line-up' : 'Trains on the line-up'}</div></div>
     <div class="stat"><div class="v">${spare('Conductor')}</div><div class="l">Conductors available (spareboard)</div></div>
     <div class="stat"><div class="v">${spare('Engineer')}</div><div class="l">Engineers available (spareboard)</div></div>
   </div>`;
@@ -1935,13 +1935,24 @@ function seqResult(r) {
   if (!r.onDuty) return '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>';
   return '<span class="offv bad">Runaround</span>';
 }
-function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [] }) {
+function assignmentStatus(kind, r, latest) {
+  const resolved = kind === 'missing' ? r.listedAt : kind === 'pool' && r.fixed ? r.last : r.fixed;
+  if (r.statusUncertain || (resolved && r.onDuty && resolved > r.onDuty)) return 'Outcome unknown';
+  if (resolved) return 'Cleared';
+  if (kind === 'missing' && r.ended) return 'Outcome unknown';
+  const observed = kind === 'pool' ? r.lastWrong || r.last : r.last;
+  if (r.onDuty && observed === r.onDuty) return 'Observed at departure';
+  if (!r.onDuty && latest && observed === latest) return 'Still observed';
+  return 'Outcome unknown';
+}
+function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [], preview = false, latestCheck = '' }) {
   // Group the saved detectors for display only; retain all source issues.
   const groups = new Map();
   const add = (rows, kind, stamp) => rows.forEach(r => {
     const key = String(r.train || '') + '|' + String(r[stamp] || '').slice(0, 7);
     if (!groups.has(key)) groups.set(key, { train: r.train, latest: '', pool: [], wrong: [], missing: [] });
     const g = groups.get(key); g[kind].push(r);
+    if (preview) (g.statuses ||= new Set()).add(assignmentStatus(kind, r, latestCheck));
     g.latest = [g.latest, r[stamp] || ''].sort().at(-1);
   });
   add(runarounds, 'pool', 'taken'); add(catsErrors, 'wrong', 'first'); add(catsMissing, 'missing', 'first');
@@ -1951,7 +1962,8 @@ function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [] }) 
   return `<p class="anote">Three independent checks, grouped by train and observation month. One train can have several issues; each craft-specific spare-job issue is retained. Wrong pool follows the calling sequence. Wrong spare-job turn compares CATS option 5 with the order (one-check blips excluded). Missing spare jobs require 30 minutes without a listing.</p>
     <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total, 'Total issues')}${anaTile(fixed, 'Pool/turn mismatches cleared (observed)')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
     <p class="anote">Cleared means the tracker stopped observing the mismatch, not proof the final crew matched; listing a missing job later does not necessarily mean it was listed before departure. Open a train for its separate findings.</p>
-    ${items.length ? items.map(g => `<section class="sheet"><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? 'Wrong pool · ' : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} issues</summary>
+    ${preview ? '<label>Finding status <select data-test-status>' + ['All findings', 'Still observed', 'Cleared', 'Outcome unknown', 'Observed at departure'].map(label => '<option>' + label + '</option>').join('') + '</select></label><p class="anote">Still observed means the finding appeared in the latest saved check. A train can have findings with different statuses.</p><p data-status-empty hidden>No train groups match this status.</p>' : ''}
+    ${items.length ? items.map(g => `<section class="sheet"${preview ? ' data-statuses="' + esc([...g.statuses].join('|')) + '"' : ''}><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? 'Wrong pool · ' : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} issues${preview ? ' · ' + [...g.statuses].join(' / ') : ''}</summary>
       ${g.pool.length ? '<h3 style="padding:0 14px">Wrong pool</h3>' + anaRunarounds({runarounds:g.pool}) : ''}
       ${g.wrong.length ? '<h3 style="padding:0 14px">Wrong spare-job turn</h3>' + anaCats({catsErrors:g.wrong,catsMissing:[]}) : ''}
       ${g.missing.length ? catsMissingView(g.missing) : ''}
@@ -2092,7 +2104,7 @@ function anaRunLog({ runLog = [] }) {
 }
 // Stale trains (owner, 2026-11-02): still planned 15 min or more past the
 // call worked out from their plan, how long, how it ended.
-function anaStale({ stale = [] }) {
+function anaStale({ stale = [], preview = false }) {
   const END = { ordered: ['ok', 'Ordered'], onDuty: ['ok', 'On duty'], gone: ['bad', 'Left the line-up (cancelled?)'], pushed: ['warn', 'Plan moved later'], stale: ['warn', 'Still stale'] };
   const ended = (r) => { const [c, t] = END[r.end] || ['', r.end || '']; return `<span class="offv ${c}">${esc(t)}</span>`; };
   const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
@@ -2112,8 +2124,9 @@ function anaStale({ stale = [] }) {
   }).join('')}</tbody></table></div>` : '<p class="empty">No stale trains in the dates picked.</p>';
   return `<p class="anote">A train still <b>planned</b> (not ordered) once it's 15 min or more past the call worked out from its plan. The stale time runs from the first check past the call to the check that saw it ordered or gone; it pauses when the plan moves later and the call is ahead again. Tap a time to open that snapshot.</p>
     <div class="strip">${anaTile(stale.length, 'Trains that went stale', stale.length > 0)}${anaTile(stale.length ? long(Math.round(total / stale.length)) : '—', 'Average time stale')}${anaTile(longest ? long(longest.minutes) : '—', longest ? `Longest (${esc(longest.train)})` : 'Longest')}${anaTile(stale.filter((r) => r.end === 'gone').length, 'Left the line-up without being ordered')}</div>
-    <section class="sheet"><header><h2>By train number</h2></header><div class="agrid">${anaList('Times stale', [...byNum].sort((a, b) => b[1].n - a[1].n).map(([k, g]) => [k, g.n]), 'train')}${anaList('Total time stale (minutes)', [...byNum].sort((a, b) => b[1].min - a[1].min).map(([k, g]) => [k, g.min]), 'train')}</div></section>
-    <section class="sheet"><header><h2>Every stale train</h2><span class="meta">newest first</span></header>${list}</section>`;
+    ${preview && latest.length ? '<button type="button" class="qbtn" data-jump-stale>Jump to train records</button>' : ''}
+    <section class="sheet"><header><h2>By train number</h2></header><div class="agrid">${anaList('Times stale', [...byNum].sort((a, b) => b[1].n - a[1].n).map(([k, g]) => [k, g.n]), 'train')}${anaList(preview ? 'Total time stale' : 'Total time stale (minutes)', [...byNum].sort((a, b) => b[1].min - a[1].min).map(([k, g]) => [k, preview ? long(g.min) : g.min]), 'train')}</div></section>
+    <section class="sheet"><header><h2${preview ? ' data-stale-records tabindex="-1"' : ''}>Every stale train</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // A5: jobs going spare and who filled them.
 function anaSpare({ spareJobs }) {
@@ -2509,10 +2522,15 @@ function prefill(r, names, craft = 'CO') {
 }
 
 // names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
-function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') {
+function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO', previewPeriod = null) {
   const rows = heldRows(all);
-  const open = rows.find((r) => heldKey(r) === openKey);
-  const body = rows.map((r) => {
+  const since = lastTaken ? callBefore(lastTaken, 7 * 24 * 60) : '';
+  const inWeek = (r) => r.offDuty && (!since || r.offDuty >= since);
+  const week = rows.filter(inWeek);
+  const stays = all.filter((r) => r.heldMin != null && inWeek(r));
+  const visibleRows = previewPeriod === 'week' ? week : rows;
+  const open = visibleRows.find((r) => heldKey(r) === openKey);
+  const body = visibleRows.map((r) => {
     const key = heldKey(r);
     const n = (names && names[key]) || {};
     const tr = `<tr class="row${key === openKey ? ' open' : ''}" data-key="${esc(key)}">
@@ -2533,10 +2551,6 @@ function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') 
   // Two tiles (owner, 2026-11-03): crews held 14 h+ in the last 7 days
   // (going off duty in Toronto then; still held counts), and that out of
   // every Toronto stay with a known off-duty time in those 7 days.
-  const since = lastTaken ? callBefore(lastTaken, 7 * 24 * 60) : '';
-  const inWeek = (r) => r.offDuty && (!since || r.offDuty >= since);
-  const week = rows.filter(inWeek);
-  const stays = all.filter((r) => r.heldMin != null && inWeek(r));
   return `
     <div class="ohead">
       <div><div class="sec-title" style="margin-bottom:6px">14-hour rule · Article 18.6(b)</div><div class="when">Held in Toronto 14 h+</div></div>
@@ -2546,9 +2560,10 @@ function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') 
       <div class="stat"><div class="v">${stays.length ? `${Math.round((100 * week.length) / stays.length)}% <small>${week.length} / ${stays.length}</small>` : '—'}</div><div class="l">Percentage of crews violated (of Toronto stays, last 7 days)</div></div>
     </div>
     ${unlock}
+    ${previewPeriod ? '<p class="anote">' + (previewPeriod === 'week' ? 'Showing the last 7 days.' : 'Showing all saved stays.') + '</p><button type="button" data-held-period>' + (previewPeriod === 'week' ? 'Show older stays' : 'Show last 7 days') + '</button>' : ''}
     <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to file it</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
-      <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
+      <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more ' + (previewPeriod === 'week' ? 'in the last 7 days.' : 'in the saved checks.') + '</td></tr>'}</tbody></table></div>
       <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode (the owner key opens them); PINs aren't on CATS, so you type each one once and this device remembers it. Submit sends it to the conductors' or the engineers' rep; Export saves it as a text file instead.</div>
     </section>`;
 }
@@ -4037,7 +4052,7 @@ source().then(async (src) => {
   let testPreviewPick = 'analytics';
   function testPreviewMenu() {
     return '<div class="test-preview-menu" role="group" aria-label="Choose Test preview">' +
-      [['analytics', 'Analytics Overview'], ['current', 'Current · 501/502 Why']].map(([key,label]) =>
+      [['analytics', 'Analytics Overview'], ['current', 'Current · Sarnia / 501/502 Why'], ['assignments', 'Assignment errors'], ['held', 'Article 18.6(b)'], ['stale', 'Stale trains']].map(([key,label]) =>
         '<button type="button" data-test-preview="' + key + '" aria-pressed="' + (testPreviewPick === key) + '">' + label + '</button>').join('') + '</div>';
   }
   function wireTestPreviewMenu(view) {
@@ -4052,12 +4067,69 @@ source().then(async (src) => {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
+    if (['assignments', 'stale', 'held'].includes(testPreviewPick)) {
+      const pick = testPreviewPick;
+      const title = { assignments: 'Assignment errors', stale: 'Stale trains', held: 'Article 18.6(b)' }[pick];
+      view.innerHTML = testPreviewMenu() + '<h2>Test · ' + title + '</h2><div data-preview-panel>Loading…</div>';
+      wireTestPreviewMenu(view);
+      const panel = view.querySelector('[data-preview-panel]');
+      const active = () => mode === 'test' && version === testRenderVersion && healthData && OwnerKey.has();
+      try {
+        if (pick === 'held') {
+          const all = await src.trains();
+          const names = await heldNames();
+          if (!active()) return;
+          const show = period => {
+            panel.innerHTML = heldView(all, null, src.index?.latest || src.days[0] + ' 2359', names.names, 'none', 'CO', period);
+            panel.querySelector('[data-held-period]').onclick = () => show(period === 'week' ? 'all' : 'week');
+            panel.querySelectorAll('tr[data-key]').forEach(row => {
+              row.onclick = () => { heldOpen = row.dataset.key; heldCraft = 'CO'; setMode('held'); };
+            });
+          };
+          show('week');
+          return;
+        }
+        const range = anaDates();
+        const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
+        if (!active()) return;
+        if (!live && !archive) throw new Error('Missing analytics');
+        const records = (key, stamp) => BoardAnalytics.joinOld(key, archive?.[key] || [], live?.[key] || []).filter(row => {
+          const date = (row[stamp] || '').slice(0, 10);
+          return date && (!range.from || date >= range.from) && (!range.to || date <= range.to);
+        });
+        if (pick === 'assignments') {
+          panel.innerHTML = anaAssignments({ preview: true, latestCheck: src.index?.latest, runarounds: records('runarounds', 'taken'), catsErrors: records('catsErrors', 'first'), catsMissing: records('catsMissing', 'first') });
+          const select = panel.querySelector('[data-test-status]');
+          select.onchange = () => {
+            let shown = 0;
+            panel.querySelectorAll('[data-statuses]').forEach(group => {
+              group.hidden = select.value !== 'All findings' && !group.dataset.statuses.split('|').includes(select.value);
+              if (!group.hidden) shown++;
+            });
+            panel.querySelector('[data-status-empty]').hidden = shown > 0 || select.value === 'All findings';
+          };
+        } else {
+          panel.innerHTML = anaStale({ stale: records('stale', 'from'), preview: true });
+          const jump = panel.querySelector('[data-jump-stale]');
+          if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
+        }
+        panel.querySelectorAll('[data-taken]').forEach(button => { button.onclick = () => jumpTo(button.dataset.taken); });
+        panel.querySelectorAll('[data-q]').forEach(button => { button.onclick = () => { ana.q = button.dataset.q; ana.kind = button.dataset.kind; setMode('analytics'); }; });
+      } catch (err) {
+        if (active()) panel.textContent = 'Could not load this preview. Select it again to retry.';
+      }
+      return;
+    }
     if (testPreviewPick === 'analytics') {
       try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
       view.innerHTML = testPreviewMenu() + '<h2>Test · Analytics Overview</h2>' + analyticsOverviewGuide({ preview: true });
       wireTestPreviewMenu(view);
       view.querySelectorAll('[data-overview-open]').forEach(button => {
-        button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; setMode('analytics'); };
+        button.onclick = () => {
+          const section = button.dataset.overviewOpen;
+          if (section === 'assignments' || section === 'stale') { testPreviewPick = section; renderTest(); return; }
+          ana.q = ''; ana.kind = 'auto'; ana.sec = section; setMode('analytics');
+        };
       });
       const count = view.querySelector('[data-test-call-count]');
       const range = anaDates();
@@ -4091,7 +4163,7 @@ source().then(async (src) => {
     setMarks();
     view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current. This Test preview additionally simplifies the 501/502 Why to the selected crew and other crew status.</p>' +
       '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
-      '<div class="test-current-boxes">' + sectionsGrid(s, false, true) + '</div>';
+      strip(s, true) + '<div class="test-current-boxes">' + sectionsGrid(s, false, true) + '</div>';
     wireTestPreviewMenu(view);
     wireCurrentBoxes(view.querySelector('.test-current-boxes'), testBoxOpen);
     tickAges();
