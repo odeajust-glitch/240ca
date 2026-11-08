@@ -544,3 +544,17 @@ status filters, exact dated train links, first/latest comparisons and all-event 
   owner decision (earlier details/Copy-only instruction versus current shared form).
 - Four mocked submission regressions and 26 site/trip tests pass. Real publication,
   visual review and any actual filing confirmation remain unverified. No Worker update.
+
+### Owner Test: collapsible Current boxes — 2026-11-08 (awaiting phone review)
+
+- Implemented Test-only preview of latest saved Current board; tap any box header
+  to expand/collapse. Native keyboard operation and arrows; initially open. Preserve
+  contents, section order, pool/spare-job controls and session collapse state.
+- Prior Order-summary Test preview replaced; approved regular Order summary remains.
+  Regular Current/snapshots unchanged. Owner key and health authorization remain required.
+- Verify after pull/restart: mobile headers and counts, all available sections,
+  open/close behavior, pool/corrected/CATS tabs, and preserved collapsed state.
+  No live or phone verification claimed. 26 site/filing tests and syntax pass;
+  local browser check blocked by missing Chromium. No Worker update required.
+- Owner clarified engineers may use shared filing form: earlier Copy-only instruction
+  is superseded; workflow decision is resolved. Publication checks remain open.

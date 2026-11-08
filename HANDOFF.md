@@ -473,3 +473,17 @@ remains available for drafts. Times, held calculations, violation tiles and craf
 eligibility/workflow remain unchanged; engineer workflow decision remains open.
 Four mocked submission tests and 26 existing site/trip tests pass; no real submission
 sent. Laptop publication and phone review pending. No Worker change.
+
+Owner-only Test: collapsible Current boxes — 2026-11-08. Replaces the approved
+Order-summary preview (regular Order summary retains those changes). Latest saved
+Current sections keep their contents/order and render as native expandable boxes:
+tap the whole header, or Enter/Space; initially open, open/closed state retained
+within this page session, including pool/spare-job tab rerenders. Owner key plus
+successful health authorization required, checked again after loading. Regular
+Current and snapshots unchanged. Syntax and 26 site/filing tests pass. Local browser
+visual check unavailable (Chromium not installed); laptop publication and owner-phone
+verification remain open. No railway, notification or Worker changes.
+
+Engineer filing clarification — owner, 2026-11-08: earlier engineer details/Copy-only
+restriction is superseded; engineers may use the shared filing form. This resolves
+the previously open workflow decision; no change to railway/held calculations.

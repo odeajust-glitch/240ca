@@ -408,6 +408,16 @@
   .greview, .gedit { min-height: 44px; margin: 6px 0; }
   .gform .greviewbox > label { display: flex; align-items: center; gap: 8px; }
   .gform .gconfirm { width: auto; min-height: 0; flex: none; }
+  /* Owner-only Current accordion preview. */
+  .test-current-box > summary { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px 10px; min-height: 44px; box-sizing: border-box; cursor: pointer; border-bottom: 1px solid var(--rule); list-style: none; }
+  .test-current-box > summary::-webkit-details-marker { display: none; }
+  .test-current-box > summary::before { content: '▸'; color: var(--accent); }
+  .test-current-box[open] > summary::before { content: '▾'; }
+  .test-current-box > summary h2 { margin: 0; font: 700 19px/1.1 var(--display); letter-spacing: .03em; text-transform: uppercase; }
+  .test-current-box > summary .meta { margin-left: auto; font-size: 12.5px; color: var(--soft); }
+  .test-current-box > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  :root[data-theme="tablet"] .test-current-box > summary { background: #3fe0d8; color: #1236d0; }
+  :root[data-theme="tablet"] .test-current-box > summary .meta { color: #1236d0; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -3794,13 +3804,13 @@ source().then(async (src) => {
     return [...o, ...known.filter((k) => !o.includes(k))];
   }
   const narrow = window.matchMedia ? window.matchMedia('(max-width: 1020px)') : { matches: true };
-  function sectionsGrid(s) {
+  function sectionsGrid(s, arrange = arranging) {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
     const built = order.map((k) => ({ ...byK[k], body: byK[k].html(s) })).filter((x) => x.body);
-    const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arranging ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
+    const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
-    if (arranging) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
+    if (arrange) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
     if (narrow.matches) return `<div class="grid"><div class="col">${built.map(wrap).join('')}</div></div>`;
     const c1 = built.filter((x) => x.col === 1);
     const c2 = built.filter((x) => x.col === 2);
@@ -3976,7 +3986,56 @@ source().then(async (src) => {
       Math.abs(BoardTrains.off(event.from, event.at) || 0) > 30);
   }
   const orderSummaryState = { day: null, from: 'all', status: 'all', find: '', open: null };
-  function renderTest() { return renderOrderSummary('test'); }
+  const testBoxOpen = new Map();
+  let testRenderVersion = 0;
+  async function renderTest() {
+    const view = document.getElementById('view');
+    const version = ++testRenderVersion;
+    if (!healthData || !OwnerKey.has()) {
+      view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
+      return;
+    }
+    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Loading the latest saved board…</p>';
+    let snapshots;
+    try { snapshots = await src.load(src.days[0]); }
+    catch (e) {
+      if (mode === 'test' && version === testRenderVersion) view.innerHTML = '<p class="empty">Could not load the current board. Reopen Test to retry.</p>';
+      return;
+    }
+    if (mode !== 'test' || version !== testRenderVersion || !healthData || !OwnerKey.has()) return;
+    const s = snapshots[snapshots.length - 1];
+    if (!s) { view.innerHTML = '<p class="empty">No saved current board yet.</p>'; return; }
+    try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
+    setMarks();
+    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Preview: tap the top of any box to collapse or expand it. Current is unchanged.</p>' +
+      '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
+      '<div class="test-current-boxes">' + sectionsGrid(s, false) + '</div>';
+    view.querySelectorAll('.test-current-boxes .secwrap').forEach((wrap) => {
+      // Retain the real section contents and controls; only its outer shell changes.
+      const section = wrap.querySelector(':scope > section.sheet');
+      const header = section && section.querySelector(':scope > header');
+      if (!header) return;
+      const details = document.createElement('details');
+      details.className = section.className + ' test-current-box';
+      if (section.id) details.id = section.id;
+      details.open = testBoxOpen.get(wrap.dataset.sec) !== false;
+      const summary = document.createElement('summary');
+      while (header.firstChild) summary.appendChild(header.firstChild);
+      header.remove();
+      details.appendChild(summary);
+      while (section.firstChild) details.appendChild(section.firstChild);
+      section.replaceWith(details);
+      details.addEventListener('toggle', () => { testBoxOpen.set(wrap.dataset.sec, details.open); });
+    });
+    tickAges();
+    paintTracked(s);
+    view.querySelectorAll('[data-pool]').forEach((button) => {
+      button.onclick = () => { poolTab = +button.dataset.pool; renderTest(); };
+    });
+    view.querySelectorAll('[data-vactab]').forEach((button) => {
+      button.onclick = () => { vacTab = button.dataset.vactab; renderTest(); };
+    });
+  }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
     const view = document.getElementById('view');
