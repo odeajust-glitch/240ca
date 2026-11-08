@@ -339,6 +339,14 @@
   /* Line-up timetable */
   .daybar { font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); background: var(--bg); padding: 6px 14px; border-bottom: 1px solid var(--rule-soft); }
   .train { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 4px 14px; padding: 11px 14px; border-bottom: 1px solid var(--rule-soft); }
+  .train.train-clear { display: flex; flex-direction: column; gap: 7px; }
+  .train-clear .craft-lines .crew-craft { display: block; }
+  .train-clear .craft-lines { font-size: 13.5px; }
+  .train-clear .craft-lines > .crew-divider { display: none; }
+  .train-clear .expected-call { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  .calling-list { padding-left: 22px; font-size: 13px; }
+  .calling-list li { margin: 5px 0; overflow-wrap: anywhere; }
+  .train-clear .why h4 { margin: 12px 0 4px; }
   .train:last-child { border-bottom: 0; }
   .train .time { font: 600 18px/1.2 var(--mono); }
   .train .sym { font: 600 16px/1.2 var(--mono); }
@@ -950,30 +958,60 @@ function lineupCrew(t) {
       : markTurn(turn);
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
-  return craft(parts[0], 'Conductor') + ' · ' + craft(parts[1], 'Engineer');
+  return craft(parts[0], 'Conductor') + '<span class="crew-divider"> · </span>' + craft(parts[1], 'Engineer');
 }
 
+function lineupWhy(s, t) {
+  const stamp = BoardTrains.resolve(t.order, s.taken);
+  const road = stamp ? new Date((stampMin(stamp) - 300) * 60000).toISOString().slice(0, 10) : '';
+  const seq = (s.callingSequence || []).filter((x) => x.day === road);
+  const first = seq.findIndex((x) => x.expected === 'A' && x.slot === 1);
+  const rows = (first >= 0 ? seq.slice(first) : seq).map((x) => {
+    const pool = x.actual || x.expected;
+    const state = x.source === 'memory' ? 'earlier departure' : x.source === 'board' ? 'called' : x.status === 'ORD' ? 'ordered' : 'planned';
+    return '<li' + (x.train === t.train && x.order === t.order ? ' class="hit"' : '') + '><b>' + esc(x.train) + '</b> · ' + esc(x.order) + ' · ' + esc(pool === 'SR' ? 'Chain Gang' : pool) +
+      (x.slot ? ' ' + esc(x.slot) : '') + ' · ' + state +
+      (x.actual && x.actual !== x.expected ? ' (sequence: ' + esc(x.expected) + '; CATS pool retained)' : '') + '</li>';
+  }).join('');
+  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered trains follow CATS’s pool. Deadheads and 501/502 keep their separate rules.</p>' +
+    (first < 0 ? '<p>The first A-pool train is not in this saved check; earlier trains may be missing.</p>' : '') +
+    (rows ? '<ol class="calling-list">' + rows + '</ol>' : '<p>No saved sequence for this road day.</p>');
+  const jobs = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].filter((v) =>
+    (v.trainDay || v.train) === t.train || (v.train === t.train.split(' ')[0] && v.at === t.order));
+  const covers = jobs.map((v) => {
+    const f = v.fill;
+    const craft = v.cc === 'EN' ? 'Engineer' : 'Conductor';
+    return '<li><b>' + craft + ':</b> ' +
+      (f ? (f.turn ? 'expected cover ' + markTurn(f.turn) : 'no spare currently free') +
+        ' · ' + esc(f.board) + ' · call ' + esc(f.call) +
+        (f.skipped && f.skipped.length ? ' · passed over: ' + esc(f.skipped.join(' · ')) : '') +
+        (f.sd ? ' · ' + markTurn(f.sd) + ' (Chain Gang) may be called' : '') : 'cover not available in this check') + '.</li>';
+  }).join('');
+  return '<p>' + esc(t.reason || '') + '</p>' + sequence +
+    '<h4>If a craft goes spare</h4><p>Each craft is assessed separately. Road jobs use the matching slow spareboard; yard jobs use the fast board. Jobs are covered in call order, with each spare used once. Rest, hold, B0 and applicable days-off restrictions can pass a spare over without changing their board position.</p>' +
+    (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
+}
 function lineup(s) {
   if (!s.lineup.length) return '';
   let day = null;
   const rows = s.lineup.map((t) => {
-    const [d, hhmm] = split(t.order);
-    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    const [d] = split(t.order);
+    const bar = d !== day ? '<div class="daybar">' + esc(d) + '</div>' : '';
     day = d;
     const [sym, od] = split(t.train);
     const hit = markedIn(t.rules);
-    return `${bar}<div class="train${hit ? ' hit' : ''}">
-      <div class="time">${esc(hhmm)}</div>
-      <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
-        <div class="sub">${esc(t.info)} · <span class="mono">${esc(t.engCrew)} / ${esc(t.trnCrew)}</span></div></div>
-      <div class="right"><span class="st ${t.status}">${esc(t.status)}</span>${t.call ? `<span class="sub mono">call ~${esc(split(t.call)[1])}</span>` : ''}${staleChip(s, t)}</div>
-      <div class="rule-say">${poolChip(t.rules)}<span>${lineupCrew(t)}</span>
-        ${t.reason ? `<details class="why"><summary>Why</summary><p>${esc(t.reason)}</p></details>` : ''}</div>
-    </div>`;
+    return bar + '<div class="train train-clear' + (hit ? ' hit' : '') + '">' +
+      '<div class="sym">' + esc(sym) + ' <span class="od">' + esc(od) + '</span> · ' +
+      (t.status === 'ORD' ? 'Ordered' : t.status === 'PLN' ? 'Planned' : esc(t.status)) + ' ' + poolChip(t.rules) + (t.deadhead ? ' <span class="chip">DH</span>' : '') + '</div>' +
+      '<div class="expected-call"><b>Expected call: ' + esc(t.call || 'not available') + '</b>' + staleChip(s, t) + '</div>' +
+      '<div>On Duty: <b class="mono">' + esc(t.order) + '</b></div>' +
+      '<div class="craft-lines">' + lineupCrew(t) + '</div>' +
+      '<details class="why"><summary>Why</summary>' + lineupWhy(s, t) +
+      '<p>CATS details: ' + esc(t.info) + ' · ' + esc(t.engCrew) + ' / ' + esc(t.trnCrew) + '</p></details></div>';
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
-  return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up · 41</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>
-    ${rows}<div class="foot">Crew codes are EN / TRN as CATS shows them. The coloured chip is the pool the crew-calling rules give the train.</div></section>`;
+  return '<section class="sheet" id="sec-lineup"><header><h2>Train line-up · 41</h2><span class="meta">' + s.lineup.length + ' trains · ' + ord + ' ordered</span></header>' +
+    rows + '<div class="foot">Times above are planned or ordered on-duty times, not confirmation that the crew is already working. Crew codes are EN / TRN as CATS shows them. The coloured chip is the pool the crew-calling rules give the train.</div></section>';
 }
 
 // Toronto (Mac yard): the westbound line-up with the bunkhouse crew predicted
