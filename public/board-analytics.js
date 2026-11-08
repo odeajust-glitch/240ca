@@ -335,13 +335,15 @@
   // Calls only (a wait ended by being taken off the line-up has no call to
   // score); takenOff counts those on their own (owner, 2026-10-26).
   function sleepStats(all) {
-    const list = all.filter((z) => !z.takenOff);
+    all = all.map(cleanCallRecord);
+    const list = all.filter((z) => !z.takenOff && !z.comparisonUnavailable);
     const offs = list.map((z) => z.off);
     const bands = { ok: 0, warn: 0, bad: 0 };
     for (const o of offs) bands[sleepBand(o)]++;
     return {
       n: list.length, ...bands,
-      takenOff: all.length - list.length,
+      takenOff: all.filter(z => z.takenOff).length,
+      excluded: all.filter(z => !z.takenOff && z.comparisonUnavailable).length,
       earlier: offs.filter((o) => o < -SLEEP_GREEN).length,
       later: offs.filter((o) => o > SLEEP_GREEN).length,
       avg: avg(offs.map(Math.abs)),
@@ -434,8 +436,23 @@
 
   // One horizontal railway-clock timeline. Keep the planning block fixed
   // at the baseline expected call; moving plans never rewrite that block.
+  function cleanCallRecord(z) {
+    const cutoff = T.toMin(z.onDuty);
+    const trim = list => (list || []).filter(c => cutoff == null || T.toMin(c.taken) <= cutoff);
+    const changes = trim(z.timelineChanges || z.shifts).sort((a,b) => String(a.taken).localeCompare(String(b.taken)));
+    const trainKind = t => /^L(501|502)/.exec(t || '')?.[1];
+    const actual = trainKind(z.train), predicted = trainKind(z.expectedTrain);
+    if (actual && predicted && actual !== predicted) {
+      const same = changes.filter(c => c.train === z.train);
+      if (!same.length) return { ...z, comparisonUnavailable: true, timelineChanges: [], shifts: [] };
+      const first = same[0];
+      return { ...z, comparisonUnavailable: false, firstSeen: first.taken, firstCall: first.call, expected: first.call, expectedTrain: z.train,
+        off: T.toMin(z.call) - T.toMin(first.call), timelineComplete: false, timelineChanges: same, shifts: same };
+    }
+    return { ...z, timelineChanges: changes, shifts: trim(z.shifts) };
+  }
   function planReliability(list) {
-    const rows = list.filter(z => !z.takenOff && T.toMin(z.firstCall) != null && T.toMin(z.call) != null)
+    const rows = list.map(cleanCallRecord).filter(z => !z.comparisonUnavailable && !z.takenOff && T.toMin(z.firstCall) != null && T.toMin(z.call) != null)
       .map(z => {
         const planned = T.toMin(z.firstCall), actual = T.toMin(z.call);
         let previous = planned, changes = 0;
@@ -455,6 +472,8 @@
   }
 
   function callTimeline(z) {
+    z = cleanCallRecord(z);
+    if (z.comparisonUnavailable) return null;
     const expected = T.toMin(z.firstCall || z.expected);
     const first = T.toMin(z.firstSeen);
     if (expected == null || first == null) return null;
@@ -474,6 +493,8 @@
   }
 
   function renderCallTimeline(z) {
+    z = cleanCallRecord(z);
+    if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: old 501/502 train mismatch. Excluded from call comparisons.</p>';
     // Some older records remained open across later trips. Do not display those changes.
     const cutoff = T.toMin(z.onDuty);
     z = { ...z, timelineChanges: (z.timelineChanges || z.shifts || []).filter(c => cutoff == null || T.toMin(c.taken) <= cutoff) };
@@ -494,16 +515,21 @@
     if (!z.takenOff && gap < 0) bands += rect(Math.max(begin,m.end),m.expected,'#000000');
     if (!z.takenOff && gap > 0) bands += rect(m.expected,m.end,gap<=60?'var(--amber)':'var(--stop)');
     const markers = m.markers.map(c => `<circle cx="${x(c.at)}%" cy="28" r="4" fill="var(--ink)"><title>${e(fmt(c.at))}: call ${e(c.call)}</title></circle>`).join('');
+    const events = [...m.markers.map(c => ({ at: c.at, text: `Change: ${fmt(c.at)} → call ${c.call.slice(5)}` })), ...m.changes.filter(c => c.ordered).map(c => ({ at: c.at, text: `Ordered observed: ${fmt(c.at)} · call ${c.call.slice(5)}` }))];
+    const eventLabels = events.map(c => `<li>${e(c.text)}</li>`).join('');
+    const orderMarks = m.changes.filter(c => c.ordered && c.at <= m.to).map(c => `<rect x="${x(c.at)}%" y="10" width="5" height="8" fill="var(--accent)"/>`).join('');
     const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
     return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b><br><strong>${e(result)}</strong>${!z.takenOff && gap < 0 ? `<br><b>Lost Sleep: ${duration(gap)}</b>` : ''}</p>
       <div class="timeline-facts"><span>First lined: <b>${e(fmt(m.first))}</b></span><span>Green starts: <b>${e(fmt(m.block.from))}</b></span><span>Original call: <b>${e(fmt(m.expected))}</b></span><span>${z.takenOff ? 'Removed' : 'Actual call time'}: <b>${m.end == null ? '—' : e(fmt(m.end))}</b></span></div>
-      <svg width="100%" height="60" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
+      <svg width="100%" height="60" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${orderMarks}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
+      <div class="anote">Green: planned window · Black: Lost Sleep · Yellow: up to 1 h late · Red: over 1 h late. Dots: changes over 30 min · Squares: ordered.</div>
+      <details><summary>Marker times (${events.length})</summary><ul class="timeline-events">${eventLabels || '<li>No saved marker times.</li>'}</ul></details>
       <p class="anote">${m.markers.length} changes over 30 min · ${stable == null ? '—' : duration(stable)} since last saved change before call.</p>
       <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
       <details><summary>About this timeline</summary><p class="anote">Green is the original eight-hour plan. An early call leaves black through the planned call, labelled Lost Sleep (the call-time gap, not measured sleep); a late call extends yellow up to one hour, red beyond. Dots mark successive changes over 30 minutes. Actual call time is calculated from on-duty minus two hours; ordering times are first observed, not exact. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'} ${m.first > m.block.from ? 'Tracking began after the green window started.' : ''}</p></details></details>`;
   }
 
-  const api = { planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
+  const api = { cleanCallRecord, planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
     sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

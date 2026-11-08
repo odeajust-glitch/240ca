@@ -40,3 +40,10 @@ test('original-plan summary uses first call, excludes removals and caps lost win
  assert.equal(st.rows.length,3);assert.equal(st.stable.length,1);assert.equal(st.early.length,1);assert.equal(st.late.length,1);assert.equal(st.lost,480);assert.equal(st.excluded,2);
  assert.equal(A.planReliability([]).lost,null);
 });
+test('501/502 mismatch is excluded without fabricating a plan; other trains unchanged',()=>{
+ const z={...record,train:'L50131 04',expectedTrain:'L50231 05',timelineChanges:[]};
+ assert.equal(A.cleanCallRecord(z).comparisonUnavailable,true);assert.equal(A.planReliability([z]).rows.length,0);assert.equal(A.sleepStats([z]).n,0);
+ assert.ok(A.renderCallTimeline(z).includes('prediction unavailable'));
+ assert.equal(A.cleanCallRecord({...z,train:'M50131 04'}).comparisonUnavailable,undefined);
+ const old={...record,onDuty:'2026-11-08 0245',timelineChanges:[...record.timelineChanges,{taken:'2026-11-09 0400',call:'2026-11-10 0145',train:'M1'}]};assert.equal(A.cleanCallRecord(old).timelineChanges.length,1);
+});

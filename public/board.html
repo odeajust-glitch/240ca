@@ -1952,24 +1952,24 @@ function planSummary(list) {
 }
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
-  return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs actual call time (earlier or later)')}</div>
+  return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded · ${st.excluded || 0} old 501/502 mismatches excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs actual call time (earlier or later)')}</div>
     <div class="strip">${anaTile(st.earlier, 'Actual call time more than 30 min earlier than expected', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Actual call time more than 30 min later than expected')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
     <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Expected-call changes after the planning baseline (average)')}${anaTile(st.short, 'Lined up less than 8 h before the actual call time')}${anaTile(st.takenOff, 'Removed after the planning baseline (excluded from call differences)', st.takenOff > 0)}</div>`;
 }
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
   if (!list.length) return '<p class="empty">No calls tracked in the dates picked yet. A call counts once the turn was on a line-up (or expected to fill a job going spare) before it went on duty.</p>';
-  const rows = [...list].reverse().slice(0, 200).map((z) => {
+  const rows = [...list].map(BoardAnalytics.cleanCallRecord).reverse().slice(0, 200).map((z) => {
     const moves = (z.shifts || []).map((x) => `<li>${esc(dt(x.taken))}: call ${esc(dt(x.call))}${x.train !== z.expectedTrain ? ` (${esc(x.train)})` : ''}</li>`).join('');
     const start = z.noWindow ? '<span class="muted">no eight-hour baseline recorded</span>'
       : `${esc(dt(z.sleepAt))}${z.short ? ` <span class="chip">short notice ${esc(dur(z.notice))}</span>` : ''}`;
     return `<tr class="nolink">${showTurn ? `<td class="num"><button type="button" class="qbtn" data-q="${esc(z.turn)}" data-kind="turn">${esc(z.turn)}</button></td>` : ''}
       <td class="num">${start}</td>
-      <td class="num"><b>${esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
+      <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (old 501/502 mismatch)' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num">${z.takenOff ? `<span class="offv warn">Taken off the line-up</span><div class="crew">last on it ${esc(dt(z.lastListed))}</div>`
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
-      <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
+      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
   }).join('');
   return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Actual call time</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
