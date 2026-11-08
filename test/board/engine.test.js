@@ -804,3 +804,26 @@ test('current Sarnia lineup supersedes an older remembered departure and receive
   assert.equal(confirmed.predictions[0].known, true);
   assert.equal(confirmed.predictions[0].turn, 'SA99');
 });
+
+test('L502 equal terminal-local position: home crew stays first after Garnet tie-up', () => {
+  const row = (craft, turn, terminal, extra = {}) => ({craft, turn, terminal, pos:1, working:false, st:null, rn:null, restUntil:null, statusUntil:null, ...extra});
+  const now=at(2026,11,8,13,59);
+  const train={symbol:'L50231', trainNo:'L502', originDay:'09', order:at(2026,11,9,4,0), status:'PLN', deadhead:false, engCrew:'45SAS50',trnCrew:'45SAS50'};
+  for (const away of ['S501','S502']) {
+    const home=away==='S501'?'S502':'S501';
+    const s5=[row('EN',away,1,{restUntil:at(2026,11,8,20,30)}),row('CO',away,1,{restUntil:at(2026,11,8,20,30)}),row('EN',home,0),row('CO',home,0)];
+    const run=(rows)=>runBoardCheck({now,callBoard:[],chainGangHome:[],lineup:[train],s5:rows});
+    const r=run(s5);assert.equal(r.predictions[0].turn,home);assert.equal(r.predictions[0].engineer,home);
+    assert.equal(r.s5Order[0].turn,home);
+    assert.equal(run([...s5].reverse()).predictions[0].turn,home);
+    // Neither an expired PL on the away crew nor an MU placeholder changes order.
+    const expired=s5.map(x=>x.turn===away&&x.craft==='EN'?{...x,st:'PL',statusUntil:at(2026,11,9,0,1)}:x);
+    assert.equal(run([...expired,row('EN','MU02',0)]).predictions[0].turn,home);
+    // Coverage is assessed separately after selecting the home turn.
+    const covered=s5.map(x=>x.turn===home&&x.craft==='EN'?{...x,restUntil:at(2026,11,9,6,0)}:x);
+    const p=run(covered).predictions[0];assert.equal(p.turn,home);assert.equal(p.spare,false);assert.equal(p.engineerSpare,true);
+    // Different actual board positions remain authoritative.
+    const distinct=s5.map(x=>({...x,pos:x.turn===away?1:2}));
+    assert.equal(run(distinct).predictions[0].turn,away);
+  }
+});

@@ -564,3 +564,15 @@ and approved promotion. Supersedes awaiting-Test-review item above. Enabled shar
 headers on Current; verify production after publication, including section shortcuts,
 notification jumps, pool/spare-job controls and Arrange. Snapshot layout unchanged.
 26 site/filing checks and syntax pass; no Worker update required.
+
+### S5 equal-position Garnet tie-up — 2026-11-08 (live verification open)
+
+- Fixed Current selecting S501 for L50231 09 after terminal-1 tie-up while S502
+  was home: both had local position 001 and alphabetical tie selected S501.
+- At tied positions only, home precedes away/outbound; actual different positions
+  remain authoritative. MU and PL/rest/hold do not decide order; craft coverage stays separate.
+- Verify after pull/restart and fresh check: L50231 09 predicts S502 CO/EN as applicable,
+  S5 board S502 first; S501 Garnet rest/PL remain factual. Verify next alternation and
+  notification agreement without sending test notifications. FORMAT 28 rebuilds caches.
+- 69 engine/site tests pass. Owner's screenshots are evidence of old bug, not live
+  verification of fix. No Worker deployment required.

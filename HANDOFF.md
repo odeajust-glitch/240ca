@@ -496,3 +496,14 @@ Screen shortcuts and notification section jumps open a collapsed destination bef
 scrolling. Test retains the shared layout. 26 site/filing checks and syntax pass.
 Owner verified the Test version; production pull/restart/publication verification
 remains pending. No railway, notification-delivery or Worker changes.
+
+S5 Garnet tie-up correction — owner evidence, 2026-11-08: S501 tied up in
+Garnet (terminal 1) and S502 home both showed local position 001; alphabetical
+tie-breaking incorrectly put S501 on L50231 09. Equal positions now break by
+location: home before away, outbound L502 last. Distinct positions remain primary;
+PL/rest/hold and MU do not reorder crews, craft coverage remains separate. Shared
+engine feeds Current predictions and S5 display order; notification routing unchanged.
+FORMAT 28 rebuilds cached site snapshots. 69 engine/site tests pass, including both
+turn directions, row order, MU/PL, per-craft coverage and distinct positions.
+Owner reports preceding notification correct; no notification sent during testing.
+Pull/restart and live confirmation L50231 09 -> S502 remain pending. No Worker change.
