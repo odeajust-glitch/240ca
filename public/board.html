@@ -412,7 +412,7 @@
   .test-current-box > summary { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px 10px; min-height: 44px; box-sizing: border-box; cursor: pointer; border-bottom: 1px solid var(--rule); list-style: none; }
   .test-current-box > summary::-webkit-details-marker { display: none; }
   .test-current-box > summary::before { content: '▸'; color: var(--accent); }
-  .test-current-boxes summary { flex-wrap: wrap; }
+  .test-current-box > summary { flex-wrap: wrap; }
   .box-collapsed-label { font-size: 13px; font-weight: 600; }
   .test-current-box[open] > summary > .box-collapsed-label { display: none; }
   .test-current-box[open] > summary::before { content: '▾'; }
@@ -570,7 +570,7 @@
   .work .det button[data-taken] { font-size: 11.5px; padding: 3px 4px; }
   .work .det h4 { margin: 0 0 6px; font-size: 12px; color: var(--soft); font-weight: 600; }
   @media (max-width: 700px) {
-    .test-preview-menu ~ .overview-guide .qbtn { align-self: center; text-align: center; }
+    .overview-guide .qbtn { align-self: center; text-align: center; }
     .thead .when { font-size: 30px; }
   }
   .ohead { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -1857,7 +1857,14 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 // Test-only directory, driven by the real Analytics tab list.
-function analyticsOverviewGuide({ preview = false } = {}) {
+function callCountText(stats, range) {
+    const result = stats.n
+      ? Math.round(100 * stats.ok / stats.n) + '% within 30 minutes of the planning baseline (' + stats.ok + ' of ' + stats.n + ' scored calls).'
+      : 'No scored calls in this date range.';
+    const dates = range.from || range.to ? [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') : 'all saved dates';
+    return result + ' Analytics dates: ' + dates + '. Excluded: ' + stats.takenOff + ' removed waits and ' + stats.excluded + ' historical train/trip mismatches.';
+}
+function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
     week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
@@ -1874,7 +1881,7 @@ function analyticsOverviewGuide({ preview = false } = {}) {
         const [,question,description] = descriptions[key];
         return '<article class="overview-guide-card"><h3>' + esc(label) + '</h3><p><b>' + esc(question) +
           '</b></p><p>' + esc(description) + '</p>' +
-          (preview && key === 'sleep' ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '') +
+          (key === 'sleep' ? (preview ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '<p>' + esc(callCount) + '</p>') : '') +
           '<button type="button" class="qbtn" data-overview-open="' + esc(key) +
           '">Open ' + esc(label) + ' →</button></article>';
       }).join('');
@@ -1891,7 +1898,7 @@ function analyticsOverview(o) {
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
-function anaHome() { return analyticsOverviewGuide(); }
+function anaHome({ sleep, range }) { return analyticsOverviewGuide({ callCount: callCountText(BoardAnalytics.sleepStats(sleep), range) }); }
 
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
@@ -3947,9 +3954,9 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${strip(s)}
+      ${strip(s, mode === 'current')}
       ${arrangeBar()}
-      ${sectionsGrid(s)}
+      ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
     if (mode === 'current' && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
     tickAges();
@@ -4043,12 +4050,10 @@ source().then(async (src) => {
       details.open = openState.get(wrap.dataset.sec) !== false;
       const summary = document.createElement('summary');
       while (header.firstChild) summary.appendChild(header.firstChild);
-      if (root.classList.contains('test-current-boxes')) {
-        const stateLabel = document.createElement('span');
-        stateLabel.className = 'box-collapsed-label';
-        stateLabel.textContent = 'Collapsed';
-        summary.appendChild(stateLabel);
-      }
+      const stateLabel = document.createElement('span');
+      stateLabel.className = 'box-collapsed-label';
+      stateLabel.textContent = 'Collapsed';
+      summary.appendChild(stateLabel);
       header.remove();
       details.appendChild(summary);
       while (section.firstChild) details.appendChild(section.firstChild);
@@ -4068,6 +4073,19 @@ source().then(async (src) => {
     view.querySelectorAll('[data-test-preview]').forEach(button => {
       button.onclick = () => { testPreviewPick = button.dataset.testPreview; renderTest(); };
     });
+  }
+  function wireFindingControls(panel) {
+    const select = panel.querySelector('[data-test-status]');
+    if (select) select.onchange = () => {
+      let shown = 0;
+      panel.querySelectorAll('[data-statuses]').forEach(group => {
+        group.hidden = select.value !== 'All findings' && !group.dataset.statuses.split('|').includes(select.value);
+        if (!group.hidden) shown++;
+      });
+      panel.querySelector('[data-status-empty]').hidden = shown > 0 || select.value === 'All findings';
+    };
+    const jump = panel.querySelector('[data-jump-stale]');
+    if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
   async function renderTest() {
     const view = document.getElementById('view');
@@ -4108,20 +4126,12 @@ source().then(async (src) => {
         });
         if (pick === 'assignments') {
           panel.innerHTML = anaAssignments({ preview: true, latestCheck: src.index?.latest, runarounds: records('runarounds', 'taken'), catsErrors: records('catsErrors', 'first'), catsMissing: records('catsMissing', 'first') });
-          const select = panel.querySelector('[data-test-status]');
-          select.onchange = () => {
-            let shown = 0;
-            panel.querySelectorAll('[data-statuses]').forEach(group => {
-              group.hidden = select.value !== 'All findings' && !group.dataset.statuses.split('|').includes(select.value);
-              if (!group.hidden) shown++;
-            });
-            panel.querySelector('[data-status-empty]').hidden = shown > 0 || select.value === 'All findings';
-          };
+
         } else {
           panel.innerHTML = anaStale({ stale: records('stale', 'from'), preview: true });
-          const jump = panel.querySelector('[data-jump-stale]');
-          if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
+
         }
+        wireFindingControls(panel);
         panel.querySelectorAll('[data-taken]').forEach(button => { button.onclick = () => jumpTo(button.dataset.taken); });
         panel.querySelectorAll('[data-q]').forEach(button => { button.onclick = () => { ana.q = button.dataset.q; ana.kind = button.dataset.kind; setMode('analytics'); }; });
       } catch (err) {
@@ -4147,11 +4157,7 @@ source().then(async (src) => {
         if (!count.isConnected || version !== testRenderVersion) return;
         if (!live && !archive?.sleep?.length) throw new Error('Call records unavailable');
         const stats = BoardAnalytics.sleepStats(callRecordsInRange(archive, live, range));
-        const result = stats.n
-          ? Math.round(100 * stats.ok / stats.n) + '% within 30 minutes of the planning baseline (' + stats.ok + ' of ' + stats.n + ' scored calls).'
-          : 'No scored calls in this date range.';
-        const dates = range.from || range.to ? [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') : 'all saved dates';
-        count.textContent = result + ' Analytics dates: ' + dates + '. Excluded: ' + stats.takenOff + ' removed waits and ' + stats.excluded + ' historical train/trip mismatches.';
+        count.textContent = callCountText(stats, range);
       } catch (e) {
         if (count.isConnected) count.textContent = 'Call records could not be loaded. Reopen Test to retry.';
       }
@@ -4302,6 +4308,7 @@ source().then(async (src) => {
     else if (mode === 'current') { if (day === src.days[0] && list.length) show(list.length - 1); else openDay(src.days[0]); }
     else if (list.length) show(cur);
   }
+  let heldPeriod = 'week';
   let heldOpen = null;
   let heldCraft = 'CO';
   // From a "Held 14 h+" alert (owner, 2026-11-06): #14h=<train>|<month>|<CO/EN>
@@ -4344,7 +4351,15 @@ source().then(async (src) => {
     if (mode !== 'held') return;
     const [{ names, state }] = await Promise.all([heldNames(), loadResets()]);
     if (mode !== 'held') return;
-    view.innerHTML = heldView(all, heldOpen, src.live ? src.index.latest : null, names, state, heldCraft);
+    const latest = src.live ? src.index.latest : src.days[0] + ' 2359';
+    const selected = heldOpen && heldRows(all).find(row => heldKey(row) === heldOpen);
+    if (selected && (!selected.offDuty || selected.offDuty < callBefore(latest, 7 * 24 * 60))) heldPeriod = 'all';
+    view.innerHTML = heldView(all, heldOpen, latest, names, state, heldCraft, heldPeriod);
+    view.querySelector('[data-held-period]').onclick = () => {
+      heldOpen = null;
+      heldPeriod = heldPeriod === 'week' ? 'all' : 'week';
+      renderHeld();
+    };
     const unlock = document.getElementById('unlock');
     if (unlock) {
       unlock.onsubmit = async (e) => {
@@ -4554,7 +4569,7 @@ source().then(async (src) => {
         }
         if (mode !== 'analytics') return;
       }
-      body = analyticsOverview({ runs, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
+      body = analyticsOverview({ runs, range, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
@@ -4602,6 +4617,7 @@ source().then(async (src) => {
         </div>
       </div>${body}`;
     try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    wireFindingControls(view);
     const box = document.getElementById('aq');
     const go = () => { ana.q = box.value; renderAnalytics(); };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
