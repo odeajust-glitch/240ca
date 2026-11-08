@@ -1671,12 +1671,12 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['runarounds', 'Out of sequence'], ['cats', 'CATS errors'], ['stale', 'Stale trains']];
+const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { overview: anaHome, week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, runarounds: anaRunarounds, spare: anaSpare, cats: anaCats, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
+  const body = { overview: anaHome, week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
   const coverage = o.sec === 'overview' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
@@ -1750,6 +1750,28 @@ function seqResult(r) {
   if (r.fixed) return `<span class="offv ok">Fixed</span><div class="crew">then ${poolName(r.final && r.final.actual)}, as the sequence said</div>`;
   if (!r.onDuty) return '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>';
   return '<span class="offv bad">Runaround</span>';
+}
+function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [] }) {
+  // Group the saved detectors for display only; retain all source issues.
+  const groups = new Map();
+  const add = (rows, kind, stamp) => rows.forEach(r => {
+    const key = String(r.train || '') + '|' + String(r[stamp] || '').slice(0, 7);
+    if (!groups.has(key)) groups.set(key, { train: r.train, latest: '', pool: [], wrong: [], missing: [] });
+    const g = groups.get(key); g[kind].push(r);
+    g.latest = [g.latest, r[stamp] || ''].sort().at(-1);
+  });
+  add(runarounds, 'pool', 'taken'); add(catsErrors, 'wrong', 'first'); add(catsMissing, 'missing', 'first');
+  const total = runarounds.length + catsErrors.length + catsMissing.length;
+  const fixed = runarounds.filter(r => r.fixed).length + catsErrors.filter(r => r.fixed).length;
+  const items = [...groups.values()].sort((a,b) => b.latest.localeCompare(a.latest));
+  return `<p class="anote">Three independent checks, grouped by train and observation month. One train can have several issues; each craft-specific spare-job issue is retained. Wrong pool follows the calling sequence. Wrong spare-job turn compares CATS option 5 with the order (one-check blips excluded). Missing spare jobs require 30 minutes without a listing.</p>
+    <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total, 'Total issues')}${anaTile(fixed, 'Pool/turn issues marked fixed')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
+    <p class="anote">Fixed status follows each original tracker; listing a missing job later does not necessarily mean it was listed before departure. Open a train for its separate findings.</p>
+    ${items.length ? items.map(g => `<section class="sheet"><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? 'Wrong pool · ' : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} issues</summary>
+      ${g.pool.length ? '<h3 style="padding:0 14px">Wrong pool</h3>' + anaRunarounds({runarounds:g.pool}) : ''}
+      ${g.wrong.length ? '<h3 style="padding:0 14px">Wrong spare-job turn</h3>' + anaCats({catsErrors:g.wrong,catsMissing:[]}) : ''}
+      ${g.missing.length ? catsMissingView(g.missing) : ''}
+      </details></section>`).join('') : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
 }
 function anaRunarounds({ runarounds }) {
   const st = BoardAnalytics.runaroundStats(runarounds);
