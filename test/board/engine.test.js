@@ -765,3 +765,42 @@ test('partial-day ordered crew code cannot infer missing A/B departures', () => 
     assert.equal(r.predictions[0].pool, 'A');
   }
 });
+
+test('Sarnia rescue: both option-5 crafts spare without a turn bypass regular pools', () => {
+  const order = at(2026, 11, 7, 23, 30);
+  const rescue = { symbol: 'RQ13931', trainNo: 'RQ139', originDay: '07', order, status: 'ORD', deadhead: false };
+  const turn = (craft, id) => ({ craft, turn: id, pos: 1, terminal: 0 });
+  const vacancies = ['CO', 'EN'].map(cc => ({ train: rescue.symbol, at: order, cc, turn: '', yard: false }));
+  const input = { now: order - 200, callBoard: [], chainGangHome: [], aHome: [turn('CO', 'SA01')], s1Home: [turn('EN', 'S101')],
+    lineup: [rescue, { symbol: 'M39491', trainNo: 'M394', originDay: '07', order: order + 10, status: 'PLN', deadhead: false }], vacancies };
+  const r = runBoardCheck(input);
+  assert.deepEqual([r.predictions[0].pool, r.predictions[0].spare, r.predictions[0].engineerSpare, r.predictions[0].call], ['SPARE', true, true, order - 135]);
+  assert.deepEqual([r.predictions[1].pool, r.predictions[1].turn], ['A', 'SA01']);
+  assert.equal(require('../../lib/board/view').goesTo(r.predictions[0]), 'Rescue: spare + spare');
+  const { expectedJobs } = require('../../lib/board/spares');
+  assert.equal(expectedJobs(r.predictions, vacancies).filter(j => j.train === rescue.symbol).length, 0);
+  for (const jobs of [[], vacancies.slice(0, 1), vacancies.map(j => ({...j, at: order - 1440})),
+    vacancies.map(j => j.cc === 'CO' ? {...j, turn: 'SR03'} : j),
+    vacancies.map(j => j.cc === 'EN' ? {...j, turn: 'MU02'} : j)]) {
+    const normal = runBoardCheck({...input, vacancies: jobs}).predictions[0];
+    assert.deepEqual([normal.pool, normal.turn, normal.engineer, normal.call], ['A', 'SA01', 'S101', order - 135]);
+  }
+});
+
+test('current Sarnia lineup supersedes an older remembered departure and receives a prediction', () => {
+  const order = at(2026, 11, 8, 2, 0);
+  const row = {symbol: 'X39491', trainNo: 'X394', originDay: '06', order, status: 'PLN', deadhead: false};
+  const turn = (craft, id) => ({craft, turn: id, pos: 1, terminal: 0});
+  const dep = {symbol: row.symbol, trainNo: row.trainNo, originDay: row.originDay, station: 'SARNIA',
+    onDuty: order - 300, crew: [{craft: 'CO', turn: 'SA99'}, {craft: 'EN', turn: 'S199'}]};
+  const input = {now: order - 150, callBoard: [], departed: [dep], chainGangHome: [],
+    aHome: [turn('CO','SA01')], s1Home: [turn('EN','S101')], lineup: [row]};
+  const r = runBoardCheck(input);
+  assert.equal(r.predictions.length, 1);
+  assert.deepEqual([r.predictions[0].pool, r.predictions[0].turn, r.predictions[0].engineer, r.predictions[0].call],
+    ['A', 'SA01', 'S101', order - 135]);
+  assert.equal(r.callingTimeline.filter(x => x.symbol === row.symbol).length, 1);
+  const confirmed = runBoardCheck({...input, callBoard: [dep]});
+  assert.equal(confirmed.predictions[0].known, true);
+  assert.equal(confirmed.predictions[0].turn, 'SA99');
+});

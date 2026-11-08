@@ -250,6 +250,13 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   by own turns, requiring their names from departing Call Board. L502 alerts held until
   crew off duty in Sarnia; L501 home alerts continue. CO/EN alerts labelled separately;
   plain S501 gets each craft once. No S5 position/ahead-rest/rescue/may-call by design.
+- **Sarnia rescue trains** (owner, 2026-11-07): an R-prefixed rescue on the
+  Sarnia lineup is not excluded by the underlying Toronto-bound manifest number.
+  If option 5 lists both conductor and engineer spare and neither row has a turn,
+  show both crafts spare. If either craft is missing or any turn is listed, use
+  the normal calculated Sarnia calling sequence. Expected call = lineup time
+  minus 2 h 15 m. Match option-5 rows to the same rescue/time, not another day's run.
+  Confirm actual cover and subsequent slot counts on real CATS.
 - **Toronto:** turns away never receive Sarnia trains until back on Sarnia list.
   Planned-train selection vs ordered selection above remains distinct. Missing train
   with no rested/predicted Sarnia crew → “Non-Sarnia Crew”; with predicted crew →
@@ -361,3 +368,12 @@ Ordered Sarnia correction, 2026-11-07: removed the CATS ordered-pool override.
 Partial-day inference still uses confirmed departures, not an unworked ordered
 row's crew code. FORMAT 25 refreshes cached site predictions. Committed does not
 confirm laptop pull/restart, publication, or real-CATS notification validation.
+
+Rescue-lineup implementation: both-craft unassigned option-5 rescues display
+spare/spare without allocating a regular turn; other rescues use the normal sequence.
+FORMAT 26 rebuilds site caches. Missing non-Toronto predictions now say crew
+prediction unavailable and retain a calculated call; the former blanket Toronto
+fallback was misleading. A current Sarnia lineup row now supersedes an older remembered departure of the
+same printed train identity, restoring normal sequence prediction without double
+counting; confirmed current Call Board crews remain factual. Live verification
+remains open. No Worker deployment performed.

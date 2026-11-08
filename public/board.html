@@ -955,14 +955,14 @@ function staleChip(s, t) {
 // decisions and their full explanation unchanged; label each craft explicitly.
 function lineupCrew(t) {
   const raw = t.rules || '';
-  const body = raw.replace(/^(?:A pool: |B pool: |Chain Gang: |S5: )/, '');
+  const body = raw.replace(/^(?:A pool: |B pool: |Chain Gang: |S5: |Rescue: )/, '');
   const parts = body.split(' + ');
   if (parts.length !== 2) return ruleText(raw);
   const craft = (part, label) => {
-    const spare = /\(goes spare[^)]*\)|^spareboard \(no /.test(part);
+    const spare = /\(goes spare[^)]*\)|^spareboard \(no |^spare$/.test(part);
     const turn = part.replace(/\s*\(goes spare[^)]*\)/g, '').trim();
     const value = spare
-      ? '<span class="spare">spare</span>' + (/^spareboard /.test(turn) ? '' : ' (' + markTurn(turn) + ' goes spare)')
+      ? '<span class="spare">spare</span>' + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + markTurn(turn) + ' goes spare)')
       : markTurn(turn);
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
@@ -981,7 +981,7 @@ function lineupWhy(s, t) {
       (x.slot ? ' ' + esc(x.slot) : '') + ' · ' + state +
       (x.actual && x.actual !== x.expected ? ' (sequence: ' + esc(x.expected) + '; CATS shows ' + esc(x.actual) + ')' : '') + '</li>';
   }).join('');
-  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered Sarnia trains follow the calculated sequence even when CATS shows another pool. Deadheads and 501/502 keep their separate rules.</p>' +
+  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered Sarnia trains follow the calculated sequence even when CATS shows another pool. Deadheads and 501/502 keep their separate rules. A rescue listed spare for both crafts without a turn uses spareboards.</p>' +
     (first < 0 ? '<p>The first A-pool train is not in this saved check; earlier trains may be missing.</p>' : '') +
     (rows ? '<ol class="calling-list">' + rows + '</ol>' : '<p>No saved sequence for this road day.</p>');
   const jobs = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].filter((v) =>

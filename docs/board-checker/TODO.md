@@ -478,3 +478,15 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   corrected train line up thats not showing there"): Current → Jobs going
   spare, under the corrected list, each with why it goes spare and the
   spare expected to fill it.
+
+### Rescue lineup and missing prediction verification — 2026-11-07 (open)
+
+- Verify RQ13931 on real CATS: option 5 must contain both CO and EN with no
+  turn for spare/spare; a named turn on either craft or an absent craft uses the
+  Sarnia calling sequence. Call = lineup time minus 135 minutes. Confirm actual
+  covering spares and subsequent sequence slots before considering complete.
+- Verify X39491 06 now gets its normal Sarnia pool, conductor, engineer and
+  expected call after publication. Fixed the suppression path where a remembered
+  departure with the same printed identity excluded a current lineup row; current
+  lineup now supersedes that memory without double counting. Current confirmed
+  Call Board crews remain factual. Regression passes, real CATS verification open.
