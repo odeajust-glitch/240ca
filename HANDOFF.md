@@ -138,8 +138,11 @@ No Worker change. This completes the previously pending timeline implementation.
 - **Predicted jobs going spare:** compare against later option 5; corrected/predicted
   lists, spareboard job rows and alerts must agree on Filled by and call order.
   Check first “expect a call” and PL “you may be called” alerts in Notifications.
-- **Ordered-pool routing:** after `e77e9ba`, next ordered out-of-sequence train must
-  notify CATS's pool's next turn, retain the mismatch flag, and consume that pool's slot.
+- **Ordered Sarnia routing:** verify the next mismatched ordered train uses the
+  calculated sequence for conductor/engineer and notification recipients, consumes
+  that sequence's slot, and retains the CATS mismatch warning. Earlier e77e9ba
+  routing to CATS's pool is superseded by the owner's November 7 correction.
+
 - **Resets:** compare data/resets.json due times with CATS PSTS05Y; confirm onBreak
   instead of overdue while off since before deadline, possible resets, and shared codes.
   Missed trips, unread names or a mid-week history window can make results wrong.
@@ -183,12 +186,12 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
 - **Alert wording:** "The turn goes spare (PL @ 6th 0001)." with the reason in
   brackets; "(spareboard covers)" dropped (cards the same).
 
-- **An ordered train goes by the pool CATS ordered it for** (owner,
-  2026-11-07: "Ordered trains should move the notification to the next
-  person who would go since sometimes their planned trains don't always go
-  when they say"): A42431 07 ORD for A as a 4th A → the next A turn and S1,
-  not the sequence's B; it takes an A slot, so the B slots stay for the next
-  trains; the "ordered for A but the sequence says B" flag stays.
+- **Ordered Sarnia trains follow the calculated calling sequence** (owner correction,
+  2026-11-07; supersedes the earlier CATS-pool override). Select the next turn and
+  engineer from that sequence's pool and consume that pool's slot. A differing CATS
+  ordered pool remains a mismatch flag, not a prediction override. Already-confirmed
+  called/on-duty crews remain factual records. Toronto selection and 501/502 rules
+  are unchanged.
 
 - Option 5 (jobs going spare) can be wrong; **the order the site works out is
   right** (2026-11-02, E27861 02: CATS listed SA09, the order had SR05).
@@ -353,3 +356,8 @@ Timeline verification refinement: common record cleanup removes changes observed
 Historical same-number/different-run-date correction: reject mismatched full dated train ids in call comparisons (for all numbered train families), recovering earliest saved actual-trip prediction when present, otherwise explicitly unavailable and excluded. Preserve legitimate cross-train lineup changes except settled opposite L501/L502 rule. Raw history retained. Publication pending.
 
 Subscriber reporting: owner-only last successful summary cached in BoardChecker data subscriber-health.json; restored as stale on restart. Independent diagnostic lookup awaited before health publication. Missing/unreadable subscription files do not replace confirmed list with zero. Page Health shows checked/confirmed age and safe lookup error. Delivery uses original non-diagnostic subscription behavior. 280 existing board tests plus reporting regression pass. Laptop pull/restart and live verification pending; no Worker change.
+
+Ordered Sarnia correction, 2026-11-07: removed the CATS ordered-pool override.
+Partial-day inference still uses confirmed departures, not an unworked ordered
+row's crew code. FORMAT 25 refreshes cached site predictions. Committed does not
+confirm laptop pull/restart, publication, or real-CATS notification validation.

@@ -83,7 +83,7 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 14. **Predicted spare jobs and notification routing** (carried forward 2026-11-07).
     Match corrected/predicted lists, Filled by, spareboard job rows and later option 5;
     verify first expect-a-call / PL warnings, dedupe, and ordered-out-of-sequence
-    trains notifying the next turn in CATS's ordered pool after e77e9ba.
+    trains notifying the next turn in the calculated sequence's pool (owner correction November 7; supersedes e77e9ba). Retain the CATS mismatch flag; verify downstream slot consumption and each craft's recipient on real CATS.
 15. **Reset alerts: verify on real runs** (alongside #8, carried forward 2026-11-07).
     Verify call-order allocation, replacement's own reset, Chain Gang/SD next callable
     turn, one spare per job, latest per-reset dedupe and onBreak vs overdue.

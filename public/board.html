@@ -975,13 +975,13 @@ function lineupWhy(s, t) {
   const seq = (s.callingSequence || []).filter((x) => x.day === road);
   const first = seq.findIndex((x) => x.expected === 'A' && x.slot === 1);
   const rows = (first >= 0 ? seq.slice(first) : seq).map((x) => {
-    const pool = x.actual || x.expected;
+    const pool = x.source === 'lineup' ? x.expected : x.actual || x.expected;
     const state = x.source === 'memory' ? 'earlier departure' : x.source === 'board' ? 'called' : x.status === 'ORD' ? 'ordered' : 'planned';
     return '<li' + (x.train === t.train && x.order === t.order ? ' class="hit"' : '') + '><b>' + esc(x.train) + '</b> · ' + esc(x.order) + ' · ' + esc(pool === 'SR' ? 'Chain Gang' : pool) +
       (x.slot ? ' ' + esc(x.slot) : '') + ' · ' + state +
-      (x.actual && x.actual !== x.expected ? ' (sequence: ' + esc(x.expected) + '; CATS pool retained)' : '') + '</li>';
+      (x.actual && x.actual !== x.expected ? ' (sequence: ' + esc(x.expected) + '; CATS shows ' + esc(x.actual) + ')' : '') + '</li>';
   }).join('');
-  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered trains follow CATS’s pool. Deadheads and 501/502 keep their separate rules.</p>' +
+  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered Sarnia trains follow the calculated sequence even when CATS shows another pool. Deadheads and 501/502 keep their separate rules.</p>' +
     (first < 0 ? '<p>The first A-pool train is not in this saved check; earlier trains may be missing.</p>' : '') +
     (rows ? '<ol class="calling-list">' + rows + '</ol>' : '<p>No saved sequence for this road day.</p>');
   const jobs = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].filter((v) =>

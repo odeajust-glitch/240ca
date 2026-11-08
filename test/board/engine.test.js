@@ -725,7 +725,7 @@ test('A train with an MU placeholder on it: the A turn goes spare', () => {
 // Owner, 2026-11-07: A42431 07 ORD for A (45SASA0) as a 4th A of the road
 // day (M39491 06 SA02, M30241 05 SA03, Z14891 06 SA04 on duty): "Ordered
 // trains should move the notification to the next person who would go".
-test('an ordered train goes by the pool CATS ordered it for; B slots stay for the next trains', () => {
+test('ordered Sarnia trains follow the sequence and consume its slot despite wrong CATS pool', () => {
   const { at } = require('../../lib/board/time');
   const now = at(2026, 11, 7, 8, 33);
   const board = (symbol, od, h, m, co, en) => ({ symbol, trainNo: symbol.slice(0, -2), originDay: od, station: 'SARNIA', onDuty: at(2026, 11, 7, h, m), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
@@ -740,9 +740,28 @@ test('an ordered train goes by the pool CATS ordered it for; B slots stay for th
       { order: at(2026, 11, 7, 15, 10), symbol: 'E27861', trainNo: 'E278', originDay: '07', status: 'PLN', deadhead: false },
     ] });
   const p = (sym) => r.predictions.find((x) => x.symbol === sym);
-  assert.deepEqual([p('A42431').pool, p('A42431').turn, p('A42431').engineer], ['A', 'SA05', 'S107']);
-  assert.match(p('A42431').reason, /^CATS has it ordered for A \(the sequence says B\); going by the order\./);
-  assert.deepEqual([p('M38261').pool, p('M38261').turn], ['B', 'SB05']);
-  assert.deepEqual([p('E27861').pool, p('E27861').turn], ['B', 'SB06']);
+  assert.deepEqual([p('A42431').pool, p('A42431').turn, p('A42431').engineer], ['B', 'SB05', 'S305']);
+  assert.match(p('A42431').reason, /following the calling sequence/);
+  assert.deepEqual([p('M38261').pool, p('M38261').turn], ['B', 'SB06']);
+  assert.deepEqual([p('E27861').pool, p('E27861').turn], ['SR', 'SR02']);
   assert.ok(r.flags.some((f) => /A42431 07 .* is ordered for A but the sequence says B/.test(f.text)));
+});
+
+test('late-day ordered A code cannot turn a Chain Gang train into an A train', () => {
+  const lineup = [6, 8, 10, 12, 14, 23].map((h, i) => ({
+    symbol: i === 5 ? 'X39491' : 'M38261', trainNo: i === 5 ? 'X394' : 'M382',
+    originDay: String(i + 1).padStart(2, '0'), order: at(2026, 11, 7, h, 30),
+    status: 'ORD', deadhead: false, trnCrew: '45SASA0',
+  }));
+  const r = runBoardCheck({ now: at(2026, 11, 7, 5, 0), seenSince: at(2026, 11, 7, 0, 0), callBoard: [], chainGangHome: [], lineup });
+  assert.deepEqual(r.predictions.map((p) => p.pool), ['A', 'A', 'A', 'B', 'B', 'SR']);
+  assert.ok(r.flags.some((f) => /X39491.*ordered for A but the sequence says SR/.test(f.text)));
+});
+
+test('partial-day ordered crew code cannot infer missing A/B departures', () => {
+  for (const trnCrew of ['45SASR0', '45SASB0']) {
+    const r = runBoardCheck({ now: at(2026, 11, 7, 12, 0), callBoard: [], chainGangHome: [],
+      lineup: [{ symbol: 'X39491', trainNo: 'X394', originDay: '06', order: at(2026, 11, 7, 23, 30), status: 'ORD', deadhead: false, trnCrew }] });
+    assert.equal(r.predictions[0].pool, 'A');
+  }
 });
