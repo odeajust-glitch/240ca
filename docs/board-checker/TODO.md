@@ -576,3 +576,20 @@ notification jumps, pool/spare-job controls and Arrange. Snapshot layout unchang
   notification agreement without sending test notifications. FORMAT 28 rebuilds caches.
 - 69 engine/site tests pass. Owner's screenshots are evidence of old bug, not live
   verification of fix. No Worker deployment required.
+
+### S5 full-cycle audit — 2026-11-08 (open defects and real-data verification)
+
+See [full evidence/reproductions](S5-CYCLE-AUDIT-2026-11-08.md).
+- Known-crew shortcut matches workingOn symbol without date; future ORD L50231 09
+  can incorrectly inherit prior L50231 crew. Require dated evidence; regression TODO.
+- Same shortcut assigns both crafts from one working row, bypassing engineer TV/rest.
+  Preserve separate factual craft/fill-in confirmation; regression TODO.
+- Simplified Why omits S5 location/position selection reason; preview concise reason
+  in Test. Current order 0400 versus When duty 0345 wording needs separate review.
+- Fourteen reconstructed phase checks pass, both rotations; 123 pass, 2 known TODO
+  failures in combined engine/site/alerts/spares/rotation run. No real sends.
+- Raw full-cycle masked captures remain missing: bundled real fixtures have no S5.
+  Replay terminal, departure, return, home rest, PL and spare/MU transitions; compare
+  actual notification evidence. Do not close on reconstructed tests alone.
+- Live browser Updated Nov 8 13:59 / snapshot 13:57 still showed old S501 prediction
+  for L50231 09. Prior fix 664c40c publication remains unverified; preserve that task.

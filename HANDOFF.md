@@ -507,3 +507,11 @@ FORMAT 28 rebuilds cached site snapshots. 69 engine/site tests pass, including b
 turn directions, row order, MU/PL, per-craft coverage and distinct positions.
 Owner reports preceding notification correct; no notification sent during testing.
 Pull/restart and live confirmation L50231 09 -> S502 remain pending. No Worker change.
+
+S5 full-cycle audit — 2026-11-08: [findings and evidence](docs/board-checker/S5-CYCLE-AUDIT-2026-11-08.md).
+14 reconstructed cycle stages pass across engine/board/notification states;
+123 tests pass, two explicit TODO defects remain: dated-identity bypass and
+one-craft-to-both confirmation in known-crew shortcut. Simplified Why lacks S5
+selection reason. Live remained Updated Nov 8 13:59 / check 13:57, still S501
+for L50231 09: prior fix not confirmed published. Saved history notes reviewed;
+no raw full-cycle S5 fixtures available. No app/rule/notification changes in audit.
