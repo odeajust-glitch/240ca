@@ -899,6 +899,7 @@ async function publishSite(changed) {
     const healthFile = path.join(dir, 'status', 'health.json');
     if (settings.r2) {
       fs.mkdirSync(path.dirname(healthFile), { recursive: true });
+      await refreshSubscriberHealth(settings.r2);
       fs.writeFileSync(healthFile, JSON.stringify(healthNow()));
       // The Notifications tab (owner only, through the Worker's
       // /health/alerts): every alert of the last 30 days with its logic.
@@ -1070,7 +1071,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     // Every check: a phone's time alerts depend on its own last-told call.
     const subs = await listSubscriptions(settings.r2, retryingFetch(fetch));
     health.phones = subs.length;
-    health.subscribers = Health.subscribersOf(subs, personTurns, codeByHash);
+    // Subscriber health is refreshed independently before publishing.
     if (!subs.length) return;
     const bases = TurnAlerts.loadTold(PHONES_FILE) || {};
     const nextBases = {};
@@ -1147,6 +1148,32 @@ const health = { lastCheck: null, lastProblem: null, phones: null, subscribers: 
 // codes notifications are getting sent to"). Kept in memory only, never in
 // history; it goes no further than the owner-only health line.
 const codeByHash = new Map();
+const SUBSCRIBER_HEALTH_FILE = path.join(DATA_DIR, 'subscriber-health.json');
+try {
+  const saved = JSON.parse(fs.readFileSync(SUBSCRIBER_HEALTH_FILE, 'utf8'));
+  if (saved && typeof saved.phones === 'number') {
+    health.subscribers = { ...saved, stale: true, error: 'Waiting for a fresh lookup after restart' };
+    health.phones = saved.phones;
+  }
+} catch { /* first run or unreadable cache: show unavailable */ }
+async function refreshSubscriberHealth(r2) {
+  const checkedAt = Date.now();
+  try {
+    const subs = await listSubscriptions(r2, retryingFetch(fetch), { diagnostics: true });
+    if (subs.readFailures) throw new Error(`${subs.readFailures} subscription file(s) could not be read`);
+    const people = TurnAlerts.loadTold(PERSON_TURNS_FILE) || {};
+    const value = { ...Health.subscribersOf(subs, people, codeByHash), confirmedAt: checkedAt, checkedAt, stale: false, error: null };
+    health.subscribers = value;
+    health.phones = value.phones;
+    try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(SUBSCRIBER_HEALTH_FILE, JSON.stringify(value)); }
+    catch { console.log('Subscriber report could not be cached; current report is still available.'); }
+  } catch (err) {
+    const message = 'Subscriber lookup failed; check laptop R2 connection and permissions.';
+    health.subscribers = { ...(health.subscribers || {}), checkedAt, stale: true, error: message };
+    console.log(`[${stamp()}] ${message}`);
+  }
+}
+
 try { health.version = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', timeout: 5000 }).trim(); } catch { /* not a git copy */ }
 function healthNow() {
   const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
