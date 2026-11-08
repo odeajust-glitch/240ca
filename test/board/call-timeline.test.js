@@ -32,7 +32,7 @@ test('axis starts at assignment, uses first plan and extends only for ordered la
 });
 
 test('early call keeps green before call and red through original planned call',()=>{
- const html=A.renderCallTimeline(record);assert.ok(html.includes('Called 1h 0m early'));assert.ok(html.includes('#000000'));assert.ok(html.includes('Lost Sleep: 1h 0m'));assert.ok(!html.includes('min-width:680px'));
+ const html=A.renderCallTimeline(record);assert.ok(html.includes('Called 1h 0m early'));assert.ok(!html.includes('#000000'));assert.ok(html.includes('fill="var(--stop)"'));assert.equal((html.match(/class="window-boundary"/g)||[]).length,2);assert.ok(html.includes('Lost Sleep: 1h 0m'));assert.ok(!html.includes('min-width:680px'));
 });
 test('original-plan summary uses first call, excludes removals and caps lost window',()=>{
  const z={...record,expected:'2026-11-08 0800'};
@@ -54,4 +54,15 @@ test('same-number different dated trips cannot create a false 47-hour delay',()=
  const fixed=A.cleanCallRecord(z);assert.equal(fixed.off,-60);assert.equal(fixed.expectedTrain,z.train);assert.equal(A.planReliability([z]).rows[0].planGap,-60);
  const other={...z,train:'M30241 02',expectedTrain:'M30241 31',timelineChanges:[]};assert.equal(A.cleanCallRecord(other).comparisonUnavailable,true);
  assert.equal(A.cleanCallRecord({...record,train:'M39671 08',expectedTrain:'M30241 08'}).comparisonUnavailable,undefined);
+});
+
+test('early-call colours use an inclusive 30-minute threshold and green window boundaries',()=>{
+ for(const minutes of [1,30,31,60]){
+  const z={...record,call:T.fromMin(T.toMin(record.expected)-minutes)};
+  const html=A.renderCallTimeline(z);
+  assert.ok(html.includes('fill="'+(minutes<=30?'var(--amber)':'var(--stop)')+'"'),String(minutes));
+  assert.ok(!html.includes('#000000'));
+  assert.ok(html.includes('Planning window starts'));
+  assert.ok(html.includes('Planning window ends'));
+ }
 });

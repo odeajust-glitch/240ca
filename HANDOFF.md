@@ -395,3 +395,12 @@ including spare coverage, backup and PL warnings; keep other rescues and actual
 Call Board evidence. Existing rescue preference and deduplication remain. No real
 notification tests were sent. Laptop pull/restart, live recipients and delivery
 verification remain pending; no Worker change.
+
+Call timeline colour update — owner, 2026-11-08 (supersedes black Lost Sleep):
+all shared call timelines now use yellow for an early-call gap of 30 minutes or
+less and red for more than 30 minutes. Green vertical bars mark the original
+eight-hour planning window boundaries when within the observed axis; the actual
+call marker remains separate and visible when times coincide. Late-call colours
+remain yellow up to one hour / red beyond. Lost Sleep durations, axes, timestamps
+and railway calculations are unchanged. Nine timeline tests pass; publication
+and visual verification pending. No Worker change.
