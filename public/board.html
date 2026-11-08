@@ -1009,7 +1009,20 @@ function lineupCrew(t) {
   return craft(parts[0], 'Conductor') + '<span class="crew-divider"> · </span>' + craft(parts[1], 'Engineer');
 }
 
-function lineupWhy(s, t) {
+function s5CrewWhy(s, t) {
+  const selected = new Set((t.rules || '').match(/\bS5\d{2}\b/g) || []);
+  const pool = (s.pools || []).find((p) => p.name === '501/502 (S5)');
+  const others = (pool ? pool.turns : []).filter((r) => /^S5\d{2}$/.test(r.turn) && !selected.has(r.turn));
+  const status = (r) => esc(r.status || 'status unavailable')
+    .replace(/away \(term 1\)/g, 'in Garnet')
+    .replace(/out working on L50131/g, 'returning on L50131');
+  return '<h4>Crew lined up for ' + esc(t.train) + '</h4><div class="craft-lines">' + lineupCrew(t) +
+    '</div><h4>Other crew</h4>' + (others.length ? '<ul>' + others.map((r) =>
+      '<li><b>' + markTurn(r.turn) + (r.craft ? ' ' + esc(r.craft) : '') + ':</b> ' + status(r) + '</li>').join('') +
+    '</ul>' : '<p>Other crew status is not available in this saved check.</p>') +
+    '<p class="muted">Lined-up crew is a prediction until confirmed by CATS.</p>';
+}
+function lineupWhy(s, t, previewS5 = false) {
   const stamp = BoardTrains.resolve(t.order, s.taken);
   const road = stamp ? new Date((stampMin(stamp) - 300) * 60000).toISOString().slice(0, 10) : '';
   const seq = (s.callingSequence || []).filter((x) => x.day === road);
@@ -1035,10 +1048,11 @@ function lineupWhy(s, t) {
         (f.skipped && f.skipped.length ? ' · passed over: ' + esc(f.skipped.join(' · ')) : '') +
         (f.sd ? ' · ' + markTurn(f.sd) + ' (Chain Gang) may be called' : '') : 'cover not available in this check') + '.</li>';
   }).join('');
+  if (previewS5 && /^L502/.test(t.train) && /\bS5\b/.test(t.rules || '')) return s5CrewWhy(s, t) + (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '');
   return sequence +
     (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
 }
-function lineup(s) {
+function lineup(s, previewS5 = false) {
   if (!s.lineup.length) return '';
   let day = null;
   const rows = s.lineup.map((t) => {
@@ -1053,7 +1067,7 @@ function lineup(s) {
       '<div class="card-duty" aria-label="On Duty: ' + esc(t.order) + '" title="On Duty: ' + esc(t.order) + '">' + esc(dutyTime || t.order) + '</div>' +
       '<div class="expected-call">Expected call: ' + esc(t.call || 'not available') + staleChip(s, t) + '</div>' +
       '<div class="craft-lines">' + lineupCrew(t) + '</div>' +
-      '<details class="why"><summary>Why</summary>' + lineupWhy(s, t) +
+      '<details class="why"><summary>Why</summary>' + lineupWhy(s, t, previewS5) +
       '<p>CATS details: ' + esc(t.info) + ' · ' + esc(t.engCrew) + ' / ' + esc(t.trnCrew) + '</p></details></div>';
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
@@ -3805,10 +3819,10 @@ source().then(async (src) => {
     return [...o, ...known.filter((k) => !o.includes(k))];
   }
   const narrow = window.matchMedia ? window.matchMedia('(max-width: 1020px)') : { matches: true };
-  function sectionsGrid(s, arrange = arranging) {
+  function sectionsGrid(s, arrange = arranging, previewS5 = false) {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
-    const built = order.map((k) => ({ ...byK[k], body: byK[k].html(s) })).filter((x) => x.body);
+    const built = order.map((k) => ({ ...byK[k], body: k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
     if (arrange) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
@@ -4030,9 +4044,9 @@ source().then(async (src) => {
     if (!s) { view.innerHTML = '<p class="empty">No saved current board yet.</p>'; return; }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
     setMarks();
-    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current.</p>' +
+    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current. This Test preview additionally simplifies the 501/502 Why to the selected crew and other crew status.</p>' +
       '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
-      '<div class="test-current-boxes">' + sectionsGrid(s, false) + '</div>';
+      '<div class="test-current-boxes">' + sectionsGrid(s, false, true) + '</div>';
     wireCurrentBoxes(view.querySelector('.test-current-boxes'), testBoxOpen);
     tickAges();
     paintTracked(s);

@@ -593,3 +593,12 @@ See [full evidence/reproductions](S5-CYCLE-AUDIT-2026-11-08.md).
   actual notification evidence. Do not close on reconstructed tests alone.
 - Live browser Updated Nov 8 13:59 / snapshot 13:57 still showed old S501 prediction
   for L50231 09. Prior fix 664c40c publication remains unverified; preserve that task.
+
+### S5 Why preview — 2026-11-08 (owner review pending)
+
+- Test-only L502 Why: lined-up CO/EN, other regular crew status (Garnet/L501/etc),
+  existing spare cover when available. Removes other-train calling list only in preview.
+- Verify after publication on phone: full dated train ID, each craft's spare state,
+  other crew's rest/PL/returning details and missing-status fallback. Await approval
+  before promotion. No fixes to the two known-crew-shortcut audit defects in this UI change.
+- Syntax and six sample rendering checks pass; live publication unverified.

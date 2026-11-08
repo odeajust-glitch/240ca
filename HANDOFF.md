@@ -515,3 +515,11 @@ one-craft-to-both confirmation in known-crew shortcut. Simplified Why lacks S5
 selection reason. Live remained Updated Nov 8 13:59 / check 13:57, still S501
 for L50231 09: prior fix not confirmed published. Saved history notes reviewed;
 no raw full-cycle S5 fixtures available. No app/rule/notification changes in audit.
+
+S5 Why simplification — owner request, 2026-11-08: Test-only Current preview
+replaces the L502 calling-sequence list with the crew lined up (CO/EN separately)
+and the other regular S5 crew's recorded status (e.g. in Garnet or returning on
+L50131). Retains rest/PL/status details and available spare-cover explanation;
+no MU ownership inference, other-train list or recalculation. Regular Current Why
+and all other trains remain unchanged pending approval. Syntax and six rendering
+checks pass; publication/phone review open. No Worker or notification change.
