@@ -418,6 +418,15 @@
   .test-current-box > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
   :root[data-theme="tablet"] .test-current-box > summary { background: #3fe0d8; color: #1236d0; }
   :root[data-theme="tablet"] .test-current-box > summary .meta { color: #1236d0; }
+  .test-preview-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 8px; margin-bottom: 18px; }
+  .test-preview-menu button { min-height: 44px; padding: 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); font: inherit; cursor: pointer; }
+  .test-preview-menu button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+  .overview-guide-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); }
+  .overview-guide-card { display: flex; flex-direction: column; min-width: 0; padding: 16px; border-top: 1px solid var(--rule); }
+  .overview-guide-card h3 { margin: 0 0 8px; }
+  .overview-guide-card p { margin: 4px 0 10px; }
+  .overview-guide-card .qbtn { align-self: flex-start; margin-top: auto; padding: 10px 0; min-height: 44px; text-align: left; }
+  .overview-guide-note { padding: 4px 16px 12px; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -1843,6 +1852,30 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 // Nothing searched: everything, in sections.
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
+// Test-only directory, driven by the real Analytics tab list.
+function analyticsOverviewPreview() {
+  const descriptions = {
+    overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
+    week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
+    trains: ['Compare work', 'How do trains compare?', 'Explore planned versus actual times, trip durations, Toronto holds and records not observed on duty. Search a full train ID to inspect a particular trip.'],
+    turns: ['Compare work', 'How is work distributed?', 'Compare turns within a pool by trains, yard jobs, trip times, holds and rest records. Open a turn for its individual history.'],
+    sleep: ['Calling and waiting', 'How much did the call change?', 'Compare the original expected call with actual call time, calculated from on-duty minus 2 hours. Timelines show early calls, later waiting and recorded changes; they do not measure sleep.'],
+    stale: ['Calling and waiting', 'Which trains were left waiting?', 'Trains still planned at least 15 minutes after the calculated call: overdue time, plan changes and the observed outcome.'],
+    assignments: ['Check assignments', 'Did the assignment match the rules?', 'Wrong pool, wrong spare-job turn and missing spare job findings, grouped by train. An observed mismatch clearing does not prove that the final crew call was correct.']
+  };
+  const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
+  return '<p class="anote">Preview only. Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
+    groups.map(group => {
+      const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group).map(([key,label]) => {
+        const [,question,description] = descriptions[key];
+        return '<article class="overview-guide-card"><h3>' + esc(label) + '</h3><p><b>' + esc(question) +
+          '</b></p><p>' + esc(description) + '</p><button type="button" class="qbtn" data-overview-open="' + esc(key) +
+          '">Open ' + esc(label) + ' →</button></article>';
+      }).join('');
+      return '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>';
+    }).join('') +
+    '<section class="sheet overview-guide"><header><h2>Using the records</h2></header><div class="overview-guide-note"><p><b>Dates:</b> choose the reporting range after opening a page. My week has its own week selector.</p><p><b>Find a specific record:</b> use Analytics search for a train number, turn or name code. Full dated train IDs help distinguish separate trips.</p><p><b>Coverage:</b> trackers can cover different dates. Missing checks or missing on-duty records can leave outcomes unknown; disappearance alone is not proof of cancellation.</p></div></section>';
+}
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
@@ -4025,6 +4058,17 @@ source().then(async (src) => {
   }
   const testBoxOpen = new Map();
   let testRenderVersion = 0;
+  let testPreviewPick = 'analytics';
+  function testPreviewMenu() {
+    return '<div class="test-preview-menu" role="group" aria-label="Choose Test preview">' +
+      [['analytics', 'Analytics Overview'], ['current', 'Current · 501/502 Why']].map(([key,label]) =>
+        '<button type="button" data-test-preview="' + key + '" aria-pressed="' + (testPreviewPick === key) + '">' + label + '</button>').join('') + '</div>';
+  }
+  function wireTestPreviewMenu(view) {
+    view.querySelectorAll('[data-test-preview]').forEach(button => {
+      button.onclick = () => { testPreviewPick = button.dataset.testPreview; renderTest(); };
+    });
+  }
   async function renderTest() {
     const view = document.getElementById('view');
     const version = ++testRenderVersion;
@@ -4032,7 +4076,17 @@ source().then(async (src) => {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
-    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Loading the latest saved board…</p>';
+    if (testPreviewPick === 'analytics') {
+      try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
+      view.innerHTML = testPreviewMenu() + '<h2>Test · Analytics Overview</h2>' + analyticsOverviewPreview();
+      wireTestPreviewMenu(view);
+      view.querySelectorAll('[data-overview-open]').forEach(button => {
+        button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; setMode('analytics'); };
+      });
+      return;
+    }
+    view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Loading the latest saved board…</p>';
+    wireTestPreviewMenu(view);
     let snapshots;
     try { snapshots = await src.load(src.days[0]); }
     catch (e) {
@@ -4044,9 +4098,10 @@ source().then(async (src) => {
     if (!s) { view.innerHTML = '<p class="empty">No saved current board yet.</p>'; return; }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
     setMarks();
-    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current. This Test preview additionally simplifies the 501/502 Why to the selected crew and other crew status.</p>' +
+    view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current. This Test preview additionally simplifies the 501/502 Why to the selected crew and other crew status.</p>' +
       '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
       '<div class="test-current-boxes">' + sectionsGrid(s, false, true) + '</div>';
+    wireTestPreviewMenu(view);
     wireCurrentBoxes(view.querySelector('.test-current-boxes'), testBoxOpen);
     tickAges();
     paintTracked(s);

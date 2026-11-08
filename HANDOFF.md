@@ -523,3 +523,12 @@ L50131). Retains rest/PL/status details and available spare-cover explanation;
 no MU ownership inference, other-train list or recalculation. Regular Current Why
 and all other trains remain unchanged pending approval. Syntax and six rendering
 checks pass; publication/phone review open. No Worker or notification change.
+
+Analytics Overview directory preview — 2026-11-08: Test defaults to a new grouped
+guide for all seven real Analytics tabs, with descriptions, evidence caveats and
+working buttons opening existing Analytics destinations. No fabricated statistics.
+Groups: Start here, Your work, Compare work, Calling and waiting, Check assignments.
+Test selector preserves pending Current/S5 Why preview. Regular Overview and all
+calculations/notifications unchanged. Syntax, exact-seven destination/exclusion/
+navigation checks and 26 site/filing tests pass; phone/publication review pending.
+No Worker update. S5 audit defects remain open.

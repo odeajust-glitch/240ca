@@ -602,3 +602,14 @@ See [full evidence/reproductions](S5-CYCLE-AUDIT-2026-11-08.md).
   other crew's rest/PL/returning details and missing-status fallback. Await approval
   before promotion. No fixes to the two known-crew-shortcut audit defects in this UI change.
 - Syntax and six sample rendering checks pass; live publication unverified.
+
+### Analytics Overview guide — 2026-11-08 (Test review pending)
+
+- Built grouped Test directory for all seven active tabs, plain-language descriptions
+  and buttons to existing destinations. Date/week controls remain on destination pages;
+  search cleared on navigation so the selected tab actually opens. Removed tabs remain absent.
+- Test selector retains Current/S5 Why pending review. Regular Overview unchanged.
+- Verify phone layout, every Open destination, returning to Test, and both preview
+  choices after normal pull/restart/publication. Do not promote until owner approves.
+- Syntax/catalog/navigation checks and 26 site/filing tests pass. No live visual
+  verification, Worker update, calculations or notifications changed. S5 defects open.
