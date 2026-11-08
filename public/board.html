@@ -1312,8 +1312,30 @@ const once = (fn) => { let p = null; return () => p || (p = fn()); };
 // The turn panel: where the turn is in this snapshot, and its history (each
 // time what the board said about it changed). History fills in once loaded.
 const KIND = { pool: 'Pool', away: 'Away', returning: 'Returning', lineup: 'Line-up', onDuty: 'On duty', sequence: 'Called', bunkhouse: 'Bunkhouse', homeTrain: 'Going home', spareJob: 'Spare', spareFill: 'Spare call', mayCall: 'May call' };
+// View-only split: original shared-craft records remain available as related detail.
+function craftHistoryText(text, craft) {
+  if (!craft) return { own: text, related: '' };
+  const own = [], related = [];
+  let side = own;
+  for (let part of String(text || '').split(' · ')) {
+    const m = /\((EN|LE|CO)\)|\bS5 (EN|LE|CO),/.exec(part);
+    if (m) side = ((m[1] || m[2]) === craft || (craft === 'EN' && (m[1] || m[2]) === 'LE')) ? own : related;
+    else if (/^(Projected for|On duty on|Called on|Job |Garnet|501\/502)/.test(part)) side = own;
+    // S5 rule text is conductor then engineer; display just the selected side.
+    part = part.replace(/S5: ([^+]+) \+ (.+)$/, (_, co, en) => {
+      related.push('Related crew prediction — ' + (craft === 'CO' ? 'EN: ' + en.trim() : 'CO: ' + co.trim()));
+      return 'S5 ' + craft + ': ' + (craft === 'CO' ? co.trim() : en.trim());
+    });
+    side.push(part);
+  }
+  return { own: own.join(' · '), related: related.join(' · ') };
+}
 function turnPanel(s) {
-  const f = BoardTurns.facts(s, focus);
+  const selectedCraft = BoardTurns.splitCraft(focus).craft;
+  const allFacts = BoardTurns.facts(s, BoardTurns.splitCraft(focus).base);
+  const f = BoardTurns.facts(s, focus).map((x) => ({ ...x, text: craftHistoryText(x.text, selectedCraft).own })).filter((x) => x.text);
+  const relatedFacts = selectedCraft ? allFacts.map((x) => craftHistoryText(x.text, selectedCraft).related).filter(Boolean) : [];
+  const related = relatedFacts.length ? '<details><summary>Related crew information (other craft)</summary><ul>' + relatedFacts.map((text) => '<li>' + markTurn(text) + '</li>').join('') + '</ul></details>' : '';
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
@@ -1323,7 +1345,7 @@ function turnPanel(s) {
     <div id="alertnote" class="alertnote" hidden></div>
     <div id="worklog" class="work"></div>
     <div id="held186" class="work"></div>
-    <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}</div>
+    <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
     <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
 }
@@ -1450,7 +1472,7 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
     return restLine(from, rows[i].onDutySeen, 'Rest before it:');
   };
   const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', '<br>(')}</div>` : ''}</td>
-    <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
+    <td><b class="num">${esc(o.train)}</b><div class="crew call-result" data-call-result="${i}">Loading call stability…</div>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
   return `<h3>Work history <span class="muted">(tap a train for call history and call stability)</span></h3>
     <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
@@ -1471,6 +1493,7 @@ function callHistory(rec, rows, i) {
 }
 function wireWork(box, rec, turn) {
   const rows = worked(rec, turn);
+  window.dispatchEvent(new CustomEvent('work-call-results', { detail: { box, turn, trips: rows } }));
   box.querySelectorAll('tr.wrow').forEach((tr) => {
     tr.onclick = () => {
       const open = tr.classList.contains('open');
@@ -3482,12 +3505,16 @@ source().then(async (src) => {
       // S501-CO / S501-EN: only that craft's rests (owner, 2026-11-03).
       const raw = all[wantBase];
       const hist = raw && wantCraft ? { ...raw, rests: raw.rests.filter((x) => !x.craft || x.craft === (wantCraft === 'CO' ? 'CO' : 'EN')) } : raw;
-      const h = turnHistory(hist, s.taken, { summary: true });
+      const selectedChanges = wantCraft && hist ? hist.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, wantCraft).own })).filter((x) => x.text) : hist && hist.changes;
+      const selectedHist = hist && { ...hist, changes: selectedChanges };
+      const h = turnHistory(selectedHist, s.taken, { summary: true });
+      const relatedChanges = wantCraft && raw ? raw.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, wantCraft).related })).filter((x) => x.text) : [];
+      if (relatedChanges.length) h.changes += '<details><summary>Related crew history (other craft)</summary><ul>' + relatedChanges.slice().reverse().map((x) => '<li>' + stampBtn(x.taken) + '<span>' + markTurn(x.text) + '</span></li>').join('') + '</ul></details>';
       hb.innerHTML = h.changes;
       const more = document.getElementById('turnmore');
       if (more) { more.innerHTML = h.more; document.getElementById('turnmorebox').hidden = !h.more; }
       const work = document.getElementById('worklog');
-      if (work && hist) { work.innerHTML = workHistory(hist, want, [], (RESETS && RESETS.offs) || {}); wireWork(work, hist, want); }
+      if (work && hist) { work.innerHTML = workHistory(selectedHist, want, [], (RESETS && RESETS.offs) || {}); wireWork(work, selectedHist, want); }
       else if (work) work.innerHTML = workHistory(null, want);
       document.querySelectorAll('.turnpanel button[data-taken]').forEach((b) => { b.onclick = () => jumpTo(b.dataset.taken); });
     }).catch(() => {
@@ -3971,6 +3998,36 @@ source().then(async (src) => {
   // The archive, a month per file (F7): only the months the dates need
   // (from the month before, for things that started then), each fetched once.
   const archMonths = new Map();
+  function matchingCallRecords(all, turn, trip) {
+    const annotation = / \(([A-Z]+\d+(?:-(?:EN|CO))?)\)$/.exec(trip.train || '');
+    const train = String(trip.train || '').replace(/ \([^)]*\)$/, '');
+    return all.filter((z) => !z.takenOff && z.turn === (annotation ? annotation[1] : turn) && z.train === train && z.onDuty === trip.at);
+  }
+  window.addEventListener('work-call-results', async (event) => {
+    const { box, turn, trips } = event.detail;
+    if (!trips.length) return;
+    try {
+      const dates = trips.map((t) => (t.at || '').slice(0, 10)).filter(Boolean).sort();
+      const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: dates[0], to: dates[dates.length - 1] })]);
+      if (!box.isConnected) return;
+      const all = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []);
+      trips.forEach((trip, i) => {
+        const el = box.querySelector('[data-call-result="' + i + '"]');
+        if (!el) return;
+        const records = matchingCallRecords(all, turn, trip);
+        const timelines = records.map((z) => BoardAnalytics.callTimeline(z)).filter((m) => m && m.expected != null && m.end != null);
+        const gaps = [...new Set(timelines.map((m) => m.end - m.expected))];
+        el.classList.remove('spare', 'ok');
+        if (!gaps.length) { el.textContent = 'Timeline unavailable'; return; }
+        if (gaps.length !== 1) { el.textContent = 'Multiple call records — open to review'; return; }
+        const gap = gaps[0];
+        el.textContent = gap < 0 ? dur(gap) + ' early · Lost Sleep ' + dur(gap) : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
+        el.classList.add(gap ? 'spare' : 'ok');
+      });
+    } catch (e) {
+      if (box.isConnected) box.querySelectorAll('[data-call-result]').forEach((el) => { el.textContent = 'Call stability could not be loaded'; });
+    }
+  });
   window.addEventListener('work-call-timeline', async (event) => {
     const { box, turn, trip } = event.detail;
     try {
