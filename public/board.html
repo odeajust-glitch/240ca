@@ -3877,7 +3877,7 @@ source().then(async (src) => {
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
     window.BoardRef.render(view, refState);
   }
-  const testPreview = { turn: 'SR03' };
+  const testPreview = { turn: 'JUOD' };
   async function renderTest() {
     const view = document.getElementById('view');
     if (!healthData || !OwnerKey.has()) {
@@ -3887,31 +3887,51 @@ source().then(async (src) => {
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
     const want = testPreview.turn;
     view.innerHTML = '<h2>Test</h2><p class="anote"><b>Preview only — mobile Turn History cards.</b> The regular Turn History is unchanged. These cards use saved board data; opening them does not send alerts or change assignments.</p>' +
-      '<label for="test-turn">Preview turn</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="SR03 or S501-CO" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-preview"><p class="anote">Loading saved trips…</p></div>';
+      '<label for="test-turn">Preview turn or name code</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="Name code or turn" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-preview"><p class="anote">Loading saved trips…</p></div>';
     const go = () => {
       const turn = clean(document.getElementById('test-turn').value);
-      if (!/^[A-Z][A-Z0-9]{1,4}\d{2}(?:-(?:CO|EN))?$/.test(turn) || BoardTurns.PLACEHOLDER.test(turn)) return;
+      if ((!isCode(turn) && !/^[A-Z][A-Z0-9]{1,4}\d{2}(?:-(?:CO|EN))?$/.test(turn)) || BoardTurns.PLACEHOLDER.test(turn)) return;
       if (BoardTurns.SHARED.test(turn)) return askCraft(turn, (selected) => { testPreview.turn = selected; renderTest(); });
       testPreview.turn = turn; renderTest();
     };
     document.getElementById('test-show').onclick = go;
     document.getElementById('test-turn').onkeydown = (event) => { if (event.key === 'Enter') go(); };
     try {
-      const all = await src.turns();
+      const person = isCode(want);
+      const [all, stretches, hash] = await Promise.all([
+        src.turns(), person ? Person.find(want) : null, person ? Person.hash(want) : null
+      ]);
       if (mode !== 'test' || testPreview.turn !== want || !healthData || !OwnerKey.has()) return;
-      const { base, craft } = BoardTurns.splitCraft(want);
-      const raw = all[base];
-      const rec = raw && craft ? { ...raw,
-        changes: raw.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, craft).own })).filter((x) => x.text),
-        rests: raw.rests.filter((x) => !x.craft || x.craft === craft || (craft === 'EN' && x.craft === 'LE')) } : raw;
+      let rec, workTurn = want;
+      if (person) {
+        rec = stretches && personHistory(stretches, all, (turn) => Person.craftNow(hash, turn));
+        // Keep shared S5 timeline lookup craft-specific in this preview.
+        if (rec) rec.orders = rec.orders.map((o) => {
+          if (!BoardTurns.SHARED.test(o.turn)) return o;
+          const seen = o.onDutySeen || o.first;
+          const held = (stretches || []).filter((e) => e.turn === o.turn && seen >= e.from && seen <= e.to);
+          const crafts = [...new Set(held.map((e) => e.craft || (!(stretches || []).some((x) => x.turn === e.turn && x.to > e.to) ? Person.craftNow(hash, e.turn) : '')).filter(Boolean))];
+          if (crafts.length !== 1) return o;
+          const craft = crafts[0] === 'CO' ? 'CO' : 'EN';
+          if (o.crew && !BoardTurns.crewHasCraft(o.crew, o.turn, craft)) return null;
+          return { ...o, train: o.train.replace(/ \([^)]*\)$/, ' (' + o.turn + '-' + craft + ')') };
+        }).filter(Boolean);
+        workTurn = ''; // Personal history retains only trips observed while holding each turn.
+      } else {
+        const { base, craft } = BoardTurns.splitCraft(want);
+        const raw = all[base];
+        rec = raw && craft ? { ...raw,
+          changes: raw.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, craft).own })).filter((x) => x.text),
+          rests: raw.rests.filter((x) => !x.craft || x.craft === craft || (craft === 'EN' && x.craft === 'LE')) } : raw;
+      }
       const box = document.getElementById('test-work');
       if (!box) return;
-      box.innerHTML = '<h3>' + esc(want) + '</h3>' + workHistory(rec, want, [], (RESETS && RESETS.offs) || {});
+      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal trip preview' : '') + '</h3>' + workHistory(rec, workTurn, [], (RESETS && RESETS.offs) || {});
       box.querySelectorAll('tr.wrow').forEach((row) => {
         row.setAttribute('tabindex', '0'); row.setAttribute('role', 'button'); row.setAttribute('aria-expanded', 'false');
         row.setAttribute('aria-label', 'Open trip call timeline');
       });
-      wireWork(box, rec, want);
+      wireWork(box, rec, workTurn);
       box.querySelectorAll('tr.wrow').forEach((row) => {
         const open = row.onclick;
         row.onclick = () => {
