@@ -1410,7 +1410,7 @@ function wireWork(box, rec, turn) {
       tr.classList.add('open');
       const d = document.createElement('tr');
       d.className = 'wdet';
-      d.innerHTML = `<td colspan="3" class="det">${callHistory(rec, rows, +tr.dataset.w)}<div class="work-call-timeline"><p class="anote">Loading call timeline…</p></div></td>`;
+      d.innerHTML = `<td colspan="3" class="det"><div class="work-call-timeline"><p class="anote">Loading call timeline…</p></div>${callHistory(rec, rows, +tr.dataset.w)}</td>`;
       tr.after(d);
       window.dispatchEvent(new CustomEvent('work-call-timeline', { detail: { box: d.querySelector('.work-call-timeline'), turn, trip: rows[+tr.dataset.w] } }));
       d.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('jumpto', { detail: b.dataset.taken })); }; });
@@ -3877,7 +3877,7 @@ source().then(async (src) => {
       const trainId = String(trip.train || '').replace(/ \([^)]*\)$/, '');
       const sourceTurn = annotation ? annotation[1] : turn;
       const matches = all.filter(z => !z.takenOff && z.turn === sourceTurn && z.train === trainId && z.onDuty === trip.at);
-      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z)).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes above are still available; a graph cannot be drawn without saved predictions.</p>';
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z).replace('<details class="call-timeline">', '<details class="call-timeline" open>')).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes below are still available; a graph cannot be drawn without saved predictions.</p>';
     } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
   });
   async function loadArchive(range) {
