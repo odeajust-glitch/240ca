@@ -522,3 +522,9 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   vs latest-order comparison, open/close details and all-event access, disappeared
   deadhead wording, empty filters and completed/tie-up-not-recorded distinctions.
 - Regular Order summary is unchanged. Do not promote until Justin approves.
+
+Order-summary preview approved for promotion (2026-11-08): owner approved items
+2–6 and requested the old dropdown appearance. Implemented on regular summary;
+shared Test view matches it. Previous “do not promote” note is superseded by this
+approval. Keep phone/publication verification open: theme dropdowns, day/origin/
+status filters, exact dated train links, first/latest comparisons and all-event access.

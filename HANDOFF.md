@@ -452,3 +452,12 @@ is labelled no call observed, not proof of cancellation. Only verified owner-key
 browsers can render Test. Regular Order summary, Changes, cards, calculations and
 notifications are unchanged. Syntax/sample/filter/access checks pass; owner visual
 review and publication pending. No Worker change.
+
+Order-summary promotion approved — 2026-11-08: owner approved Test items 2–6
+for the regular Order summary. Shared renderer retains six-column summary,
+first/latest-order comparisons, key events with every original event expandable,
+evidence-based disappearance labels and status/day/origin/search filters. Dropdowns
+and search use the prior Order-summary theme styling and friendly day labels.
+Chronological row order, full dated-ID deep links, snapshot links and share links
+are retained. Test remains owner-key gated; regular summary remains public.
+No railway/notification changes. Publication and live visual verification pending.

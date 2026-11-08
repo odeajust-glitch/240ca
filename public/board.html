@@ -388,7 +388,9 @@
   .test-notes-list summary { cursor: pointer; color: var(--accent); }
   .test-notes-full { white-space: normal; overflow-wrap: anywhere; }
   .preview-order-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 12px 0; }
-  .preview-order-filters label { display: grid; gap: 4px; }
+  .preview-order-filters label { display: grid; gap: 4px; font-size: 12.5px; color: var(--soft); }
+  .preview-order-filters select, .preview-order-filters input { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; }
+  .preview-order-filters button { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 12px; cursor: pointer; }
   .preview-order-filters input, .preview-order-filters select, .preview-order-filters button { min-height: 44px; max-width: 100%; }
   .preview-order-details { padding: 14px; white-space: normal; }
   .preview-order-details .timeline-facts { margin-bottom: 14px; }
@@ -3915,31 +3917,49 @@ source().then(async (src) => {
     return (r.events || []).filter((event) => !/^(planChange|orderChange)$/.test(event.kind) ||
       Math.abs(BoardTrains.off(event.from, event.at) || 0) > 30);
   }
-  async function renderTest() {
+  const orderSummaryState = { day: null, from: 'all', status: 'all', find: '', open: null };
+  function renderTest() { return renderOrderSummary('test'); }
+  async function renderOrderSummary(target) {
+    const preview = target === 'test' ? testPreview : orderSummaryState;
     const view = document.getElementById('view');
-    if (!healthData || !OwnerKey.has()) {
+    if (target === 'test' && (!healthData || !OwnerKey.has())) {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
-    try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    view.innerHTML = '<h2>Test · Order summary</h2><p class="anote">Loading preview…</p>';
+    try { history.replaceState(null, '', target === 'test' ? '#test' : '#orders'); } catch (e) { /* unavailable */ }
+    view.innerHTML = '<h2>' + (target === 'test' ? 'Test · Order summary' : 'Order summary') + '</h2><p class="anote">Loading trains…</p>';
     let all;
     try { all = (await src.trains()).map(BoardTrains.cleanTrip); }
-    catch (e) { if (mode === 'test') view.innerHTML = '<h2>Test · Order summary</h2><p class="empty">Could not load saved trains. Reopen Test to retry.</p>'; return; }
-    if (mode !== 'test' || !healthData || !OwnerKey.has()) return;
+    catch (e) { if (mode === target) view.innerHTML = '<h2>Test · Order summary</h2><p class="empty">Could not load saved trains. Reopen Test to retry.</p>'; return; }
+    if (mode !== target || (target === 'test' && (!healthData || !OwnerKey.has()))) return;
+    if (target === 'orders') {
+      if (order.jump) {
+        Object.assign(preview, {day: order.day, open: order.open, find: '', status: 'all', from: order.from || 'all'});
+        order.jump = false;
+      }
+      if (order.find) {
+        const q = order.find.toUpperCase().replace(/\s+/g, '');
+        const match = all.find((r) => r.id.toUpperCase().replace(/\s+/g, '') === q);
+        if (match) Object.assign(preview, {day: match.day, open: match.id + ' ' + match.month, from: 'all', status: 'all'});
+        preview.find = order.find; order.find = '';
+      }
+    }
     const days = [...new Set(all.map((r) => r.day).filter(Boolean))].sort().reverse();
-    if (!days.includes(testPreview.day)) testPreview.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
+    if (!days.includes(preview.day)) preview.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
     const labels = { planned: 'Planned / no order observed', ordered: 'Order observed', onDuty: 'On duty / tie-up not recorded', completed: 'Completed', disappeared: 'Off lineup / no call observed' };
-    const query = testPreview.find.trim().toUpperCase().replace(/\s+/g, '');
-    const rows = all.filter((r) => r.day === testPreview.day &&
-      (testPreview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === testPreview.from) &&
-      (testPreview.status === 'all' || previewOrderStatus(r) === testPreview.status) &&
-      (!query || r.id.toUpperCase().replace(/\s+/g, '').includes(query)));
+    const query = preview.find.trim().toUpperCase().replace(/\s+/g, '');
+    const rows = all.filter((r) => r.day === preview.day &&
+      (preview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === preview.from) &&
+      (preview.status === 'all' || previewOrderStatus(r) === preview.status) &&
+      (!query || r.id.toUpperCase().replace(/\s+/g, '').includes(query))).sort((a,b) => {
+      const due = r => r.onDuty || r.order || r.plan || r.firstSeen;
+      return String(due(a)).localeCompare(String(due(b)));
+    });
     const select = (id, name, items, selected) => '<label>' + name + '<select id="' + id + '">' +
       items.map(([value, label]) => '<option value="' + esc(value) + '"' + (value === selected ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></label>';
     const body = rows.map((r) => {
       const key = r.id + ' ' + r.month;
-      const open = testPreview.open === key;
+      const open = preview.open === key;
       const latest = r.order || r.firstOrder;
       const delta = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null;
       const status = previewOrderStatus(r);
@@ -3957,31 +3977,33 @@ source().then(async (src) => {
         '<span>Compared with latest order: ' + offCell(delta) + '</span><span>Toronto off duty: <b>' + (r.noOffDuty ? 'Not applicable' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? 'Needs review' : 'Not recorded') + '</b></span>' +
         '<span>Time on duty: <b>' + (r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + '</b></span><span>Crew: <b>' + esc(r.crew || 'Not recorded') + '</b></span></div>' +
         '<h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections. All smaller movements remain below.</p>' + major +
-        '<details><summary>All recorded changes (' + (r.events || []).length + ')</summary>' + full + '</details></td></tr>';
+        '<details><summary>All recorded changes (' + (r.events || []).length + ')</summary>' + full + '</details>' + (target === 'orders' ? '<button type="button" data-preview-share="' + esc(r.id) + '">🔗 Share this train</button>' : '') + '</td></tr>';
     }).join('');
-    view.innerHTML = '<h2>Test · Order summary</h2><p class="anote"><b>Preview only.</b> Regular Order summary is unchanged. Times are railway time. “Order” is the lineup time, not the moment a call was made. Comparisons use actual on-duty time.</p>' +
-      '<div class="preview-order-filters">' + select('test-order-day', 'Day', days.map((day) => [day, day]), testPreview.day) +
-      select('test-order-from', 'Origin', [['all','Sarnia and Toronto'],['sarnia','Sarnia'],['mac','Toronto']], testPreview.from) +
-      select('test-order-status', 'Status', [['all','All statuses'], ...Object.entries(labels)], testPreview.status) +
-      '<label>Find within day<input id="test-order-find" placeholder="X39491 06" value="' + esc(testPreview.find) + '"></label><button type="button" id="test-order-show">Apply</button></div>' +
-      '<section class="sheet"><header><h2>' + esc(testPreview.day || 'No saved day') + '</h2><span class="meta">' + rows.length + ' trains · tap a row for details</span></header>' +
+    view.innerHTML = (target === 'test' ? '<h2>Test · Order summary</h2><p class="anote"><b>Preview only.</b> This matches the approved regular Order summary.</p>' : '<div class="ohead"><div><div class="eyebrow">Order summary</div><div class="when">' + esc(preview.day ? when(preview.day + ' 0000').long : 'No saved day') + '</div></div></div>') +
+      '<p class="anote">Times are railway time. “Order” is the lineup time, not the moment a call was made. Comparisons use actual on-duty time.</p>' +
+      '<div class="preview-order-filters">' + select('test-order-day', 'Day', days.map((day) => [day, when(day + ' 0000').day]), preview.day) +
+      select('test-order-from', 'Trains from', [['all','Sarnia and Toronto'],['sarnia','Sarnia'],['mac','Toronto']], preview.from) +
+      select('test-order-status', 'Status', [['all','All statuses'], ...Object.entries(labels)], preview.status) +
+      '<label>Find within day<input id="test-order-find" placeholder="X39491 06" value="' + esc(preview.find) + '"></label><button type="button" id="test-order-show">Apply</button></div>' +
+      '<section class="sheet"><header><h2>' + esc(preview.day ? when(preview.day + ' 0000').day : 'No saved day') + '</h2><span class="meta">' + rows.length + ' trains · tap a row for details</span></header>' +
       '<div class="scroll"><table class="orders"><thead><tr><th>Train / status</th><th>First plan</th><th>Latest order</th><th>Actual on duty</th><th>Vs first plan</th><th>Vs latest order</th></tr></thead><tbody>' +
       (body || '<tr><td colspan="6">No trains match these filters.</td></tr>') + '</tbody></table></div></section>' +
       '<p class="anote">Completed means a usable tie-up is recorded. “No call observed” does not prove cancellation or that nobody was called. Order observed describes saved evidence, not a live dispatcher status.</p>';
     const apply = () => {
-      testPreview.day = document.getElementById('test-order-day').value;
-      testPreview.from = document.getElementById('test-order-from').value;
-      testPreview.status = document.getElementById('test-order-status').value;
-      testPreview.find = document.getElementById('test-order-find').value;
-      testPreview.open = null; renderTest();
+      preview.day = document.getElementById('test-order-day').value;
+      preview.from = document.getElementById('test-order-from').value;
+      preview.status = document.getElementById('test-order-status').value;
+      preview.find = document.getElementById('test-order-find').value;
+      preview.open = null; renderOrderSummary(target);
     };
     for (const id of ['test-order-day','test-order-from','test-order-status']) document.getElementById(id).onchange = apply;
     document.getElementById('test-order-show').onclick = apply;
     document.getElementById('test-order-find').onkeydown = (event) => { if (event.key === 'Enter') apply(); };
     view.querySelectorAll('[data-preview-key]').forEach((row) => {
-      row.onclick = () => { testPreview.open = testPreview.open === row.dataset.previewKey ? null : row.dataset.previewKey; renderTest(); };
+      row.onclick = () => { preview.open = preview.open === row.dataset.previewKey ? null : row.dataset.previewKey; renderOrderSummary(target); };
       row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
     });
+    view.querySelectorAll('[data-preview-share]').forEach((button) => { button.onclick = () => shareLink('#train=' + encodeURIComponent(button.dataset.previewShare.replace(/\s+/g, '-')), 'Train ' + button.dataset.previewShare, button); });
     view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
   }
 
@@ -4084,31 +4106,7 @@ source().then(async (src) => {
       if (!form.elements.name.value) form.elements.name.focus({ preventScroll: true });
     }
   }
-  async function renderOrders() {
-    const view = document.getElementById('view');
-    view.innerHTML = '<p class="empty">Loading the order summary…</p>';
-    let all;
-    try { all = await src.trains(); } catch (e) { view.innerHTML = '<p class="empty">The order summary isn\'t available right now.</p>'; return; }
-    if (mode !== 'orders') return;
-    // Searching a train opens the day it belongs to.
-    const q = order.find.trim().toUpperCase().replace(/\s+/g, '');
-    const match = q && all.find((r) => r.id.replace(/\s+/g, '') === q);
-    if (match) { order.day = match.day; order.open = `${match.id} ${match.month}`; order.from = 'all'; }
-    if (!order.day) order.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
-    view.innerHTML = ordersView(all, order.day, order.open, order.find, order.from);
-    try { history.replaceState(null, '', '#orders'); } catch (e) { /* not allowed in some frames */ }
-    document.getElementById('oday').onchange = (e) => { order.day = e.target.value; order.open = null; order.find = ''; renderOrders(); };
-    document.getElementById('ofrom').onchange = (e) => { order.from = e.target.value; order.open = null; renderOrders(); };
-    const find = document.getElementById('ofind');
-    find.onkeydown = (e) => { if (e.key === 'Enter') { order.find = find.value; renderOrders(); } };
-    find.onchange = () => { order.find = find.value; renderOrders(); };
-    view.querySelectorAll('tr.row').forEach((tr) => { tr.onclick = () => { order.open = order.open === tr.dataset.key ? null : tr.dataset.key; order.find = ''; renderOrders(); }; });
-    view.querySelectorAll('.story button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); setMode(false); jumpTo(b.dataset.taken); }; });
-    view.querySelectorAll('.story button[data-share]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); shareLink(`#train=${encodeURIComponent(b.dataset.share.replace(/\s+/g, '-'))}`, `Train ${b.dataset.share}`, b); }; });
-    const open = view.querySelector('tr.open');
-    if (open && (match || order.jump)) open.scrollIntoView({ block: 'center' });
-    order.jump = false;
-  }
+  async function renderOrders() { return renderOrderSummary('orders'); }
 
   // Analytics tab (owner, 2026-10-26): a train number, turn or name code,
   // within the dates picked. A name code is never put in the address bar or
