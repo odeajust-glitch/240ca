@@ -501,3 +501,14 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   PL warnings, multiple rescues, unread screens and repeat suppression on real CATS.
 - Targeted automated alert/engine/spare tests pass; no actual notifications sent.
   Keep this item open until laptop publication and actual recipient evidence confirm.
+
+### Corrected departure / Toronto tie-up verification — 2026-11-08 (open)
+
+- [Error list and fixes](TRIP-DATA-FIXES-2026-11-08.md): verify X39491 06 no
+  longer combines duty 8th 0445 (S107/SA05) with off 8th 0149 (SD12/SR04).
+- Confirm withdrawn evidence is visible in the story; missing tie-up is shown as
+  unavailable/Needs review, not an invented duration. Any later replacement must
+  match the corrected departure and crew. Review any affected historical held-away
+  record before relying on it; no previous submissions were inspected here.
+- 49 targeted tests pass; keep real-CATS/publication verification open. Full dated
+  train identity and month remain part of matching. No Worker update required.

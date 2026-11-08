@@ -431,3 +431,12 @@ unchanged status repetitions stay in the full history. Now, work history cards,
 call timelines, railway calculations and notifications are unchanged. Owner Test
 uses the same approved renderer. Syntax, condensation and raw-note preservation
 checks pass; live publication remains pending. Order summary is review-only.
+
+Order-summary trip correction — 2026-11-08: changed departure time/crew/station
+withdraws the old Toronto off-duty match and away-crew mapping; crew-only corrections
+are no longer skipped. Original events remain with explicit withdrawal/correction
+entries. Invalid legacy rows cannot feed positive durations or held-away totals.
+FORMAT 27 rebuilds retained snapshots. 49 targeted tests pass; laptop publication
+and real-CATS verification remain pending. Error/evidence/fix list:
+[Trip data fixes](docs/board-checker/TRIP-DATA-FIXES-2026-11-08.md).
+No calling-rule, notification or Worker change.

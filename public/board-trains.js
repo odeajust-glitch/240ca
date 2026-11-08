@@ -58,6 +58,29 @@
 
   // Feeds snapshots (oldest first) into `state`; call it again with more
   // snapshots to carry on (the builder does, one day at a time).
+  // Invalidate derived Toronto evidence when the departure it belonged to changes.
+  function invalidateOff(r, taken, reason) {
+    if (!r.offDuty) return;
+    r.events.push({ taken, kind: 'offDutyInvalidated', at: r.offDuty, reason });
+    r.offDuty = null;
+    r.dataIssue = reason;
+    delete r.offDutyOnDuty; delete r.offDutyCrew;
+    delete r.awayCo; delete r.awayEn;
+  }
+  // Also defend old saved rows that predate provenance fields.
+  function cleanTrip(r) {
+    if (!r.offDuty) return r;
+    const duration = off(r.onDuty, r.offDuty);
+    const evidence = [...(r.events || [])].reverse().find(e => e.kind === 'offDuty' && e.at === r.offDuty);
+    const bunk = evidence && String(evidence.crew || '').split(' + ');
+    const unrelated = bunk && bunk.length === 2 && !crewHas(r.crew, bunk[0]) && !crewHas(r.crew, bunk[1]);
+    const reason = duration == null || duration <= 0 ? 'Off duty is not after on duty.' :
+      r.offDutyOnDuty && r.offDutyOnDuty !== r.onDuty ? 'Off duty belongs to an earlier on-duty time.' :
+      ((r.offDutyCrew && r.offDutyCrew !== r.crew) || unrelated) ? 'Off duty belongs to a different crew.' : '';
+    return reason ? { ...r, offDuty: null, timeOnDuty: null, heldMin: null, stillHeld: false, back: null,
+      awayCo: undefined, awayEn: undefined, dataIssue: reason } : r;
+  }
+
   function track(snapshots, state = { trains: {} }) {
     for (const s of snapshots) {
       state.lastTaken = s.taken;
@@ -120,8 +143,10 @@
         const r = state.trains[key];
         if (!r) continue; // never on a line-up in the saved checks
         const at = resolve(t.onDuty, s.taken);
-        if (r.onDuty === at) continue;
-        r.events.push({ taken: s.taken, kind: r.onDuty ? 'onDutyChange' : 'onDuty', at, from: r.onDuty, station: t.station, crew: t.crew });
+        if (!at) continue;
+        if (r.onDuty === at && r.crew === t.crew && r.station === t.station) continue;
+        invalidateOff(r, s.taken, 'On-duty time or crew changed; the earlier bunkhouse match was withdrawn.');
+        r.events.push({ taken: s.taken, kind: r.onDuty ? (r.onDuty === at ? 'crewChange' : 'onDutyChange') : 'onDuty', at, from: r.onDuty, station: t.station, crew: t.crew });
         r.onDuty = at;
         r.crew = t.crew;
         r.station = t.station;
@@ -136,7 +161,7 @@
       const openFor = (offAt) => Object.values(state.trains).filter((r) => !noOffDuty(r) && r.onDuty && !r.offDuty && r.station !== 'TORONTO'
         && r.onDuty < offAt && toMin(offAt) - toMin(r.onDuty) <= 24 * 60);
       const newest = (list) => list.sort((a, b) => (a.onDuty < b.onDuty ? 1 : -1))[0];
-      const setOff = (r, c, offAt) => { r.offDuty = offAt; r.events.push({ taken: s.taken, kind: 'offDuty', at: offAt, crew: `${c.en} + ${c.co}` }); };
+      const setOff = (r, c, offAt) => { delete r.dataIssue; r.offDuty = offAt; r.offDutyOnDuty = r.onDuty; r.offDutyCrew = r.crew; r.events.push({ taken: s.taken, kind: 'offDuty', at: offAt, crew: `${c.en} + ${c.co}` }); };
       const left = [];
       for (const { c, offAt } of bunk) {
         const r = newest(openFor(offAt).filter((x) => crewHas(x.crew, c.en) && crewHas(x.crew, c.co)));
@@ -203,6 +228,7 @@
   const HOME_WITHIN = 72 * 60; // a trip home later than this isn't the same stay
   const turnOf = (crew, craft) => { const m = new RegExp(`(?:^|· )${craft} (\\S+)`).exec(crew || ''); return m ? m[1] : null; };
   function heldOf(r, state) {
+    r = cleanTrip(r);
     if (!r.offDuty || noOffDuty(r)) return {};
     // The conductor turn in Toronto (and home), when it isn't the one that
     // left Sarnia (a spare on another job: awayCo, set above).
@@ -249,7 +275,8 @@
   }
 
   function summarize(state) {
-    return Object.values(state.trains).map(({ predLog, ...r }) => {
+    return Object.values(state.trains).map((raw) => {
+      const { predLog, ...r } = cleanTrip(raw);
       const due = r.onDuty || r.order || r.plan;
       return { ...r, predHit: predHit({ ...r, predLog }), from: r.from || 'sarnia', day: due ? due.slice(0, 10) : r.firstSeen.slice(0, 10), offPlan: off(r.firstPlan, r.onDuty), offOrder: off(r.firstOrder, r.onDuty),
         leadMin: off(r.firstSeen, r.onDuty || r.order || r.plan), timeOnDuty: off(r.onDuty, r.offDuty), noOffDuty: noOffDuty(r), flag: flagOf(r, state.lastTaken),
@@ -257,7 +284,7 @@
     }).sort((a, b) => (toMin(b.onDuty || b.order || b.plan || b.firstSeen) - toMin(a.onDuty || a.order || a.plan || a.firstSeen)));
   }
 
-  const api = { predHit, track, summarize, resolve, trainKey, toMin, fromMin, off, FLAG_WAIT, HELD_LIMIT };
+  const api = { cleanTrip, predHit, track, summarize, resolve, trainKey, toMin, fromMin, off, FLAG_WAIT, HELD_LIMIT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardTrains = api;
 })(this);

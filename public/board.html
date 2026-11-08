@@ -1619,6 +1619,8 @@ function story(r) {
       ordered: () => `<span class="k">Ordered</span> for <b>${esc(dt(e.at))}</b>`,
       orderChange: () => `<span class="k chg">Order changed</span> ${esc(dt(e.from))} → <b>${esc(dt(e.at))}</b> (${BoardTrains.off(e.from, e.at) > 0 ? '+' : '−'}${dur(BoardTrains.off(e.from, e.at))})`,
       onDuty: () => `<span class="k">On duty</span> ${esc(dt(e.at))} (Call Board${e.crew ? `, ${esc(e.crew)}` : ''})`,
+      crewChange: () => 'Crew corrected on the Call Board: ' + esc(e.crew || 'not recorded'),
+      offDutyInvalidated: () => 'Earlier off-duty match withdrawn: ' + esc(e.reason),
       onDutyChange: () => `On-duty time corrected ${esc(dt(e.from))} → ${esc(dt(e.at))}`,
       gone: () => 'Off the line-up without showing on the Call Board (cancelled, or on duty between checks)',
       offDuty: () => `<span class="k">Off duty in Toronto</span> ${esc(dt(e.at))} (${esc(e.crew)} in the bunkhouse; rest − 8 h)`,
@@ -1627,6 +1629,7 @@ function story(r) {
     return `<li class="${/ordered|onDuty$|seen/.test(e.kind) ? 'big' : ''}">${time}<span>${t ? t() : esc(e.kind)}</span></li>`;
   };
   const sum = [];
+  if (r.dataIssue) sum.push('<span class="spare">Off-duty match needs review: ' + esc(r.dataIssue) + '</span>');
   if (r.onDuty && r.firstPlan) sum.push(`First plan ${esc(dt(r.firstPlan))} → on duty ${esc(dt(r.onDuty))}: ${offCell(r.offPlan)}`);
   if (r.onDuty && r.firstOrder) sum.push(`First order ${esc(dt(r.firstOrder))} → on duty ${esc(dt(r.onDuty))}: ${offCell(r.offOrder)}`);
   if (!r.firstPlan && r.firstOrder) sum.push('Already ordered the first time it was seen, so there is no plan to compare.');
@@ -2196,7 +2199,7 @@ function ordersView(all, day, openId, find, from = 'all') {
       <td class="num"><b>${r.onDuty ? esc(dt(r.onDuty)) : `<span class="muted">${r.gone ? 'off line-up' : 'not yet'}</span>`}</b></td>
       <td>${offCell(r.offPlan)}</td>
       <td>${offCell(r.offOrder)}</td>
-      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.offDuty ? esc(dt(r.offDuty)) : '—'}</td>
+      <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? '<span class="spare">Needs review</span>' : '—'}</td>
       <td class="num">${r.noOffDuty ? '<span class="muted">n/a</span>' : r.timeOnDuty != null ? `<b>${esc(dur(r.timeOnDuty))}</b>` : '—'}</td></tr>`;
     return tr + (key === openId ? story(r) : '');
   }).join('');
@@ -2714,7 +2717,7 @@ async function source() {
       days: index.days.map((d) => d.day),
       load: (day) => cache.get(day) || cache.set(day, getJSON(`data/${day}.json`).then((d) => d.snapshots)).get(day),
       turns: once(() => getJSON('data/turns.json').then((d) => d.turns)),
-      trains: once(() => getJSON('data/trains.json').then((d) => d.trains)),
+      trains: once(() => getJSON('data/trains.json').then((d) => d.trains.map(BoardTrains.cleanTrip))),
       names: once(() => getJSON('data/names.json').catch(() => null)),
       // Analytics (owner, 2026-10-26): runarounds and jobs going spare, and
       // the long-term archive. Either may be missing on an older build.

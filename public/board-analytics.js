@@ -383,6 +383,7 @@
   };
   // older + newer as one list, each thing once.
   function joinOld(kind, older = [], newer = []) {
+    if (kind === 'trains') { older = older.map(T.cleanTrip); newer = newer.map(T.cleanTrip); }
     if (kind === 'runarounds') {
       // The archive's copy saw it start; later checks (the site's) add their
       // stretches, the end state and the crew that went.
