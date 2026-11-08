@@ -378,6 +378,20 @@
   .screen-links button { min-height: 44px; white-space: normal; }
   .screens:has(.screen-group) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .off-heading { margin: 12px 14px 6px; font-size: 14px; }
+  /* Owner Test only: regular Turn History table keeps its existing layout. */
+  .test-preview .scroll { overflow: visible; }
+  .test-preview table, .test-preview tbody { display: block; width: 100%; }
+  .test-preview thead { display: none; }
+  .test-preview .wrow { display: grid; grid-template-columns: minmax(0,1fr); padding: 14px; margin: 10px 0; border: 1px solid var(--rule-soft); border-radius: 8px; cursor: pointer; }
+  .test-preview .wrow:focus { outline: 2px solid var(--accent); }
+  .test-preview .wrow td { display: block; border: 0; padding: 5px 0; white-space: normal; overflow-wrap: anywhere; }
+  .test-preview .wrow td:nth-child(2) { order: -1; font-size: 17px; }
+  .test-preview .wrow td:first-child::before { content: "Actual call: "; color: var(--soft); }
+  .test-preview .wrow td:last-child::before { content: "Worked with: "; color: var(--soft); }
+  .test-preview .wrow::after { content: "▸ Call timeline and trip details"; color: var(--accent); font-size: 13px; padding-top: 8px; }
+  .test-preview .wrow.open::after { content: "▾ Call timeline and trip details"; }
+  .test-preview .wrest, .test-preview .wdet, .test-preview .wrest td, .test-preview .wdet td { display: block; white-space: normal; }
+  .test-preview .wdet { padding: 10px; border-left: 3px solid var(--accent); }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -719,7 +733,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeTest" type="button" aria-pressed="false" hidden>Test</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2743,6 +2757,7 @@ source().then(async (src) => {
     document.getElementById('modeHealth').hidden = !h;
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
+    document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
     // A key saved on this phone that the site doesn't take: say so in Settings (owner, 2026-11-02).
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !h);
@@ -2758,6 +2773,7 @@ source().then(async (src) => {
       const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
+    if (mode === 'test') renderTest();
     if (h && mode === 'health') renderHealth();
     if (h && mode === 'notes' && !notesData) renderNotes();
   }
@@ -3844,6 +3860,7 @@ source().then(async (src) => {
   const modeHealth = document.getElementById('modeHealth');
   const modeReview = document.getElementById('modeReview');
   const modeNotes = document.getElementById('modeNotes');
+  const modeTest = document.getElementById('modeTest');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
   // Agreements tab (owner, 2026-11-03): the agreement search, in this page (board-ask.js).
@@ -3861,9 +3878,58 @@ source().then(async (src) => {
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
     window.BoardRef.render(view, refState);
   }
+  const testPreview = { turn: 'SR03' };
+  async function renderTest() {
+    const view = document.getElementById('view');
+    if (!healthData || !OwnerKey.has()) {
+      view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
+      return;
+    }
+    try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
+    const want = testPreview.turn;
+    view.innerHTML = '<h2>Test</h2><p class="anote"><b>Preview only — mobile Turn History cards.</b> The regular Turn History is unchanged. These cards use saved board data; opening them does not send alerts or change assignments.</p>' +
+      '<label for="test-turn">Preview turn</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="SR03 or S501-CO" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-preview"><p class="anote">Loading saved trips…</p></div>';
+    const go = () => {
+      const turn = clean(document.getElementById('test-turn').value);
+      if (!/^[A-Z][A-Z0-9]{1,4}\d{2}(?:-(?:CO|EN))?$/.test(turn) || BoardTurns.PLACEHOLDER.test(turn)) return;
+      if (BoardTurns.SHARED.test(turn)) return askCraft(turn, (selected) => { testPreview.turn = selected; renderTest(); });
+      testPreview.turn = turn; renderTest();
+    };
+    document.getElementById('test-show').onclick = go;
+    document.getElementById('test-turn').onkeydown = (event) => { if (event.key === 'Enter') go(); };
+    try {
+      const all = await src.turns();
+      if (mode !== 'test' || testPreview.turn !== want || !healthData || !OwnerKey.has()) return;
+      const { base, craft } = BoardTurns.splitCraft(want);
+      const raw = all[base];
+      const rec = raw && craft ? { ...raw,
+        changes: raw.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, craft).own })).filter((x) => x.text),
+        rests: raw.rests.filter((x) => !x.craft || x.craft === craft || (craft === 'EN' && x.craft === 'LE')) } : raw;
+      const box = document.getElementById('test-work');
+      if (!box) return;
+      box.innerHTML = '<h3>' + esc(want) + '</h3>' + workHistory(rec, want, [], (RESETS && RESETS.offs) || {});
+      box.querySelectorAll('tr.wrow').forEach((row) => {
+        row.setAttribute('tabindex', '0'); row.setAttribute('role', 'button'); row.setAttribute('aria-expanded', 'false');
+        row.setAttribute('aria-label', 'Open trip call timeline');
+      });
+      wireWork(box, rec, want);
+      box.querySelectorAll('tr.wrow').forEach((row) => {
+        const open = row.onclick;
+        row.onclick = () => {
+          open();
+          box.querySelectorAll('tr.wrow').forEach((x) => x.setAttribute('aria-expanded', String(x.classList.contains('open'))));
+        };
+        row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
+      });
+    } catch (e) {
+      const box = document.getElementById('test-work');
+      if (box && mode === 'test') box.innerHTML = '<p class="anote">Preview data could not be loaded. Use Show preview to retry.</p>';
+    }
+  }
+
   function setMode(m) {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
+    document.body.classList.toggle('orders', mode === 'test' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -3875,9 +3941,11 @@ source().then(async (src) => {
     modeHealth.setAttribute('aria-pressed', mode === 'health');
     modeReview.setAttribute('aria-pressed', mode === 'review');
     modeNotes.setAttribute('aria-pressed', mode === 'notes');
+    modeTest.setAttribute('aria-pressed', mode === 'test');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
-    if (mode === 'orders') renderOrders();
+    if (mode === 'test') renderTest();
+    else if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
     else if (mode === 'review') renderReview();
     else if (mode === 'notes') { notesData = null; renderNotes(); }
@@ -4252,6 +4320,7 @@ source().then(async (src) => {
   modeHealth.onclick = () => setMode('health');
   modeReview.onclick = () => setMode('review');
   modeNotes.onclick = () => setMode('notes');
+  modeTest.onclick = () => setMode('test');
   modeRef.onclick = () => setMode('ref');
   modeAsk.onclick = () => setMode('ask');
 
@@ -4280,6 +4349,7 @@ source().then(async (src) => {
   const wantRef = location.hash === '#ref';
   const wantAsk = location.hash === '#agreements';
   const wantNotes = location.hash === '#notifications';
+  const wantTest = location.hash === '#test';
   pendingGo = goFromHash();
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
@@ -4292,6 +4362,7 @@ source().then(async (src) => {
   else if (wantRef) setMode('ref');
   else if (wantAsk) setMode('ask');
   else if (wantNotes) setMode('notes');
+  else if (wantTest) setMode('test');
 
   // A newer board published while this page is open (live site only). On
   // the Current tab it loads by itself (owner, 2026-10-30: two phones showed

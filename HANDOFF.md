@@ -377,3 +377,11 @@ fallback was misleading. A current Sarnia lineup row now supersedes an older rem
 same printed train identity, restoring normal sequence prediction without double
 counting; confirmed current Call Board crews remain factual. Live verification
 remains open. No Worker deployment performed.
+
+Owner Test tab (2026-11-07): hidden unless this browser has an owner key and
+the existing health endpoint confirms owner access. Direct #test rendering checks
+the same gate. Initial preview uses saved Turn History data in compact trip cards;
+the regular Turn History UI remains unchanged. Future candidate layouts belong in
+Test until Justin approves promotion. Opening previews does not change assignments
+or send notifications. Pull/restart/publication and owner-phone visual verification
+remain pending; no Worker changes.
