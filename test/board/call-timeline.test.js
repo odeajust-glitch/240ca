@@ -22,12 +22,12 @@ test('timeline records changes before the eight-hour baseline without altering s
  const z=I.finish(st).sleep[0];assert.equal(z.timelineChanges.length,2);assert.equal(z.shifts.length,1);assert.equal(z.off,-60);assert.equal(z.timelineComplete,true);
 });
 
-test('axis starts at assignment, uses first plan and extends only for ordered later calls',()=>{
+test('axis starts at assignment, uses first plan and includes later actual calls',()=>{
  const z={...record,firstSeen:'2026-11-07 2200',expected:'2026-11-08 0300',call:'2026-11-08 0600',timelineChanges:[
  {taken:'2026-11-07 2210',call:'2026-11-08 0215'},
  {taken:'2026-11-07 2220',call:'2026-11-08 0246'},
  {taken:'2026-11-07 2230',call:'2026-11-08 0600'}]};
- let m=A.callTimeline(z);assert.equal(m.from,T.toMin(z.firstSeen));assert.equal(m.to,T.toMin(z.firstCall));assert.equal(m.expected,T.toMin(z.firstCall));assert.equal(m.markers.length,2);
+ let m=A.callTimeline(z);assert.equal(m.from,T.toMin(z.firstSeen));assert.equal(m.to,T.toMin(z.call));assert.equal(m.expected,T.toMin(z.firstCall));assert.equal(m.markers.length,2);
  z.timelineChanges[2].ordered=true;m=A.callTimeline(z);assert.equal(m.to,T.toMin('2026-11-08 0600'));
 });
 
@@ -65,4 +65,21 @@ test('early-call colours use an inclusive 30-minute threshold and green window b
   assert.ok(html.includes('Planning window starts'));
   assert.ok(html.includes('Planning window ends'));
  }
+});
+
+test('purple waiting runs to inferred actual call, not order observation or on-duty',()=>{
+ const z={...record,call:'2026-11-08 0345',onDuty:'2026-11-08 0545',
+ timelineChanges:[{taken:'2026-11-08 0400',call:'2026-11-08 0345',ordered:true}]};
+ const m=A.callTimeline(z);
+ assert.equal(m.end,T.toMin(z.onDuty)-120);
+ assert.equal(m.to,m.end);
+ const html=A.renderCallTimeline(z);
+ assert.ok(html.includes('fill="#a78bfa"'));
+ assert.ok(html.includes('Purple: past expected call until actual call'));
+ assert.ok(!html.includes('<b>Lost Sleep:'));
+ const older={...z,timelineChanges:[]};
+ assert.equal(A.callTimeline(older).to,m.end);
+ assert.ok(A.renderCallTimeline(older).includes('fill="#a78bfa"'));
+ assert.ok(!A.renderCallTimeline({...record,call:record.firstCall}).includes('fill="#a78bfa"'));
+ assert.ok(!A.renderCallTimeline({...z,takenOff:true}).includes('fill="#a78bfa"'));
 });

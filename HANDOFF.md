@@ -404,3 +404,13 @@ call marker remains separate and visible when times coincide. Late-call colours
 remain yellow up to one hour / red beyond. Lost Sleep durations, axes, timestamps
 and railway calculations are unchanged. Nine timeline tests pass; publication
 and visual verification pending. No Worker change.
+
+Call timeline purple waiting — owner clarification, 2026-11-08: late waiting
+runs from the original expected call until the actual call, inferred as confirmed
+on-duty minus 120 minutes. Ordering first-observed time is not the endpoint.
+Purple replaces the prior late yellow/red bands; early Lost Sleep remains yellow
+<=30 minutes / red >30 minutes. Axis extends to a later actual call even if an
+older record lacks ordered markers. Removed records are not shown as called.
+This is call-plan displacement, not measured sleep or the separate collector's
+15-minute stale-train threshold. Shared renderer covers Analytics, Turn History
+and owner Test. Ten timeline tests pass; live verification pending. No Worker change.
