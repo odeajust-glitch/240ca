@@ -1382,7 +1382,7 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
   const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', '<br>(')}</div>` : ''}</td>
     <td><b class="num">${esc(o.train)}</b>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
-  return `<h3>Work history <span class="muted">(tap a train for its call history)</span></h3>
+  return `<h3>Work history <span class="muted">(tap a train for call history and call stability)</span></h3>
     <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 // What happened to the turn from the train before (exclusive) up to this one.
@@ -3865,9 +3865,13 @@ source().then(async (src) => {
       const day = (trip.at || '').slice(0, 10);
       const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: day, to: day })]);
       if (!box.isConnected) return;
-      const all = BoardAnalytics.joinOld('sleep', archive.sleep || [], live.sleep || []);
-      const matches = all.filter(z => !z.takenOff && z.turn === turn && z.train === trip.train && z.onDuty === trip.at);
-      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z)).join('') : '<p class="anote">No saved call timeline for this turn and trip.</p>';
+      const all = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []);
+      // Person history appends the source turn to the displayed train id.
+      const annotation = / \(([A-Z]+\d+(?:-(?:EN|CO))?)\)$/.exec(trip.train || '');
+      const trainId = String(trip.train || '').replace(/ \([^)]*\)$/, '');
+      const sourceTurn = annotation ? annotation[1] : turn;
+      const matches = all.filter(z => !z.takenOff && z.turn === sourceTurn && z.train === trainId && z.onDuty === trip.at);
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z)).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes above are still available; a graph cannot be drawn without saved predictions.</p>';
     } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
   });
   async function loadArchive(range) {
