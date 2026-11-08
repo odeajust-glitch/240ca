@@ -378,7 +378,10 @@
   .screen-links button { min-height: 44px; white-space: normal; }
   .screens:has(.screen-group) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .off-heading { margin: 12px 14px 6px; font-size: 14px; }
-  /* Isolated owner preview: condensed history notes. */
+  /* Condensed history notes, approved from the owner preview. */
+  .hist .test-notes-list > li { display: block; }
+  .hist .test-notes-list ul li { display: list-item; }
+  .hist .test-notes-list details > button { margin-top: 6px; }
   .test-notes-list { padding: 0; list-style: none; }
   .test-notes-list > li { padding: 12px 0; border-bottom: 1px solid var(--rule-soft); overflow-wrap: anywhere; }
   .test-notes-list ul { padding-left: 20px; margin: 6px 0; }
@@ -1353,7 +1356,7 @@ function turnPanel(s) {
     <div id="worklog" class="work"></div>
     <div id="held186" class="work"></div>
     <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
-    <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
+    <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
 }
 // A time that opens that snapshot.
@@ -1524,6 +1527,30 @@ function wireWork(box, rec, turn) {
 // real changes (rest, hold, available, called, on duty, Toronto, spare…),
 // not every step up the board or a predicted train flipping between checks.
 // Each kept line without its position number and predictions.
+function historyChangeNotes(rec) {
+  const changes = (rec && rec.changes) || [];
+  if (!changes.length) return '<p class="anote">No saved history for this lookup.</p>';
+  const parts = (value) => [...new Set(String(value || '').split(' · ').map((part) =>
+    part.replace(/,? position \d{3}\b/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean))];
+  const events = [];
+  let previous = [];
+  for (const entry of changes) {
+    const current = parts(entry.text);
+    const added = current.filter((part) => !previous.includes(part));
+    const removed = previous.filter((part) => !current.includes(part));
+    if (added.length || removed.length) events.push({ ...entry, added, removed });
+    previous = current;
+  }
+  const list = events.slice().reverse().map((entry) => '<li><b>' + esc(dt(entry.taken)) + '</b>' +
+    (entry.added.length ? '<ul>' + entry.added.map((part) => '<li>' + markTurn(part) + '</li>').join('') + '</ul>' : '<p class="anote">Previous note no longer shown in this check.</p>') +
+    '<details><summary>Full note for this check</summary><p class="test-notes-full">' + markTurn(entry.text) + '</p>' +
+    (entry.removed.length ? '<p class="anote">No longer shown: ' + entry.removed.map(esc).join(' · ') + '</p>' : '') + stampBtn(entry.taken) + '</details></li>').join('');
+  const full = changes.slice().reverse().map((entry) => '<li>' + stampBtn(entry.taken) + '<span>' + markTurn(entry.text) + '</span></li>').join('');
+  return '<h3>What changed</h3><p class="anote">' + events.length + ' meaningful updates from ' + changes.length + ' recorded notes. Repeated status and position-only changes are tucked away.</p><ol class="test-notes-list">' + list + '</ol>' +
+    '<details><summary>Every original recorded note (' + changes.length + ')</summary><div class="hist test-notes-full"><ul>' + full + '</ul></div></details>';
+}
+
+
 const changeCore = (text) => text.split(' · ').filter((p) => !/^(Projected for|Predicted home on)\b/.test(p))
   .map((p) => p.replace(/,? position \d{3}\b/g, '').replace(/; predicted home on .*$/, '').replace(/\(PLN [^)]*\)|\(ORD [^)]*\)/g, '')).join(' · ').replace(/\s+/g, ' ').trim();
 function changeSummary(changes) {
@@ -1544,12 +1571,7 @@ function turnHistory(rec, current, { summary = false } = {}) {
     return `<ul>${items.map((e, i) => [e, i]).reverse().map(([e, i]) =>
       `<li class="${i === nowIdx ? 'now' : ''}">${stampBtn(e.taken)}<span>${markTurn(text(e))}</span></li>`).join('')}</ul>`;
   };
-  const full = list(rec.changes, (e) => e.text);
-  const short = summary && changeSummary(rec.changes);
-  const changes = short && short.length < rec.changes.length
-    ? `<div class="chg-short">${list(short, (e) => e.core)}</div><div class="chg-full" hidden>${full}</div>
-      <button type="button" class="chg-toggle" onclick="const h=this.parentNode;const f=h.querySelector('.chg-full');f.hidden=!f.hidden;h.querySelector('.chg-short').hidden=!f.hidden;this.textContent=f.hidden?'Show every check (${rec.changes.length})':'Show the short version';">Show every check (${rec.changes.length})</button>`
-    : full;
+  const changes = summary ? historyChangeNotes(rec) : list(rec.changes, (e) => e.text);
   const orders = rec.orders.length ? `<ul>${[...rec.orders].reverse().map((o) => `<li>${stampBtn(o.first)}<span><b class="num">${esc(o.train)}</b>${
     o.projected ? `<br>Projected: ${markTurn(o.projected)}` : ''}${o.called ? `<br>Called: ${esc(o.called)}` : ''}${
     o.onDuty ? `<br><b>On duty</b> ${esc(o.onDuty)}` : ''}</span></li>`).join('')}</ul>` : none('No trains for this turn in the saved checks.');
@@ -3604,7 +3626,7 @@ source().then(async (src) => {
       <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
       <div id="held186" class="work"></div>
       <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
-      <div><h3>Changes <span class="muted">(only real changes; the button shows every one)</span></h3><div class="hist">${h.changes}</div></div></div>
+      <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div class="hist">${h.changes}</div></div></div>
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
@@ -3871,29 +3893,6 @@ source().then(async (src) => {
   }
   // Owner preview only: show changed notes rather than repeating the whole
   // status. All original observations remain in the full-history disclosure.
-  function previewHistoryNotes(rec) {
-    const changes = (rec && rec.changes) || [];
-    if (!changes.length) return '<p class="anote">No saved history for this lookup.</p>';
-    const parts = (value) => [...new Set(String(value || '').split(' · ').map((part) =>
-      part.replace(/,? position \d{3}\b/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean))];
-    const events = [];
-    let previous = [];
-    for (const entry of changes) {
-      const current = parts(entry.text);
-      const added = current.filter((part) => !previous.includes(part));
-      const removed = previous.filter((part) => !current.includes(part));
-      if (added.length || removed.length) events.push({ ...entry, added, removed });
-      previous = current;
-    }
-    const list = events.slice().reverse().map((entry) => '<li><b>' + esc(dt(entry.taken)) + '</b>' +
-      (entry.added.length ? '<ul>' + entry.added.map((part) => '<li>' + markTurn(part) + '</li>').join('') + '</ul>' : '<p class="anote">Previous note no longer shown in this check.</p>') +
-      '<details><summary>Full note for this check</summary><p class="test-notes-full">' + markTurn(entry.text) + '</p>' +
-      (entry.removed.length ? '<p class="anote">No longer shown: ' + entry.removed.map(esc).join(' · ') + '</p>' : '') + stampBtn(entry.taken) + '</details></li>').join('');
-    const full = changes.slice().reverse().map((entry) => '<li>' + stampBtn(entry.taken) + '<span>' + markTurn(entry.text) + '</span></li>').join('');
-    return '<h3>What changed</h3><p class="anote">' + events.length + ' meaningful updates from ' + changes.length + ' recorded notes. Repeated status and position-only changes are tucked away.</p><ol class="test-notes-list">' + list + '</ol>' +
-      '<details><summary>Every original recorded note (' + changes.length + ')</summary><div class="hist test-notes-full"><ul>' + full + '</ul></div></details>';
-  }
-
   const testPreview = { turn: 'JUOD' };
   async function renderTest() {
     const view = document.getElementById('view');
@@ -3931,7 +3930,7 @@ source().then(async (src) => {
       }
       const box = document.getElementById('test-work');
       if (!box) return;
-      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal history preview' : '') + '</h3>' + previewHistoryNotes(rec);
+      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal history preview' : '') + '</h3>' + historyChangeNotes(rec);
       box.querySelectorAll('button[data-taken]').forEach((button) => {
         button.onclick = () => jumpTo(button.dataset.taken);
       });

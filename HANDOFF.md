@@ -423,3 +423,11 @@ Unchanged statuses and position-only changes are folded into the complete origin
 notes disclosure; each displayed change can expand its original note and snapshot.
 Raw saved history and calculations remain unchanged. Syntax and sample rendering
 checks pass; laptop publication/owner visual review pending. No Worker change.
+
+Approved Changes-section promotion — 2026-11-08: owner approved the simplified
+notes preview. Turn/name-code History Changes now show newly changed note segments,
+with per-check full notes and every-original-note disclosures. Position-only and
+unchanged status repetitions stay in the full history. Now, work history cards,
+call timelines, railway calculations and notifications are unchanged. Owner Test
+uses the same approved renderer. Syntax, condensation and raw-note preservation
+checks pass; live publication remains pending. Order summary is review-only.
