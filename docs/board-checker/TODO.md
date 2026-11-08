@@ -558,3 +558,9 @@ status filters, exact dated train links, first/latest comparisons and all-event 
   local browser check blocked by missing Chromium. No Worker update required.
 - Owner clarified engineers may use shared filing form: earlier Copy-only instruction
   is superseded; workflow decision is resolved. Publication checks remain open.
+
+Current accordion promotion — 2026-11-08: Justin verified Test (“Works great”)
+and approved promotion. Supersedes awaiting-Test-review item above. Enabled shared
+headers on Current; verify production after publication, including section shortcuts,
+notification jumps, pool/spare-job controls and Arrange. Snapshot layout unchanged.
+26 site/filing checks and syntax pass; no Worker update required.

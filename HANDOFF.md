@@ -487,3 +487,12 @@ verification remain open. No railway, notification or Worker changes.
 Engineer filing clarification — owner, 2026-11-08: earlier engineer details/Copy-only
 restriction is superseded; engineers may use the shared filing form. This resolves
 the previously open workflow decision; no change to railway/held calculations.
+
+Collapsible Current boxes promoted — owner approval, 2026-11-08: owner reported
+Test works and requested promotion. Current now shares the approved native header
+expand/collapse behavior. Initially open; Current and Test keep separate session
+open states. Pool/spare-job tabs retain state; Arrange and Snapshots stay unchanged.
+Screen shortcuts and notification section jumps open a collapsed destination before
+scrolling. Test retains the shared layout. 26 site/filing checks and syntax pass.
+Owner verified the Test version; production pull/restart/publication verification
+remains pending. No railway, notification-delivery or Worker changes.

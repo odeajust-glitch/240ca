@@ -3760,6 +3760,7 @@ source().then(async (src) => {
   function goTo(go) {
     const box = document.getElementById(`sec-${go.sec}`) || document.getElementById('sec-lineup');
     if (!box) return;
+    if (box.matches('details.test-current-box')) box.open = true;
     const words = (x) => new RegExp(`(^|\\W)${x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+')}(\\W|$)`);
     // A cell or name that is the train / turn, then its row.
     const find = (key) => { if (!key) return null; const hit = [...box.querySelectorAll('.sym, td, b, li')].find((x) => words(key).test(x.textContent.replace(/\s+/g, ' ').trim())); return hit ? hit.closest('.train, tr, li') || hit : null; };
@@ -3909,6 +3910,7 @@ source().then(async (src) => {
       ${arrangeBar()}
       ${sectionsGrid(s)}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
+    if (mode === 'current' && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
     tickAges();
     paintTracked(s);
     wireArrange();
@@ -3936,6 +3938,7 @@ source().then(async (src) => {
       }
       const el = document.getElementById(j.id);
       if (!el) return;
+      if (el.matches('details.test-current-box')) el.open = true;
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       el.classList.add('jumped');
       setTimeout(() => el.classList.remove('jumped'), 1500);
@@ -3986,6 +3989,26 @@ source().then(async (src) => {
       Math.abs(BoardTrains.off(event.from, event.at) || 0) > 30);
   }
   const orderSummaryState = { day: null, from: 'all', status: 'all', find: '', open: null };
+  const currentBoxOpen = new Map();
+  function wireCurrentBoxes(root, openState) {
+    root.querySelectorAll('.secwrap').forEach((wrap) => {
+      // Retain the real section contents and controls; only its outer shell changes.
+      const section = wrap.querySelector(':scope > section.sheet');
+      const header = section && section.querySelector(':scope > header');
+      if (!header) return;
+      const details = document.createElement('details');
+      details.className = section.className + ' test-current-box';
+      if (section.id) details.id = section.id;
+      details.open = openState.get(wrap.dataset.sec) !== false;
+      const summary = document.createElement('summary');
+      while (header.firstChild) summary.appendChild(header.firstChild);
+      header.remove();
+      details.appendChild(summary);
+      while (section.firstChild) details.appendChild(section.firstChild);
+      section.replaceWith(details);
+      details.addEventListener('toggle', () => { openState.set(wrap.dataset.sec, details.open); });
+    });
+  }
   const testBoxOpen = new Map();
   let testRenderVersion = 0;
   async function renderTest() {
@@ -4007,26 +4030,10 @@ source().then(async (src) => {
     if (!s) { view.innerHTML = '<p class="empty">No saved current board yet.</p>'; return; }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
     setMarks();
-    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Preview: tap the top of any box to collapse or expand it. Current is unchanged.</p>' +
+    view.innerHTML = '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current.</p>' +
       '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
       '<div class="test-current-boxes">' + sectionsGrid(s, false) + '</div>';
-    view.querySelectorAll('.test-current-boxes .secwrap').forEach((wrap) => {
-      // Retain the real section contents and controls; only its outer shell changes.
-      const section = wrap.querySelector(':scope > section.sheet');
-      const header = section && section.querySelector(':scope > header');
-      if (!header) return;
-      const details = document.createElement('details');
-      details.className = section.className + ' test-current-box';
-      if (section.id) details.id = section.id;
-      details.open = testBoxOpen.get(wrap.dataset.sec) !== false;
-      const summary = document.createElement('summary');
-      while (header.firstChild) summary.appendChild(header.firstChild);
-      header.remove();
-      details.appendChild(summary);
-      while (section.firstChild) details.appendChild(section.firstChild);
-      section.replaceWith(details);
-      details.addEventListener('toggle', () => { testBoxOpen.set(wrap.dataset.sec, details.open); });
-    });
+    wireCurrentBoxes(view.querySelector('.test-current-boxes'), testBoxOpen);
     tickAges();
     paintTracked(s);
     view.querySelectorAll('[data-pool]').forEach((button) => {
