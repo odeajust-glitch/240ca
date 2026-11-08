@@ -1,5 +1,16 @@
 # HANDOFF — read this before doing anything
 
+## Latest session handoff — 2026-11-08
+
+**Start with [the November 8 session handoff](docs/board-checker/HANDOFF-2026-11-08-SESSION.md).**
+It summarizes current commits, pending Test reviews, the two open S5 audit defects,
+owner's engineer-form clarification, and separate publication/verification evidence.
+Latest source inspected: `2fcfac27e4d8ef3026c57ea27b2290dba12be7ed`.
+Earlier dated status below remains historical; the last browser observation was
+Updated Nov 8 13:59 / check 13:57, still showing the old S501 prediction.
+The owner reported a pull; exact laptop SHA/restart and latest publication remain
+unverified. No outstanding task is closed by this handoff.
+
 Documentation reorganized: **2026-11-07**. Historical statements are evidence from their
 recorded dates, not confirmation of today's deployment. Backlog: [TODO](docs/board-checker/TODO.md).
 
