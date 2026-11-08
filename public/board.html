@@ -1702,7 +1702,7 @@ function anaHome({ runs = [], sleep = [], runLog = [] }) {
     <div style="padding:12px 14px"><p><b>Actual train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'No on-duty trains recorded yet.'}</p>
     <p class="anote">Summaries use the available records within your selected dates. Each tracker may cover a different span; gaps in checking and missing observations can affect the results.</p></div>
     <div class="agrid">
-      ${card('Call stability', calls.length ? `<b>${Math.round(100 * stable / calls.length)}%</b> within 30 minutes (${stable} of ${calls.length})` : 'Not enough data yet', 'Expected versus inferred call time (on duty minus 2 hours). This measures call changes, not actual sleep. Taken-off waits are excluded.', 'sleep', 'View call stability details')}
+      ${card('Call stability', calls.length ? `<b>${Math.round(100 * stable / calls.length)}%</b> within 30 minutes (${stable} of ${calls.length})` : 'Not enough data yet', 'Expected versus actual call time time (on duty minus 2 hours). This measures call changes, not actual sleep. Taken-off waits are excluded.', 'sleep', 'View call stability details')}
       ${card('Crew prediction eight hours ahead', `<b>Conductor:</b> ${score('co')}<br><b>Engineer:</b> ${score('en')}`, 'Compared with the crew that went. Missing eight-hour predictions are excluded from these percentages.', 'pred', 'View prediction details')}
       ${card('Toronto holds', held.length ? `<b>${over} of ${held.length} recorded stays</b> reached 14 hours (${Math.round(100 * over / held.length)}%)` : 'No recorded hold times yet', `Unknown hold times are excluded.${ongoing ? ` Includes ${ongoing} ongoing ${ongoing === 1 ? 'stay' : 'stays'}, measured so far.` : ''}`, 'trains', 'View train and hold details')}
       ${card('Calling events to review', `<b>${likely} likely</b> · <b>${possible} possible</b> runarounds`, 'These are events flagged for review, not confirmed findings. Explained events stay available in the detailed log.', 'runlog', 'Review the calling log')}
@@ -1934,13 +1934,13 @@ function sleepCell(off) {
   if (!off) return '<span class="offv ok">on time</span>';
   return `<span class="offv ${band}">${esc(dur(off))} ${off < 0 ? 'earlier' : 'later'}</span>`;
 }
-const SLEEP_NOTE = 'Call stability compares the expected call at the planning baseline (the first check showing 8 h or less to call) with an inferred call: recorded on-duty time minus 2 h. Short-notice cases can start with less than 8 h available. This does not record actual phone calls or sleep. Within 30 min is green, over 30 min to 1 h yellow, and over 1 h red. Removal from the line-up ends that wait and is counted separately. Samples reflect observed records; checking gaps may affect results.';
+const SLEEP_NOTE = 'Call stability compares the expected call at the planning baseline (the first check showing 8 h or less to call) with an actual call time: recorded on-duty time minus 2 h. Short-notice cases can start with less than 8 h available. This does not record actual phone calls or sleep. Within 30 min is green, over 30 min to 1 h yellow, and over 1 h red. Removal from the line-up ends that wait and is counted separately. Samples reflect observed records; checking gaps may affect results.';
 function planSummary(list) {
   const st = BoardAnalytics.planReliability(list), n = st.rows.length;
   const group = (label, rows, value) => `<details><summary><b>${value}</b> · ${label} (${rows.length} records)</summary>${sleepTable(rows, true)}${rows.length > 200 ? '<p class="anote">Showing the latest 200 matching records; totals include all matching records.</p>' : ''}</details>`;
   const pc = rows => n ? `${Math.round(100 * rows.length / n)}%` : '—';
   return `<section class="sheet"><header><h2>How reliable was my eight-hour plan?</h2></header><div style="padding:14px">
-    <p class="anote">Original plan = first saved expected call, as in the timeline. ${n} eligible call records; ${st.excluded} removed or missing-time records excluded. Calls are inferred from on-duty time minus 2 h; these are records, not unique people or measured sleep.</p>
+    <p class="anote">Original plan = first saved expected call, as in the timeline. ${n} eligible call records; ${st.excluded} removed or missing-time records excluded. Actual call time is calculated from on-duty time minus 2 h; these are records, not unique people or measured sleep.</p>
     ${group('Within 30 minutes of original plan', st.stable, pc(st.stable))}
     ${group('More than 1 hour early', st.early, pc(st.early))}
     ${group('More than 1 hour late', st.late, pc(st.late))}
@@ -1952,9 +1952,9 @@ function planSummary(list) {
 }
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
-  return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs inferred call (earlier or later)')}</div>
-    <div class="strip">${anaTile(st.earlier, 'Inferred call more than 30 min earlier than expected', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Inferred call more than 30 min later than expected')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
-    <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Expected-call changes after the planning baseline (average)')}${anaTile(st.short, 'Lined up less than 8 h before the inferred call')}${anaTile(st.takenOff, 'Removed after the planning baseline (excluded from call differences)', st.takenOff > 0)}</div>`;
+  return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs actual call time (earlier or later)')}</div>
+    <div class="strip">${anaTile(st.earlier, 'Actual call time more than 30 min earlier than expected', st.earlier > 0)}${anaTile(durOr(st.earlierAvg), `When called earlier: average gap${st.earlierAll ? ` (${st.earlierAll} calls)` : ''}`)}${anaTile(st.later, 'Actual call time more than 30 min later than expected')}${anaTile(durOr(st.laterAvg), `When called later: average gap${st.laterAll ? ` (${st.laterAll} calls)` : ''}`)}</div>
+    <div class="strip three">${anaTile(st.shifts == null ? '—' : st.shifts.toFixed(1), 'Expected-call changes after the planning baseline (average)')}${anaTile(st.short, 'Lined up less than 8 h before the actual call time')}${anaTile(st.takenOff, 'Removed after the planning baseline (excluded from call differences)', st.takenOff > 0)}</div>`;
 }
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
@@ -1971,7 +1971,7 @@ function sleepTable(list, showTurn) {
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
       <td>${z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
   }).join('');
-  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Inferred call</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Planning baseline (check)</th><th>Expected call at baseline</th><th>Expected-call changes</th><th>Actual call time</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
     <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
