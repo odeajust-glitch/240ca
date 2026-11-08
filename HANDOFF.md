@@ -543,3 +543,12 @@ Test selector preserves pending Current/S5 Why preview. Regular Overview and all
 calculations/notifications unchanged. Syntax, exact-seven destination/exclusion/
 navigation checks and 26 site/filing tests pass; phone/publication review pending.
 No Worker update. S5 audit defects remain open.
+
+Analytics Overview promotion — owner approval, 2026-11-08: “Push the analytics
+change.” Regular Analytics Overview now uses the approved grouped seven-tab guide
+from Test, with working destination buttons and descriptions. Test retains the shared
+preview and separate Current/S5 Why choice; S5 Why is not promoted. Replaces prior
+Overview display only; underlying detail pages, collection/calculations and notifications
+unchanged. Syntax, public/Test rendering, destination/isolation checks and 26 site/
+filing tests pass. Pull/restart/publication/phone verification pending; no Worker update.
+This supersedes Analytics Overview's awaiting-promotion status in the session handoff.

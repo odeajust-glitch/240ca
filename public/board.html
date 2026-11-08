@@ -1853,7 +1853,7 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 // Test-only directory, driven by the real Analytics tab list.
-function analyticsOverviewPreview() {
+function analyticsOverviewGuide({ preview = false } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
     week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
@@ -1864,7 +1864,7 @@ function analyticsOverviewPreview() {
     assignments: ['Check assignments', 'Did the assignment match the rules?', 'Wrong pool, wrong spare-job turn and missing spare job findings, grouped by train. An observed mismatch clearing does not prove that the final crew call was correct.']
   };
   const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
-  return '<p class="anote">Preview only. Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
+  return '<p class="anote">' + (preview ? 'Preview only. ' : '') + 'Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
     groups.map(group => {
       const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group).map(([key,label]) => {
         const [,question,description] = descriptions[key];
@@ -1885,34 +1885,7 @@ function analyticsOverview(o) {
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
-function anaHome({ runs = [], sleep = [], runLog = [] }) {
-  const calls = sleep.filter((z) => !z.takenOff && Number.isFinite(z.off));
-  const stable = calls.filter((z) => Math.abs(z.off) <= 30).length;
-  const score = (k) => {
-    const hits = runs.filter((r) => r.ran && r.predHit && r.predHit.early && !r.predHit.early.none)
-      .map((r) => r.predHit.early[k + 'Hit']).filter((x) => x != null);
-    return hits.length ? `${Math.round(100 * hits.filter(Boolean).length / hits.length)}% (${hits.filter(Boolean).length} of ${hits.length})` : 'Not enough data yet';
-  };
-  const held = runs.filter((r) => r.ran && !r.yard && Number.isFinite(r.heldMin));
-  const over = held.filter((r) => r.heldMin >= BoardTrains.HELD_LIMIT).length;
-  const ongoing = held.filter((r) => r.stillHeld).length;
-  const likely = runLog.filter((r) => r.result === 'likely').length;
-  const possible = runLog.filter((r) => r.result === 'possible').length;
-  const dates = runs.filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
-  const link = (sec, label) => `<button type="button" class="qbtn" data-sec="${sec}">${label} →</button>`;
-  const card = (title, content, note, sec, label) => `<div><h3>${title}</h3><p>${content}</p><p class="anote">${note}</p>${link(sec, label)}</div>`;
-  return `<section class="sheet"><header><h2>Overview</h2><span class="meta">Start here</span></header>
-    <div style="padding:12px 14px"><p><b>Actual train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'No on-duty trains recorded yet.'}</p>
-    <p class="anote">Summaries use the available records within your selected dates. Each tracker may cover a different span; gaps in checking and missing observations can affect the results.</p></div>
-    <div class="agrid">
-      ${card('My week', 'Your weekly work summary.', 'Trips, time on duty, Toronto holds, rests and calling changes for the turns or people followed on this phone. Follow a turn or person to see their week.', 'week', 'Open My week')}
-      ${card('Call stability', calls.length ? `<b>${Math.round(100 * stable / calls.length)}%</b> within 30 minutes (${stable} of ${calls.length})` : 'Not enough data yet', 'Expected versus actual call time (on duty minus 2 hours). This measures call changes, not actual sleep. Taken-off waits are excluded.', 'sleep', 'View call stability details')}
-      ${card('Trains', held.length ? `<b>${over} of ${held.length} recorded stays</b> reached 14 hours (${Math.round(100 * over / held.length)}%)` : 'No recorded hold times yet', `Explore train reliability, planned versus actual times, busiest periods, cancellations and Toronto holds. Unknown hold times are excluded.${ongoing ? ` Includes ${ongoing} ongoing ${ongoing === 1 ? 'stay' : 'stays'}, measured so far.` : ''}`, 'trains', 'Open Trains')}
-      ${card('Turns side by side', 'Compare turns within a pool.', 'See workload, timing and reliability side by side. Select a pool, then open a turn for its individual records.', 'turns', 'Open Turns side by side')}
-      ${card('Assignment errors', 'Review pool and spare-job discrepancies.', 'Wrong pool, wrong spare-job turn and missing spare job findings are grouped by train. See when each appeared, its recorded status and the crew that went; findings still need review.', 'assignments', 'Open Assignment errors')}
-      ${card('Stale trains', 'See trains left planned after their expected call.', 'Tracks trains still not ordered at least 15 minutes past the planned call, how long they remained overdue, plan changes and the recorded outcome.', 'stale', 'Open Stale trains')}
-    </div></section>`;
-}
+function anaHome() { return analyticsOverviewGuide(); }
 
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
@@ -4078,7 +4051,7 @@ source().then(async (src) => {
     }
     if (testPreviewPick === 'analytics') {
       try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-      view.innerHTML = testPreviewMenu() + '<h2>Test · Analytics Overview</h2>' + analyticsOverviewPreview();
+      view.innerHTML = testPreviewMenu() + '<h2>Test · Analytics Overview</h2>' + analyticsOverviewGuide({ preview: true });
       wireTestPreviewMenu(view);
       view.querySelectorAll('[data-overview-open]').forEach(button => {
         button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; setMode('analytics'); };
@@ -4549,6 +4522,7 @@ source().then(async (src) => {
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       };
     }
+    view.querySelectorAll('[data-overview-open]').forEach(button => { button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; renderAnalytics(); }; });
     view.querySelectorAll('button[data-sec]').forEach((b) => { b.onclick = () => { ana.sec = b.dataset.sec; renderAnalytics(); }; });
     view.querySelectorAll('button[data-rashow]').forEach((b) => { b.onclick = () => { raShow = b.dataset.rashow; renderAnalytics(); }; });
     view.querySelectorAll('button[data-weekpick]').forEach((b) => { b.onclick = () => { weekPick = b.dataset.weekpick; renderAnalytics(); }; });

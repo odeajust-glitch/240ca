@@ -613,3 +613,10 @@ See [full evidence/reproductions](S5-CYCLE-AUDIT-2026-11-08.md).
   choices after normal pull/restart/publication. Do not promote until owner approves.
 - Syntax/catalog/navigation checks and 26 site/filing tests pass. No live visual
   verification, Worker update, calculations or notifications changed. S5 defects open.
+
+Analytics Overview promotion approved — 2026-11-08: owner requested push.
+Approved seven-tab guide now on regular Overview with working Open buttons;
+shared Test preview remains. Prior wait-for-approval requirement satisfied for
+Analytics Overview only. S5 Why approval and two S5 defects remain outstanding.
+Verify production mobile layout and all seven destinations after laptop publication.
+26 site/filing tests plus syntax/rendering checks pass; no Worker update.
