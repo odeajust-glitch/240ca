@@ -995,7 +995,7 @@ function lineupWhy(s, t) {
       (x.slot ? ' ' + esc(x.slot) : '') + ' · ' + state +
       (x.actual && x.actual !== x.expected ? ' (sequence: ' + esc(x.expected) + '; CATS shows ' + esc(x.actual) + ')' : '') + '</li>';
   }).join('');
-  const sequence = '<h4>Calling sequence</h4><p>First 3 A, then 2 B, then Chain Gang. Called/ordered trains take priority over planned trains; ordered Sarnia trains follow the calculated sequence even when CATS shows another pool. Deadheads and 501/502 keep their separate rules. A rescue listed spare for both crafts without a turn uses spareboards.</p>' +
+  const sequence = '<h4>Calling sequence</h4>' +
     (first < 0 ? '<p>The first A-pool train is not in this saved check; earlier trains may be missing.</p>' : '') +
     (rows ? '<ol class="calling-list">' + rows + '</ol>' : '<p>No saved sequence for this road day.</p>');
   const jobs = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].filter((v) =>
@@ -1009,8 +1009,7 @@ function lineupWhy(s, t) {
         (f.skipped && f.skipped.length ? ' · passed over: ' + esc(f.skipped.join(' · ')) : '') +
         (f.sd ? ' · ' + markTurn(f.sd) + ' (Chain Gang) may be called' : '') : 'cover not available in this check') + '.</li>';
   }).join('');
-  return '<p>' + esc(t.reason || '') + '</p>' + sequence +
-    '<h4>If a craft goes spare</h4><p>Each craft is assessed separately. Road jobs use the matching slow spareboard; yard jobs use the fast board. Jobs are covered in call order, with each spare used once. Rest, hold, B0 and applicable days-off restrictions can pass a spare over without changing their board position.</p>' +
+  return sequence +
     (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
 }
 function lineup(s) {
