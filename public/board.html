@@ -935,6 +935,24 @@ function staleChip(s, t) {
   if (past < STALE_GRACE) return '';
   return `<span class="stalechip">Past call ${past >= 60 ? `${Math.floor(past / 60)} h ${String(past % 60).padStart(2, '0')} m` : `${past} min`} · not ordered</span>`;
 }
+// Crew order in calling-rule text is conductor, then engineer. Keep eligibility
+// decisions and their full explanation unchanged; label each craft explicitly.
+function lineupCrew(t) {
+  const raw = t.rules || '';
+  const body = raw.replace(/^(?:A pool: |B pool: |Chain Gang: |S5: )/, '');
+  const parts = body.split(' + ');
+  if (parts.length !== 2) return ruleText(raw);
+  const craft = (part, label) => {
+    const spare = /\(goes spare[^)]*\)|^spareboard \(no /.test(part);
+    const turn = part.replace(/\s*\(goes spare[^)]*\)/g, '').trim();
+    const value = spare
+      ? '<span class="spare">spare</span>' + (/^spareboard /.test(turn) ? '' : ' (' + markTurn(turn) + ' goes spare)')
+      : markTurn(turn);
+    return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
+  };
+  return craft(parts[0], 'Conductor') + ' · ' + craft(parts[1], 'Engineer');
+}
+
 function lineup(s) {
   if (!s.lineup.length) return '';
   let day = null;
@@ -949,7 +967,7 @@ function lineup(s) {
       <div><div class="sym">${esc(sym)} <span class="od">${esc(od)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}</div>
         <div class="sub">${esc(t.info)} · <span class="mono">${esc(t.engCrew)} / ${esc(t.trnCrew)}</span></div></div>
       <div class="right"><span class="st ${t.status}">${esc(t.status)}</span>${t.call ? `<span class="sub mono">call ~${esc(split(t.call)[1])}</span>` : ''}${staleChip(s, t)}</div>
-      <div class="rule-say">${poolChip(t.rules)}<span>${ruleText(t.rules)}</span>
+      <div class="rule-say">${poolChip(t.rules)}<span>${lineupCrew(t)}</span>
         ${t.reason ? `<details class="why"><summary>Why</summary><p>${esc(t.reason)}</p></details>` : ''}</div>
     </div>`;
   }).join('');
