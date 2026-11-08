@@ -1751,7 +1751,8 @@ function anaTurns({ turnRows, pool }) {
 // (a runaround) or put right (fixed).
 const poolName = (p) => esc(BoardAnalytics.SEQ_POOLS[p] || p || '—');
 function seqResult(r) {
-  if (r.fixed) return `<span class="offv ok">Fixed</span><div class="crew">then ${poolName(r.final && r.final.actual)}, as the sequence said</div>`;
+  if (r.statusUncertain || (r.onDuty && r.last && r.last > r.onDuty)) return '<span class="offv warn">Outcome needs review</span><div class="crew">Includes observations after on-duty; pre-departure outcome not confirmed.</div>';
+  if (r.fixed) return `<span class="offv ok">Mismatch cleared (observed)</span><div class="crew">then ${poolName(r.final && r.final.actual)}, as the sequence said</div>`;
   if (!r.onDuty) return '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>';
   return '<span class="offv bad">Runaround</span>';
 }
@@ -1766,11 +1767,11 @@ function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [] }) 
   });
   add(runarounds, 'pool', 'taken'); add(catsErrors, 'wrong', 'first'); add(catsMissing, 'missing', 'first');
   const total = runarounds.length + catsErrors.length + catsMissing.length;
-  const fixed = runarounds.filter(r => r.fixed).length + catsErrors.filter(r => r.fixed).length;
+  const fixed = runarounds.filter(r => r.fixed && !(r.onDuty && r.last > r.onDuty)).length + catsErrors.filter(r => r.fixed && (!r.onDuty || r.fixed <= r.onDuty)).length;
   const items = [...groups.values()].sort((a,b) => b.latest.localeCompare(a.latest));
   return `<p class="anote">Three independent checks, grouped by train and observation month. One train can have several issues; each craft-specific spare-job issue is retained. Wrong pool follows the calling sequence. Wrong spare-job turn compares CATS option 5 with the order (one-check blips excluded). Missing spare jobs require 30 minutes without a listing.</p>
-    <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total, 'Total issues')}${anaTile(fixed, 'Pool/turn issues marked fixed')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
-    <p class="anote">Fixed status follows each original tracker; listing a missing job later does not necessarily mean it was listed before departure. Open a train for its separate findings.</p>
+    <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total, 'Total issues')}${anaTile(fixed, 'Pool/turn mismatches cleared (observed)')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
+    <p class="anote">Cleared means the tracker stopped observing the mismatch, not proof the final crew matched; listing a missing job later does not necessarily mean it was listed before departure. Open a train for its separate findings.</p>
     ${items.length ? items.map(g => `<section class="sheet"><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? 'Wrong pool · ' : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} issues</summary>
       ${g.pool.length ? '<h3 style="padding:0 14px">Wrong pool</h3>' + anaRunarounds({runarounds:g.pool}) : ''}
       ${g.wrong.length ? '<h3 style="padding:0 14px">Wrong spare-job turn</h3>' + anaCats({catsErrors:g.wrong,catsMissing:[]}) : ''}
@@ -1778,6 +1779,7 @@ function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [] }) 
       </details></section>`).join('') : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
 }
 function anaRunarounds({ runarounds }) {
+  runarounds = runarounds.map(r => ({ ...r, statusUncertain: !!(r.onDuty && r.last && r.last > r.onDuty) }));
   const st = BoardAnalytics.runaroundStats(runarounds);
   const latest = [...runarounds].reverse().slice(0, 60);
   const shown = (r) => {
@@ -1797,8 +1799,8 @@ function anaRunarounds({ runarounds }) {
       <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">not on duty yet</span>'}</td>
       <td>${seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No trains out of sequence in the dates picked.</p>';
-  return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. <b>Runaround</b>: still out of sequence the last time it showed. <b>Fixed</b>: put right before it went. Tap a time to open that snapshot.</p>
-    <div class="strip">${anaTile(st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Runarounds (still wrong at the end)', st.n > 0)}${anaTile(st.fixed, 'Fixed before they went')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
+  return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. Observations after on-duty remain evidence but cannot confirm the pre-departure outcome. <b>Runaround</b>: still out of sequence the last time it showed. <b>Mismatch cleared</b>: observed pool equality; this alone does not prove a correct crew call. Tap a time to open that snapshot.</p>
+    <div class="strip">${anaTile(st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Last observed wrong (review required)', st.n > 0)}${anaTile(st.fixed, 'Mismatch cleared; no post-duty observations')}${anaTile(st.uncertain || 0, 'Outcomes needing review')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
     <section class="sheet"><header><h2>Runarounds by pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
     <section class="sheet"><header><h2>Every train shown out of sequence</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
@@ -1808,7 +1810,7 @@ function anaRunarounds({ runarounds }) {
 // before the train went, and the crew that went (who was right).
 function anaCats({ catsErrors = [], catsMissing = [] }) {
   const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
-  const result = (r) => (r.fixed ? `<span class="offv ok">CATS fixed it</span><div class="crew">${esc(dt(r.fixed))}</div>`
+  const result = (r) => (r.fixed && r.onDuty && r.fixed > r.onDuty ? '<span class="offv warn">Disappeared after on-duty</span><div class="crew">Pre-departure correction not confirmed.</div>' : r.fixed ? `<span class="offv ok">Mismatch disappeared</span><div class="crew">${esc(dt(r.fixed))}</div>`
     : r.onDuty ? '<span class="offv bad">Still wrong when it went</span>' : '<span class="offv warn">Still wrong</span><div class="crew">not on duty yet</div>');
   const went = (r) => {
     if (!r.onDuty) return '<span class="muted">not on duty yet</span>';
@@ -1829,10 +1831,10 @@ function anaCats({ catsErrors = [], catsMissing = [] }) {
       <td class="num">${went(r)}</td><td>${result(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No CATS option 5 errors in the dates picked.</p>';
   return `<p class="anote">CATS's jobs going spare (option 5) checked against the order: a job CATS lists under a turn the order doesn't have on that train. The site's Jobs Going Spare shows the corrected list; the spare CATS's list would call is told it's the wrong turn. A one-check blip isn't counted. Tap a time to open that snapshot.</p>
-    <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed).length, 'CATS fixed before it went')}${anaTile(called, 'Would have called a spare')}</div>
+    <div class="strip">${anaTile(catsErrors.length, 'Times CATS listed the wrong turn', catsErrors.length > 0)}${anaTile(wrongAtEnd, 'Still wrong when the train went', wrongAtEnd > 0)}${anaTile(catsErrors.filter((r) => r.fixed && (!r.onDuty || r.fixed <= r.onDuty)).length, 'Mismatch disappeared before on-duty (or still pending)')}${anaTile(called, 'Would have called a spare')}</div>
     <section class="sheet"><header><h2>Wrong turns CATS listed</h2></header><div class="agrid">${anaList('Turn CATS listed', [...byTurn].sort((a, b) => b[1] - a[1]))}</div></section>
     <section class="sheet"><header><h2>Every CATS option 5 error</h2><span class="meta">newest first</span></header>${list}</section>
-    ${catsMissingView(catsMissing)}`;
+    ${catsMissing.length ? catsMissingView(catsMissing) : ''}`;
 }
 // Missing from option 5 (owner, 2026-11-03): the order says the job goes
 // spare, option 5 doesn't list it for 30 min or more.

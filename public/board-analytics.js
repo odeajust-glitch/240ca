@@ -283,12 +283,14 @@
   // Each train shown out of sequence counts; a runaround is one still out of
   // sequence the last time it showed (fixed ones were put right).
   function runaroundStats(list) {
-    const runs = list.filter((r) => !r.fixed);
+    const uncertain = r => r.statusUncertain || !!(r.onDuty && r.last && r.last > r.onDuty);
+    const runs = list.filter((r) => !r.fixed && !uncertain(r));
     const span = (r) => (r.stretches || []).reduce((n, x) => n + Math.max(0, T.toMin(x.to) - T.toMin(x.from)), 0);
     return {
       shown: list.length,
       n: runs.length,
-      fixed: list.length - runs.length,
+      fixed: list.filter(r => r.fixed && !uncertain(r)).length,
+      uncertain: list.filter(uncertain).length,
       wrongFor: avg(list.filter((r) => r.stretches).map(span)),
       shouldHave: top(runs.map((r) => SEQ_POOLS[r.expected] || r.expected), 9),
       wentTo: top(runs.map((r) => SEQ_POOLS[r.actual] || r.actual), 9),
