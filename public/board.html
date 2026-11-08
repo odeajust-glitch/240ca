@@ -2932,10 +2932,15 @@ source().then(async (src) => {
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
     const S = L.subscribers;
-    const who = S && S.phones ? `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${S.phones} phone${S.phones === 1 ? '' : 's'}</span></header><div class="hbody">
-      ${S.turns.length ? `<p><b>Turns:</b> ${S.turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
-      ${S.people.length ? `<p><b>People:</b> ${S.people.map((p) => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
-      <p class="muted">Phones are anonymous: this is what they follow, not whose they are. ×2 = two phones.</p></div></section>` : '';
+    const known = S && typeof S.phones === 'number';
+    const turns = Array.isArray(S?.turns) ? S.turns : [];
+    const people = Array.isArray(S?.people) ? S.people : [];
+    const who = `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${known ? `${S.phones} phone${S.phones === 1 ? '' : 's'}` : 'Information unavailable'}</span></header><div class="hbody">
+      ${!known ? '<p class="warn">Subscriber information unavailable in the latest laptop report. This does not mean no phones are subscribed.</p>' : S.phones === 0 ? '<p>No phones subscribed, according to the latest laptop report.</p>' : ''}
+      ${turns.length ? `<p><b>Turns:</b> ${turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
+      ${people.length ? `<p><b>People:</b> ${people.map(p => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
+      ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
+      <p class="muted">Report received ${esc(ago(L.at))}. Phones are anonymous: this shows what they follow, not whose they are. ×2 = two phones.</p></div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
     const sent = `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
