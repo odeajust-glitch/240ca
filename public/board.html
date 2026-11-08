@@ -387,6 +387,13 @@
   .test-notes-list ul { padding-left: 20px; margin: 6px 0; }
   .test-notes-list summary { cursor: pointer; color: var(--accent); }
   .test-notes-full { white-space: normal; overflow-wrap: anywhere; }
+  .preview-order-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 12px 0; }
+  .preview-order-filters label { display: grid; gap: 4px; }
+  .preview-order-filters input, .preview-order-filters select, .preview-order-filters button { min-height: 44px; max-width: 100%; }
+  .preview-order-details { padding: 14px; white-space: normal; }
+  .preview-order-details .timeline-facts { margin-bottom: 14px; }
+  .preview-order-details > details > summary { cursor: pointer; color: var(--accent); padding: 10px 0; }
+  .preview-order-details .story { min-width: 0; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -3896,7 +3903,18 @@ source().then(async (src) => {
   }
   // Owner preview only: show changed notes rather than repeating the whole
   // status. All original observations remain in the full-history disclosure.
-  const testPreview = { turn: 'JUOD' };
+  const testPreview = { day: null, from: 'all', status: 'all', find: '', open: null };
+  function previewOrderStatus(r) {
+    if (r.onDuty && r.offDuty && r.timeOnDuty != null) return 'completed';
+    if (r.onDuty) return 'onDuty';
+    if (r.gone) return 'disappeared';
+    if (r.firstOrder) return 'ordered';
+    return 'planned';
+  }
+  function previewMajorEvents(r) {
+    return (r.events || []).filter((event) => !/^(planChange|orderChange)$/.test(event.kind) ||
+      Math.abs(BoardTrains.off(event.from, event.at) || 0) > 30);
+  }
   async function renderTest() {
     const view = document.getElementById('view');
     if (!healthData || !OwnerKey.has()) {
@@ -3904,43 +3922,67 @@ source().then(async (src) => {
       return;
     }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    const want = testPreview.turn;
-    view.innerHTML = '<h2>Test</h2><p class="anote"><b>Preview only — simpler history notes.</b> The regular Turn History is unchanged. This example shows changes without repeating every unchanged status. Full original notes remain available.</p>' +
-      '<label for="test-turn">Preview turn or name code</label><div class="row"><input id="test-turn" value="' + esc(want) + '" placeholder="Name code or turn" maxlength="8"><button id="test-show" type="button">Show preview</button></div><div id="test-work" class="work test-notes-preview"><p class="anote">Loading saved history…</p></div>';
-    const go = () => {
-      const turn = clean(document.getElementById('test-turn').value);
-      if ((!isCode(turn) && !/^[A-Z][A-Z0-9]{1,4}\d{2}(?:-(?:CO|EN))?$/.test(turn)) || BoardTurns.PLACEHOLDER.test(turn)) return;
-      if (BoardTurns.SHARED.test(turn)) return askCraft(turn, (selected) => { testPreview.turn = selected; renderTest(); });
-      testPreview.turn = turn; renderTest();
+    view.innerHTML = '<h2>Test · Order summary</h2><p class="anote">Loading preview…</p>';
+    let all;
+    try { all = (await src.trains()).map(BoardTrains.cleanTrip); }
+    catch (e) { if (mode === 'test') view.innerHTML = '<h2>Test · Order summary</h2><p class="empty">Could not load saved trains. Reopen Test to retry.</p>'; return; }
+    if (mode !== 'test' || !healthData || !OwnerKey.has()) return;
+    const days = [...new Set(all.map((r) => r.day).filter(Boolean))].sort().reverse();
+    if (!days.includes(testPreview.day)) testPreview.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
+    const labels = { planned: 'Planned / no order observed', ordered: 'Order observed', onDuty: 'On duty / tie-up not recorded', completed: 'Completed', disappeared: 'Off lineup / no call observed' };
+    const query = testPreview.find.trim().toUpperCase().replace(/\s+/g, '');
+    const rows = all.filter((r) => r.day === testPreview.day &&
+      (testPreview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === testPreview.from) &&
+      (testPreview.status === 'all' || previewOrderStatus(r) === testPreview.status) &&
+      (!query || r.id.toUpperCase().replace(/\s+/g, '').includes(query)));
+    const select = (id, name, items, selected) => '<label>' + name + '<select id="' + id + '">' +
+      items.map(([value, label]) => '<option value="' + esc(value) + '"' + (value === selected ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></label>';
+    const body = rows.map((r) => {
+      const key = r.id + ' ' + r.month;
+      const open = testPreview.open === key;
+      const latest = r.order || r.firstOrder;
+      const delta = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null;
+      const status = previewOrderStatus(r);
+      const row = '<tr class="row' + (open ? ' open' : '') + '" tabindex="0" role="button" aria-expanded="' + open + '" data-preview-key="' + esc(key) + '">' +
+        '<td><b class="num">' + esc(r.id) + '</b><div class="crew">' + (r.from === 'mac' ? 'Toronto' : 'Sarnia') + ' · ' + labels[status] + '</div></td>' +
+        '<td class="num">' + esc(dt(r.firstPlan)) + '</td><td class="num">' + esc(dt(latest)) + '</td><td class="num">' + esc(dt(r.onDuty)) + '</td>' +
+        '<td>' + offCell(r.offPlan) + '</td><td>' + offCell(delta) + '</td></tr>';
+      if (!open) return row;
+      const major = story({ ...r, events: previewMajorEvents(r) }).replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
+      const full = story(r).replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
+      return row + '<tr><td colspan="6" class="preview-order-details">' +
+        '<div class="timeline-facts"><span>First seen: <b>' + esc(dt(r.firstSeen)) + '</b></span><span>First plan: <b>' + esc(dt(r.firstPlan)) + '</b></span>' +
+        '<span>First order: <b>' + esc(dt(r.firstOrder)) + '</b></span><span>Latest order: <b>' + esc(dt(latest)) + '</b></span>' +
+        '<span>Actual on duty: <b>' + esc(dt(r.onDuty)) + '</b></span><span>Compared with first order: ' + offCell(r.offOrder) + '</span>' +
+        '<span>Compared with latest order: ' + offCell(delta) + '</span><span>Toronto off duty: <b>' + (r.noOffDuty ? 'Not applicable' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? 'Needs review' : 'Not recorded') + '</b></span>' +
+        '<span>Time on duty: <b>' + (r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + '</b></span><span>Crew: <b>' + esc(r.crew || 'Not recorded') + '</b></span></div>' +
+        '<h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections. All smaller movements remain below.</p>' + major +
+        '<details><summary>All recorded changes (' + (r.events || []).length + ')</summary>' + full + '</details></td></tr>';
+    }).join('');
+    view.innerHTML = '<h2>Test · Order summary</h2><p class="anote"><b>Preview only.</b> Regular Order summary is unchanged. Times are railway time. “Order” is the lineup time, not the moment a call was made. Comparisons use actual on-duty time.</p>' +
+      '<div class="preview-order-filters">' + select('test-order-day', 'Day', days.map((day) => [day, day]), testPreview.day) +
+      select('test-order-from', 'Origin', [['all','Sarnia and Toronto'],['sarnia','Sarnia'],['mac','Toronto']], testPreview.from) +
+      select('test-order-status', 'Status', [['all','All statuses'], ...Object.entries(labels)], testPreview.status) +
+      '<label>Find within day<input id="test-order-find" placeholder="X39491 06" value="' + esc(testPreview.find) + '"></label><button type="button" id="test-order-show">Apply</button></div>' +
+      '<section class="sheet"><header><h2>' + esc(testPreview.day || 'No saved day') + '</h2><span class="meta">' + rows.length + ' trains · tap a row for details</span></header>' +
+      '<div class="scroll"><table class="orders"><thead><tr><th>Train / status</th><th>First plan</th><th>Latest order</th><th>Actual on duty</th><th>Vs first plan</th><th>Vs latest order</th></tr></thead><tbody>' +
+      (body || '<tr><td colspan="6">No trains match these filters.</td></tr>') + '</tbody></table></div></section>' +
+      '<p class="anote">Completed means a usable tie-up is recorded. “No call observed” does not prove cancellation or that nobody was called. Order observed describes saved evidence, not a live dispatcher status.</p>';
+    const apply = () => {
+      testPreview.day = document.getElementById('test-order-day').value;
+      testPreview.from = document.getElementById('test-order-from').value;
+      testPreview.status = document.getElementById('test-order-status').value;
+      testPreview.find = document.getElementById('test-order-find').value;
+      testPreview.open = null; renderTest();
     };
-    document.getElementById('test-show').onclick = go;
-    document.getElementById('test-turn').onkeydown = (event) => { if (event.key === 'Enter') go(); };
-    try {
-      const person = isCode(want);
-      const [all, stretches, hash] = await Promise.all([
-        src.turns(), person ? Person.find(want) : null, person ? Person.hash(want) : null
-      ]);
-      if (mode !== 'test' || testPreview.turn !== want || !healthData || !OwnerKey.has()) return;
-      let rec;
-      if (person) {
-        rec = stretches && personHistory(stretches, all, (turn) => Person.craftNow(hash, turn));
-      } else {
-        const { base, craft } = BoardTurns.splitCraft(want);
-        const raw = all[base];
-        rec = raw && craft ? { ...raw,
-          changes: raw.changes.map((x) => ({ ...x, text: craftHistoryText(x.text, craft).own })).filter((x) => x.text),
-          rests: raw.rests.filter((x) => !x.craft || x.craft === craft || (craft === 'EN' && x.craft === 'LE')) } : raw;
-      }
-      const box = document.getElementById('test-work');
-      if (!box) return;
-      box.innerHTML = '<h3>' + esc(want) + (person ? ' · personal history preview' : '') + '</h3>' + historyChangeNotes(rec);
-      box.querySelectorAll('button[data-taken]').forEach((button) => {
-        button.onclick = () => jumpTo(button.dataset.taken);
-      });
-    } catch (e) {
-      const box = document.getElementById('test-work');
-      if (box && mode === 'test') box.innerHTML = '<p class="anote">Preview data could not be loaded. Use Show preview to retry.</p>';
-    }
+    for (const id of ['test-order-day','test-order-from','test-order-status']) document.getElementById(id).onchange = apply;
+    document.getElementById('test-order-show').onclick = apply;
+    document.getElementById('test-order-find').onkeydown = (event) => { if (event.key === 'Enter') apply(); };
+    view.querySelectorAll('[data-preview-key]').forEach((row) => {
+      row.onclick = () => { testPreview.open = testPreview.open === row.dataset.previewKey ? null : row.dataset.previewKey; renderTest(); };
+      row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
+    });
+    view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
   }
 
   function setMode(m) {

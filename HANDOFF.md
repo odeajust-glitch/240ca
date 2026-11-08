@@ -440,3 +440,15 @@ FORMAT 27 rebuilds retained snapshots. 49 targeted tests pass; laptop publicatio
 and real-CATS verification remain pending. Error/evidence/fix list:
 [Trip data fixes](docs/board-checker/TRIP-DATA-FIXES-2026-11-08.md).
 No calling-rule, notification or Worker change.
+
+Owner Test Order-summary preview — 2026-11-08: replaced the previous history-note
+example (already promoted) with the owner's requested items 2–6. Six-column
+summary shows full dated train ID/status, first plan, latest order, actual duty,
+and differences from first plan/latest order. Expanded facts retain first-order
+comparison, first-seen, crew, off-duty and duration. Key events retain movements
+over 30 min plus all non-movement events; every original event is expandable.
+Origin/day/search and evidence-based status filters are preview-only. Disappearance
+is labelled no call observed, not proof of cancellation. Only verified owner-key
+browsers can render Test. Regular Order summary, Changes, cards, calculations and
+notifications are unchanged. Syntax/sample/filter/access checks pass; owner visual
+review and publication pending. No Worker change.

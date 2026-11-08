@@ -512,3 +512,13 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
   record before relying on it; no previous submissions were inspected here.
 - 49 targeted tests pass; keep real-CATS/publication verification open. Full dated
   train identity and month remain part of matching. No Worker update required.
+
+### Owner Test: Order summary items 2–6 — 2026-11-08 (awaiting review)
+
+- Preview built: first/latest-order comparisons, six-column table, shortened key
+  events with all originals retained, cautious disappeared/no-call-observed wording,
+  and day/origin/status/search filters. Earlier Test history example removed.
+- Verify on the owner's phone after publication, including X39491 06 first-order
+  vs latest-order comparison, open/close details and all-event access, disappeared
+  deadhead wording, empty filters and completed/tie-up-not-recorded distinctions.
+- Regular Order summary is unchanged. Do not promote until Justin approves.
