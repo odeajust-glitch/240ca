@@ -370,6 +370,12 @@
   details.why p { margin: 4px 0 0; font-size: 13px; color: var(--soft); max-width: 62ch; }
   .rule-say details { flex-basis: 100%; }
 
+  .screen-group { border: 1px solid var(--rule-soft); border-radius: 5px; }
+  .screen-group summary { padding: 10px 12px; cursor: pointer; font-weight: 600; min-height: 44px; box-sizing: border-box; }
+  .screen-links { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px; }
+  .screen-links button { min-height: 44px; white-space: normal; }
+  .screens:has(.screen-group) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .off-heading { margin: 12px 14px 6px; font-size: 14px; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -1036,6 +1042,13 @@ function garnet(s) {
     <div class="foot">Garnet's line-up (option 41, station 47956) and the Garnet board (31). Only one crew is ever in Garnet: the 501/502 crew that took L502 out brings the next L501 home. Call = order − 2 h.</div></section>`;
 }
 
+function torontoRestWarning(s, t, rested) {
+  if (!rested || !t.call) return '';
+  const end = BoardTrains.resolve(rested, s.taken);
+  const call = BoardTrains.resolve(t.call, s.taken);
+  return end && call && stampMin(end) > stampMin(call)
+    ? '<div class="crew spare">⚠ ' + (t.crewExpected ? 'Estimated rest' : 'Rest') + ' extends past planned call. Assignment remains a prediction.</div>' : '';
+}
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
@@ -1059,7 +1072,7 @@ function toronto(s) {
     // Planned and still on rest at the call (owner, 2026-10-25): when they're rested, in yellow.
     const when = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
     return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
-      <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
+      <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${torontoRestWarning(s, t, c.rested)}${skip}`;
   };
   // A crew not in the bunkhouse yet (owner, 2026-10-22): an estimate from
   // when it went on duty in Sarnia (train ~8 h, deadhead ~3 h, then 8 h rest).
@@ -1067,7 +1080,7 @@ function toronto(s) {
     const x = t.crewExpected;
     const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
     return `<b class="num">${markTurn(t.crew)}</b> <span class="chip">estimate</span>
-      <div class="crew">on the way: on duty Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${skip}`;
+      <div class="crew">on the way: on duty Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${torontoRestWarning(s, t, x.rested)}${skip}`;
   };
   const rows = trains.map((t) => {
     if (t.crewExpected) {
@@ -1174,11 +1187,12 @@ function onDuty(s) {
 function daysOff(s) {
   if (!(s.screens || []).includes('daysOff') && !(s.daysOff || []).length) return '';
   const list = s.daysOff || [];
-  // Owner, 2026-11-05: just when and the turn (Until, Type, pool and trainee notes taken out).
-  const rows = list.map((d) => `<tr${marked(d.turn) ? ' class="hit"' : ''}><td class="num">${esc(d.from)}</td>
-    <td><b class="num">${markTurn(d.turn)}</b> <span class="chip">${esc(d.craft)}</span>${d.on ? ' <span class="chip">off now</span>' : ''}</td></tr>`).join('');
-  return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${list.length} coming</span></header>
-    <div class="scroll"><table><thead><tr><th>From</th><th>Turn</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">No upcoming days off.</td></tr>'}</tbody></table></div>
+  const active = list.filter((d) => d.on);
+  const upcoming = list.filter((d) => !d.on);
+  const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span></td></tr>').join('');
+  const group = (name, items) => '<h3 class="off-heading">' + name + ' · ' + items.length + '</h3><div class="scroll"><table><thead><tr><th>From</th><th>Ends</th><th>Turn</th></tr></thead><tbody>' + (rows(items) || '<tr><td colspan="3" class="muted">None in this check.</td></tr>') + '</tbody></table></div>';
+  return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${active.length} active · ${upcoming.length} upcoming</span></header>
+    ${group('Active now', active)}${group('Upcoming', upcoming)}
     <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call still takes it and goes spare; a spare off then is passed over. A trainee (ET / TT) off changes nothing: their jobs never go spare.</div></section>`;
 }
 
@@ -1210,7 +1224,7 @@ function vacancies(s) {
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
   const fill = (v) => (!v.fill ? ''
-    : `<div class="crew">Filled by ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<span class="spare">no one free</span>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${skippedText(v.fill.skipped)}${v.fill.sd ? ` · <b class="num">${markTurn(v.fill.sd)}</b> (Chain Gang) may be called` : ''}</div>`);
+    : `<div class="crew">Expected cover ${v.fill.turn ? `<b class="num">${markTurn(v.fill.turn)}</b> <span class="chip">estimate</span>` : '<strong class="spare">NO SPARE AVAILABLE</strong>'} · ${esc(v.fill.board)} · call ~${esc(v.fill.call)}${skippedText(v.fill.skipped)}${v.fill.sd ? ` · <b class="num">${markTurn(v.fill.sd)}</b> (Chain Gang) may be called` : ''}</div>`);
   // Short: the B0s counted, the rest named (owner, 2026-10-26: a long list of B0s).
   function skippedText(list) {
     if (!list || !list.length) return '';
@@ -1230,12 +1244,12 @@ function vacancies(s) {
     <td class="num">${v.turn ? markTurn(v.turn) : '—'} <span class="spare">(spare)</span></td></tr>`).join('');
   const predSection = !predicted.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Predicted jobs going spare · ${predicted.length}</h3>
     <p class="anote" style="margin:4px 14px 10px">On the corrected train line-up as going spare, but not on CATS's option 5${s.option5Read === false ? ' (option 5 wasn\'t read this check)' : ' yet'}. A guess until CATS lists it.</p>
-    <div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${predRows}</tbody></table></div>`;
+    <div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${predRows}</tbody></table></div>`;
   const tabs = tabbed ? `<div class="tabs" role="tablist"><button type="button" role="tab" data-vactab="fixed" aria-selected="${!showCats}">Corrected (by the order)</button><button type="button" role="tab" data-vactab="cats" aria-selected="${showCats}">As CATS shows${wrongs ? ` <span class="bad">· ${wrongs} wrong</span>` : ''}</button></div>` : '';
   const why = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${why}
-    ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · filled by</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>'}${predSection}
-    <div class="foot">"Filled by" is a guess: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div></section>`;
+    ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>'}${predSection}
+    <div class="foot">"Expected cover" is an estimate, not a confirmed crew call: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div></section>`;
 }
 
 function sequence(s) {
@@ -3730,9 +3744,19 @@ source().then(async (src) => {
     const agebar = latest
       ? `<div class="agebar" data-live="1"><span class="age" data-age="${esc(lastSeen)}" data-prefix="Last checked "></span>${s.sameUntil ? `<span class="sub">no change since ${esc(w.time)}</span>` : ''}${mode === 'current' ? '' : '<span class="sub">This is the current board.</span>'}</div>`
       : `<div class="agebar old"><span class="age" data-age="${esc(s.taken)}" data-prefix="Taken "></span><span class="sub">Not the current board.</span><button type="button" class="tocurrent" id="tocurrent">Go to current</button></div>`;
-    const screens = ['callBoard', ...s.screens].map((k) => {
-      const name = k === 'callBoard' ? 'Call board' : SCREENS[k] || k;
-      return JUMPS[k] ? `<button type="button" class="chip" data-jump="${esc(k)}">${esc(name)}</button>` : `<span class="chip">${esc(name)}</span>`;
+    const availableScreens = [...new Set(['callBoard', ...(s.screens || [])])];
+    const screenGroups = [
+      ['Trains', ['callBoard', 'lineup', 'macLineup', 'garnetLineup']],
+      ['Pools', ['chainGang', 'aPool', 'bPool', 'sdPool', 's1Pool', 's3Pool', 's5Pool', 'garnet', 'bunkhouse']],
+      ['Spareboards', ['coFast', 'coSlow', 'enFast', 'enSlow']],
+      ['Other', availableScreens.filter((k) => !['callBoard', 'lineup', 'macLineup', 'garnetLineup', 'chainGang', 'aPool', 'bPool', 'sdPool', 's1Pool', 's3Pool', 's5Pool', 'garnet', 'bunkhouse', 'coFast', 'coSlow', 'enFast', 'enSlow'].includes(k))]
+    ];
+    const screens = screenGroups.map(([title, keys]) => {
+      const links = keys.filter((k) => availableScreens.includes(k)).map((k) => {
+        const name = k === 'callBoard' ? 'Call board' : SCREENS[k] || k;
+        return JUMPS[k] ? '<button type="button" class="chip" data-jump="' + esc(k) + '">' + esc(name) + '</button>' : '<span class="chip">' + esc(name) + '</span>';
+      }).join('');
+      return links ? '<details class="screen-group"><summary>' + title + '</summary><div class="screen-links">' + links + '</div></details>' : '';
     }).join('');
     const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
     document.getElementById('view').innerHTML = `
