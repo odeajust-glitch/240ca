@@ -509,6 +509,12 @@
     const visible = m.changes.filter(c => c.at <= m.to);
     const lastChange = visible.filter(c => m.end == null || c.at <= m.end).at(-1);
     const stable = m.end == null ? null : Math.max(0, m.end - (lastChange ? lastChange.at : m.first));
+    const elapsed = m.end == null ? null : Math.max(0, m.end - m.first);
+    const ticks = Array.from({ length: 5 }, (_, i) => {
+      const at = m.from + Math.round((m.to-m.from)*i/4);
+      const value = fmt(at);
+      return `<line x1="${x(at)}%" x2="${x(at)}%" y1="36" y2="42" stroke="var(--soft)"/><text x="${x(at)}%" y="58" text-anchor="${i===0?'start':i===4?'end':'middle'}" fill="var(--ink)" style="font:11px sans-serif"><tspan x="${x(at)}%">${e(value.slice(0,5))}</tspan><tspan x="${x(at)}%" dy="14">${e(value.slice(6))}</tspan></text>`;
+    }).join('');
     const rect = (a,b,colour) => `<rect x="${x(a)}%" y="20" width="${Math.max(0,x(b)-x(a))}%" height="16" fill="${colour}"/>`;
     const begin = Math.max(m.from,m.block.from);
     let bands = rect(begin,m.expected,'var(--go)');
@@ -521,10 +527,10 @@
     const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
     return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b><br><strong>${e(result)}</strong>${!z.takenOff && gap < 0 ? `<br><b>Lost Sleep: ${duration(gap)}</b>` : ''}</p>
       <div class="timeline-facts"><span>First lined: <b>${e(fmt(m.first))}</b></span><span>Green starts: <b>${e(fmt(m.block.from))}</b></span><span>Original call: <b>${e(fmt(m.expected))}</b></span><span>${z.takenOff ? 'Removed' : 'Actual call time'}: <b>${m.end == null ? '—' : e(fmt(m.end))}</b></span></div>
-      <svg width="100%" height="60" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${orderMarks}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
+      <svg width="100%" height="85" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${orderMarks}${ticks}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
       <div class="anote">Green: planned window · Black: Lost Sleep · Yellow: up to 1 h late · Red: over 1 h late. Dots: changes over 30 min · Squares: ordered.</div>
       <details><summary>Marker times (${events.length})</summary><ul class="timeline-events">${eventLabels || '<li>No saved marker times.</li>'}</ul></details>
-      <p class="anote">${m.markers.length} changes over 30 min · ${stable == null ? '—' : duration(stable)} since last saved change before call.</p>
+      <p class="anote">${elapsed == null ? '' : `${duration(elapsed)} from first lined to ${z.takenOff ? 'removal' : 'actual call'} · `}${m.markers.length} changes over 30 min · ${stable == null ? '—' : duration(stable)} since last saved change before call.</p>
       <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
       <details><summary>About this timeline</summary><p class="anote">Green is the original eight-hour plan. An early call leaves black through the planned call, labelled Lost Sleep (the call-time gap, not measured sleep); a late call extends yellow up to one hour, red beyond. Dots mark successive changes over 30 minutes. Actual call time is calculated from on-duty minus two hours; ordering times are first observed, not exact. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'} ${m.first > m.block.from ? 'Tracking began after the green window started.' : ''}</p></details></details>`;
   }
