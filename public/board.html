@@ -1406,8 +1406,9 @@ function wireWork(box, rec, turn) {
       tr.classList.add('open');
       const d = document.createElement('tr');
       d.className = 'wdet';
-      d.innerHTML = `<td colspan="3" class="det">${callHistory(rec, rows, +tr.dataset.w)}</td>`;
+      d.innerHTML = `<td colspan="3" class="det">${callHistory(rec, rows, +tr.dataset.w)}<div class="work-call-timeline"><p class="anote">Loading call timeline…</p></div></td>`;
       tr.after(d);
+      window.dispatchEvent(new CustomEvent('work-call-timeline', { detail: { box: d.querySelector('.work-call-timeline'), turn, trip: rows[+tr.dataset.w] } }));
       d.querySelectorAll('button[data-taken]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('jumpto', { detail: b.dataset.taken })); }; });
     };
   });
@@ -3854,6 +3855,17 @@ source().then(async (src) => {
   // The archive, a month per file (F7): only the months the dates need
   // (from the month before, for things that started then), each fetched once.
   const archMonths = new Map();
+  window.addEventListener('work-call-timeline', async (event) => {
+    const { box, turn, trip } = event.detail;
+    try {
+      const day = (trip.at || '').slice(0, 10);
+      const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: day, to: day })]);
+      if (!box.isConnected) return;
+      const all = BoardAnalytics.joinOld('sleep', archive.sleep || [], live.sleep || []);
+      const matches = all.filter(z => !z.takenOff && z.turn === turn && z.train === trip.train && z.onDuty === trip.at);
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z)).join('') : '<p class="anote">No saved call timeline for this turn and trip.</p>';
+    } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
+  });
   async function loadArchive(range) {
     const idx = await src.archive();
     if (!idx) return null;
