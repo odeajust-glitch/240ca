@@ -528,3 +528,19 @@ Order-summary preview approved for promotion (2026-11-08): owner approved items
 shared Test view matches it. Previous “do not promote” note is superseded by this
 approval. Keep phone/publication verification open: theme dropdowns, day/origin/
 status filters, exact dated train links, first/latest comparisons and all-event access.
+
+### Filing form usability items 5–7 — 2026-11-08 (publication verification open)
+
+- Implemented inline selected-trip form, four filing steps, separate missing-fields,
+  configuration/lookup errors, review with explicit confirmation, and success reference.
+- Verify after pull/restart: selected stay stays beside its form in Article 18.6(b)
+  and Turn History; phone layout, required fields, craft destination, full review,
+  edit invalidation, draft export and setup reasons. Do not send a test filing to a rep.
+- References are client-generated, included in outgoing text, and recorded locally
+  only after the service returns success; inbox delivery is not tracked. Local receipt
+  history is not a server duplicate guard. Existing backend duplicate rules unchanged.
+- Owner confirmed times accurate: preserve existing calculations/summary labels.
+  Engineer filing workflow was explained only; do not implement suggestion 2 without
+  owner decision (earlier details/Copy-only instruction versus current shared form).
+- Four mocked submission regressions and 26 site/trip tests pass. Real publication,
+  visual review and any actual filing confirmation remain unverified. No Worker update.

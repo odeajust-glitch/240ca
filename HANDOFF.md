@@ -461,3 +461,15 @@ and search use the prior Order-summary theme styling and friendly day labels.
 Chronological row order, full dated-ID deep links, snapshot links and share links
 are retained. Test remains owner-key gated; regular summary remains public.
 No railway/notification changes. Publication and live visual verification pending.
+
+Article 18.6(b) filing usability — 2026-11-08: approved items 5–7 implemented.
+Selected stay's form appears immediately below its row/card. Four filing steps,
+separate missing-field/setup reasons, a complete review and explicit confirmation
+precede Submit. Editing invalidates review. Successful service response shows a
+client-generated reference included in the submitted/exported text; last 50 receipt
+references stay on that device (no added name/PIN storage). This is service acceptance,
+not verified inbox delivery. Failed sends retain retry and show the error. Export
+remains available for drafts. Times, held calculations, violation tiles and craft
+eligibility/workflow remain unchanged; engineer workflow decision remains open.
+Four mocked submission tests and 26 existing site/trip tests pass; no real submission
+sent. Laptop publication and phone review pending. No Worker change.

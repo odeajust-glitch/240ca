@@ -396,6 +396,18 @@
   .preview-order-details .timeline-facts { margin-bottom: 14px; }
   .preview-order-details > details > summary { cursor: pointer; color: var(--accent); padding: 10px 0; }
   .preview-order-details .story { min-width: 0; }
+  .held-inline-form > td { padding: 0; white-space: normal; }
+  .held-inline-form .gform { min-width: 0; }
+  .filing-steps { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; list-style: none; font-size: 13px; }
+  .greviewbox { padding: 12px; border: 1px solid var(--accent); border-radius: 5px; margin: 12px 0; }
+  .greviewfacts dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; }
+  .greviewfacts dt { color: var(--soft); font-size: 12px; }
+  .greviewfacts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+  .greviewfacts pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+  .gmissing, .gsetup { margin: 8px 0; font-size: 13px; }
+  .greview, .gedit { min-height: 44px; margin: 6px 0; }
+  .gform .greviewbox > label { display: flex; align-items: center; gap: 8px; }
+  .gform .gconfirm { width: auto; min-height: 0; flex: none; }
   /* Compact lists */
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   th { text-align: left; font: 600 11.5px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); padding: 8px 14px 6px; }
@@ -2466,6 +2478,7 @@ function prefill(r, names, craft = 'CO') {
 // names: unlocked map, or null. namesState: 'none' (no names file), 'locked', 'unlocked'.
 function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') {
   const rows = heldRows(all);
+  const open = rows.find((r) => heldKey(r) === openKey);
   const body = rows.map((r) => {
     const key = heldKey(r);
     const n = (names && names[key]) || {};
@@ -2476,10 +2489,9 @@ function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') 
       <td class="num">${r.back ? `<b class="id">${esc(r.back.id)}</b>` : '<span class="muted">still in the bunkhouse</span>'}</td>
       <td class="num">${r.back ? esc(dt(r.back.onDuty)) : '—'}</td>
       <td><span class="held${r.stillHeld ? ' now' : ''}">${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}</span></td></tr>`;
-    return tr;
+    return tr + (key === openKey ? `<tr class="held-inline-form"><td colspan="6"><div class="gform"><h3>File it · ${esc(open.co)}${open.en ? ` + ${esc(open.en)}` : ''} on ${esc(open.id)}</h3>${claimForm(open, openCraft === 'EN' && open.en ? 'EN' : 'CO', prefill(open, names, openCraft === 'EN' && open.en ? 'EN' : 'CO'))}</div></td></tr>` : '');
   }).join('');
-  // The form sits under the table, not in it, so it fits a phone screen.
-  const open = rows.find((r) => heldKey(r) === openKey);
+  // Keep the selected stay and its filing form together.
   const unlock = namesState === 'locked'
     ? `<form class="unlock" id="unlock" autocomplete="off"><label for="npass">Crew names are locked. Passcode</label><span class="row2"><input type="password" id="npass" autocomplete="current-password"><button type="submit">Unlock</button></span><span class="uerr" role="alert"></span></form>`
     : namesState === 'unlocked'
@@ -2504,7 +2516,6 @@ function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO') 
     <section class="sheet"><header><h2>Crews held 14 h or more</h2><span class="meta">tap a crew to file it</span></header>
       <div class="scroll"><table class="orders"><thead><tr><th>Conductor · engineer</th><th>Train to Toronto · on duty</th><th>Off duty (Toronto)</th><th>Train home</th><th>On duty home</th><th>Held</th></tr></thead>
       <tbody>${body || '<tr><td colspan="6" class="muted">No crew held 14 hours or more in the saved checks.</td></tr>'}</tbody></table></div>
-      ${open ? `<div class="gform"><h3>File it · ${esc(open.co)}${open.en ? ` + ${esc(open.en)}` : ''} on ${esc(open.id)}</h3>${claimForm(open, openCraft === 'EN' && open.en ? 'EN' : 'CO', prefill(open, names, openCraft === 'EN' && open.en ? 'EN' : 'CO'))}</div>` : ''}
       <div class="foot">Held = off duty in Toronto to the conductor turn's next on-duty time at Toronto on the Call Board. Off duty is the bunkhouse rest − 8 h, so it's worked out, not read: check it against the time slip before filing. Crews whose rest or trip home fell between checks, or who went home some other way, don't show here. Names come from the Call Board, locked with a passcode (the owner key opens them); PINs aren't on CATS, so you type each one once and this device remembers it. Submit sends it to the conductors' or the engineers' rep; Export saves it as a text file instead.</div>
     </section>`;
 }
@@ -2543,6 +2554,7 @@ function claimForm(r, craft, pre = {}) {
   const homeOff = homeOffOf(r);
   const seg = (c, label, turn) => `<label><input type="radio" name="craft" value="${c}"${craft === c ? ' checked' : ''}${turn ? '' : ' disabled'}> ${label}${turn ? ` (${esc(turn)})` : ''}</label>`;
   return `<form class="gf claim" autocomplete="off" onsubmit="return false">
+    <ol class="filing-steps" aria-label="Filing steps"><li>1 · Check trip</li><li>2 · Add personal / TS details</li><li>3 · Review</li><li>4 · Submit or export</li></ol>
     <p class="gnote">Filled in from the board${pre.fromCats ? ', name from the Call Board' : ''}. Check every field and add your TS numbers (on your time slips).</p>
     ${pre.turnOnly ? `<p class="gnote"><b>The name is the one last seen on that turn</b>, not read off this trip: if a spare worked it, change it.</p>` : ''}
     <div class="seg" role="radiogroup" aria-label="Craft">${seg('CO', 'Conductor', r.co)}${seg('EN', 'Engineer', r.en)}</div>
@@ -2567,6 +2579,11 @@ function claimForm(r, craft, pre = {}) {
     <label class="gwide">Additional information<textarea name="more" rows="4" placeholder="Anything the rep should know"></textarea></label>
     <p class="gnote">From the board (check it against your time slips): off duty ≈ ${esc(isoOf(r.offDuty))}${r.back ? `, on duty for the train home ${esc(isoOf(r.back.onDuty))}` : ''}; held ${esc(dur(r.heldMin))}${r.stillHeld ? ' so far' : ''}.</p>
     <label class="gwide">Your email for a copy (optional)<input type="email" name="copy" placeholder="you@example.com" autocomplete="email"></label>
+    <div class="gmissing" role="status"></div><div class="gsetup" role="status"></div>
+    <button type="button" class="greview">Review submission</button>
+    <section class="greviewbox" hidden aria-label="Review submission"><h3>Review before submitting</h3><div class="greviewfacts"></div>
+      <label><input type="checkbox" class="gconfirm"> I have checked the trip and personal details.</label>
+      <button type="button" class="gedit">Edit details</button></section>
     <div class="gsum"><span class="gerr" role="alert"></span>
       <button type="button" class="gexport">Export (.txt)</button>
       <button type="button" class="gen gsend" disabled>Submit to the rep</button></div>
@@ -2595,6 +2612,7 @@ function claimText(r, d) {
     'Check Against Time Slips',
     ...(d.more ? ['', 'Additional information:', d.more] : []),
     '',
+    ...(d.reference ? [`Submission reference: ${d.reference}`, ''] : []),
     'Sent from the Sarnia board site.',
   ].join('\n');
 }
@@ -2609,15 +2627,44 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
     more: val('more'), copy: val('copy') });
   const send = form.querySelector('.gsend');
   const errEl = form.querySelector('.gerr');
+  const reviewButton = form.querySelector('.greview');
+  const reviewBox = form.querySelector('.greviewbox');
+  const confirmBox = form.querySelector('.gconfirm');
+  let reviewed = false, sending = false, sent = false, setupFailed = false;
+  const reference = 'H186-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+  const invalidateReview = () => { reviewed = false; reviewBox.hidden = true; confirmBox.checked = false; };
   const missing = (d) => [['name', 'name'], ['pin', 'PIN'], ['outTrain', 'train out'], ['outDate', 'date out'], ['outOn', 'on duty time out'], ['outOff', 'off duty time out'], ['outOffDate', 'off duty date out'], ['outTs', 'TS number out'], ['homeTrain', 'train home'], ['homeDate', 'date home'], ['homeOn', 'on duty time home'], ['homeOff', 'off duty time home'], ['homeOffDate', 'off duty date home'], ['homeTs', 'TS number home']].filter(([k]) => !d[k]).map(([, l]) => l);
   function update() {
-    const d = read();
+    const d = { ...read(), reference };
     const ready = HELD186_READY && HELD186_READY[d.craft];
     const miss = missing(d);
-    send.disabled = !ready || miss.length > 0;
-    errEl.textContent = HELD186_READY && !ready ? `Sending to the ${d.craft === 'EN' ? 'engineers\'' : 'conductors\''} rep isn't set up yet: export the text file instead.` : miss.length ? `Still needed: ${miss.join(', ')}.` : '';
+    reviewButton.disabled = miss.length > 0 || sending || sent;
+    send.disabled = !ready || miss.length > 0 || !reviewed || !confirmBox.checked || sending || sent;
+    form.querySelector('.gmissing').textContent = sent ? 'Submission accepted. Reference shown below.' : sending ? 'Sending your reviewed submission…' : miss.length ? 'Still needed: ' + miss.join(', ') + '.' :
+      reviewed ? 'Details ready. Check the review confirmation before submitting.' : 'Details filled in. Review them before submitting.';
+    form.querySelector('.gsetup').textContent = setupFailed ? 'Could not check email sending setup. Reload to retry; Export remains available.' : !HELD186_READY ? 'Checking email sending setup…' :
+      !ready ? 'Sending to the ' + (d.craft === 'EN' ? 'engineers’' : 'conductors’') + ' rep is not configured. Export remains available.' :
+      'Destination: configured ' + (d.craft === 'EN' ? 'engineers’' : 'conductors’') + ' representative.';
     return d;
   }
+  reviewButton.onclick = () => {
+    const d = update();
+    if (missing(d).length || sending || sent) return;
+    reviewed = true; confirmBox.checked = false;
+    const facts = [
+      ['Craft / turn', (d.craft === 'EN' ? 'Engineer' : 'Conductor') + ' · ' + (d.turn || 'not recorded')],
+      ['Full name', d.name], ['PIN', d.pin], ['Train out', d.outTrain],
+      ['Out on duty', d.outDate + ' ' + d.outOn], ['Out off duty', d.outOffDate + ' ' + d.outOff], ['TS out', d.outTs],
+      ['Train home', d.homeTrain], ['Home on duty', d.homeDate + ' ' + d.homeOn],
+      ['Home off duty', d.homeOffDate + ' ' + d.homeOff], ['TS home', d.homeTs],
+      ['Destination', (d.craft === 'EN' ? 'Engineers’' : 'Conductors’') + ' representative configured on this site'],
+      ['Copy', d.copy || 'No copy requested'], ['Reference', reference]
+    ];
+    form.querySelector('.greviewfacts').innerHTML = '<dl>' + facts.map(([label,value]) => '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>').join('') +
+      '</dl><details><summary>Full text to submit (includes held duration)</summary><pre>' + esc(claimText(r,d)) + '</pre></details>';
+    reviewBox.hidden = false; update(); reviewBox.scrollIntoView({block:'nearest'});
+  };
+  form.querySelector('.gedit').onclick = () => { invalidateReview(); update(); f.name.focus(); };
   // The name for the craft picked: from the Call Board (unlocked), else the
   // name this device last used for that turn; the PIN this device remembers.
   function fillName() {
@@ -2631,12 +2678,13 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
   }
   form.addEventListener('input', (e) => {
     const t = e.target;
+    if (t !== confirmBox) invalidateReview();
     if (t.name === 'name') { const known = people().byName[t.value.trim().toUpperCase()]; if (known && known.pin) f.pin.value = known.pin; }
     if (/Train$/.test(t.name)) t.value = t.value.toUpperCase();
     if (/(On|Off)$/.test(t.name)) t.value = t.value.replace(/\D/g, '').slice(0, 4);
     update();
   });
-  form.addEventListener('change', (e) => { if (e.target.name === 'craft') fillName(); update(); });
+  form.addEventListener('change', (e) => { if (e.target !== confirmBox) invalidateReview(); if (e.target.name === 'craft') fillName(); update(); });
   form.querySelector('.gexport').onclick = () => {
     const d = update();
     remember(d.turn, d, '');
@@ -2647,6 +2695,8 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
   };
   send.onclick = async () => {
     const d = update();
+    if (send.disabled || !reviewed || !confirmBox.checked || sending || sent) return;
+    sending = true;
     send.disabled = true;
     send.textContent = 'Sending…';
     try {
@@ -2654,22 +2704,29 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
       const out = await res.json().catch(() => ({}));
       if (!res.ok || !out.ok) throw new Error(out.error || `the site answered ${res.status}`);
       remember(d.turn, d, '');
+      sending = false; sent = true;
+      try {
+        const receipts = JSON.parse(localStorage.getItem('boardHeld186Receipts') || '[]');
+        receipts.push({reference, craft:d.craft, outTrain:d.outTrain, homeTrain:d.homeTrain, sentAt:new Date().toISOString()});
+        localStorage.setItem('boardHeld186Receipts', JSON.stringify(receipts.slice(-50)));
+      } catch (e) { /* confirmation still shown if local storage is unavailable */ }
       errEl.textContent = '';
-      form.querySelector('.gsum').insertAdjacentHTML('beforeend', `<p class="gok">✓ Sent to the ${d.craft === 'EN' ? 'engineers\'' : 'conductors\''} rep${out.copy ? `, a copy to ${esc(d.copy)}` : ''}.</p>`);
+      form.querySelector('.gsum').insertAdjacentHTML('beforeend', `<p class="gok">✓ Sent to the ${d.craft === 'EN' ? 'engineers\'' : 'conductors\''} rep${out.copy ? `, a copy to ${esc(d.copy)}` : ''}.<br>Reference: <b>${esc(reference)}</b><br>Confirmed by the email service; inbox delivery is not tracked.</p>`);
       send.textContent = 'Sent';
+      update();
       return;
     } catch (e) {
+      sending = false;
       send.textContent = 'Submit to the rep';
       update();
-      // After update(), which would clear it (owner, 2026-11-06: the button
-      // went grey, then back, with no reason shown).
+      // Keep a visible failure reason when submission becomes retryable.
       errEl.textContent = `Not sent: ${e.message}`;
       return;
     }
   };
   if (!f.name.value) fillName();
   update();
-  if (!HELD186_READY) fetch('api/held186', { cache: 'no-store' }).then((x) => (x.ok ? x.json() : { CO: false, EN: false })).catch(() => ({ CO: false, EN: false })).then((x) => { HELD186_READY = x; if (form.isConnected) update(); });
+  if (!HELD186_READY) fetch('api/held186', { cache: 'no-store' }).then((x) => { if (!x.ok) throw new Error('setup unavailable'); return x.json(); }).then((x) => { HELD186_READY = x; if (form.isConnected) update(); }).catch(() => { setupFailed = true; if (form.isConnected) update(); });
 }
 
 function held186(rows) {
@@ -2710,6 +2767,7 @@ function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
       await loadResets();
       const { r, role } = rows[+b.dataset.i];
       const out = box.querySelector('#g186box');
+      b.closest('.h186').after(out);
       out.innerHTML = `<div class="gform"><h3>${role === 'EN' ? 'Held 14 h+' : 'Article 18.6(b)'} · ${esc(role === 'EN' ? r.en : r.co)} on ${esc(r.id)}</h3>${claimForm(r, role, noNames ? {} : prefill(r, names, role))}</div>`;
       wireClaim(out.querySelector('form.claim'), r, { names, noNames });
       out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
