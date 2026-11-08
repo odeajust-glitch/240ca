@@ -4110,7 +4110,7 @@ source().then(async (src) => {
         if (!gaps.length) { el.textContent = 'Timeline unavailable'; return; }
         if (gaps.length !== 1) { el.textContent = 'Multiple call records — open to review'; return; }
         const gap = gaps[0];
-        el.textContent = gap < 0 ? dur(gap) + ' early · Lost Sleep ' + dur(gap) : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
+        el.textContent = gap < 0 ? 'Called ' + dur(gap) + ' early' : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
         el.classList.add(gap ? 'spare' : 'ok');
       });
     } catch (e) {
