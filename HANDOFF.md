@@ -3,6 +3,33 @@
 Documentation reorganized: **2026-11-07**. Historical statements are evidence from their
 recorded dates, not confirmation of today's deployment. Backlog: [TODO](docs/board-checker/TODO.md).
 
+## Latest verified status — 2026-11-07 evening
+
+This status supersedes older rollout statements below, which remain historical evidence.
+Reviewed application head: `1a6c728090c39c41d48d59494ecd2b407f1ec1b1`.
+
+- Live browser: **check November 7 20:37; Updated November 7 20:39**, Toronto time.
+- Analytics sections verified: Overview, My week, Trains, Turns side by side,
+  Call stability, Assignment errors, Stale trains.
+- Assignment errors replaces Out of sequence and CATS errors; grouped Wrong pool,
+  Wrong spare-job turn and Missing spare job details verified on E27861 07.
+- Runaround log, Jobs going spare and Predictions tabs removed; Overview contains
+  Call stability and Toronto holds, without the removed prediction/calling-log cards.
+  Underlying collection, Current spare jobs and notification rules remain.
+- Earlier live verification (20:16 check / 20:18 update): Turn History timeline opens
+  first and expanded; Original expected call time / Actual call time labels; five
+  date/time ticks; elapsed duration; black Lost Sleep segment, legend and marker times.
+  S501-CO L50231 04 showed 0145 original vs 0045 actual, Lost Sleep 1 h.
+- Historical opposite L501/L502 comparisons were visibly excluded; the former 47 h
+  L50231 02 comparison recovered a November 2 prediction and showed 1 h early.
+  This verifies those examples, not every historical trip or summary.
+- Subscriber-report persistence/error distinction is committed (aafef71), but
+  owner-only Page Health and retention through restart remain **unverified** here.
+- Browser observation confirms published page behavior only: exact Windows checkout
+  SHA and checker restart were not inspected; no Worker deployment was performed.
+- Audit findings and unresolved data/status issues are in TODO #21–23. No railway
+  rules changed. Original snapshot/archive remain intact.
+
 ## 1. Current project status and branch
 
 - Repository: `odeajust-glitch/240ca`; work on **`claude/vigilant-planck-zawrj4`**.

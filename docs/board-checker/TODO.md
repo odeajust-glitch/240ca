@@ -113,10 +113,56 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
     comparison. December 31 22:00: Anthropic key expiry (source time zone unspecified),
     replace in Cloudflare and Netlify. Reminder existence/delivery not rechecked here.
 
+21. **Assignment errors audit follow-up (2026-11-07; remains open).**
+    Live check 20:37 / update 20:39 (Toronto); last-90-days display: 126 train
+    groups, 222 issues, 166 pool/turn marked fixed, 20 missing jobs listed later.
+    Saved data generated 2026-11-08T01:39:53.842Z: 76 pool + 109 wrong-turn +
+    37 missing = 222 issues. No duplicate identities found within these saved
+    arrays using pool=train/month, wrong=train/month/craft/CATS-turn,
+    missing=train/month/craft/turn. Cross-type and craft findings are intentionally
+    separate (E27861 07 = 1 pool + 2 wrong-turn crafts + 1 missing = 4).
+    Archive-overlap and month-boundary identities still need explicit verification:
+    display groups by train text + observation month, not canonical service date.
+    Do not deduplicate crafts or detector types blindly.
+    Concrete UI issue: anaCats includes catsMissingView([]), so E27861 07 shows
+    an empty Missing from option 5 panel followed by its actual missing finding.
+    Concrete status risk: catsCheck marks fixed when a mismatch disappears while
+    the train remains listed; disappearance is not proof the actual crew matched.
+    E27861 07 conductor was marked fixed at 1312 with order SR04, but crew later
+    shown CO SB06. Review last-order changes before changing status semantics.
+    No fixed timestamp later than on-duty was found in saved catsErrors.
+    Three pool records have lastWrong later than onDuty: M39491 24, Z14891 24,
+    A42431 25. Audit post-departure observations before treating end-state labels
+    as proof of a runaround or correction before departure. Pool fixed flag is
+    final observed equality, without a stored correction timestamp.
+22. **Subscriber reporting real-run verification (2026-11-07; open).**
+    Persistence and diagnostic lookup committed aafef71; owner Health visibility,
+    successful/failed lookup ages, confirmed zero vs failure, last-good restoration
+    after restart, and delivery unaffected still require owner-side runtime evidence.
+    Do not close from public page verification or local tests.
+23. **Historical call-data completeness (2026-11-07; open).**
+    Opposite L501/L502 exclusions and L50231 02 wrong-date recovery observed live.
+    Audit remaining trips, archive identities, summary denominator consistency and
+    recovery baselines. In particular recovered expected/first-call timestamp may
+    coexist with older sleepAt/notice fields; validate/relabel before declaring full
+    historical accuracy. Raw history retained; Actual call time remains calculated
+    from on-duty minus two hours, not a logged phone-call timestamp.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-07: **Analytics navigation cleanup and Assignment errors merge — live verified.**
+  Runaround log / Jobs going spare / Predictions tabs and related Overview cards
+  removed; Out of sequence + CATS errors replaced by grouped Assignment errors.
+  Check 20:37, update 20:39 Toronto; E27861 07 expanded and all three types observed.
+  Only presentation completion closed; detector/data-quality audit remains #21.
+- 2026-11-07: **Timeline presentation — live verified examples.** Turn History graph
+  opens first and expanded; labels, five clock ticks, elapsed time, black Lost Sleep,
+  legend and marker-time control confirmed at 20:16 check / 20:18 update. Broad
+  historical accuracy remains #23; subscriber runtime verification remains #22.
+
 
 - 2026-11-07: **Call stability timeline** from owner sketch: first seen,
   fixed eight-hour block, saved call changes, inferred call/removal marker.
