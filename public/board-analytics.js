@@ -442,7 +442,10 @@
     const changes = trim(z.timelineChanges || z.shifts).sort((a,b) => String(a.taken).localeCompare(String(b.taken)));
     const trainKind = t => /^L(501|502)/.exec(t || '')?.[1];
     const actual = trainKind(z.train), predicted = trainKind(z.expectedTrain);
-    if (actual && predicted && actual !== predicted) {
+    const trip = t => /^([A-Z]+\d+) (\d{2})$/.exec(t || '');
+    const actualTrip = trip(z.train), expectedTrip = trip(z.expectedTrain);
+    const wrongDate = actualTrip && expectedTrip && actualTrip[1] === expectedTrip[1] && actualTrip[2] !== expectedTrip[2];
+    if ((actual && predicted && actual !== predicted) || wrongDate) {
       const same = changes.filter(c => c.train === z.train);
       if (!same.length) return { ...z, comparisonUnavailable: true, timelineChanges: [], shifts: [] };
       const first = same[0];
@@ -494,7 +497,7 @@
 
   function renderCallTimeline(z) {
     z = cleanCallRecord(z);
-    if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: old 501/502 train mismatch. Excluded from call comparisons.</p>';
+    if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: historical train/trip mismatch. Excluded from call comparisons.</p>';
     // Some older records remained open across later trips. Do not display those changes.
     const cutoff = T.toMin(z.onDuty);
     z = { ...z, timelineChanges: (z.timelineChanges || z.shifts || []).filter(c => cutoff == null || T.toMin(c.taken) <= cutoff) };

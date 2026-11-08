@@ -47,3 +47,11 @@ test('501/502 mismatch is excluded without fabricating a plan; other trains unch
  assert.equal(A.cleanCallRecord({...z,train:'M50131 04'}).comparisonUnavailable,undefined);
  const old={...record,onDuty:'2026-11-08 0245',timelineChanges:[...record.timelineChanges,{taken:'2026-11-09 0400',call:'2026-11-10 0145',train:'M1'}]};assert.equal(A.cleanCallRecord(old).timelineChanges.length,1);
 });
+test('same-number different dated trips cannot create a false 47-hour delay',()=>{
+ const z={...record,train:'L50231 02',expectedTrain:'L50231 31',firstCall:'2026-10-31 0145',expected:'2026-10-31 0145',call:'2026-11-02 0045',onDuty:'2026-11-02 0245',timelineChanges:[]};
+ assert.equal(A.cleanCallRecord(z).comparisonUnavailable,true);assert.equal(A.sleepStats([z]).n,0);assert.equal(A.planReliability([z]).rows.length,0);
+ z.timelineChanges=[{taken:'2026-11-01 1800',call:'2026-11-02 0145',train:'L50231 02'}];
+ const fixed=A.cleanCallRecord(z);assert.equal(fixed.off,-60);assert.equal(fixed.expectedTrain,z.train);assert.equal(A.planReliability([z]).rows[0].planGap,-60);
+ const other={...z,train:'M30241 02',expectedTrain:'M30241 31',timelineChanges:[]};assert.equal(A.cleanCallRecord(other).comparisonUnavailable,true);
+ assert.equal(A.cleanCallRecord({...record,train:'M39671 08',expectedTrain:'M30241 08'}).comparisonUnavailable,undefined);
+});
