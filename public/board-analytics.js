@@ -513,6 +513,9 @@
     const lastChange = visible.filter(c => m.end == null || c.at <= m.end).at(-1);
     const stable = m.end == null ? null : Math.max(0, m.end - (lastChange ? lastChange.at : m.first));
     const elapsed = m.end == null ? null : Math.max(0, m.end - m.first);
+    const seenBefore = t => t == null ? 'Unavailable' : t < m.first ? 'First seen after this call time' : duration(t - m.first);
+    const leadTimes = `<div class="timeline-facts"><span>Time seen before Original expected call time: <b>${e(seenBefore(m.expected))}</b></span><span>Time seen before actual call time: <b>${z.takenOff ? 'Not called — removed' : e(seenBefore(m.end))}</b></span></div>`;
+
     const ticks = Array.from({ length: 5 }, (_, i) => {
       const at = m.from + Math.round((m.to-m.from)*i/4);
       const value = fmt(at);
@@ -528,7 +531,7 @@
     const eventLabels = events.map(c => `<li>${e(c.text)}</li>`).join('');
     const orderMarks = m.changes.filter(c => c.ordered && c.at <= m.to).map(c => `<rect x="${x(c.at)}%" y="10" width="5" height="8" fill="var(--accent)"/>`).join('');
     const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
-    return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b><br><strong>${e(result)}</strong>${!z.takenOff && gap < 0 ? `<br><b>Lost Sleep: ${duration(gap)}</b>` : ''}</p>
+    return `<details class="call-timeline"><summary>Show call timeline</summary><p><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b><br><strong>${e(result)}</strong>${!z.takenOff && gap < 0 ? `<br><b>Lost Sleep: ${duration(gap)}</b>` : ''}</p>${leadTimes}
       <div class="timeline-facts"><span>First lined: <b>${e(fmt(m.first))}</b></span><span>Green starts: <b>${e(fmt(m.block.from))}</b></span><span>Original expected call time: <b>${e(fmt(m.expected))}</b></span><span>${z.takenOff ? 'Removed' : 'Actual call time'}: <b>${m.end == null ? '—' : e(fmt(m.end))}</b></span></div>
       <svg width="100%" height="85" role="img" aria-label="${e(result)}; dots mark changes greater than 30 minutes"><line x1="4%" x2="96%" y1="28" y2="28" stroke="var(--soft)"/>${bands}${markers}${orderMarks}${ticks}${m.end == null ? '' : `<line x1="${x(m.end)}%" x2="${x(m.end)}%" y1="12" y2="44" stroke="var(--ink)" stroke-width="2"/>`}</svg>
       <div class="anote">Green: planned window · Black: Lost Sleep · Yellow: up to 1 h late · Red: over 1 h late. Dots: changes over 30 min · Squares: ordered.</div>
