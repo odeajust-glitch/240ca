@@ -28,6 +28,14 @@ stops at 50 people. The accounts are built into the Worker
   emailed. **Remove access** signs an approved person out everywhere.
   **Delete from list** forgets a declined/removed person (they could then
   sign up again; a declined person can re-apply anyway).
+- **Members tab** on the board page (owner, 2026-11-09): shown only on a
+  device with the owner key. Waiting for approval at the top (Approve /
+  Decline), then Approved members, each with **Access** (Member / Admin)
+  and **Remove access**. An **Admin** is a member who also sees this tab
+  and can approve, decline and remove members; only the owner key makes or
+  removes an Admin. The same list is still on `/account`. The tab is in
+  `public/board.html` (`renderMembers`), so it needs the laptop's publish
+  as well as the Worker paste.
 - **After approval** the device they signed up on just opens the site. On
   any other device: `/account` → Sign in → their email → a 6-digit code by
   email (10 minutes, 5 tries). Signed in for 90 days.

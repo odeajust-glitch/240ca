@@ -46,7 +46,7 @@ test('unlocked, the site is open, the account page works and account files are n
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Send for approval/);
   res = await call('/auth/me');
-  assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null });
+  assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null, role: null });
   res = await call('/auth/signup', { body: person('a') });
   assert.equal(res.status, 200);
   assert.doesNotMatch(await (await call('/account')).text(), /Sarnia|CN |employee/i);
@@ -189,4 +189,41 @@ test('a declined sign-up loses its details and can try again; the owner key sign
   for (let i = 0; i < 3; i++) await call('/auth/signup', { body: person(`d${i}`) });
   assert.equal((await call('/auth/signup', { body: person('d9') })).status, 429);
   assert.equal((await call('/auth/signup', { body: person('d9'), ip: '2.2.2.2' })).status, 200);
+});
+
+test('an Admin approves and removes members; only the owner key makes or removes an Admin', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const join = async (n, ip) => {
+    const body = person(n);
+    await call('/auth/signup', { body, ip });
+    const res = await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } });
+    const { users } = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+    return { cookie: cookieOf(res), id: users.find((u) => u.email === body.email).id };
+  };
+  const act = (who, id, action, extra = {}) => call('/health/accounts', { ...who, body: { id, action, ...extra } });
+  const owner = { key: OWNER_KEY };
+  const a = await join('e1', '3.3.3.1');
+  const b = await join('e2', '3.3.3.2');
+  await act(owner, a.id, 'approve');
+  const helper = { cookie: a.cookie };
+  // A plain member sees no list and can't make themselves an Admin.
+  assert.equal((await call('/health/accounts', helper)).status, 404);
+  assert.equal((await act(helper, a.id, 'role', { role: 'admin' })).status, 404);
+  assert.equal((await act(owner, a.id, 'role', { role: 'admin' })).status, 200);
+  assert.equal((await (await call('/auth/me', helper)).json()).role, 'admin');
+  let list = await (await call('/health/accounts', helper)).json();
+  assert.equal(list.you, 'admin');
+  assert.equal(list.users.find((u) => u.id === a.id).role, 'admin');
+  // The Admin approves the other sign-up, but can't hand out Admin.
+  assert.equal((await act(helper, b.id, 'approve')).status, 200);
+  assert.equal((await act(helper, b.id, 'role', { role: 'admin' })).status, 403);
+  assert.equal((await act(owner, b.id, 'role', { role: 'admin' })).status, 200);
+  assert.equal((await act(helper, b.id, 'remove')).status, 403); // one Admin can't remove another
+  assert.equal((await act(owner, b.id, 'role', { role: 'member' })).status, 200);
+  assert.equal((await act(helper, b.id, 'remove')).status, 200);
+  assert.equal((await call('/data/index.json', { cookie: b.cookie })).status, 401);
+  // Removed Admin: no list any more.
+  assert.equal((await act(owner, a.id, 'remove')).status, 200);
+  assert.equal((await call('/health/accounts', helper)).status, 404);
+  assert.equal(JSON.parse(store.get(`accounts/users/${a.id}.json`)).role, 'member');
 });

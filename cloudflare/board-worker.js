@@ -1160,10 +1160,10 @@ async function sessionOf(request, env, now = Date.now()) {
   let p;
   try { p = JSON.parse(new TextDecoder().decode(ub64(m[1]))); } catch { return null; }
   if (!p || typeof p.u !== 'string' || !(now - p.t < SESSION_DAYS * 86400000)) return null;
-  if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner' };
+  if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member' };
   const user = await userById(env, p.u, now);
   if (!user || user.key !== p.k || user.status === 'removed') return null;
-  return { id: p.u, status: user.status, name: user.name };
+  return { id: p.u, status: user.status, name: user.name, role: user.role === 'admin' ? 'admin' : 'member' };
 }
 
 // One email through the Gmail script, counted against the day's allowance:
@@ -1278,9 +1278,14 @@ async function authVerify(request, env, now = Date.now()) {
   return res;
 }
 
-// The owner's list, and Approve / Decline / Remove / Delete. Owner key only.
+// The Members list, and Approve / Decline / Remove / Delete. The owner key,
+// or a signed-in member the owner made an Admin (owner, 2026-11-09: "an
+// access button (Member, Admin)"). An Admin approves, declines and removes
+// members; only the owner key changes who is an Admin or removes one.
 async function accountsAdmin(request, env, url, now = Date.now()) {
-  if (!keyMatches(request, env)) return json({ error: 'not found' }, 404);
+  let you = keyMatches(request, env) ? 'owner' : null;
+  if (!you) { const who = await sessionOf(request, env, now); if (who && who.status === 'approved' && who.role === 'admin') you = 'admin'; }
+  if (!you) return json({ error: 'not found' }, 404);
   if (request.method === 'GET') {
     const users = [];
     let cursor;
@@ -1295,7 +1300,7 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     } while (cursor);
     users.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
-    return json({ users, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
+    return json({ you, users, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
   }
   if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
   const b = await bodyJson(request);
@@ -1316,8 +1321,12 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     await saveUser(env, id, { ...rest, status: 'declined', declinedAt: now }, now);
     mail = await accountMail(env, user.email, 'Your sign-up couldn\'t be confirmed',
       `Hi ${user.name},\n\nYour sign-up couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, PIN and hire date.`, now);
+  } else if (action === 'role' && user.status === 'approved') {
+    if (you !== 'owner') return json({ error: 'Only the owner changes who is an Admin.' }, 403);
+    await saveUser(env, id, { ...user, role: b.role === 'admin' ? 'admin' : 'member' }, now);
   } else if (action === 'remove' && user.status === 'approved') {
-    await saveUser(env, id, { ...user, status: 'removed', removedAt: now, key: b64(crypto.getRandomValues(new Uint8Array(12))) }, now);
+    if (you !== 'owner' && user.role === 'admin') return json({ error: 'Only the owner removes an Admin.' }, 403);
+    await saveUser(env, id, { ...user, role: 'member', status: 'removed', removedAt: now, key: b64(crypto.getRandomValues(new Uint8Array(12))) }, now);
   } else if (action === 'delete' && user.status !== 'approved') {
     await saveUser(env, id, null, now);
     await env.SITE.delete(`${ACC}codes/${id}.json`);
@@ -1333,7 +1342,7 @@ async function accounts(request, env, url) {
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env);
-    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null });
+    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, role: s && s.status === 'approved' ? s.role || 'member' : null });
   }
   if (p.startsWith('/auth/')) {
     if (request.method !== 'POST') return json({ error: 'POST only' }, 405);

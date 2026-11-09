@@ -646,6 +646,17 @@
   .alist li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--rule-soft); padding-bottom: 3px; }
   .alist li b { font-family: var(--mono); }
   .alist button { background: none; border: 0; padding: 0; font: 600 14px/1.3 var(--mono); color: var(--accent); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .members h2 { font-size: 15px; margin: 18px 0 4px; }
+  .members .mrow { border-top: 1px solid var(--line, #cfd6d3); padding: 10px 0; overflow-wrap: anywhere; }
+  .members .mrow b { font-size: 15px; }
+  .members .mrow dl { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 12px; font-size: 13.5px; }
+  .members .mrow dt { color: var(--soft); }
+  .members .mrow dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .members .mact { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; }
+  .members .mact button, .members .mact select { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+  .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
+  .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
+  .members .mmsg.bad { color: #b3261e; }
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
   .anote b { color: var(--ink); }
   table.orders tr.nolink { cursor: default; }
@@ -777,7 +788,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeTest" type="button" aria-pressed="false" hidden>Test</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeTest" type="button" aria-pressed="false" hidden>Test</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2998,6 +3009,8 @@ source().then(async (src) => {
   // doesn't clutter the main screen"). Read again when the page updates.
   let healthData = null;
   let healthUnavailable = false;
+  let membersOwner = false;
+  let membersAdmin = false;
   let healthRequest = 0;
   let publishedAt = Date.parse(src.index?.generatedAt);
   const retryHealth = () => showHealth(document.getElementById('updated'), true);
@@ -3037,6 +3050,8 @@ source().then(async (src) => {
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
     document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
+    membersOwner = !!(h && OwnerKey.has());
+    document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !report);
     if (!note.hidden && rejected) {
@@ -3099,6 +3114,59 @@ source().then(async (src) => {
   // includes the type of notification"): turn or code, words in the
   // message or its why, the types (one or several), and how far back.
   const notesState = { turn: '', text: '', kinds: new Set(), days: 30, mention: true };
+  // Members tab (owner, 2026-11-09: "a tab that's only visible if you have
+  // the owner's key … at the top the list of who needs approval, then the
+  // approved members. An access button (Member, Admin) then a button to
+  // remove access"). The Worker's /health/accounts (docs ACCOUNTS.md); an
+  // Admin (a member the owner picked) sees it too, without the access choice.
+  async function renderMembers(said) {
+    const view = document.getElementById('view');
+    try { history.replaceState(null, '', '#members'); } catch (e) { /* not allowed in some frames */ }
+    if (!membersOwner && !membersAdmin) { view.innerHTML = '<p class="empty">Members is only for the owner.</p>'; return; }
+    const head = '<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>';
+    if (!view.querySelector('.members')) view.innerHTML = `<div class="healthpage members">${head}<p class="muted">Loading…</p></div>`;
+    let d = null;
+    let status = 0;
+    try { const r = await fetch('health/accounts', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
+    if (mode !== 'members') return;
+    if (!d || !Array.isArray(d.users)) {
+      view.innerHTML = `<div class="healthpage members">${head}<p class="mmsg bad">${status === 404 ? 'Members isn’t switched on for this site yet (the Worker needs the accounts code), or this device isn’t allowed to see it.' : 'Couldn’t load the list. Check the connection and open the tab again.'}</p></div>`;
+      return;
+    }
+    const day = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'never');
+    const row = (u, facts, actions) => `<div class="mrow"><b>${esc(u.name)}</b><dl>${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="mact" data-id="${esc(u.id)}" data-name="${esc(u.name)}">${actions}</div></div>`;
+    const waiting = d.users.filter((u) => u.status === 'pending');
+    const approved = d.users.filter((u) => u.status === 'approved').sort((a, b) => a.name.localeCompare(b.name));
+    const other = d.users.filter((u) => u.status !== 'pending' && u.status !== 'approved');
+    const owner = d.you === 'owner';
+    view.innerHTML = `<div class="healthpage members">${head}
+      <p class="muted">The site is ${d.lock ? '<b>locked</b>: only approved members get in' : 'open to everyone (not locked yet)'}. Emails sent today: ${esc(d.mailToday)} of ${esc(d.mailMax)}${d.mailReady ? '' : ' · <b>the email sender is not set up</b>'}.</p>
+      ${said ? `<p class="mmsg${said.bad ? ' bad' : ''}" role="status">${esc(said.text)}</p>` : ''}
+      <h2>Waiting for approval (${waiting.length})</h2>
+      ${waiting.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Asked', day(u.requestedAt)]], '<button type="button" class="go" data-act="approve">Approve</button><button type="button" data-act="decline">Decline</button>')).join('') || '<p class="muted">Nobody is waiting.</p>'}
+      <h2>Approved members (${approved.length})</h2>
+      ${approved.map((u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)]],
+        (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
+        + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''))).join('') || '<p class="muted">Nobody yet.</p>'}
+      ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}
+      ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
+    const send = async (box, action, extra) => {
+      const name = box.dataset.name;
+      const ask = action === 'decline' ? `Decline ${name}? They are emailed that the details did not match.`
+        : action === 'remove' ? `Remove ${name}? They are signed out everywhere and cannot sign up again unless you delete them from the list.`
+          : action === 'delete' ? `Delete ${name} from the list? They could then sign up again.` : '';
+      if (ask && !confirm(ask)) return;
+      let out = { error: 'Couldn’t reach the site. Try again.' };
+      try { const r = await fetch('health/accounts', { method: 'POST', headers: { ...OwnerKey.headers(), 'content-type': 'application/json' }, body: JSON.stringify({ id: box.dataset.id, action, ...extra }) }); out = await r.json(); } catch (e) { /* said below */ }
+      if (mode !== 'members') return;
+      renderMembers(out.error ? { bad: true, text: out.error }
+        : out.mail === 'sent' ? { text: `Done: ${name} has been emailed.` }
+          : out.mail ? { bad: true, text: `Done, but the email to ${name} did not go (${out.mail === 'cap' ? 'today’s email allowance is used up' : out.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed'}). Let them know yourself.` }
+            : { text: action === 'role' ? `${name} is now ${extra.role === 'admin' ? 'an Admin' : 'a Member'}.` : 'Done.' });
+    };
+    view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => send(b.parentElement, b.dataset.act); });
+    view.querySelectorAll('.members [data-role]').forEach((sel) => { sel.onchange = () => send(sel.closest('.mact'), 'role', { role: sel.value }); });
+  }
   async function renderNotes() {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#notifications'); } catch (e) { /* not allowed in some frames */ }
@@ -4184,6 +4252,7 @@ source().then(async (src) => {
   const modeReview = document.getElementById('modeReview');
   const modeNotes = document.getElementById('modeNotes');
   const modeTest = document.getElementById('modeTest');
+  const modeMembers = document.getElementById('modeMembers');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
   // Agreements tab (owner, 2026-11-03): the agreement search, in this page (board-ask.js).
@@ -4377,7 +4446,7 @@ source().then(async (src) => {
   function setMode(m) {
     if (mode === 'current') flushCurrentBoxes();
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'test' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
+    document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
@@ -4390,9 +4459,11 @@ source().then(async (src) => {
     modeReview.setAttribute('aria-pressed', mode === 'review');
     modeNotes.setAttribute('aria-pressed', mode === 'notes');
     modeTest.setAttribute('aria-pressed', mode === 'test');
+    modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
     if (mode === 'test') renderTest();
+    else if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
     else if (mode === 'review') renderReview();
@@ -4767,6 +4838,9 @@ source().then(async (src) => {
   modeReview.onclick = () => setMode('review');
   modeNotes.onclick = () => setMode('notes');
   modeTest.onclick = () => setMode('test');
+  modeMembers.onclick = () => setMode('members');
+  // A member the owner made an Admin sees the Members tab too.
+  fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => { if (me && me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; } }).catch(() => {});
   modeRef.onclick = () => setMode('ref');
   modeAsk.onclick = () => setMode('ask');
 
