@@ -4596,7 +4596,7 @@ source().then(async (src) => {
         }
         if (mode !== 'analytics') return;
       }
-      body = analyticsOverview({ runs, range, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
+      body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];
