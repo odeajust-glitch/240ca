@@ -25,6 +25,24 @@ failed before this work too.
 - Found on the way, not fixed: `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token. With Access off and `OWNER_EMAIL` set, a stranger could send that header and pass the owner checks on `/health*`. The accounts list does not use it (owner key only). Have `OWNER_EMAIL` deleted wherever Access is off, or fix `accessEmail()`.
 - Also this session: the local checkout was stale (Nov 3 history) and was reset to the GitHub branch; Justin sent a test alert himself with `node scripts/alert-check.js <CODE>` (worked). 14 tests fail in the cloud session with or without this change (same 14 before it).
 
+**Reset tracker fix, 2026-11-09 (third session, started by Justin: "check how the reset
+tracker is going, I think it might be missing some"):** his PSTS05Y log for the conductor
+on **SA02** (he wrote SA07; the four trains in the log are SA02's) showed 7DY RESET
+261111 0444, the site had 14th 0559 with no colour. Cause: off 5th 1020, on duty 7th 0600
+= 43 h with the nights of the 6th and 7th "free", so the site logged a reset 7th 0559;
+CATS did not, because the call (about 0400) disturbed that night (rest rules: two periods
+"undisturbed by the company"). Now `naturalReset(a, b, call)` in lib/board/resets.js ends
+the night test at the call, taken as on duty − 2 h (`CALL_MIN`); the 32 h still run to on
+duty. Recomputed from the live day files: SA02 → 11th 0444, yellow, to the minute; none
+of the other 68 turns changed. resets.json is rebuilt every check, so no FORMAT bump and
+no Worker change. Laptop pull/restart pending. Also checked from live data (2026-11-09
+1642): 15 board turns show nothing; 14 are right (reset 9th 0559 or 0700, not on duty
+since, so no clock running); **S108** shows nothing because its name code is shared and
+nothing is known before 6th 0455 (❓ could say "not known" instead of blank: ask). 11 of
+310 turn trips in 9 days weren't credited to the current holder, all 1st–4th Nov, before
+they were seen on the turn (SR03 = Justin's own, 4 trains: he was displaced then). Full
+suite 339 of 341 (the same two Analytics Overview tests fail).
+
 **Pool labels, 2026-11-09 (owner, straight to Current):** in Pools at Sarnia the buttons
 and headings read Drags (SD), 1st Manifest (S1), 3rd Manifest (S3) (`POOL_LABELS` /
 `poolLabel` in public/board.html). Wording only: snapshot pool names, jumps and saved
@@ -258,7 +276,8 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   including `**` / B0 / PL, to the next callable turn; spare only if none are available.
   Example: SD02 / M39491 call 5th 0226 → SD04, not EN03 (SD11 hold, SD01 `**`).
 - **Reset calculation:** later of off + 32 h and 05:59 on the second free night
-  (00:00–05:59); manual rest/hold to 0559 also recorded. Latest confirmed due formula
+  (00:00–05:59); manual rest/hold to 0559 also recorded. A night is not free when the
+  call for the next duty (on duty − 2 h) falls in it (owner's PSTS05Y, SA02, 2026-11-09). Latest confirmed due formula
   is first on duty after reset + 7 days **minus 1 minute** (PSTS05Y 261111 0244).
   No next duty since reset → nothing due. Yellow <=2 days; red <=24 h. Regular yard
   holders excluded; 60 h/7 days and 192 h/28 days not tracked (owner deferred).

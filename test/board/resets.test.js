@@ -289,3 +289,22 @@ test('off since before the deadline: on a reset break, not overdue', () => {
   const r = R.byTurn(acc, people, t(2, 2300)).SR03;
   assert.deepEqual([r.level, r.onBreak, r.offText, r.resetText], ['', true, '1st 0600', '3rd 0559']);
 });
+
+test('a call before 0559 spoils that night: no reset (owner\'s PSTS05Y, SA02, 2026-11-09)', () => {
+  // Off 5th 1020, on duty 7th 0600 (called 0400): 43 h off, but the night
+  // of the 7th was disturbed by the call. CATS: 7DY RESET 261111 0444.
+  assert.equal(R.naturalReset(t(5, 1020), t(7, 600), t(7, 400)), null);
+  // Called at 0600 or later: the night stands.
+  assert.equal(fmt(R.naturalReset(t(5, 1020), t(7, 800), t(7, 600))), '7th 0559');
+  const acc = R.empty();
+  const trips = [['M39491 03', t(4, 445), t(4, 1359)], ['E27531 05', t(5, 145), t(5, 1020)], ['M39491 06', t(7, 600), t(7, 1534)], ['E27331 08', t(8, 135), t(8, 1110)]];
+  acc.since = t(1, 0); acc.last = t(9, 1642);
+  acc.turnTrips.SA02 = {};
+  for (const [train, on, off] of trips) {
+    acc.turnTrips.SA02[`${train}/${on}`] = { train, on, job: 'SA02', first: on - 120, last: off };
+    acc.offs[`${train}/${on}`] = off;
+  }
+  const people = { me: [{ turn: 'SA02', own: true, from: '2026-11-01 0000', to: '2026-11-09 1642' }] };
+  const r = R.byTurn(acc, people, t(9, 1642)).SA02;
+  assert.deepEqual([r.dueText, r.level], ['11th 0444', 'yellow']);
+});
