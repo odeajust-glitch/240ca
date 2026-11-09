@@ -131,6 +131,9 @@
   .settings .sw { width: 34px; height: 24px; border-radius: 4px; border: 1px solid var(--rule); flex: none; display: grid; place-items: center; font: 600 11px/1 'IBM Plex Mono', monospace; }
   .settings .note { font-size: 12px; color: var(--soft); margin: 10px 0 0; }
   .settings h2.vish { margin-top: 16px; }
+  .settings .profwho { margin: 0 0 8px; font-size: 13.5px; overflow-wrap: anywhere; }
+  .settings .profwho b { display: block; font-size: 15px; }
+  .settings .profwho span { color: var(--soft); }
   .settings h2 .only { font: 400 11px/1 var(--body, inherit); letter-spacing: 0; text-transform: none; }
   .health { font-size: 12px; color: var(--soft); margin-top: 6px; line-height: 1.5; }
   .health b { color: var(--ink, inherit); }
@@ -793,7 +796,12 @@
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   <div class="settings" id="settings" role="dialog" aria-label="Settings" hidden>
-    <h2>Page style</h2>
+    <div id="profile" hidden>
+      <h2>Profile</h2>
+      <p class="profwho" id="profwho"></p>
+      <p><button type="button" class="sty" id="profbtn" style="width:auto;padding:8px 12px"></button></p>
+    </div>
+    <h2 id="styhead">Page style</h2>
     <div class="styles">
       <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
@@ -4840,7 +4848,31 @@ source().then(async (src) => {
   modeTest.onclick = () => setMode('test');
   modeMembers.onclick = () => setMode('members');
   // A member the owner made an Admin sees the Members tab too.
-  fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => { if (me && me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; } }).catch(() => {});
+  // and Profile in ⚙ Settings (owner, 2026-11-09: "a profile button … in the
+  // settings button"): who is signed in on this device, and Sign out. Stays
+  // hidden on a site whose Worker has no accounts.
+  fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
+    if (!me || !me.ready) return;
+    if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
+    const who = document.getElementById('profwho');
+    const btn = document.getElementById('profbtn');
+    if (me.signedIn) {
+      who.innerHTML = me.name === 'Owner' ? '<b>Owner</b><span>This is your owner device.</span>'
+        : `<b>${esc(me.name)}</b><span>${esc(me.email || '')}${me.email ? ' · ' : ''}${me.role === 'admin' ? 'Admin' : 'Member'}</span>`;
+      btn.textContent = 'Sign out';
+      btn.onclick = async () => {
+        if (!confirm('Sign out on this device?')) return;
+        try { await fetch('auth/logout', { method: 'POST', body: '{}' }); } catch (e) { /* the account page says so */ }
+        location.href = 'account';
+      };
+    } else {
+      who.innerHTML = '<span>Not signed in on this device.</span>';
+      btn.textContent = 'Sign in or sign up';
+      btn.onclick = () => { location.href = 'account'; };
+    }
+    document.getElementById('profile').hidden = false;
+    document.getElementById('styhead').classList.add('vish');
+  }).catch(() => {});
   modeRef.onclick = () => setMode('ref');
   modeAsk.onclick = () => setMode('ask');
 

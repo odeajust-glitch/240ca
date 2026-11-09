@@ -1163,7 +1163,7 @@ async function sessionOf(request, env, now = Date.now()) {
   if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member' };
   const user = await userById(env, p.u, now);
   if (!user || user.key !== p.k || user.status === 'removed') return null;
-  return { id: p.u, status: user.status, name: user.name, role: user.role === 'admin' ? 'admin' : 'member' };
+  return { id: p.u, status: user.status, name: user.name, email: user.email, role: user.role === 'admin' ? 'admin' : 'member' };
 }
 
 // One email through the Gmail script, counted against the day's allowance:
@@ -1342,7 +1342,7 @@ async function accounts(request, env, url) {
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env);
-    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, role: s && s.status === 'approved' ? s.role || 'member' : null });
+    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
   }
   if (p.startsWith('/auth/')) {
     if (request.method !== 'POST') return json({ error: 'POST only' }, 405);

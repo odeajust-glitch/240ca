@@ -46,7 +46,7 @@ test('unlocked, the site is open, the account page works and account files are n
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Send for approval/);
   res = await call('/auth/me');
-  assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null, role: null });
+  assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null, email: null, role: null });
   res = await call('/auth/signup', { body: person('a') });
   assert.equal(res.status, 200);
   assert.doesNotMatch(await (await call('/account')).text(), /Sarnia|CN |employee/i);
@@ -119,7 +119,8 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal(saved.hireDate, undefined);
   assert.equal((await call('/data/index.json', { cookie })).status, 200);
   assert.equal((await call('/', { cookie, html: true })).status, 200);
-  assert.equal((await (await call('/auth/me', { cookie })).json()).signedIn, true);
+  const me = await (await call('/auth/me', { cookie })).json();
+  assert.deepEqual([me.signedIn, me.name, me.email, me.role], [true, 'Pat Example b', 'patb@example.com', 'member']);
   // A cookie that's been altered is no cookie.
   assert.equal((await call('/data/index.json', { cookie: `${cookie.slice(0, -2)}xx` })).status, 401);
 

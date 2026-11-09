@@ -36,6 +36,9 @@ stops at 50 people. The accounts are built into the Worker
   removes an Admin. The same list is still on `/account`. The tab is in
   `public/board.html` (`renderMembers`), so it needs the laptop's publish
   as well as the Worker paste.
+- **Profile** in ⚙ Settings on the board page (owner, 2026-11-09): the
+  signed-in name, email and access, and **Sign out**. Hidden on a site
+  whose Worker has no accounts.
 - **After approval** the device they signed up on just opens the site. On
   any other device: `/account` → Sign in → their email → a 6-digit code by
   email (10 minutes, 5 tries). Signed in for 90 days.
