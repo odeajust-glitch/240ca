@@ -1955,14 +1955,26 @@ function assignmentStatus(kind, r, latest) {
   if (!r.onDuty && latest && observed === latest) return 'Still observed';
   return 'Outcome unknown';
 }
-function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [], preview = false, latestCheck = '' }) {
+function reviewedPoolOutcome(r, latest) {
+  // Justin verified this dated pair against both Call Board trips.
+  if (r.train === 'A42431 07' && r.onDuty === '2026-11-07 1045' && /\bCO SB05\b/.test(r.crew || '')) return 'Final pool sequence correct';
+  const turns = [...new Set(Array.from((r.crew || '').matchAll(/\bCO\s+(\w+)/g), m => m[1]))];
+  const pool = turns.length === 1 && /^(SA|SB|SR)\d+$/.test(turns[0]) ? { SA: 'A', SB: 'B', SR: 'SR' }[turns[0].slice(0, 2)] : null;
+  if (pool && r.onDuty && r.last >= r.onDuty && r.final?.expected === pool && r.final.actual === pool && r.final.turn === turns[0]) return 'Final pool sequence correct';
+  if (pool && r.onDuty) return 'Pool sequence needs review';
+  if (r.fixed || r.onDuty) return 'Final crew unverified';
+  return assignmentStatus('pool', r, latest);
+}
+function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [], preview = false, latestCheck = '', reviewPools = false }) {
+  if (reviewPools) runarounds = runarounds.map(r => ({ ...r, poolOutcome: reviewedPoolOutcome(r, latestCheck) }));
+  const correct = runarounds.filter(r => r.poolOutcome === 'Final pool sequence correct').length;
   // Group the saved detectors for display only; retain all source issues.
   const groups = new Map();
   const add = (rows, kind, stamp) => rows.forEach(r => {
     const key = String(r.train || '') + '|' + String(r[stamp] || '').slice(0, 7);
     if (!groups.has(key)) groups.set(key, { train: r.train, latest: '', pool: [], wrong: [], missing: [] });
     const g = groups.get(key); g[kind].push(r);
-    if (preview) (g.statuses ||= new Set()).add(assignmentStatus(kind, r, latestCheck));
+    if (preview) (g.statuses ||= new Set()).add(r.poolOutcome || assignmentStatus(kind, r, latestCheck));
     g.latest = [g.latest, r[stamp] || ''].sort().at(-1);
   });
   add(runarounds, 'pool', 'taken'); add(catsErrors, 'wrong', 'first'); add(catsMissing, 'missing', 'first');
@@ -1970,18 +1982,19 @@ function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [], pr
   const fixed = runarounds.filter(r => r.fixed && !(r.onDuty && r.last > r.onDuty)).length + catsErrors.filter(r => r.fixed && (!r.onDuty || r.fixed <= r.onDuty)).length;
   const items = [...groups.values()].sort((a,b) => b.latest.localeCompare(a.latest));
   return `<p class="anote">Three independent checks, grouped by train and observation month. One train can have several issues; each craft-specific spare-job issue is retained. Wrong pool follows the calling sequence. Wrong spare-job turn compares CATS option 5 with the order (one-check blips excluded). Missing spare jobs require 30 minutes without a listing.</p>
-    <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total, 'Total issues')}${anaTile(fixed, 'Pool/turn mismatches cleared (observed)')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
+    <div class="strip">${anaTile(groups.size, 'Train groups affected')}${anaTile(total - correct, reviewPools ? 'Findings excluding verified correct sequences' : 'Total issues')}${reviewPools ? anaTile(correct, 'Prediction discrepancies · final pool correct') : ''}${anaTile(fixed, 'Pool/turn mismatches cleared (observed)')}${anaTile(catsMissing.filter(r => r.listedAt).length, 'Missing jobs listed later')}</div>
     <p class="anote">Cleared means the tracker stopped observing the mismatch, not proof the final crew matched; listing a missing job later does not necessarily mean it was listed before departure. Open a train for its separate findings.</p>
-    ${preview ? '<label>Finding status <select data-test-status>' + ['All findings', 'Still observed', 'Cleared', 'Outcome unknown', 'Observed at departure'].map(label => '<option>' + label + '</option>').join('') + '</select></label><p class="anote">Still observed means the finding appeared in the latest saved check. A train can have findings with different statuses.</p><p data-status-empty hidden>No train groups match this status.</p>' : ''}
-    ${items.length ? items.map(g => `<section class="sheet"${preview ? ' data-statuses="' + esc([...g.statuses].join('|')) + '"' : ''}><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? 'Wrong pool · ' : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} issues${preview ? ' · ' + [...g.statuses].join(' / ') : ''}</summary>
-      ${g.pool.length ? '<h3 style="padding:0 14px">Wrong pool</h3>' + anaRunarounds({runarounds:g.pool}) : ''}
+    ${preview ? '<label>Finding status <select data-test-status>' + ['All findings', ...(reviewPools ? ['Final pool sequence correct', 'Final crew unverified', 'Pool sequence needs review'] : []), 'Still observed', 'Cleared', 'Outcome unknown', 'Observed at departure'].map(label => '<option>' + label + '</option>').join('') + '</select></label><p class="anote">Still observed means the finding appeared in the latest saved check. A train can have findings with different statuses.</p><p data-status-empty hidden>No train groups match this status.</p>' : ''}
+    ${items.length ? items.map(g => `<section class="sheet"${preview ? ' data-statuses="' + esc([...g.statuses].join('|')) + '"' : ''}><details><summary style="padding:14px"><b class="num">${esc(g.train)}</b> · ${g.pool.length ? (reviewPools ? [...new Set(g.pool.map(r => r.poolOutcome))].join(' / ') + ' · ' : 'Wrong pool · ') : ''}${g.wrong.length ? 'Wrong spare-job turn · ' : ''}${g.missing.length ? 'Missing spare job · ' : ''}${g.pool.length + g.wrong.length + g.missing.length} ${reviewPools ? 'recorded findings' : 'issues'}${preview ? [...g.statuses].filter(x => !reviewPools || !g.pool.some(r => r.poolOutcome === x)).map(x => ' · ' + x).join('') : ''}</summary>
+      ${g.pool.length ? '<h3 style="padding:0 14px">' + (reviewPools ? 'Pool sequence history' : 'Wrong pool') + '</h3>' + anaRunarounds({runarounds:g.pool}) : ''}
       ${g.wrong.length ? '<h3 style="padding:0 14px">Wrong spare-job turn</h3>' + anaCats({catsErrors:g.wrong,catsMissing:[]}) : ''}
       ${g.missing.length ? catsMissingView(g.missing) : ''}
       </details></section>`).join('') : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
 }
 function anaRunarounds({ runarounds }) {
   runarounds = runarounds.map(r => ({ ...r, statusUncertain: !!(r.onDuty && r.last && r.last > r.onDuty) }));
-  const st = BoardAnalytics.runaroundStats(runarounds);
+  const st = BoardAnalytics.runaroundStats(runarounds.filter(r => r.poolOutcome !== 'Final pool sequence correct'));
+  const review = runarounds.some(r => r.poolOutcome);
   const latest = [...runarounds].reverse().slice(0, 60);
   const shown = (r) => {
     const sts = r.stretches || [];
@@ -1998,11 +2011,12 @@ function anaRunarounds({ runarounds }) {
       <td>${poolName(r.actual)}${r.turn ? ` <button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : ''}</td>
       <td>${poolName(r.expected)}</td>
       <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">not on duty yet</span>'}</td>
-      <td>${seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
+      <td>${r.poolOutcome ? esc(r.poolOutcome) : seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No trains out of sequence in the dates picked.</p>';
   return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. Observations after on-duty remain evidence but cannot confirm the pre-departure outcome. <b>Runaround</b>: still out of sequence the last time it showed. <b>Mismatch cleared</b>: observed pool equality; this alone does not prove a correct crew call. Tap a time to open that snapshot.</p>
-    <div class="strip">${anaTile(st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Last observed wrong (review required)', st.n > 0)}${anaTile(st.fixed, 'Mismatch cleared; no post-duty observations')}${anaTile(st.uncertain || 0, 'Outcomes needing review')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
-    <section class="sheet"><header><h2>Runarounds by pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>
+    ${review && runarounds.some(r => r.poolOutcome === 'Final pool sequence correct') ? '<p class="anote">The earlier lineup prediction differed from the final pool sequence. This contributes zero confirmed pool errors.</p>' : ''}
+    <div class="strip">${anaTile(review ? runarounds.length : st.shown, 'Trains shown out of sequence')}${anaTile(st.n, 'Last observed wrong (review required)', st.n > 0)}${anaTile(st.fixed, 'Mismatch cleared; no post-duty observations')}${anaTile(st.uncertain || 0, 'Outcomes needing review')}${anaTile(durOr(st.wrongFor), 'Average time shown wrong')}</div>
+    ${review && !st.n ? '' : `<section class="sheet"><header><h2>Runarounds by pool and turn</h2></header><div class="agrid">${anaList('The sequence said', st.shouldHave)}${anaList('Went to', st.wentTo)}${anaList('Turns that took them', st.tookIt, 'turn')}</div></section>`}
     <section class="sheet"><header><h2>Every train shown out of sequence</h2><span class="meta">newest first</span></header>${list}</section>`;
 }
 // CATS's option 5 against the order (owner, 2026-11-02: "track these
@@ -4138,7 +4152,7 @@ source().then(async (src) => {
           return date && (!range.from || date >= range.from) && (!range.to || date <= range.to);
         });
         if (pick === 'assignments') {
-          panel.innerHTML = anaAssignments({ preview: true, latestCheck: src.index?.latest, runarounds: records('runarounds', 'taken'), catsErrors: records('catsErrors', 'first'), catsMissing: records('catsMissing', 'first') });
+          panel.innerHTML = anaAssignments({ preview: true, reviewPools: true, latestCheck: src.index?.latest, runarounds: records('runarounds', 'taken'), catsErrors: records('catsErrors', 'first'), catsMissing: records('catsMissing', 'first') });
 
         } else {
           panel.innerHTML = anaStale({ stale: records('stale', 'from'), preview: true });
