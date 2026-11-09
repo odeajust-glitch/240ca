@@ -2189,6 +2189,87 @@ function planSummary(list) {
     <p class="anote">Open a number for its records and timelines. Older history may omit changes; saved change counts can be incomplete. Each timeline detail lists its recorded changes. Existing baseline statistics below use their separately labelled planning baseline.</p>
     </div></section>`;
 }
+// Test preview. Overview and detail use the same recorded-baseline sample.
+function callReviewData(records) {
+  const bands = [[], [], [], [], []];
+  const baseline = [], fallback = [], missingBaseline = [];
+  let removed = 0, mismatched = 0, missingActual = 0, missingOriginal = 0;
+  const minute = stamp => stamp ? BoardTrains.toMin(stamp) : null;
+  for (const raw of records) {
+    if (raw.takenOff) { removed++; continue; }
+    const z = BoardAnalytics.cleanCallRecord(raw);
+    if (z.comparisonUnavailable) { mismatched++; continue; }
+    const actual = minute(z.call);
+    if (!Number.isFinite(actual)) { missingActual++; continue; }
+    const first = minute(z.firstCall), expected = minute(z.expected);
+    const recovered = raw.expectedTrain !== z.expectedTrain;
+    const observed = !recovered && !z.noWindow && Number.isFinite(minute(z.sleepAt)) && Number.isFinite(expected);
+    const lastKnown = !observed && !recovered && Number.isFinite(expected) && (z.noWindow || !z.sleepAt);
+    const row = { z, originalGap: Number.isFinite(first) ? actual - first : null,
+      baselineGap: observed ? actual - expected : null, lastGap: lastKnown ? actual - expected : null };
+    if (observed) baseline.push(row);
+    else if (lastKnown) fallback.push(row);
+    else missingBaseline.push(row);
+    const g = row.originalGap;
+    if (g == null) missingOriginal++;
+    else bands[g < -60 ? 0 : g < -30 ? 1 : g <= 30 ? 2 : g <= 60 ? 3 : 4].push(row);
+  }
+  const n = baseline.length, ok = baseline.filter(row => Math.abs(row.baselineGap) <= 30).length;
+  const headline = n ? Math.round(100 * ok / n) + '% within 30 minutes (' + ok + ' of ' + n + ' recorded baselines)' : 'No recorded baselines in this date range.';
+  return { bands, baseline, fallback, missingBaseline, missingOriginal, removed, mismatched, missingActual, headline };
+}
+function callReviewRecord(row) {
+  const { z, originalGap, baselineGap, lastGap } = row;
+  const comparison = (name, gap, expected) => '<p><b>' + name + '</b> · ' + (gap == null ? 'Unavailable' :
+    esc(dt(expected)) + ' · ' + (gap === 0 ? 'on time' : dur(gap) + (gap < 0 ? ' early' : ' late'))) + '</p>';
+  return '<article class="overview-guide-note"><h3>Calculated actual call · ' + esc(dt(z.call)) + '</h3><p>' +
+    esc(z.train || '') + ' · ' + esc(z.turn || '') + ' · On duty minus 2 hours</p>' +
+    comparison('Original expected call', originalGap, z.firstCall) + comparison('Eight-hour baseline', baselineGap, z.expected) +
+    (lastGap == null ? '' : comparison('Last known plan', lastGap, z.expected)) +
+    BoardAnalytics.renderCallTimeline(z) + '</article>';
+}
+function showCallReview(panel, records, range) {
+  const data = callReviewData(records);
+  const labels = ['Over 1 hour early', '31–60 minutes early', 'Within 30 minutes', '31–60 minutes late', 'Over 1 hour late'];
+  const originalCount = data.bands.reduce((n, rows) => n + rows.length, 0);
+  const lists = [...data.bands, data.baseline, data.fallback, data.missingBaseline];
+  const group = (i, label, total) => {
+    const n = lists[i].length;
+    return '<details class="sheet" data-call-group="' + i + '"><summary style="padding:12px">' + label + ' · ' + n +
+      (total ? ' (' + Math.round(100 * n / total) + '%)' : '') + '</summary><div></div></details>';
+  };
+  const dates = [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') || 'all saved dates';
+  panel.innerHTML = '<p class="anote">Analytics dates: ' + esc(dates) + '</p><section class="sheet"><header><h2>Overview · Call stability</h2></header>' +
+    '<p class="anote">' + data.headline + '</p></section><h2>Call stability · Eight-hour baseline</h2><p>' + data.headline +
+    '</p><p class="anote">The baseline is the first recorded check showing eight hours or less until the expected call.</p>' +
+    group(5, 'Calls with a recorded baseline') + group(6, 'No eight-hour baseline · compared with last known plan') +
+    (data.missingBaseline.length ? group(7, 'Baseline evidence unavailable') : '') +
+    '<h2>How close was the call to the original plan?</h2><p>Compared with the first saved expected call · ' + originalCount + ' eligible records</p>' +
+    labels.map((label, i) => group(i, label, originalCount)).join('') +
+    '<p class="anote">Removed waits: ' + data.removed + ' · Unresolved train mismatches: ' + data.mismatched +
+    ' · Missing calculated call: ' + data.missingActual + ' · Missing original plan among calls: ' + data.missingOriginal + '</p>';
+  panel.querySelectorAll('[data-call-group]').forEach(details => {
+    details.addEventListener('toggle', () => {
+      if (!details.open || details.dataset.loaded) return;
+      details.dataset.loaded = '1';
+      const rows = lists[Number(details.dataset.callGroup)].slice().sort((a,b) => String(b.z.call).localeCompare(String(a.z.call)));
+      const body = details.querySelector('div');
+      if (!rows.length) { body.textContent = 'No matching calls.'; return; }
+      let offset = 0;
+      const more = document.createElement('button');
+      more.type = 'button'; more.textContent = 'Show more calls';
+      body.appendChild(more);
+      const append = () => {
+        const batch = rows.slice(offset, offset + 20);
+        more.insertAdjacentHTML('beforebegin', batch.map(callReviewRecord).join(''));
+        offset += batch.length;
+        more.hidden = offset >= rows.length;
+      };
+      more.onclick = append;
+      append();
+    });
+  });
+}
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
   return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded · ${st.excluded || 0} historical train/trip mismatches excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs actual call time (earlier or later)')}</div>
@@ -4113,14 +4194,14 @@ source().then(async (src) => {
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
-  function renderTest() {
+  async function renderTest() {
     const view = document.getElementById('view');
     if (!healthData || !OwnerKey.has()) {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    view.innerHTML = '<h2>Notification review · A424 / Z148</h2><div data-replay></div>';
+    view.innerHTML = '<h2>Call stability preview</h2><div data-call-review>Loading call records…</div><details class="sheet"><summary>Notification review · A424 / Z148</summary><div data-replay></div></details>';
     const checks = src.index?.notificationReplay || [];
     const entries = checks.filter(c => c.events.length || c.held.length);
     const details = entries.map(c => '<section class="sheet"><header><h2>' + esc(c.time) + '</h2></header><ul>' +
@@ -4129,6 +4210,16 @@ source().then(async (src) => {
       c.held.map(turn => '<li>' + esc(turn) + ' · reassignment held during the call window</li>').join('') + '</ul></section>').join('');
     view.querySelector('[data-replay]').innerHTML = '<p>November 7 · 07:45–09:05 · SA04, S106, SB05, S305 and the spares expected to cover their jobs. Shared lineup, order and on-duty events reconstructed from that day’s saved checks. The replay starts with empty alert history. Phone preferences and actual deliveries are unavailable here.</p>' +
       (checks.length ? '<p>' + checks.length + ' checks replayed.</p>' + (details || '<p>No matching events or holds in these checks.</p>') : '<p>No saved checks available for this replay.</p>');
+    const panel = view.querySelector('[data-call-review]');
+    const range = anaDates();
+    try {
+      const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
+      if (!panel.isConnected || mode !== 'test') return;
+      if (!live && !archive) throw new Error('Missing analytics');
+      showCallReview(panel, callRecordsInRange(archive, live, range), range);
+    } catch {
+      if (panel.isConnected) panel.textContent = 'Could not load call records. Reopen Test to retry.';
+    }
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
