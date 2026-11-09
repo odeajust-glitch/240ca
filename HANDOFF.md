@@ -17,6 +17,11 @@ not yet seen on the live board. Laptop pull/restart/publish and phone refresh pe
 Worker change. Full suite: 337 of 339 pass; the two failing Analytics Overview tests
 failed before this work too.
 
+**Pool labels, 2026-11-09 (owner, straight to Current):** in Pools at Sarnia the buttons
+and headings read Drags (SD), 1st Manifest (S1), 3rd Manifest (S3) (`POOL_LABELS` /
+`poolLabel` in public/board.html). Wording only: snapshot pool names, jumps and saved
+picks are unchanged. Analytics still says SD / S1 / S3 (not asked). Laptop publish pending.
+
 Justin confirmed the Page Health live check on November 9. Resume the Analytics review with **Stale trains**, then consistent filters. The dated handoff below preserves earlier deployment observations and settled rules.
 
 Documentation reorganized: **2026-11-07**. Historical statements are evidence from their

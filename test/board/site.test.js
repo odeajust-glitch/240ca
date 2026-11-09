@@ -444,7 +444,7 @@ test('site page: every function the page calls at the top level is still there',
   const html = fs.readFileSync(path.join(__dirname, '../../public/board.html'), 'utf8');
   const defined = new Set([...html.matchAll(/^(?:async )?function ([A-Za-z0-9_]+)|^const ([A-Za-z0-9_]+) =/gm)].map((m) => m[1] || m[2]));
   for (const name of ['ordersView', 'heldView', 'heldRows', 'heldKey', 'HELD_LIMIT', 'shareLink', 'story', 'offCell', 'turnPanel', 'workHistory', 'personHistory',
-    'analyticsView', 'analyticsOverview', 'anaTrains', 'anaTurns', 'anaSleepAll', 'anaRunarounds', 'anaSpare', 'anaPred', 'colChart', 'source', 'whenGo', 'pools', 'poolBody', 'poolShort']) {
+    'analyticsView', 'analyticsOverview', 'anaTrains', 'anaTurns', 'anaSleepAll', 'anaRunarounds', 'anaSpare', 'anaPred', 'colChart', 'source', 'whenGo', 'pools', 'poolBody', 'poolShort', 'poolLabel']) {
     assert.ok(defined.has(name), `${name} is missing from board.html`);
   }
 });

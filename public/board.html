@@ -1234,13 +1234,17 @@ function poolBody(s, p) {
 // others, in the usual pool order, instead of switching boards. picked: the
 // short pool names that are on (kept on the phone, see poolPicks).
 const poolShort = (q) => q.name.replace(' · conductors', '').replace(' · engineers', '');
+// What the buttons and headings call a pool (owner, 2026-11-09). Only the
+// wording: the saved name stays, so jumps and saved picks still match.
+const POOL_LABELS = { SD: 'Drags (SD)', 'S1 (A)': '1st Manifest (S1)', 'S3 (B)': '3rd Manifest (S3)' };
+const poolLabel = (q) => POOL_LABELS[poolShort(q)] || poolShort(q);
 function pools(s, picked) {
   if (!s.pools.length) return '';
   askResets(s);
   const on = s.pools.filter((q) => picked.includes(poolShort(q)));
   const all = on.length === s.pools.length;
-  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}">${esc(poolShort(q))}</button>`).join('');
-  const boards = on.map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolShort(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
+  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}">${esc(poolLabel(q))}</button>`).join('');
+  const boards = on.map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolLabel(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${on.length} of ${s.pools.length} pools · ${on.reduce((n, p) => n + p.turns.length, 0)} turns</span></header>
     <div class="poolfilter" role="group" aria-label="Pools to show">${btns}<button type="button" class="all" data-poolall="${all ? 'none' : 'all'}">${all ? 'Clear' : 'All'}</button></div>
     ${boards || '<p class="empty">Pick a pool above.</p>'}</section>`;
