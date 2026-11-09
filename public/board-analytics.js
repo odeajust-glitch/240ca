@@ -44,7 +44,7 @@
   const numberOf = (id) => { if (/^DH/.test(String(id))) return 'DH'; const m = /^([A-Z]+)(\d{3})/.exec(String(id)); return m ? m[2] : String(id).split(' ')[0]; };
   // "SR03" → "SR", "B119" → "B", "S102" → "S1".
   const poolOf = (turn) => { const m = /^(S[RABD135]|MU|[A-Z]+)/.exec(turn || ''); return m ? m[1] : ''; };
-  const POOLS = { SR: 'Chain Gang (SR)', SA: 'A pool (SA)', SB: 'B pool (SB)', SD: 'SD', S1: 'S1', S3: 'S3', S5: '501/502', MU: 'make-up (MU)', B: 'spareboard (B)' };
+  const POOLS = { SR: 'Chain Gang (SR)', SA: 'A pool (SA)', SB: 'B pool (SB)', SD: 'Drags (SD)', S1: '1st Manifest (S1)', S3: '3rd Manifest (S3)', S5: '501/502', MU: 'make-up (MU)', B: 'spareboard (B)' };
   const crewTurn = (crew, crafts) => { const m = new RegExp(`(?:^|· )(?:${crafts}) ([A-Z0-9]+)`).exec(crew || ''); return m ? m[1] : null; };
 
   // One train from trains.json as a row.

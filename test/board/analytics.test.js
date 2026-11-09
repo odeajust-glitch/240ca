@@ -56,7 +56,7 @@ test('analytics: stats for every 148', () => {
   assert.deepStrictEqual(st.offPlan, { n: 2, avg: 25, late: 1, early: 1 });
   assert.deepStrictEqual(st.pred.co, { hit: 1, n: 2 });
   assert.deepStrictEqual(st.engineers, [['SD07', 2]]);
-  assert.deepStrictEqual(st.pools.map((p) => p[0]), ['SD', 'A pool (SA)', 'Chain Gang (SR)']);
+  assert.deepStrictEqual(st.pools.map((p) => p[0]), ['Drags (SD)', 'A pool (SA)', 'Chain Gang (SR)']);
   assert.deepStrictEqual(st.weekdays.filter(([, n]) => n).map(([d]) => d), ['Tue', 'Wed']);
   assert.strictEqual(st.first, '2026-10-20 0500');
 });

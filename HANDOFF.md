@@ -20,7 +20,7 @@ failed before this work too.
 **Pool labels, 2026-11-09 (owner, straight to Current):** in Pools at Sarnia the buttons
 and headings read Drags (SD), 1st Manifest (S1), 3rd Manifest (S3) (`POOL_LABELS` /
 `poolLabel` in public/board.html). Wording only: snapshot pool names, jumps and saved
-picks are unchanged. Analytics still says SD / S1 / S3 (not asked). Laptop publish pending.
+picks are unchanged. Analytics uses the same three names (its Pool picker and "Pools that took it" lists; `ANA_POOLS`, board-analytics.js `POOLS`). Laptop publish pending.
 
 Justin confirmed the Page Health live check on November 9. Resume the Analytics review with **Stale trains**, then consistent filters. The dated handoff below preserves earlier deployment observations and settled rules.
 
