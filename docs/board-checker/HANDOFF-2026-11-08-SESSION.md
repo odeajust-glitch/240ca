@@ -6,9 +6,10 @@ Branch `claude/vigilant-planck-zawrj4` · application head reviewed `e59a88c2cec
 
 ### Where to resume
 
-1. After the Windows laptop pulls and restarts, open Page Health on the phone. Check **Laptop code version** against `e59a88c` (or a later commit), **Laptop last checked**, and **Website last published**. Latest laptop restart, publication and phone verification are still open.
-2. Next Analytics review: **Stale trains**. Check how an active wait, a plan pushed later, and a completed case appear. The jump to train records and hours/minutes totals are already promoted. Then review consistent date, train, turn and name-code filters.
-3. Keep new changes in owner-only Test until Justin approves promotion. Remove promoted items from Test. The current empty state reads “No items awaiting review.” Justin waived testing and Test staging specifically for the four Page Health changes.
+Justin confirmed the Page Health live check on November 9 (“Live check is good”). The exact laptop SHA and publication time were not supplied.
+
+1. Next Analytics review: **Stale trains**. Check how an active wait, a plan pushed later, and a completed case appear. The jump to train records and hours/minutes totals are already promoted. Then review consistent date, train, turn and name-code filters.
+2. Keep new changes in owner-only Test until Justin approves promotion. Remove promoted items from Test. The current empty state reads “No items awaiting review.” Justin waived testing and Test staging specifically for the four Page Health changes.
 
 ### Promoted on the branch
 
@@ -19,7 +20,7 @@ Branch `claude/vigilant-planck-zawrj4` · application head reviewed `e59a88c2cec
 | Assignment errors | `a3ed7c4` promotes final pool outcomes. A verified correct sequence retains the prediction discrepancy in history and contributes zero confirmed pool errors. Spare-job findings keep their own outcomes. |
 | Call stability | `3c0eb43` promotes matching recorded-baseline counts on Overview and detail. Fallback comparisons use the last known plan. Five original-plan groups include 31–60 minutes early and late. Records show calculated actual call (on duty minus two hours), the two comparisons, and their timeline. |
 | Sequence notifications | `3c0eb43` also promotes the approved A/B-pool and covering-spare wording, including the shortened B-pool engineer message. Existing holds, repeat suppression and phone preferences govern delivery. The production-path run passed 131 tests. No phone delivery was independently verified. |
-| Page Health | `e59a88c` groups laptop check, publication and code version; retains a verified session report with Retry on temporary failure; clears private views on rejected access; moves subscriber counts and lookup status near the top; and identifies recovery after failures and restarts. Committed directly, without a test run or owner-phone verification for this change. |
+| Page Health | `e59a88c` groups laptop check, publication and code version; retains a verified session report with Retry on temporary failure; clears private views on rejected access; moves subscriber counts and lookup status near the top; and identifies recovery after failures and restarts. Promoted directly at Justin’s request. Justin subsequently confirmed the live check. |
 
 ### November 7 notification case to retain
 
