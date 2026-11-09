@@ -294,7 +294,7 @@
   button.chip { border: 0; font-family: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
   button.chip:disabled { cursor: default; text-decoration: none; opacity: .6; }
   .sheet.jumped { outline: 2px solid var(--soft); outline-offset: 2px; }
-  .train.jumped, tr.jumped, li.jumped { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .train.jumped, tr.jumped, li.jumped, .poolhead.jumped { outline: 2px solid var(--accent); outline-offset: -2px; }
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .steps button { background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
   .steps button:disabled { opacity: 0.4; cursor: default; }
@@ -447,7 +447,7 @@
   .crew { color: var(--soft); font-size: 12px; }
   .away { padding: 10px 14px; font-size: 13px; border-top: 1px solid var(--rule-soft); display: grid; gap: 3px; }
   .away b { font-weight: 600; }
-  /* Test tab: the pool filter (owner, 2026-11-09) */
+  /* Pools at Sarnia: the pool filter (owner, 2026-11-09) */
   .poolfilter { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
   .poolfilter button { padding: 5px 10px; min-height: 34px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: 13.5px; color: var(--soft); }
   .poolfilter button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
@@ -455,7 +455,6 @@
   .poolhead { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px 6px; font-weight: 600; font-size: 14px; border-top: 2px solid var(--rule); }
   .poolfilter + .poolhead { border-top: 0; }
   .poolhead .meta { font-weight: 400; font-size: 12.5px; color: var(--soft); }
-  .testpage { max-width: 620px; }
   .ok { color: var(--go); }
   .bad { color: var(--stop); font-weight: 600; }
 
@@ -1212,17 +1211,7 @@ function askResets(s) {
   resetsAsked = s.taken;
   getJSON('data/resets.json').then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
 }
-function pools(s, pi) {
-  if (!s.pools.length) return '';
-  const p = s.pools[pi] || s.pools[0];
-  askResets(s);
-  const tabs = s.pools.map((q, i) => `<button role="tab" aria-selected="${q === p}" data-pool="${i}">${esc(q.name.replace(' · conductors', '').replace(' · engineers', ''))}</button>`).join('');
-  return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${p.turns.length} turns</span></header>
-    <div class="tabs" role="tablist">${tabs}</div>
-    ${poolBody(s, p)}</section>`;
-}
-// One pool's board: its table and the notes under it (shared by the Current
-// tab's pool tabs and the Test tab's pool filter).
+// One pool's board: its table and the notes under it.
 function poolBody(s, p) {
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
@@ -1240,17 +1229,18 @@ function poolBody(s, p) {
   const left = p.turns.some((t) => t.left) ? `<p class="anote" style="margin:10px 14px">A <span class="vt">${esc(p.viewTime || '')}</span> beside a turn: only on the board with VIEW TIME ${esc(p.viewTime || '')}.</p>` : '';
   return `<table><thead><tr><th>Pos</th><th>Turn</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>${away}${left}`;
 }
-// Test tab (owner, 2026-11-09): the pool buttons as a filter. Each pool
-// switched on adds its board under the others, in the usual pool order,
-// instead of switching boards. picked: the short pool names that are on.
+// Pools at Sarnia (owner, 2026-11-09, approved from Test the same day): the
+// pool buttons are a filter. Each pool switched on adds its board under the
+// others, in the usual pool order, instead of switching boards. picked: the
+// short pool names that are on (kept on the phone, see poolPicks).
 const poolShort = (q) => q.name.replace(' · conductors', '').replace(' · engineers', '');
-function poolsFilter(s, picked) {
-  if (!s.pools.length) return '<p class="empty">No pools in this check.</p>';
+function pools(s, picked) {
+  if (!s.pools.length) return '';
   askResets(s);
   const on = s.pools.filter((q) => picked.includes(poolShort(q)));
   const all = on.length === s.pools.length;
   const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}">${esc(poolShort(q))}</button>`).join('');
-  const boards = on.map((p) => `<div class="poolhead"><span>${esc(poolShort(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
+  const boards = on.map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolShort(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${on.length} of ${s.pools.length} pools · ${on.reduce((n, p) => n + p.turns.length, 0)} turns</span></header>
     <div class="poolfilter" role="group" aria-label="Pools to show">${btns}<button type="button" class="all" data-poolall="${all ? 'none' : 'all'}">${all ? 'Clear' : 'All'}</button></div>
     ${boards || '<p class="empty">Pick a pool above.</p>'}</section>`;
@@ -3440,7 +3430,13 @@ source().then(async (src) => {
   let mode = 'current';
   // Set when the site has published a newer board since this page loaded.
   let newerBar = '';
-  let poolTab = 0;
+  // The pools switched on under Pools at Sarnia (short names), kept on this
+  // phone. Nothing saved yet → the tracked turn's pool, else the first one.
+  let poolPicks = null;
+  try { const saved = JSON.parse(localStorage.getItem('boardPoolFilter') || 'null'); if (Array.isArray(saved)) poolPicks = saved.map(String); } catch (e) { /* storage off */ }
+  const savePools = () => { try { localStorage.setItem('boardPoolFilter', JSON.stringify(poolPicks)); } catch (e) { /* storage off */ } };
+  // Switch a pool on (an alert's turn, a screen chip) without saving it as a pick.
+  const poolOn = (q) => { if (q && !(poolPicks || []).includes(poolShort(q))) poolPicks = [...(poolPicks || []), poolShort(q)]; };
 
   async function openDay(d, pick) {
     day = d;
@@ -4010,7 +4006,7 @@ source().then(async (src) => {
     { k: 'garnet', name: 'Garnet', col: 1, html: (s) => garnet(s) },
     { k: 'changes', name: 'Changes', col: 1, html: (s) => changes(s) },
     { k: 'flags', name: 'To check', col: 2, html: (s) => flags(s) },
-    { k: 'pools', name: 'Pools', col: 2, html: (s) => pools(s, poolTab) },
+    { k: 'pools', name: 'Pools', col: 2, html: (s) => pools(s, poolPicks || []) },
     { k: 'vacancies', name: 'Jobs going spare', col: 2, html: (s) => vacancies(s) },
     { k: 'daysoff', name: 'Days off', col: 2, html: (s) => daysOff(s) },
     { k: 'callboard', name: 'Call board', col: 2, html: (s) => onDuty(s) },
@@ -4082,14 +4078,13 @@ source().then(async (src) => {
     // From an alert: its turn's board tab first (applied after drawing).
     const go = mode === 'current' ? pendingGo : null;
     if (go && go.sec === 'pools' && go.turn) {
-      const at = s.pools.findIndex((q) => q.turns.some((t) => t.turn === go.turn));
-      if (at >= 0) { poolTab = at; keepTab = true; }
+      poolOn(s.pools.find((q) => q.turns.some((t) => t.turn === go.turn)));
     }
     document.getElementById('turnlist').innerHTML = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     setMarks();
-    if (marks.length && !keepTab) {
-      const mine = s.pools.findIndex((q) => q.turns.some((t) => marked(t.turn, t.craft)));
-      if (mine >= 0) poolTab = mine;
+    if (!poolPicks) {
+      const mine = s.pools.find((q) => q.turns.some((t) => marked(t.turn, t.craft))) || s.pools[0];
+      if (mine) poolPicks = [poolShort(mine)];
     }
     const w = when(s.taken);
     const dayIdx = src.days.indexOf(day);
@@ -4145,7 +4140,13 @@ source().then(async (src) => {
     if (back) back.onclick = () => setMode('current');
     const upd = document.getElementById('newerbtn');
     if (upd) upd.onclick = () => { location.hash = '#current'; location.reload(); };
-    document.querySelectorAll('[data-pool]').forEach((b) => { b.onclick = () => { poolTab = +b.dataset.pool; show(cur, true); }; });
+    document.querySelectorAll('[data-poolpick]').forEach((b) => { b.onclick = () => {
+      const name = poolShort(s.pools[+b.dataset.poolpick]);
+      poolPicks = (poolPicks || []).includes(name) ? poolPicks.filter((n) => n !== name) : [...(poolPicks || []), name];
+      savePools();
+      show(cur, true);
+    }; });
+    document.querySelectorAll('[data-poolall]').forEach((b) => { b.onclick = () => { poolPicks = b.dataset.poolall === 'all' ? s.pools.map(poolShort) : []; savePools(); show(cur, true); }; });
     document.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; show(cur, true); }; });
     // A chip whose section isn't on the page this check (nothing to show) isn't a link.
     document.querySelectorAll('[data-jump]').forEach((b) => {
@@ -4154,13 +4155,13 @@ source().then(async (src) => {
     });
     document.querySelectorAll('[data-jump]').forEach((b) => { b.onclick = () => {
       const j = JUMPS[b.dataset.jump];
-      if (j.pool) {
-        const i = s.pools.findIndex((q) => q.name.startsWith(j.pool));
-        if (i >= 0 && i !== poolTab) { poolTab = i; show(cur, true); }
-      }
-      const el = document.getElementById(j.id);
-      if (!el) return;
-      if (el.matches('details.test-current-box')) el.open = true;
+      // A pool's chip: switch that pool on and go to its board in the list.
+      const q = j.pool ? s.pools.find((x) => x.name.startsWith(j.pool)) : null;
+      if (q && !(poolPicks || []).includes(poolShort(q))) { poolOn(q); show(cur, true); }
+      const box = document.getElementById(j.id);
+      if (!box) return;
+      if (box.matches('details.test-current-box')) box.open = true;
+      const el = (q && [...box.querySelectorAll('.poolhead')].find((x) => x.dataset.poolname === poolShort(q))) || box;
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       el.classList.add('jumped');
       setTimeout(() => el.classList.remove('jumped'), 1500);
@@ -4275,41 +4276,11 @@ source().then(async (src) => {
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
-  let poolPicks = null;
   function renderTest() {
     const view = document.getElementById('view');
+    view.innerHTML = healthData && OwnerKey.has() ? '<p class="empty">No items awaiting review.</p>' :
+      '<p class="empty">Test previews require a verified owner key on this browser.</p>';
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    if (!healthData || !OwnerKey.has()) { view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>'; return; }
-    // Awaiting review (owner, 2026-11-09): the pool filter (poolsFilter), on
-    // the newest check. The Current tab's pool tabs stay as they are until
-    // he approves. Picks kept on this phone; none saved → the tracked turn's
-    // pool, else the first one.
-    const s = list[list.length - 1];
-    if (day !== src.days[0] || !s) {
-      view.innerHTML = '<p class="anote">Loading the current board…</p>';
-      openDay(src.days[0]).then(() => { if (mode === 'test' && day === src.days[0] && list.length) renderTest(); });
-      return;
-    }
-    setMarks();
-    if (!poolPicks) {
-      try { const saved = JSON.parse(localStorage.getItem('boardPoolFilter') || 'null'); if (Array.isArray(saved)) poolPicks = saved.map(String); } catch (e) { /* storage off */ }
-    }
-    if (!poolPicks) {
-      const mine = s.pools.find((q) => q.turns.some((t) => marked(t.turn, t.craft))) || s.pools[0];
-      poolPicks = mine ? [poolShort(mine)] : [];
-    }
-    const w = when(s.taken);
-    view.innerHTML = `<div class="testpage"><h2>Test · Pool filter</h2>
-      <p class="anote">Tap a pool to add its board to the list; tap it again to take it off. The Current tab is unchanged. Board of ${esc(w.long)} ${esc(w.time)}.</p>
-      ${poolsFilter(s, poolPicks)}</div>`;
-    const keep = () => { try { localStorage.setItem('boardPoolFilter', JSON.stringify(poolPicks)); } catch (e) { /* storage off */ } renderTest(); };
-    view.querySelectorAll('[data-poolpick]').forEach((b) => { b.onclick = () => {
-      const name = poolShort(s.pools[+b.dataset.poolpick]);
-      poolPicks = poolPicks.includes(name) ? poolPicks.filter((n) => n !== name) : [...poolPicks, name];
-      keep();
-    }; });
-    const allBtn = view.querySelector('[data-poolall]');
-    if (allBtn) allBtn.onclick = () => { poolPicks = allBtn.dataset.poolall === 'all' ? s.pools.map(poolShort) : []; keep(); };
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;

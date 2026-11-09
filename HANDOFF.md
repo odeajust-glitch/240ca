@@ -2,25 +2,20 @@
 
 ## Current handoff — November 9, 2026
 
-Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. **Test has one pending preview: the pool filter (TODO #25, added 2026-11-09 after that commit).** Page Health went directly to the regular page at Justin’s request.
+Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
-**Pool filter preview, 2026-11-09 (awaiting Justin's review):** owner-only Test shows
-"Pools at Sarnia" with the pool buttons as a filter (`poolsFilter` / `renderTest` in
-public/board.html): each pool switched on adds its board under the others in pool order,
-with All / Clear; picks saved per device (localStorage `boardPoolFilter`). Current's
-`pools()` output is unchanged (its table moved into shared `poolBody`). Checked locally in
-a browser on sample data (3 pools) only; not seen on the live board. On approval: replace
-the tabs in `pools()` with the filter, make the screen-chip jumps (JUMPS) and the
-tracked-turn pick switch that pool on, then return Test to "No items awaiting review."
-Laptop pull/restart/publish needed to see it; no Worker change. Full suite: 334 of 336
-pass; the two failing Analytics Overview tests failed before this change too.
-
-**November 9, later session — site accounts (in progress).** Justin wants the site visible only to approved people. Cloudflare Access was tried on a new test Worker `board-test` (https://board-test.sarniaboard.workers.dev, same code and bucket as `board`) and dropped (free plan stops at 50 people). Built instead: accounts inside the Worker — read [ACCOUNTS.md](docs/board-checker/ACCOUNTS.md). Sign-up = name, email, CN employee number, hire date; Justin approves each by eye on `/account` (owner key); locked by the `LOCK=on` variable. State when this session ended:
-
-- Code and tests are committed and pushed (`cloudflare/board-worker.js`, `test/board/accounts.test.js`). **Not deployed anywhere**: Justin pastes the Worker himself. He was given the `board-test` steps (Access off, delete `OWNER_EMAIL`, add `OWNER_KEY` + mail secrets, `LOCK=on`, paste). Ask him how the test went before doing more.
-- Next, in order: (1) his test on `board-test`; (2) paste into `board` unlocked + a "sign up to keep access" notice in `board.html` (Test tab first; `/auth/me` already reports `SIGNUP_NOTICE`); (3) `board.html` sends people to `/account` on a 401; (4) find out what RailroadTracker reads from the site; (5) `LOCK=on` on `board`.
-- Found on the way, not fixed: `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token. With Access off and `OWNER_EMAIL` set, a stranger could send that header and pass the owner checks on `/health*`. The accounts list does not use it (owner key only). Have `OWNER_EMAIL` deleted wherever Access is off, or fix `accessEmail()`.
-- Also this session: the local checkout was stale (Nov 3 history) and was reset to the GitHub branch; Justin sent a test alert himself with `node scripts/alert-check.js <CODE>` (worked). 14 tests fail in the cloud session with or without this change (same 14 before it).
+**Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
+("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
+Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
+public/board.html); each pool switched on adds its board under the others in pool order,
+with All / Clear. Picks saved per device (localStorage `boardPoolFilter`); nothing saved →
+the tracked turn's pool, else the first. A saved pick now wins: the tracked turn's pool is
+no longer switched to on every refresh. A screen chip or an alert's turn switches that
+pool on (not saved) and scrolls to its heading. Test is back to "No items awaiting
+review." Checked locally in a browser on sample data (3 pools); the promoted version is
+not yet seen on the live board. Laptop pull/restart/publish and phone refresh pending; no
+Worker change. Full suite: 337 of 339 pass; the two failing Analytics Overview tests
+failed before this work too.
 
 Justin confirmed the Page Health live check on November 9. Resume the Analytics review with **Stale trains**, then consistent filters. The dated handoff below preserves earlier deployment observations and settled rules.
 

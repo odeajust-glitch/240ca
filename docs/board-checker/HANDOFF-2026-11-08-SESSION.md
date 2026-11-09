@@ -9,7 +9,7 @@ Branch `claude/vigilant-planck-zawrj4` · application head reviewed `e59a88c2cec
 Justin confirmed the Page Health live check on November 9 (“Live check is good”). The exact laptop SHA and publication time were not supplied.
 
 1. Next Analytics review: **Stale trains**. Check how an active wait, a plan pushed later, and a completed case appear. The jump to train records and hours/minutes totals are already promoted. Then review consistent date, train, turn and name-code filters.
-2. Keep new changes in owner-only Test until Justin approves promotion. Remove promoted items from Test. Test now holds the pool filter preview (TODO #25, 2026-11-09; see HANDOFF.md); once promoted, its empty state reads “No items awaiting review.” Justin waived testing and Test staging specifically for the four Page Health changes.
+2. Keep new changes in owner-only Test until Justin approves promotion. Remove promoted items from Test. The current empty state reads “No items awaiting review.” (The pool filter was previewed there and promoted on 2026-11-09; see HANDOFF.md.) Justin waived testing and Test staging specifically for the four Page Health changes.
 
 ### Promoted on the branch
 

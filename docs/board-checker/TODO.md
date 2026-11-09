@@ -167,12 +167,12 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
-25. **Pool filter on "Pools at Sarnia"** (owner, 2026-11-09; in Test, awaiting his review):
-    the pool buttons switch each pool on or off and the boards stack in pool
-    order, instead of switching boards. Current's pool tabs are unchanged
-    until he approves; then promote and clear Test.
-
 ## Done
+
+- 2026-11-09: **Pool filter on "Pools at Sarnia"** (was #25). The pool buttons
+  switch each pool on or off and the boards stack in pool order, with All /
+  Clear; picks kept on the phone. Previewed in Test, approved by the owner
+  and promoted to Current the same day. Still to see on the live board.
 
 - 2026-11-07: **Analytics navigation cleanup and Assignment errors merge — live verified.**
   Runaround log / Jobs going spare / Predictions tabs and related Overview cards
