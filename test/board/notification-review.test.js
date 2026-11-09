@@ -45,11 +45,13 @@ test('B-pool reassignment explains the earlier planned train and preserves engin
   assert.match(spareEvents.find(e => e.turn === 'EN03').suggested,/cover S106’s engineer job.*still planned ahead/);
   check(65,swapped);
   assert.equal(replay.rows[2].events.filter(e => e.suggested).length, 0);
+  const engineerMessage = 'A42431 07 was ordered for 11:00, changing the predicted sequence. S305 is now lined up for Z14891 06, still planned for 08:48. If Z14891 06 is ordered for a time before 11:00, your train assignment may change.';
+  assert.equal(events.find(e => e.turn === 'S305').suggested, engineerMessage);
+  assert.equal(spareEvents.find(e => e.turn === 'EN11').suggested, 'EN11, you are expected to cover S305’s engineer job. ' + engineerMessage);
   assert.equal(events.length,2);
   for (const e of events) {
     assert.equal(e.kind,'lineup');
     assert.match(e.suggested,/A42431 07 was ordered for 11:00/);
-    assert.match(e.suggested,/If Z14891 06 is ordered for a time before 11:00, your train assignment may change again/);
-    assert.equal(e.suggested.includes('Your turn goes spare'),e.turn === 'S305');
+    if (e.turn === 'SB05') assert.match(e.suggested,/your train assignment may change again\. Expected call 06:33\.$/);
   }
 });
