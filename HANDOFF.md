@@ -2,7 +2,18 @@
 
 ## Current handoff — November 9, 2026
 
-Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews. Page Health went directly to the regular page at Justin’s request.
+Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. **Test has one pending preview: the pool filter (TODO #25, added 2026-11-09 after that commit).** Page Health went directly to the regular page at Justin’s request.
+
+**Pool filter preview, 2026-11-09 (awaiting Justin's review):** owner-only Test shows
+"Pools at Sarnia" with the pool buttons as a filter (`poolsFilter` / `renderTest` in
+public/board.html): each pool switched on adds its board under the others in pool order,
+with All / Clear; picks saved per device (localStorage `boardPoolFilter`). Current's
+`pools()` output is unchanged (its table moved into shared `poolBody`). Checked locally in
+a browser on sample data (3 pools) only; not seen on the live board. On approval: replace
+the tabs in `pools()` with the filter, make the screen-chip jumps (JUMPS) and the
+tracked-turn pick switch that pool on, then return Test to "No items awaiting review."
+Laptop pull/restart/publish needed to see it; no Worker change. Full suite: 334 of 336
+pass; the two failing Analytics Overview tests failed before this change too.
 
 **November 9, later session — site accounts (in progress).** Justin wants the site visible only to approved people. Cloudflare Access was tried on a new test Worker `board-test` (https://board-test.sarniaboard.workers.dev, same code and bucket as `board`) and dropped (free plan stops at 50 people). Built instead: accounts inside the Worker — read [ACCOUNTS.md](docs/board-checker/ACCOUNTS.md). Sign-up = name, email, CN employee number, hire date; Justin approves each by eye on `/account` (owner key); locked by the `LOCK=on` variable. State when this session ended:
 
