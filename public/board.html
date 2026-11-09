@@ -1853,14 +1853,6 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 // Nothing searched: everything, in sections.
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'SD'], ['S1', 'S1'], ['S3', 'S3'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
-// Test-only directory, driven by the real Analytics tab list.
-function callCountText(stats, range) {
-    const result = stats.n
-      ? Math.round(100 * stats.ok / stats.n) + '% within 30 minutes of the planning baseline (' + stats.ok + ' of ' + stats.n + ' scored calls).'
-      : 'No scored calls in this date range.';
-    const dates = range.from || range.to ? [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') : 'all saved dates';
-    return result + ' Analytics dates: ' + dates + '. Excluded: ' + stats.takenOff + ' removed waits and ' + stats.excluded + ' historical train/trip mismatches.';
-}
 function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
@@ -1895,7 +1887,7 @@ function analyticsOverview(o) {
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
-function anaHome({ sleep, range }) { return analyticsOverviewGuide({ callCount: callCountText(BoardAnalytics.sleepStats(sleep), range) }); }
+function anaHome({ sleep }) { return analyticsOverviewGuide({ callCount: callReviewData(sleep).headline }); }
 
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
@@ -2175,21 +2167,16 @@ function sleepCell(off) {
 }
 const SLEEP_NOTE = 'Call stability compares the expected call at the planning baseline (the first check showing 8 h or less to call) with an actual call time: recorded on-duty time minus 2 h. Short-notice cases can start with less than 8 h available. This does not record actual phone calls or sleep. Within 30 min is green, over 30 min to 1 h yellow, and over 1 h red. Removal from the line-up ends that wait and is counted separately. Samples reflect observed records; checking gaps may affect results.';
 function planSummary(list) {
-  const st = BoardAnalytics.planReliability(list), n = st.rows.length;
+  const st = BoardAnalytics.planReliability(list);
   const group = (label, rows, value) => `<details><summary><b>${value}</b> · ${label} (${rows.length} records)</summary>${sleepTable(rows, true)}${rows.length > 200 ? '<p class="anote">Showing the latest 200 matching records; totals include all matching records.</p>' : ''}</details>`;
-  const pc = rows => n ? `${Math.round(100 * rows.length / n)}%` : '—';
-  return `<section class="sheet"><header><h2>How reliable was my eight-hour plan?</h2></header><div style="padding:14px">
-    <p class="anote">Original plan = first saved expected call, as in the timeline. ${n} eligible call records; ${st.excluded} removed or missing-time records excluded. Actual call time is calculated from on-duty time minus 2 h; these are records, not unique people or measured sleep.</p>
-    ${group('Within 30 minutes of original plan', st.stable, pc(st.stable))}
-    ${group('More than 1 hour early', st.early, pc(st.early))}
-    ${group('More than 1 hour late', st.late, pc(st.late))}
+  return `<section class="sheet"><header><h2>Changes during the original plan</h2></header><div style="padding:14px">
     ${group('Average planned window lost among early calls', st.earlyAll, st.lost == null ? '—' : dur(Math.round(st.lost)))}
     <p class="anote">Lost time is the early-call overlap with the original eight-hour window, capped at 8 h per early call. Late calls do not cancel early losses.</p>
     ${group('Records with saved changes greater than 30 minutes during the original window', st.changed, `${st.rows.reduce((a,z) => a + z.planChanges, 0)} changes`)}
     <p class="anote">Open a number for its records and timelines. Older history may omit changes; saved change counts can be incomplete. Each timeline detail lists its recorded changes. Existing baseline statistics below use their separately labelled planning baseline.</p>
     </div></section>`;
 }
-// Test preview. Overview and detail use the same recorded-baseline sample.
+// Overview and detail use the same recorded-baseline sample.
 function callReviewData(records) {
   const bands = [[], [], [], [], []];
   const baseline = [], fallback = [], missingBaseline = [];
@@ -2239,8 +2226,7 @@ function showCallReview(panel, records, range) {
       (total ? ' (' + Math.round(100 * n / total) + '%)' : '') + '</summary><div></div></details>';
   };
   const dates = [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') || 'all saved dates';
-  panel.innerHTML = '<p class="anote">Analytics dates: ' + esc(dates) + '</p><section class="sheet"><header><h2>Overview · Call stability</h2></header>' +
-    '<p class="anote">' + data.headline + '</p></section><h2>Call stability · Eight-hour baseline</h2><p>' + data.headline +
+  panel.innerHTML = '<p class="anote">Analytics dates: ' + esc(dates) + '</p><h2>Call stability · Eight-hour baseline</h2><p>' + data.headline +
     '</p><p class="anote">The baseline is the first recorded check showing eight hours or less until the expected call.</p>' +
     group(5, 'Calls with a recorded baseline') + group(6, 'No eight-hour baseline · compared with last known plan') +
     (data.missingBaseline.length ? group(7, 'Baseline evidence unavailable') : '') +
@@ -2270,6 +2256,10 @@ function showCallReview(panel, records, range) {
     });
   });
 }
+function baselineStatsRows(list) {
+  return callReviewData(list).baseline.map(row => ({ ...row.z, off: row.baselineGap }))
+    .concat(list.filter(z => z.takenOff || BoardAnalytics.cleanCallRecord(z).comparisonUnavailable));
+}
 function sleepTiles(st) {
   const pc = (n) => (st.n ? `${n} <small>${Math.round((100 * n) / st.n)}%</small>` : '—');
   return `<p class="anote">${st.n} scored call records · ${st.takenOff} removed waits excluded · ${st.excluded || 0} historical train/trip mismatches excluded.</p><div class="strip">${anaTile(`<span class="offv ok">${pc(st.ok)}</span>`, 'Within 30 min of expected call')}${anaTile(`<span class="offv warn">${pc(st.warn)}</span>`, '30 min to 1 h from expected call')}${anaTile(`<span class="offv bad">${pc(st.bad)}</span>`, 'More than 1 h from expected call', st.bad > 0)}${anaTile(durOr(st.avg), 'Average difference: expected vs actual call time (earlier or later)')}</div>
@@ -2287,22 +2277,23 @@ function sleepTable(list, showTurn) {
       <td class="num">${z.takenOff ? `<span class="offv warn">Taken off the line-up</span><div class="crew">last on it ${esc(dt(z.lastListed))}</div>`
         : `<b>${esc(dt(z.call))}</b><div class="crew">${esc(z.train)}${z.yard ? ' · yard' : ''}</div>`}</td>
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
-      <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (historical train/trip mismatch)' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
+      <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (historical train/trip mismatch)' : z.noWindow || !z.sleepAt ? 'No recorded baseline' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td class="num">${start}</td>
-      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
+      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
   }).join('');
-  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Actual call time</th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
-    <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px">${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(list))}</div>${sleepTable(list, false)}</section>`;
+    <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px"><div data-call-detail></div>${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(baselineStatsRows(list)))}</div>${sleepTable(list, false)}</section>`;
 function anaSleepAll({ sleep }) {
-  const st = BoardAnalytics.sleepStats(sleep);
-  const turns = BoardAnalytics.sleepByTurn(sleep).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn));
+  const scored = baselineStatsRows(sleep);
+  const st = BoardAnalytics.sleepStats(scored);
+  const turns = BoardAnalytics.sleepByTurn(scored).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn));
   const table = turns.length ? `<div class="scroll"><table class="orders"><thead><tr><th class="stick">Turn</th><th>Calls</th><th>Green</th><th>Yellow</th><th>Red</th><th>Average gap</th><th>Earlier · later</th><th>Short notice</th><th>Taken off</th></tr></thead><tbody>${turns.map((t) => `<tr class="nolink">
       <td class="num stick"><button type="button" class="qbtn" data-q="${esc(t.turn)}" data-kind="turn">${esc(t.turn)}</button></td><td class="num"><b>${t.n}</b></td>
       <td class="num"><span class="offv ok">${t.ok}</span></td><td class="num"><span class="offv warn">${t.warn}</span></td><td class="num"><span class="offv bad">${t.bad}</span></td>
       <td class="num">${durOr(t.avg)}</td><td class="num">${t.earlier} · ${t.later}</td><td class="num">${t.short}</td><td class="num">${t.takenOff}</td></tr>`).join('')}</tbody></table></div>` : '';
-  return `<p class="anote">${SLEEP_NOTE}</p>${planSummary(sleep)}${sleepTiles(st)}
+  return `<p class="anote">${SLEEP_NOTE}</p><div data-call-detail></div>${planSummary(sleep)}${sleepTiles(st)}
     ${table ? `<section class="sheet"><header><h2>By turn</h2><span class="meta">most red first · tap a turn for its calls</span></header>${table}</section>` : ''}
     <section class="sheet"><header><h2>Latest calls</h2><span class="meta">newest first</span></header>${sleepTable(sleep, true)}</section>`;
 }
@@ -4194,32 +4185,11 @@ source().then(async (src) => {
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
-  async function renderTest() {
+  function renderTest() {
     const view = document.getElementById('view');
-    if (!healthData || !OwnerKey.has()) {
-      view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-      return;
-    }
+    view.innerHTML = healthData && OwnerKey.has() ? '<p class="empty">No items awaiting review.</p>' :
+      '<p class="empty">Test previews require a verified owner key on this browser.</p>';
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    view.innerHTML = '<h2>Call stability preview</h2><div data-call-review>Loading call records…</div><details class="sheet"><summary>Notification review · A424 / Z148</summary><div data-replay></div></details>';
-    const checks = src.index?.notificationReplay || [];
-    const entries = checks.filter(c => c.events.length || c.held.length);
-    const details = entries.map(c => '<section class="sheet"><header><h2>' + esc(c.time) + '</h2></header><ul>' +
-      c.events.map(e => '<li>' + esc(e.text) + (e.alternate ? ' (orders-only alternative)' : '') +
-        (e.suggested ? '<p><b>Proposed notification:</b> ' + esc(e.suggested) + '</p>' : e.provisional ? '<p><b>Proposed clarification:</b> Crew assignment is provisional while Z148 is still planned and A424 is ordered.</p>' : '') + '</li>').join('') +
-      c.held.map(turn => '<li>' + esc(turn) + ' · reassignment held during the call window</li>').join('') + '</ul></section>').join('');
-    view.querySelector('[data-replay]').innerHTML = '<p>November 7 · 07:45–09:05 · SA04, S106, SB05, S305 and the spares expected to cover their jobs. Shared lineup, order and on-duty events reconstructed from that day’s saved checks. The replay starts with empty alert history. Phone preferences and actual deliveries are unavailable here.</p>' +
-      (checks.length ? '<p>' + checks.length + ' checks replayed.</p>' + (details || '<p>No matching events or holds in these checks.</p>') : '<p>No saved checks available for this replay.</p>');
-    const panel = view.querySelector('[data-call-review]');
-    const range = anaDates();
-    try {
-      const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
-      if (!panel.isConnected || mode !== 'test') return;
-      if (!live && !archive) throw new Error('Missing analytics');
-      showCallReview(panel, callRecordsInRange(archive, live, range), range);
-    } catch {
-      if (panel.isConnected) panel.textContent = 'Could not load call records. Reopen Test to retry.';
-    }
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4551,6 +4521,7 @@ source().then(async (src) => {
     const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
     const sleep = callRecordsInRange(arch, found, range);
+    let detailSleep = sleep;
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
     const catsMissing = joinOld('catsMissing', arch.catsMissing || [], found.catsMissing).filter((r) => inDates(r.first));
@@ -4616,8 +4587,9 @@ source().then(async (src) => {
       else {
         const runs = inRange(workRuns(workOf(q), byId, base), range);
         anaCsv = { name: `turn-${q}`, runs };
+        detailSleep = sleep.filter((z) => z.turn === q || (z.turn === base && !BoardTurns.SHARED.test(base)));
         body = analyticsView(runs, 'turn', `Turn ${q}`, turnsAll[base] || arch.work[base] ? '' : 'no history for this turn in the saved checks',
-          { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: sleep.filter((z) => z.turn === q || (z.turn === base && !BoardTurns.SHARED.test(base))) });
+          { between: between(runs), spares: countIn(base, 'spares'), took: took(base), sleep: detailSleep });
       }
     } else {
       // A person: the live stretches (people.json) and the archive's.
@@ -4633,6 +4605,7 @@ source().then(async (src) => {
         anaCsv = { name: 'person', runs };
         // Their calls: on a turn while they were on it.
         const mine = sleep.filter((z) => stretches.some((e) => e.turn === BoardTurns.splitCraft(z.turn).base && z.firstSeen <= e.to && z.seen >= e.from));
+        detailSleep = mine;
         body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches, h && Person.pickOf(h)).turn)}`, { between: between(runs), spares: null, sleep: mine });
       }
     }
@@ -4649,6 +4622,8 @@ source().then(async (src) => {
         </div>
       </div>${body}`;
     try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    const callPanel = view.querySelector('[data-call-detail]');
+    if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
     const box = document.getElementById('aq');
     const go = () => { ana.q = box.value; renderAnalytics(); };
