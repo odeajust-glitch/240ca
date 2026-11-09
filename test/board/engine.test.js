@@ -615,9 +615,10 @@ test('L502 alternates: the crew bringing L501 home takes the next one', () => {
   assert.equal(require('../../lib/board/view').goesTo(h), 'S5: S501 (goes spare) + S501');
   // The one after goes back to S502 (home by then).
   assert.equal(b.turn, 'S502');
-  // Already called for this L502 (ordered): that crew keeps it.
+  // Dated Call Board evidence confirms this L502 and the two crafts.
   const ord = { ...l502('03', 4), order: at(2026, 11, 3, 5, 0), status: 'ORD' };
-  const c = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [ord], s5 }).predictions.find((x) => x.symbol === 'L50231');
+  const called = { ...ord, onDuty: ord.order, station: 'SARNIA', crew: [{ craft: 'CO', turn: 'S502' }, { craft: 'EN', turn: 'S502' }] };
+  const c = runBoardCheck({ now, callBoard: [called], chainGangHome: [], lineup: [ord], s5 }).predictions.find((x) => x.symbol === 'L50231');
   assert.deepEqual([c.turn, c.known], ['S502', true]);
 });
 

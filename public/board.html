@@ -421,9 +421,6 @@
   .test-current-box > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
   :root[data-theme="tablet"] .test-current-box > summary { background: #3fe0d8; color: #1236d0; }
   :root[data-theme="tablet"] .test-current-box > summary .meta { color: #1236d0; }
-  .test-preview-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 8px; margin-bottom: 18px; }
-  .test-preview-menu button { min-height: 44px; padding: 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); font: inherit; cursor: pointer; }
-  .test-preview-menu button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
   .overview-guide-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); }
   .overview-guide-card { display: flex; flex-direction: column; min-width: 0; padding: 16px; border-top: 1px solid var(--rule); }
   .overview-guide-card h3 { margin: 0 0 8px; }
@@ -1033,7 +1030,7 @@ function s5CrewWhy(s, t) {
     '</div><h4>Other crew</h4>' + (others.length ? '<ul>' + others.map((r) =>
       '<li><b>' + markTurn(r.turn) + (r.craft ? ' ' + esc(r.craft) : '') + ':</b> ' + status(r) + '</li>').join('') +
     '</ul>' : '<p>Other crew status is not available in this saved check.</p>') +
-    '<p class="muted">Lined-up crew is a prediction until confirmed by CATS.</p>';
+    '<p class="muted">' + (t.s5OnDuty ? 'Crew recorded on the dated Call Board.' : 'Lined-up crew is a prediction until confirmed by CATS.') + '</p>';
 }
 function lineupWhy(s, t, previewS5 = false) {
   const stamp = BoardTrains.resolve(t.order, s.taken);
@@ -4075,19 +4072,6 @@ source().then(async (src) => {
       details.addEventListener('toggle', () => { openState.set(wrap.dataset.sec, details.open); });
     });
   }
-  const testBoxOpen = new Map();
-  let testRenderVersion = 0;
-  let testPreviewPick = 'analytics';
-  function testPreviewMenu() {
-    return '<div class="test-preview-menu" role="group" aria-label="Choose Test preview">' +
-      [['analytics', 'Analytics Overview'], ['current', 'Current · Sarnia / 501/502 Why'], ['s5-review', '501/502 crew comparison'], ['assignments', 'Assignment errors'], ['held', 'Article 18.6(b)'], ['stale', 'Stale trains']].map(([key,label]) =>
-        '<button type="button" data-test-preview="' + key + '" aria-pressed="' + (testPreviewPick === key) + '">' + label + '</button>').join('') + '</div>';
-  }
-  function wireTestPreviewMenu(view) {
-    view.querySelectorAll('[data-test-preview]').forEach(button => {
-      button.onclick = () => { testPreviewPick = button.dataset.testPreview; renderTest(); };
-    });
-  }
   function wireFindingControls(panel) {
     const select = panel.querySelector('[data-test-status]');
     if (select) select.onchange = () => {
@@ -4101,121 +4085,21 @@ source().then(async (src) => {
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
-  async function renderTest() {
+  function renderTest() {
     const view = document.getElementById('view');
-    const version = ++testRenderVersion;
     if (!healthData || !OwnerKey.has()) {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
-    if (testPreviewPick === 's5-review') {
-      const review = src.index?.s5Review;
-      const show = ({ title, rows }) => '<section class="sheet"><header><h2>' + esc(title) + '</h2></header>' +
-        (rows.length ? rows.map(r => '<h3>' + esc(r.train) + ' · ' + esc(r.origin) + '</h3><p>Order ' + esc(r.order.replace('T', ' ')) +
-          '</p><table class="orders"><thead><tr><th>Craft</th><th>Current</th><th>Proposed</th></tr></thead><tbody>' +
-          ['Conductor', 'Engineer'].map((craft, i) => '<tr><th>' + craft + '</th><td>' + esc(r.current[i]) + '</td><td>' +
-            esc(r.proposed[i]) + '</td></tr>').join('') + '</tbody></table>').join('') : '<p>No L502 in this check.</p>') + '</section>';
-      view.innerHTML = testPreviewMenu() + '<h2>501/502 crew comparison</h2>' + (review ?
-        show({ title: 'Latest check · ' + (review.checked || 'unavailable'), rows: review.latest }) +
-        '<h2>Reconstructed audit cases</h2>' + review.examples.map(show).join('') : '<p>The checker has not supplied a comparison for this build.</p>');
-      wireTestPreviewMenu(view);
-      return;
-    }
-    if (['assignments', 'stale', 'held'].includes(testPreviewPick)) {
-      const pick = testPreviewPick;
-      const title = { assignments: 'Assignment errors', stale: 'Stale trains', held: 'Article 18.6(b)' }[pick];
-      view.innerHTML = testPreviewMenu() + '<h2>Test · ' + title + '</h2><div data-preview-panel>Loading…</div>';
-      wireTestPreviewMenu(view);
-      const panel = view.querySelector('[data-preview-panel]');
-      const active = () => mode === 'test' && version === testRenderVersion && healthData && OwnerKey.has();
-      try {
-        if (pick === 'held') {
-          const all = await src.trains();
-          const names = await heldNames();
-          if (!active()) return;
-          const show = period => {
-            panel.innerHTML = heldView(all, null, src.index?.latest || src.days[0] + ' 2359', names.names, 'none', 'CO', period);
-            panel.querySelector('[data-held-period]').onclick = () => show(period === 'week' ? 'all' : 'week');
-            panel.querySelectorAll('tr[data-key]').forEach(row => {
-              row.onclick = () => { heldOpen = row.dataset.key; heldCraft = 'CO'; setMode('held'); };
-            });
-          };
-          show('week');
-          return;
-        }
-        const range = anaDates();
-        const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
-        if (!active()) return;
-        if (!live && !archive) throw new Error('Missing analytics');
-        const records = (key, stamp) => BoardAnalytics.joinOld(key, archive?.[key] || [], live?.[key] || []).filter(row => {
-          const date = (row[stamp] || '').slice(0, 10);
-          return date && (!range.from || date >= range.from) && (!range.to || date <= range.to);
-        });
-        if (pick === 'assignments') {
-          panel.innerHTML = anaAssignments({ preview: true, reviewPools: true, latestCheck: src.index?.latest, runarounds: records('runarounds', 'taken'), catsErrors: records('catsErrors', 'first'), catsMissing: records('catsMissing', 'first') });
-
-        } else {
-          panel.innerHTML = anaStale({ stale: records('stale', 'from'), preview: true });
-
-        }
-        wireFindingControls(panel);
-        panel.querySelectorAll('[data-taken]').forEach(button => { button.onclick = () => jumpTo(button.dataset.taken); });
-        panel.querySelectorAll('[data-q]').forEach(button => { button.onclick = () => { ana.q = button.dataset.q; ana.kind = button.dataset.kind; setMode('analytics'); }; });
-      } catch (err) {
-        if (active()) panel.textContent = 'Could not load this preview. Select it again to retry.';
-      }
-      return;
-    }
-    if (testPreviewPick === 'analytics') {
-      try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-      view.innerHTML = testPreviewMenu() + '<h2>Test · Analytics Overview</h2>' + analyticsOverviewGuide({ preview: true });
-      wireTestPreviewMenu(view);
-      view.querySelectorAll('[data-overview-open]').forEach(button => {
-        button.onclick = () => {
-          const section = button.dataset.overviewOpen;
-          if (section === 'assignments' || section === 'stale') { testPreviewPick = section; renderTest(); return; }
-          ana.q = ''; ana.kind = 'auto'; ana.sec = section; setMode('analytics');
-        };
-      });
-      const count = view.querySelector('[data-test-call-count]');
-      const range = anaDates();
-      try {
-        const [live, archive] = await Promise.all([src.analytics(), loadArchive(range)]);
-        if (!count.isConnected || version !== testRenderVersion) return;
-        if (!live && !archive?.sleep?.length) throw new Error('Call records unavailable');
-        const stats = BoardAnalytics.sleepStats(callRecordsInRange(archive, live, range));
-        count.textContent = callCountText(stats, range);
-      } catch (e) {
-        if (count.isConnected) count.textContent = 'Call records could not be loaded. Reopen Test to retry.';
-      }
-      return;
-    }
-    view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Loading the latest saved board…</p>';
-    wireTestPreviewMenu(view);
-    let snapshots;
-    try { snapshots = await src.load(src.days[0]); }
-    catch (e) {
-      if (mode === 'test' && version === testRenderVersion) view.innerHTML = '<p class="empty">Could not load the current board. Reopen Test to retry.</p>';
-      return;
-    }
-    if (mode !== 'test' || version !== testRenderVersion || !healthData || !OwnerKey.has()) return;
-    const s = snapshots[snapshots.length - 1];
-    if (!s) { view.innerHTML = '<p class="empty">No saved current board yet.</p>'; return; }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    setMarks();
-    view.innerHTML = testPreviewMenu() + '<h2>Test · Current boxes</h2><p class="anote">Approved layout: tap the top of any box to collapse or expand it. Also available on Current. This Test preview additionally simplifies the 501/502 Why to the selected crew and other crew status.</p>' +
-      '<div class="agebar"><span class="age" data-age="' + esc(s.sameUntil || s.taken) + '" data-prefix="Last checked "></span></div>' +
-      strip(s, true) + '<div class="test-current-boxes">' + sectionsGrid(s, false, true) + '</div>';
-    wireTestPreviewMenu(view);
-    wireCurrentBoxes(view.querySelector('.test-current-boxes'), testBoxOpen);
-    tickAges();
-    paintTracked(s);
-    view.querySelectorAll('[data-pool]').forEach((button) => {
-      button.onclick = () => { poolTab = +button.dataset.pool; renderTest(); };
-    });
-    view.querySelectorAll('[data-vactab]').forEach((button) => {
-      button.onclick = () => { vacTab = button.dataset.vactab; renderTest(); };
-    });
+    const checks = src.index?.notificationReplay || [];
+    const entries = checks.filter(c => c.events.length || c.held.length);
+    const details = entries.map(c => '<section class="sheet"><header><h2>' + esc(c.time) + '</h2></header><ul>' +
+      c.events.map(e => '<li>' + esc(e.text) + (e.alternate ? ' (orders-only alternative)' : '') +
+        (e.provisional ? '<p><b>Proposed clarification:</b> Crew assignment is provisional while Z148 is still planned and A424 is ordered.</p>' : '') + '</li>').join('') +
+      c.held.map(turn => '<li>' + esc(turn) + ' · reassignment held during the call window</li>').join('') + '</ul></section>').join('');
+    view.innerHTML = '<h2>Notification review · A424 / Z148</h2><p>November 7 · 07:45–09:05 · SA04, S106, SB05 and S305. Shared lineup, order and on-duty events reconstructed from that day’s saved checks. The replay starts with empty alert history. Phone preferences and actual deliveries are unavailable here.</p>' +
+      (checks.length ? '<p>' + checks.length + ' checks replayed.</p>' + (details || '<p>No matching events or holds in these checks.</p>') : '<p>No saved checks available for this replay.</p>');
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;

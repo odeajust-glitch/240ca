@@ -157,6 +157,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
     alerts at each check. Compare with retained notification evidence where
     available and distinguish predicted alerts from actual delivery. Review only,
     using replay without sending notifications. Stage any proposed changes in Test.
+    Owner Test now replays the four regular turns from retained Nov 7 checks.
+    Review its wording and compare any retained receipts before changing live alerts.
+    Remove a Test item after promotion so only outstanding reviews appear there.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.

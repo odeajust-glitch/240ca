@@ -53,12 +53,12 @@ test('away selected turn may be predicted but receives no L502 lineup notificati
  assert.equal(r.predictions[0].turn,'S501');assert.equal(r.predictions[0].s5Away,true);
  assert.ok(!states['S501-CO']?.lineup);assert.ok(!states['S501-EN']?.lineup);
 });
-test('future ordered L502 must not match a previous dated trip by symbol alone', {todo:'Audit finding: option 29 workingOn has no date; known-crew shortcut needs dated evidence'},()=>{
+test('future ordered L502 must not match a previous dated trip by symbol alone',()=>{
  const i=input();i.now=at(2026,11,8,14);i.lineup=[{...i.lineup[0],originDay:'09',order:at(2026,11,9,4),status:'ORD'}];
  i.s5=[row('S501','CO',999,{working:true,workingOn:'L50231'}),row('S501','EN',999,{working:true,workingOn:'L50231'}),row('S502','CO',1),row('S502','EN',1)];
  assert.equal(runBoardCheck(i).predictions[0].turn,'S502');
 });
-test('one craft working does not prove both crafts are confirmed for an ordered L502', {todo:'Audit finding: known-crew shortcut currently assigns both crafts from one working row'},()=>{
+test('one craft working does not prove both crafts are confirmed for an ordered L502',()=>{
  const i=input();i.now=at(2026,11,8,3);i.lineup=[{...i.lineup[0],originDay:'08',order:at(2026,11,8,5),status:'ORD'}];
  i.s5=[row('S501','CO',999,{working:true,workingOn:'L50231'}),row('S501','EN',1,{st:'TV'}),row('S502','CO',2),row('S502','EN',2)];
  assert.equal(runBoardCheck(i).predictions[0].engineerSpare,true);
