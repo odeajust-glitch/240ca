@@ -17,6 +17,13 @@ not yet seen on the live board. Laptop pull/restart/publish and phone refresh pe
 Worker change. Full suite: 337 of 339 pass; the two failing Analytics Overview tests
 failed before this work too.
 
+**November 9, later session — site accounts (in progress).** Justin wants the site visible only to approved people. Cloudflare Access was tried on a new test Worker `board-test` (https://board-test.sarniaboard.workers.dev, same code and bucket as `board`) and dropped (free plan stops at 50 people). Built instead: accounts inside the Worker — read [ACCOUNTS.md](docs/board-checker/ACCOUNTS.md). Sign-up = name, email, PIN (CN employee number), hire date, email confirmed by a code; the page and emails must stay non-descript (no Sarnia, no CN: Justin's ask); Justin approves each by eye on `/account` (owner key); locked by the `LOCK=on` variable. State when this session ended:
+
+- Code and tests are committed and pushed (`cloudflare/board-worker.js`, `test/board/accounts.test.js`). **Not deployed anywhere**: Justin pastes the Worker himself. He was given the `board-test` steps (Access off, delete `OWNER_EMAIL`, add `OWNER_KEY` + mail secrets, `LOCK=on`, paste). Ask him how the test went before doing more.
+- Next, in order: (1) his test on `board-test`; (2) paste into `board` unlocked + a "sign up to keep access" notice in `board.html` (Test tab first; `/auth/me` already reports `SIGNUP_NOTICE`); (3) `board.html` sends people to `/account` on a 401; (4) find out what RailroadTracker reads from the site; (5) `LOCK=on` on `board`.
+- Found on the way, not fixed: `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token. With Access off and `OWNER_EMAIL` set, a stranger could send that header and pass the owner checks on `/health*`. The accounts list does not use it (owner key only). Have `OWNER_EMAIL` deleted wherever Access is off, or fix `accessEmail()`.
+- Also this session: the local checkout was stale (Nov 3 history) and was reset to the GitHub branch; Justin sent a test alert himself with `node scripts/alert-check.js <CODE>` (worked). 14 tests fail in the cloud session with or without this change (same 14 before it).
+
 **Pool labels, 2026-11-09 (owner, straight to Current):** in Pools at Sarnia the buttons
 and headings read Drags (SD), 1st Manifest (S1), 3rd Manifest (S3) (`POOL_LABELS` /
 `poolLabel` in public/board.html). Wording only: snapshot pool names, jumps and saved

@@ -12,9 +12,15 @@ stops at 50 people. The accounts are built into the Worker
 ## How it works
 
 - **`/account`** is the sign-in / sign-up page. It always works, locked or not.
-- **Sign up:** name, email, CN employee number, hire date. The phone or
-  computer that signed up is remembered. Your phone gets an ntfy alert
-  ("New sign-up", no personal details in it).
+- **Sign up:** name, email, PIN (their CN employee number; the page only
+  says "PIN"), hire date. The page and the emails name no place or company
+  (owner: "non descript"). A 6-digit code is emailed to confirm the
+  address (owner: "can we verify emails"); only then does it reach your
+  list and your phone gets an ntfy alert ("New sign-up", no personal
+  details). Sign-ups never confirmed are cleared after two days.
+- Emails come from your Gmail address. The sender name is "Account" once
+  the Gmail script's line reads `const opts = { name: d.name || 'Sarnia board · 18.6(b)' };`
+  (until then it is the 18.6(b) name).
 - **You approve:** open `/account` on a device that holds your owner key
   (the same key Page Health uses). The list shows each person's details;
   compare against your seniority list; **Approve** or **Decline**. Either
@@ -26,7 +32,8 @@ stops at 50 people. The accounts are built into the Worker
   any other device: `/account` → Sign in → their email → a 6-digit code by
   email (10 minutes, 5 tries). Signed in for 90 days.
 - **Emails** go through the same Gmail script as 18.6(b) (EMAIL.md), at
-  most 60 a day for accounts. A sign-up costs one email (the approval);
+  most 70 a day for accounts. A sign-up costs two emails (the code and the
+  approval), so about 35 new people a day;
   if the allowance runs out the approval still works, the page tells you
   the email didn't go.
 - **Limits:** 5 sign-ups a day per internet address, 150 a day in all.

@@ -36,6 +36,7 @@ async function setup(extra = {}) {
   const cookieOf = (res) => (res.headers.get('set-cookie') || '').split(';')[0];
   return { env, store, mails, pings, call, cookieOf };
 }
+const codeIn = (mails) => /code is (\d{6})/.exec(mails[mails.length - 1].body)[1];
 const person = (n) => ({ name: `Pat Example ${n}`, email: `pat${n}@example.com`, pin: '123456', hireDate: '2015-06-01' });
 
 test('unlocked, the site is open, the account page works and account files are never served', async () => {
@@ -48,6 +49,7 @@ test('unlocked, the site is open, the account page works and account files are n
   assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null });
   res = await call('/auth/signup', { body: person('a') });
   assert.equal(res.status, 200);
+  assert.doesNotMatch(await (await call('/account')).text(), /Sarnia|CN |employee/i);
   const key = [...store.keys()].find((k) => k.startsWith('accounts/users/'));
   assert.ok(key);
   assert.equal((await call(`/${key}`)).status, 404);
@@ -72,6 +74,15 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
 
   res = await call('/auth/signup', { body: person('b') });
   assert.equal(res.status, 200);
+  assert.equal(res.headers.get('set-cookie'), null);
+  // Not on the owner's list, and no alert, until the email is confirmed.
+  assert.equal((await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.length, 0);
+  assert.equal(pings.length, 0);
+  assert.equal(mails.length, 1);
+  assert.equal(mails[0].to, 'patb@example.com');
+  assert.doesNotMatch(JSON.stringify(mails[0]), /Sarnia|CN /);
+  res = await call('/auth/verify', { body: { email: 'patb@example.com', code: codeIn(mails) } });
+  assert.deepEqual(await res.json(), { ok: true, status: 'pending' });
   const cookie = cookieOf(res);
   assert.match(cookie, /^bsess=/);
   assert.match(res.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Lax/);
@@ -85,7 +96,7 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal(res.headers.get('set-cookie'), null);
   // No sign-in code for someone not approved yet.
   assert.equal((await call('/auth/code', { body: { email: 'patb@example.com' } })).status, 200);
-  assert.equal(mails.length, 0);
+  assert.equal(mails.length, 1);
 
   // Only the owner key sees the list (not an Access email header).
   assert.equal((await call('/health/accounts')).status, 404);
@@ -99,8 +110,9 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
 
   res = await call('/health/accounts', { key: OWNER_KEY, body: { id: u.id, action: 'approve' } });
   assert.deepEqual(await res.json(), { ok: true, mail: 'sent' });
-  assert.equal(mails[0].to, 'patb@example.com');
-  assert.match(mails[0].body, /https:\/\/board\.example\/account/);
+  assert.equal(mails[1].to, 'patb@example.com');
+  assert.match(mails[1].body, /https:\/\/board\.example\/account/);
+  store.delete(`accounts/codes/${u.id}.json`); // (a minute later)
   const saved = JSON.parse(store.get(`accounts/users/${u.id}.json`));
   assert.equal(saved.status, 'approved');
   assert.equal(saved.pin, undefined);
@@ -114,8 +126,8 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   // Another device: a code by email.
   res = await call('/auth/code', { body: { email: 'PatB@example.com ' } });
   assert.equal(res.status, 200);
-  assert.equal(mails.length, 2);
-  const code = /code is (\d{6})/.exec(mails[1].body)[1];
+  assert.equal(mails.length, 3);
+  const code = codeIn(mails);
   assert.equal((await call('/auth/verify', { body: { email: 'patb@example.com', code: code === '000000' ? '000001' : '000000' } })).status, 400);
   res = await call('/auth/verify', { body: { email: 'patb@example.com', code } });
   assert.equal(res.status, 200);
@@ -124,10 +136,10 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal((await call('/auth/verify', { body: { email: 'patb@example.com', code } })).status, 400); // once only
   // A second code within the minute isn't sent.
   await call('/auth/code', { body: { email: 'patb@example.com' } });
-  assert.equal(mails.length, 2);
+  assert.equal(mails.length, 3);
   // Unknown email: the same answer, no email.
   assert.equal((await call('/auth/code', { body: { email: 'nobody@example.com' } })).status, 200);
-  assert.equal(mails.length, 2);
+  assert.equal(mails.length, 3);
 
   // Removed: out on every device at once, and can't sign up again.
   res = await call('/health/accounts', { key: OWNER_KEY, body: { id: u.id, action: 'remove' } });
@@ -143,16 +155,24 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
 
 test('a declined sign-up loses its details and can try again; the owner key signs the owner in', async () => {
   const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
-  let res = await call('/auth/signup', { body: person('c') });
+  const join = async (body, ip) => {
+    const r = await call('/auth/signup', { body, ip });
+    if (r.status !== 200) return r;
+    const id0 = [...store.keys()].find((k) => k.startsWith('accounts/users/') && JSON.parse(store.get(k)).email === body.email).slice(15, -5);
+    const out = await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } });
+    store.delete(`accounts/codes/${id0}.json`);
+    return out;
+  };
+  let res = await join(person('c'));
   const first = cookieOf(res);
   const { users } = await (await call('/health/accounts', { key: OWNER_KEY })).json();
   const id = users.find((x) => x.email === 'patc@example.com').id;
   res = await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'decline' } });
   assert.equal((await res.json()).mail, 'sent');
-  assert.match(mails[0].subject, /couldn't be confirmed/);
+  assert.match(mails[mails.length - 1].subject, /couldn't be confirmed/);
   assert.equal(JSON.parse(store.get(`accounts/users/${id}.json`)).pin, undefined);
   assert.equal((await (await call('/auth/me', { cookie: first })).json()).status, 'declined');
-  res = await call('/auth/signup', { body: { ...person('c'), pin: '654321' } });
+  res = await join({ ...person('c'), pin: '654321' });
   const again = cookieOf(res);
   assert.match(again, /^bsess=/);
   assert.equal(JSON.parse(store.get(`accounts/users/${id}.json`)).pin, '654321');

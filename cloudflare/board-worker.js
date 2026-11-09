@@ -1102,9 +1102,10 @@ async function alertsFor(request, env) {
 //   SIGNUP_NOTICE=on (variable): /auth/me says so, for the page's "sign up
 //     to keep access" line before the lock goes on.
 //   AUTH_SECRET (secret, optional): signs the sign-in cookie; else OWNER_KEY.
-// A sign-up is kept in R2 accounts/users/<id>.json (never served) and the
-// device that sent it holds a cookie that starts working the moment the
-// owner approves: no email needed for the first device. Other devices sign
+// A sign-up is kept in R2 accounts/users/<id>.json (never served). Its
+// email is confirmed with a code first ("can we verify emails"); the device
+// that entered the code holds a cookie that starts working the moment the
+// owner approves. The page names no place or company ("non descript"). Other devices sign
 // in with a 6-digit code emailed through the Gmail script (EMAIL.md). The
 // employee number and hire date are deleted when the owner approves or
 // declines; only the owner key (never the Access email header, which a
@@ -1115,7 +1116,7 @@ const SESSION_DAYS = 90;
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
 const CODE_DAY_MAX = 6;
-const ACC_MAIL_DAY_MAX = 60; // Gmail allows about 100 a day; 18.6(b) has its own 30
+const ACC_MAIL_DAY_MAX = 70; // Gmail allows about 100 a day; 18.6(b) has its own 30
 const SIGNUP_IP_MAX = 5;
 const SIGNUP_DAY_MAX = 150;
 const USER_CACHE_MS = 60 * 1000;
@@ -1174,7 +1175,7 @@ async function accountMail(env, to, subject, body, now = Date.now()) {
   if (count.n >= ACC_MAIL_DAY_MAX) return 'cap';
   try {
     const res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: '', replyTo: '', subject, body }) });
+      body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: '', replyTo: '', subject, body, name: 'Account' }) });
     const out = JSON.parse(await res.text());
     if (!res.ok || !out || !out.ok) return 'failed';
   } catch { return 'failed'; }
@@ -1184,7 +1185,7 @@ async function accountMail(env, to, subject, body, now = Date.now()) {
 }
 
 async function authSignup(request, env, now = Date.now()) {
-  if (!authSecret(env)) return json({ error: 'Accounts aren\'t set up yet.' }, 503);
+  if (!authSecret(env) || !mailReady(env)) return json({ error: 'Sign-up isn\'t set up yet.' }, 503);
   const b = await bodyJson(request);
   if (!b) return json({ error: 'That didn\'t come through. Try again.' }, 400);
   const name = String(b.name || '').replace(/\s+/g, ' ').trim();
@@ -1193,7 +1194,7 @@ async function authSignup(request, env, now = Date.now()) {
   const hireDate = String(b.hireDate || '').trim();
   if (name.length < 3 || name.length > 80) return json({ error: 'Enter your full name.' }, 400);
   if (email.length > 120 || !EMAIL_RE.test(email)) return json({ error: 'That email doesn\'t look right.' }, 400);
-  if (!/^\d{4,9}$/.test(pin)) return json({ error: 'Enter your CN employee number (PIN): digits only.' }, 400);
+  if (!/^\d{4,9}$/.test(pin)) return json({ error: 'Enter your PIN: digits only.' }, 400);
   if (!/^\d{4}-\d\d-\d\d$/.test(hireDate) || Number.isNaN(Date.parse(hireDate)) || hireDate < '1960-01-01' || hireDate > torontoDay(now)) return json({ error: 'Enter your hire date.' }, 400);
   const dayKey = `${ACC}signups/${torontoDay(now)}.json`;
   const today = (await readJson(env, dayKey)) || { n: 0, ips: {} };
@@ -1204,40 +1205,43 @@ async function authSignup(request, env, now = Date.now()) {
   today.ips[ip] = (today.ips[ip] || 0) + 1;
   await putJson(env, dayKey, today);
   // The same answer whether or not the email is already known, so nobody
-  // can find out who has an account.
-  const answer = { ok: true, message: `Sent for approval. An email goes to ${email} once you're approved.` };
+  // can find out who has an account. The email is confirmed with a code
+  // (owner, 2026-11-09: "can we verify emails") before the owner sees it.
   const id = await uidOf(email);
   const old = await readJson(env, userKey(id));
-  if (old && old.status !== 'declined') return json(answer);
-  const key = b64(crypto.getRandomValues(new Uint8Array(12)));
-  await saveUser(env, id, { email, name, pin, hireDate, status: 'pending', key, requestedAt: now }, now);
-  if (env.NTFY_TOPIC) {
-    try { await fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body: 'Someone is waiting for approval. Open the account page to check them.', headers: { Title: 'New sign-up on the board site', Priority: 'default' } }); } catch { /* the list still shows it */ }
-  }
-  const res = json(answer);
-  res.headers.append('set-cookie', await sessionCookie(env, { u: id, k: key, t: now }));
-  return res;
+  if (old && old.status !== 'declined' && old.status !== 'unverified') return json({ ok: true });
+  const sent = await sendCode(env, id, email, now);
+  if (sent !== 'sent' && sent !== 'wait') return json({ error: 'The confirmation email couldn\'t be sent right now. Try again later.' }, 503);
+  await saveUser(env, id, { email, name, pin, hireDate, status: 'unverified', key: b64(crypto.getRandomValues(new Uint8Array(12))), requestedAt: now }, now);
+  return json({ ok: true });
+}
+
+// A 6-digit code to that address: 'sent', 'wait' (one a minute, six a day)
+// or why the email didn't go.
+async function sendCode(env, id, email, now = Date.now()) {
+  const codeKey = `${ACC}codes/${id}.json`;
+  const rec = (await readJson(env, codeKey)) || {};
+  const day = torontoDay(now);
+  const n = rec.day === day ? rec.n || 0 : 0;
+  if ((rec.sentAt && now - rec.sentAt < 60000) || n >= CODE_DAY_MAX) return 'wait';
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  const sent = await accountMail(env, email, `${code} is your code`,
+    `Your code is ${code}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, ignore this email.`, now);
+  if (sent !== 'sent') return sent;
+  await putJson(env, codeKey, { hash: await shaHex(`${id}:${code}:${authSecret(env)}`), exp: now + CODE_MINUTES * 60000, tries: 0, sentAt: now, day, n: n + 1 });
+  return 'sent';
 }
 
 async function authCode(request, env, now = Date.now()) {
-  const secret = authSecret(env);
-  if (!secret || !mailReady(env)) return json({ error: 'Email sign-in isn\'t set up yet.' }, 503);
+  if (!authSecret(env) || !mailReady(env)) return json({ error: 'Email sign-in isn\'t set up yet.' }, 503);
   const b = await bodyJson(request);
   const email = String((b && b.email) || '').trim().toLowerCase();
   if (email.length > 120 || !EMAIL_RE.test(email)) return json({ error: 'That email doesn\'t look right.' }, 400);
   const id = await uidOf(email);
   const user = await readJson(env, userKey(id));
   if (!user || user.status !== 'approved') return json({ ok: true });
-  const codeKey = `${ACC}codes/${id}.json`;
-  const rec = (await readJson(env, codeKey)) || {};
-  const day = torontoDay(now);
-  const n = rec.day === day ? rec.n || 0 : 0;
-  if ((rec.sentAt && now - rec.sentAt < 60000) || n >= CODE_DAY_MAX) return json({ ok: true });
-  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
-  const sent = await accountMail(env, email, `${code} is your sign-in code for the Sarnia board`,
-    `Your sign-in code is ${code}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, ignore this email.`, now);
-  if (sent !== 'sent') return json({ error: 'The sign-in email couldn\'t be sent right now. Try again later.' }, 503);
-  await putJson(env, codeKey, { hash: await shaHex(`${id}:${code}:${secret}`), exp: now + CODE_MINUTES * 60000, tries: 0, sentAt: now, day, n: n + 1 });
+  const sent = await sendCode(env, id, email, now);
+  if (sent !== 'sent' && sent !== 'wait') return json({ error: 'The sign-in email couldn\'t be sent right now. Try again later.' }, 503);
   return json({ ok: true });
 }
 
@@ -1259,10 +1263,17 @@ async function authVerify(request, env, now = Date.now()) {
   }
   await putJson(env, codeKey, { sentAt: rec.sentAt, day: rec.day, n: rec.n });
   const user = await readJson(env, userKey(id));
-  if (!user || user.status !== 'approved') return bad();
-  user.lastSignIn = now;
+  if (!user || (user.status !== 'approved' && user.status !== 'unverified')) return bad();
+  if (user.status === 'unverified') {
+    // Email confirmed: now it waits for the owner.
+    user.status = 'pending';
+    user.requestedAt = now;
+    if (env.NTFY_TOPIC) {
+      try { await fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body: 'Someone is waiting for approval. Open the account page to check them.', headers: { Title: 'New sign-up', Priority: 'default' } }); } catch { /* the list still shows it */ }
+    }
+  } else user.lastSignIn = now;
   await saveUser(env, id, user, now);
-  const res = json({ ok: true });
+  const res = json({ ok: true, status: user.status });
   res.headers.append('set-cookie', await sessionCookie(env, { u: id, k: user.key, t: now }));
   return res;
 }
@@ -1276,7 +1287,10 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     do {
       const page = await env.SITE.list({ prefix: `${ACC}users/`, cursor });
       const got = await Promise.all(page.objects.map(async (o) => { const u = await readJson(env, o.key); return u && { id: o.key.slice(`${ACC}users/`.length, -5), ...u, key: undefined }; }));
-      users.push(...got.filter(Boolean));
+      for (const u of got.filter(Boolean)) {
+        if (u.status !== 'unverified') users.push(u);
+        else if (now - (u.requestedAt || 0) > 2 * 86400000) await saveUser(env, u.id, null, now); // never confirmed their email
+      }
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     users.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
@@ -1295,13 +1309,13 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   if (action === 'approve' && user.status === 'pending') {
     const { pin, hireDate, ...rest } = user;
     await saveUser(env, id, { ...rest, status: 'approved', approvedAt: now }, now);
-    mail = await accountMail(env, user.email, 'You\'re approved: Sarnia board',
-      `Hi ${user.name},\n\nYour sign-up for the Sarnia board site is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now);
+    mail = await accountMail(env, user.email, 'You\'re approved',
+      `Hi ${user.name},\n\nYour sign-up is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now);
   } else if (action === 'decline' && user.status === 'pending') {
     const { pin, hireDate, ...rest } = user;
     await saveUser(env, id, { ...rest, status: 'declined', declinedAt: now }, now);
-    mail = await accountMail(env, user.email, 'Your sign-up couldn\'t be confirmed: Sarnia board',
-      `Hi ${user.name},\n\nYour sign-up for the Sarnia board site couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, employee number and hire date.`, now);
+    mail = await accountMail(env, user.email, 'Your sign-up couldn\'t be confirmed',
+      `Hi ${user.name},\n\nYour sign-up couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, PIN and hire date.`, now);
   } else if (action === 'remove' && user.status === 'approved') {
     await saveUser(env, id, { ...user, status: 'removed', removedAt: now, key: b64(crypto.getRandomValues(new Uint8Array(12))) }, now);
   } else if (action === 'delete' && user.status !== 'approved') {
@@ -1355,7 +1369,7 @@ const ACCOUNT_PAGE = String.raw`<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Sign in · Sarnia board</title>
+<title>Sign in</title>
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <style>
 :root { --bg: #eceeea; --sheet: #ffffff; --ink: #1d2a2e; --muted: #56676c; --line: #cdd5d2; --accent: #0f5c63; --accent-ink: #ffffff; --tint: #dcebec; --bad: #9c2b2b; --badbg: #f7e3e1; }
@@ -1392,19 +1406,19 @@ p { margin: .4rem 0; }
 </head>
 <body>
 <main>
-<h1>Sarnia board</h1>
+<h1>Members</h1>
 <div id="msg" role="status" hidden></div>
 
 <section id="in" hidden>
   <h2>You're signed in</h2>
   <p id="who"></p>
-  <a class="btn" id="go" href="/">Open the board</a>
+  <a class="btn" id="go" href="/">Open the site</a>
   <button type="button" class="plain" id="out">Sign out</button>
 </section>
 
 <section id="wait" hidden>
   <h2>Waiting for approval</h2>
-  <p>Each sign-up is checked by hand, so this can take a day or so. Once you're approved, this phone or computer opens the board by itself, and you get an email.</p>
+  <p>Each sign-up is checked by hand, so this can take a day or so. Once you're approved, this phone or computer opens the site by itself, and you get an email.</p>
   <button type="button" id="again">Check again</button>
   <button type="button" class="plain" id="out2">Start over</button>
 </section>
@@ -1420,23 +1434,23 @@ p { margin: .4rem 0; }
     <button type="submit">Email me a sign-in code</button>
   </form>
   <form id="fCode" hidden>
-    <p>If that email has an approved account, a 6-digit code is on its way. Give it a minute, and look in junk mail too.</p>
+    <p id="codeNote"></p>
     <label for="inCode">Code</label>
     <input id="inCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
-    <button type="submit">Sign in</button>
-    <button type="button" class="plain" id="back">Use a different email</button>
+    <button type="submit">Continue</button>
+    <button type="button" class="plain" id="back">Go back</button>
   </form>
   <form id="fUp" hidden>
-    <p>For CN Sarnia crews. Each sign-up is approved by hand.</p>
+    <p>Each sign-up is approved by hand.</p>
     <label for="upName">Full name</label>
     <input id="upName" autocomplete="name" maxlength="80" required>
     <label for="upEmail">Email</label>
     <input id="upEmail" type="email" autocomplete="email" required>
-    <label for="upPin">CN employee number (PIN)</label>
+    <label for="upPin">PIN</label>
     <input id="upPin" inputmode="numeric" autocomplete="off" maxlength="12" required>
     <label for="upHire">Hire date</label>
     <input id="upHire" type="date" required>
-    <p class="hint">Your employee number and hire date are only used to confirm you work at CN. They are deleted as soon as your sign-up is approved or declined, and never shown on the site.</p>
+    <p class="hint">Your PIN and hire date are only used to confirm who you are. They are deleted as soon as your sign-up is approved or declined, and never shown on the site.</p>
     <button type="submit">Send for approval</button>
   </form>
 </section>
@@ -1490,6 +1504,8 @@ p { margin: .4rem 0; }
   $('tabUp').onclick = function () { say(''); tab(true); };
 
   var triedOwner = false;
+  var codeEmail = '';
+  function askCode(email, note) { codeEmail = email; $('codeNote').textContent = note; $('fIn').hidden = true; $('fUp').hidden = true; $('fCode').hidden = false; $('inCode').value = ''; $('inCode').focus(); }
   function refresh(follow) {
     return api('/auth/me').then(function (me) {
       if (me.error) { say(me.error, true); show('forms'); return; }
@@ -1517,15 +1533,16 @@ p { margin: .4rem 0; }
     api('/auth/code', { email: $('inEmail').value }).then(function (r) {
       busy(f, false);
       if (r.error) { say(r.error, true); return; }
-      $('fIn').hidden = true; $('fCode').hidden = false; $('inCode').value = ''; $('inCode').focus();
+      askCode($('inEmail').value, 'If that email has an approved account, a 6-digit code is on its way. Give it a minute, and look in junk mail too.');
     });
   };
-  $('back').onclick = function () { say(''); tab(false); };
+  $('back').onclick = function () { say(''); tab($('tabUp').getAttribute('aria-pressed') === 'true'); };
   $('fCode').onsubmit = function (e) {
     e.preventDefault(); say(''); busy(this, true); var f = this;
-    api('/auth/verify', { email: $('inEmail').value, code: $('inCode').value }).then(function (r) {
+    api('/auth/verify', { email: codeEmail, code: $('inCode').value }).then(function (r) {
       busy(f, false);
       if (r.error) { say(r.error, true); return; }
+      if (r.status === 'pending') { $('fUp').reset(); refresh(false).then(function () { say('Email confirmed. Your sign-up has been sent for approval.'); }); return; }
       if (next) location.replace(next); else location.replace('/');
     });
   };
@@ -1534,8 +1551,7 @@ p { margin: .4rem 0; }
     api('/auth/signup', { name: $('upName').value, email: $('upEmail').value, pin: $('upPin').value, hireDate: $('upHire').value }).then(function (r) {
       busy(f, false);
       if (r.error) { say(r.error, true); return; }
-      f.reset();
-      refresh(false).then(function () { say(r.message); });
+      askCode($('upEmail').value, 'Almost done: a 6-digit code was emailed to you to confirm your address. Enter it here. Give it a minute, and look in junk mail too.');
     });
   };
   function signOut() { api('/auth/logout', {}).then(function () { say(''); triedOwner = true; refresh(false); }); }
@@ -1563,7 +1579,7 @@ p { margin: .4rem 0; }
     var dl = el('dl');
     function row(k, v) { dl.appendChild(el('dt', k)); dl.appendChild(el('dd', v)); }
     row('Email', u.email);
-    if (u.status === 'pending') { row('Employee no.', u.pin || ''); row('Hire date', u.hireDate || ''); row('Asked', day(u.requestedAt)); }
+    if (u.status === 'pending') { row('PIN', u.pin || ''); row('Hire date', u.hireDate || ''); row('Asked', day(u.requestedAt)); }
     else if (u.status === 'approved') { row('Approved', day(u.approvedAt)); row('Last code sign-in', day(u.lastSignIn)); }
     else row('Status', u.status === 'declined' ? 'Declined ' + day(u.declinedAt) : 'Removed ' + day(u.removedAt));
     box.appendChild(dl);
