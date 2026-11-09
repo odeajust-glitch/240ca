@@ -1,6 +1,33 @@
 # Railway board session handoff — November 8, 2026
 
-## Latest continuation — November 8, 2026, evening
+## November 9 continuation
+
+Branch `claude/vigilant-planck-zawrj4` · application head reviewed `e59a88c2cec09a861ab5bf14024db81adfda0c40`. Use this section for current status. Older entries below describe the branch and live site at the time they were written.
+
+### Where to resume
+
+1. After the Windows laptop pulls and restarts, open Page Health on the phone. Check **Laptop code version** against `e59a88c` (or a later commit), **Laptop last checked**, and **Website last published**. Latest laptop restart, publication and phone verification are still open.
+2. Next Analytics review: **Stale trains**. Check how an active wait, a plan pushed later, and a completed case appear. The jump to train records and hours/minutes totals are already promoted. Then review consistent date, train, turn and name-code filters.
+3. Keep new changes in owner-only Test until Justin approves promotion. Remove promoted items from Test. The current empty state reads “No items awaiting review.” Justin waived testing and Test staging specifically for the four Page Health changes.
+
+### Promoted on the branch
+
+| Area | Current behavior and evidence |
+| --- | --- |
+| Current and 501/502 | The November 8 14:24 live check showed S502 conductor and engineer for L50231 09 after S501 tied up at Garnet. The later promotion `3f6644d` uses dated L502 identity and independent craft evidence for predictions and notification calculations. An undated working row cannot confirm both crafts. Keep full-cycle verification against real masked CATS records open. |
+| Current box memory | Justin verified the preview. `c9be4cd` promotes per-device open/closed choices across refreshes and reopening, including choices saved in Test. |
+| Assignment errors | `a3ed7c4` promotes final pool outcomes. A verified correct sequence retains the prediction discrepancy in history and contributes zero confirmed pool errors. Spare-job findings keep their own outcomes. |
+| Call stability | `3c0eb43` promotes matching recorded-baseline counts on Overview and detail. Fallback comparisons use the last known plan. Five original-plan groups include 31–60 minutes early and late. Records show calculated actual call (on duty minus two hours), the two comparisons, and their timeline. |
+| Sequence notifications | `3c0eb43` also promotes the approved A/B-pool and covering-spare wording, including the shortened B-pool engineer message. Existing holds, repeat suppression and phone preferences govern delivery. The production-path run passed 131 tests. No phone delivery was independently verified. |
+| Page Health | `e59a88c` groups laptop check, publication and code version; retains a verified session report with Retry on temporary failure; clears private views on rejected access; moves subscriber counts and lookup status near the top; and identifies recovery after failures and restarts. Committed directly, without a test run or owner-phone verification for this change. |
+
+### November 7 notification case to retain
+
+A42431 07 was first seen ordered at 07:50 for 11:00 while Z14891 06 still showed planned for 08:48. Its ORD transition was never captured. At 08:23 the Call Board showed Z148 on duty for 10:20 (SA04, EN11 covering S106). At 08:52 it showed A424 on duty for 10:45 (SB05, EN03 covering S305). Justin confirmed the final pool sequence was correct.
+
+Housekeeping item 24 remains open for delivery evidence and the separate CATS wrong-turn alert. In the replay, EN11 could hear that S106 was the wrong turn before the Call Board recorded EN11 working S106. The promoted sequence messages address the lineup prediction; the separate wrong-turn wording still needs review. See the [backlog](TODO.md) and [S5 cycle audit](S5-CYCLE-AUDIT-2026-11-08.md).
+
+## Earlier continuation — November 8, 2026, evening
 
 Supersedes pending-promotion statements below; earlier detail is preserved.
 Source inspected: `751e7e4ff4a9e6ecc78ea8764b63303ccef172a8`. No fresh live inspection in this documentation task.

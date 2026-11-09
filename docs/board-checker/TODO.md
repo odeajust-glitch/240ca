@@ -153,13 +153,10 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
     07:50 for 11:00 while Z148 still showed PLN for 08:48 at the 08:15 check.
     Z148's ORD transition was never captured. Justin confirmed the final pool
     sequence was correct: Z148 worked A pool and A424 worked B pool.
-    Trace which turns and crafts would receive lineup, reassignment or correction
-    alerts at each check. Compare with retained notification evidence where
-    available and distinguish predicted alerts from actual delivery. Review only,
-    using replay without sending notifications. Stage any proposed changes in Test.
-    Owner Test now replays the four regular turns from retained Nov 7 checks.
-    Review its wording and compare any retained receipts before changing live alerts.
-    Remove a Test item after promotion so only outstanding reviews appear there.
+    The pool and covering-spare replay was reviewed and its sequence wording
+    promoted in `3c0eb43`. Compare retained receipts with the reconstructed alerts
+    where available. Review EN11’s separate 07:50 CATS wrong-turn warning for S106,
+    subsequently recorded as the job EN11 worked. These checks remain open.
 
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
