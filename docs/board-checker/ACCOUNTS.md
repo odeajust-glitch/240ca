@@ -76,7 +76,10 @@ passes. Phones already getting alerts keep getting them.
    time. Then the notice line on the page (Test tab first).
 3. **Lock:** add `LOCK=on` on `board`. To undo, delete it.
 
-Before step 3: find out what the RailroadTracker app reads from the site
-(if it reads the site's files directly it will need the `BOARD_KEY`
-header), and have `board.html` send people to `/account` when a check
+Before step 3: have `board.html` send people to `/account` when a check
 comes back 401 (signed out while the page is open).
+
+RailroadTracker is set aside (owner, 2026-11-09: "Let's forget about the
+railroad app for now"): the lock does not wait on it. If the app reads the
+site's files directly it will stop working once locked, until it sends the
+`BOARD_KEY` header; its relay (`/api/board*`) is unaffected.
