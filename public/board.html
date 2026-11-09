@@ -4127,7 +4127,7 @@ source().then(async (src) => {
     const entries = checks.filter(c => c.events.length || c.held.length);
     const details = entries.map(c => '<section class="sheet"><header><h2>' + esc(c.time) + '</h2></header><ul>' +
       c.events.map(e => '<li>' + esc(e.text) + (e.alternate ? ' (orders-only alternative)' : '') +
-        (e.provisional ? '<p><b>Proposed clarification:</b> Crew assignment is provisional while Z148 is still planned and A424 is ordered.</p>' : '') + '</li>').join('') +
+        (e.suggested ? '<p><b>Proposed notification:</b> ' + esc(e.suggested) + '</p>' : e.provisional ? '<p><b>Proposed clarification:</b> Crew assignment is provisional while Z148 is still planned and A424 is ordered.</p>' : '') + '</li>').join('') +
       c.held.map(turn => '<li>' + esc(turn) + ' · reassignment held during the call window</li>').join('') + '</ul></section>').join('');
     view.querySelector('[data-replay]').innerHTML = '<p>November 7 · 07:45–09:05 · SA04, S106, SB05 and S305. Shared lineup, order and on-duty events reconstructed from that day’s saved checks. The replay starts with empty alert history. Phone preferences and actual deliveries are unavailable here.</p>' +
       (checks.length ? '<p>' + checks.length + ' checks replayed.</p>' + (details || '<p>No matching events or holds in these checks.</p>') : '<p>No saved checks available for this replay.</p>');

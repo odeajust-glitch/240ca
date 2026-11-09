@@ -15,6 +15,7 @@ test('the replay distinguishes a predicted ORD recipient from the later dated cr
   step(50, [z,{...a,status:'ORD'}]);
   assert.deepEqual(replay.rows[0].events.map(e => [e.turn,e.kind,e.provisional]),
     [['SA04','ordered',true],['S106','ordered',true]]);
+  for (const e of replay.rows[0].events) assert.match(e.suggested, /Z14891 06 is still planned ahead of you for 08:48 and has not been ordered/);
   step(55, [z,{...a,status:'ORD'}]);
   assert.deepEqual(replay.rows[1].events, []);
   step(83, [a], [{...z,station:'SARNIA',onDuty:at(2026,11,7,10,20),crew:[{craft:'CO',turn:'SA04'},{craft:'EN',turn:'S106'}]}]);
