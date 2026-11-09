@@ -3913,6 +3913,7 @@ source().then(async (src) => {
   if (narrow.addEventListener) narrow.addEventListener('change', () => { if (mode === 'current' || mode === 'snap') show(cur, true); });
 
   function show(i, keepTab) {
+    flushCurrentBoxes();
     cur = i;
     if (document.body.classList.contains('orders') || mode === 'turns') return;
     const s = list[i];
@@ -4048,27 +4049,26 @@ source().then(async (src) => {
       Math.abs(BoardTrains.off(event.from, event.at) || 0) > 30);
   }
   const orderSummaryState = { day: null, from: 'all', status: 'all', find: '', open: null };
-  const currentBoxOpen = new Map();
   // A separate key for each section keeps independently opened tabs from
-  // overwriting choices for other sections. Only the Test view uses this store.
-  const testBoxMemory = new Map();
-  const testBoxState = {
+  // overwriting choices for other sections. Reuse preferences saved during preview.
+  const boxMemory = new Map();
+  const currentBoxOpen = {
     get(section) {
       const saved = local.get('test-current-box-open:' + section);
-      return typeof saved === 'boolean' ? saved : testBoxMemory.get(section);
+      return typeof saved === 'boolean' ? saved : boxMemory.get(section);
     },
     set(section, open) {
-      testBoxMemory.set(section, open);
+      boxMemory.set(section, open);
       local.set('test-current-box-open:' + section, open);
     }
   };
-  function flushTestBoxes() {
-    document.querySelectorAll('[data-box-memory-preview] .secwrap').forEach(wrap => {
+  function flushCurrentBoxes() {
+    document.querySelectorAll('#view .secwrap').forEach(wrap => {
       const box = wrap.querySelector(':scope > details.test-current-box');
-      if (box) box.saveOpenState();
+      if (box?.saveOpenState) box.saveOpenState();
     });
   }
-  window.addEventListener('pagehide', flushTestBoxes);
+  window.addEventListener('pagehide', flushCurrentBoxes);
   function wireCurrentBoxes(root, openState) {
     root.querySelectorAll('.secwrap').forEach((wrap) => {
       // Retain the real section contents and controls; only its outer shell changes.
@@ -4113,16 +4113,14 @@ source().then(async (src) => {
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
   }
-  async function renderTest() {
+  function renderTest() {
     const view = document.getElementById('view');
     if (!healthData || !OwnerKey.has()) {
       view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
       return;
     }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    flushTestBoxes();
-    view.innerHTML = '<h2>Current · Remember open and closed boxes</h2><p>Close a box, then refresh or reopen Test on this device.</p><div data-box-memory-preview>Loading Current…</div><details><summary>Notification review · A424 / Z148</summary><div data-replay></div></details>';
-    const preview = view.querySelector('[data-box-memory-preview]');
+    view.innerHTML = '<h2>Notification review · A424 / Z148</h2><div data-replay></div>';
     const checks = src.index?.notificationReplay || [];
     const entries = checks.filter(c => c.events.length || c.held.length);
     const details = entries.map(c => '<section class="sheet"><header><h2>' + esc(c.time) + '</h2></header><ul>' +
@@ -4131,22 +4129,6 @@ source().then(async (src) => {
       c.held.map(turn => '<li>' + esc(turn) + ' · reassignment held during the call window</li>').join('') + '</ul></section>').join('');
     view.querySelector('[data-replay]').innerHTML = '<p>November 7 · 07:45–09:05 · SA04, S106, SB05, S305 and the spares expected to cover their jobs. Shared lineup, order and on-duty events reconstructed from that day’s saved checks. The replay starts with empty alert history. Phone preferences and actual deliveries are unavailable here.</p>' +
       (checks.length ? '<p>' + checks.length + ' checks replayed.</p>' + (details || '<p>No matching events or holds in these checks.</p>') : '<p>No saved checks available for this replay.</p>');
-    try {
-      const latest = await src.load(src.days[0]);
-      if (!preview.isConnected || mode !== 'test') return;
-      const snapshot = latest.at(-1);
-      if (!snapshot) { preview.textContent = 'No current board available.'; return; }
-      const draw = () => {
-        flushTestBoxes();
-        preview.innerHTML = sectionsGrid(snapshot, false, true);
-        wireCurrentBoxes(preview, testBoxState);
-        preview.querySelectorAll('[data-pool]').forEach(b => { b.onclick = () => { poolTab = +b.dataset.pool; draw(); }; });
-        preview.querySelectorAll('[data-vactab]').forEach(b => { b.onclick = () => { vacTab = b.dataset.vactab; draw(); }; });
-      };
-      draw();
-    } catch {
-      if (preview.isConnected) preview.textContent = 'Could not load the current board. Reopen Test to retry.';
-    }
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4237,7 +4219,7 @@ source().then(async (src) => {
   }
 
   function setMode(m) {
-    if (mode === 'test') flushTestBoxes();
+    if (mode === 'current') flushCurrentBoxes();
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
