@@ -2974,21 +2974,58 @@ source().then(async (src) => {
   // sign-in countdown; the rest on the Page Health tab (owner: "so the info
   // doesn't clutter the main screen"). Read again when the page updates.
   let healthData = null;
-  async function showHealth(after) {
-    let h = null;
-    try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) h = await r.json(); } catch (e) { /* not the owner, or offline */ }
-    healthData = h;
-    document.getElementById('modeHealth').hidden = !h;
+  let healthUnavailable = false;
+  let healthRequest = 0;
+  let publishedAt = Date.parse(src.index?.generatedAt);
+  const retryHealth = () => showHealth(document.getElementById('updated'), true);
+  const retryButton = '<button type="button" class="linkbtn" data-health-retry>Retry</button>';
+  function wireHealthRetry(root) {
+    root.querySelectorAll('[data-health-retry]').forEach(button => { button.onclick = retryHealth; });
+  }
+  async function showHealth(after, refreshIndex = false) {
+    const request = ++healthRequest;
+    const hadReport = !!healthData;
+    const indexRequest = refreshIndex ? getJSON('data/index.json').catch(() => null) : null;
+    let rejected = false, report = null;
+    try {
+      const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() });
+      if (r.status === 401 || r.status === 403) rejected = true;
+      else if (r.status === 404) {
+        // This Worker conceals its owner endpoint with a specific JSON response.
+        rejected = (await r.json()).error === 'not found';
+      } else if (r.ok) {
+        const data = await r.json();
+        if (data && Object.hasOwn(data, 'laptop')) report = data;
+      }
+    } catch { /* Retain the verified report from this session during an outage. */ }
+    if (request !== healthRequest) return;
+    if (rejected && hadReport) {
+      healthData = null;
+      document.getElementById('view').replaceChildren();
+      document.getElementById('health')?.remove();
+      history.replaceState(null, '', location.pathname + location.search + '#current');
+      location.reload();
+      return;
+    }
+    if (report || rejected) healthData = report;
+    healthUnavailable = !report && !rejected;
+    const h = healthData;
+    document.getElementById('modeHealth').hidden = !(h || (OwnerKey.has() && healthUnavailable));
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
     document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
-    // A key saved on this phone that the site doesn't take: say so in Settings (owner, 2026-11-02).
     const note = document.getElementById('keynote');
-    note.hidden = !(OwnerKey.has() && !h);
-    if (!note.hidden) {
-      note.innerHTML = 'This phone has an owner key saved, but the site doesn\'t accept it (it must match OWNER_KEY in Cloudflare exactly). <button type="button" id="keyforget2">Forget it</button>';
+    note.hidden = !(OwnerKey.has() && !report);
+    if (!note.hidden && rejected) {
+      note.innerHTML = 'Owner access was denied. Check the saved owner key. <button type="button" id="keyforget2">Forget it</button>';
       document.getElementById('keyforget2').onclick = () => { OwnerKey.forget(); location.reload(); };
+    } else if (!note.hidden) {
+      note.innerHTML = 'Couldn’t refresh Page Health. ' + retryButton;
+      wireHealthRetry(note);
     }
+    const idx = await indexRequest;
+    if (request !== healthRequest) return;
+    if (idx?.generatedAt) publishedAt = Date.parse(idx.generatedAt);
     let box = document.getElementById('health');
     const S = h && h.laptop && h.laptop.signIn;
     if (!S) { if (box) box.remove(); } else {
@@ -2998,7 +3035,7 @@ source().then(async (src) => {
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
     if (mode === 'test') renderTest();
-    if (h && mode === 'health') renderHealth();
+    if (mode === 'health') renderHealth();
     if (h && mode === 'notes' && !notesData) renderNotes();
   }
   const noCountSaved = () => { try { return localStorage.getItem('boardNoCount') === '1'; } catch (e) { return false; } };
@@ -3265,30 +3302,46 @@ source().then(async (src) => {
   async function renderHealth() {
     const view = document.getElementById('view');
     const h = healthData;
-    if (!h) { view.innerHTML = '<p class="empty">Page Health is only for the owner.</p>'; return; }
-    if (!h.laptop) { view.innerHTML = '<p class="empty">Waiting for the laptop\'s first update with the new code (restart the checker after pulling).</p>'; return; }
+    const notice = healthUnavailable ? '<p class="warn" role="status">Couldn’t refresh Page Health. ' +
+      (h?.laptop?.at ? 'Showing the report from ' + esc(healthClock(h.laptop.at)) + '. ' : '') + retryButton + '</p>' : '';
+    if (!h || !h.laptop) {
+      view.innerHTML = notice || (h ? '<p class="empty">Waiting for the laptop’s first health report.</p>' : '<p class="empty">Page Health is only for the owner.</p>');
+      wireHealthRetry(view);
+      return;
+    }
     const L = h.laptop;
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const rows = [];
     const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
+    const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
+    row('Laptop last checked', stamp(L.lastCheck), !L.lastCheck || now - L.lastCheck > 20 * 60000);
+    row('Website last published', stamp(publishedAt));
+    row('Laptop code version', L.version || 'Unavailable');
     // The Worker's 10-minute timer (owner, 2026-11-03: the 30 min ntfy never came).
     const W = h.watch;
     row('Worker timer', W ? `ran ${ago(W.at)}; ntfy topic ${W.ntfy ? 'set' : 'NOT set (no 30 min message)'}; push key ${W.push ? 'set' : 'NOT set (no phone alerts)'}` : 'never ran: no Cron Trigger on the Worker?', !W || now - W.at > 25 * 60000 || !W.ntfy || !W.push);
     if (h.down && h.down.ownerPushed) row('Your phones told it was down', `${ago(h.down.ownerPushed)}${h.down.ownerPhones ? ` (${h.down.ownerPhones.sent} sent)` : ''}`, true);
     if (h.down) row('Down alert', `${h.down.alerted ? `sent ${ago(h.down.alerted)}` : `down since ${ago(h.down.since)}`}${h.down.pushed ? `; phones told ${ago(h.down.pushed)}${h.down.phones ? ` (${h.down.phones.sent} sent${h.down.phones.failed ? `, ${h.down.phones.failed} failed` : ''}${h.down.phones.error ? `: ${h.down.phones.error}` : ''})` : ''}` : ''}`, true);
-    if (L.lastCheck) row('Last check', ago(L.lastCheck), now - L.lastCheck > 20 * 60000);
-    row('Last failed check', L.lastProblem ? `${ago(L.lastProblem.at)}: ${L.lastProblem.text}` : 'none', L.lastProblem && now - L.lastProblem.at < 6 * 3600000);
+    const failed = L.lastProblem;
+    const recovered = failed && L.lastCheck > failed.at;
+    row('Last failed check', failed ? (recovered ? 'Recovered · ' : '') + 'Failed ' + stamp(failed.at) +
+      (recovered ? ' · Successful check ' + stamp(L.lastCheck) : '') + ' · ' + failed.text : 'None recorded', !!failed && !recovered);
     if (L.signIn) {
       const left = L.signIn.endsAt - now;
       row('Microsoft sign-in', `${ago(L.signIn.lastAt)}; runs out ~${healthClock(L.signIn.endsAt)} (${left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now'})`, left < 2 * 3600000);
     }
     const r = L.restarts || { count: 0 };
-    row('Watchdog restarts today', `${r.count}${r.last ? ` (last ${r.last.at.slice(-5)}: ${r.last.text.replace(/^Restarting: /, '').replace(/\.$/, '')})` : ''}`, r.count > 0);
+    // The watchdog log records local railway minutes without an offset.
+    const lastCheckLocal = L.lastCheck && new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).format(L.lastCheck);
+    const restartAt = r.last?.at?.replace(/ (\d):/, ' 0$1:');
+    const resumed = restartAt && lastCheckLocal > restartAt;
+    row('Watchdog restarts today', String(r.count) + (r.last ? ' · ' + (resumed ? 'Recovered · ' : '') +
+      'Last restart ' + restartAt + ' · ' + r.last.text + (resumed ? ' · Successful check ' + stamp(L.lastCheck) : '') : ''), r.count > 0 && !resumed);
     if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
-    if (L.phones != null) row('Phones getting alerts', String(L.phones));
     row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
-    if (L.version) row('Code version', L.version);
     row('Health sent', ago(L.at));
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
@@ -3296,12 +3349,19 @@ source().then(async (src) => {
     const known = S && typeof S.phones === 'number';
     const turns = Array.isArray(S?.turns) ? S.turns : [];
     const people = Array.isArray(S?.people) ? S.people : [];
-    const who = `<section class="sheet"><header><h2>Who gets alerts</h2><span class="meta">${known ? `${S.phones} phone${S.phones === 1 ? '' : 's'}` : 'Information unavailable'}</span></header><div class="hbody">
-      ${!known ? '<p class="warn">Subscriber information unavailable in the latest laptop report. This does not mean no phones are subscribed.</p>' : S.phones === 0 ? '<p>No phones subscribed, according to the latest laptop report.</p>' : ''}
+    const retained = healthUnavailable || S?.stale || !!S?.error;
+    const count = known ? (retained ? 'Last known: ' : '') + S.phones + (S.phones === 1 ? ' phone' : ' phones') : 'Count unavailable';
+    const lookup = S?.error ? 'latest lookup failed' : S?.stale ? 'last known lookup' : '';
+    const subscriberSummary = [count, lookup, S?.confirmedAt ? 'last confirmed ' + stamp(S.confirmedAt) : 'confirmation time unavailable'].filter(Boolean).join(' · ');
+    const expanded = view.querySelector('[data-health-followed]')?.open;
+    const who = `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">
+      <p>${esc(subscriberSummary)}</p>
+      ${known && S.phones > 0 && (turns.length || people.length) ? '<details data-health-followed' + (expanded ? ' open' : '') + '><summary>Followed turns and people</summary>' : ''}
       ${turns.length ? `<p><b>Turns:</b> ${turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
       ${people.length ? `<p><b>People:</b> ${people.map(p => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
+      ${known && S.phones > 0 && (turns.length || people.length) ? '</details>' : ''}
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
-      <p class="anote">${S?.confirmedAt ? `Last confirmed: ${esc(ago(S.confirmedAt))}. ` : 'No successful lookup recorded yet. '}${S?.checkedAt ? `Last checked: ${esc(ago(S.checkedAt))}. ` : ''}${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>
+      <p class="anote">${S?.checkedAt ? `Last checked: ${esc(ago(S.checkedAt))}. ` : ''}${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>
       <p class="muted">Report received ${esc(ago(L.at))}. Phones are anonymous: this shows what they follow, not whose they are. ×2 = two phones.</p></div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
@@ -3310,13 +3370,14 @@ source().then(async (src) => {
     // word, as the checker answered them (owner, 2026-11-03).
     const Q = L.questions || [];
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
-    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>
-      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>
+    view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
+      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${who}${sent}
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
+    wireHealthRetry(view);
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
@@ -4729,8 +4790,10 @@ source().then(async (src) => {
       checking = true;
       try {
         const idx = await getJSON('data/index.json');
+        if (idx.generatedAt) publishedAt = Date.parse(idx.generatedAt);
         if (!idx.latest) return;
         if (idx.latest !== src.index.latest && mode === 'current' && !busy()) { location.hash = '#current'; location.reload(); return; }
+        if (mode === 'health' && (newerBar || idx.latest !== src.index.latest || idx.checked === src.index.checked)) showHealth(document.getElementById('updated'));
         if (newerBar) return;
         if (idx.latest !== src.index.latest) {
           newerBar = `<div class="newer">A newer board was published (${esc(when(idx.latest).time)}).<button type="button" id="newerbtn">Update</button></div>`;
@@ -4746,7 +4809,7 @@ source().then(async (src) => {
         const s = list.find((x) => x.taken === idx.latest);
         if (s && idx.checked > s.taken) s.sameUntil = idx.checked;
         if (mode === 'current' || mode === 'snap') show(cur, true);
-      } catch (e) { /* offline: try again next time */ } finally { checking = false; }
+      } catch (e) { if (mode === 'health') showHealth(document.getElementById('updated')); } finally { checking = false; }
     };
     setInterval(checkNewer, 120000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkNewer(); });
