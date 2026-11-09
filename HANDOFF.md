@@ -4,6 +4,13 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews. Page Health went directly to the regular page at Justin’s request.
 
+**November 9, later session — site accounts (in progress).** Justin wants the site visible only to approved people. Cloudflare Access was tried on a new test Worker `board-test` (https://board-test.sarniaboard.workers.dev, same code and bucket as `board`) and dropped (free plan stops at 50 people). Built instead: accounts inside the Worker — read [ACCOUNTS.md](docs/board-checker/ACCOUNTS.md). Sign-up = name, email, CN employee number, hire date; Justin approves each by eye on `/account` (owner key); locked by the `LOCK=on` variable. State when this session ended:
+
+- Code and tests are committed and pushed (`cloudflare/board-worker.js`, `test/board/accounts.test.js`). **Not deployed anywhere**: Justin pastes the Worker himself. He was given the `board-test` steps (Access off, delete `OWNER_EMAIL`, add `OWNER_KEY` + mail secrets, `LOCK=on`, paste). Ask him how the test went before doing more.
+- Next, in order: (1) his test on `board-test`; (2) paste into `board` unlocked + a "sign up to keep access" notice in `board.html` (Test tab first; `/auth/me` already reports `SIGNUP_NOTICE`); (3) `board.html` sends people to `/account` on a 401; (4) find out what RailroadTracker reads from the site; (5) `LOCK=on` on `board`.
+- Found on the way, not fixed: `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token. With Access off and `OWNER_EMAIL` set, a stranger could send that header and pass the owner checks on `/health*`. The accounts list does not use it (owner key only). Have `OWNER_EMAIL` deleted wherever Access is off, or fix `accessEmail()`.
+- Also this session: the local checkout was stale (Nov 3 history) and was reset to the GitHub branch; Justin sent a test alert himself with `node scripts/alert-check.js <CODE>` (worked). 14 tests fail in the cloud session with or without this change (same 14 before it).
+
 Justin confirmed the Page Health live check on November 9. Resume the Analytics review with **Stale trains**, then consistent filters. The dated handoff below preserves earlier deployment observations and settled rules.
 
 Documentation reorganized: **2026-11-07**. Historical statements are evidence from their
@@ -294,7 +301,7 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
 - `site.js` builds page/data; `r2.js` uploads in background, one upload at a time;
   `public/board.html`, `board-analytics.js`, `board-ref.js`, `board-ask.js` render UI.
   Analytics: year/month archive, sleep, predictions, runarounds, errors, CSV, My week.
-- Site: https://board.sarniaboard.workers.dev — open link, Access off. Worker + R2
+- Site: https://board.sarniaboard.workers.dev — open link, Access off (accounts lock being built, 2026-11-09: ACCOUNTS.md). Worker + R2
   `board-site`; owner key enables Page Health, Notifications, Search Review. Search:
   Worker BM25/R2 + selectable Kimi/Claude; owner Opus, members deeper Sonnet.
   Questions/answers kept 60 days; owner review; model/spend details in snapshot.

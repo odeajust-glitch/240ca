@@ -56,6 +56,10 @@
 // /api/status, /api/stats?key=… (STATS_KEY, else OWNER_KEY). The PDFs are
 // R2 docs/<id>.pdf, served like any file. 10 questions per 5 minutes each.
 //
+// Accounts (owner, 2026-11-09): LOCK=on shows the site only to people the
+// owner approved; /account, /auth/*, /health/accounts. See "Accounts" below
+// and docs/board-checker/ACCOUNTS.md.
+//
 // Setup: docs/board-checker/CLOUDFLARE.md. Paste this whole file into the
 // Worker's editor in the Cloudflare dashboard.
 
@@ -1085,6 +1089,509 @@ async function alertsFor(request, env) {
   try { return json(JSON.parse(typeof o.text === 'function' ? await o.text() : o.body)); } catch { return json({ from: null, alerts: [] }); }
 }
 
+// --- Accounts (owner, 2026-11-09: "the information is only visible if you
+// have an account"; "I have to approve each person. Sign Up I need name,
+// email, pin and hire date"; the pin is their CN employee number; "I check
+// by eye") ---
+// Cloudflare Access was tried first (board-test) and dropped: its free plan
+// stops at 50 people. So the accounts live here.
+//   LOCK=on (variable): everything needs a signed-in, approved account,
+//     except /account, /auth/*, the app icons/manifest/service worker, the
+//     relay (its own BOARD_KEY) and requests carrying the owner key.
+//     Pages are sent to /account?next=…; anything else gets 401.
+//   SIGNUP_NOTICE=on (variable): /auth/me says so, for the page's "sign up
+//     to keep access" line before the lock goes on.
+//   AUTH_SECRET (secret, optional): signs the sign-in cookie; else OWNER_KEY.
+// A sign-up is kept in R2 accounts/users/<id>.json (never served) and the
+// device that sent it holds a cookie that starts working the moment the
+// owner approves: no email needed for the first device. Other devices sign
+// in with a 6-digit code emailed through the Gmail script (EMAIL.md). The
+// employee number and hire date are deleted when the owner approves or
+// declines; only the owner key (never the Access email header, which a
+// stranger could send once Access is off) opens GET/POST /health/accounts.
+const ACC = 'accounts/';
+const SESSION_COOKIE = 'bsess';
+const SESSION_DAYS = 90;
+const CODE_MINUTES = 10;
+const CODE_TRIES = 5;
+const CODE_DAY_MAX = 6;
+const ACC_MAIL_DAY_MAX = 60; // Gmail allows about 100 a day; 18.6(b) has its own 30
+const SIGNUP_IP_MAX = 5;
+const SIGNUP_DAY_MAX = 150;
+const USER_CACHE_MS = 60 * 1000;
+const switchOn = (v) => /^(on|1|true|yes)$/i.test(String(v || '').trim());
+const lockOn = (env) => switchOn(env.LOCK);
+const authSecret = (env) => { const s = String(env.AUTH_SECRET || env.OWNER_KEY || ''); return s.length >= 16 ? s : ''; };
+const shaHex = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', utf8(t)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+const uidOf = async (email) => (await shaHex(`account:${email}`)).slice(0, 32);
+const userKey = (id) => `${ACC}users/${id}.json`;
+const putJson = (env, key, value) => env.SITE.put(key, JSON.stringify(value), { httpMetadata: { contentType: 'application/json' } });
+const sameText = (a, b) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
+const bodyJson = async (request) => { const t = await request.text(); if (t.length > 4000) return null; try { const b = JSON.parse(t); return b && typeof b === 'object' ? b : null; } catch { return null; } };
+
+const userCache = new Map();
+async function userById(env, id, now = Date.now()) {
+  const hit = userCache.get(id);
+  if (hit && now - hit.at < USER_CACHE_MS) return hit.user;
+  const user = await readJson(env, userKey(id));
+  userCache.set(id, { at: now, user });
+  return user;
+}
+async function saveUser(env, id, user, now = Date.now()) {
+  if (user) await putJson(env, userKey(id), user); else await env.SITE.delete(userKey(id));
+  userCache.set(id, { at: now, user });
+}
+
+async function sessionCookie(env, payload) {
+  const body = b64(utf8(JSON.stringify(payload)));
+  const sig = b64(await hmac256(utf8(authSecret(env)), utf8(body)));
+  return `${SESSION_COOKIE}=${body}.${sig}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Lax`;
+}
+const CLEAR_COOKIE = `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+// Who the cookie says this is: { id, status, name } or null. The account is
+// looked up each time (kept a minute), so Remove works at once.
+async function sessionOf(request, env, now = Date.now()) {
+  const secret = authSecret(env);
+  if (!secret) return null;
+  const m = new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([A-Za-z0-9_-]+)\\.([A-Za-z0-9_-]+)`).exec(request.headers.get('cookie') || '');
+  if (!m) return null;
+  if (!sameText(b64(await hmac256(utf8(secret), utf8(m[1]))), m[2])) return null;
+  let p;
+  try { p = JSON.parse(new TextDecoder().decode(ub64(m[1]))); } catch { return null; }
+  if (!p || typeof p.u !== 'string' || !(now - p.t < SESSION_DAYS * 86400000)) return null;
+  if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner' };
+  const user = await userById(env, p.u, now);
+  if (!user || user.key !== p.k || user.status === 'removed') return null;
+  return { id: p.u, status: user.status, name: user.name };
+}
+
+// One email through the Gmail script, counted against the day's allowance:
+// 'sent', or why not ('off', 'cap', 'failed').
+async function accountMail(env, to, subject, body, now = Date.now()) {
+  if (!mailReady(env)) return 'off';
+  const key = `${ACC}mail/${torontoDay(now)}.json`;
+  const count = (await readJson(env, key)) || { n: 0 };
+  if (count.n >= ACC_MAIL_DAY_MAX) return 'cap';
+  try {
+    const res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: '', replyTo: '', subject, body }) });
+    const out = JSON.parse(await res.text());
+    if (!res.ok || !out || !out.ok) return 'failed';
+  } catch { return 'failed'; }
+  count.n += 1;
+  await putJson(env, key, count);
+  return 'sent';
+}
+
+async function authSignup(request, env, now = Date.now()) {
+  if (!authSecret(env)) return json({ error: 'Accounts aren\'t set up yet.' }, 503);
+  const b = await bodyJson(request);
+  if (!b) return json({ error: 'That didn\'t come through. Try again.' }, 400);
+  const name = String(b.name || '').replace(/\s+/g, ' ').trim();
+  const email = String(b.email || '').trim().toLowerCase();
+  const pin = String(b.pin || '').replace(/[\s-]+/g, '');
+  const hireDate = String(b.hireDate || '').trim();
+  if (name.length < 3 || name.length > 80) return json({ error: 'Enter your full name.' }, 400);
+  if (email.length > 120 || !EMAIL_RE.test(email)) return json({ error: 'That email doesn\'t look right.' }, 400);
+  if (!/^\d{4,9}$/.test(pin)) return json({ error: 'Enter your CN employee number (PIN): digits only.' }, 400);
+  if (!/^\d{4}-\d\d-\d\d$/.test(hireDate) || Number.isNaN(Date.parse(hireDate)) || hireDate < '1960-01-01' || hireDate > torontoDay(now)) return json({ error: 'Enter your hire date.' }, 400);
+  const dayKey = `${ACC}signups/${torontoDay(now)}.json`;
+  const today = (await readJson(env, dayKey)) || { n: 0, ips: {} };
+  today.ips = today.ips || {};
+  const ip = await sha(`signup:${request.headers.get('cf-connecting-ip') || 'unknown'}`);
+  if (today.n >= SIGNUP_DAY_MAX || (today.ips[ip] || 0) >= SIGNUP_IP_MAX) return json({ error: 'Too many sign-ups from here today. Try again tomorrow.' }, 429);
+  today.n += 1;
+  today.ips[ip] = (today.ips[ip] || 0) + 1;
+  await putJson(env, dayKey, today);
+  // The same answer whether or not the email is already known, so nobody
+  // can find out who has an account.
+  const answer = { ok: true, message: `Sent for approval. An email goes to ${email} once you're approved.` };
+  const id = await uidOf(email);
+  const old = await readJson(env, userKey(id));
+  if (old && old.status !== 'declined') return json(answer);
+  const key = b64(crypto.getRandomValues(new Uint8Array(12)));
+  await saveUser(env, id, { email, name, pin, hireDate, status: 'pending', key, requestedAt: now }, now);
+  if (env.NTFY_TOPIC) {
+    try { await fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body: 'Someone is waiting for approval. Open the account page to check them.', headers: { Title: 'New sign-up on the board site', Priority: 'default' } }); } catch { /* the list still shows it */ }
+  }
+  const res = json(answer);
+  res.headers.append('set-cookie', await sessionCookie(env, { u: id, k: key, t: now }));
+  return res;
+}
+
+async function authCode(request, env, now = Date.now()) {
+  const secret = authSecret(env);
+  if (!secret || !mailReady(env)) return json({ error: 'Email sign-in isn\'t set up yet.' }, 503);
+  const b = await bodyJson(request);
+  const email = String((b && b.email) || '').trim().toLowerCase();
+  if (email.length > 120 || !EMAIL_RE.test(email)) return json({ error: 'That email doesn\'t look right.' }, 400);
+  const id = await uidOf(email);
+  const user = await readJson(env, userKey(id));
+  if (!user || user.status !== 'approved') return json({ ok: true });
+  const codeKey = `${ACC}codes/${id}.json`;
+  const rec = (await readJson(env, codeKey)) || {};
+  const day = torontoDay(now);
+  const n = rec.day === day ? rec.n || 0 : 0;
+  if ((rec.sentAt && now - rec.sentAt < 60000) || n >= CODE_DAY_MAX) return json({ ok: true });
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  const sent = await accountMail(env, email, `${code} is your sign-in code for the Sarnia board`,
+    `Your sign-in code is ${code}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, ignore this email.`, now);
+  if (sent !== 'sent') return json({ error: 'The sign-in email couldn\'t be sent right now. Try again later.' }, 503);
+  await putJson(env, codeKey, { hash: await shaHex(`${id}:${code}:${secret}`), exp: now + CODE_MINUTES * 60000, tries: 0, sentAt: now, day, n: n + 1 });
+  return json({ ok: true });
+}
+
+async function authVerify(request, env, now = Date.now()) {
+  const secret = authSecret(env);
+  if (!secret) return json({ error: 'Accounts aren\'t set up yet.' }, 503);
+  const b = await bodyJson(request);
+  const email = String((b && b.email) || '').trim().toLowerCase();
+  const code = String((b && b.code) || '').replace(/\D/g, '');
+  const bad = () => json({ error: 'That code isn\'t right, or it ran out. Check it, or ask for a new one.' }, 400);
+  if (!EMAIL_RE.test(email) || code.length !== 6) return bad();
+  const id = await uidOf(email);
+  const codeKey = `${ACC}codes/${id}.json`;
+  const rec = await readJson(env, codeKey);
+  if (!rec || !rec.hash || now > rec.exp || rec.tries >= CODE_TRIES) return bad();
+  if (!sameText(await shaHex(`${id}:${code}:${secret}`), rec.hash)) {
+    await putJson(env, codeKey, { ...rec, tries: rec.tries + 1 });
+    return bad();
+  }
+  await putJson(env, codeKey, { sentAt: rec.sentAt, day: rec.day, n: rec.n });
+  const user = await readJson(env, userKey(id));
+  if (!user || user.status !== 'approved') return bad();
+  user.lastSignIn = now;
+  await saveUser(env, id, user, now);
+  const res = json({ ok: true });
+  res.headers.append('set-cookie', await sessionCookie(env, { u: id, k: user.key, t: now }));
+  return res;
+}
+
+// The owner's list, and Approve / Decline / Remove / Delete. Owner key only.
+async function accountsAdmin(request, env, url, now = Date.now()) {
+  if (!keyMatches(request, env)) return json({ error: 'not found' }, 404);
+  if (request.method === 'GET') {
+    const users = [];
+    let cursor;
+    do {
+      const page = await env.SITE.list({ prefix: `${ACC}users/`, cursor });
+      const got = await Promise.all(page.objects.map(async (o) => { const u = await readJson(env, o.key); return u && { id: o.key.slice(`${ACC}users/`.length, -5), ...u, key: undefined }; }));
+      users.push(...got.filter(Boolean));
+      cursor = page.truncated ? page.cursor : undefined;
+    } while (cursor);
+    users.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
+    const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
+    return json({ users, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
+  }
+  if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
+  const b = await bodyJson(request);
+  const id = String((b && b.id) || '');
+  const action = String((b && b.action) || '');
+  if (!/^[0-9a-f]{32}$/.test(id)) return json({ error: 'No such account.' }, 400);
+  const user = await readJson(env, userKey(id));
+  if (!user) return json({ error: 'That account is gone already.' }, 404);
+  const site = String(env.SITE_URL || url.origin).replace(/\/+$/, '');
+  let mail = null;
+  if (action === 'approve' && user.status === 'pending') {
+    const { pin, hireDate, ...rest } = user;
+    await saveUser(env, id, { ...rest, status: 'approved', approvedAt: now }, now);
+    mail = await accountMail(env, user.email, 'You\'re approved: Sarnia board',
+      `Hi ${user.name},\n\nYour sign-up for the Sarnia board site is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now);
+  } else if (action === 'decline' && user.status === 'pending') {
+    const { pin, hireDate, ...rest } = user;
+    await saveUser(env, id, { ...rest, status: 'declined', declinedAt: now }, now);
+    mail = await accountMail(env, user.email, 'Your sign-up couldn\'t be confirmed: Sarnia board',
+      `Hi ${user.name},\n\nYour sign-up for the Sarnia board site couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, employee number and hire date.`, now);
+  } else if (action === 'remove' && user.status === 'approved') {
+    await saveUser(env, id, { ...user, status: 'removed', removedAt: now, key: b64(crypto.getRandomValues(new Uint8Array(12))) }, now);
+  } else if (action === 'delete' && user.status !== 'approved') {
+    await saveUser(env, id, null, now);
+    await env.SITE.delete(`${ACC}codes/${id}.json`);
+  } else return json({ error: 'That can\'t be done to this account now. Reload the list.' }, 409);
+  return json({ ok: true, mail });
+}
+
+const OPEN_FILES = /^\/(manifest\.webmanifest|board\.webmanifest|board-icon-\d+\.png|board-sw\.js|favicon\.ico|robots\.txt)$/;
+// Every request comes through here first: an answer, or null to carry on.
+async function accounts(request, env, url) {
+  const p = url.pathname;
+  if (p === '/account') return new Response(ACCOUNT_PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'same-origin' } });
+  if (p === '/health/accounts') return accountsAdmin(request, env, url);
+  if (p === '/auth/me') {
+    const s = await sessionOf(request, env);
+    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null });
+  }
+  if (p.startsWith('/auth/')) {
+    if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+    if (p === '/auth/signup') return authSignup(request, env);
+    if (p === '/auth/code') return authCode(request, env);
+    if (p === '/auth/verify') return authVerify(request, env);
+    if (p === '/auth/logout') { const res = json({ ok: true }); res.headers.append('set-cookie', CLEAR_COOKIE); return res; }
+    if (p === '/auth/owner') {
+      // The owner's device: its key gets it in without an email.
+      if (!keyMatches(request, env)) return json({ error: 'not found' }, 404);
+      const res = json({ ok: true });
+      res.headers.append('set-cookie', await sessionCookie(env, { u: 'owner', t: Date.now() }));
+      return res;
+    }
+    return json({ error: 'not found' }, 404);
+  }
+  if (!lockOn(env)) return null;
+  if (p === '/whoami' || p === '/api/board' || p === '/api/board/latest' || OPEN_FILES.test(p)) return null;
+  if (keyMatches(request, env) || bearerMatches(request, env.BOARD_KEY)) return null;
+  const s = await sessionOf(request, env);
+  if (s && s.status === 'approved') return null;
+  if (request.method === 'GET' && /text\/html/.test(request.headers.get('accept') || '')) {
+    return new Response(null, { status: 302, headers: { location: `/account?next=${encodeURIComponent(p + url.search)}`, 'cache-control': 'no-store' } });
+  }
+  return json({ error: 'Sign in to see this.', signIn: '/account' }, 401);
+}
+
+// The sign-in / sign-up page, and the owner's approval list on a device
+// that holds the owner key. String.raw: its script has no template text.
+const ACCOUNT_PAGE = String.raw`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sign in · Sarnia board</title>
+<link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
+<style>
+:root { --bg: #eceeea; --sheet: #ffffff; --ink: #1d2a2e; --muted: #56676c; --line: #cdd5d2; --accent: #0f5c63; --accent-ink: #ffffff; --tint: #dcebec; --bad: #9c2b2b; --badbg: #f7e3e1; }
+:root[data-theme="dark"] { --bg: #12191b; --sheet: #1a2326; --ink: #e2e9e8; --muted: #9eaeb1; --line: #2d3b3f; --accent: #5fb3ba; --accent-ink: #0c1416; --tint: #1f3539; --bad: #ffaaa3; --badbg: #3a2020; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 30rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+h1 { font-size: 1.35rem; margin: .5rem 0 1rem; }
+h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+h3 { font-size: .95rem; margin: 1.25rem 0 .4rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+section { background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+label { display: block; font-weight: 600; margin: .8rem 0 .25rem; }
+.hint { font-weight: 400; color: var(--muted); font-size: .9rem; }
+input { width: 100%; padding: .65rem .7rem; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button, a.btn { display: inline-block; font: inherit; font-weight: 600; padding: .65rem 1rem; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; text-decoration: none; margin: .9rem .4rem 0 0; }
+button.plain { background: transparent; color: var(--accent); }
+button.small { padding: .4rem .7rem; margin-top: .5rem; font-size: .92rem; }
+button:disabled { opacity: .55; cursor: default; }
+.tabs { display: flex; gap: .5rem; margin-bottom: .25rem; }
+.tabs button { flex: 1; margin: 0; background: transparent; color: var(--accent); }
+.tabs button[aria-pressed="true"] { background: var(--tint); color: var(--ink); }
+#msg { padding: .7rem .9rem; border-radius: 8px; background: var(--tint); margin-bottom: 1rem; }
+#msg.bad { background: var(--badbg); color: var(--bad); }
+.person { border-top: 1px solid var(--line); padding: .7rem 0 .8rem; overflow-wrap: anywhere; }
+.person b { font-size: 1.05rem; }
+.person dl { margin: .3rem 0 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .7rem; }
+.person dt { color: var(--muted); }
+.person dd { margin: 0; font-variant-numeric: tabular-nums; }
+.none { color: var(--muted); margin: .3rem 0; }
+p { margin: .4rem 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+<h1>Sarnia board</h1>
+<div id="msg" role="status" hidden></div>
+
+<section id="in" hidden>
+  <h2>You're signed in</h2>
+  <p id="who"></p>
+  <a class="btn" id="go" href="/">Open the board</a>
+  <button type="button" class="plain" id="out">Sign out</button>
+</section>
+
+<section id="wait" hidden>
+  <h2>Waiting for approval</h2>
+  <p>Each sign-up is checked by hand, so this can take a day or so. Once you're approved, this phone or computer opens the board by itself, and you get an email.</p>
+  <button type="button" id="again">Check again</button>
+  <button type="button" class="plain" id="out2">Start over</button>
+</section>
+
+<section id="forms" hidden>
+  <div class="tabs">
+    <button type="button" id="tabIn" aria-pressed="true">Sign in</button>
+    <button type="button" id="tabUp" aria-pressed="false">Sign up</button>
+  </div>
+  <form id="fIn">
+    <label for="inEmail">Email</label>
+    <input id="inEmail" type="email" autocomplete="email" required>
+    <button type="submit">Email me a sign-in code</button>
+  </form>
+  <form id="fCode" hidden>
+    <p>If that email has an approved account, a 6-digit code is on its way. Give it a minute, and look in junk mail too.</p>
+    <label for="inCode">Code</label>
+    <input id="inCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+    <button type="submit">Sign in</button>
+    <button type="button" class="plain" id="back">Use a different email</button>
+  </form>
+  <form id="fUp" hidden>
+    <p>For CN Sarnia crews. Each sign-up is approved by hand.</p>
+    <label for="upName">Full name</label>
+    <input id="upName" autocomplete="name" maxlength="80" required>
+    <label for="upEmail">Email</label>
+    <input id="upEmail" type="email" autocomplete="email" required>
+    <label for="upPin">CN employee number (PIN)</label>
+    <input id="upPin" inputmode="numeric" autocomplete="off" maxlength="12" required>
+    <label for="upHire">Hire date</label>
+    <input id="upHire" type="date" required>
+    <p class="hint">Your employee number and hire date are only used to confirm you work at CN. They are deleted as soon as your sign-up is approved or declined, and never shown on the site.</p>
+    <button type="submit">Send for approval</button>
+  </form>
+</section>
+
+<section id="owner" hidden>
+  <h2>Sign-ups</h2>
+  <p class="hint" id="ownerNote">Only this device sees this list.</p>
+  <h3>Waiting for you</h3>
+  <div id="pending"></div>
+  <h3>Approved</h3>
+  <div id="approved"></div>
+  <h3>Declined or removed</h3>
+  <div id="other"></div>
+</section>
+</main>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('boardTheme') || '';
+    var dark = t ? (t === 'dark' || t === 'tablet') : matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.dataset.theme = 'dark';
+  } catch (e) { /* light */ }
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'boardOwnerKey';
+  var m = /^#ownerkey=([^&]+)$/.exec(location.hash);
+  if (m) {
+    try { localStorage.setItem(KEY, decodeURIComponent(m[1])); } catch (e) { /* not kept */ }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+  }
+  function ownerKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  var next = new URLSearchParams(location.search).get('next') || '';
+  if (!/^\/(?!\/)/.test(next) || next.indexOf('/account') === 0) next = '';
+  if (next) $('go').setAttribute('href', next);
+
+  function api(path, body, headers) {
+    var h = headers || {};
+    var o = { headers: h, credentials: 'same-origin', cache: 'no-store' };
+    if (body !== undefined) { o.method = 'POST'; h['content-type'] = 'application/json'; o.body = JSON.stringify(body); }
+    return fetch(path, o).then(function (r) {
+      return r.json().then(function (j) { j.http = r.status; return j; }, function () { return { http: r.status, error: 'The site gave an answer that could not be read (' + r.status + '). Try again.' }; });
+    }, function () { return { http: 0, error: 'Could not reach the site. Check your connection and try again.' }; });
+  }
+  function say(text, bad) { var el = $('msg'); el.textContent = text || ''; el.hidden = !text; el.className = bad ? 'bad' : ''; }
+  function show(id) { ['in', 'wait', 'forms'].forEach(function (s) { $(s).hidden = s !== id; }); }
+  function busy(form, on) { Array.prototype.forEach.call(form.querySelectorAll('button'), function (b) { b.disabled = on; }); }
+  function tab(up) {
+    $('tabIn').setAttribute('aria-pressed', String(!up)); $('tabUp').setAttribute('aria-pressed', String(up));
+    $('fUp').hidden = !up; $('fIn').hidden = up; $('fCode').hidden = true;
+  }
+  $('tabIn').onclick = function () { say(''); tab(false); };
+  $('tabUp').onclick = function () { say(''); tab(true); };
+
+  var triedOwner = false;
+  function refresh(follow) {
+    return api('/auth/me').then(function (me) {
+      if (me.error) { say(me.error, true); show('forms'); return; }
+      if (me.signedIn) {
+        if (follow && next) { location.replace(next); return; }
+        $('who').textContent = me.name === 'Owner' ? 'This is your owner device.' : 'Signed in as ' + me.name + '.';
+        show('in');
+      } else if (me.status === 'pending') {
+        show('wait');
+      } else {
+        show('forms');
+        if (me.status === 'declined') { say('Your sign-up could not be confirmed: the details did not match. You can sign up again.', true); tab(true); }
+        else if (!me.ready) say('Accounts are not set up on this site yet.', true);
+        else if (location.hash === '#signup') tab(true);
+      }
+      if (ownerKey() && !me.signedIn && !triedOwner) {
+        triedOwner = true;
+        return api('/auth/owner', {}, { 'x-owner-key': ownerKey() }).then(function (r) { if (r.ok) return refresh(false); });
+      }
+    });
+  }
+
+  $('fIn').onsubmit = function (e) {
+    e.preventDefault(); say(''); busy(this, true); var f = this;
+    api('/auth/code', { email: $('inEmail').value }).then(function (r) {
+      busy(f, false);
+      if (r.error) { say(r.error, true); return; }
+      $('fIn').hidden = true; $('fCode').hidden = false; $('inCode').value = ''; $('inCode').focus();
+    });
+  };
+  $('back').onclick = function () { say(''); tab(false); };
+  $('fCode').onsubmit = function (e) {
+    e.preventDefault(); say(''); busy(this, true); var f = this;
+    api('/auth/verify', { email: $('inEmail').value, code: $('inCode').value }).then(function (r) {
+      busy(f, false);
+      if (r.error) { say(r.error, true); return; }
+      if (next) location.replace(next); else location.replace('/');
+    });
+  };
+  $('fUp').onsubmit = function (e) {
+    e.preventDefault(); say(''); busy(this, true); var f = this;
+    api('/auth/signup', { name: $('upName').value, email: $('upEmail').value, pin: $('upPin').value, hireDate: $('upHire').value }).then(function (r) {
+      busy(f, false);
+      if (r.error) { say(r.error, true); return; }
+      f.reset();
+      refresh(false).then(function () { say(r.message); });
+    });
+  };
+  function signOut() { api('/auth/logout', {}).then(function () { say(''); triedOwner = true; refresh(false); }); }
+  $('out').onclick = signOut;
+  $('out2').onclick = signOut;
+  $('again').onclick = function () { say(''); refresh(true).then(function () { if (!$('wait').hidden) say('Not approved yet. Nothing more to do: it opens by itself once you are.'); }); };
+
+  // The owner's list.
+  function el(tag, text, cls) { var n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; }
+  function day(ms) { return ms ? new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'never'; }
+  function act(id, action, ask) {
+    if (ask && !confirm(ask)) return;
+    say('');
+    api('/health/accounts', { id: id, action: action }, { 'x-owner-key': ownerKey() }).then(function (r) {
+      if (r.error) say(r.error, true);
+      else if (r.mail === 'sent') say('Done. They have been emailed.');
+      else if (r.mail) say('Done, but the email did not go (' + (r.mail === 'cap' ? 'today\'s email allowance is used up' : r.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed') + '). Let them know yourself.', true);
+      else say('Done.');
+      loadOwner();
+    });
+  }
+  function person(u) {
+    var box = el('div', undefined, 'person');
+    box.appendChild(el('b', u.name));
+    var dl = el('dl');
+    function row(k, v) { dl.appendChild(el('dt', k)); dl.appendChild(el('dd', v)); }
+    row('Email', u.email);
+    if (u.status === 'pending') { row('Employee no.', u.pin || ''); row('Hire date', u.hireDate || ''); row('Asked', day(u.requestedAt)); }
+    else if (u.status === 'approved') { row('Approved', day(u.approvedAt)); row('Last code sign-in', day(u.lastSignIn)); }
+    else row('Status', u.status === 'declined' ? 'Declined ' + day(u.declinedAt) : 'Removed ' + day(u.removedAt));
+    box.appendChild(dl);
+    function btn(label, action, ask, plain) { var b = el('button', label, 'small' + (plain ? ' plain' : '')); b.type = 'button'; b.onclick = function () { act(u.id, action, ask); }; box.appendChild(b); }
+    if (u.status === 'pending') { btn('Approve', 'approve'); btn('Decline', 'decline', 'Decline ' + u.name + '? They are emailed that the details did not match.', true); }
+    else if (u.status === 'approved') btn('Remove access', 'remove', 'Remove ' + u.name + '? They are signed out everywhere and cannot sign up again unless you delete them from the list below.', true);
+    else btn('Delete from list', 'delete', 'Delete ' + u.name + ' from the list? They could then sign up again.', true);
+    return box;
+  }
+  function fill(id, list, none) { var box = $(id); box.textContent = ''; if (!list.length) box.appendChild(el('p', none, 'none')); list.forEach(function (u) { box.appendChild(person(u)); }); }
+  function loadOwner() {
+    if (!ownerKey()) return;
+    api('/health/accounts', undefined, { 'x-owner-key': ownerKey() }).then(function (r) {
+      $('owner').hidden = false;
+      if (r.error) { $('ownerNote').textContent = r.http === 404 ? 'The owner key kept on this device was not accepted by the site.' : r.error; return; }
+      $('ownerNote').textContent = 'Only this device sees this list. The site is ' + (r.lock ? 'LOCKED: only approved people get in.' : 'open to everyone (not locked yet).') + ' Emails sent today: ' + r.mailToday + ' of ' + r.mailMax + (r.mailReady ? '.' : '. The email sender is NOT set up.');
+      fill('pending', r.users.filter(function (u) { return u.status === 'pending'; }), 'Nobody is waiting.');
+      fill('approved', r.users.filter(function (u) { return u.status === 'approved'; }), 'Nobody yet.');
+      fill('other', r.users.filter(function (u) { return u.status !== 'pending' && u.status !== 'approved'; }), 'Nobody.');
+    });
+  }
+
+  refresh(true).then(loadOwner);
+})();
+</script>
+</body>
+</html>`;
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(Promise.all([watchChecker(env), pruneAskLog(env).catch(() => {})]));
@@ -1092,6 +1599,8 @@ export default {
 
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const early = await accounts(request, env, url);
+    if (early) return early;
     if (url.pathname === '/api/ask') {
       if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
       return ask(request, env, ctx);
@@ -1133,7 +1642,7 @@ export default {
       return new Response('Bad address', { status: 400 });
     }
     if (key === '' || key.endsWith('/')) key += 'index.html';
-    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/') || key.startsWith('search/') || key.startsWith('ask/') || key.startsWith('settings/')) return new Response('Not found', { status: 404 });
+    if (key.split('/').includes('..') || key.startsWith('subs/') || key.startsWith('status/') || key.startsWith('stats/') || key.startsWith('backups/') || key.startsWith('relay/') || key.startsWith('search/') || key.startsWith('ask/') || key.startsWith('settings/') || key.startsWith('accounts/')) return new Response('Not found', { status: 404 });
 
     const head = await env.SITE.head(key);
     if (!head) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
