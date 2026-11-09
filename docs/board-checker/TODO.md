@@ -148,6 +148,16 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
     historical accuracy. Raw history retained; Actual call time remains calculated
     from on-duty minus two hours, not a logged phone-call timestamp.
 
+24. **Review notification logic when an ordered train passes a planned train (2026-11-08, open).**
+    Replay A42431 07 and Z14891 06 from November 7, 2026. A424 showed ORD at
+    07:50 for 11:00 while Z148 still showed PLN for 08:48 at the 08:15 check.
+    Z148's ORD transition was never captured. Justin confirmed the final pool
+    sequence was correct: Z148 worked A pool and A424 worked B pool.
+    Trace which turns and crafts would receive lineup, reassignment or correction
+    alerts at each check. Compare with retained notification evidence where
+    available and distinguish predicted alerts from actual delivery. Review only,
+    using replay without sending notifications. Stage any proposed changes in Test.
+
 Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
