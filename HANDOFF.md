@@ -66,7 +66,12 @@ Reviewed application head: `1a6c728090c39c41d48d59494ecd2b407f1ec1b1`.
 - Repository: `odeajust-glitch/240ca`; work on **`claude/vigilant-planck-zawrj4`**.
   Reviewed source head: `34a58378ba14ea12be2a306ff50071c046664938` (2026-11-07).
   No PR or merge to main unless Justin asks. Pull before changes; push small commits.
-  One session at a time changes the checker/site; earlier parallel sessions were owner-authorized exceptions.
+  Two sessions may work at once (owner, 2026-11-09: "Change the rule. You working on the
+  login is fine. I have another chat doing changes"): one on the **accounts/login** work
+  (`cloudflare/board-worker.js` Accounts section, `test/board/accounts.test.js`,
+  `docs/board-checker/ACCOUNTS.md`), one on the board page and checker. Each stays in its
+  own files, pulls before pushing (rebase, never force-push), and when editing this
+  handoff or TODO keeps the other session's sections. No third session without Justin's say.
 - Justin is a CN conductor, SR03 (Chain Gang), union rep in Sarnia; Windows,
   non-technical, often on Android. Give exact Command Prompt steps and recommended options.
 - Deterministic CATS board reader and prediction engine; Cloudflare Worker + R2 website.
