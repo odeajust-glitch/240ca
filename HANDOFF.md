@@ -207,6 +207,20 @@ same-train calls land within 30 min of the plan. ❓ The Current page's Toronto 
 order − 2 h (owner's settled rule), 15 min later than the real call: ask before touching
 (same question as Garnet). Rebuilt from the day files: no FORMAT bump, no Worker change.
 
+**Toronto notice starts at off duty, 2026-11-10 (owner: "the time the train shows in the
+line up isn't necessarily how much notice the crew has. The first lined should start when
+the crew goes off duty at the bunkhouse"):** in `sleepCheck`, a crew still on its way to
+Toronto (line-up row with `crewExpected` and no `crewPos`) is on no wait yet; once in the
+bunkhouse the wait's `firstSeen` is the later of their off duty (`s.bunkhouse[].offDuty`)
+and the train first showing, marked `firstFrom: 'offDuty'`. The graph and table then say
+"Off duty" / "Off duty at Toronto" where they said "First lined". Replayed on the live
+days: all 349 Toronto calls start at off duty, on average 7 h 27 m later than before. Side
+effects, both checked: 25 calls with no bunkhouse stay (turned straight back, e.g.
+RQ13931 07) have no record now; 45 more "removed" records, Sarnia waits whose job a spare
+worked that used to be carried into the Toronto prediction (e.g. SD03 DHT039C 09, EN02
+went). Not done: a spare working a pool turn to Toronto gets no record for the train home
+(the line-up lists the turn, the Call Board the spare). Suite 282 of 296, same 14 failing.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

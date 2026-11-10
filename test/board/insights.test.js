@@ -410,3 +410,21 @@ test('insights: a Toronto line-up train is tracked for its crew', () => {
   // Planned call: order 1700 − 15 min − 2 h = 1445; called 1445 (on duty 1645 − 2 h).
   assert.deepStrictEqual(list, [['SD03', 'Z14931 29', '2026-10-29 1445', '2026-10-29 1445', 0], ['SR08', 'Z14931 29', '2026-10-29 1445', '2026-10-29 1445', 0]]);
 });
+
+// Owner, 2026-11-10: out of Toronto "the first lined should start when the
+// crew goes off duty at the bunkhouse".
+test('insights: Toronto notice starts at off duty in the bunkhouse, not when the train showed', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const row = (extra) => ({ train: 'M39731 08', status: 'PLN', order: '8th 0800', call: '8th 0600', crew: 'S305 + SB05', pred: { co: 'SB05', en: 'S305' }, ...extra });
+  const st = Insights.collect([
+    // Still on their way to Toronto: lined up, but no wait yet.
+    snap('2026-11-07 1200', { macLineup: [row({ crewPos: '', crewExpected: { offDuty: '7th 1849' } })] }),
+    snap('2026-11-07 1700', { macLineup: [row({ crewPos: '', crewExpected: { offDuty: '7th 1849' } })] }),
+    // In the bunkhouse, off duty 1849; first seen there at the 1900 check.
+    snap('2026-11-07 1900', { macLineup: [row({ crewPos: '003' })], bunkhouse: [{ pos: '003', en: 'S305', co: 'SB05', offDuty: '7th 1849' }] }),
+    snap('2026-11-08 0400', { onDuty: [{ train: 'M39731 08', station: 'TORONTO', onDuty: '8th 0745', crew: 'EN S305 · CO SB05' }] }),
+  ]);
+  const [z] = Insights.finish(st).sleep.filter((x) => x.turn === 'SB05');
+  assert.deepStrictEqual([z.firstSeen, z.firstFrom, z.call, z.off], ['2026-11-07 1849', 'offDuty', '2026-11-08 0545', 0]);
+  assert.strictEqual(z.firstWhy, 'off duty at the Toronto bunkhouse; M39731 08 was already on the line-up');
+});
