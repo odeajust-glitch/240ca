@@ -198,10 +198,10 @@ test('a declined sign-up loses its details and can try again; the owner key sign
   assert.equal(res.status, 200);
   assert.equal((await call('/', { cookie: cookieOf(res), html: true })).status, 200);
 
-  // Five sign-ups a day from one address.
-  for (let i = 0; i < 3; i++) await call('/auth/signup', { body: person(`d${i}`) });
-  assert.equal((await call('/auth/signup', { body: person('d9') })).status, 429);
-  assert.equal((await call('/auth/signup', { body: person('d9'), ip: '2.2.2.2' })).status, 200);
+  // Forty sign-ups a day from one address.
+  for (let i = 0; i < 38; i++) await call('/auth/signup', { body: person(`d${i}`) });
+  assert.equal((await call('/auth/signup', { body: person('dz') })).status, 429);
+  assert.equal((await call('/auth/signup', { body: person('dz'), ip: '2.2.2.2' })).status, 200);
 });
 
 test('an Admin approves and removes members; only the owner key makes or removes an Admin', async () => {
@@ -320,4 +320,27 @@ test('a sign-in lasts until the device goes 30 days without a visit', async () =
     assert.equal((await call('/data/index.json', { cookie: renewed })).status, 401);
     assert.equal((await (await call('/auth/me', { cookie: renewed })).json()).signedIn, false);
   } finally { Date.now = realNow; }
+});
+
+// Owner, 2026-11-10: "show who's following what turn on the members page".
+test('a signed-in member\'s follows are kept with their account and listed for the owner', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('h1');
+  await call('/auth/signup', { body, ip: '6.6.6.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  let list = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+  const id = list.users.find((u) => u.email === body.email).id;
+  await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+  const sub = (n) => ({ endpoint: `https://fcm.googleapis.com/fcm/send/${n}`, keys: { p256dh: 'BPk', auth: 'au' } });
+  let res = await call('/push/subscribe', { cookie, body: { subscription: sub('m'), turns: ['SR03', 'SD05', '@0123456789abcdef'] } });
+  assert.equal(res.status, 200);
+  // The owner's own phone and a phone from before accounts carry no member.
+  await call('/push/subscribe', { key: OWNER_KEY, body: { subscription: sub('o'), turns: ['SR01'] } });
+  const mine = [...store.keys()].find((k) => k.startsWith('subs/') && JSON.parse(store.get(k)).account === id);
+  assert.ok(mine);
+  // The phone's choices are kept as before, so the laptop reads them unchanged.
+  assert.deepEqual(JSON.parse(store.get(mine)).turns, ['SR03', 'SD05', '@0123456789abcdef']);
+  list = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+  assert.deepEqual(list.users.find((u) => u.id === id).follows, { phones: 1, turns: ['SD05', 'SR03'], people: 1 });
+  assert.equal(list.unknownPhones, 1);
 });

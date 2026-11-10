@@ -124,7 +124,14 @@ async function subscribe(request, env) {
       before: [30, 45, 60, 90].includes(Number(p.before)) ? Number(p.before) : 0,
     };
   }
-  await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, prefs, updated: new Date().toISOString() }),
+  // Whose phone (owner, 2026-11-10: "show who's following what turn on the
+  // members page"): the signed-in member's account id, kept with the
+  // follows. A save while signed out keeps the id already there.
+  let account;
+  const who = await sessionOf(request, env);
+  if (who && who.status === 'approved' && who.id !== 'owner') account = who.id;
+  else { const old = await readJson(env, key); if (old && typeof old.account === 'string') account = old.account; }
+  await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, prefs, account, updated: new Date().toISOString() }),
     { httpMetadata: { contentType: 'application/json' } });
   return json({ ok: true, turns, prefs });
 }
@@ -1122,7 +1129,9 @@ const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
 const CODE_DAY_MAX = 20;
 const ACC_MAIL_DAY_MAX = 70; // Gmail allows about 100 a day; 18.6(b) has its own 30
-const SIGNUP_IP_MAX = 5;
+// Per internet address. 40, not 5: a crew room's Wi-Fi or a phone company
+// puts many people behind one address (found planning the lock, 2026-11-10).
+const SIGNUP_IP_MAX = 40;
 const SIGNUP_DAY_MAX = 150;
 const USER_CACHE_MS = 60 * 1000;
 const switchOn = (v) => /^(on|1|true|yes)$/i.test(String(v || '').trim());
@@ -1335,8 +1344,25 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     users.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
+    // What each member's phones follow (subs/ stamped by subscribe()).
+    const follows = new Map();
+    let unknownPhones = 0;
+    let subCursor;
+    do {
+      const page = await env.SITE.list({ prefix: 'subs/', cursor: subCursor });
+      const subs = await Promise.all((page.objects || []).map((o) => readJson(env, o.key)));
+      for (const sub of subs.filter(Boolean)) {
+        if (!sub.account) { unknownPhones += 1; continue; }
+        const f = follows.get(sub.account) || { phones: 0, turns: new Set(), people: new Set() };
+        f.phones += 1;
+        for (const t of sub.turns || []) (String(t).startsWith('@') ? f.people : f.turns).add(String(t));
+        follows.set(sub.account, f);
+      }
+      subCursor = page.truncated ? page.cursor : undefined;
+    } while (subCursor);
+    for (const u of users) { const f = follows.get(u.id); if (f) u.follows = { phones: f.phones, turns: [...f.turns].sort(), people: f.people.size }; }
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
-    return json({ you, users, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
+    return json({ you, users, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
   }
   if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
   const b = await bodyJson(request);
@@ -1370,7 +1396,7 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   return json({ ok: true, mail });
 }
 
-const OPEN_FILES = /^\/(manifest\.webmanifest|board\.webmanifest|board-icon-\d+\.png|board-sw\.js|favicon\.ico|robots\.txt)$/;
+const OPEN_FILES = /^\/(manifest\.webmanifest|board\.webmanifest|board-icon-\d+\.png|board-sw\.js|sw\.js|favicon\.ico|robots\.txt)$/;
 // Every request comes through here first: an answer, or null to carry on.
 async function accounts(request, env, url) {
   const p = url.pathname;

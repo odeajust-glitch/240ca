@@ -62,7 +62,14 @@ stops at 50 people. The accounts are built into the Worker
 - The sign-up banner has a second switch in `board.html` (`SIGNUP_BANNER`,
   on since 2026-11-10); the Worker's `SIGNUP_NOTICE=on` is the one the
   owner uses.
-- **Limits:** 5 sign-ups a day per internet address, 150 a day in all.
+- **Limits:** 40 sign-ups a day per internet address, 150 a day in all.
+- **Follows on the Members tab** (owner, 2026-11-10): a phone that saves its
+  alerts while signed in is stamped with the member's account id
+  (`account` in its `subs/` file), and each approved member's row shows the
+  turns followed. Phones set up before accounts show as a count of phones
+  with no known member until they change their alerts while signed in.
+  Followed name codes are shown as a count only (the Worker can't turn the
+  hash back into a code).
 - Account files are in R2 under `accounts/` and are never served.
 - Only the owner key opens the list (not the Cloudflare Access email).
 

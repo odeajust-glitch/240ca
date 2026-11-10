@@ -4147,7 +4147,12 @@ source().then(async (src) => {
     // admin list too").
     const admins = approved.filter((u) => u.role === 'admin');
     const plain = approved.filter((u) => u.role !== 'admin');
-    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)]],
+    // What their phones follow (owner, 2026-11-10: "show who's following
+    // what turn on the members page"): known for a phone that saved its
+    // alerts while signed in.
+    const followsOf = (u) => (!u.follows ? 'No alerts saved while signed in'
+      : [u.follows.turns.join(', '), u.follows.people ? `${u.follows.people} name code${u.follows.people === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ') + ` (${u.follows.phones} phone${u.follows.phones === 1 ? '' : 's'})`);
+    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Follows', followsOf(u)]],
       (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
       + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''));
     view.innerHTML = `<div class="healthpage members">${head}
@@ -4160,6 +4165,7 @@ source().then(async (src) => {
       <h2>Members (${plain.length})</h2>
       ${plain.map(approvedRow).join('') || '<p class="muted">Nobody yet.</p>'}
       ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}
+      ${d.unknownPhones ? `<p class="muted" style="margin-top:18px">${esc(d.unknownPhones)} phone${d.unknownPhones === 1 ? ' gets' : 's get'} alerts without a known member: set up before accounts, or not signed in. Each is matched to its member the next time it changes its alerts while signed in.</p>` : ''}
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
       const name = box.dataset.name;
@@ -4265,7 +4271,7 @@ source().then(async (src) => {
         ${list || '<p class="hbody muted">No alerts for that.</p>'}
       </section>
       <section class="sheet"><header><h2>How each alert works</h2></header><div class="hbody"><dl class="rules">${Object.keys(NOTE_RULES).map((k) => `<dt>${esc(NOTE_KINDS[k] || k)}</dt><dd>${esc(NOTE_RULES[k])}</dd>`).join('')}</dl>
-        <p class="muted">Phones are anonymous: an alert counts the phones it reached, not whose they are. The checker sends to a turn's phones and to phones following a person by name code (on the turn they're on now).</p></div></section></div>`;
+        <p class="muted">An alert counts the phones it reached, not whose they are. The checker sends to a turn's phones and to phones following a person by name code (on the turn they're on now).</p></div></section></div>`;
     const inp = document.getElementById('nturn');
     inp.oninput = () => { notesState.turn = inp.value; const pos = inp.selectionStart; paintNotes(); const i2 = document.getElementById('nturn'); i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (e) { /* fine */ } };
     const keep = (id, set) => { const el = document.getElementById(id); el.oninput = () => { set(el.value); const pos = el.selectionStart; paintNotes(); const e2 = document.getElementById(id); e2.focus(); try { e2.setSelectionRange(pos, pos); } catch (e) { /* fine */ } }; };
@@ -4503,7 +4509,7 @@ source().then(async (src) => {
       ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
       ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
-      <p class="muted">Phones are anonymous: this shows what they follow, not whose they are. A phone can follow several.</p></div></section>`;
+      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p></div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
     const sent = `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
