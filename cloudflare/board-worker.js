@@ -1112,7 +1112,12 @@ async function alertsFor(request, env) {
 // stranger could send once Access is off) opens GET/POST /health/accounts.
 const ACC = 'accounts/';
 const SESSION_COOKIE = 'bsess';
-const SESSION_DAYS = 90;
+// Signed in until the device goes 30 days without opening the site (owner,
+// 2026-11-10: "every 30 days if they do not use it"): each visit a day or
+// more after the last renews the cookie (/auth/me, which the page asks on
+// every load).
+const SESSION_DAYS = 30;
+const SESSION_RENEW_MS = 86400000;
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
 const CODE_DAY_MAX = 20;
@@ -1166,10 +1171,10 @@ async function sessionOf(request, env, now = Date.now(), fresh = false) {
   let p;
   try { p = JSON.parse(new TextDecoder().decode(ub64(m[1]))); } catch { return null; }
   if (!p || typeof p.u !== 'string' || !(now - p.t < SESSION_DAYS * 86400000)) return null;
-  if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member' };
+  if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member', t: p.t };
   const user = await userById(env, p.u, now, fresh);
   if (!user || user.key !== p.k || user.status === 'removed') return null;
-  return { id: p.u, status: user.status, name: user.name, email: user.email, role: user.role === 'admin' ? 'admin' : 'member' };
+  return { id: p.u, key: p.k, t: p.t, status: user.status, name: user.name, email: user.email, role: user.role === 'admin' ? 'admin' : 'member' };
 }
 
 // One email through the Gmail script, counted against the day's allowance:
@@ -1362,7 +1367,9 @@ async function accounts(request, env, url) {
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);
-    return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
+    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
+    if (s && s.status === 'approved' && Date.now() - s.t > SESSION_RENEW_MS) res.headers.append('set-cookie', await sessionCookie(env, s.id === 'owner' ? { u: 'owner', t: Date.now() } : { u: s.id, k: s.key, t: Date.now() }));
+    return res;
   }
   if (p.startsWith('/auth/')) {
     if (request.method !== 'POST') return json({ error: 'POST only' }, 405);

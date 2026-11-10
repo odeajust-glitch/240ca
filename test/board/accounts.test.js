@@ -285,3 +285,29 @@ test('an approval made elsewhere lets a waiting device in at once', async () => 
   store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), role: 'member' }));
   assert.equal((await call('/health/accounts', { cookie })).status, 404);
 });
+
+// Owner, 2026-11-10: "every 30 days if they do not use it".
+test('a sign-in lasts until the device goes 30 days without a visit', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('g1');
+  await call('/auth/signup', { body, ip: '5.5.5.1' });
+  const first = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  const key = [...store.keys()].find((k) => k.startsWith('accounts/users/') && JSON.parse(store.get(k)).email === body.email);
+  store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), status: 'approved' }));
+  const realNow = Date.now;
+  const at = (days) => { Date.now = () => realNow() + days * 86400000; };
+  try {
+    let res = await call('/auth/me', { cookie: first });
+    assert.equal(res.headers.get('set-cookie'), null); // same day: nothing to renew
+    at(20);
+    res = await call('/auth/me', { cookie: first });
+    assert.match(res.headers.get('set-cookie'), /^bsess=.*Max-Age=2592000/);
+    const renewed = cookieOf(res);
+    at(45); // 25 days after that visit, 45 after signing in
+    assert.equal((await call('/data/index.json', { cookie: renewed })).status, 200);
+    assert.equal((await call('/data/index.json', { cookie: first })).status, 401);
+    at(51); // 31 days with no visit
+    assert.equal((await call('/data/index.json', { cookie: renewed })).status, 401);
+    assert.equal((await (await call('/auth/me', { cookie: renewed })).json()).signedIn, false);
+  } finally { Date.now = realNow; }
+});

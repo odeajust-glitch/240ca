@@ -41,7 +41,8 @@ stops at 50 people. The accounts are built into the Worker
   whose Worker has no accounts.
 - **After approval** the device they signed up on just opens the site. On
   any other device: `/account` → Sign in → their email → a 6-digit code by
-  email (10 minutes, 5 tries). Signed in for 90 days.
+  email (10 minutes, 5 tries). Signed in until the device goes 30 days
+  without opening the site (owner, 2026-11-10); each visit renews it.
 - **Emails** go through the same Gmail script as 18.6(b) (EMAIL.md), at
   most 70 a day for accounts. A sign-up costs two emails (the code and the
   approval), so about 35 new people a day;
