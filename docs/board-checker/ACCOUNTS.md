@@ -98,6 +98,15 @@ in CATS.
   `parseBoardCrew`, kept as `@board|<turn>` in the laptop's names.json by
   `recordBoardCrew`); a turn not on those screens falls back to its last
   Call Board name. The 18.6(b) names don't use the board entries.
+- **Which name shows** (owner, 2026-11-10: "when a job is working, put the
+  name of the person who's working, who you would see on the call board.
+  When the turn is back home … the person whose turn it is"):
+  `namesByTurn` takes the Call Board name while the turn is on the Call
+  Board in the latest check; while the pool screen still shows it out
+  (position 999, a train beside it, or an away terminal) it keeps that
+  worker for up to a day; at home it is the pool screen's name.
+- 501/502 turns need the craft read with the name, so they only fill in
+  from reads made after 2026-11-10 (the pool screen gives both each check).
 - **Laptop** (`lib/board/names.js` `namesByTurn`, `lib/board/site.js`): each
   turn's latest name as "Last, F" goes out as `data/crew.json`, locked with
   `BOARD_NAMES_KEY` like the 18.6(b) names. A 501/502 turn is two people:

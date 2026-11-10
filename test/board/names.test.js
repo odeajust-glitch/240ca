@@ -126,10 +126,26 @@ test('names: the pool screen\'s own name for a turn wins over an older Call Boar
   ];
   const crew = S.parseBoardCrew(parseGrid(POOL));
   assert.deepEqual(crew.map((c) => `${c.craft} ${c.turn} ${c.name}`), ['CO SA05 Ben Allen', 'CO SA06 Rober Borody', 'CO SA07 Ryan Pavey', 'EN S501 Ann Lee', "CO S501 Justin O'Dea"]);
+  assert.deepEqual(crew.map((c) => c.working), [false, false, false, false, false]);
   // Thompson worked SA05 two days ago; the pool screen shows Allen on it today.
   const store = recordNames({}, [{ symbol: 'A42431', originDay: '08', crew: [{ craft: 'CO', turn: 'SA05', name: 'Chris Thompson' }, { craft: 'CO', turn: 'SB09', name: 'Away Person' }] }], new Date('2026-11-08T12:00:00Z'));
   recordBoardCrew(store, crew, new Date('2026-11-10T23:00:00Z'));
   assert.deepEqual(namesByTurn(store, new Date('2026-11-10T23:05:00Z')), { 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SA05: 'Allen, B', SA06: 'Borody, R', SA07: 'Pavey, R', SB09: 'Person, A' });
+  // Owner: "when a job is working, put the name of the person who's working
+  // … when the turn is back home, the person whose turn it is."
+  // SA06 goes out with a spare on it: the Call Board has Sam Spare, the pool screen still Borody.
+  const out1 = new Date('2026-11-11T02:00:00Z');
+  recordNames(store, [{ symbol: 'M38331', originDay: '10', crew: [{ craft: 'CO', turn: 'SA06', name: 'Sam Spare' }] }], out1);
+  recordBoardCrew(store, S.parseBoardCrew(parseGrid(['200 | 20:CO | 60:SA06 | 110:0 | 130:999 | 180:BORODY*+ | 340:R | 380:ROBER | 520:M38331'])), out1);
+  assert.equal(namesByTurn(store, out1).SA06, 'Spare, S');
+  // Off the Call Board but still out (shown working on the pool screen): still the spare.
+  const out2 = new Date('2026-11-11T08:00:00Z');
+  recordBoardCrew(store, S.parseBoardCrew(parseGrid(['200 | 20:CO | 60:SA06 | 110:0 | 130:999 | 180:BORODY*+ | 340:R | 380:ROBER'])), out2);
+  assert.equal(namesByTurn(store, out2).SA06, 'Spare, S');
+  // Back home on the board: Borody's turn again.
+  const home = new Date('2026-11-11T20:00:00Z');
+  recordBoardCrew(store, S.parseBoardCrew(parseGrid(['200 | 20:CO | 60:SA06 | 110:0 | 130:004 | 180:BORODY*+ | 340:R | 380:ROBER'])), home);
+  assert.equal(namesByTurn(store, home).SA06, 'Borody, R');
   // The 18.6(b) names don't use the board's: still the trip's.
   assert.deepEqual(namesForHeld([{ id: 'Q9 07', month: '2026-11', co: 'SA05', heldMin: 900 }], store, 840, new Date('2026-11-10T23:05:00Z')), { 'Q9 07 2026-11': { co: 'Chris Thompson', en: null, turnOnly: true } });
 });
