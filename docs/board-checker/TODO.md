@@ -5,6 +5,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Call timeline, new layout** (owner screenshots 2026-11-10): in Test, awaiting his
+  review; on approval swap the regular page to `renderCallTimelineV2`. See HANDOFF.
+
 - **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
   the other crew shown for one or two checks, then the Call Board has the first). Call
   stability no longer believes it; Current and alerts still see it. Check after the

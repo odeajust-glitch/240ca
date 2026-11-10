@@ -83,3 +83,18 @@ test('purple waiting runs to inferred actual call, not order observation or on-d
  assert.ok(!A.renderCallTimeline({...record,call:record.firstCall}).includes('fill="#a78bfa"'));
  assert.ok(!A.renderCallTimeline({...z,takenOff:true}).includes('fill="#a78bfa"'));
 });
+// Owner, 2026-11-10 (Test preview): EN09 on YMXS02, first lined 8th 1412
+// for 9th 0205, called 8th 1500. The old graph left the call as a tick
+// beside a red bar that started at the window.
+test('new call timeline: a call before the window shows the notice given and red from the call',()=>{
+ const z={turn:'EN09',train:'YMXS02',expectedTrain:'YMXS02',firstSeen:'2026-11-08 1412',firstCall:'2026-11-09 0205',expected:'2026-11-09 0205',sleepAt:null,noWindow:true,call:'2026-11-08 1500',onDuty:'2026-11-08 1700',timelineChanges:[],timelineComplete:true};
+ const h=A.renderCallTimelineV2(z);
+ for(const t of ['Called with 48 m notice','11 h 05 m earlier than planned','expected 11 h 53 m notice','Called 8th 1500','11 h 05 m early','stroke-dasharray','notice given','lost to the early call','8 h window starts','Notice given','Recorded changes (0)'])assert.ok(h.includes(t),t);
+ assert.ok(!h.includes('</i>waiting past the plan'));
+ const late=A.renderCallTimelineV2({...z,call:'2026-11-09 0305',onDuty:'2026-11-09 0505'});
+ for(const t of ['Called 1 h 00 m late','waiting past the plan','planned 8 h window'])assert.ok(late.includes(t),t);
+ assert.ok(!late.includes('</i>lost to the early call'));
+ const off=A.renderCallTimelineV2({...z,call:undefined,takenOff:true,onDuty:'2026-11-08 2000'});
+ for(const t of ['Removed from the line-up','Removed 8th 2000','not used'])assert.ok(off.includes(t),t);
+ assert.ok(!A.renderCallTimelineV2({}).includes('<svg'));
+});

@@ -69,6 +69,19 @@ when first seen ordered" as a general rule did worse than today's (18 vs 23 of 2
 so it was **not built**. Asked Justin for the cut-off; do not change `spareFills` on rest
 until he gives one.
 
+**Call timeline, new layout — in Test, awaiting Justin's phone review (2026-11-10):** he
+sent three screenshots: a call before the eight-hour window (EN09 YMXS02, 48 min notice)
+drew as a tick beside a red bar that didn't reach it, and the six facts wrapped badly.
+`renderCallTimelineV2` (public/board-analytics.js; styles `.ct2*` in board.html): red
+from the actual call to the planned call whatever the window (dashed green box = a window
+the call came before), headline = notice given (first lined → call) when under 8 h, times
+under their points plus a fixed-row table, key lists only what is drawn; the three
+fold-outs kept. Test tab (`testTimelines`) shows real calls in five groups, four each.
+The regular page still uses `renderCallTimeline`: swap its three callers (sleepTable,
+callReviewRecord, work-call-timeline) only when he approves. Open with him: headline as
+notice vs "how early"; notice counted from first lined (not from ordered). Checked here
+on the 27 live days in a browser at phone width; laptop pull/restart needed to see it.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

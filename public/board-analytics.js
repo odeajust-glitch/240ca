@@ -457,6 +457,80 @@
     }
     return { ...z, timelineChanges: changes, shifts: trim(z.shifts) };
   }
+  // The call timeline, tidier (owner, 2026-11-10: a call before the eight-hour
+  // window began was a tick beside a red bar that didn't reach it). Red runs
+  // from the actual call to the planned call whatever the window; the
+  // headline is the notice given; the times sit under their points and in a
+  // table with fixed rows; the key lists only what is drawn.
+  function renderCallTimelineV2(z) {
+    z = cleanCallRecord(z);
+    if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: historical train/trip mismatch. Excluded from call comparisons.</p>';
+    const m = callTimeline(z);
+    if (!m) return '<p class="anote">No saved timeline.</p>';
+    const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th');
+    const fmt = t => { const s = T.fromMin(t); return ord(+s.slice(8,10)) + ' ' + s.slice(11); };
+    const d = n => { n = Math.round(Math.abs(n)); const h = Math.floor(n/60), mm = n % 60; return h ? `${h} h ${String(mm).padStart(2,'0')} m` : `${mm} m`; };
+    const from = m.from, to = m.to, w0 = Math.max(from, m.block.from), exp = m.expected, end = m.end;
+    const x = t => 3 + 94 * Math.max(0, Math.min(1, (t-from)/(to-from)));
+    const off = !!z.takenOff, gap = end == null ? null : end - exp, called = !off && gap != null;
+    const early = called && gap < 0, late = called && gap > 0, notice = end == null ? null : Math.max(0, end - m.first);
+    const tone = off ? 'var(--amber)' : !called ? 'var(--soft)' : early ? (gap >= -30 ? 'var(--amber)' : 'var(--stop)') : gap > 30 ? '#a78bfa' : 'var(--go)';
+    const head = off ? 'Removed from the line-up' : !called ? 'Call time unavailable' : early ? (notice < 480 ? `Called with ${d(notice)} notice` : `Called ${d(gap)} early`) : late ? `Called ${d(gap)} late` : 'Called at the planned time';
+    const expectedNotice = exp > m.first ? `expected ${d(exp - m.first)} notice` : 'first lined at or after the planned call';
+    const sub = off ? `Lined up ${d(notice)} before it was removed · ${expectedNotice}` : early ? `${d(gap)} earlier than planned · ${expectedNotice}`
+      : called ? `${d(notice)} from first lined to the call · ${m.markers.length} change${m.markers.length === 1 ? '' : 's'} over 30 min` : '';
+    const rect = (a, b, fill, y = 34, h = 22) => (x(b) > x(a) ? `<rect x="${x(a)}%" y="${y}" width="${x(b)-x(a)}%" height="${h}" fill="${fill}"/>` : '');
+    const key = [];
+    const stop = called || off ? end : exp; // where what happened ends
+    let bands = '';
+    const lined = rect(from, Math.min(w0, stop), 'var(--soft)', 41, 8);
+    if (lined) { bands += lined; key.push(['var(--soft)', early && end <= w0 ? 'notice given' : 'lined up before the 8 h window']); }
+    if (early || off) {
+      const kept = rect(w0, Math.min(end, exp), 'var(--go)');
+      if (kept) { bands += kept; key.push(['var(--go)', 'planned 8 h window, before the ' + (off ? 'removal' : 'call')]); }
+      if (early) { bands += rect(end, exp, gap >= -30 ? 'var(--amber)' : 'var(--stop)'); key.push([gap >= -30 ? 'var(--amber)' : 'var(--stop)', 'lost to the early call']); }
+      if (end < exp && (off || end < w0)) {
+        bands += `<rect x="${x(Math.max(w0, off ? end : w0))}%" y="34" width="${x(exp)-x(Math.max(w0, off ? end : w0))}%" height="22" fill="none" stroke="var(--go)" stroke-width="2" stroke-dasharray="5 4"/>`;
+        key.push(['dash', off ? 'planned 8 h window, not used' : 'planned 8 h window']);
+      }
+    } else {
+      bands += rect(w0, exp, 'var(--go)'); if (x(exp) > x(w0)) key.push(['var(--go)', 'planned 8 h window']);
+      if (late) { bands += rect(exp, end, '#a78bfa'); key.push(['#a78bfa', 'waiting past the plan']); }
+    }
+    const shown = m.markers.filter(c => c.at <= to);
+    const dots = shown.map(c => `<circle cx="${x(c.at)}%" cy="45" r="3.5" fill="var(--ink)" stroke="var(--bg, #1b2227)" stroke-width="1"><title>${e(fmt(c.at))}: call ${e(c.call)}</title></circle>`).join('');
+    if (shown.length) key.push(['dot', 'change over 30 min']);
+    const ordered = m.changes.filter(c => c.ordered && c.at <= to);
+    const squares = ordered.map(c => `<rect x="${x(c.at)}%" y="25" width="5" height="7" fill="var(--accent)"><title>Ordered, seen ${e(fmt(c.at))}</title></rect>`).join('');
+    if (ordered.length) key.push(['var(--accent)', 'ordered (first seen)']);
+    // The gap, written in its band when there is room and no dot under it.
+    const span = called && gap ? [Math.min(end, exp), Math.max(end, exp)] : null;
+    const mid = span ? (span[0] + span[1]) / 2 : 0;
+    const clear = span && x(span[1]) - x(span[0]) > 30 && !shown.some(c => Math.abs(x(c.at) - x(mid)) < 16);
+    const inside = clear ? `<text x="${x(mid)}%" y="50" text-anchor="middle" fill="#1b2227" style="font:700 12px sans-serif">${e(d(gap))} ${early ? 'early' : 'waiting'}</text>` : '';
+    const anchor = t => (x(t) < 18 ? 'start' : x(t) > 82 ? 'end' : 'middle');
+    const label = (t, y, text, bold, a) => `<text x="${x(t)}%" y="${y}" text-anchor="${a || anchor(t)}" fill="var(--ink)" style="font:${bold ? '700 ' : ''}12px sans-serif">${e(text)}</text>`;
+    const under = [[from, 'First lined', 'start']];
+    if (x(w0) - x(from) > 24 && x(exp) - x(w0) > 24) under.push([w0, '8 h before']);
+    if (x(exp) - x(from) > 24) under.push([exp, 'Planned call', x(exp) > 70 ? 'end' : 'middle']);
+    const below = under.map(([t, name, a]) => `<line x1="${x(t)}%" x2="${x(t)}%" y1="58" y2="64" stroke="var(--soft)"/>${label(t, 78, name, false, a)}${label(t, 93, fmt(t), true, a)}`).join('');
+    const mark = end == null ? '' : `<line x1="${x(end)}%" x2="${x(end)}%" y1="22" y2="62" stroke="var(--ink)" stroke-width="3"/>${label(end, 16, (off ? 'Removed ' : 'Called ') + fmt(end), true)}`;
+    const keyHtml = key.map(([c, text]) => `<span><i class="${c === 'dash' ? 'dash' : c === 'dot' ? 'dot' : ''}"${c === 'dash' || c === 'dot' ? '' : ` style="background:${c}"`}></i>${e(text)}</span>`).join('');
+    const row = (name, value) => `<div><span>${e(name)}</span><b>${e(value)}</b></div>`;
+    const facts = row('First lined', fmt(m.first)) + row('8 h window starts', fmt(m.block.from)) + row('Planned call', fmt(exp))
+      + row(off ? 'Removed' : 'Actual call', end == null ? '—' : fmt(end)) + row(off ? 'Lined up for' : 'Notice given', notice == null ? '—' : d(notice))
+      + (called ? row(early ? 'Earlier than planned' : late ? 'Later than planned' : 'Against the plan', gap ? d(gap) : 'on time') : '');
+    const events = [...m.markers.map(c => ({ at: c.at, text: `Change: ${fmt(c.at)} → call ${c.call.slice(5)}` })), ...m.changes.filter(c => c.ordered).map(c => ({ at: c.at, text: `Ordered observed: ${fmt(c.at)} · call ${c.call.slice(5)}` }))];
+    const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
+    return `<details class="call-timeline ct2"><summary>Show call timeline</summary><p class="ct2-who"><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b></p>
+      <p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>
+      <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${mark}${below}</svg>
+      <div class="ct2-key">${keyHtml}</div><div class="ct2-facts">${facts}</div>
+      <details><summary>Marker times (${events.length})</summary><ul class="timeline-events">${events.map(c => `<li>${e(c.text)}</li>`).join('') || '<li>No saved marker times.</li>'}</ul></details>
+      <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
+      <details><summary>About this timeline</summary><p class="anote">The white bar is the actual call: on duty minus two hours. Green is the eight hours before the planned call. Red (yellow for 30 minutes or less) runs from an early call to the planned call: the time the plan said they still had. A dashed green box is a planned window the call came before. Purple is waiting past the planned call. Notice given is from the first check that lined the turn up to the call. Dots mark changes of the expected call over 30 minutes. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'}</p></details></details>`;
+  }
   function planReliability(list) {
     const rows = list.map(cleanCallRecord).filter(z => !z.comparisonUnavailable && !z.takenOff && T.toMin(z.firstCall) != null && T.toMin(z.call) != null)
       .map(z => {
@@ -548,7 +622,7 @@
 
   const api = { cleanCallRecord, planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
-    sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
+    renderCallTimelineV2, sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);
