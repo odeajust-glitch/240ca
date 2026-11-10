@@ -470,6 +470,14 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Spareboard predictions switched off, 2026-11-10 (owner: "take the working predictions
+off the spareboard for now").** `SPARE_PREDICT = false` in board.html: neither the "likely
+call … · held X of N" line (`spareCall`) nor the older "typically works in …" line
+(`boardOdds`) shows on a spareboard, on the test site or anywhere. The code and the figures
+in data/patterns.json (`board`, `spare`) are kept; set it to `true` to bring both back. The
+likely-call window on the line-up's trains is untouched. He gave no reason; don't turn it
+back on unless he asks.
+
 **Assignment errors, simpler on the test site, 2026-11-10 (owner: "clean up the assignment
 errors tab in the test site, make it simpler to read. push the changes to the test
 site").** Preview only: `anaAssignments2` in board.html, used when `ANA2` is on; the

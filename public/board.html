@@ -1733,8 +1733,10 @@ function poolBody(s, p) {
     const open = !t.left && t.status === 'available';
     if (open) out++;
     // Test site: when this spare is likely to be called, and how often that window has held.
-    const likely = spareCall(s, p, t);
-    const odds = !likely && open ? boardOdds(p.name, out) : '';
+    // Switched off (owner, 2026-11-10: "take the working predictions off the spareboard for now"):
+    // neither this line nor the older "typically works in" line shows. SPARE_PREDICT turns both back on.
+    const likely = SPARE_PREDICT ? spareCall(s, p, t) : null;
+    const odds = SPARE_PREDICT && !likely && open ? boardOdds(p.name, out) : '';
     const likelyHtml = likely ? `<details class="splikely${likely.tight ? ' tight' : ''}"><summary>likely call ${esc(likely.window)} <small>· held ${likely.held} of ${likely.n}</small></summary><p>${esc(likely.text)}</p></details>` : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
@@ -2505,6 +2507,7 @@ function sparePlace(s, turn) {
   return m[turn];
 }
 const SPARE_WIDE_MAX = 360;
+const SPARE_PREDICT = false; // the spareboard's predictions, off for now (owner, 2026-11-10); the figures are still built
 function spareCall(s, p, t) {
   const P = PREVIEW && PATTERNS && PATTERNS.spare;
   const m = SPARE_BOARD.exec(p.name || '');
