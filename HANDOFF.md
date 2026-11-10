@@ -4,6 +4,13 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Pool buttons two to a row, 2026-11-10 evening (owner, after a sample: "looks good, push
+it"):** on a phone the Pools at Sarnia filter buttons sit two to a row in his order: A
+pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot` and the
+`--o` order on each button in `public/board.html`; a pool not named comes after 501/502).
+Buttons only: the boards under them still open in the old pool order (asked him). A
+computer is unchanged. Laptop pull/restart/publish pending.
+
 **Tab bar on a phone wraps again, 2026-11-10 evening (owner, screenshot from his phone:
 "fix the tabs at the top so they don't run off the screen"):** the one swipe row promoted
 that morning cut a tab in half at the edge ("Article 1…"). Now the tabs wrap into as many
