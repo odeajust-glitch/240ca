@@ -7,7 +7,7 @@ const html = fs.readFileSync(require.resolve('../../public/board.html'), 'utf8')
 // tests were still written for the dashboard it replaced and had failed ever
 // since (owner review, 2026-11-10): rewritten for the guide.
 const source = html.slice(html.indexOf('let ANA2 = false;'), html.indexOf('function analyticsOverview(o) {'));
-const ctx = { esc: String };
+const ctx = { esc: String, location: { hostname: 'board.sarniaboard.workers.dev' } };
 vm.createContext(ctx); vm.runInContext(source + '\nthis.guide = analyticsOverviewGuide; this.secs = ANA_SECS;', ctx);
 test('overview guide: a card and an Open button for every Analytics page', () => {
   const out = ctx.guide({ callCount: '43% within 30 minutes (438 of 1007 recorded baselines)' });
@@ -22,6 +22,14 @@ test('overview guide, Test preview: each page shows its number and Overview has 
   assert.ok(!out.includes('data-overview-open="overview"'));
   assert.ok(!out.includes('Start here'));
   for (const key of ['week', 'trains', 'turns', 'sleep', 'stale', 'assignments']) assert.ok(out.includes(`data-overview-open="${key}"`), key);
+});
+// The previews across the whole site only switch on at the test address.
+test('test site: the switch is off at the normal address', () => {
+  assert.equal(vm.runInContext('PREVIEW_HOST', ctx), false);
+  const t = { esc: String, location: { hostname: 'board-test.sarniaboard.workers.dev' } };
+  vm.createContext(t); vm.runInContext(source + '\nthis.host = PREVIEW_HOST; this.on = PREVIEW;', t);
+  assert.equal(t.host, true);
+  assert.equal(t.on, false); // still off until the owner key is verified
 });
 test('all inline scripts parse', () => {
   for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)) if(m[1].trim()) new vm.Script(m[1]);
