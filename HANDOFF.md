@@ -298,6 +298,19 @@ suggestions and put it in the test tab"):**
   at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
   `testPreview` state and `mode !== 'test'` checks: pass the target through).
 
+**Analytics preview in Test, third round, 2026-11-10 (owner screenshot of a turn search,
+SD11: "clean up the call stability area and make it more mobile friendly. Put the changes
+in the test tab"). Test only.** Under a turn or person search the Call stability box is
+rebuilt (`ana2SearchCalls`): one summary card for that turn (the same card as the Sarnia /
+Mac yard ones), a line for waits removed and calls with a job pulled, then the calls as
+short rows (`ana2CallList` / `ana2CallRows`: call time, train, planned → called, how far
+off in colour; tap = the graph and Why, drawn when opened; 20 at a time). The eight-hour
+baseline panel, "Changes during the original plan", the tiles and the old table fold into
+"More numbers and how they are worked out". The Call stability page's "Latest calls" uses
+the same rows. Checked on live data for SD11 at phone width: no errors, regular tab
+unchanged. Not touched: the turn's other tiles above the box (trains worked, time on duty
+…), which is what looks ragged in his screenshot in the iPhone style: ask.
+
 **Analytics preview in Test, second round, 2026-11-10 (owner: "do all the changes in the
 test tab ... separate the trains ordered out of sarnia and ... mac yard ... simplify it and
 add a visual explanation ... Dont push anything thats currently in the test tab to the main

@@ -828,6 +828,10 @@
   .ct2-ordermove { margin: 6px 0 0; padding: 6px 10px; border-left: 4px solid var(--amber); background: var(--amber-tint); border-radius: 4px; font-size: 13px; }
   .ct2-key i.cross { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--stop); background: linear-gradient(45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%); box-sizing: border-box; }
   .ct2-key i.diamond { width: 9px; height: 9px; background: var(--amber); transform: rotate(45deg); margin-right: 7px; }
+  .ana2 .cs2-h3 { margin: 4px 14px 2px; font-size: 14px; }
+  .ana2 .cs2-morebox { border-top: 1px solid var(--rule-soft); }
+  .ana2 .cs2-morebox > summary { cursor: pointer; color: var(--accent); padding: 10px 14px; font-size: 13.5px; }
+  .ana2 details.cur2 .fold .ana2-lazybox .ct2 > summary { display: none; }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -5275,7 +5279,48 @@ source().then(async (src) => {
     while (el && !(el.matches('section.sheet') && /^(By turn|Latest calls)/.test((el.querySelector('h2') || {}).textContent || ''))) { const next = el.nextElementSibling; box.appendChild(el); el = next; }
     view.appendChild(more);
   }
-  function ana2Pass(view, callPage) {
+  // Calls as short rows (Test preview; owner, 2026-11-10: "clean up the call
+  // stability area and make it more mobile friendly"): the call time, the
+  // train, planned → called and how far off; tap for the graph and the Why.
+  let ANA2_LISTS = [];
+  function ana2CallRows(list, showTurn, from, to) {
+    return list.slice(from, to).map((z) => {
+      const m = BoardAnalytics.callTimeline(z);
+      const gap = m && m.end != null && !z.takenOff ? m.end - m.expected : null;
+      const [sym, od] = split(z.train || z.expectedTrain || '');
+      const pulled = (z.timelineChanges || []).filter((c) => c.dropped).length;
+      const tone = gap == null ? '' : Math.abs(gap) <= 30 ? 'ok' : gap < 0 ? (gap >= -60 ? 'warn' : 'bad') : 'late';
+      const result = z.takenOff ? '<span class="offv warn">removed from the line-up</span>' : gap == null ? '' : gap === 0 ? '<span class="offv ok">called when planned</span>'
+        : `<span class="offv ${tone === 'late' ? '' : tone}"${tone === 'late' ? ' style="color:#a78bfa"' : ''}>${esc(dur(gap))} ${gap < 0 ? 'early' : 'late'}</span>`;
+      const line2 = `<span>planned ${esc(dt(z.firstCall || z.expected))}${z.takenOff ? '' : ` → called <b>${esc(dt(z.call))}</b>`}</span>${result ? `<span>${result}</span>` : ''}${z.takenOff && z.replacedBy ? `<span class="muted">now ${esc(z.replacedBy)}</span>` : ''}`;
+      const chips = `${showTurn ? `<span class="chip">${esc(z.turn)}</span>` : ''}${pulled ? ' <span class="chip" style="color:var(--stop)">✕ job pulled</span>' : ''}${z.yard ? ' <span class="chip">yard</span>' : ''}`;
+      return cur2Row({ time: String(z.takenOff ? z.seen : z.call || '').slice(11) || '—', train: sym, od, chips, line2, foldName: 'The call', fold: `<div class="ana2-lazybox" data-lazy-call="${ANA2_CALLS.push(z) - 1}"></div>` });
+    }).join('');
+  }
+  function ana2CallList(records, showTurn) {
+    const list = [...records].map(BoardAnalytics.cleanCallRecord).filter((z) => !z.comparisonUnavailable).reverse();
+    if (!list.length) return '<p class="empty" style="margin:10px 14px">No calls tracked in these dates.</p>';
+    const id = ANA2_LISTS.push({ list, showTurn, at: ANA2_PAGE }) - 1;
+    return `<div data-ana2-calls="${id}">${ana2CallRows(list, showTurn, 0, ANA2_PAGE)}</div>${list.length > ANA2_PAGE ? `<p class="ana2-more"><button type="button" class="qbtn" data-ana2-callsmore="${id}">Show 20 more of ${list.length - ANA2_PAGE} left</button></p>` : ''}`;
+  }
+  // Under a turn or person search: one summary card, the calls, and the
+  // older numbers folded away.
+  function ana2SearchCalls(view, calls, who) {
+    const sec = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Call stability');
+    if (!sec) return;
+    const st = ana2OriginStats(calls);
+    const removed = calls.filter((z) => z.takenOff).length;
+    const pulled = calls.filter((z) => !z.takenOff && (z.timelineChanges || []).some((c) => c.dropped)).length;
+    const more = document.createElement('details');
+    more.className = 'cs2-morebox';
+    more.innerHTML = '<summary>More numbers and how they are worked out</summary><div></div>';
+    [...sec.children].forEach((el) => { if (!el.matches('header')) more.lastChild.appendChild(el); });
+    sec.insertAdjacentHTML('beforeend', `<div class="cs2-grid">${ana2OriginCard(who, 'actual call against the first planned call', st)}</div>
+      ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `Removed from the line-up after lining up: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
+      <h3 class="cs2-h3">Calls, newest first</h3>${ana2CallList(calls, false)}`);
+    sec.appendChild(more);
+  }
+  function ana2Pass(view, callPage, calls = [], who = '') {
     local.set('analytics2', { range: ana.range, sec: ana.sec });
     // The explanations, folded: the number comes first.
     const pick = view.querySelector('.secpick');
@@ -5300,6 +5345,12 @@ source().then(async (src) => {
       panel.insertAdjacentHTML('beforebegin', `<div class="ana2-filters">${sel('origin', 'Called at', [['all', 'Everywhere'], ['sarnia', 'Sarnia trains'], ['toronto', 'Toronto'], ['garnet', 'Garnet (L501)'], ['yard', 'Yard jobs']])}${sel('pool', 'Pool', [['all', 'All pools'], ...ANA_POOLS])}${sel('craft', 'Craft', [['all', 'Both'], ['CO', 'Conductors'], ['EN', 'Engineers']])}</div>`);
       view.querySelectorAll('[data-ana2]').forEach((el) => { el.onchange = () => { ana2[el.dataset.ana2] = el.value; renderAnalytics(); }; });
     }
+    // The calls themselves: short rows in place of the table, on the Call
+    // stability page and under a turn or person search.
+    if (callPage) {
+      const latest = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Latest calls');
+      if (latest) { [...latest.children].forEach((el) => { if (!el.matches('header')) el.remove(); }); latest.insertAdjacentHTML('beforeend', ana2CallList(calls, true)); }
+    } else if (who) ana2SearchCalls(view, calls, who);
     // Assignment errors: open on what still needs a look.
     const status = view.querySelector('[data-test-status]');
     if (status) {
@@ -5316,11 +5367,21 @@ source().then(async (src) => {
     // A call's graph is drawn when it is opened; 20 more calls on request.
     view.addEventListener('toggle', (e) => {
       const d = e.target;
+      // A call row opened: its graph and Why, drawn now.
+      const lazy = ANA2 && d.matches && d.matches('details.cur2') && d.open ? d.querySelector('.ana2-lazybox:not([data-done])') : null;
+      if (lazy) { const zz = ANA2_CALLS[+lazy.dataset.lazyCall]; lazy.dataset.done = '1'; if (zz) lazy.innerHTML = BoardAnalytics.renderCallTimelineV2(zz).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>'); return; }
       if (!ANA2 || !d.matches || !d.matches('details.ana2-lazy') || !d.open) return;
       const z = ANA2_CALLS[+d.dataset.lazyCall];
       if (z) d.outerHTML = BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>');
     }, true);
     view.addEventListener('click', (e) => {
+      const callsBtn = ANA2 && e.target.closest && e.target.closest('[data-ana2-callsmore]');
+      if (callsBtn) {
+        const L = ANA2_LISTS[+callsBtn.dataset.ana2Callsmore];
+        const box = view.querySelector(`[data-ana2-calls="${callsBtn.dataset.ana2Callsmore}"]`);
+        if (L && box) { box.insertAdjacentHTML('beforeend', ana2CallRows(L.list, L.showTurn, L.at, L.at + ANA2_PAGE)); L.at += ANA2_PAGE; if (L.at >= L.list.length) callsBtn.parentElement.remove(); else callsBtn.textContent = `Show 20 more of ${L.list.length - L.at} left`; }
+        return;
+      }
       const btn = e.target.closest && e.target.closest('[data-ana2-more]');
       if (!ANA2 || !btn) return;
       const more = ANA2_MORE[+btn.dataset.ana2More];
@@ -5344,7 +5405,7 @@ source().then(async (src) => {
   async function drawAnalytics() {
     const view = document.getElementById('view');
     view.classList.toggle('ana2', ANA2);
-    ANA2_CALLS = []; ANA2_MORE = [];
+    ANA2_CALLS = []; ANA2_MORE = []; ANA2_LISTS = [];
     // Test preview: the dates and page last used on this phone.
     if (ANA2 && !ana2.loaded) { weekPick = 'this'; const was = local.get('analytics2') || {}; if (RANGES.some((r) => r[0] === was.range && r[0] !== 'custom')) ana.range = was.range; if (ANA_SECS.some((x) => x[0] === was.sec)) ana.sec = was.sec; ana2.loaded = true; }
     if (!view.querySelector('.ohead.ana')) view.innerHTML = '<p class="empty">Loading…</p>';
@@ -5487,7 +5548,7 @@ source().then(async (src) => {
     const callPanel = view.querySelector('[data-call-detail]');
     if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
-    if (ANA2) ana2Pass(view, !q && ana.sec === 'sleep');
+    if (ANA2) ana2Pass(view, !q && ana.sec === 'sleep', detailSleep, q ? (kind === 'turn' ? `Turn ${q}` : kind === 'code' ? 'This person' : '') : '');
     const box = document.getElementById('aq');
     const go = () => { ana.q = box.value; renderAnalytics(); };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };
