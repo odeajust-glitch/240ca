@@ -136,6 +136,19 @@ stability note). Checked against the live records: L50231 04, 08 and 10 match S5
 (2) The long list under an opened train is folded into "What the board showed before
 this call (N)" (`callHistory`, `.boardnotes`). Laptop pull/restart pending.
 
+**L501 home now has Call stability, 2026-11-10 (owner: "fix why 501 doesn't have the call
+stability graph"):** `sleepCheck` (lib/board/insights.js) reads `garnetLineup` (saved since
+4th Nov). Whoever went out on an L502 (`state.s5Home`: the regular crew by craft, a
+fill-in, an MU crew's spares) is expected on the same day's L501 at order − 15 min
+(`GARNET_PREP`: on duty at Garnet was 15 min before the order on every L501, 4th–9th)
+− 2 h. That wait is its own: it replaces whatever Sarnia's line-up still projects for the
+turn, a gap in the Garnet reads is not "taken off", and an L501 on duty with no Garnet
+wait is left unscored. Replayed on the live days: all 12 crew trips on L50131 04–09
+scored (04, 05, 09 on time; 06 4 h 20 m late, 07 2 h late, 08 1 h 15 m late). ❓ The
+Current page's Garnet "call" is order − 2 h (15 min later than this): ask before touching.
+The fold-out he asked for again was already pushed (board notes); it shows once the laptop
+publishes. Rebuilt from the day files: no FORMAT bump, no Worker change.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

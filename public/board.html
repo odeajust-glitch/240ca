@@ -4678,7 +4678,7 @@ source().then(async (src) => {
         const gaps = [...new Set(timelines.map((m) => m.end - m.expected))];
         el.classList.remove('spare', 'ok');
         // L501 home has no expected call to compare with (not scored).
-        if (!gaps.length) { el.textContent = /^L501/.test(trip.train || '') ? 'Not scored: L501 home has no expected call' : 'Timeline unavailable'; return; }
+        if (!gaps.length) { el.textContent = /^L501/.test(trip.train || '') ? 'Not scored: Garnet’s line-up wasn’t saved for it' : 'Timeline unavailable'; return; }
         if (gaps.length !== 1) { el.textContent = 'Multiple call records — open to review'; return; }
         const gap = gaps[0];
         el.textContent = gap < 0 ? 'Called ' + dur(gap) + ' early' : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
@@ -4696,7 +4696,7 @@ source().then(async (src) => {
       if (!box.isConnected) return;
       const all = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []);
       const matches = matchingCallRecords(all, turn, trip);
-      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>')).join('') : (/^L501/.test(trip.train || '') ? '<p class="anote">L501 home from Garnet is not scored: the site has no expected call for it to compare with. The board notes below are still available.</p>' : '<p class="anote">No saved call-stability record for this trip. The board notes below are still available; a graph cannot be drawn without saved predictions.</p>');
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>')).join('') : (/^L501/.test(trip.train || '') ? '<p class="anote">This L501 home from Garnet is not scored: Garnet’s line-up wasn’t saved for it (it is read since November 4), so there is no planned call to compare with. The board notes below are still available.</p>' : '<p class="anote">No saved call-stability record for this trip. The board notes below are still available; a graph cannot be drawn without saved predictions.</p>');
     } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
   });
   async function loadArchive(range) {

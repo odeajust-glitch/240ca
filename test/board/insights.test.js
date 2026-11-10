@@ -354,3 +354,20 @@ test('insights: off a train for one check and back on it keeps the wait', () => 
   const list = Insights.finish(st).sleep.filter((z) => z.turn === 'SD10');
   assert.deepStrictEqual(list.map((z) => [!!z.takenOff, z.sleepAt, z.expected, z.off]), [[false, '2026-10-20 0000', '2026-10-20 0600', 0]]);
 });
+
+// Owner, 2026-11-10: "fix why 501 doesn't have the call stability graph".
+// Live, 8th Nov: L50131 08 ordered 2130 at Garnet, moved to 2245; on duty 2230.
+test('insights: L501 home is scored against the Garnet line-up, for whoever took L502 out', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const out = { train: 'L50231 08', onDuty: '8th 0450', crew: 'EN S501 · CO S501', backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] };
+  const st = Insights.collect([
+    snap('2026-11-08 0308', { onDuty: [out] }),
+    snap('2026-11-08 0528', { onDuty: [out], garnetLineup: [{ train: 'L50131 08', status: 'ORD', order: '8th 2130' }] }),
+    snap('2026-11-08 1200', { garnetLineup: [{ train: 'L50131 08', status: 'ORD', order: '8th 2130' }] }),
+    snap('2026-11-08 1938', { garnetLineup: [{ train: 'L50131 08', status: 'ORD', order: '8th 2245' }] }),
+    snap('2026-11-08 2052', { onDuty: [{ train: 'L50131 08', onDuty: '8th 2230', crew: 'EN S501 · CO S501', backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] }),
+  ]);
+  const list = Insights.finish(st).sleep.filter((z) => z.train === 'L50131 08').map((z) => [z.turn, z.expected, z.call, z.off, z.shifts.length]).sort();
+  // Planned call 1915 (order 2130 − 15 min − 2 h); called 2030: 1 h 15 m late, one move.
+  assert.deepStrictEqual(list, [['S501-CO', '2026-11-08 1915', '2026-11-08 2030', 75, 1], ['SA07', '2026-11-08 1915', '2026-11-08 2030', 75, 1]]);
+});
