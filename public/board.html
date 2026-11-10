@@ -847,6 +847,38 @@
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
   @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
   .odds { display: block; font-size: 12px; color: var(--accent); margin-top: 2px; }
+  .tn2 .tn2-now { padding: 10px 14px 12px; border-bottom: 1px solid var(--rule-soft); }
+  .tn2 .tn2-now h3 { margin: 0 0 6px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
+  .tn2 .tn2-now ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 15px; }
+  .tn2 .tn2-now li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; }
+  .tn2 .tn2-now .kind { color: var(--soft); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding-top: 3px; }
+  .tn2 .tn2-notes > .hist { padding: 4px 14px 12px; }
+  .work2-sum { margin: 0 14px 10px; font-size: 13.5px; color: var(--soft); }
+  .work2-sum b { color: var(--ink); } .work2-sum b.ok { color: var(--go); } .work2-sum b.bad { color: var(--stop); } .work2-sum b.warn { color: var(--amber); }
+  .work2 thead { display: none; }
+  .work2 table, .work2 tbody, .work2 tr, .work2 td { display: block; }
+  .work2 tr[hidden] { display: none; }
+  .work2 td { border: 0; padding: 0; }
+  .work2 tr.wrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; padding: 10px 14px; border-top: 1px solid var(--rule-soft); }
+  .work2 tr.wrow[hidden] { display: none; }
+  .work2 tr.wrow.open { background: var(--rule-soft); }
+  .work2 tr.wrow td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: 15px; }
+  .work2 tr.wrow td:nth-child(3) { grid-column: 2; grid-row: 1; text-align: right; font-size: 13px; }
+  .work2 tr.wrow td:nth-child(1) { grid-column: 1 / -1; grid-row: 2; font-size: 12.5px; color: var(--soft); white-space: normal; overflow-wrap: anywhere; }
+  .work2 tr.wrow td:nth-child(1)::before { content: 'call '; }
+  .work2 tr.wrow td:nth-child(1) .crew { display: inline; font-size: inherit; }
+  .work2 tr.wrow td:nth-child(1) .crew::before { content: ' · '; }
+  .work2 tr.wrow td:nth-child(1) br { display: none; }
+  .work2 tr.wrow td:nth-child(2) .crew { display: inline; font-size: 12.5px; margin-left: 8px; }
+  .work2 tr.wrow td:nth-child(2) .call-result { display: inline-block; margin: 0 0 0 8px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 999px; font: 600 11.5px/1.3 var(--body); color: var(--soft); vertical-align: 1px; }
+  .work2 tr.wrow td:nth-child(2) .call-result.ok { color: var(--go); }
+  .work2 tr.wrow td:nth-child(2) .call-result.spare { color: var(--amber); }
+  .work2 tr.wrow td:nth-child(2) .call-result.spare[data-gap^="-"] { color: var(--stop); }
+  .work2 tr.wrow td:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+  .work2 tr.wrest td { padding: 4px 14px 5px; font-size: 12px; background: none; color: var(--soft); border-top: 1px dashed var(--rule-soft); }
+  .work2 tr.wdet td { padding: 10px 14px 14px; background: var(--bg); }
+  .work2-more { margin: 10px 14px 12px; }
+  .tn2-recent button { padding: 4px 9px; border: 1px solid var(--rule); border-radius: 4px; background: none; color: var(--ink); font: 13px/1.3 var(--mono); cursor: pointer; }
   .lt2 { max-width: 760px; }
   .lt2 h2 { margin: 0 0 4px; }
   .lt2-when { margin: 0 0 14px; color: var(--soft); font-size: 14px; }
@@ -1985,6 +2017,17 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
+  // The test site (owner, 2026-11-10: "improvements to the turn history tab"): where the turn
+  // stands now comes first, under its name; the board's notes fold away under the work history.
+  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+    <div class="tn2-now"><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
+    <div id="held186top" class="heldtop" hidden></div>
+    <div id="whengo" class="whengo" hidden></div>
+    <div id="alertnote" class="alertnote" hidden></div>
+    <div id="worklog" class="work"></div>
+    <div id="held186" class="work"></div>
+    <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></details>
+    <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
   return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
@@ -2119,12 +2162,23 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
     const from = before.length > 1 ? before[before.length - 2].at : '';
     return restLine(from, rows[i].onDutySeen, 'Rest before it:');
   };
-  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', '<br>(')}</div>` : ''}</td>
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', PREVIEW ? ' (' : '<br>(')}</div>` : ''}</td>
     <td><b class="num">${esc(o.train)}</b><div class="crew call-result" data-call-result="${i}">Loading call stability…</div>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
+  if (PREVIEW) {
+    // The test site: each trip a short row (train and how the call went, then the times), the
+    // newest WORK2_SHOW first with the rest behind a button, and one line adding the calls up.
+    let n = -1;
+    const paged = body.replace(/<tr class="(wrow|wrest)/g, (m, c) => { if (c === 'wrow') n++; return n >= WORK2_SHOW ? `<tr hidden class="${c}` : m; });
+    const yard = rows.filter((o) => o.yard).length;
+    return `<h3>Work history</h3><p class="work2-sum" data-work-sum data-trips="${rows.length}">${plural(rows.length, 'trip')} in the saved checks${yard ? ` (${plural(yard, 'yard job')})` : ''}, since ${esc(dt(rows[rows.length - 1].at))}. Tap one for its call history.</p>
+      <div class="work2"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${paged}</tbody></table></div>
+      ${rows.length > WORK2_SHOW ? `<button type="button" class="work2-more" data-work-more>Show all ${rows.length} trips</button>` : ''}`;
+  }
   return `<h3>Work history <span class="muted">(tap a train for call history and call stability)</span></h3>
     <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
+const WORK2_SHOW = 6;
 // What happened to the turn from the train before (exclusive) up to this one.
 function callHistory(rec, rows, i) {
   const o = rows[i];
@@ -2143,6 +2197,8 @@ function callHistory(rec, rows, i) {
 function wireWork(box, rec, turn) {
   const rows = worked(rec, turn);
   window.dispatchEvent(new CustomEvent('work-call-results', { detail: { box, turn, trips: rows } }));
+  const more = box.querySelector('[data-work-more]');
+  if (more) more.onclick = () => { box.querySelectorAll('tr[hidden]').forEach((tr) => { tr.hidden = false; }); more.remove(); };
   box.querySelectorAll('tr.wrow').forEach((tr) => {
     tr.onclick = () => {
       const open = tr.classList.contains('open');
@@ -4826,7 +4882,14 @@ source().then(async (src) => {
     // A person search isn't remembered on the phone.
     if (isCode(focus)) return;
     try { focus ? localStorage.setItem('boardTurn', focus) : localStorage.removeItem('boardTurn'); } catch (e) { /* storage off */ }
+    // The last few turns looked up, for one-tap return (test site).
+    if (focus && !BoardTurns.PLACEHOLDER.test(focus)) local.set('boardTurnsRecent', [focus, ...recentTurns().filter((x) => x !== focus)].slice(0, 6));
   }
+  function recentTurns() { const r = local.get('boardTurnsRecent'); return Array.isArray(r) ? r.filter((x) => typeof x === 'string' && !isCode(x)) : []; }
+  const recentChips = () => {
+    const r = PREVIEW ? recentTurns().filter((x) => x !== focus && !tracked().includes(x)) : [];
+    return r.length ? `<div class="tracked tn2-recent"><span class="lbl">Looked up lately:</span>${r.map((x) => `<button type="button" data-recent="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : '';
+  };
   try { setFocus(localStorage.getItem('boardTurn') || ''); } catch (e) { /* storage off */ }
 
   // Turn History tab (owner, 2026-10-24): one turn, from the newest check,
@@ -4840,7 +4903,7 @@ source().then(async (src) => {
     const options = BoardTurns.turnsIn(s).filter((t) => !BoardTurns.PLACEHOLDER.test(t)).map((t) => `<option value="${t}"></option>`).join('');
     view.innerHTML = `<div class="thead"><div class="when">Turn History</div>
         <div class="turnpick"><label for="tturn">Look up a turn</label><div class="row"><input id="tturn" list="tturnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6" value="${esc(focus)}"><button id="tgo" type="button">Show</button></div>
-          <datalist id="tturnlist">${options}</datalist><div class="tracked">${trackChips('Your tracked turns:')}</div></div></div>
+          <datalist id="tturnlist">${options}</datalist><div class="tracked">${trackChips('Your tracked turns:')}</div>${recentChips()}</div></div>
       ${focus ? (isCode(focus) ? '<div id="person"><p class="empty">Looking that up…</p></div>' : turnPanel(s)) : '<p class="empty">Type a turn (e.g. SR03) to see where it stands now, when it goes, and everything the saved checks show about it.</p>'}`;
     // A person search stays out of the address bar.
     try { history.replaceState(null, '', focus && !isCode(focus) ? `#turn=${encodeURIComponent(focus)}` : '#turns'); } catch (e) { /* not allowed in some frames */ }
@@ -4856,6 +4919,7 @@ source().then(async (src) => {
     box.onchange = go;
     document.getElementById('tgo').onclick = go;
     view.querySelectorAll('.thead [data-track]').forEach((b) => { b.onclick = () => { const x = b.dataset.track; setFocus(isPerson(x) ? (codes()[x] || nowTurn(x)) : x); renderTurns(); }; });
+    view.querySelectorAll('.thead [data-recent]').forEach((b) => { b.onclick = () => { setFocus(b.dataset.recent); renderTurns(); }; });
     if (!focus) return;
     if (isCode(focus)) return showPerson(focus, s);
     if (BoardTurns.PLACEHOLDER.test(focus)) {
@@ -4980,7 +5044,7 @@ source().then(async (src) => {
     const prev = focus;
     focus = live ? cur.turn : '';
     setMarks();
-    box.innerHTML = `<section class="sheet turnpanel"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
+    box.innerHTML = `<section class="sheet turnpanel${PREVIEW ? ' tn2' : ''}"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
       ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
@@ -4988,8 +5052,10 @@ source().then(async (src) => {
       <div id="whengo" class="whengo" hidden></div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
       <div id="held186" class="work"></div>
-      <div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
-      <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div class="hist">${h.changes}</div></div></div>
+      ${PREVIEW ? `<details class="moredet tn2-notes"><summary>Turns seen on (${homes.length})</summary><div class="hist">${homeList}</div></details>
+      <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div class="hist">${h.changes}</div></details>`
+    : `<div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
+      <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div class="hist">${h.changes}</div></div></div>`}
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
@@ -5663,7 +5729,16 @@ source().then(async (src) => {
         const gap = gaps[0];
         el.textContent = gap < 0 ? 'Called ' + dur(gap) + ' early' : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
         el.classList.add(gap ? 'spare' : 'ok');
+        el.dataset.gap = gap;
       });
+      // The test site: the calls added up over the work history.
+      const sum = box.querySelector('[data-work-sum]');
+      if (sum) {
+        const gaps = [...box.querySelectorAll('[data-call-result][data-gap]')].map((el) => +el.dataset.gap);
+        const on = gaps.filter((g) => !g).length; const early = gaps.filter((g) => g < 0).length; const late = gaps.filter((g) => g > 0).length;
+        const off = gaps.filter(Boolean).map(Math.abs).sort((a, b) => a - b);
+        if (gaps.length) sum.innerHTML = `<b>${plural(+sum.dataset.trips, 'trip')}</b> in the saved checks. Of ${plural(gaps.length, 'call')} that can be compared: <b class="ok">${on}</b> when first expected, <b class="bad">${early}</b> early, <b class="warn">${late}</b> late${off.length ? `; when it moved, typically by ${esc(dur(off[Math.floor((off.length - 1) / 2)]))}` : ''}. Tap a trip for its call history.`;
+      }
     } catch (e) {
       if (box.isConnected) box.querySelectorAll('[data-call-result]').forEach((el) => { el.textContent = 'Call stability could not be loaded'; });
     }

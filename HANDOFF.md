@@ -470,6 +470,43 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Turn History, improved on the test site, 2026-11-10 (owner: "come up with improvments to
+the turn history tab and push those to the test site").** Preview only, every change
+behind `PREVIEW` in board.html; the regular site draws Turn History as before (checked
+here on SR03, B122, S501-CO and a name code). Why it was the way it was: the page grew a
+section at a time (when it goes 10-24, work history 10-25, call stability per trip 11-07,
+the "what the board showed" fold 11-10), each added under the last, so where the turn
+stands now ended up below the whole work history and every trip was a four-line table
+cell. What changed:
+1. **Now comes first**, under the turn's name (`turnPanel`, `.tn2-now`), then when it goes.
+2. **Work history as short rows** (`workHistory` → `.work2`, the same table restyled so
+   `wireWork` and the call graph are untouched): train, how the call went as a pill (red
+   early, amber late, green as first expected), who it worked with; under it call · on
+   duty · off. The newest 6 show (`WORK2_SHOW`), "Show all N trips" for the rest.
+3. **The calls added up** in one line over the list (`[data-work-sum]`, filled by the
+   `work-call-results` handler): e.g. SR03 "16 trips. Of 16 calls that can be compared: 2
+   when first expected, 5 early, 9 late; when it moved, typically by 45 m".
+4. **The board's notes fold away** ("Board notes: every change the checks saw"); on a
+   person search "Turns seen on (N)" folds too.
+5. **Looked up lately**: the last six turns looked up, one tap each (`boardTurnsRecent` on
+   the phone; turns only, a name code is never kept, same rule as `boardTurn`).
+At phone width on live data, test site vs regular: SR03 1,788 px vs 3,236; a name code
+1,811 vs 3,022; no sideways scroll, no page errors. Opening a trip still draws its call
+graph. Suite 292 of 304 (no automated test covers this layout).
+
+**Where everything on the test site stands, 2026-11-10 (owner: "update the handoff file
+once this is done").** Nothing below is on the main site; promote only on his say-so.
+- Analytics new layout (incl. Call stability by origin, My week, the simpler Assignment
+  errors), Snapshots rows, 18.6(b) rows, the newer-version bar, the compact header.
+- Current: train habit chip and the likely-call window on planned Sarnia trains (**on a
+  two-week test, 2026-11-11 to 11-24, read in the Test tab; check-in booked 11-25**).
+- Spareboards: predictions built but **switched off** (`SPARE_PREDICT = false`).
+- Turn History: the layout above.
+- Test tab: the likely-call test (on the main site the Test tab is still the old
+  Analytics preview).
+Laptop: he pulls and restarts after each push; `data/patterns.json` (board, drift,
+predict, score, spare, lead) is written on every publish.
+
 **Likely-call window on a two-week test, 2026-11-10 (owner: "track it for 2 weeks. Use
 the data its collecting and test to see how accurate the predictions are. If its more
 beneficial than the time it shows over 2 weeks maybe we can push it [to] the main site, in

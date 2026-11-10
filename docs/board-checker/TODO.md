@@ -198,6 +198,9 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-10: **Turn History, new layout** (test site only, not promoted): now first,
+  short trip rows with the calls added up, notes folded, recent lookups; see HANDOFF.
+
 - 2026-11-10: **Likely-call test** set up (test site, Test tab): 2026-11-11 to 11-24, then
   decide whether the train window goes to the main site; see HANDOFF.
 
