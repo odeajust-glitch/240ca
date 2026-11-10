@@ -389,3 +389,28 @@ test('matching a phone to its member leaves its alerts exactly as they were', as
   assert.equal(JSON.parse(store.get(key)).account, id);
   assert.deepEqual((await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.id === id).follows, { phones: 1, turns: ['SR03'], people: 1 });
 });
+
+// Owner, 2026-11-10: crew names on the board, for members only, on the test
+// site first (CREW_NAMES).
+test('the crew names key goes only to approved members, and only where it is switched on', async () => {
+  const off = await setup({ LOCK: 'on' });
+  off.store.set('settings/held186.json', JSON.stringify({ namesPass: 'the-passcode' }));
+  assert.equal((await off.call('/api/crewkey', { key: OWNER_KEY })).status, 404); // not switched on here
+
+  const { call, cookieOf, store, mails, env } = await setup({ CREW_NAMES: 'on' }); // an unlocked site
+  assert.equal((await call('/api/crewkey', { key: OWNER_KEY })).status, 503); // no passcode saved yet
+  store.set('settings/held186.json', JSON.stringify({ namesPass: 'the-passcode' }));
+  assert.equal((await call('/api/crewkey')).status, 404); // a stranger, even with the site open
+  const body = person('n1');
+  await call('/auth/signup', { body, ip: '9.9.9.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  assert.equal((await call('/api/crewkey', { cookie })).status, 404); // waiting for approval
+  const id = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === body.email).id;
+  await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+  assert.deepEqual(await (await call('/api/crewkey', { cookie })).json(), { pass: 'the-passcode' });
+  assert.deepEqual(await (await call('/api/crewkey', { key: OWNER_KEY })).json(), { pass: 'the-passcode' });
+  await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'remove' } });
+  assert.equal((await call('/api/crewkey', { cookie })).status, 404); // removed: at once
+  assert.equal((await call('/settings/held186.json')).status, 404);
+  assert.ok(env);
+});

@@ -667,6 +667,7 @@
   .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
+  .crewnm { color: var(--soft); font-weight: 400; font-size: 0.92em; white-space: nowrap; letter-spacing: 0; text-transform: none; }
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
   .anote b { color: var(--ink); }
   table.orders tr.nolink { cursor: default; }
@@ -1419,6 +1420,34 @@ function poolChip(rules) {
   return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
 }
 // The marked turns, picked out in a line of text.
+// Crew names on the board, test site only for now (owner, 2026-11-10: "once
+// the site is locked … add crew names to the board"; "last name, first
+// initial"). CREW: { turn: "Last, F" } from data/crew.json, which is locked;
+// the Worker gives its key to approved members only (loadCrew). Names never
+// go into an alert: they are only drawn here.
+let CREW = null;
+const crewTag = (key) => (PREVIEW && CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
+// The name after each turn in a line of text ("CO SR05 · EN SD11"). A
+// 501/502 turn is two people: named only where the text says which
+// ("CO S501", "S501-EN").
+function crewIn(html) {
+  if (!PREVIEW || !CREW) return html;
+  let before = '';
+  return html.split(/(<[^>]+>)/).map((seg) => {
+    if (!seg || seg[0] === '<') return seg;
+    const out = seg.replace(/(^|[^A-Z0-9-])([A-Z][A-Z0-9]\d{2})(-(?:CO|EN))?(?![A-Z0-9])/g, (all, lead, turn, suffix, at) => {
+      let key = turn + (suffix || '');
+      if (!suffix && /^S5\d{2}$/.test(turn)) {
+        const said = /(CO|EN|LE|ET)\s*$/.exec(before + seg.slice(0, at) + lead);
+        if (!said) return all;
+        key = `${turn}-${said[1] === 'CO' ? 'CO' : 'EN'}`;
+      }
+      return CREW[key] ? `${all} <span class="crewnm">${esc(CREW[key])}</span>` : all;
+    });
+    before += seg;
+    return out;
+  }).join('');
+}
 function markTurn(text) {
   let safe = esc(text);
   const ids = marks.filter((m) => /^[A-Z0-9]+$/.test(m));
@@ -1434,7 +1463,7 @@ function markTurn(text) {
     const two = (safe.match(new RegExp(`(^|[^A-Z0-9])${base}(?=[^A-Z0-9]|$)`, 'g')) || []).length === 2 && / \+ /.test(safe);
     safe = safe.replace(new RegExp(`(^|[^A-Z0-9])(${base})(?=[^A-Z0-9]|$)`, 'g'), (all, a, b) => { const i = n++; return !two || i === (craft === 'CO' ? 0 : 1) ? `${a}<mark class="t">${b}</mark>` : all; });
   }
-  return safe;
+  return crewIn(safe);
 }
 function ruleText(rules) {
   // No turn free, conductor or engineer: still an SR train with its chip,
@@ -1808,7 +1837,7 @@ function poolBody(s, p) {
     const odds = SPARE_PREDICT && !likely && open ? boardOdds(p.name, out) : '';
     const likelyHtml = likely ? `<details class="splikely${likely.tight ? ' tight' : ''}"><summary>likely call ${esc(likely.window)} <small>· held ${likely.held} of ${likely.n}</small></summary><p>${esc(likely.text)}</p></details>` : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
-    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
+    return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${crewTag(resetKey(t))}${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
     <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
       ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2">${t.job ? `<div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div>` : ''}${likelyHtml}</td></tr>` : ''}`;
@@ -2023,7 +2052,7 @@ function turnPanel(s) {
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
   // The test site (owner, 2026-11-10: "improvements to the turn history tab"): where the turn
   // stands now comes first, under its name; the board's notes fold away under the work history.
-  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div class="tn2-now"><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
@@ -4020,6 +4049,17 @@ source().then(async (src) => {
   function wireHealthRetry(root) {
     root.querySelectorAll('[data-health-retry]').forEach(button => { button.onclick = retryHealth; });
   }
+  // Crew names (test site): the key from the Worker, the locked file opened
+  // in the browser, then the page drawn again with the names in.
+  async function loadCrew() {
+    if (CREW || !window.BoardNames) return;
+    try {
+      const r = await fetch('api/crewkey', { cache: 'no-store', headers: OwnerKey.headers() });
+      if (!r.ok) return;
+      const got = await BoardNames.unlockNames(await getJSON('data/crew.json'), (await r.json()).pass);
+      if (got && got.turns && PREVIEW) { CREW = got.turns; setMode(mode); }
+    } catch (e) { /* no names: the board as it was */ }
+  }
   async function showHealth(after, refreshIndex = false) {
     const request = ++healthRequest;
     const hadReport = !!healthData;
@@ -4058,6 +4098,7 @@ source().then(async (src) => {
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
+      if (PREVIEW) loadCrew();
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }

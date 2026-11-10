@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { parseGrid } = require('../../lib/board/grid');
 const S = require('../../lib/board/screens');
-const { recordNames, namesForHeld, lockNames, loadNames, saveNames } = require('../../lib/board/names');
+const { recordNames, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
 const { unlockNames } = require('../../public/board-names');
 const { buildSite } = require('../../lib/board/site');
 
@@ -84,4 +84,29 @@ test('names: the site publishes data/names.json only with BOARD_NAMES_KEY, and n
   for (const f of fs.readdirSync(path.join(out, 'data'))) {
     assert.doesNotMatch(fs.readFileSync(path.join(out, 'data', f), 'utf8'), /Mike|Wilson|de Man/, f);
   }
+});
+
+// Owner, 2026-11-10: crew names on the board for members, "last name, first
+// initial ie Justin O'Dea would be O'Dea, J".
+test('names: each turn\'s latest name as "Last, F", a 501/502 turn by craft', () => {
+  assert.equal(shortName("Justin O'Dea"), "O'Dea, J");
+  assert.equal(shortName('Mike de Man'), 'de Man, M');
+  assert.equal(shortName("Kate O'Brien-Smith"), "O'Brien-Smith, K");
+  assert.equal(shortName('Cher'), 'Cher');
+  assert.equal(shortName(''), '');
+  const at = new Date('2026-10-18T05:00:00Z');
+  const store = recordNames({}, S.parseCallBoardNames(parseGrid(PAGE)), at);
+  // A 501 job: conductor and engineer under one turn number.
+  recordNames(store, [{ symbol: 'L50131', originDay: '18', crew: [{ craft: 'EN', turn: 'S501', name: 'Ann Lee' }, { craft: 'CO', turn: 'S501', name: "Justin O'Dea" }] }], at);
+  assert.equal(store['L50131 18|S501'].name, "Justin O'Dea"); // as before: the last read
+  assert.deepEqual(namesByTurn(store, new Date('2026-10-18T06:00:00Z')), { MU01: "O'Brien-Smith, K", 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SD11: 'Wilson, D', SR05: 'de Man, M' });
+  // A spare on the turn later is the name shown; an old S5 entry with no craft is left out.
+  recordNames(store, [{ symbol: 'M38331', originDay: '20', crew: [{ craft: 'CO', turn: 'SR05', name: 'Sam Spare' }] }], new Date('2026-10-20T05:00:00Z'));
+  store['L50231 16|S502'] = { name: 'Old Entry', seen: '2026-10-16T05:00:00.000Z' };
+  const later = namesByTurn(store, new Date('2026-10-21T06:00:00Z'));
+  assert.equal(later.SR05, 'Spare, S');
+  assert.equal(later['S502-CO'], undefined);
+  assert.equal(later.S502, undefined);
+  // Not seen for 14 days: no name.
+  assert.deepEqual(namesByTurn(store, new Date('2026-11-20T06:00:00Z')), {});
 });

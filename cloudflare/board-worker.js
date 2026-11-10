@@ -1402,6 +1402,22 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   return json({ ok: true, mail });
 }
 
+// Crew names on the board, members only (owner, 2026-11-10). The laptop
+// publishes each turn's latest name locked (data/crew.json, the same key as
+// the 18.6(b) names); this hands the key to an approved member, signed in,
+// or to the owner key, and only where the variable CREW_NAMES is on. It
+// does not depend on LOCK: an unlocked site still gives it to nobody else.
+// The key is the crew names passcode saved on Page Health.
+async function crewKey(request, env) {
+  if (!switchOn(env.CREW_NAMES)) return json({ error: 'not found' }, 404);
+  let ok = keyMatches(request, env);
+  if (!ok) { const who = await sessionOf(request, env, Date.now(), true); ok = !!who && who.status === 'approved'; }
+  if (!ok) return json({ error: 'not found' }, 404);
+  const pass = ((await readJson(env, HELD186_KEY)) || {}).namesPass;
+  if (!pass) return json({ error: 'The crew names passcode isn\'t saved on Page Health yet.' }, 503);
+  return json({ pass });
+}
+
 // Whose phone, without touching its alerts (owner, 2026-11-10: match phones
 // to members for a week before alerts to unmatched phones stop; "make sure
 // it doesn't affect anyone that will get a notification"). The page sends
@@ -1427,6 +1443,7 @@ async function accounts(request, env, url) {
   const p = url.pathname;
   if (p === '/account') return new Response(ACCOUNT_PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'same-origin' } });
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
+  if (p === '/api/crewkey') return crewKey(request, env);
   if (p === '/push/claim') return request.method === 'POST' ? claimPhone(request, env) : json({ error: 'POST only' }, 405);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);

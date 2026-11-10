@@ -78,6 +78,36 @@ stops at 50 people. The accounts are built into the Worker
 - Account files are in R2 under `accounts/` and are never served.
 - Only the owner key opens the list (not the Cloudflare Access email).
 
+## Crew names on the board (test site only so far)
+
+Owner, 2026-11-10: "once the site is locked and it is members only, I would
+like to add crew names to the board … push it to the test site for now";
+"last name, first initial ie Justin O'Dea would be O'Dea, J"; names only for
+turns seen on a Call Board in the last 14 days is fine for a first version;
+"no names in the notifications" until the alerts grace period is over. His
+reason it is all right: every approved member can already see these names
+in CATS.
+
+- **Laptop** (`lib/board/names.js` `namesByTurn`, `lib/board/site.js`): each
+  turn's latest name as "Last, F" goes out as `data/crew.json`, locked with
+  `BOARD_NAMES_KEY` like the 18.6(b) names. A 501/502 turn is two people:
+  keys `S501-CO` / `S501-EN`. A spare who filled a turn is the name shown
+  until the regular is seen on it again.
+- **Worker** `GET /api/crewkey`: the passcode (the "Crew names passcode"
+  saved on Page Health) to an approved signed-in member or the owner key,
+  and only where the variable `CREW_NAMES` = `on`. Not tied to `LOCK`.
+- **Page** (`CREW`, `crewTag`, `crewIn`, `loadCrew` in `board.html`): drawn
+  only when `PREVIEW` is on (the `board-test` address with the owner key):
+  beside the turn in pool and spareboard rows, the turn panel, and after a
+  turn wherever `markTurn` writes a line (line-up, crews, away lists).
+- **Alerts carry no names**; nothing here touches them.
+- To put it on the main site later: set `CREW_NAMES` = `on` on `board`, and
+  in `board.html` let members load it (today `loadCrew` runs only from the
+  owner-key `PREVIEW` switch, and `crewTag` / `crewIn` test `PREVIEW`).
+- Known limits: a removed member who kept the passcode could still open a
+  copy of the file they saved; changing `BOARD_NAMES_KEY` and the saved
+  passcode ends that.
+
 ## Worker settings
 
 | Name | Type | What |
@@ -88,6 +118,7 @@ stops at 50 people. The accounts are built into the Worker
 | `AUTH_SECRET` | Secret, optional | Signs the cookies instead of `OWNER_KEY`. Changing whichever is used signs everyone out. |
 | `MAIL_SCRIPT_URL`, `MAIL_SCRIPT_KEY` | Secrets | The Gmail script (EMAIL.md). |
 | `MAIL_DAY_MAX` | Variable, optional | Account emails a day; 70 if not set. Gmail stops at about 100 a day in all and 18.6(b) is allowed 30, so above 70 the two compete. Raised for the lock (2026-11-10); delete it again once things settle. |
+| `CREW_NAMES` | Variable, optional | `on` = approved members may fetch the key to the crew names (`board-test` only for now). |
 | `SITE_URL` | Variable | The address put in the emails. |
 
 Stays open when locked: `/account`, `/auth/*`, the app icon / manifest /
