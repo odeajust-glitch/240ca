@@ -9,7 +9,9 @@ Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-S
 that morning cut a tab in half at the edge ("Article 1…"). Now the tabs wrap into as many
 rows as they need (three on his phone), each row filled edge to edge, and the bar uses the
 48px the top bar keeps for the gear (`body.nav-one-row .modes` in `public/board.html`; the
-class kept its name, the scroll-into-view line is gone). **This supersedes "one swipeable
+class kept its name, the scroll-into-view line is gone). Then, from a second
+screenshot: "Make current and turn history take up the first row": those two are half the
+row each, the rest wrap under them. **This supersedes "one swipeable
 row" in the notes below.** Measured in all six styles at phone width: no tab past the
 edge, nothing to scroll. Laptop pull/restart/publish pending.
 

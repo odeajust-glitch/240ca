@@ -760,7 +760,9 @@
        say there was more). Replaces the swipe row of that morning. */
     /* The top bar keeps 48px free on the right for the gear; the tabs sit below it, so they take that back. */
     body.nav-one-row .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-right: -48px; width: calc(100% + 48px); }
-    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; } }
+    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
+    /* Current and Turn History share the first row, half each (owner, 2026-11-10). */
+    body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); } }
   /* Order summary, the two-line rows (2026-11-10). */
   .os2-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
   .os2-filters label { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; }
