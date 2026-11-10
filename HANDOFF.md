@@ -470,6 +470,35 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Patterns on the test site, and two tracker fixes, 2026-11-10 (owner: "Push this to the
+test site"; then, from board-test on his phone: separate yard / Sarnia / Mac yard under a
+search, and "502 got messed up ... the train goes every day it doesn't get removed").**
+The test site works on the real board-test address (his screenshot).
+- **`lib/board/patterns.js` → `data/patterns.json`** (site.js builds it every publish from
+  all the day files; unused at the normal address): `board` (an available spare's place on
+  a spareboard → time until on duty), `drift` (a Sarnia train number against its first
+  plan), `lead` (how wrong the shown time is by how far out). test/board/patterns.test.js.
+- **Test site only** (`PATTERNS`, loaded when `PREVIEW` turns on): Current's spareboards
+  say under each available turn "typically works in 5 h · 78% within 8 h" (`boardOdds`);
+  line-up rows carry a habit chip ("usually +2.8 h", "holds its plan") and, opened, "How
+  this train has gone" with the trust-by-lead note (`trainHabit`, `planTrust`); My week has
+  "Sleep this week" (lost to early calls, waiting on late ones, calls 0000–0459, night
+  calls in a row, under 8 h notice, shortest time off before a call, on-duty range).
+  Not built: the spare-job alert (alerts are sent by the laptop, so it can't be test-only).
+- **Under a turn or person search** the Call stability box has a card each for trains
+  ordered out of Sarnia, out of Mac yard, yard jobs and Garnet (`ana2SearchCalls`,
+  `ana2.originOf`).
+- **Tracker fixes (every tab, after the next publish):** (1) a turn the line-up shows going
+  spare for a train is no longer lined up for it, so a day off is not a "removed from the
+  line-up"; (2) on 501/502, a train that goes with the other crew's number or a make-up
+  crew drops the wait silently: the line-up had the wrong crew, nobody was removed;
+  (3) a person search takes only their craft's records on 501/502 (each trip showed twice).
+  Replayed on the live days: removed waits 264 → 220; S501-CO has no removals left
+  (S502-CO keeps two, both a spare covering the conductor). About 22 calls no longer have a
+  record: turns marked going spare that went anyway.
+Simulated here with the patterns file and the fixed records: no page errors. Suite 290 of
+302, the same 12 failing.
+
 **Data study, 2026-11-10 (owner: "look up different things that would be useful to track
 especially ... sleep ... the spareboard. Examine all the data ... find patterns or ways to
 predict line ups"). Nothing built; 26 live days (16 Oct – 10 Nov), about 1,060 calls.**

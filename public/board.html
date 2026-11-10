@@ -846,6 +846,11 @@
   .newversion { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 18px rgba(0, 0, 0, .35); font-size: 14px; font-weight: 600; }
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
   @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
+  .odds { display: block; font-size: 12px; color: var(--accent); margin-top: 2px; }
+  .chip.habit.late { background: #2a2247; color: #c9b8fb; }
+  .chip.habit.early { background: var(--stop-tint); color: var(--stop); }
+  .chip.habit.ok { background: var(--go-tint); color: var(--go); }
+  .habitnote { border-left: 3px solid var(--accent); padding-left: 8px; }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -1532,10 +1537,12 @@ function lineup2(s) {
     const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
     day = d;
     const [sym, od] = split(t.train);
-    const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}`;
+    const habit = t.deadhead ? null : trainHabit(t.train);
+    const lead = planTrust(s, t);
+    const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}${habit && t.status !== 'ORD' ? ` ${habit.chip}` : ''}`;
     const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}`;
     return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
-      fold: lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
+      fold: (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
@@ -1679,11 +1686,13 @@ function askResets(s) {
 }
 // One pool's board: its table and the notes under it.
 function poolBody(s, p) {
+  let out = 0; // place among the turns available now (test site: how soon such a turn has worked)
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
+    const odds = !t.left && t.status === 'available' ? boardOdds(p.name, ++out) : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span></td></tr>${t.job
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
       ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2"><div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div></td></tr>` : ''}`;
   }).join('');
@@ -2379,6 +2388,36 @@ let ANA2 = false;
 // Everywhere else PREVIEW stays false and nothing below changes.
 const PREVIEW_HOST = /^board-test\./.test(location.hostname);
 let PREVIEW = false;
+// data/patterns.json (lib/board/patterns.js), loaded on the test site only:
+// board position → time to work, a train's habit, how wrong a shown time is.
+let PATTERNS = null;
+const hrs = (m) => (m == null ? '' : m >= 600 ? `${Math.round(m / 60)} h` : `${(m / 60).toFixed(1).replace(/\.0$/, '')} h`);
+// An available spare at this place on a spareboard: how soon such a turn has worked.
+function boardOdds(poolName, rank) {
+  const m = /^(Conductor|Engineer) (fast|slow) board/.exec(poolName || '');
+  const list = PREVIEW && PATTERNS && m ? (PATTERNS.board || {})[`${m[1]} ${m[2]}`] : null;
+  if (!list) return '';
+  const name = rank <= 1 ? '1st' : rank === 2 ? '2nd' : rank === 3 ? '3rd' : rank <= 5 ? '4th–5th' : rank <= 8 ? '6th–8th' : '9th or more';
+  const x = list.find((r) => r.rank === name);
+  return x ? `<span class="odds" title="From ${x.n} looks at this board over ${PATTERNS.days} days: an available turn ${esc(name)} out was on duty in a typical ${hrs(x.median)}; a quarter within ${hrs(x.quarter)}, three in four within ${hrs(x.most)}.">typically works in ${hrs(x.median)} · ${x.in8}% within 8 h${x.in4 >= 10 ? ` · ${x.in4}% within 4 h` : ''}</span>` : '';
+}
+// A Sarnia train's habit against its first plan, and how far the shown time can be trusted this far out.
+function trainHabit(train) {
+  const num = (/^[A-Z]+(\d{3})/.exec(train || '') || [])[1];
+  const d = PREVIEW && PATTERNS && num ? (PATTERNS.drift || {})[num] : null;
+  if (!d) return null;
+  const text = d.within30 >= 70 ? `usually on its first plan (${d.within30}% within 30 min)` : d.median >= 45 ? `usually goes about ${hrs(d.median)} later than first planned (${d.later}% go later)`
+    : d.median <= -45 ? `usually goes about ${hrs(-d.median)} earlier than first planned (${d.earlier}% go earlier)` : `no steady habit: ${d.later}% later, ${d.earlier}% earlier than first planned`;
+  const chip = d.within30 >= 70 ? '<span class="chip habit ok">holds its plan</span>' : d.median >= 45 ? `<span class="chip habit late">usually +${hrs(d.median)}</span>` : d.median <= -45 ? `<span class="chip habit early">usually −${hrs(-d.median)}</span>` : '';
+  return { chip, text: `x${num} ${text}, over ${d.n} runs.` };
+}
+function planTrust(s, t) {
+  const od = BoardTrains.resolve(t.order, s.taken);
+  if (!PREVIEW || !PATTERNS || !od || t.status === 'ORD') return '';
+  const out = (stampMin(od) - stampMin(s.sameUntil || s.taken)) / 60;
+  const b = (PATTERNS.lead || []).find((x) => out >= x.lo && out < x.hi);
+  return b ? `A time shown ${b.lo}–${b.hi} h before on duty has been within an hour ${b.within1h}% of the time, and 2 h or more out ${b.off2h}% of the time (${b.n} trains).` : '';
+}
 const ANA2_PAGE = 20;
 let ANA2_CALLS = []; // call records whose graph is drawn when opened
 let ANA2_MORE = []; // "show more" lists
@@ -2678,9 +2717,34 @@ function anaMyWeek2({ weeks = [] }) {
     ].join('');
     const reset = resetKey && RESETS && RESETS.turns ? RESETS.turns[resetKey] : null;
     const calls = band.ok + band.warn + band.bad;
+    // Sleep (test site; owner, 2026-11-10): what the week's calls cost.
+    let sleepBox = '';
+    if (PREVIEW && trips.length) {
+      const gapsNow = trips.map(({ r }) => gapOf(call(r))).filter((g) => g != null);
+      const lost = gapsNow.filter((g) => g < 0).reduce((n, g) => n - g, 0);
+      const waited = gapsNow.filter((g) => g > 0).reduce((n, g) => n + g, 0);
+      const callAt = trips.map(({ r }) => stampMin(r.at) - 120);
+      const isNight = (m0) => { const hh = ((m0 % 1440) + 1440) % 1440 / 60; return hh < 5 || hh >= 22; };
+      const nights = callAt.filter((m0) => { const hh = ((m0 % 1440) + 1440) % 1440 / 60; return hh < 5; }).length;
+      let run = 0, best = 0;
+      for (const m0 of callAt) { run = isNight(m0) ? run + 1 : 0; best = Math.max(best, run); }
+      const short = trips.filter(({ r }) => { const z = call(r); const mm = z && BoardAnalytics.callTimeline(z); return mm && mm.end != null && mm.end - mm.first < 480; }).length;
+      const before = trips.map((t, i) => (i && trips[i - 1].off ? stampMin(t.r.at) - 120 - stampMin(trips[i - 1].off) : null)).filter((g) => g != null && g >= 0);
+      const starts = trips.map(({ r }) => r.at.slice(11)).sort();
+      const line = (label, value, alert) => `<div${alert ? ' class="alert"' : ''}><span>${label}</span><b>${value}</b></div>`;
+      sleepBox = `<div class="tl2-group week2-sleep"><h3>Sleep this week</h3>
+        ${line('Lost to early calls <small>(against the first plan)</small>', lost ? hm(lost) : 'none', lost >= 120)}
+        ${line('Spent waiting on late calls', waited ? hm(waited) : 'none')}
+        ${line('Calls between midnight and 0459', String(nights), nights >= 3)}
+        ${line('Night calls in a row <small>(2200–0459)</small>', String(best), best >= 3)}
+        ${line('Calls with under 8 h notice', String(short), short > 0)}
+        ${line('Shortest time off before a call', before.length ? hm(Math.min(...before)) : '—', before.length && Math.min(...before) < 600)}
+        ${starts.length > 1 ? line('On-duty times ranged', `${starts[0]}–${starts[starts.length - 1]}`) : ''}</div>`;
+    }
     return `<section class="sheet"><header><h2>${esc(name)}</h2><span class="meta">${esc(x.label)}</span></header>
       ${reset && (reset.dueText || reset.onBreak) ? `<p class="week2-reset${reset.level === 'red' ? ' bad' : reset.level ? ' warn' : ''}"><b>Reset:</b> ${esc(resetText(reset))}</p>` : ''}
       <div class="strip">${anaTile(x.trips, 'Trips')}${anaTile(x.yard, 'Yard jobs')}${anaTile(known ? hm(total) : '—', `On duty${known && known < trips.length ? ` (${known} of ${trips.length} trips with an off-duty time)` : ''}`)}${anaTile(x.held14, 'Held 14 h+', x.held14 > 0)}${anaTile(gaps.length ? hm(Math.min(...gaps)) : '—', 'Shortest time off between trips')}</div>
+      ${sleepBox}
       ${calls ? `<p class="anote" style="margin:10px 14px">Calls against the first plan: <span class="offv ok">${band.ok} within 30 min</span> · <span class="offv warn">${band.warn} within 1 h</span> · <span class="offv bad">${band.bad} over 1 h</span></p>` : ''}
       ${rows || '<p class="empty" style="margin:10px 14px">No trains or yard jobs worked that week.</p>'}${extra}</section>`;
   };
@@ -3621,7 +3685,11 @@ source().then(async (src) => {
     document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
     // The test site's previews: this address and the owner key, nothing else.
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
-    if (preview !== PREVIEW) { PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW); if (PREVIEW) checkSiteVersion(); setTimeout(() => setMode(mode), 0); }
+    if (preview !== PREVIEW) {
+      PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
+      if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
+      setTimeout(() => setMode(mode), 0);
+    }
     membersOwner = !!(h && OwnerKey.has());
     document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
     const note = document.getElementById('keynote');
@@ -5497,13 +5565,17 @@ source().then(async (src) => {
     const sec = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Call stability');
     if (!sec) return;
     const st = ana2OriginStats(calls);
+    // Apart, as on the Call stability page (owner, 2026-11-10): the calls are much worse out of Sarnia.
+    const groups = [['sarnia', 'Trains ordered out of Sarnia'], ['toronto', 'Trains ordered out of Mac yard'], ['yard', 'Yard jobs'], ['garnet', 'Garnet (L501 home)']]
+      .map(([k, name]) => [name, calls.filter((z) => ana2.originOf && ana2.originOf(z) === k)]).filter(([, l]) => l.filter((z) => !z.takenOff).length);
+    const cards = groups.length > 1 ? groups.map(([name, l]) => ana2OriginCard(name, who, ana2OriginStats(l))).join('') : ana2OriginCard(groups.length ? `${who}: ${groups[0][0].toLowerCase()}` : who, 'actual call against the first planned call', st);
     const removed = calls.filter((z) => z.takenOff).length;
     const pulled = calls.filter((z) => !z.takenOff && (z.timelineChanges || []).some((c) => c.dropped)).length;
     const more = document.createElement('details');
     more.className = 'cs2-morebox';
     more.innerHTML = '<summary>More numbers and how they are worked out</summary><div></div>';
     [...sec.children].forEach((el) => { if (!el.matches('header')) more.lastChild.appendChild(el); });
-    sec.insertAdjacentHTML('beforeend', `<div class="cs2-grid">${ana2OriginCard(who, 'actual call against the first planned call', st)}</div>
+    sec.insertAdjacentHTML('beforeend', `<div class="cs2-grid">${cards}</div>
       ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `Removed from the line-up after lining up: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
       <h3 class="cs2-h3">Calls, newest first</h3>${ana2CallList(calls, false)}`);
     sec.appendChild(more);
@@ -5624,6 +5696,7 @@ source().then(async (src) => {
     const poolKey = (t) => (/^S5/.test(t) ? 'S5' : /^(B|EN)\d/.test(t) ? 'B' : t.slice(0, 2));
     const sleep = !ANA2 ? sleepInDates : sleepInDates.filter((z) => (ana2.origin === 'all' || originOf(z) === ana2.origin) && (ana2.pool === 'all' || poolKey(z.turn) === ana2.pool) && (ana2.craft === 'all' || craftOf(z.turn) === ana2.craft));
     if (ANA2) {
+      ana2.originOf = originOf;
       ana2.byOrigin = { sarnia: [], toronto: [], garnet: [], yard: [] };
       for (const z of sleepInDates) if ((ana2.pool === 'all' || poolKey(z.turn) === ana2.pool) && (ana2.craft === 'all' || craftOf(z.turn) === ana2.craft)) ana2.byOrigin[originOf(z)].push(z);
     }
@@ -5715,7 +5788,8 @@ source().then(async (src) => {
         const runs = inRange(workRuns(unique([...worked(list ? personHistory(list, turnsAll) : null, ''), ...oldWork]), byId), range);
         anaCsv = { name: 'person', runs };
         // Their calls: on a turn while they were on it.
-        const mine = sleep.filter((z) => stretches.some((e) => e.turn === BoardTurns.splitCraft(z.turn).base && z.firstSeen <= e.to && z.seen >= e.from));
+        // On 501/502 only their craft (owner, 2026-11-10: every trip showed twice, and the engineer's removals as his).
+        const mine = sleep.filter((z) => stretches.some((e) => { const tc = BoardTurns.splitCraft(z.turn); return e.turn === tc.base && z.firstSeen <= e.to && z.seen >= e.from && (!tc.craft || !e.craft || tc.craft === e.craft); }));
         detailSleep = mine;
         body = analyticsView(runs, 'code', 'Person search', `last seen on ${esc(Person.current(stretches, h && Person.pickOf(h)).turn)}`, { between: between(runs), spares: null, sleep: mine });
       }
