@@ -399,10 +399,13 @@
   .preview-order-filters select, .preview-order-filters input { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; }
   .preview-order-filters button { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 12px; cursor: pointer; }
   .preview-order-filters input, .preview-order-filters select, .preview-order-filters button { min-height: 44px; max-width: 100%; }
-  .preview-order-details { padding: 14px; white-space: normal; }
+  .preview-order-details, table.orders td.preview-order-details { padding: 14px; white-space: normal; }
   .preview-order-details .timeline-facts { margin-bottom: 14px; }
   .preview-order-details > details > summary { cursor: pointer; color: var(--accent); padding: 10px 0; }
   .preview-order-details .story { min-width: 0; }
+  /* The table scrolls sideways on a phone: the opened detail stays in view, a screen wide. */
+  @media (max-width: 700px) { .preview-order-details > * { position: sticky; left: 14px; max-width: calc(100vw - 64px); box-sizing: border-box; }
+    .preview-order-details .timeline-facts { grid-template-columns: 1fr; gap: 4px; } }
   .held-inline-form > td { padding: 0; white-space: normal; }
   .held-inline-form .gform { min-width: 0; }
   .filing-steps { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; list-style: none; font-size: 13px; }
@@ -727,6 +730,122 @@
   .ct2-why li { margin: 5px 0; }
   .ct2-why .ct2-because { color: var(--ink); }
   .ct2-why summary { cursor: pointer; color: var(--accent); margin-top: 6px; }
+  /* Current, the short rows (2026-11-10). */
+  details.cur2 { border-bottom: 1px solid var(--rule-soft); }
+  details.cur2 > summary { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 0 10px; padding: 9px 14px; cursor: pointer; list-style: none; align-items: start; }
+  details.cur2 > summary::-webkit-details-marker { display: none; }
+  details.cur2.hit > summary { background: var(--amber-tint); box-shadow: inset 3px 0 0 var(--amber); }
+  details.cur2 .t { font: 800 21px/1.2 var(--mono); }
+  details.cur2 .b { display: grid; gap: 3px; min-width: 0; }
+  details.cur2 .sym { font: 600 15px/1.3 var(--mono); }
+  details.cur2 .sym .od { color: var(--soft); font-weight: 400; }
+  details.cur2 .l2 { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 13.5px; }
+  details.cur2 .l2 .crew-divider { display: none; }
+  details.cur2 .l2 .call { color: var(--soft); }
+  details.cur2 > summary::after { content: '▾'; color: var(--accent); font-size: 15px; line-height: 1.5; }
+  details.cur2[open] > summary::after { content: '▴'; }
+  details.cur2 .fold { padding: 2px 14px 12px 86px; font-size: 13px; }
+  details.cur2 .fold .foldname { display: block; font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); margin: 4px 0; }
+  details.cur2 .fold p { margin: 4px 0; color: var(--soft); }
+  details.cur2 .fold ul, details.cur2 .fold ol { margin: 4px 0; padding-left: 18px; }
+  .cur2-how { padding: 8px 14px 10px; }
+  .cur2-quiet { margin: 0 0 14px; padding: 8px 14px; color: var(--soft); font-size: 13px; border: 1px dashed var(--rule); }
+  .cur2-strip { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 14px; margin-bottom: 14px; border: 1px solid var(--rule); background: var(--sheet); font-size: 13.5px; color: var(--soft); }
+  .cur2-strip b { color: var(--ink); font-family: var(--mono); }
+  @media (max-width: 700px) { details.cur2 .fold { padding-left: 14px; }
+    body.nav-one-row .modes { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    body.nav-one-row .modes::-webkit-scrollbar { display: none; }
+    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; white-space: nowrap; } }
+  /* Order summary, the two-line rows (2026-11-10). */
+  .os2-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+  .os2-filters label { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; }
+  .os2-filters label.wide { grid-column: 1 / -1; }
+  .os2-filters select, .os2-filters input { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 6px; min-height: 40px; min-width: 0; width: 100%; box-sizing: border-box; }
+  .os2-group { margin-bottom: 14px; }
+  .st.os2-planned { background: var(--plan-tint); color: var(--soft); }
+  .st.os2-ordered, .st.os2-onDuty { background: var(--go-tint); color: var(--go); }
+  .st.os2-completed { background: var(--accent-tint); color: var(--accent); }
+  .st.os2-disappeared { background: var(--amber-tint); color: var(--amber); }
+  details.cur2 .fold h3 { margin: 12px 0 4px; font-size: 14px; }
+  details.cur2 .fold .os2-all > summary { cursor: pointer; color: var(--accent); padding: 8px 0; }
+  details.cur2[hidden] { display: none; }
+  /* Analytics, new layout (Test preview): everything under #view.ana2. */
+  .ana2 .ana2-about { margin: 0 0 14px; }
+  .ana2 .ana2-about > summary { cursor: pointer; color: var(--accent); font-size: 13.5px; padding: 6px 0; }
+  .ana2 .ana2-number { font: 600 15px/1.3 var(--mono); color: var(--ink); }
+  .ana2 .ana2-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+  .ana2 .ana2-filters label, .ana2 label:has(> select[data-test-status]) { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; margin-bottom: 8px; }
+  .ana2 select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px; min-height: 40px; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .ana2 .ana2-more { padding: 10px 14px; margin: 0; }
+  /* An odd tile out fills its row instead of leaving a gap. */
+  .ana2 .strip > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  @media (max-width: 700px) {
+    .ana2 .ohead.ana .ctl { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; width: 100%; margin: 8px 0 0; }
+    .ana2 .ohead.ana .ctl label { min-width: 0; }
+    .ana2 .ohead.ana .ctl input, .ana2 .ohead.ana .ctl select { width: 100%; min-width: 0; box-sizing: border-box; }
+    .ana2 .ohead.ana .ctl .abtns { grid-column: 1 / -1; }
+    .ana2 .anatabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .ana2 .anatabs::-webkit-scrollbar { display: none; }
+    .ana2 .anatabs button { flex: 0 0 auto; white-space: nowrap; }
+    /* No table scrolls sideways: each row is a block, the first cell its title, the rest "label value". */
+    .ana2 .scroll.ana2-open { overflow: visible; }
+    .ana2 table.ana2-stack, .ana2 table.ana2-stack tbody { display: block; width: 100%; }
+    .ana2 table.ana2-stack thead { display: none; }
+    .ana2 table.ana2-stack tbody > tr { display: flex; flex-wrap: wrap; gap: 1px 12px; padding: 7px 14px; border-bottom: 1px solid var(--rule-soft); font-size: 13.5px; }
+    .ana2 table.ana2-stack tbody > tr[hidden] { display: none; }
+    .ana2 table.ana2-stack td { display: block; padding: 0; border: 0; white-space: normal; min-width: 0; background: none; }
+    .ana2 table.ana2-stack td:first-child, .ana2 table.ana2-stack td.full { flex: 0 0 100%; }
+    .ana2 table.ana2-stack td:first-child { font-weight: 600; }
+    .ana2 table.ana2-stack td[data-label]::before { content: attr(data-label) ' '; color: var(--soft); font-size: 12px; font-weight: 400; }
+    .ana2 table.ana2-stack td.stick { position: static; }
+  }
+  .ana2 .cs2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 12px 14px; }
+  .ana2 .cs2-card { border: 1px solid var(--rule); border-radius: 8px; padding: 12px; min-width: 0; }
+  .ana2 .cs2-card h3 { margin: 0; font-size: 16px; }
+  .ana2 .cs2-note { margin: 2px 0 8px; color: var(--soft); font-size: 12.5px; }
+  .ana2 .cs2-big { margin: 0 0 8px; font-size: 14px; }
+  .ana2 .cs2-big b { font: 800 30px/1 var(--mono); margin-right: 6px; }
+  .ana2 .cs2-bar { display: flex; height: 18px; border-radius: 4px; overflow: hidden; background: var(--plan-tint); }
+  .ana2 .cs2-bar i { display: block; height: 100%; }
+  .ana2 .cs2-list { list-style: none; margin: 10px 0 6px; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+  .ana2 .cs2-list li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 34px; gap: 8px; align-items: center; }
+  .ana2 .cs2-list li i, .ana2 .cs2-parts li i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+  .ana2 .cs2-list small { color: var(--soft); text-align: right; }
+  .ana2 .cs2-extra { margin: 6px 0 0; font-size: 13px; color: var(--soft); }
+  .ana2 .cs2-extra b { color: var(--ink); }
+  .ana2 .cs2-parts { list-style: none; margin: 12px 0 8px; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+  .ana2 .cs2-parts li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 8px; align-items: start; }
+  .ana2 .cs2-parts li i { margin-top: 5px; }
+  .ana2 .cs2-parts li i.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); }
+  .ana2 .cs2-example { border-top: 1px solid var(--rule-soft); padding: 12px 0 4px; }
+  .ana2 .cs2-example h3 { margin: 0 0 4px; font-size: 15px; }
+  .ana2 .cs2-example > p { margin: 0 0 6px; font-size: 13.5px; color: var(--soft); }
+  .ana2 .ct2-bare .ct2-head { font-size: 1.05rem; }
+  .ana2 .week2-reset { margin: 10px 14px 0; padding: 8px 10px; border-left: 4px solid var(--accent); background: var(--accent-tint); border-radius: 4px; font-size: 13.5px; }
+  .ana2 .week2-reset.warn { border-left-color: var(--amber); background: var(--amber-tint); }
+  .ana2 .week2-reset.bad { border-left-color: var(--stop); background: var(--stop-tint); }
+  .ct2-drop { margin: 6px 0 0; padding: 7px 10px; border-left: 4px solid var(--stop); background: var(--stop-tint); border-radius: 4px; font-size: 13.5px; font-weight: 600; }
+  .ct2-ordermove { margin: 6px 0 0; padding: 6px 10px; border-left: 4px solid var(--amber); background: var(--amber-tint); border-radius: 4px; font-size: 13px; }
+  .ct2-key i.cross { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--stop); background: linear-gradient(45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%); box-sizing: border-box; }
+  .ct2-key i.diamond { width: 9px; height: 9px; background: var(--amber); transform: rotate(45deg); margin-right: 7px; }
+  .ana2 .cs2-h3 { margin: 4px 14px 2px; font-size: 14px; }
+  .ana2 .cs2-morebox { border-top: 1px solid var(--rule-soft); }
+  .ana2 .cs2-morebox > summary { cursor: pointer; color: var(--accent); padding: 10px 14px; font-size: 13.5px; }
+  .ana2 details.cur2 .fold .ana2-lazybox .ct2 > summary { display: none; }
+  .ana2 .tl2 { padding: 4px 0 0; margin-bottom: 18px; }
+  .ana2 .tl2-group { padding: 8px 14px 6px; border-bottom: 1px solid var(--rule-soft); }
+  .ana2 .tl2-group h3 { margin: 0 0 4px; font: 600 11.5px/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+  .ana2 .tl2-group > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; font-size: 14px; }
+  .ana2 .tl2-group > div + div { border-top: 1px solid var(--rule-soft); }
+  .ana2 .tl2-group span { color: var(--ink); min-width: 0; }
+  .ana2 .tl2-group span small, .ana2 .tl2-group b small { color: var(--soft); font-weight: 400; font-size: 12px; }
+  .ana2 .tl2-group b { font-family: var(--mono); white-space: nowrap; text-align: right; }
+  .ana2 .tl2-group .alert b { color: var(--stop); }
+  /* The test site (board-test with the owner key). */
+  body.preview-site .top h1::after { content: 'TEST SITE'; margin-left: 10px; padding: 2px 7px; border-radius: 4px; background: var(--amber-tint); color: var(--amber); font: 700 11px/1.6 var(--body); letter-spacing: .08em; vertical-align: middle; }
+  .newversion { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 18px rgba(0, 0, 0, .35); font-size: 14px; font-weight: 600; }
+  .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -1391,6 +1510,139 @@ function toronto(s) {
     ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
 }
 
+// ---- Current, the layout since 2026-11-10 (owner; built in Test first, then
+// "push this to the main current tab"). Snapshots still use the functions
+// above. One short row
+// per train with the detail folded under it, Toronto and Garnet the same
+// way, one line for the counts, quiet empty boxes.
+// A call away from home as it really comes: on duty − 2 h, and on duty is 15
+// min before the order for a train, at the order for a deadhead.
+const awayCall = (s, t) => {
+  const o = BoardTrains.resolve(t.order, s.taken);
+  if (!o) return t.call || '';
+  return dt(BoardTrains.fromMin(stampMin(o) - (t.deadhead || /^DH/.test(t.train || '') ? 0 : 15) - 120));
+};
+const cur2Row = ({ hit, time, train, od, chips, line2, fold, foldName = 'Why' }) =>
+  `<details class="cur2${hit ? ' hit' : ''}"><summary><span class="t">${esc(time)}</span><span class="b"><span class="sym">${esc(train)}${od ? ` <span class="od">${esc(od)}</span>` : ''} ${chips || ''}</span><span class="l2">${line2}</span></span></summary><div class="fold"><b class="foldname">${esc(foldName)}</b>${fold}</div></details>`;
+function lineup2(s) {
+  if (!s.lineup.length) return '';
+  let day = null;
+  const rows = s.lineup.map((t) => {
+    const [d, dutyTime] = split(t.order);
+    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    day = d;
+    const [sym, od] = split(t.train);
+    const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}`;
+    const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}`;
+    return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
+      fold: lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
+  }).join('');
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
+    <div class="foot">The big time is on duty (planned or ordered). CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
+}
+function toronto2(s) {
+  const trains = s.macLineup || [];
+  const crews = s.bunkhouse || [];
+  const readB = (s.screens || []).includes('bunkhouse');
+  const readM = (s.screens || []).includes('macLineup');
+  if (!readB && !readM) return '<p class="cur2-quiet">Toronto: the bunkhouse and Mac yard line-up weren’t read in this check.</p>';
+  const byPos = new Map(crews.map((c) => [c.pos, c]));
+  let day = null;
+  const rows = trains.map((t) => {
+    const [d, time] = split(t.order);
+    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    day = d;
+    const [sym, od] = split(t.train);
+    const call = awayCall(s, t);
+    const x = t.crewExpected;
+    const c = x ? null : byPos.get(t.crewPos);
+    const skipped = t.skipped && t.skipped.length ? `<p><b>Skipped, on rest at the call:</b></p><ul>${t.skipped.map((k) => `<li>${esc(k)}</li>`).join('')}</ul>` : '';
+    let crew, state, detail, hit = false;
+    if (x) {
+      hit = t.crew.split(' + ').some(marked);
+      crew = markTurn(t.crew);
+      state = `<span class="chip">on the way</span> rested ~${esc(x.rested)}`;
+      detail = `<p>An estimate. On duty at Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}.</p>`;
+    } else if (c) {
+      hit = marked(c.en) || marked(c.co);
+      crew = markTurn([c.en, c.co].filter(Boolean).join(' + '));
+      state = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
+      detail = `<p>Bunkhouse position ${esc(c.pos)}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}.</p>`;
+    } else if (t.status === 'ORD' && !t.deadhead) {
+      crew = '<span class="spare">possible Toronto South crew</span>';
+      state = 'no rested crew by the call';
+      detail = t.south ? `<p>First in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}.</p>` : '';
+    } else {
+      crew = '<span class="muted">no crew yet</span>';
+      state = t.skipped && t.skipped.length ? 'no rested crew by the call' : 'none in the bunkhouse yet';
+      detail = '';
+    }
+    const warn = torontoRestWarning(s, t, x ? x.rested : c && c.rested);
+    return bar + cur2Row({ hit, time, train: sym, od, chips: `<span class="st ${esc(t.status)}">${esc(t.status)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}${staleChip(s, t)}`,
+      line2: `<span class="crew-craft">${crew}</span><span class="call">${state}</span><span class="call">call ~${esc(call)}</span>`, foldName: 'Details',
+      fold: `${detail}${warn}${skipped}<p>CATS details: ${esc(t.info)} · from ${esc(t.orstn)}</p>` });
+  }).join('');
+  const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
+  const extra = crews.filter((c) => !taken.has(c.pos));
+  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
+  const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
+  const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
+  const missing = !readB ? 'The bunkhouse wasn’t read in this check, so no crews are shown.' : !readM ? 'The Mac yard line-up wasn’t read in this check, so no trains are shown.' : '';
+  return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
+    ${rows || '<p class="empty">No trains on the Toronto line-up.</p>'}${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}
+    <details class="why cur2-how"><summary>How crews are picked</summary><p>Crews take these trains in bunkhouse order: first crew home, first train. After the bunkhouse come the crews still on their way, as estimates: a Sarnia train is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h) and to be rested 8 h after that. A planned train stays with the next crew in line. An ordered train goes to the next crew rested by the call; one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. The call here is 2 h before on duty (on duty is 15 min before the order for a train).</p></details></section>`;
+}
+// Who is in Garnet when the Garnet board wasn't read: the 501/502 turns
+// shown away on their own board, with anyone filling in from the Call Board.
+function garnetCrew(s) {
+  const away = [];
+  for (const p of s.pools || []) for (const t of p.turns || []) {
+    if (!/^S5\d{2}$/.test(t.turn) || !/away|out working on L502/.test(t.status || '')) continue;
+    away.push({ turn: t.turn, craft: t.craft === 'CO' ? 'CO' : 'EN', status: t.status });
+  }
+  if (!away.length) return null;
+  const turn = away[0].turn;
+  const out = (s.onDuty || []).find((r) => /^L502/.test(r.train || '') && (r.crew || '').includes(turn));
+  const fills = out ? (out.backfill || []).filter((b) => b.job === turn) : [];
+  return { turn, rows: away.filter((a) => a.turn === turn), fills };
+}
+function garnet2(s) {
+  const g = s.garnetHome;
+  const read = (s.screens || []).includes('garnetLineup');
+  if (!g && !read) return '';
+  if (!g) return '<p class="cur2-quiet">Garnet: no L501 planned home in the next 24 h.</p>';
+  const [d, time] = split(g.order);
+  const [sym, od] = split(g.train);
+  const c = g.crew;
+  const guess = c ? null : garnetCrew(s);
+  const crew = c ? markTurn(c.turn) : guess ? markTurn(guess.turn) : '<span class="muted">crew not known</span>';
+  const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
+    : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
+  const detail = c ? `<p>${esc(c.crafts)} · from the Garnet board.</p>`
+    : guess ? `<p>The Garnet board wasn’t read in this check. ${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.</p>` : '<p>The Garnet board wasn’t read in this check and no 501/502 turn is shown away.</p>';
+  return `<section class="sheet" id="sec-garnet"><header><h2>Garnet line-up · L501 home</h2></header><div class="daybar">${esc(d)}</div>
+    ${cur2Row({ hit: !!(c ? marked(c.turn) : guess && marked(guess.turn)), time, train: sym, od, chips: `<span class="st ${esc(g.status)}">${esc(g.status)}</span>`,
+      line2: `<span class="crew-craft">${crew}</span>${state ? `<span class="call">${state}</span>` : ''}<span class="call">call ~${esc(awayCall(s, { order: g.order, train: g.train }))}</span>`, foldName: 'Details', fold: detail })}
+    <div class="foot">The 501/502 crew that took L502 out brings the next L501 home.</div></section>`;
+}
+function changes2(s) {
+  if (!s.changes) return '<p class="cur2-quiet">Changes: first snapshot, nothing earlier to compare.</p>';
+  const w = when(s.prevTaken);
+  if (!s.changes.length) return `<p class="cur2-quiet">No changes since ${esc(w.time)}.</p>`;
+  return changes(s);
+}
+function strip2(s) {
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  const spare = (craft) => {
+    const turns = new Map();
+    for (const p of s.pools.filter((q) => q.name.startsWith(`${craft} fast board`) || q.name.startsWith(`${craft} slow board`))) for (const t of p.turns) turns.set(t.turn, t);
+    if (!turns.size) return '—';
+    return `<b>${[...turns.values()].filter((t) => t.status === 'available').length}</b> / ${turns.size}`;
+  };
+  return `<div class="cur2-strip"><span><b>${s.lineup.length}</b> ${s.lineup.length === 1 ? 'train' : 'trains'} · <b>${ord}</b> ordered</span><span>Conductors free ${spare('Conductor')}</span><span>Engineers free ${spare('Engineer')}</span></div>`;
+}
 function dot(status) {
   if (/out working/.test(status)) return 'out';
   if (/spare|B0/.test(status)) return 'spare';
@@ -1907,7 +2159,8 @@ function offCell(min) {
   return `<span class="offv ${band}">${dur(min)} ${min > 0 ? 'late' : 'early'}</span>`;
 }
 
-function story(r) {
+// A train's saved events and what they add up to (the inside of a row).
+function storyBody(r) {
   const line = (e) => {
     const time = `<button type="button" data-taken="${esc(e.taken)}" title="Open this snapshot">${esc(dt(e.taken))}</button>`;
     const t = {
@@ -1953,8 +2206,10 @@ function story(r) {
   sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
   if (r.flag === 'deadhead') sum.push(`<span class="chg">${esc(FLAG_TEXT.deadhead)}</span>: left the ${r.from === 'mac' ? 'Toronto' : 'Sarnia'} line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later.`);
   else if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? `no rested Sarnia crew was in the bunkhouse${r.flag === 'possible' && r.predicted ? `, but ${esc([r.predicted.en, r.predicted.co].filter(Boolean).join(' + '))} ${r.predicted.en && r.predicted.co ? 'were' : 'was'} predicted for it, so it may have been cancelled` : ''}` : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
-  return `<tr class="story"><td colspan="10"><ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}</td></tr>`;
+  return `<ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}`;
 }
+// As a table row of its own (Trains, the older Order summary).
+const story = (r) => `<tr class="story"><td colspan="10">${storyBody(r)}</td></tr>`;
 
 const FLAG_TEXT = { nonSarnia: 'Non-Sarnia Crew', possible: 'Possible Non-Sarnia Crew or Train Cancelled', deadhead: 'Deadhead never called' };
 const FROM = { sarnia: 'Sarnia', mac: 'Toronto' };
@@ -2070,6 +2325,26 @@ function anaTable(runs, kind) {
     <div class="scroll"><table class="orders"><thead><tr><th>On duty</th><th>Train</th><th>${kind === 'train' ? 'Crew' : 'Worked with'}</th><th>First plan vs on duty</th><th>Time on duty</th><th>Off duty in Toronto</th></tr></thead>
     <tbody>${rows}</tbody></table></div></section>`;
 }
+// A turn's, person's or train's numbers as short labelled lines in groups
+// (Test preview; owner, 2026-11-10: "tidy the other tiles too"). The same
+// figures as the tiles, one to a line, so nothing sits uneven on a phone.
+function anaFacts2(st, kind, extra = {}) {
+  const d = durOr;
+  const row = (label, value, alert) => `<div${alert ? ' class="alert"' : ''}><span>${label}</span><b>${value}</b></div>`;
+  const group = (title, rows) => (rows.length ? `<div class="tl2-group"><h3>${title}</h3>${rows.join('')}</div>` : '');
+  const work = kind === 'train'
+    ? [row('Went on duty', `${st.ran} <small>of ${st.seen} seen</small>`), row('Never ran (cancelled, or on duty between checks)', String(st.cancelled), st.cancelled > 0),
+      ...(st.nonSarnia || st.possibleNonSarnia ? [row('Went to a non-Sarnia crew', `${st.nonSarnia}${st.possibleNonSarnia ? ` <small>+ ${st.possibleNonSarnia} possibly</small>` : ''}`)] : [])]
+    : [row('Trains worked', `${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`), row('Deadheads', String(st.deadheads))];
+  const duty = [row(`Average time on duty to Toronto${st.timeOnDuty.n ? ` <small>(${st.timeOnDuty.n} trips)</small>` : ''}`, d(st.timeOnDuty.avg)), row('Longest time on duty', d(st.timeOnDuty.max)),
+    row(`Average held in Toronto${st.held.n ? ` <small>(${st.held.n} stays)</small>` : ''}`, d(st.held.avg)), row('Held 14 h or more', `${st.held.over14} <small>of ${st.held.n}</small>`, st.held.over14 > 0)];
+  const plan = [row('First plan against on duty, average apart', `${d(st.offPlan.avg)}${st.offPlan.n ? ` <small>(${st.offPlan.late} later, ${st.offPlan.early} earlier)</small>` : ''}`),
+    row('First order against on duty, average', `${d(st.offOrder.avg)} <small>(${st.offOrder.n} compared)</small>`), row('Order time changed after ordering', String(st.orderChanged))];
+  const b = extra.between;
+  const between = kind === 'train' || !b ? [] : [row(`Average time between trains${b.n ? ` <small>(${b.n})</small>` : ''}`, d(b.avg)), row('Shortest time between trains', d(b.min))];
+  return `<section class="sheet tl2">${group(kind === 'train' ? 'The train' : 'Work', work)}${group('On duty and Toronto', duty)}${group('Plan against what happened', plan)}${group('Between trains', between)}
+    <p class="anote" style="margin:8px 14px 12px">Between trains is on duty to the next on duty. Hold figures leave out unknown times and count a stay still going at its time so far.</p></section>`;
+}
 // The whole answer for one search. kind: 'train' | 'turn' | 'code'.
 // extra: { between, spares, took } for a turn (spares/took left out for a person);
 // { runarounds } for a train number.
@@ -2087,15 +2362,30 @@ function analyticsView(runs, kind, title, note, extra = {}) {
     : `<div class="strip${extra.spares == null ? ' two' : ''}">${anaTile(durOr(b.avg), `Average time between trains${b.n ? ` (${b.n})` : ''}, on duty to next on duty`)}${anaTile(durOr(b.min), 'Shortest time between trains')}${
       extra.spares == null ? '' : anaTile(extra.spares, 'Times it went spare (B0, ** or its train going spare)') + anaTile(extra.took, 'Trains it took out of sequence')}</div>`;
   return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
-    ${anaTiles(st, kind)}${more}${extra.sleep ? sleepSection(extra.sleep) : ''}${anaCharts(runs)}
+    ${ANA2 ? anaFacts2(st, kind, extra) + (kind === 'train' ? more : '') : anaTiles(st, kind) + more}${extra.sleep ? sleepSection(extra.sleep) : ''}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${lists.join('')}</div></section>
     ${anaTable(runs, kind)}`;
 }
 
 // Nothing searched: everything, in sections.
+// Analytics, new layout: Test preview only (owner, 2026-11-10: "do all the
+// changes in the test tab"). ANA2 is on only while Test is drawing it; the
+// regular Analytics tab runs the same code with it off.
+let ANA2 = false;
+// The test site (owner, 2026-11-10: "go, owner key only, keep the test tab
+// for now"): the same page opened at board-test.sarniaboard.workers.dev, on a
+// device with the owner key, shows every preview across the whole site (the
+// two Workers serve one bucket, so the page tells them apart by its address).
+// Everywhere else PREVIEW stays false and nothing below changes.
+const PREVIEW_HOST = /^board-test\./.test(location.hostname);
+let PREVIEW = false;
+const ANA2_PAGE = 20;
+let ANA2_CALLS = []; // call records whose graph is drawn when opened
+let ANA2_MORE = []; // "show more" lists
+const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'test' };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'Drags (SD)'], ['S1', '1st Manifest (S1)'], ['S3', '3rd Manifest (S3)'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
-function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
+function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
     week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
@@ -2108,28 +2398,41 @@ function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
   const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
   return '<p class="anote">' + (preview ? 'Preview only. ' : '') + 'Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
     groups.map(group => {
-      const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group).map(([key,label]) => {
+      const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group && !(numbers && key === 'overview')).map(([key,label]) => {
         const [,question,description] = descriptions[key];
         return '<article class="overview-guide-card"><h3>' + esc(label) + '</h3><p><b>' + esc(question) +
           '</b></p><p>' + esc(description) + '</p>' +
-          (key === 'sleep' ? (preview ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '<p>' + esc(callCount) + '</p>') : '') +
+          (numbers ? (numbers[key] ? '<p class="ana2-number">' + esc(numbers[key]) + '</p>' : '') : key === 'sleep' ? (preview ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '<p>' + esc(callCount) + '</p>') : '') +
           '<button type="button" class="qbtn" data-overview-open="' + esc(key) +
           '">Open ' + esc(label) + ' →</button></article>';
       }).join('');
-      return '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>';
+      return cards ? '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>' : '';
     }).join('') +
     '<section class="sheet overview-guide"><header><h2>Using the records</h2></header><div class="overview-guide-note"><p><b>Dates:</b> choose the reporting range after opening a page. My week has its own week selector.</p><p><b>Find a specific record:</b> use Analytics search for a train number, turn or name code. Full dated train IDs help distinguish separate trips.</p><p><b>Coverage:</b> trackers can cover different dates. Missing checks or missing on-duty records can leave outcomes unknown; disappearance alone is not proof of cancellation.</p></div></section>';
 }
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { overview: anaHome, week: anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
+  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
   const coverage = o.sec === 'overview' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
-function anaHome({ sleep }) { return analyticsOverviewGuide({ callCount: callReviewData(sleep).headline }); }
+function anaHome(o) {
+  const { sleep = [] } = o;
+  if (!ANA2) return analyticsOverviewGuide({ callCount: callReviewData(sleep).headline });
+  // Test preview: each page's headline on its card.
+  const ran = (o.runs || []).filter((r) => r.ran).length;
+  const waiting = (o.stale || []).length;
+  const open = (o.runarounds || []).filter((r) => !r.fixed).length + (o.catsErrors || []).filter((r) => !r.fixed).length + (o.catsMissing || []).filter((r) => !r.listedAt).length;
+  return analyticsOverviewGuide({ numbers: {
+    trains: `${ran} train${ran === 1 ? '' : 's'} on duty in these dates`,
+    sleep: callReviewData(sleep).headline,
+    stale: `${waiting} train${waiting === 1 ? '' : 's'} left waiting past the call`,
+    assignments: `${open} finding${open === 1 ? '' : 's'} not cleared`,
+  } });
+}
 
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
@@ -2327,6 +2630,62 @@ function anaMyWeek({ weeks = [] }) {
   };
   return `<p class="anote">The turns and people followed on this phone, Sunday to Saturday. The Sunday alert sends the same summary for last week.</p><section class="sheet secpick">${tabs}</section>${weeks.map(one).join('')}`;
 }
+// My week, new layout (Test preview only; owner, 2026-11-10). Every trip's
+// hours (501/502 and yard jobs too, from the reset tracker's off-duty times),
+// each trip two lines with its call from Call stability and the graph inside,
+// the reset due, the shortest time off between trips, one line per rest.
+function anaMyWeek2({ weeks = [] }) {
+  const picks = [['this', 'This week'], ['last', 'Last week'], ['before', 'Week before']];
+  const tabs = `<div class="tabs" role="tablist">${picks.map(([k, l]) => `<button type="button" role="tab" data-weekpick="${k}" aria-selected="${weekPick === k}">${l}</button>`).join('')}</div>`;
+  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (Find a turn, on Current) and its week shows here.</p>`;
+  const hm = (m) => `${Math.floor(m / 60)} h ${String(Math.round(m) % 60).padStart(2, '0')} m`;
+  const offs = (RESETS && RESETS.offs) || {};
+  const one = ({ name, sum: x, resetKey }) => {
+    const trips = x.runs.map((r) => {
+      const o = offs[r.id];
+      const off = o && o.off ? o.off : '';
+      const rough = !!o && /^(call board|yard)$/.test(o.how || '');
+      const mins = r.timeOnDuty != null ? r.timeOnDuty : off ? stampMin(off) - stampMin(r.at) : null;
+      return { r, off, rough, mins: mins != null && mins > 0 && mins < 24 * 60 ? mins : null };
+    });
+    const total = trips.reduce((n, t) => n + (t.mins || 0), 0);
+    const known = trips.filter((t) => t.mins != null).length;
+    // Time off between trips: off duty to the next on duty.
+    const gaps = trips.map((t, i) => (i && trips[i - 1].off ? stampMin(t.r.at) - stampMin(trips[i - 1].off) : null)).filter((g) => g != null && g >= 0);
+    const call = (r) => x.calls.list.find((z) => z.train === r.id && z.onDuty === r.at);
+    const gapOf = (z) => { const m = z && BoardAnalytics.callTimeline(z); return m && m.end != null ? m.end - m.expected : null; };
+    const band = { ok: 0, warn: 0, bad: 0 };
+    const rows = trips.map(({ r, off, rough, mins }) => {
+      const z = call(r);
+      const g = gapOf(z);
+      if (g != null) band[Math.abs(g) <= 30 ? 'ok' : Math.abs(g) <= 60 ? 'warn' : 'bad']++;
+      const [sym, od] = split(r.id);
+      const result = g == null ? '' : g === 0 ? '<span class="offv ok">called when planned</span>' : `<span class="offv ${Math.abs(g) <= 30 ? 'ok' : Math.abs(g) <= 60 ? 'warn' : 'bad'}">called ${esc(dur(g))} ${g < 0 ? 'early' : 'late'}</span>`;
+      const line2 = `<span>${esc(dt(r.at))}${off ? ` → off ${rough ? '~' : ''}${esc(off.slice(0, 10) === r.at.slice(0, 10) ? off.slice(11) : dt(off))}` : ''}${mins != null ? ` · <b>${rough ? '~' : ''}${hm(mins)}</b>` : ''}</span>${r.heldMin != null ? `<span class="${r.heldMin >= 840 ? 'bad' : 'muted'}">held ${hm(r.heldMin)}</span>` : ''}${result ? `<span>${result}</span>` : ''}`;
+      const fold = `<p class="anote">Crew: ${esc(r.crew || 'not recorded')}${r.as ? ` · ${esc(r.as)}` : ''}</p>` +
+        (z ? BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>') : '<p class="anote">No Call stability record is saved for this trip.</p>');
+      return cur2Row({ time: r.at.slice(11), train: sym, od, chips: `${r.yard ? '<span class="chip">yard</span>' : ''}${r.from === 'mac' ? '<span class="chip">Toronto</span>' : ''}`, line2, foldName: 'This trip’s call', fold });
+    }).join('');
+    // One line per rest or hold: the same one is seen at check after check.
+    const seen = new Set();
+    const rests = x.rests.filter((r) => { const k = `${r.kind || 'rest'}|${r.until || ''}`; if (seen.has(k)) return false; seen.add(k); return true; });
+    const list = (title, items) => (items.length ? `<h3 style="margin:12px 14px 4px">${title}</h3><ul class="moves" style="margin:0 14px 10px">${items.join('')}</ul>` : '');
+    const extra = [
+      list('Rests and holds', rests.map((r) => `<li>${esc(r.kind || 'Rest')} until <b>${esc(r.until || '')}</b> <span class="muted">(first seen ${esc(dt(r.seen))})</span></li>`)),
+      list('Possible runarounds', x.runarounds.map((r) => `<li>${esc(r.train)}: ${esc(r.went)} went (${esc(r.result)}) · ${stampBtn(r.seen)}</li>`)),
+      list('Lined up for a train left waiting', x.stale.map((r) => `<li>${esc(r.train)}: ${esc(dur(r.minutes || 0))} past its call, not ordered</li>`)),
+      list('CATS option 5 would have called you', x.cats.map((r) => `<li>${esc(r.train)}: CATS listed ${esc(r.cats)}, the order had ${esc(r.order)}</li>`)),
+    ].join('');
+    const reset = resetKey && RESETS && RESETS.turns ? RESETS.turns[resetKey] : null;
+    const calls = band.ok + band.warn + band.bad;
+    return `<section class="sheet"><header><h2>${esc(name)}</h2><span class="meta">${esc(x.label)}</span></header>
+      ${reset && (reset.dueText || reset.onBreak) ? `<p class="week2-reset${reset.level === 'red' ? ' bad' : reset.level ? ' warn' : ''}"><b>Reset:</b> ${esc(resetText(reset))}</p>` : ''}
+      <div class="strip">${anaTile(x.trips, 'Trips')}${anaTile(x.yard, 'Yard jobs')}${anaTile(known ? hm(total) : '—', `On duty${known && known < trips.length ? ` (${known} of ${trips.length} trips with an off-duty time)` : ''}`)}${anaTile(x.held14, 'Held 14 h+', x.held14 > 0)}${anaTile(gaps.length ? hm(Math.min(...gaps)) : '—', 'Shortest time off between trips')}</div>
+      ${calls ? `<p class="anote" style="margin:10px 14px">Calls against the first plan: <span class="offv ok">${band.ok} within 30 min</span> · <span class="offv warn">${band.warn} within 1 h</span> · <span class="offv bad">${band.bad} over 1 h</span></p>` : ''}
+      ${rows || '<p class="empty" style="margin:10px 14px">No trains or yard jobs worked that week.</p>'}${extra}</section>`;
+  };
+  return `<section class="sheet secpick">${tabs}</section>${weeks.map(one).join('')}<p class="anote">The turns and people followed on this phone, Sunday to Saturday. Tap a trip for its call graph. Off-duty times marked ~ are estimates.</p>`;
+}
 // The runaround log (owner, 2026-11-02, all boards; no alerts until it's
 // been checked against real runs): when a train went, each craft's crew
 // against the order at the last check before it. Likely: the passed-over
@@ -2511,7 +2870,9 @@ function sleepTiles(st) {
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
   if (!list.length) return '<p class="empty">No calls tracked in the dates picked yet. A call counts once the turn was on a line-up (or expected to fill a job going spare) before it went on duty.</p>';
-  const rows = [...list].map(BoardAnalytics.cleanCallRecord).reverse().slice(0, 200).map((z) => {
+  const newest = [...list].map(BoardAnalytics.cleanCallRecord).reverse();
+  // Test preview: 20 at a time, each graph drawn when it is opened.
+  const rows = newest.slice(0, ANA2 ? ANA2_PAGE : 200).map((z) => {
     const moves = (z.shifts || []).map((x) => `<li>${esc(dt(x.taken))}: call ${esc(dt(x.call))}${x.train !== z.expectedTrain ? ` (${esc(x.train)})` : ''}</li>`).join('');
     const start = z.noWindow ? '<span class="muted">no eight-hour baseline recorded</span>'
       : `${esc(dt(z.sleepAt))}${z.short ? ` <span class="chip">short notice ${esc(dur(z.notice))}</span>` : ''}`;
@@ -2521,9 +2882,9 @@ function sleepTable(list, showTurn) {
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (historical train/trip mismatch)' : z.noWindow || !z.sleepAt ? 'No recorded baseline' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td class="num">${start}</td>
-      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
+      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${(ANA2 ? `<details class="call-timeline ana2-lazy" data-lazy-call="${ANA2_CALLS.push(z) - 1}"><summary>Show call timeline</summary></details>` : BoardAnalytics.renderCallTimelineV2(z))}</td></tr>`;
   }).join('');
-  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>${ANA2 && newest.length > ANA2_PAGE ? `<p class="ana2-more"><button type="button" class="qbtn" data-ana2-more="${ANA2_MORE.push({ list: newest, showTurn, at: ANA2_PAGE }) - 1}">Show 20 more of ${newest.length}</button></p>` : ''}`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
     <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px"><div data-call-detail></div>${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(baselineStatsRows(list)))}</div>${sleepTable(list, false)}</section>`;
@@ -3258,6 +3619,9 @@ source().then(async (src) => {
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
     document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
+    // The test site's previews: this address and the owner key, nothing else.
+    const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
+    if (preview !== PREVIEW) { PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW); if (PREVIEW) checkSiteVersion(); setTimeout(() => setMode(mode), 0); }
     membersOwner = !!(h && OwnerKey.has());
     document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
     const note = document.getElementById('keynote');
@@ -3280,7 +3644,8 @@ source().then(async (src) => {
       const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
-    if (mode === 'test') renderTest();
+    // A health refresh redraws Test, but not over a preview already on screen (it would lose your place).
+    if (mode === 'test' && !document.querySelector('#view.ana2 .ohead.ana')) renderTest();
     if (mode === 'health') renderHealth();
     if (h && mode === 'notes' && !notesData) renderNotes();
   }
@@ -4351,7 +4716,10 @@ source().then(async (src) => {
   function sectionsGrid(s, arrange = arranging, previewS5 = false) {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
-    const built = order.map((k) => ({ ...byK[k], body: k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
+    // Current (owner, 2026-11-10, approved in Test): the short rows. Snapshots keep the older layout.
+    const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too
+    const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x).replace('Jobs going spare · 5', 'Jobs going spare') };
+    const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
     if (arrange) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
@@ -4449,11 +4817,11 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${strip(s, mode === 'current')}
+      ${mode === 'current' || PREVIEW ? strip2(s) : strip(s, false)}
       ${arrangeBar()}
       ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
-    if (mode === 'current' && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
+    if ((mode === 'current' || PREVIEW) && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
     tickAges();
     paintTracked(s);
     wireArrange();
@@ -4607,8 +4975,106 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
+    else { ANA2 = true; ana2.mode = 'test'; renderAnalytics(); return; } // Analytics in a new layout (ana2Pass)
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
+  }
+  // Order summary, the layout since 2026-11-10 (owner; reviewed in Test, then
+  // "push the updates"). No table to scroll sideways: each train
+  // is two lines with the comparison on the second; short status chips; the
+  // day in groups (to come, on duty, completed, dropped) that stay folded the
+  // way they were left; a sort by biggest change; filters on one row with a
+  // search that works as you type; and each crew's call from Call stability
+  // inside the train's detail.
+  const OS2_SHORT = { planned: 'Planned', ordered: 'Ordered', onDuty: 'On duty', completed: 'Completed', disappeared: 'Dropped' };
+  const OS2_GROUPS = [['coming', 'Still to come', ['planned', 'ordered'], true], ['onDuty', 'On duty', ['onDuty'], true], ['completed', 'Completed', ['completed'], false], ['disappeared', 'Dropped off the line-up', ['disappeared'], false]];
+  async function orderSummary2(view, preview, all, days, labels, target) {
+    const saved = local.get('orderSummary2') || {};
+    // The last filters on this phone, unless a link or a search opened one train (it must not be filtered away).
+    if (preview.sort == null) Object.assign(preview, { sort: saved.sort || 'time' }, preview.open ? {} : { from: saved.from || preview.from, status: saved.status || preview.status });
+    let calls = [];
+    try { const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: preview.day, to: preview.day })]); calls = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []); } catch (e) { /* the trains still show */ }
+    if (mode !== target) return;
+    const hm = (stamp) => (stamp ? stamp.slice(11) : '—');
+    const moved = (r) => { const latest = r.order || r.firstOrder; const d = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null; return Math.abs(r.offPlan ?? d ?? 0); };
+    const rows = all.filter((r) => r.day === preview.day && (preview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === preview.from) &&
+      (preview.status === 'all' || previewOrderStatus(r) === preview.status)).sort((a, b) => {
+      if (preview.sort === 'change' && moved(a) !== moved(b)) return moved(b) - moved(a);
+      const due = (r) => r.onDuty || r.order || r.plan || r.firstSeen;
+      return String(due(a)).localeCompare(String(due(b)));
+    });
+    const noShare = (html) => html.replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
+    const one = (r) => {
+      const status = previewOrderStatus(r);
+      const latest = r.order || r.firstOrder;
+      const delta = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null;
+      const time = r.onDuty || latest || r.plan || r.firstPlan;
+      const [sym, od] = split(r.id);
+      // plan → order → on duty, each once, then how far the first plan was out.
+      const nowPlan = !r.onDuty && !latest && r.plan && r.plan !== r.firstPlan ? r.plan : '';
+      const steps = [r.firstPlan && `${nowPlan ? 'first plan' : 'plan'} ${hm(r.firstPlan)}`, nowPlan && `<b>now ${hm(nowPlan)}</b>`, latest && `order ${hm(latest)}`, r.onDuty && `<b>on duty ${hm(r.onDuty)}</b>`].filter(Boolean).join(' → ');
+      const result = r.onDuty ? (r.offPlan != null ? offCell(r.offPlan) + ' <span class="muted">vs first plan</span>' : delta != null ? offCell(delta) + ' <span class="muted">vs order</span>' : '') : '';
+      const fact = (name, value) => `<div><span>${esc(name)}</span><b>${value}</b></div>`;
+      // Not on duty yet: only what there is to say.
+      const facts = !r.onDuty ? fact('First seen', esc(dt(r.firstSeen))) + (r.firstPlan ? fact('First plan', esc(dt(r.firstPlan))) : '') + (nowPlan ? fact('Plan now', esc(dt(nowPlan))) : '') + (r.firstOrder ? fact('First order', esc(dt(r.firstOrder))) : '') + (latest && latest !== r.firstOrder ? fact('Latest order', esc(dt(latest))) : '')
+        : fact('First seen', esc(dt(r.firstSeen))) + fact('First plan', esc(dt(r.firstPlan))) + fact('First order', esc(dt(r.firstOrder))) + fact('Latest order', esc(dt(latest))) +
+        fact('Actual on duty', esc(dt(r.onDuty))) + fact('Against first plan', offCell(r.offPlan)) + fact('Against first order', offCell(r.offOrder)) + fact('Against latest order', offCell(delta)) +
+        fact('Toronto off duty', r.noOffDuty ? 'Not applicable' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? 'Needs review' : 'Not recorded') +
+        fact('Time on duty', r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + fact('Crew', esc(r.crew || 'Not recorded'));
+      // The crew's own call for this train (Call stability).
+      const mine = calls.filter((z) => !z.takenOff && z.train === r.id && z.onDuty === r.onDuty);
+      const crewCalls = mine.length ? '<h3>The crew’s call</h3>' + mine.map((z) => BoardAnalytics.renderCallTimelineV2(z).replace('<summary>Show call timeline</summary>', `<summary>${esc(z.turn)}: call timeline</summary>`)).join('')
+        : r.onDuty ? '<p class="anote">No Call stability record is saved for this train’s crew.</p>' : '';
+      const fold = `<p class="anote">${esc(r.from === 'mac' ? 'Toronto' : 'Sarnia')} · ${esc(labels[status])}</p><div class="ct2-facts">${facts}</div>${crewCalls}
+        <h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections.</p><div class="story">${noShare(storyBody({ ...r, events: previewMajorEvents(r) }))}</div>
+        <details class="os2-all"><summary>All recorded changes (${(r.events || []).length})</summary><div class="story">${noShare(storyBody(r))}</div></details>
+        <p><button type="button" class="sharebtn" data-preview-share="${esc(r.id)}">🔗 Share this train</button></p>`;
+      const isOpen = preview.open === r.id + ' ' + r.month;
+      return cur2Row({ time: hm(time), train: sym, od, chips: `<span class="st os2-${status}">${esc(OS2_SHORT[status])}</span>${r.from === 'mac' ? ' <span class="chip">Toronto</span>' : ''}${r.deadhead ? ' <span class="chip">DH</span>' : ''}`,
+        line2: `<span>${steps || 'no time saved'}</span>${result ? `<span>${result}</span>` : ''}`, foldName: 'Details', fold }).replace('<details class="cur2', `<details data-os2="${esc(r.id.toUpperCase().replace(/\s+/g, ''))}"${isOpen ? ' open data-os2open' : ''} class="cur2`);
+    };
+    const groups = OS2_GROUPS.map(([k, name, kinds, openByDefault]) => {
+      const list = rows.filter((r) => kinds.includes(previewOrderStatus(r)));
+      if (!list.length) return '';
+      const was = local.get('orderSummary2Open:' + k);
+      const holdsOpen = list.some((r) => preview.open === r.id + ' ' + r.month);
+      return `<details class="sheet test-current-box os2-group" data-os2group="${k}"${holdsOpen || (typeof was === 'boolean' ? was : openByDefault) ? ' open' : ''}><summary><h2>${esc(name)}</h2><span class="meta"><span data-os2count>${list.length}</span> ${list.length === 1 ? 'train' : 'trains'}</span></summary>${list.map(one).join('')}</details>`;
+    }).join('');
+    const select = (id, name, items, selected) => `<label>${name}<select id="${id}">${items.map(([value, label]) => `<option value="${esc(value)}"${value === selected ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select></label>`;
+    view.innerHTML = `
+      <div class="ohead"><div><div class="eyebrow">Order summary</div><div class="when">${esc(preview.day ? when(preview.day + ' 0000').long : 'No saved day')}</div></div></div>
+      <div class="os2-filters">${select('os2-day', 'Day', days.map((d) => [d, when(d + ' 0000').day]), preview.day)}${select('os2-from', 'From', [['all', 'All'], ['sarnia', 'Sarnia'], ['mac', 'Toronto']], preview.from)}
+        ${select('os2-status', 'Status', [['all', 'All'], ...Object.entries(OS2_SHORT)], preview.status)}${select('os2-sort', 'Sort', [['time', 'By time'], ['change', 'Biggest change']], preview.sort)}
+        <label class="wide">Find a train<input id="os2-find" placeholder="X39491 06" value="${esc(preview.find)}" autocomplete="off"></label></div>
+      ${groups || '<p class="empty">No trains match these filters.</p>'}<p class="empty" id="os2-none" hidden>No train on this day matches that.</p>
+      <p class="anote">Times are railway time. “Order” is the line-up time, not the moment a call was made; results compare with the actual on-duty time. Completed means a usable tie-up is recorded. Dropped means it left the line-up with no call observed, which does not prove it was cancelled.</p>`;
+    const apply = () => {
+      Object.assign(preview, { day: document.getElementById('os2-day').value, from: document.getElementById('os2-from').value, status: document.getElementById('os2-status').value, sort: document.getElementById('os2-sort').value });
+      local.set('orderSummary2', { from: preview.from, status: preview.status, sort: preview.sort });
+      preview.open = null;
+      renderOrderSummary(target);
+    };
+    for (const id of ['os2-day', 'os2-from', 'os2-status', 'os2-sort']) document.getElementById(id).onchange = apply;
+    // The search hides rows as you type; nothing is redrawn, so the box keeps its place.
+    const find = document.getElementById('os2-find');
+    const filter = () => {
+      preview.find = find.value;
+      const q = find.value.trim().toUpperCase().replace(/\s+/g, '');
+      let shown = 0;
+      view.querySelectorAll('.os2-group').forEach((g) => {
+        let n = 0;
+        g.querySelectorAll('[data-os2]').forEach((row) => { const hit = !q || row.dataset.os2.includes(q); row.hidden = !hit; if (hit) n++; });
+        g.hidden = !n; g.querySelector('[data-os2count]').textContent = n; if (q && n) g.open = true; shown += n;
+      });
+      document.getElementById('os2-none').hidden = shown > 0 || !view.querySelector('.os2-group');
+    };
+    find.oninput = filter;
+    if (preview.find) filter();
+    view.querySelectorAll('.os2-group').forEach((g) => { g.addEventListener('toggle', () => { if (!find.value.trim()) local.set('orderSummary2Open:' + g.dataset.os2group, g.open); }); });
+    view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
+    view.querySelectorAll('[data-preview-share]').forEach((button) => { button.onclick = () => shareLink('#train=' + encodeURIComponent(button.dataset.previewShare.replace(/\s+/g, '-')), 'Train ' + button.dataset.previewShare, button); });
+    // Opened from a link or a search: bring that train into view.
+    const opened = view.querySelector('[data-os2open]');
+    if (opened) setTimeout(() => opened.scrollIntoView({ block: 'start' }), 50);
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4638,64 +5104,7 @@ source().then(async (src) => {
     const days = [...new Set(all.map((r) => r.day).filter(Boolean))].sort().reverse();
     if (!days.includes(preview.day)) preview.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
     const labels = { planned: 'Planned / no order observed', ordered: 'Order observed', onDuty: 'On duty / tie-up not recorded', completed: 'Completed', disappeared: 'Off lineup / no call observed' };
-    const query = preview.find.trim().toUpperCase().replace(/\s+/g, '');
-    const rows = all.filter((r) => r.day === preview.day &&
-      (preview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === preview.from) &&
-      (preview.status === 'all' || previewOrderStatus(r) === preview.status) &&
-      (!query || r.id.toUpperCase().replace(/\s+/g, '').includes(query))).sort((a,b) => {
-      const due = r => r.onDuty || r.order || r.plan || r.firstSeen;
-      return String(due(a)).localeCompare(String(due(b)));
-    });
-    const select = (id, name, items, selected) => '<label>' + name + '<select id="' + id + '">' +
-      items.map(([value, label]) => '<option value="' + esc(value) + '"' + (value === selected ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></label>';
-    const body = rows.map((r) => {
-      const key = r.id + ' ' + r.month;
-      const open = preview.open === key;
-      const latest = r.order || r.firstOrder;
-      const delta = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null;
-      const status = previewOrderStatus(r);
-      const row = '<tr class="row' + (open ? ' open' : '') + '" tabindex="0" role="button" aria-expanded="' + open + '" data-preview-key="' + esc(key) + '">' +
-        '<td><b class="num">' + esc(r.id) + '</b><div class="crew">' + (r.from === 'mac' ? 'Toronto' : 'Sarnia') + ' · ' + labels[status] + '</div></td>' +
-        '<td class="num">' + esc(dt(r.firstPlan)) + '</td><td class="num">' + esc(dt(latest)) + '</td><td class="num">' + esc(dt(r.onDuty)) + '</td>' +
-        '<td>' + offCell(r.offPlan) + '</td><td>' + offCell(delta) + '</td></tr>';
-      if (!open) return row;
-      const major = story({ ...r, events: previewMajorEvents(r) }).replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
-      const full = story(r).replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
-      return row + '<tr><td colspan="6" class="preview-order-details">' +
-        '<div class="timeline-facts"><span>First seen: <b>' + esc(dt(r.firstSeen)) + '</b></span><span>First plan: <b>' + esc(dt(r.firstPlan)) + '</b></span>' +
-        '<span>First order: <b>' + esc(dt(r.firstOrder)) + '</b></span><span>Latest order: <b>' + esc(dt(latest)) + '</b></span>' +
-        '<span>Actual on duty: <b>' + esc(dt(r.onDuty)) + '</b></span><span>Compared with first order: ' + offCell(r.offOrder) + '</span>' +
-        '<span>Compared with latest order: ' + offCell(delta) + '</span><span>Toronto off duty: <b>' + (r.noOffDuty ? 'Not applicable' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? 'Needs review' : 'Not recorded') + '</b></span>' +
-        '<span>Time on duty: <b>' + (r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + '</b></span><span>Crew: <b>' + esc(r.crew || 'Not recorded') + '</b></span></div>' +
-        '<h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections. All smaller movements remain below.</p>' + major +
-        '<details><summary>All recorded changes (' + (r.events || []).length + ')</summary>' + full + '</details>' + (target === 'orders' ? '<button type="button" data-preview-share="' + esc(r.id) + '">🔗 Share this train</button>' : '') + '</td></tr>';
-    }).join('');
-    view.innerHTML = (target === 'test' ? '<h2>Test · Order summary</h2><p class="anote"><b>Preview only.</b> This matches the approved regular Order summary.</p>' : '<div class="ohead"><div><div class="eyebrow">Order summary</div><div class="when">' + esc(preview.day ? when(preview.day + ' 0000').long : 'No saved day') + '</div></div></div>') +
-      '<p class="anote">Times are railway time. “Order” is the lineup time, not the moment a call was made. Comparisons use actual on-duty time.</p>' +
-      '<div class="preview-order-filters">' + select('test-order-day', 'Day', days.map((day) => [day, when(day + ' 0000').day]), preview.day) +
-      select('test-order-from', 'Trains from', [['all','Sarnia and Toronto'],['sarnia','Sarnia'],['mac','Toronto']], preview.from) +
-      select('test-order-status', 'Status', [['all','All statuses'], ...Object.entries(labels)], preview.status) +
-      '<label>Find within day<input id="test-order-find" placeholder="X39491 06" value="' + esc(preview.find) + '"></label><button type="button" id="test-order-show">Apply</button></div>' +
-      '<section class="sheet"><header><h2>' + esc(preview.day ? when(preview.day + ' 0000').day : 'No saved day') + '</h2><span class="meta">' + rows.length + ' trains · tap a row for details</span></header>' +
-      '<div class="scroll"><table class="orders"><thead><tr><th>Train / status</th><th>First plan</th><th>Latest order</th><th>Actual on duty</th><th>Vs first plan</th><th>Vs latest order</th></tr></thead><tbody>' +
-      (body || '<tr><td colspan="6">No trains match these filters.</td></tr>') + '</tbody></table></div></section>' +
-      '<p class="anote">Completed means a usable tie-up is recorded. “No call observed” does not prove cancellation or that nobody was called. Order observed describes saved evidence, not a live dispatcher status.</p>';
-    const apply = () => {
-      preview.day = document.getElementById('test-order-day').value;
-      preview.from = document.getElementById('test-order-from').value;
-      preview.status = document.getElementById('test-order-status').value;
-      preview.find = document.getElementById('test-order-find').value;
-      preview.open = null; renderOrderSummary(target);
-    };
-    for (const id of ['test-order-day','test-order-from','test-order-status']) document.getElementById(id).onchange = apply;
-    document.getElementById('test-order-show').onclick = apply;
-    document.getElementById('test-order-find').onkeydown = (event) => { if (event.key === 'Enter') apply(); };
-    view.querySelectorAll('[data-preview-key]').forEach((row) => {
-      row.onclick = () => { preview.open = preview.open === row.dataset.previewKey ? null : row.dataset.previewKey; renderOrderSummary(target); };
-      row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
-    });
-    view.querySelectorAll('[data-preview-share]').forEach((button) => { button.onclick = () => shareLink('#train=' + encodeURIComponent(button.dataset.previewShare.replace(/\s+/g, '-')), 'Train ' + button.dataset.previewShare, button); });
-    view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
+    await orderSummary2(view, preview, all, days, labels, target);
   }
 
   function setMode(m) {
@@ -4703,6 +5112,9 @@ source().then(async (src) => {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
+    document.body.classList.add('nav-one-row'); // on a phone the tabs are one row to swipe (owner, 2026-11-10)
+    // Keep the open tab in sight in the row (after the buttons below are marked).
+    setTimeout(() => { try { const on = document.querySelector('.modes [aria-pressed="true"]'); if (on && window.matchMedia('(max-width: 700px)').matches) on.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* older browsers */ } }, 0);
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
     modeTurns.setAttribute('aria-pressed', mode === 'turns');
@@ -4717,6 +5129,8 @@ source().then(async (src) => {
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
+    ANA2 = false; document.getElementById('view').classList.remove('ana2'); // only Test, or the test site, turns the Analytics preview on
+    if (PREVIEW && mode === 'analytics') { ANA2 = true; ana2.mode = 'analytics'; }
     if (mode === 'test') renderTest();
     else if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
@@ -4778,6 +5192,7 @@ source().then(async (src) => {
     const selected = heldOpen && heldRows(all).find(row => heldKey(row) === heldOpen);
     if (selected && (!selected.offDuty || selected.offDuty < callBefore(latest, 7 * 24 * 60))) heldPeriod = 'all';
     view.innerHTML = heldView(all, heldOpen, latest, names, state, heldCraft, heldPeriod);
+    if (PREVIEW) { view.classList.add('ana2'); ana2Stack(view, { all: true }); } // the test site: rows in place of the sideways table
     view.querySelector('[data-held-period]').onclick = () => {
       heldOpen = null;
       heldPeriod = heldPeriod === 'week' ? 'all' : 'week';
@@ -4920,6 +5335,254 @@ source().then(async (src) => {
   view0.addEventListener('focusout', () => { tip.hidden = true; });
   window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
 
+  // "A newer version of the site is ready" (test site only for now; owner
+  // review, 2026-11-10: twice a phone kept an older copy of the page after
+  // the laptop published). The page's own headers are asked every 5 minutes
+  // and when the page comes back into view; a change shows a bar to reload.
+  let siteStamp = null;
+  async function checkSiteVersion() {
+    if (!PREVIEW || document.getElementById('newversion')) return;
+    try {
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const tag = r.ok && (r.headers.get('etag') || r.headers.get('last-modified') || r.headers.get('content-length'));
+      if (!tag) return;
+      if (siteStamp == null) { siteStamp = tag; return; }
+      if (tag === siteStamp) return;
+      const bar = document.createElement('div');
+      bar.id = 'newversion';
+      bar.className = 'newversion';
+      bar.innerHTML = '<span>A newer version of the site is ready.</span><button type="button">Reload</button>';
+      bar.querySelector('button').onclick = () => location.reload();
+      document.body.appendChild(bar);
+    } catch (e) { /* offline: ask again later */ }
+  }
+  setInterval(checkSiteVersion, 5 * 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkSiteVersion(); });
+  // Analytics, new layout (Test preview): what is done to the drawn page.
+  // Nothing here runs for the regular Analytics tab.
+  function ana2Stack(root, opts = {}) {
+    // Turns side by side stays a table: reading across the turns is its point.
+    if (!opts.all && ana.sec === 'turns' && !ana.q.trim()) return;
+    const LIST = opts.all ? Infinity : 10; // rows of a summary list before "show more"
+    root.querySelectorAll('table').forEach((table) => {
+      const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' '));
+      if (!heads.length) return;
+      table.classList.add('ana2-stack');
+      if (table.closest('.scroll')) table.closest('.scroll').classList.add('ana2-open');
+      table.querySelectorAll('tbody > tr').forEach((tr) => {
+        [...tr.children].forEach((td, i) => { if (td.colSpan > 1) td.classList.add('full'); else if (i && heads[i] && !td.dataset.label) td.dataset.label = heads[i]; });
+      });
+      // A long list: 10 rows, then 20 more on request (the calls table pages itself).
+      const body = table.querySelector('tbody');
+      const rows = body ? [...body.children] : [];
+      const own = table.parentElement.nextElementSibling;
+      if (rows.length <= LIST || table.dataset.ana2Paged || (own && own.classList.contains('ana2-more')) || rows.some((tr) => tr.querySelector('.ana2-lazy'))) return;
+      table.dataset.ana2Paged = '1';
+      rows.slice(LIST).forEach((tr) => { tr.hidden = true; });
+      const more = document.createElement('p');
+      more.className = 'ana2-more';
+      more.innerHTML = `<button type="button" class="qbtn">Show 20 more of ${rows.length - LIST} left</button>`;
+      more.firstChild.onclick = () => {
+        const hidden = rows.filter((tr) => tr.hidden);
+        hidden.slice(0, ANA2_PAGE).forEach((tr) => { tr.hidden = false; });
+        if (hidden.length <= ANA2_PAGE) more.remove(); else more.firstChild.textContent = `Show 20 more of ${hidden.length - ANA2_PAGE} left`;
+      };
+      (table.closest('.scroll') || table).after(more);
+    });
+  }
+  // Call stability, simpler (Test preview; owner, 2026-11-10: "separate the
+  // trains ordered out of sarnia and the trains ordered out of mac yard ...
+  // the calls are much worse out of sarnia ... simplify it and add a visual
+  // explanation of how the call stability graph works, with a few examples").
+  // One measure throughout, the one the graph draws: the actual call against
+  // the first planned call.
+  const CS2_BANDS = [['Over 1 h early', 'var(--stop)'], ['31–60 min early', 'var(--amber)'], ['Within 30 min', 'var(--go)'], ['31–60 min late', '#c9b8fb'], ['Over 1 h late', '#a78bfa']];
+  function ana2OriginStats(list) {
+    const rows = BoardAnalytics.planReliability(list).rows;
+    const c = [0, 0, 0, 0, 0];
+    let short = 0;
+    const early = [];
+    for (const z of rows) {
+      const g = z.planGap;
+      c[g < -60 ? 0 : g < -30 ? 1 : g <= 30 ? 2 : g <= 60 ? 3 : 4]++;
+      const notice = stampMin(z.call) - stampMin(z.firstSeen);
+      if (notice >= 0 && notice < 480) short++;
+      if (g < -30) early.push(-g);
+    }
+    early.sort((a, b) => a - b);
+    return { n: rows.length, c, short, typicalEarly: early.length ? early[Math.floor((early.length - 1) / 2)] : null };
+  }
+  function ana2OriginCard(title, note, st) {
+    if (!st.n) return `<div class="cs2-card"><h3>${esc(title)}</h3><p class="anote">No calls in these dates.</p></div>`;
+    const pc = (n) => Math.round((100 * n) / st.n);
+    return `<div class="cs2-card"><h3>${esc(title)}</h3><p class="cs2-note">${esc(note)} · ${st.n} calls</p>
+      <p class="cs2-big"><b>${pc(st.c[2])}%</b> called within 30 min of the plan</p>
+      <div class="cs2-bar" role="img" aria-label="${CS2_BANDS.map(([l], i) => `${l} ${pc(st.c[i])}%`).join(', ')}">${CS2_BANDS.map(([l, col], i) => (st.c[i] ? `<i style="width:${(100 * st.c[i]) / st.n}%;background:${col}" title="${esc(l)}: ${st.c[i]}"></i>` : '')).join('')}</div>
+      <ul class="cs2-list">${CS2_BANDS.map(([l, col], i) => `<li><i style="background:${col}"></i><span>${esc(l)}</span><b>${pc(st.c[i])}%</b><small>${st.c[i]}</small></li>`).join('')}</ul>
+      <p class="cs2-extra">Under 8 h notice: <b>${pc(st.short)}%</b> (${st.short})${st.typicalEarly != null ? ` · when called early, typically <b>${esc(dur(st.typicalEarly))}</b> early` : ''}</p></div>`;
+  }
+  // Four made-up calls, drawn by the same code as the real ones.
+  function ana2Examples() {
+    const ex = (firstSeen, firstCall, call, changes = []) => ({ turn: 'Example', train: 'Example', expectedTrain: 'Example', firstSeen, firstCall, expected: firstCall, call, onDuty: BoardTrains.fromMin(stampMin(call) + 120), sleepAt: null, noWindow: true,
+      timelineChanges: changes.map(([taken, c]) => ({ taken, call: c, train: 'Example' })), timelineComplete: true });
+    const list = [
+      ['1. Called when planned', 'Lined up at 1000 for a 0200 call, and called at 0200. The whole eight hours before the call is green: the plan held.', ex('2026-01-05 1000', '2026-01-06 0200', '2026-01-06 0200')],
+      ['2. Called early, inside the eight hours', 'Planned for 0800, called at 0430. Green is the part of the eight hours that went as planned; red is the 3 h 30 m the plan said was still theirs.', ex('2026-01-05 1400', '2026-01-06 0800', '2026-01-06 0430')],
+      ['3. Short notice', 'Lined up at 1412 for 0205 the next morning, then called at 1500: 48 minutes’ notice. The dashed green box is the eight hours that never came; red runs from the call to the planned call.', ex('2026-01-05 1412', '2026-01-06 0205', '2026-01-05 1500', [['2026-01-05 1421', '2026-01-05 1500']])],
+      ['4. Called late', 'Planned for 2100, moved three times, called at 0300. Purple is the waiting past the planned call. Each dot is a move of more than 30 minutes.', ex('2026-01-05 0800', '2026-01-05 2100', '2026-01-06 0300', [['2026-01-05 1900', '2026-01-05 2230'], ['2026-01-05 2200', '2026-01-06 0100'], ['2026-01-06 0030', '2026-01-06 0300']])],
+    ];
+    const parts = [['var(--ink)', 'White bar', 'the actual call (on duty minus 2 hours)'], ['var(--go)', 'Green', 'the eight hours before the planned call'], ['var(--stop)', 'Red', 'called early: time the plan said they still had (yellow if 30 min or less)'],
+      ['#a78bfa', 'Purple', 'called late: waiting past the planned call'], ['var(--soft)', 'Grey', 'lined up, before the eight hours began'], ['dot', 'Dot', 'the planned call moved by more than 30 minutes'],
+      ['var(--stop)', 'Red cross ✕', 'the job was pulled without a call in the eight hours before it; the graph carries on to the job that replaced it'], ['var(--amber)', 'Diamond ◆', 'an ordered time changed (the small square is when it was first seen ordered)']];
+    return `<ul class="cs2-parts">${parts.map(([col, name, text]) => `<li><i class="${col === 'dot' ? 'dot' : ''}"${col === 'dot' ? '' : ` style="background:${col}"`}></i><span><b>${name}:</b> ${esc(text)}</span></li>`).join('')}</ul>
+      <p class="anote">The graph reads left to right in time. The headline says how much notice the crew had, or how early or late the call came.</p>
+      ${list.map(([title, text, z]) => `<div class="cs2-example"><h3>${esc(title)}</h3><p>${esc(text)}</p>${BoardAnalytics.renderCallTimelineV2(z, { bare: true })}</div>`).join('')}`;
+  }
+  function ana2CallPage(view, panel) {
+    const by = ana2.byOrigin || { sarnia: [], toronto: [], garnet: [], yard: [] };
+    const st = { sarnia: ana2OriginStats(by.sarnia), toronto: ana2OriginStats(by.toronto), garnet: ana2OriginStats(by.garnet), yard: ana2OriginStats(by.yard) };
+    const small = (name, x) => (x.n ? `${name}: ${Math.round((100 * x.c[2]) / x.n)}% within 30 min of ${x.n} calls` : '');
+    const others = [small('Garnet (L501 home)', st.garnet), small('Yard jobs', st.yard)].filter(Boolean).join(' · ');
+    const compare = `<section class="sheet"><header><h2>Sarnia and Mac yard, apart</h2><span class="meta">actual call against the first planned call</span></header>
+      <div class="cs2-grid">${ana2OriginCard('Ordered out of Sarnia', 'trains on the Sarnia line-up', st.sarnia)}${ana2OriginCard('Ordered out of Mac yard', 'trains home from Toronto', st.toronto)}</div>
+      ${others ? `<p class="anote" style="margin:0 14px 12px">Counted on their own: ${esc(others)}.</p>` : ''}</section>`;
+    const openHow = local.get('analytics2How') !== false;
+    const how = `<details class="sheet test-current-box cs2-how"${openHow ? ' open' : ''}><summary><h2>How to read the call graph</h2><span class="meta">four examples</span></summary><div style="padding:0 14px 14px">${ana2Examples()}</div></details>`;
+    panel.insertAdjacentHTML('beforebegin', compare + how);
+    view.querySelector('.cs2-how').addEventListener('toggle', (e) => local.set('analytics2How', e.target.open));
+    // The rest, simpler: the calls by how far off (tap a line for them), by
+    // turn and the latest calls stay; everything else folds into one box.
+    const more = document.createElement('details');
+    more.className = 'sheet test-current-box';
+    more.innerHTML = '<summary><h2>More numbers</h2><span class="meta">the eight-hour baseline, changes during the plan, the tiles</span></summary><div class="cs2-more" style="padding:0 14px 14px"></div>';
+    const box = more.lastChild;
+    const second = [...panel.querySelectorAll('h2')][1];
+    if (second) {
+      while (panel.firstChild && panel.firstChild !== second) box.appendChild(panel.firstChild);
+      second.textContent = 'Calls by how far off the plan';
+      const tail = panel.querySelector('p.anote:last-child');
+      if (tail) box.appendChild(tail);
+    }
+    let el = panel.nextElementSibling;
+    while (el && !(el.matches('section.sheet') && /^(By turn|Latest calls)/.test((el.querySelector('h2') || {}).textContent || ''))) { const next = el.nextElementSibling; box.appendChild(el); el = next; }
+    view.appendChild(more);
+  }
+  // Calls as short rows (Test preview; owner, 2026-11-10: "clean up the call
+  // stability area and make it more mobile friendly"): the call time, the
+  // train, planned → called and how far off; tap for the graph and the Why.
+  let ANA2_LISTS = [];
+  function ana2CallRows(list, showTurn, from, to) {
+    return list.slice(from, to).map((z) => {
+      const m = BoardAnalytics.callTimeline(z);
+      const gap = m && m.end != null && !z.takenOff ? m.end - m.expected : null;
+      const [sym, od] = split(z.train || z.expectedTrain || '');
+      const pulled = (z.timelineChanges || []).filter((c) => c.dropped).length;
+      const tone = gap == null ? '' : Math.abs(gap) <= 30 ? 'ok' : gap < 0 ? (gap >= -60 ? 'warn' : 'bad') : 'late';
+      const result = z.takenOff ? '<span class="offv warn">removed from the line-up</span>' : gap == null ? '' : gap === 0 ? '<span class="offv ok">called when planned</span>'
+        : `<span class="offv ${tone === 'late' ? '' : tone}"${tone === 'late' ? ' style="color:#a78bfa"' : ''}>${esc(dur(gap))} ${gap < 0 ? 'early' : 'late'}</span>`;
+      const line2 = `<span>planned ${esc(dt(z.firstCall || z.expected))}${z.takenOff ? '' : ` → called <b>${esc(dt(z.call))}</b>`}</span>${result ? `<span>${result}</span>` : ''}${z.takenOff && z.replacedBy ? `<span class="muted">now ${esc(z.replacedBy)}</span>` : ''}`;
+      const chips = `${showTurn ? `<span class="chip">${esc(z.turn)}</span>` : ''}${pulled ? ' <span class="chip" style="color:var(--stop)">✕ job pulled</span>' : ''}${z.yard ? ' <span class="chip">yard</span>' : ''}`;
+      return cur2Row({ time: String(z.takenOff ? z.seen : z.call || '').slice(11) || '—', train: sym, od, chips, line2, foldName: 'The call', fold: `<div class="ana2-lazybox" data-lazy-call="${ANA2_CALLS.push(z) - 1}"></div>` });
+    }).join('');
+  }
+  function ana2CallList(records, showTurn) {
+    const list = [...records].map(BoardAnalytics.cleanCallRecord).filter((z) => !z.comparisonUnavailable).reverse();
+    if (!list.length) return '<p class="empty" style="margin:10px 14px">No calls tracked in these dates.</p>';
+    const id = ANA2_LISTS.push({ list, showTurn, at: ANA2_PAGE }) - 1;
+    return `<div data-ana2-calls="${id}">${ana2CallRows(list, showTurn, 0, ANA2_PAGE)}</div>${list.length > ANA2_PAGE ? `<p class="ana2-more"><button type="button" class="qbtn" data-ana2-callsmore="${id}">Show 20 more of ${list.length - ANA2_PAGE} left</button></p>` : ''}`;
+  }
+  // Under a turn or person search: one summary card, the calls, and the
+  // older numbers folded away.
+  function ana2SearchCalls(view, calls, who) {
+    const sec = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Call stability');
+    if (!sec) return;
+    const st = ana2OriginStats(calls);
+    const removed = calls.filter((z) => z.takenOff).length;
+    const pulled = calls.filter((z) => !z.takenOff && (z.timelineChanges || []).some((c) => c.dropped)).length;
+    const more = document.createElement('details');
+    more.className = 'cs2-morebox';
+    more.innerHTML = '<summary>More numbers and how they are worked out</summary><div></div>';
+    [...sec.children].forEach((el) => { if (!el.matches('header')) more.lastChild.appendChild(el); });
+    sec.insertAdjacentHTML('beforeend', `<div class="cs2-grid">${ana2OriginCard(who, 'actual call against the first planned call', st)}</div>
+      ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `Removed from the line-up after lining up: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
+      <h3 class="cs2-h3">Calls, newest first</h3>${ana2CallList(calls, false)}`);
+    sec.appendChild(more);
+  }
+  function ana2Pass(view, callPage, calls = [], who = '') {
+    local.set('analytics2', { range: ana.range, sec: ana.sec });
+    // The explanations, folded: the number comes first.
+    const pick = view.querySelector('.secpick');
+    const notes = [...view.children].filter((el) => el.matches('p.anote') && pick && (el.compareDocumentPosition(pick) & Node.DOCUMENT_POSITION_FOLLOWING));
+    if (pick) { let el = pick.nextElementSibling; while (el && el.matches('p.anote')) { notes.push(el); el = el.nextElementSibling; } }
+    if (pick && notes.length) {
+      const about = document.createElement('details');
+      about.className = 'ana2-about';
+      about.innerHTML = '<summary>About these numbers</summary>';
+      notes.forEach((el) => about.appendChild(el));
+      pick.after(about);
+    }
+    const banner = document.createElement('p');
+    banner.className = 'cur2-quiet';
+    banner.textContent = ana2.mode === 'test' ? 'Preview of Analytics in a new layout. The regular Analytics tab is unchanged.' : 'Test site: Analytics in the new layout.';
+    view.prepend(banner);
+    // Call stability: by where the call was, pool and craft.
+    const panel = view.querySelector('[data-call-detail]');
+    if (callPage && panel) ana2CallPage(view, panel);
+    if (callPage && panel) {
+      const sel = (key, name, items) => `<label>${name}<select data-ana2="${key}">${items.map(([v, l]) => `<option value="${v}"${ana2[key] === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+      panel.insertAdjacentHTML('beforebegin', `<div class="ana2-filters">${sel('origin', 'Called at', [['all', 'Everywhere'], ['sarnia', 'Sarnia trains'], ['toronto', 'Toronto'], ['garnet', 'Garnet (L501)'], ['yard', 'Yard jobs']])}${sel('pool', 'Pool', [['all', 'All pools'], ...ANA_POOLS])}${sel('craft', 'Craft', [['all', 'Both'], ['CO', 'Conductors'], ['EN', 'Engineers']])}</div>`);
+      view.querySelectorAll('[data-ana2]').forEach((el) => { el.onchange = () => { ana2[el.dataset.ana2] = el.value; renderAnalytics(); }; });
+    }
+    // The calls themselves: short rows in place of the table, on the Call
+    // stability page and under a turn or person search.
+    if (callPage) {
+      const latest = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Latest calls');
+      if (latest) { [...latest.children].forEach((el) => { if (!el.matches('header')) el.remove(); }); latest.insertAdjacentHTML('beforeend', ana2CallList(calls, true)); }
+    } else if (who) ana2SearchCalls(view, calls, who);
+    // Assignment errors: open on what still needs a look.
+    const status = view.querySelector('[data-test-status]');
+    if (status) {
+      const has = (name) => [...view.querySelectorAll('[data-statuses]')].some((g) => g.dataset.statuses.split('|').includes(name));
+      const want = ana2.finding || ['Still observed', 'Pool sequence needs review'].find(has) || 'All findings';
+      if ([...status.options].some((o) => o.value === want || o.textContent === want)) status.value = want;
+      const filter = status.onchange;
+      status.onchange = () => { ana2.finding = status.value; if (filter) filter(); };
+      if (filter) filter();
+    }
+    ana2Stack(view);
+    if (view.dataset.ana2Wired) return;
+    view.dataset.ana2Wired = '1';
+    // A call's graph is drawn when it is opened; 20 more calls on request.
+    view.addEventListener('toggle', (e) => {
+      const d = e.target;
+      // A call row opened: its graph and Why, drawn now.
+      const lazy = ANA2 && d.matches && d.matches('details.cur2') && d.open ? d.querySelector('.ana2-lazybox:not([data-done])') : null;
+      if (lazy) { const zz = ANA2_CALLS[+lazy.dataset.lazyCall]; lazy.dataset.done = '1'; if (zz) lazy.innerHTML = BoardAnalytics.renderCallTimelineV2(zz).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>'); return; }
+      if (!ANA2 || !d.matches || !d.matches('details.ana2-lazy') || !d.open) return;
+      const z = ANA2_CALLS[+d.dataset.lazyCall];
+      if (z) d.outerHTML = BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>');
+    }, true);
+    view.addEventListener('click', (e) => {
+      const callsBtn = ANA2 && e.target.closest && e.target.closest('[data-ana2-callsmore]');
+      if (callsBtn) {
+        const L = ANA2_LISTS[+callsBtn.dataset.ana2Callsmore];
+        const box = view.querySelector(`[data-ana2-calls="${callsBtn.dataset.ana2Callsmore}"]`);
+        if (L && box) { box.insertAdjacentHTML('beforeend', ana2CallRows(L.list, L.showTurn, L.at, L.at + ANA2_PAGE)); L.at += ANA2_PAGE; if (L.at >= L.list.length) callsBtn.parentElement.remove(); else callsBtn.textContent = `Show 20 more of ${L.list.length - L.at} left`; }
+        return;
+      }
+      const btn = e.target.closest && e.target.closest('[data-ana2-more]');
+      if (!ANA2 || !btn) return;
+      const more = ANA2_MORE[+btn.dataset.ana2More];
+      const tbody = btn.closest('.ana2-more').previousElementSibling.querySelector('tbody');
+      if (!more || !tbody) return;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = sleepTable(more.list.slice(more.at, more.at + ANA2_PAGE).reverse(), more.showTurn);
+      const rows = tmp.querySelector('tbody');
+      if (rows) { const holder = document.createElement('table'); holder.innerHTML = '<thead>' + tbody.parentElement.querySelector('thead').innerHTML + '</thead>'; holder.appendChild(rows); ana2Stack(holder); [...rows.children].forEach((tr) => tbody.appendChild(tr)); }
+      more.at += ANA2_PAGE;
+      if (more.at >= more.list.length) btn.closest('.ana2-more').remove(); else btn.textContent = `Show 20 more of ${more.list.length - more.at} left`;
+    });
+  }
   async function renderAnalytics() {
     try { await drawAnalytics(); } catch (e) {
       // Never leave the tab on "Loading…" (owner, 2026-10-26).
@@ -4929,6 +5592,10 @@ source().then(async (src) => {
   }
   async function drawAnalytics() {
     const view = document.getElementById('view');
+    view.classList.toggle('ana2', ANA2);
+    ANA2_CALLS = []; ANA2_MORE = []; ANA2_LISTS = [];
+    // Test preview: the dates and page last used on this phone.
+    if (ANA2 && !ana2.loaded) { weekPick = 'this'; const was = local.get('analytics2') || {}; if (RANGES.some((r) => r[0] === was.range && r[0] !== 'custom')) ana.range = was.range; if (ANA_SECS.some((x) => x[0] === was.sec)) ana.sec = was.sec; ana2.loaded = true; }
     if (!view.querySelector('.ohead.ana')) view.innerHTML = '<p class="empty">Loading…</p>';
     let live;
     let turnsAll;
@@ -4937,7 +5604,7 @@ source().then(async (src) => {
     try {
       [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), loadArchive(anaDates())]);
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
-    if (mode !== 'analytics') return;
+    if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
     found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
@@ -4949,7 +5616,17 @@ source().then(async (src) => {
     const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
     const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
-    const sleep = callRecordsInRange(arch, found, range);
+    const sleepInDates = callRecordsInRange(arch, found, range);
+    // Test preview: Call stability by where the call was, pool and craft.
+    const fromToronto = new Set(all.filter((r) => r.from === 'mac').map((r) => r.id));
+    const originOf = (z) => (z.yard ? 'yard' : /^L501/.test(z.train || '') ? 'garnet' : fromToronto.has(z.train) || z.firstFrom === 'offDuty' ? 'toronto' : 'sarnia');
+    const craftOf = (t) => (/-EN$/.test(t) || /^(SD|S1|S3|EN)/.test(t) ? 'EN' : 'CO');
+    const poolKey = (t) => (/^S5/.test(t) ? 'S5' : /^(B|EN)\d/.test(t) ? 'B' : t.slice(0, 2));
+    const sleep = !ANA2 ? sleepInDates : sleepInDates.filter((z) => (ana2.origin === 'all' || originOf(z) === ana2.origin) && (ana2.pool === 'all' || poolKey(z.turn) === ana2.pool) && (ana2.craft === 'all' || craftOf(z.turn) === ana2.craft));
+    if (ANA2) {
+      ana2.byOrigin = { sarnia: [], toronto: [], garnet: [], yard: [] };
+      for (const z of sleepInDates) if ((ana2.pool === 'all' || poolKey(z.turn) === ana2.pool) && (ana2.craft === 'all' || craftOf(z.turn) === ana2.craft)) ana2.byOrigin[originOf(z)].push(z);
+    }
     let detailSleep = sleep;
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
@@ -4986,20 +5663,25 @@ source().then(async (src) => {
         let followed = [];
         let codes = {};
         try { followed = JSON.parse(localStorage.getItem('trackTurns')) || []; codes = JSON.parse(localStorage.getItem('personCodes')) || {}; } catch (e) { /* nothing kept */ }
-        const lists = { trains: all, sleep, runLog, stale, catsErrors, runarounds };
+        // Test preview: calls unfiltered by the Call stability page's filters, the reset tracker's times, this week first.
+        if (ANA2 && !RESETS) { try { const r = await getJSON('data/resets.json'); if (r && r.turns) RESETS = r; } catch (e) { /* hours and reset left out */ } }
+        const lists = { trains: all, sleep: ANA2 ? sleepInDates : sleep, runLog, stale, catsErrors, runarounds };
         for (const t of followed) {
           if (/^@[0-9a-f]{16}$/.test(t)) {
             const listAll = (await Person.byHash(t)) || [];
             // 501/502 craft for the newest stretch from the newest check, when the stretch has none.
             const st = listAll.filter((e) => e.to.slice(0, 10) >= week.from && e.from.slice(0, 10) <= week.to)
               .map((e) => (e.craft || !BoardTurns.SHARED.test(e.turn) || listAll.some((x) => x.turn === e.turn && x.to > e.to) ? e : { ...e, craft: Person.craftNow(t, e.turn) || undefined }));
-            weeks.push({ name: `👤 ${codes[t] || 'person'}`, sum: BoardWeek.weekSummary({ ...lists, rec: BoardWeek.personRec(st, turnsAll), turns: [...new Set(st.map((e) => e.turn))], spans: st, week }) });
+            // Test preview: Turn History's record of the person (trains worked while filling in, a 501/502 craft someone else covered).
+            const rec2 = ANA2 ? (() => { const r = personHistory(st, turnsAll); return { ...r, orders: r.orders.map((o) => ({ ...o, train: String(o.train).replace(/ \([^)]*\)$/, '') })) }; })() : BoardWeek.personRec(st, turnsAll);
+            const nowOn = [...st].sort((a, b) => (a.to < b.to ? 1 : -1))[0];
+            weeks.push({ name: `👤 ${codes[t] || 'person'}`, resetKey: nowOn ? (BoardTurns.SHARED.test(nowOn.turn) && nowOn.craft ? `${nowOn.turn}-${nowOn.craft}` : nowOn.turn) : '', sum: BoardWeek.weekSummary({ ...lists, rec: rec2, turns: [...new Set(st.map((e) => e.turn))], spans: st, week }) });
           } else {
             const base = BoardTurns.splitCraft(t).base;
-            weeks.push({ name: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });
+            weeks.push({ name: t, resetKey: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });
           }
         }
-        if (mode !== 'analytics') return;
+        if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       }
       body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
@@ -5024,7 +5706,7 @@ source().then(async (src) => {
       // A person: the live stretches (people.json) and the archive's.
       const ok = /^[A-Z]{4}$/.test(q) && window.crypto && crypto.subtle;
       const [list, h] = ok ? await Promise.all([Person.find(q), Person.hash(q)]) : [null, null];
-      if (mode !== 'analytics') return;
+      if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       const old = (h && arch.people[h]) || [];
       const stretches = [...(list || []), ...old];
       if (!stretches.length) body = '<p class="empty">Nothing found for that name code in the saved checks.</p>';
@@ -5050,10 +5732,11 @@ source().then(async (src) => {
           <div class="abtns">${q ? '<button type="button" id="aclear">Clear search</button>' : ''}${anaCsv && anaCsv.runs.length ? '<button type="button" id="acsv">⬇ Spreadsheet</button>' : ''}</div>
         </div>
       </div>${body}`;
-    try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    try { history.replaceState(null, '', ANA2 && ana2.mode === 'test' ? '#test' : '#analytics'); } catch (e) { /* not allowed in some frames */ }
     const callPanel = view.querySelector('[data-call-detail]');
     if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
+    if (ANA2) ana2Pass(view, !q && ana.sec === 'sleep', detailSleep, q ? (kind === 'turn' ? `Turn ${q}` : kind === 'code' ? 'This person' : '') : '');
     const box = document.getElementById('aq');
     const go = () => { ana.q = box.value; renderAnalytics(); };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };

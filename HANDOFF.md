@@ -4,6 +4,14 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Page styles pushed to the laptop's branch, 2026-11-10 (owner: "Push them all to the real
+site"):** `ccr-2f227f1e-8taof0` (Retro second pass, Retro Tablet second pass, Departure
+Board; iPhone was already here) was merged with `claude/vigilant-planck-zawrj4` and pushed
+to it as a fast-forward. The "pushed to ccr-… only" caveats in the notes below no longer
+hold. Checked after the merge: all four styles load and Current / Turn History / Order
+summary / Analytics open at phone width with no script errors; 289 of 301 tests, the same
+12 failing as the branch before the merge. **Laptop pull/restart/publish pending.**
+
 **iPhone page style, 2026-11-10 (owner: "Add a iPhone theme to the board checker website"):**
 a fifth choice in ⚙ Settings → Page style, `data-theme="iphone"` in `public/board.html`
 (the block at the end of the style sheet): Apple's system font and colours, rounded cards
@@ -117,7 +125,14 @@ call. M39491 29: B104, rest until 0600, ordered seen 0517, call 0615 → **got i
 DHT040B 31: B111, rest until 0600, ordered seen from 0154, call 0700 → **passed**. "Free
 when first seen ordered" as a general rule did worse than today's (18 vs 23 of 29 right),
 so it was **not built**. Asked Justin for the cut-off; do not change `spareFills` on rest
-until he gives one.
+until he gives one. **2026-11-10, later (this session):** Justin again: "I think
+B111 was on rest when the call was made so it should have gone to the next person". The
+saved checks don't show that: B111 reads "rest until 31st 0600" up to 0521 and
+"available" from 0559; the line-up still had DHT040B at 0643 and the Call Board had it
+(B133 working SR08) at 0652, so the call was made between 0643 and 0652 (deadheads reach
+the Call Board a median 127 min before on duty; this one 128). B111 was off rest about 45
+min before the call. Told him so. **Closed by Justin, 2026-11-10: "Leave it as a one
+off".** `spareFills` keeps "rested by the call"; don't reopen it or ask for a cut-off again.
 
 **Page Health → Who gets alerts tidied, 2026-11-10 (same session; Justin: "can we clean up
 this. Maybe show who's following what turn on the members page"):** in `public/board.html`
@@ -228,6 +243,232 @@ change with no reason is listed bare. Replayed on the live days: 459 of 612 call
 Why, 429 with a reason on every line. On the regular page (he asked for it directly), not
 Test. Rebuilt from the day files: no FORMAT bump, no Worker change. ❓ Ask him how the
 wording reads on real calls; long back-and-forth runs between pool turns are noisy.
+
+**Toronto (Mac yard) trains had no Call stability, fixed 2026-11-10 (owner screenshot,
+SD03: "Timeline unavailable" on every train from Toronto):** `sleepCheck` took `t.crew ||
+t.pred` and read `.co` / `.en`; Toronto's line-up rows carry `crew` as words ("S105 +
+SA03", engineer first) with the pair in `pred`, so no Toronto train was ever tracked. Now
+the object form, else `pred`, else the words. Their planned call is order − 15 min − 2 h
+for a train and order − 2 h for a deadhead (on duty at Toronto was 15 min before the order
+on 279 of 280 trains, at the order on 46 of 49 deadheads), so it lines up with on duty − 2
+h. Replayed on the live days: 399 new call records and 79 "removed"; 155 of the 215
+same-train calls land within 30 min of the plan. ❓ The Current page's Toronto "call" is
+order − 2 h (owner's settled rule), 15 min later than the real call: ask before touching
+(same question as Garnet). Rebuilt from the day files: no FORMAT bump, no Worker change.
+
+**Toronto notice starts at off duty, 2026-11-10 (owner: "the time the train shows in the
+line up isn't necessarily how much notice the crew has. The first lined should start when
+the crew goes off duty at the bunkhouse"):** in `sleepCheck`, a crew still on its way to
+Toronto (line-up row with `crewExpected` and no `crewPos`) is on no wait yet; once in the
+bunkhouse the wait's `firstSeen` is the later of their off duty (`s.bunkhouse[].offDuty`)
+and the train first showing, marked `firstFrom: 'offDuty'`. The graph and table then say
+"Off duty" / "Off duty at Toronto" where they said "First lined". Replayed on the live
+days: all 349 Toronto calls start at off duty, on average 7 h 27 m later than before. Side
+effects, both checked: 25 calls with no bunkhouse stay (turned straight back, e.g.
+RQ13931 07) have no record now; 45 more "removed" records, Sarnia waits whose job a spare
+worked that used to be carried into the Toronto prediction (e.g. SD03 DHT039C 09, EN02
+went). Not done: a spare working a pool turn to Toronto gets no record for the train home
+(the line-up lists the turn, the Call Board the spare). Suite 282 of 296, same 14 failing.
+
+**A spare on a pool turn to Toronto now gets the graph for the train home, 2026-11-10
+(owner: "is there a fix for this"):** `sleepCheck` keeps who is working a turn in its
+holder's place from the Call Board's backfill (`state.sleepRiding`: turn → spare, ended
+when the turn is seen on duty on another train with no fill-in, or after 2 days). A Toronto
+line-up row for that turn opens the wait under the spare, with the turn's bunkhouse off
+duty. Replayed on the live days: 59 calls gained for spares and 59 false "removed" records
+gone for holders who were never there; 5 calls and 6 "removed" went the other way (a ride
+remembered a little too long). Suite 283 of 297, same 14 failing.
+
+**Current, new layout promoted, 2026-11-10 (owner: "Push this to the main current tab and
+clear out the test tab"):** `sectionsGrid` uses `lineup2`, `toronto2`, `garnet2`,
+`changes2` and the "Jobs going spare" heading when `mode === 'current'`; `show` uses
+`strip2`. **Snapshots still draw the older layout** (same data, older functions): ask
+whether to switch them too. The Toronto / Garnet call on Current is now on duty − 2 h (15
+min earlier for a train): this replaces the settled "Mac yard call = order − 2 h" on that
+page, approved by the push. On a phone the tab bar is one swipeable row on every tab
+(`body.nav-one-row`, the open tab scrolled into view). Test is back to "No items awaiting
+review." Checked in a browser on live data: Current draws 17 rows with no page errors, a
+row opens, Snapshots and Analytics still draw. Laptop pull/restart pending. The note below
+is how it was built.
+
+**Current, new layout — in Test, awaiting Justin's phone review (2026-11-10; he said "do
+all but don't change the main current tab ... put it in the test tab"):** the real Current
+is untouched. Test → `testCurrent` (board.html) draws the newest check with `strip2`
+(counts on one line), `lineup2` (one two-line row per train, `cur2Row`; tap = the same
+Why), `toronto2` (same rows; position, off duty, on-the-way estimate and the skipped list
+folded under Details; "How crews are picked" folded), `garnet2` + `garnetCrew` (the
+501/502 turn shown away on its own board, and who is filling in, when the Garnet board
+wasn't read), `changes2` and empty boxes as one grey line (`.cur2-quiet`), headings without
+the CATS option numbers, and on a phone the tab bar in one swipeable row while Test is open
+(`body.nav-one-row`). Toronto and Garnet calls in the preview are on duty − 2 h (`awayCall`:
+order − 15 min − 2 h for a train, order − 2 h for a deadhead), 15 min earlier than Current's
+order − 2 h: ❓ his settled rule, confirm before promoting. The other boxes are the real
+ones; folding uses the same per-phone memory Current already has. Measured on the live
+09:42 check at phone width: page 7,989 → 5,597 px, line-up 1,400 → 644 px, Toronto about
+2,000 → 866 px. To promote: swap `lineup`, `toronto`, `garnet`, `changes`, `strip` in
+`SECTIONS` / `show` for the `…2` versions and decide on the tab bar. Suite 283 of 297.
+
+**Order summary new layout promoted, 2026-11-10 (owner: "My bad. Push the updates"):**
+`renderOrderSummary` always ends in `orderSummary2(view, preview, all, days, labels,
+target)`; the six-column table is gone. A shared link or a search still opens its train
+(`preview.open` → the row opened, its group opened, scrolled to; the remembered From /
+Status are not applied then, so it can't be filtered away); Share is in each train's
+detail. Test is back to "No items awaiting review." Checked in a browser on live data: 20
+trains in four groups, page a screen wide, `#train=Q13931-10` opens that train, no page
+errors. **Worker:** nothing in this session touched `cloudflare/board-worker.js`; the live
+`board` Worker serves the "one device per account" wording (commit 361e039 or later).
+❓ Not verifiable from here: whether it has ee8a13a (Admins not held to one device, 8 min
+later) and what `board-test` runs (this session can't reach that address). The note below
+is how it was built.
+
+**Order summary, 2026-11-10 (owner asked for a review, then "do the fix and build the
+suggestions and put it in the test tab"):**
+- **Fixed on the regular tab:** an opened train's detail was broken apart. `story()`
+  returns a table row and was put inside a cell, so the browser threw "All recorded
+  changes" and Share above the column headings. `storyBody(r)` is now the inside and
+  `story` wraps it; the detail also stays a screen wide while the table scrolls sideways.
+- **New layout in Test, awaiting his phone review** (`orderSummary2`, reached through
+  `renderOrderSummary('test')`; regular tab otherwise unchanged): no table; each train two
+  lines (`cur2Row`): plan → order → on duty and the result against the first plan; short
+  status chips (`OS2_SHORT`; the careful wording he approved on the 8th stays in the
+  detail and the footnote); the day in four groups that stay folded as left
+  (`orderSummary2Open:*`; completed and dropped start folded); sort by time or biggest
+  change; filters on one row, remembered per phone (`orderSummary2`); search that hides
+  rows as you type; and each crew's Call stability graph inside the train's detail.
+  Checked in a browser on the live 10th at phone width: 21 trains, no sideways scroll, no
+  page errors, search and sort work. Not built: nothing from the old count tiles (removed
+  at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
+  `testPreview` state and `mode !== 'test'` checks: pass the target through).
+
+**The test site, 2026-11-10 (owner: "go, owner key only, keep the test tab for now ...
+make changes to the test site only and I'll push it when you're ready"):** `board-test`
+and `board` serve one bucket, so the page tells them apart itself: `PREVIEW_HOST`
+(`location.hostname` starts with `board-test.`) and the owner key verified (`healthData &&
+OwnerKey.has()`, set in the health handler) make `PREVIEW` true and redraw. Everywhere else
+it is false. With it on (board.html):
+- **Analytics** tab = the new layout (`setMode` turns `ANA2` on with `ana2.mode =
+  'analytics'`; the Test tab still shows the same preview at the normal address).
+- **Snapshots** = Current's short rows (`sectionsGrid` / `strip2` / `wireCurrentBoxes`).
+- **Article 18.6(b)** = rows, no sideways table (`ana2Stack(view, { all: true })`).
+- **"A newer version of the site is ready" bar** (`checkSiteVersion`: a HEAD of the page
+  every 5 min and on coming back into view; a changed ETag shows Reload).
+- **Header**: a TEST SITE chip, smaller title, no subtitle, tighter sign-up banner.
+- **A search's figures** (`anaFacts2`) cut at his screenshot: no usual / earliest–latest on
+  duty, no crew predicted right, no times it went spare / out of sequence.
+Simulated here (the switch forced on, live data, phone width): each of the above shows; at
+the normal address none do; no page errors either way. **Not checked: the real
+`board-test`** (this session cannot reach it). He needs the owner key saved on that
+address once (`#ownerkey=…`), and ❓ whether the Worker answers a HEAD for the page with an
+ETag (if not, the bar never shows). Turn History was left as it is (its table fits a
+phone). To promote any of it: replace its `PREVIEW` test with `true`. Suite 288 of 300.
+
+**Analytics preview in Test, fourth round, 2026-11-10 (owner: "Tidy the other tiles too").
+Test only.** Under a turn, person or train search the four tile grids are grouped lines
+(`anaFacts2`, `.tl2`): Work (or The train), On duty and Toronto, Plan against what
+happened, Between trains; label left, value right, the same figures, shorter labels, the
+explanations in one note underneath. `analyticsView` picks it when `ANA2`. Checked on live
+data for SD11, 148 and a name code at phone width in the iPhone style: no errors; the
+regular tab still has its tiles.
+
+**Analytics preview in Test, third round, 2026-11-10 (owner screenshot of a turn search,
+SD11: "clean up the call stability area and make it more mobile friendly. Put the changes
+in the test tab"). Test only.** Under a turn or person search the Call stability box is
+rebuilt (`ana2SearchCalls`): one summary card for that turn (the same card as the Sarnia /
+Mac yard ones), a line for waits removed and calls with a job pulled, then the calls as
+short rows (`ana2CallList` / `ana2CallRows`: call time, train, planned → called, how far
+off in colour; tap = the graph and Why, drawn when opened; 20 at a time). The eight-hour
+baseline panel, "Changes during the original plan", the tiles and the old table fold into
+"More numbers and how they are worked out". The Call stability page's "Latest calls" uses
+the same rows. Checked on live data for SD11 at phone width: no errors, regular tab
+unchanged. Not touched: the turn's other tiles above the box (trains worked, time on duty
+…), which is what looks ragged in his screenshot in the iPhone style: ask.
+
+**Analytics preview in Test, second round, 2026-11-10 (owner: "do all the changes in the
+test tab ... separate the trains ordered out of sarnia and ... mac yard ... simplify it and
+add a visual explanation ... Dont push anything thats currently in the test tab to the main
+page"). Still Test only; nothing promoted.**
+- **Call stability** (`ana2CallPage`): first a "Sarnia and Mac yard, apart" box, one card
+  each (`ana2OriginStats`, `ana2OriginCard`): % called within 30 min of the first plan, a
+  five-band bar (over 1 h early … over 1 h late), under-8-h-notice share, typical early
+  call; Garnet and yard jobs counted on their own in one line. On the live 90 days:
+  Sarnia 19% within 30 min of 481 calls (31% over 1 h early, 35% over 1 h late, 16% under
+  8 h notice); Mac yard 54% of 435 (17% / 19%, 4%). One measure throughout, the graph's:
+  actual call against the first planned call (the older eight-hour-baseline figures are
+  under "More numbers"). Then "How to read the call graph": the six parts and four made-up
+  calls drawn by the real code (`ana2Examples`, `renderCallTimelineV2(z, { bare: true })`),
+  open until he folds it (`analytics2How`). Then the filters, "Calls by how far off the
+  plan", By turn, Latest calls; the baseline groups, "Changes during the original plan"
+  and the tiles fold into "More numbers".
+- **My week** (`anaMyWeek2`): opens on this week; every trip's hours from the reset
+  tracker's off-duty times (501/502 and yard jobs included; ~ = an estimate); two-line
+  trips with the call result from Call stability and its graph and Why inside; the reset
+  due on top; shortest time off between trips; one line per rest or hold; the person's
+  record from `personHistory` (trains worked while filling in; a 501/502 craft someone
+  else covered left out). Checked with JUOD + SR03 followed: JUOD this week 3 trips, 24 h
+  20 m on duty, reset needed by 15th 0449.
+Checked in a browser on live data at phone width: no page errors; the regular My week and
+Call stability are unchanged. Suite 286 of 298, the same 12 failing. The note below is the
+first round.
+
+**Analytics, new layout — in Test, awaiting Justin's phone review (2026-11-10; a review of
+the tab, then "do all the changes in the test tab"):** the regular Analytics tab runs the
+same code with `ANA2` off. Test → `renderTest` sets `ANA2 = true` and calls
+`renderAnalytics`; `setMode` turns it off again; `ana2Pass(view)` then reworks the drawn
+page (board.html):
+1. Call stability: "Latest calls" 20 at a time (`ANA2_PAGE`, "Show 20 more"), each call's
+   graph drawn only when opened (`details.ana2-lazy`, `ANA2_CALLS`).
+2. No sideways scrolling: every table becomes stacked rows on a phone (`ana2Stack`, each
+   cell labelled from its column heading; summary lists show 10 rows then "Show 20 more").
+   **Turns side by side is left a table on purpose** (reading across the turns is its point).
+3. The explanations fold under "About these numbers".
+4. Overview: each card carries its page's number; no card for Overview itself (`anaHome`).
+5. Call stability filters: Called at (Sarnia / Toronto / Garnet / yard), Pool, Craft (`ana2`).
+6. Assignment errors: opens on "Still observed", else "Pool sequence needs review"; the
+   dropdown styled; the odd tile fills its row.
+7. Controls on one row, section tabs one swipe row, dates and page remembered per phone
+   (`analytics2`).
+8. The two Overview tests that had failed for days were written for the dashboard the guide
+   replaced: rewritten (test/board/overview.test.js). Suite 285 of 297, 12 failing.
+Measured at phone width on live data, regular → preview: Call stability 27,251 → 8,175 px,
+Assignment errors 12,008 → 2,226, Stale trains 6,841 → 3,988, Trains 4,398 → 4,900 (taller:
+stacked rows, but nothing off the side). Call stability headline by origin: everywhere 43%
+within 30 min, Toronto 53%, Sarnia 28%. **Also fixed on the regular tab:** the "Latest
+calls" table still drew the old call graph (missed when the new one was promoted).
+To promote: drop the `ANA2` switch (make its branches the only path) and call `ana2Pass`
+from `drawAnalytics` always.
+
+**Call stability: the same yard job again within 3 days, fixed 2026-11-10 (owner: "do the
+fix and push it"):** `sleepCheck` kept its "already called" note as turn + train for 3
+days; a yard job's id has no day in it, so a spare lined up for the same job again was
+ignored. `doneKey` now adds the on-duty day for an id with no day (road trains as before);
+the notes are pruned after 4 days. Replayed on the live days: 11 calls recovered, 5 false
+"removed" records became the calls they were, B116's 9th Nov YPRS30 wait is recorded
+(removed 0947 when B108 got it). Suite 286 of 298, the same 12 failing.
+
+**Call graph: pulled jobs, moved order times, who replaced a turn — on every graph,
+2026-11-10 (owner: "anything that is dropped without being called it need to be noticable
+... the graph should keep going. Only do this if its in the 8 hour window"; "anytime the
+order time changes ... that needs to be noted"; for a removed turn "who else is shown on
+the job and why"):** not a Test preview: the tracker and `renderCallTimelineV2` changed,
+so it shows wherever a call graph does.
+- Tracker (`sleepCheck`): a change carries `dropped` (+ `droppedFrom`) when the turn's
+  train or job is off its list, nobody is on it and it isn't on the Call Board, within 8 h
+  of its call (`jobGone`, `inWindow`); with nothing replacing it, an entry of its own
+  (`only`). A mark only stands if that train was never seen again by the time the wait
+  ends (`settle`, `state.sleepPresent`): a train off the line-up for a check and back, or
+  one that reached the Call Board a check later, is not "pulled". `orderFrom` when an
+  ordered time moves. A removed wait carries `replacedBy`, `replacedWhy`, `ownStatus`
+  (their own board's status then) or `jobDropped`.
+- Graph: a red ✕ in a ring on the line where the job was pulled, an amber ◆ where an
+  ordered time changed, each with a banner line under the headline, a key entry and a row
+  in the table; a removed graph says "Now on M38261 07: SD13 (moved from RQ13931 07).
+  SD01 then showed: ** goes spare". A job off the spare list reads "Job closed without a
+  call" (the vacancy closing). The Why box says the same.
+Replayed on the live days: 83 of 1,049 calls had a job pulled, 79 an ordered time that
+moved; of 264 removed waits 187 name who took the job and 19 are the job itself going.
+Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bump, no
+Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
+as pulled then lined up for the new number.
 
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
@@ -481,7 +722,9 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   they're off duty.
 - Toronto: PLN train → next crew in bunkhouse order even if resting; ORD →
   next crew rested by the call; none rested → possible Toronto South crew.
-  Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h.
+  Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h. (2026-11-10:
+  Current and Call stability show the Toronto and Garnet call as on duty − 2 h,
+  order − 15 min − 2 h for a train; the engine's crew pick still uses order − 2 h.)
 - Yard jobs are 8 h, **YSBY jobs 12 h** by default (owner, 2026-11-03;
   site.js yardMinutes).
 - A/B slots per road day: first 3 after 0459 → A, next 2 → B; called trains

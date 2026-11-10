@@ -462,7 +462,7 @@
   // from the actual call to the planned call whatever the window; the
   // headline is the notice given; the times sit under their points and in a
   // table with fixed rows; the key lists only what is drawn.
-  function renderCallTimelineV2(z) {
+  function renderCallTimelineV2(z, opts = {}) {
     z = cleanCallRecord(z);
     if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: historical train/trip mismatch. Excluded from call comparisons.</p>';
     const m = callTimeline(z);
@@ -501,6 +501,20 @@
     const shown = m.markers.filter(c => c.at <= to);
     const dots = shown.map(c => `<circle cx="${x(c.at)}%" cy="45" r="3.5" fill="var(--ink)" stroke="var(--bg, #1b2227)" stroke-width="1"><title>${e(fmt(c.at))}: call ${e(c.call)}</title></circle>`).join('');
     if (shown.length) key.push(['dot', 'change over 30 min']);
+    // A job pulled without a call: a red cross, and the graph carries on.
+    // An ordered time that moved: a diamond (the square is when it was first seen ordered).
+    const at = (px, inner) => `<svg x="${px}%" y="45" width="1" height="1" overflow="visible">${inner}</svg>`;
+    const drops = m.changes.filter(c => c.dropped && c.at <= to);
+    const crosses = drops.map(c => at(x(c.at), `<circle r="9" fill="var(--sheet, #1b2227)" stroke="var(--stop)" stroke-width="2"/><path d="M-4.5 -4.5 L4.5 4.5 M4.5 -4.5 L-4.5 4.5" stroke="var(--stop)" stroke-width="2.5" stroke-linecap="round"/><title>${e(c.dropped)} pulled without a call, ${e(fmt(c.at))}</title>`)).join('');
+    if (drops.length) key.push(['cross', 'job pulled without a call']);
+    const orderMoves = m.changes.filter(c => c.orderFrom && c.at <= to);
+    const diamonds = orderMoves.map(c => at(x(c.at), `<path d="M0 -24 L6 -18 L0 -12 L-6 -18 Z" fill="var(--amber)" stroke="var(--sheet, #1b2227)" stroke-width="1"/><title>Ordered time changed ${e(fmt(T.toMin(c.orderFrom) + 0))} → ${e(fmt(T.toMin(c.call)))}, seen ${e(fmt(c.at))}</title>`)).join('');
+    if (orderMoves.length) key.push(['diamond', 'ordered time changed']);
+    // A spare's job coming off the spare list is the vacancy closing, said as that.
+    const notes = drops.map(c => `<p class="ct2-drop">✕ ${c.droppedFrom === 'spare list' ? 'Job closed without a call' : 'Job pulled without a call'}: <b>${e(c.dropped)}</b> came off the ${e(c.droppedFrom || 'line-up')} at ${e(fmt(c.at))}${c.train && c.train !== c.dropped ? `; then lined up for ${e(c.train)}` : ''}.</p>`).join('')
+      + orderMoves.map(c => `<p class="ct2-ordermove">◆ Ordered time changed: ${e(fmt(T.toMin(c.orderFrom)))} → <b>${e(fmt(T.toMin(c.call)))}</b>, seen ${e(fmt(c.at))}.</p>`).join('')
+      + (off && z.replacedBy ? `<p class="ct2-drop">Now on ${e(z.train)}: <b>${e(z.replacedBy)}</b>${z.replacedWhy ? ` (${e(z.replacedWhy)})` : ''}.${z.ownStatus ? ` ${e(z.turn)} then showed: ${e(z.ownStatus)}.` : ''}</p>` : '')
+      + (off && !z.replacedBy && z.jobDropped ? `<p class="ct2-drop">✕ ${e(z.jobDropped)} came off the line-up without being called, and nothing replaced it.</p>` : '');
     const ordered = m.changes.filter(c => c.ordered && c.at <= to);
     const squares = ordered.map(c => `<rect x="${x(c.at)}%" y="25" width="5" height="7" fill="var(--accent)"><title>Ordered, seen ${e(fmt(c.at))}</title></rect>`).join('');
     if (ordered.length) key.push(['var(--accent)', 'ordered (first seen)']);
@@ -511,25 +525,31 @@
     const inside = clear ? `<text x="${x(mid)}%" y="50" text-anchor="middle" fill="#1b2227" style="font:700 12px sans-serif">${e(d(gap))} ${early ? 'early' : 'waiting'}</text>` : '';
     const anchor = t => (x(t) < 18 ? 'start' : x(t) > 82 ? 'end' : 'middle');
     const label = (t, y, text, bold, a) => `<text x="${x(t)}%" y="${y}" text-anchor="${a || anchor(t)}" fill="var(--ink)" style="font:${bold ? '700 ' : ''}12px sans-serif">${e(text)}</text>`;
-    const under = [[from, 'First lined', 'start']];
+    const firstName = z.firstFrom === 'offDuty' ? 'Off duty' : 'First lined';
+    const under = [[from, firstName, 'start']];
     if (x(w0) - x(from) > 24 && x(exp) - x(w0) > 24) under.push([w0, '8 h before']);
     if (x(exp) - x(from) > 24) under.push([exp, 'Planned call', x(exp) > 70 ? 'end' : 'middle']);
     const below = under.map(([t, name, a]) => `<line x1="${x(t)}%" x2="${x(t)}%" y1="58" y2="64" stroke="var(--soft)"/>${label(t, 78, name, false, a)}${label(t, 93, fmt(t), true, a)}`).join('');
     const mark = end == null ? '' : `<line x1="${x(end)}%" x2="${x(end)}%" y1="22" y2="62" stroke="var(--ink)" stroke-width="3"/>${label(end, 16, (off ? 'Removed ' : 'Called ') + fmt(end), true)}`;
-    const keyHtml = key.map(([c, text]) => `<span><i class="${c === 'dash' ? 'dash' : c === 'dot' ? 'dot' : ''}"${c === 'dash' || c === 'dot' ? '' : ` style="background:${c}"`}></i>${e(text)}</span>`).join('');
+    const shapes = ['dash', 'dot', 'cross', 'diamond'];
+    const keyHtml = key.map(([c, text]) => `<span><i class="${shapes.includes(c) ? c : ''}"${shapes.includes(c) ? '' : ` style="background:${c}"`}></i>${e(text)}</span>`).join('');
     const row = (name, value) => `<div><span>${e(name)}</span><b>${e(value)}</b></div>`;
-    const facts = row('First lined', fmt(m.first)) + row('8 h window starts', fmt(m.block.from)) + row('Planned call', fmt(exp))
+    const facts = row(z.firstFrom === 'offDuty' ? 'Off duty at Toronto' : 'First lined', fmt(m.first)) + row('8 h window starts', fmt(m.block.from)) + row('Planned call', fmt(exp))
       + row(off ? 'Removed' : 'Actual call', end == null ? '—' : fmt(end)) + row(off ? 'Lined up for' : 'Notice given', notice == null ? '—' : d(notice))
-      + (called ? row(early ? 'Earlier than planned' : late ? 'Later than planned' : 'Against the plan', gap ? d(gap) : 'on time') : '');
+      + (called ? row(early ? 'Earlier than planned' : late ? 'Later than planned' : 'Against the plan', gap ? d(gap) : 'on time') : '')
+      + (drops.length ? row('Jobs pulled without a call', String(drops.length)) : '') + (orderMoves.length ? row('Ordered time changed', `${orderMoves.length} time${orderMoves.length === 1 ? '' : 's'}`) : '');
     const events = [...m.markers.map(c => ({ at: c.at, text: `Change: ${fmt(c.at)} → call ${c.call.slice(5)}` })), ...m.changes.filter(c => c.ordered).map(c => ({ at: c.at, text: `Ordered observed: ${fmt(c.at)} · call ${c.call.slice(5)}` }))];
     const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
+    // The graph alone, for the "how to read it" examples.
+    if (opts.bare) return `<div class="call-timeline ct2 ct2-bare"><p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>${notes}
+      <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${diamonds}${mark}${below}${crosses}</svg><div class="ct2-key">${keyHtml}</div></div>`;
     return `<details class="call-timeline ct2"><summary>Show call timeline</summary><p class="ct2-who"><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b></p>
-      <p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>
-      <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${mark}${below}</svg>
+      <p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>${notes}
+      <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${diamonds}${mark}${below}${crosses}</svg>
       <div class="ct2-key">${keyHtml}</div><div class="ct2-facts">${facts}</div>${renderCallReasons(z)}
       <details><summary>Marker times (${events.length})</summary><ul class="timeline-events">${events.map(c => `<li>${e(c.text)}</li>`).join('') || '<li>No saved marker times.</li>'}</ul></details>
       <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
-      <details><summary>About this timeline</summary><p class="anote">The white bar is the actual call: on duty minus two hours. Green is the eight hours before the planned call. Red (yellow for 30 minutes or less) runs from an early call to the planned call: the time the plan said they still had. A dashed green box is a planned window the call came before. Purple is waiting past the planned call. Notice given is from the first check that lined the turn up to the call. Dots mark changes of the expected call over 30 minutes. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'}</p></details></details>`;
+      <details><summary>About this timeline</summary><p class="anote">The white bar is the actual call: on duty minus two hours. Green is the eight hours before the planned call. Red (yellow for 30 minutes or less) runs from an early call to the planned call: the time the plan said they still had. A dashed green box is a planned window the call came before. Purple is waiting past the planned call. A red cross is a job pulled without a call (off its line-up, nobody on it, not on the Call Board) in the eight hours before its call; the graph carries on to the job that replaced it. A square is the first check that saw it ordered, a diamond an ordered time that changed. Notice given is from the first check that lined the turn up to the call; out of Toronto it runs from the crew going off duty at the bunkhouse when the train was already on the line-up. Dots mark changes of the expected call over 30 minutes. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'}</p></details></details>`;
   }
   // Why a call landed where it did (owner, 2026-11-10): for a call more than
   // an hour early or late, or with under 8 h notice, the reasons the tracker
@@ -546,13 +566,15 @@
     const fmt = t => { const s = typeof t === 'number' ? T.fromMin(t) : String(t || ''); return /^\d{4}-\d{2}-\d{2} \d{4}$/.test(s) ? ord(+s.slice(8,10)) + ' ' + s.slice(11) : s; };
     const d = n => { n = Math.round(Math.abs(n)); const h = Math.floor(n/60), mm = n % 60; return h ? `${h} h ${String(mm).padStart(2,'0')} m` : `${mm} m`; };
     const lines = [];
-    if (notice < 480 || z.firstWhy) lines.push({ at: m.first, text: `First lined up${z.firstTrain ? ` for ${z.firstTrain}, call ${fmt(z.firstCall)}` : ''}${notice < 480 ? `, only ${d(notice)} before the actual call` : ''}`, why: z.firstWhy || '' });
+    if (notice < 480 || z.firstWhy) lines.push({ at: m.first, text: `${z.firstFrom === 'offDuty' ? 'Off duty, lined up' : 'First lined up'}${z.firstTrain ? ` for ${z.firstTrain}, call ${fmt(z.firstCall)}` : ''}${notice < 480 ? `, only ${d(notice)} before the actual call` : ''}`, why: z.firstWhy || '' });
     let prevCall = T.toMin(z.firstCall), prevTrain = z.firstTrain || null;
     for (const c of m.changes.filter(c => c.at <= m.end)) {
       const call = T.toMin(c.call);
       const moved = prevTrain != null && c.train && c.train !== prevTrain;
       const big = call != null && prevCall != null && Math.abs(call - prevCall) > 30;
-      if (c.at > m.first && (moved || big)) lines.push({ at: c.at, text: moved ? `Moved to ${c.train}, call ${fmt(c.call)}` : `Call moved ${fmt(prevCall)} → ${fmt(c.call)}`, why: c.why || '' });
+      if (c.at > m.first && (moved || big)) lines.push({ at: c.at, text: (c.dropped ? `${c.dropped} was pulled without a call; ` : '') + (moved ? `${c.dropped ? 'moved' : 'Moved'} to ${c.train}, call ${fmt(c.call)}` : `${c.orderFrom ? 'Ordered time' : 'Call'} moved ${fmt(prevCall)} → ${fmt(c.call)}`), why: c.why || '' });
+      else if (c.at > m.first && c.dropped) lines.push({ at: c.at, text: `${c.dropped} was pulled without a call`, why: 'nothing replaced it at that check' });
+      else if (c.at > m.first && c.orderFrom) lines.push({ at: c.at, text: `Ordered time moved ${fmt(prevCall)} → ${fmt(c.call)}`, why: c.why || '' });
       if (call != null) prevCall = call;
       if (c.train) prevTrain = c.train;
     }

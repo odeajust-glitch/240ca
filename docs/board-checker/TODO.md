@@ -5,6 +5,16 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Test site** (board-test + owner key shows every preview): built 2026-11-10, ❓ not yet
+  seen on the real address. On it, awaiting his go to promote: Analytics, Snapshots rows,
+  18.6(b) rows, the newer-version bar, the compact header. See HANDOFF.
+
+- **Analytics, new layout:** in Test since 2026-11-10, awaiting his review. See HANDOFF.
+
+
+- **Snapshots tab:** still the older layout after Current's was changed 2026-11-10; ask
+  whether to switch it too.
+
 - **Names for followers on Page Health:** three answers pending from the owner (capture
   names for everyone each check; OWNER_EMAIL deleted on `board`; layout). See HANDOFF.
 
@@ -14,8 +24,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 
 1. **Call timeline headline for early calls: DECIDED 2026-11-10, keep notice given**
    ("Called with 48 m notice" when under 8 h). Alternative was always how early.
-2. **Call timeline, where notice starts:** from the turn first lined up for the train
-   (now) or from when the train was ordered.
+2. **Call timeline, where notice starts: DECIDED 2026-11-10, keep it as it is** (from the
+   turn first lined up; out of Toronto from off duty at the bunkhouse). Alternative was
+   from when the train was ordered.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
@@ -25,8 +36,6 @@ Small decisions parked for a housekeeping pass; ask, don't build.
   the other crew shown for one or two checks, then the Call Board has the first). Call
   stability no longer believes it; Current and alerts still see it. Check after the
   laptop runs the 8th's engine fixes.
-- **Call stability: same yard job again within 3 days is ignored** (`isDone` in
-  insights.js; yard job ids carry no date). Found 2026-11-10, B116 YPRS30 7th → 9th.
 
 1. **Runaround log: check it on real runs**, then decide on alerts (to the
    passed-over turn? the rep?), claim time limits and an evidence page.
@@ -66,13 +75,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 8. **Rest / reset tracker: check it on real runs** (built 2026-11-03, see
    "Done"; reset alerts built too). Then maybe Person search / Analytics views, and the
    hours limits (60 h / 7 days, 192 h / 28 days; owner: "too hard to pass",
-   not tracked for now). **Saved question (owner: "save your question …
-   see if it gets answered once we do the rest tracker"):** DHT040B 31
-   (31st 0900, call ~0700): B111 was first on the conductor slow board but
-   B133 (fast board 001) went; owner: B111 "might have not had enough time
-   to take a train or dead head, but had enough time for a yard shift".
-   Look at B111's reset due time then: a reset needed before a road trip
-   would end fits that. Also: the runaround log showed B111's fast-board
+   not tracked for now). **The saved B111 / DHT040B 31 question is closed** (owner, 2026-11-10: "leave it
+   as a one off"; B111 was off rest 45 min before the call, went to Toronto later that
+   morning, reset fresh; no rule changed). Also: the runaround log showed B111's fast-board
    spot (pos 004) instead of the slow board (fixed 2026-11-03).
 
 12. **Pushover trial** (owner, 2026-11-04: "free for 30 days then 5 dollars
@@ -192,6 +197,14 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Call stability, same yard job again within 3 days**: counted as its own call.
+
+- 2026-11-10: **Order summary, new layout** (two-line rows, groups, sort, search as you
+  type, the crew's call in each train) and its opened-detail fix: approved and promoted.
+
+- 2026-11-10: **Current, new layout** (short rows, Toronto and Garnet folded, who is in
+  Garnet, counts on one line, tab bar in one row): approved in Test and promoted.
 
 - 2026-11-10: **Page Health new top** (verdict line, code version in words, name codes
   kept over a restart): approved in Test and promoted.
