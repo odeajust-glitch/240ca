@@ -44,6 +44,21 @@ engine (known-crew shortcut, S5 audit). Results:
 | 08 | S501 | S502 at 0259 | before 8th fixes | swap |
 | 09 | S502 | S501 at 0058 | not known | swap |
 
+**Saved B111 question looked at, 2026-11-10 (another session, started by Justin: "start
+with the rest tracker … the site should know who has enough time left for a road trip").
+Nothing built, no code changed.** From the live day files for DHT040B 31 (TODO #8): the
+site had B111 (slow 001) for DHT040B (call 0700) and B133 (slow 010, **fast 001**) for
+A42431 31 (call 0845); CATS did the opposite, and B111 went to Toronto on A42431 (on duty
+1045, working SA01). So B111 was not short of time for a road trip, and its reset was
+fresh (hold until 30th 0559, then YBHS01 30th 0800). Not explained by rest, reset, PL or
+B0. Other deadhead spare jobs (DHT249C 30, DHT377B 30) went down the slow board with the
+first one passed, so "deadheads come off the fast board" does not hold in general: do not
+build that. Asked Justin why B133 got the deadhead. Also noted: `spareFills` (spares.js)
+does not use resets.json; only reset-alerts.js does (yard 8 h / YSBY 12 h / road 35 h),
+so Current's "Filled by" can still show a spare who would be reset. Offered to make
+spareFills pass those over; waiting for his answer. This cloud session too began on the
+stale 3rd Nov checkout (kept locally as branch `stale-2026-11-03-backup`, never pushed).
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
