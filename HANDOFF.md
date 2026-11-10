@@ -95,6 +95,12 @@ history is rebuilt from the day files each publish: no FORMAT bump, no Worker ch
 Laptop pull/restart pending. Two call-timeline decisions parked on the new
 "Housekeeping list" in TODO.
 
+**Call stability: new timeline is now the regular page (2026-11-10, owner: "Switch to the
+new call stability layout").** `renderCallTimelineV2` replaces `renderCallTimeline` in the
+three places that draw a call (callReviewRecord, the Turn History call history, the Test
+preview). The old function stays in board-analytics.js only because its tests still use it.
+Suite 276 of 290 (same 14 failing). Live after the laptop pull and the next publish.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

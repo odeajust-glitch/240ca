@@ -15,8 +15,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    (now) or from when the train was ordered.
 
 
-- **Call timeline, new layout** (owner screenshots 2026-11-10): in Test, awaiting his
-  review; on approval swap the regular page to `renderCallTimelineV2`. See HANDOFF.
+- **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
+  headline choices still open in Housekeeping.
 
 - **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
   the other crew shown for one or two checks, then the Call Board has the first). Call

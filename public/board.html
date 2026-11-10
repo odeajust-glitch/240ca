@@ -2273,7 +2273,7 @@ function callReviewRecord(row) {
     esc(z.train || '') + ' · ' + esc(z.turn || '') + ' · On duty minus 2 hours</p>' +
     comparison('Original expected call', originalGap, z.firstCall) + comparison('Eight-hour baseline', baselineGap, z.expected) +
     (lastGap == null ? '' : comparison('Last known plan', lastGap, z.expected)) +
-    BoardAnalytics.renderCallTimeline(z) + '</article>';
+    BoardAnalytics.renderCallTimelineV2(z) + '</article>';
 }
 function showCallReview(panel, records, range) {
   const data = callReviewData(records);
@@ -4680,7 +4680,7 @@ source().then(async (src) => {
       const trainId = String(trip.train || '').replace(/ \([^)]*\)$/, '');
       const sourceTurn = annotation ? annotation[1] : turn;
       const matches = all.filter(z => !z.takenOff && z.turn === sourceTurn && z.train === trainId && z.onDuty === trip.at);
-      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimeline(z).replace('<details class="call-timeline">', '<details class="call-timeline" open>')).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes below are still available; a graph cannot be drawn without saved predictions.</p>';
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>')).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes below are still available; a graph cannot be drawn without saved predictions.</p>';
     } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
   });
   async function loadArchive(range) {
