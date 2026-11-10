@@ -183,6 +183,18 @@ Why, 429 with a reason on every line. On the regular page (he asked for it direc
 Test. Rebuilt from the day files: no FORMAT bump, no Worker change. ❓ Ask him how the
 wording reads on real calls; long back-and-forth runs between pool turns are noisy.
 
+**Toronto (Mac yard) trains had no Call stability, fixed 2026-11-10 (owner screenshot,
+SD03: "Timeline unavailable" on every train from Toronto):** `sleepCheck` took `t.crew ||
+t.pred` and read `.co` / `.en`; Toronto's line-up rows carry `crew` as words ("S105 +
+SA03", engineer first) with the pair in `pred`, so no Toronto train was ever tracked. Now
+the object form, else `pred`, else the words. Their planned call is order − 15 min − 2 h
+for a train and order − 2 h for a deadhead (on duty at Toronto was 15 min before the order
+on 279 of 280 trains, at the order on 46 of 49 deadheads), so it lines up with on duty − 2
+h. Replayed on the live days: 399 new call records and 79 "removed"; 155 of the 215
+same-train calls land within 30 min of the plan. ❓ The Current page's Toronto "call" is
+order − 2 h (owner's settled rule), 15 min later than the real call: ask before touching
+(same question as Garnet). Rebuilt from the day files: no FORMAT bump, no Worker change.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

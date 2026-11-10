@@ -395,3 +395,18 @@ test('insights: a call that moved says why (a job new on the spare list, who too
   // On time with plenty of notice: no Why block.
   assert.strictEqual(A.callReasons({ ...z, firstSeen: '2026-11-08 0100', firstCall: '2026-11-08 1500', expected: '2026-11-08 1500', timelineChanges: [] }), null);
 });
+
+// Owner, 2026-11-10: "trains originating in mac yard don't have the data for
+// the graph". Toronto's rows carry the crew as words, the pair in pred.
+test('insights: a Toronto line-up train is tracked for its crew', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const row = (order, call, extra) => ({ train: 'Z14931 29', status: 'PLN', order, call, crew: 'SD03 + SR08', ...extra });
+  const st = Insights.collect([
+    snap('2026-10-29 0700', { macLineup: [row('29th 1700', '29th 1500', { pred: { co: 'SR08', en: 'SD03' } })] }),
+    snap('2026-10-29 1200', { macLineup: [row('29th 1730', '29th 1530')] }), // an older build: words only
+    snap('2026-10-29 1500', { onDuty: [{ train: 'Z14931 29', station: 'TORONTO', onDuty: '29th 1645', crew: 'EN SD03 · CO SR08' }] }),
+  ]);
+  const list = Insights.finish(st).sleep.map((z) => [z.turn, z.train, z.expected, z.call, z.off]).sort();
+  // Planned call: order 1700 − 15 min − 2 h = 1445; called 1445 (on duty 1645 − 2 h).
+  assert.deepStrictEqual(list, [['SD03', 'Z14931 29', '2026-10-29 1445', '2026-10-29 1445', 0], ['SR08', 'Z14931 29', '2026-10-29 1445', '2026-10-29 1445', 0]]);
+});
