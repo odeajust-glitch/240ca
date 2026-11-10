@@ -28,6 +28,22 @@ yard job again within 3 days (yard job ids have no date; seen: B116 YPRS30 7th â
 Also: this cloud session started on the stale 3rd Nov checkout again and was reset to
 the GitHub branch (never push from that state).
 
+**S5 swap watch (plan agreed with Justin 2026-11-10; he is on S501):** each night's
+L502 is checked from the live day file the next morning (a scheduled message wakes the
+session; trace the line-up crew per check from 15 min before the call until the Call
+Board shows the train). Pass = the same crew from the last PLN check through the Call
+Board. Past swaps all came on the first check after the call time. Justin's part: pull
+the laptop, read the code version on Page Health, and on a night he is called look at
+option 29 at the call (his row and S502's). Five clean nights in a row on the new code,
+at least two of them S501's and two S502's = done; a swap on the new code = fix the
+engine (known-crew shortcut, S5 audit). Results:
+
+| L502 | Crew that went | Line-up at the call | Laptop code | Result |
+|---|---|---|---|---|
+| 05 | S502 | S501 at 0046 | before 8th fixes | swap |
+| 08 | S501 | S502 at 0259 | before 8th fixes | swap |
+| 09 | S502 | S501 at 0058 | not known | swap |
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots â†’ Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
