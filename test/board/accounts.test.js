@@ -263,3 +263,18 @@ test('the laptop site update never deletes account files', async () => {
   await deployR2({ dir, r2: { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'S' }, fetchImpl });
   assert.deepEqual([...objects.keys()].sort(), ['accounts/codes/abc.json', 'accounts/users/abc.json', 'index.html']);
 });
+
+// Owner, 2026-11-10: approved in one window, the other still said "Not
+// approved yet". Another copy of the Worker had remembered the waiting state.
+test('an approval made elsewhere lets a waiting device in at once', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('f1');
+  await call('/auth/signup', { body, ip: '4.4.4.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  assert.equal((await (await call('/auth/me', { cookie })).json()).status, 'pending');
+  // Approved by another copy of the Worker: only the stored file changes.
+  const key = [...store.keys()].find((k) => k.startsWith('accounts/users/') && JSON.parse(store.get(k)).email === body.email);
+  store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), status: 'approved' }));
+  assert.equal((await (await call('/auth/me', { cookie })).json()).signedIn, true);
+  assert.equal((await call('/data/index.json', { cookie })).status, 200);
+});

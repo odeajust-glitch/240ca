@@ -1133,7 +1133,10 @@ const bodyJson = async (request) => { const t = await request.text(); if (t.leng
 const userCache = new Map();
 async function userById(env, id, now = Date.now()) {
   const hit = userCache.get(id);
-  if (hit && now - hit.at < USER_CACHE_MS) return hit.user;
+  // Only an approved member is remembered: someone waiting is looked up
+  // every time, so an approval lets them in at once (owner, 2026-11-10:
+  // "Not approved yet" a moment after he had approved the account).
+  if (hit && hit.user && hit.user.status === 'approved' && now - hit.at < USER_CACHE_MS) return hit.user;
   const user = await readJson(env, userKey(id));
   userCache.set(id, { at: now, user });
   return user;
