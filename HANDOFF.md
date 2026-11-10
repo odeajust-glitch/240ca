@@ -89,7 +89,8 @@ saved checks don't show that: B111 reads "rest until 31st 0600" up to 0521 and
 "available" from 0559; the line-up still had DHT040B at 0643 and the Call Board had it
 (B133 working SR08) at 0652, so the call was made between 0643 and 0652 (deadheads reach
 the Call Board a median 127 min before on duty; this one 128). B111 was off rest about 45
-min before the call. Told him so; still ❓ unexplained, no rule changed.
+min before the call. Told him so. **Closed by Justin, 2026-11-10: "Leave it as a one
+off".** `spareFills` keeps "rested by the call"; don't reopen it or ask for a cut-off again.
 
 **Page Health → Who gets alerts tidied, 2026-11-10 (same session; Justin: "can we clean up
 this. Maybe show who's following what turn on the members page"):** in `public/board.html`

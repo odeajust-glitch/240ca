@@ -71,13 +71,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 8. **Rest / reset tracker: check it on real runs** (built 2026-11-03, see
    "Done"; reset alerts built too). Then maybe Person search / Analytics views, and the
    hours limits (60 h / 7 days, 192 h / 28 days; owner: "too hard to pass",
-   not tracked for now). **Saved question (owner: "save your question …
-   see if it gets answered once we do the rest tracker"):** DHT040B 31
-   (31st 0900, call ~0700): B111 was first on the conductor slow board but
-   B133 (fast board 001) went; owner: B111 "might have not had enough time
-   to take a train or dead head, but had enough time for a yard shift".
-   Look at B111's reset due time then: a reset needed before a road trip
-   would end fits that. Also: the runaround log showed B111's fast-board
+   not tracked for now). **The saved B111 / DHT040B 31 question is closed** (owner, 2026-11-10: "leave it
+   as a one off"; B111 was off rest 45 min before the call, went to Toronto later that
+   morning, reset fresh; no rule changed). Also: the runaround log showed B111's fast-board
    spot (pos 004) instead of the slow board (fixed 2026-11-03).
 
 12. **Pushover trial** (owner, 2026-11-04: "free for 30 days then 5 dollars
