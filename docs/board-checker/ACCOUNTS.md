@@ -81,7 +81,7 @@ stops at 50 people. The accounts are built into the Worker
 - Account files are in R2 under `accounts/` and are never served.
 - Only the owner key opens the list (not the Cloudflare Access email).
 
-## Crew names on the board (test site only so far)
+## Crew names on the board
 
 Owner, 2026-11-10: "once the site is locked and it is members only, I would
 like to add crew names to the board … push it to the test site for now";
@@ -115,17 +115,19 @@ in CATS.
 - **Worker** `GET /api/crewkey`: the passcode (the "Crew names passcode"
   saved on Page Health) to an approved signed-in member or the owner key,
   and only where the variable `CREW_NAMES` = `on`. Not tied to `LOCK`.
-- **Page** (`CREW`, `crewTag`, `crewIn`, `loadCrew` in `board.html`): drawn
-  only when `PREVIEW` is on (the `board-test` address with the owner key):
+- **Page** (`CREW`, `crewTag`, `crewIn`, `loadCrew` in `board.html`): since
+  the evening of 2026-11-10 (owner: "I want anyone with access to be able
+  to see them") drawn for any signed-in approved member and the owner's
+  devices on a site whose Worker has `CREW_NAMES` = `on`; that variable is
+  the only switch. Where it shows:
   beside the turn in pool and spareboard rows, the turn panel, and after a
   turn wherever `markTurn` writes a line (line-up, crews, away lists).
 - **Alerts carry no names**; nothing here touches them.
 - **Not showing?** Page Health on the test site has a "Crew names on the
   board" box that says which step is missing (Worker / `CREW_NAMES`,
   passcode not saved, laptop hasn't published, passcode doesn't match).
-- To put it on the main site later: set `CREW_NAMES` = `on` on `board`, and
-  in `board.html` let members load it (today `loadCrew` runs only from the
-  owner-key `PREVIEW` switch, and `crewTag` / `crewIn` test `PREVIEW`).
+- Main site: `CREW_NAMES` = `on` on `board` (the owner's plan: after the
+  7 pm lock on 2026-11-10). Delete it to take the names off again.
 - Known limits: a removed member who kept the passcode could still open a
   copy of the file they saved; changing `BOARD_NAMES_KEY` and the saved
   passcode ends that.

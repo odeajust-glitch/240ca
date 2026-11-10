@@ -1605,19 +1605,22 @@ function poolChip(rules) {
   return m ? `<span class="pool ${m[1]}">${m[1]}</span>` : '';
 }
 // The marked turns, picked out in a line of text.
-// Crew names on the board, test site only for now (owner, 2026-11-10: "once
-// the site is locked … add crew names to the board"; "last name, first
-// initial"). CREW: { turn: "Last, F" } from data/crew.json, which is locked;
-// the Worker gives its key to approved members only (loadCrew). Names never
-// go into an alert: they are only drawn here.
+// Crew names on the board (owner, 2026-11-10: "once the site is locked … add
+// crew names to the board"; "last name, first initial"; then, the same
+// evening: "I want anyone with access to be able to see them"). CREW:
+// { turn: "Last, F" } from data/crew.json, which is locked; the Worker gives
+// its key to approved, signed-in members and only on a site whose
+// CREW_NAMES variable is on (loadCrew), so that variable is the switch.
+// Names never go into an alert: they are only drawn here.
 let CREW = null;
-let CREW_NOTE = 'Not asked for yet (needs the test site address and the owner key).';
-const crewTag = (key) => (PREVIEW && CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
+let CREW_NOTE = 'Not asked for yet.';
+let crewAsked = false;
+const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
 // The name after each turn in a line of text ("CO SR05 · EN SD11"). A
 // 501/502 turn is two people: named only where the text says which
 // ("CO S501", "S501-EN").
 function crewIn(html) {
-  if (!PREVIEW || !CREW) return html;
+  if (!CREW) return html;
   let before = '';
   return html.split(/(<[^>]+>)/).map((seg) => {
     if (!seg || seg[0] === '<') return seg;
@@ -2255,7 +2258,7 @@ function turnPanel(s) {
     <div id="held186" class="work"></div>
     <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></details>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span></h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
@@ -4246,11 +4249,12 @@ source().then(async (src) => {
   // Crew names (test site): the key from the Worker, the locked file opened
   // in the browser, then the page drawn again with the names in.
   async function loadCrew() {
-    if (CREW || !window.BoardNames) return;
+    if (CREW || crewAsked || !window.BoardNames) return;
+    crewAsked = true;
     const say = (text) => { CREW_NOTE = text; if (mode === 'health') renderHealth(); };
     try {
       const r = await fetch('api/crewkey', { cache: 'no-store', headers: OwnerKey.headers() });
-      if (r.status === 404) return say('The Worker did not give the key. Either this Worker does not have the newest code pasted in, or its variable CREW_NAMES is not set to on.');
+      if (r.status === 404) return say('Off on this site: its Worker variable CREW_NAMES is not set to on (or the Worker does not have the newest code).');
       if (r.status === 503) return say('The crew names passcode is not saved. Type it in "Crew names passcode" under Article 18.6(b) submissions on this page and Save.');
       if (!r.ok) return say(`The Worker answered ${r.status} when asked for the key.`);
       const pass = (await r.json()).pass;
@@ -4260,7 +4264,8 @@ source().then(async (src) => {
       const got = await BoardNames.unlockNames(locked, pass);
       if (!got || !got.turns) return say('The saved passcode does not open the names file: it is not the same as BOARD_NAMES_KEY on the laptop. Save the right one under Article 18.6(b) submissions.');
       const n = Object.keys(got.turns).length;
-      if (PREVIEW) { CREW = got.turns; setMode(mode); }
+      CREW = got.turns;
+      setMode(mode);
       say(n ? `Showing ${n} name${n === 1 ? '' : 's'}, from Call Boards read in the last 14 days (file made ${got.at ? new Date(got.at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'at an unknown time'}).` : 'The names file opened but it is empty: the laptop has read no Call Board names in the last 14 days.');
     } catch (e) { say(`Could not load the names (${e.message}).`); }
   }
@@ -4296,6 +4301,7 @@ source().then(async (src) => {
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
     // The test site's previews: this address and the owner key, nothing else.
+    if (h && OwnerKey.has()) loadCrew(); // the owner's devices, either site
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
@@ -4780,7 +4786,7 @@ source().then(async (src) => {
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
       <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${PREVIEW ? `<section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">test site only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>` : ''}${questions}${sent}
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
@@ -6517,6 +6523,7 @@ source().then(async (src) => {
     // alerts). Only reads the alerts the phone already has and tells the
     // site whose they are: nothing is asked of the person, no alert is
     // added, changed or removed.
+    if (me.signedIn) loadCrew(); // crew names, where the site has them on
     if (me.signedIn && me.name !== 'Owner' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((reg) => (reg && reg.pushManager ? reg.pushManager.getSubscription() : null))
         .then((sub) => (sub ? fetch('push/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }) : null))
