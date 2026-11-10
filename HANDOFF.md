@@ -36,13 +36,17 @@ Board. Past swaps all came on the first check after the call time. Justin's part
 the laptop, read the code version on Page Health, and on a night he is called look at
 option 29 at the call (his row and S502's). Five clean nights in a row on the new code,
 at least two of them S501's and two S502's = done; a swap on the new code = fix the
-engine (known-crew shortcut, S5 audit). Results:
+engine (known-crew shortcut, S5 audit).The line-up's reason wording does not tell the
+version (the same sentence is in the current engine): use Page Health's "Running code"
+row from now on. Call stability had both S501 crafts' call for the 10th and no false
+"taken off". Next: L50231 11, lined up for S502. Results:
 
 | L502 | Crew that went | Line-up at the call | Laptop code | Result |
 |---|---|---|---|---|
 | 05 | S502 | S501 at 0046 | before 8th fixes | swap |
 | 08 | S501 | S502 at 0259 | before 8th fixes | swap |
 | 09 | S502 | S501 at 0058 | not known | swap |
+| 10 | S501 | S501 at every check to 0039; Call Board 0049 | not known | clean (1) |
 
 **Saved B111 question looked at, 2026-11-10 (another session, started by Justin: "start
 with the rest tracker … the site should know who has enough time left for a road trip").
