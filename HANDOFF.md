@@ -83,7 +83,13 @@ call. M39491 29: B104, rest until 0600, ordered seen 0517, call 0615 → **got i
 DHT040B 31: B111, rest until 0600, ordered seen from 0154, call 0700 → **passed**. "Free
 when first seen ordered" as a general rule did worse than today's (18 vs 23 of 29 right),
 so it was **not built**. Asked Justin for the cut-off; do not change `spareFills` on rest
-until he gives one.
+until he gives one. **2026-11-10, later (this session):** Justin again: "I think
+B111 was on rest when the call was made so it should have gone to the next person". The
+saved checks don't show that: B111 reads "rest until 31st 0600" up to 0521 and
+"available" from 0559; the line-up still had DHT040B at 0643 and the Call Board had it
+(B133 working SR08) at 0652, so the call was made between 0643 and 0652 (deadheads reach
+the Call Board a median 127 min before on duty; this one 128). B111 was off rest about 45
+min before the call. Told him so; still ❓ unexplained, no rule changed.
 
 **Page Health → Who gets alerts tidied, 2026-11-10 (same session; Justin: "can we clean up
 this. Maybe show who's following what turn on the members page"):** in `public/board.html`

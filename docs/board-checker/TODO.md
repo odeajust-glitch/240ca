@@ -20,8 +20,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 
 1. **Call timeline headline for early calls: DECIDED 2026-11-10, keep notice given**
    ("Called with 48 m notice" when under 8 h). Alternative was always how early.
-2. **Call timeline, where notice starts:** from the turn first lined up for the train
-   (now) or from when the train was ordered.
+2. **Call timeline, where notice starts: DECIDED 2026-11-10, keep it as it is** (from the
+   turn first lined up; out of Toronto from off duty at the bunkhouse). Alternative was
+   from when the train was ordered.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
