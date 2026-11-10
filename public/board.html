@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1169,6 +1169,34 @@
   :root[data-theme="board"] input, :root[data-theme="board"] select, :root[data-theme="board"] textarea { background: #000000 !important; color: #ffffff; border-color: var(--soft) !important; }
   :root[data-theme="board"] .daybar { background: #171204; color: #ffffff; }
   :root[data-theme="board"] .htable td.warn, :root[data-theme="board"] .health .warn { color: #ff8a80; }
+  /* Matrix (owner, 2026-11-10: "make a matrix theme"): the film's green
+     code on black. Fixed-width green letters with a phosphor glow on the
+     headings and big times, pale green for anything you tap, square
+     corners. Yellow and red keep their meaning; "ordered" is the bright
+     pale green so it still stands out from the rest. */
+  :root[data-theme="matrix"] { --bg: #000000; --sheet: #020a04; --ink: #1fe85a; --soft: #0fa040; --rule: #0c4a22; --rule-soft: #072a14;
+    --accent: #d2ffdc; --accent-ink: #000000; --accent-tint: #063219;
+    --amber: #ffd23c; --amber-tint: #2e2606; --go: #c9ffd6; --go-tint: #0a4a22; --stop: #ff5050; --stop-tint: #3a0d0d;
+    --plan-tint: #051b0c; --poolA: #5fd0ff; --poolB: #d39bff; --poolSR: #00ff41;
+    --display: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark; }
+  :root[data-theme="matrix"] * { border-radius: 0 !important; }
+  :root[data-theme="matrix"] body { font-size: 14px; }
+  :root[data-theme="matrix"] .top { border-bottom: 1px solid var(--ink); }
+  :root[data-theme="matrix"] .top h1 { font-size: 24px; letter-spacing: 0.08em; }
+  :root[data-theme="matrix"] .top h1, :root[data-theme="matrix"] .sheet > header h2, :root[data-theme="matrix"] .test-current-box > summary h2, :root[data-theme="matrix"] .head .when, :root[data-theme="matrix"] .ohead .when, :root[data-theme="matrix"] .thead .when,
+  :root[data-theme="matrix"] .head .when .num, :root[data-theme="matrix"] .train-clear .card-duty, :root[data-theme="matrix"] .train .time, :root[data-theme="matrix"] .stat .v, :root[data-theme="matrix"] .rail .t { color: #00ff41; text-shadow: 0 0 8px rgba(0, 255, 65, 0.6); }
+  :root[data-theme="matrix"] .sheet > header h2, :root[data-theme="matrix"] .test-current-box > summary h2 { font-size: 17px; letter-spacing: 0.06em; }
+  :root[data-theme="matrix"] .head .when, :root[data-theme="matrix"] .ohead .when, :root[data-theme="matrix"] .thead .when { font-size: 26px; }
+  :root[data-theme="matrix"] .head .when .num { font-size: 26px; }
+  :root[data-theme="matrix"] .modes button, :root[data-theme="matrix"] .modes a.modelink { color: var(--ink); border-color: var(--rule); text-transform: uppercase; letter-spacing: 0.04em; }
+  :root[data-theme="matrix"] .modes button[aria-pressed="true"], :root[data-theme="matrix"] .poolfilter button[aria-pressed="true"], :root[data-theme="matrix"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="matrix"] .notes .nkinds button[aria-pressed="true"] { background: #00ff41; border-color: #00ff41; color: #000000; box-shadow: 0 0 10px rgba(0, 255, 65, 0.5); }
+  :root[data-theme="matrix"] .poolfilter button, :root[data-theme="matrix"] .rail .hours button { color: var(--ink); }
+  :root[data-theme="matrix"] input, :root[data-theme="matrix"] select, :root[data-theme="matrix"] textarea { background: #000000 !important; color: #d2ffdc; border-color: var(--soft) !important; }
+  :root[data-theme="matrix"] .daybar { background: #03140a; }
+  :root[data-theme="matrix"] .htable td.warn, :root[data-theme="matrix"] .health .warn { color: #ff8a80; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1242,6 +1270,7 @@
       <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:linear-gradient(90deg,#f2f2f7 50%,#000000 50%);color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
       <button type="button" class="sty" data-theme="iphonelight"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone Light</button>
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
+      <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1300,7 +1329,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;

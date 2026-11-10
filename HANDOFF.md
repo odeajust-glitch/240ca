@@ -4,6 +4,12 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Matrix page style, 2026-11-10 evening (owner: "make a matrix theme"):** an eighth choice,
+`data-theme="matrix"` in `public/board.html`: black page, fixed-width green letters, a
+glow on headings and big times, pale green for anything tapped, yellow and red unchanged,
+"ordered" in bright pale green. Opt-in per phone. Checked at phone width on sample data,
+Current only. Laptop pull/restart/publish pending.
+
 **iPhone Light page style, 2026-11-10 evening (owner: "add an iphone theme that is light as
 well"; his phone is set dark, so iPhone always drew dark for him):** a seventh choice,
 saved as `boardTheme = iphonelight`. It is the iPhone style with `data-shade="light"` on
