@@ -6256,6 +6256,16 @@ source().then(async (src) => {
   fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me || !me.ready) return;
     if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
+    // This phone's alerts, matched to the signed-in member (owner,
+    // 2026-11-10; a week's grace before unmatched phones stop getting
+    // alerts). Only reads the alerts the phone already has and tells the
+    // site whose they are: nothing is asked of the person, no alert is
+    // added, changed or removed.
+    if (me.signedIn && me.name !== 'Owner' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => (reg && reg.pushManager ? reg.pushManager.getSubscription() : null))
+        .then((sub) => (sub ? fetch('push/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }) : null))
+        .catch(() => {});
+    }
     // "Sign up to keep access" (owner, 2026-11-09: people make an account
     // before the lock goes on): the Worker's SIGNUP_NOTICE=on switches it on.
     // Was off 2026-11-10 while the login was being sorted out; back on at the

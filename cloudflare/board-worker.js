@@ -1402,12 +1402,32 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   return json({ ok: true, mail });
 }
 
+// Whose phone, without touching its alerts (owner, 2026-11-10: match phones
+// to members for a week before alerts to unmatched phones stop; "make sure
+// it doesn't affect anyone that will get a notification"). The page sends
+// the address of the alerts this phone already has; the signed-in member's
+// account id is written beside them. Turns, choices and keys are copied back
+// exactly as they were; a phone with no saved alerts is left with none.
+async function claimPhone(request, env) {
+  const who = await sessionOf(request, env);
+  if (!who || who.status !== 'approved' || who.id === 'owner') return json({ ok: true, matched: false });
+  const b = await bodyJson(request);
+  const endpoint = String((b && b.endpoint) || '');
+  if (!endpoint.startsWith('https://') || endpoint.length > 2000) return json({ ok: true, matched: false });
+  const key = await subKey(endpoint);
+  const old = await readJson(env, key);
+  if (!old || old.endpoint !== endpoint || !Array.isArray(old.turns)) return json({ ok: true, matched: false });
+  if (old.account !== who.id) await putJson(env, key, { ...old, account: who.id });
+  return json({ ok: true, matched: true });
+}
+
 const OPEN_FILES = /^\/(manifest\.webmanifest|board\.webmanifest|board-icon-\d+\.png|board-sw\.js|sw\.js|favicon\.ico|robots\.txt)$/;
 // Every request comes through here first: an answer, or null to carry on.
 async function accounts(request, env, url) {
   const p = url.pathname;
   if (p === '/account') return new Response(ACCOUNT_PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'same-origin' } });
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
+  if (p === '/push/claim') return request.method === 'POST' ? claimPhone(request, env) : json({ error: 'POST only' }, 405);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);
     const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });

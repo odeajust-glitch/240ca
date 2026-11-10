@@ -68,6 +68,11 @@ stops at 50 people. The accounts are built into the Worker
   (`account` in its `subs/` file), and each approved member's row shows the
   turns followed. Phones set up before accounts show as a count of phones
   with no known member until they change their alerts while signed in.
+  A member's phone is also matched without them doing anything: the
+  board page, when signed in, sends the address of the alerts the phone
+  already has to `/push/claim`, which writes the account id beside them
+  and nothing else. Alerts still reach unmatched phones (a week's grace
+  from the lock, 2026-11-10; stopping them is not built).
   Followed name codes are shown as a count only (the Worker can't turn the
   hash back into a code).
 - Account files are in R2 under `accounts/` and are never served.

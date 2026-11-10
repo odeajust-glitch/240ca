@@ -356,3 +356,36 @@ test('MAIL_DAY_MAX sets how many account emails go in a day', async () => {
   const { call } = await setup({ MAIL_DAY_MAX: '95' });
   assert.equal((await (await call('/health/accounts', { key: OWNER_KEY })).json()).mailMax, 95);
 });
+
+// Owner, 2026-11-10: match phones to members "and make sure it doesn't
+// affect anyone that will get a notification".
+test('matching a phone to its member leaves its alerts exactly as they were', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('k1');
+  await call('/auth/signup', { body, ip: '8.8.8.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  const id = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === body.email).id;
+  const endpoint = 'https://fcm.googleapis.com/fcm/send/old-phone';
+  // Alerts set up before accounts: saved with the owner key standing in for "no member".
+  await call('/push/subscribe', { key: OWNER_KEY, body: { subscription: { endpoint, keys: { p256dh: 'BPk', auth: 'au' } }, turns: ['SR03', '@0123456789abcdef'], prefs: { SR03: { ordered: false, time: 60 } } } });
+  const key = [...store.keys()].find((k) => k.startsWith('subs/'));
+  const before = JSON.parse(store.get(key));
+  assert.equal(before.account, undefined);
+  // Not approved yet: nothing happens.
+  let res = await call('/push/claim', { cookie, body: { endpoint } });
+  assert.deepEqual(await res.json(), { ok: true, matched: false });
+  assert.deepEqual(JSON.parse(store.get(key)), before);
+  await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+  res = await call('/push/claim', { cookie, body: { endpoint } });
+  assert.deepEqual(await res.json(), { ok: true, matched: true });
+  const after = JSON.parse(store.get(key));
+  assert.equal(after.account, id);
+  assert.deepEqual({ ...after, account: undefined }, { ...before, account: undefined }); // same turns, choices, keys, time
+  // A phone with no alerts saved gets none made for it; the owner's own device isn't a member.
+  const count = [...store.keys()].filter((k) => k.startsWith('subs/')).length;
+  assert.deepEqual(await (await call('/push/claim', { cookie, body: { endpoint: 'https://fcm.googleapis.com/fcm/send/never-saved' } })).json(), { ok: true, matched: false });
+  assert.deepEqual(await (await call('/push/claim', { key: OWNER_KEY, body: { endpoint } })).json(), { ok: true, matched: false });
+  assert.equal([...store.keys()].filter((k) => k.startsWith('subs/')).length, count);
+  assert.equal(JSON.parse(store.get(key)).account, id);
+  assert.deepEqual((await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.id === id).follows, { phones: 1, turns: ['SR03'], people: 1 });
+});
