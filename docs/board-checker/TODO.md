@@ -9,8 +9,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 Small decisions parked for a housekeeping pass; ask, don't build.
 
-1. **Call timeline headline for early calls:** notice given ("Called with 48 m
-   notice", now, when under 8 h) or always how early ("Called 11 h 05 m early").
+1. **Call timeline headline for early calls: DECIDED 2026-11-10, keep notice given**
+   ("Called with 48 m notice" when under 8 h). Alternative was always how early.
 2. **Call timeline, where notice starts:** from the turn first lined up for the train
    (now) or from when the train was ordered.
 
