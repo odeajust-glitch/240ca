@@ -761,6 +761,8 @@
     /* The top bar keeps 48px free on the right for the gear; the tabs sit below it, so they take that back. */
     body.nav-one-row .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-right: -48px; width: calc(100% + 48px); }
     body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
+    /* The pool buttons line up the same way: rows filled edge to edge (owner, 2026-11-10). */
+    .poolfilter button { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }
     /* Current and Turn History share the first row, half each (owner, 2026-11-10). */
     body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); } }
   /* Order summary, the two-line rows (2026-11-10). */
