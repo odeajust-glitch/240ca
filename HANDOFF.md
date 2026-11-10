@@ -360,6 +360,31 @@ the notes are pruned after 4 days. Replayed on the live days: 11 calls recovered
 "removed" records became the calls they were, B116's 9th Nov YPRS30 wait is recorded
 (removed 0947 when B108 got it). Suite 286 of 298, the same 12 failing.
 
+**Call graph: pulled jobs, moved order times, who replaced a turn — on every graph,
+2026-11-10 (owner: "anything that is dropped without being called it need to be noticable
+... the graph should keep going. Only do this if its in the 8 hour window"; "anytime the
+order time changes ... that needs to be noted"; for a removed turn "who else is shown on
+the job and why"):** not a Test preview: the tracker and `renderCallTimelineV2` changed,
+so it shows wherever a call graph does.
+- Tracker (`sleepCheck`): a change carries `dropped` (+ `droppedFrom`) when the turn's
+  train or job is off its list, nobody is on it and it isn't on the Call Board, within 8 h
+  of its call (`jobGone`, `inWindow`); with nothing replacing it, an entry of its own
+  (`only`). A mark only stands if that train was never seen again by the time the wait
+  ends (`settle`, `state.sleepPresent`): a train off the line-up for a check and back, or
+  one that reached the Call Board a check later, is not "pulled". `orderFrom` when an
+  ordered time moves. A removed wait carries `replacedBy`, `replacedWhy`, `ownStatus`
+  (their own board's status then) or `jobDropped`.
+- Graph: a red ✕ in a ring on the line where the job was pulled, an amber ◆ where an
+  ordered time changed, each with a banner line under the headline, a key entry and a row
+  in the table; a removed graph says "Now on M38261 07: SD13 (moved from RQ13931 07).
+  SD01 then showed: ** goes spare". A job off the spare list reads "Job closed without a
+  call" (the vacancy closing). The Why box says the same.
+Replayed on the live days: 83 of 1,049 calls had a job pulled, 79 an ordered time that
+moved; of 264 removed waits 187 name who took the job and 19 are the job itself going.
+Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bump, no
+Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
+as pulled then lined up for the new number.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

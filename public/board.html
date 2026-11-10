@@ -824,6 +824,10 @@
   .ana2 .week2-reset { margin: 10px 14px 0; padding: 8px 10px; border-left: 4px solid var(--accent); background: var(--accent-tint); border-radius: 4px; font-size: 13.5px; }
   .ana2 .week2-reset.warn { border-left-color: var(--amber); background: var(--amber-tint); }
   .ana2 .week2-reset.bad { border-left-color: var(--stop); background: var(--stop-tint); }
+  .ct2-drop { margin: 6px 0 0; padding: 7px 10px; border-left: 4px solid var(--stop); background: var(--stop-tint); border-radius: 4px; font-size: 13.5px; font-weight: 600; }
+  .ct2-ordermove { margin: 6px 0 0; padding: 6px 10px; border-left: 4px solid var(--amber); background: var(--amber-tint); border-radius: 4px; font-size: 13px; }
+  .ct2-key i.cross { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--stop); background: linear-gradient(45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--stop) 42%, var(--stop) 58%, transparent 58%); box-sizing: border-box; }
+  .ct2-key i.diamond { width: 9px; height: 9px; background: var(--amber); transform: rotate(45deg); margin-right: 7px; }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -5236,7 +5240,8 @@ source().then(async (src) => {
       ['4. Called late', 'Planned for 2100, moved three times, called at 0300. Purple is the waiting past the planned call. Each dot is a move of more than 30 minutes.', ex('2026-01-05 0800', '2026-01-05 2100', '2026-01-06 0300', [['2026-01-05 1900', '2026-01-05 2230'], ['2026-01-05 2200', '2026-01-06 0100'], ['2026-01-06 0030', '2026-01-06 0300']])],
     ];
     const parts = [['var(--ink)', 'White bar', 'the actual call (on duty minus 2 hours)'], ['var(--go)', 'Green', 'the eight hours before the planned call'], ['var(--stop)', 'Red', 'called early: time the plan said they still had (yellow if 30 min or less)'],
-      ['#a78bfa', 'Purple', 'called late: waiting past the planned call'], ['var(--soft)', 'Grey', 'lined up, before the eight hours began'], ['dot', 'Dot', 'the planned call moved by more than 30 minutes']];
+      ['#a78bfa', 'Purple', 'called late: waiting past the planned call'], ['var(--soft)', 'Grey', 'lined up, before the eight hours began'], ['dot', 'Dot', 'the planned call moved by more than 30 minutes'],
+      ['var(--stop)', 'Red cross ✕', 'the job was pulled without a call in the eight hours before it; the graph carries on to the job that replaced it'], ['var(--amber)', 'Diamond ◆', 'an ordered time changed (the small square is when it was first seen ordered)']];
     return `<ul class="cs2-parts">${parts.map(([col, name, text]) => `<li><i class="${col === 'dot' ? 'dot' : ''}"${col === 'dot' ? '' : ` style="background:${col}"`}></i><span><b>${name}:</b> ${esc(text)}</span></li>`).join('')}</ul>
       <p class="anote">The graph reads left to right in time. The headline says how much notice the crew had, or how early or late the call came.</p>
       ${list.map(([title, text, z]) => `<div class="cs2-example"><h3>${esc(title)}</h3><p>${esc(text)}</p>${BoardAnalytics.renderCallTimelineV2(z, { bare: true })}</div>`).join('')}`;

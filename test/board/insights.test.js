@@ -460,3 +460,45 @@ test('insights: the same yard job again two days later is its own call', () => {
   const list = Insights.finish(st).sleep.filter((z) => z.turn === 'B116').map((z) => [z.train, z.onDuty, z.expected, z.off]);
   assert.deepStrictEqual(list, [['YPRS30', '2026-11-07 1445', '2026-11-07 1245', 0], ['YPRS30', '2026-11-09 1445', '2026-11-09 1245', 0]]);
 });
+
+// Owner, 2026-11-10: "anything that is dropped without being called it need
+// to be noticable ... the graph should keep going. Only ... in the 8 hour
+// window"; an ordered time that changes "needs to be noted"; and for a
+// removed turn "who else is shown on the job and why".
+test('insights: a job pulled without a call, an ordered time that moved, and who replaced a turn', () => {
+  const A = require('../../public/board-analytics');
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], pools: [], ...x });
+  const row = (train, call, co, status = 'PLN') => ({ train, call, status, crew: { co, en: '' } });
+  const st = Insights.collect([
+    snap('2026-11-09 1800', { lineup: [row('M1 09', '9th 2200', 'SR01'), row('M2 10', '10th 0200', 'SR02')] }),
+    // M1 is gone from the line-up and from the Call Board: pulled. SR01 moves to M2, SR02 to M3.
+    snap('2026-11-09 1900', { lineup: [row('M2 10', '10th 0200', 'SR01', 'ORD'), row('M3 10', '10th 0600', 'SR02')] }),
+    // The ordered time moves.
+    snap('2026-11-09 2000', { lineup: [row('M2 10', '10th 0300', 'SR01', 'ORD'), row('M3 10', '10th 0600', 'SR02')] }),
+    // SR09 shows on M3 in SR02's place.
+    snap('2026-11-10 0100', { lineup: [row('M3 10', '10th 0600', 'SR09')], onDuty: [{ train: 'M2 10', onDuty: '10th 0500', crew: 'CO SR01' }], pools: [{ name: 'Chain Gang', turns: [{ turn: 'SR02', status: 'rest until 10th 0900' }] }] }),
+    snap('2026-11-10 0140', { lineup: [row('M3 10', '10th 0600', 'SR09')] }),
+  ]);
+  const list = Insights.finish(st).sleep;
+  const z = list.find((x) => x.turn === 'SR01');
+  assert.deepStrictEqual(z.timelineChanges.map((c) => [c.taken.slice(11), c.train, c.dropped || '', c.orderFrom ? c.orderFrom.slice(11) : '']), [['1900', 'M2 10', 'M1 09', ''], ['2000', 'M2 10', '', '0200']]);
+  const html = A.renderCallTimelineV2(z);
+  for (const text of ['Job pulled without a call', 'M1 09', 'then lined up for M2 10', 'Ordered time changed', 'job pulled without a call', 'ordered time changed']) assert.ok(html.includes(text), text);
+  const off = list.find((x) => x.turn === 'SR02' && x.takenOff);
+  assert.deepStrictEqual([off.train, off.replacedBy, off.replacedWhy, off.ownStatus], ['M3 10', 'SR09', 'not on a list the check before', 'rest until 10th 0900']);
+  assert.ok(A.renderCallTimelineV2(off).includes('Now on M3 10'));
+});
+
+// A train that leaves the line-up and comes back was not pulled.
+test('insights: a train off the line-up for a check and back is not a pulled job', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const row = (train, call, co) => ({ train, call, status: 'PLN', crew: { co, en: '' } });
+  const st = Insights.collect([
+    snap('2026-11-09 1800', { lineup: [row('M1 09', '9th 2200', 'SR01'), row('M2 10', '10th 0200', 'SR02')] }),
+    snap('2026-11-09 1900', { lineup: [row('M2 10', '10th 0200', 'SR01')] }),
+    snap('2026-11-09 1910', { lineup: [row('M1 09', '9th 2200', 'SR01'), row('M2 10', '10th 0200', 'SR02')] }),
+    snap('2026-11-09 2010', { onDuty: [{ train: 'M1 09', onDuty: '10th 0000', crew: 'CO SR01' }] }),
+  ]);
+  const z = Insights.finish(st).sleep.find((x) => x.turn === 'SR01');
+  assert.ok(!z.timelineChanges.some((c) => c.dropped));
+});
