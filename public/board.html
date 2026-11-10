@@ -810,6 +810,54 @@
   @media (prefers-reduced-motion: no-preference) {
     .rail button, .tabs button { transition: background-color 0.12s, border-color 0.12s; }
   }
+  /* Retro, second pass (owner, 2026-11-10, four screenshots of CATS in
+     Chrome on his phone). The colours already matched to the pixel; the
+     lettering and the boxes did not. CATS is one thin weight (never bold),
+     all capitals, widely spaced, with no boxes or lines round anything but
+     the white entry fields. Black for data and titles, navy for labels and
+     the F-key line, maroon for the menu's choices, the picked thing black
+     on a yellow bar. Sentences meant to be read (reasons, notes, agreement
+     answers) keep their small letters. */
+  :root[data-theme="retro"] { --rule: #c4c4c4; --rule-soft: #dcdcdc; --plan-tint: transparent; --accent-tint: #ffff00; }
+  :root[data-theme="retro"] *, :root[data-theme="retro"] *::before, :root[data-theme="retro"] *::after { font-weight: 400 !important; }
+  :root[data-theme="retro"] body { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+  :root[data-theme="retro"] details.why p, :root[data-theme="retro"] .note, :root[data-theme="retro"] .foot, :root[data-theme="retro"] .alertnote,
+  :root[data-theme="retro"] .notes .why, :root[data-theme="retro"] .ntext, :root[data-theme="retro"] .qbody, :root[data-theme="retro"] .qtext,
+  :root[data-theme="retro"] .askanswer, :root[data-theme="retro"] .asktx, :root[data-theme="retro"] .asknote, :root[data-theme="retro"] .askhint,
+  :root[data-theme="retro"] .asktip, :root[data-theme="retro"] .calling-list, :root[data-theme="retro"] .ct2-why, :root[data-theme="retro"] .boardnotes,
+  :root[data-theme="retro"] .test-notes-list, :root[data-theme="retro"] .flags, :root[data-theme="retro"] .overview-guide-card p,
+  :root[data-theme="retro"] textarea, :root[data-theme="retro"] input:not(#turn) { text-transform: none; letter-spacing: 0; }
+  :root[data-theme="retro"] button, :root[data-theme="retro"] select, :root[data-theme="retro"] summary { text-transform: inherit; letter-spacing: inherit; }
+  :root[data-theme="retro"] .top { border-bottom: 0; }
+  :root[data-theme="retro"] .top h1, :root[data-theme="retro"] h2, :root[data-theme="retro"] .sheet > header h2,
+  :root[data-theme="retro"] .test-current-box > summary h2 { color: #000000; font-size: 17px; letter-spacing: 0.1em; }
+  :root[data-theme="retro"] .top h1 { font-size: 20px; }
+  :root[data-theme="retro"] h3, :root[data-theme="retro"] .sec-title, :root[data-theme="retro"] .rail h2, :root[data-theme="retro"] th, :root[data-theme="retro"] .settings h2 { color: #000080; }
+  :root[data-theme="retro"] .head .when, :root[data-theme="retro"] .ohead .when, :root[data-theme="retro"] .thead .when { font-size: 22px; letter-spacing: 0.06em; }
+  :root[data-theme="retro"] .head .when .num { font-size: 22px; }
+  :root[data-theme="retro"] .train-clear .card-duty { font-size: 22px; }
+  :root[data-theme="retro"] .stat .v { font-size: 22px; }
+  /* No boxes: the sheets lose their frames, lists keep a faint line to read across. */
+  :root[data-theme="retro"] .sheet, :root[data-theme="retro"] .strip, :root[data-theme="retro"] .stat, :root[data-theme="retro"] .screen-group { border-color: transparent; }
+  :root[data-theme="retro"] .sheet.turnpanel { border-color: #000000; }
+  :root[data-theme="retro"] .sheet > header, :root[data-theme="retro"] .test-current-box > summary { border-bottom-color: transparent; padding-bottom: 4px; }
+  :root[data-theme="retro"] .daybar { background: none; color: #000080; border-bottom-color: transparent; }
+  /* The views read like CATS's menu (maroon choices); the one you are on is the yellow bar. */
+  :root[data-theme="retro"] .modes button, :root[data-theme="retro"] .modes a.modelink { background: none; border-color: transparent; color: #800000; }
+  :root[data-theme="retro"] .modes button[aria-pressed="true"], :root[data-theme="retro"] .poolfilter button[aria-pressed="true"],
+  :root[data-theme="retro"] .rail .hours button[aria-pressed="true"], :root[data-theme="retro"] .notes .nkinds button[aria-pressed="true"],
+  :root[data-theme="retro"] .rail button[aria-current="true"] { background: #ffff00; border-color: #ffff00; color: #000000; }
+  /* Things you press: a white box with a black edge, like CATS's entry fields. */
+  :root[data-theme="retro"] .gear, :root[data-theme="retro"] .steps button, :root[data-theme="retro"] .rail .hours button, :root[data-theme="retro"] .poolfilter button,
+  :root[data-theme="retro"] .rail .turnpick button, :root[data-theme="retro"] .sharebtn, :root[data-theme="retro"] .settings button.sty { background: #ffffff; border: 1px solid #000000; color: #000000; }
+  :root[data-theme="retro"] .settings button.sty[aria-pressed="true"] { background: #ffff00; }
+  /* Pool letters and statuses are plain coloured letters, not filled blocks. */
+  :root[data-theme="retro"] .pool { background: none; padding-inline: 0; color: #000080; }
+  :root[data-theme="retro"] .pool.B { color: #800080; } :root[data-theme="retro"] .pool.SR { color: #800000; }
+  :root[data-theme="retro"] .chip { background: none; padding-inline: 0; }
+  :root[data-theme="retro"] .train .sym .od, :root[data-theme="retro"] .crew { color: #000000; }
+  :root[data-theme="retro"] .top .sample { background: #ffff00; color: #000000; }
+  :root[data-theme="retro"] .tabs button[aria-selected="true"] { background: #ffff00; border-bottom-color: transparent; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for

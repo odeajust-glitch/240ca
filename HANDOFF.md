@@ -16,6 +16,20 @@ only (the branch this cloud session was given, fast-forwarded to
 not have it until it is merged there. Not done: the Worker's sign-in page and
 grievance.html only know light/dark, so with iPhone picked they show light.
 
+**Retro page style, second pass, 2026-11-10 (owner: "2 themes already on the site that
+don't match how I want", then four screenshots of CATS in Chrome on his phone, "Here is
+one"):** the colours were already right to the pixel (#f1f1f1, #000000, #000080, #800000,
+#ffff00, white fields with black edges). Changed in `public/board.html` (the "Retro,
+second pass" block near the end of the style sheet): one thin weight (no bold anywhere),
+capitals with wide spacing, smaller headings, no frames round the sheets (a faint line
+between rows kept), views as maroon menu words with the current one black on yellow,
+pressable things as white boxes with black edges, pool letters as plain coloured letters.
+Sentences meant to be read (reasons, notes, agreement answers) keep small letters.
+Checked here at phone width on sample data, Current only; the sandbox has no Courier New,
+so the real phone will draw thinner letters. Same branch caveat as the iPhone style
+below. ❓ Waiting on him: does it match, and samples for the second one (Retro Tablet,
+presumably).
+
 **Call stability, 501/502 fix, 2026-11-10 (owner: "the 502 / 501 call stability data is
 messed up", then "fix the tracker"):** on the live data 22 of 39 S5 records were "removed
 from lineup", 8 "unavailable", and no L502 call was recorded after 4th Nov. Causes, all
