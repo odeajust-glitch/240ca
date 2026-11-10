@@ -1447,6 +1447,13 @@ async function accounts(request, env, url) {
   if (p === '/push/claim') return request.method === 'POST' ? claimPhone(request, env) : json({ error: 'POST only' }, 405);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);
+    // Last seen, for the Members tab (owner, 2026-11-10: "add last seen to
+    // the members tab"): when this member last opened the board, noted at
+    // most once an hour.
+    if (s && s.status === 'approved' && s.id !== 'owner') {
+      const u = await userById(env, s.id, Date.now(), true);
+      if (u && u.status === 'approved' && !(Date.now() - u.seenAt < 3600000)) await saveUser(env, s.id, { ...u, seenAt: Date.now() });
+    }
     const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
     if (s && s.status === 'approved' && Date.now() - s.t > SESSION_RENEW_MS) res.headers.append('set-cookie', await sessionCookie(env, s.id === 'owner' ? { u: 'owner', t: Date.now() } : { u: s.id, k: s.key, t: Date.now() }));
     return res;

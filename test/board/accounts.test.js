@@ -414,3 +414,32 @@ test('the crew names key goes only to approved members, and only where it is swi
   assert.equal((await call('/settings/held186.json')).status, 404);
   assert.ok(env);
 });
+
+// Owner, 2026-11-10: "add last seen to the members tab".
+test('a member opening the board is noted as last seen, at most once an hour', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('s1');
+  await call('/auth/signup', { body, ip: '10.1.1.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  const list = async () => (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === body.email);
+  const id = (await list()).id;
+  await call('/auth/me', { cookie });
+  assert.equal((await list()).seenAt, undefined); // waiting: not a visit
+  await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+  const realNow = Date.now;
+  try {
+    await call('/auth/me', { cookie });
+    const first = (await list()).seenAt;
+    assert.ok(Math.abs(first - realNow()) < 5000);
+    Date.now = () => realNow() + 10 * 60000;
+    await call('/auth/me', { cookie });
+    assert.equal((await list()).seenAt, first); // ten minutes on: not written again
+    Date.now = () => realNow() + 2 * 3600000;
+    await call('/auth/me', { cookie });
+    assert.ok((await list()).seenAt > first);
+    // Everything else about the account is as it was.
+    const saved = JSON.parse(store.get(`accounts/users/${id}.json`));
+    assert.deepEqual([saved.status, saved.name, saved.email, typeof saved.key], ['approved', body.name, body.email, 'string']);
+  } finally { Date.now = realNow; }
+  assert.equal((await call('/data/index.json', { cookie })).status, 200);
+});

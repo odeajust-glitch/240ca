@@ -1435,6 +1435,7 @@ function poolChip(rules) {
 // the Worker gives its key to approved members only (loadCrew). Names never
 // go into an alert: they are only drawn here.
 let CREW = null;
+let CREW_NOTE = 'Not asked for yet (needs the test site address and the owner key).';
 const crewTag = (key) => (PREVIEW && CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
 // The name after each turn in a line of text ("CO SR05 · EN SD11"). A
 // 501/502 turn is two people: named only where the text says which
@@ -4068,12 +4069,22 @@ source().then(async (src) => {
   // in the browser, then the page drawn again with the names in.
   async function loadCrew() {
     if (CREW || !window.BoardNames) return;
+    const say = (text) => { CREW_NOTE = text; if (mode === 'health') renderHealth(); };
     try {
       const r = await fetch('api/crewkey', { cache: 'no-store', headers: OwnerKey.headers() });
-      if (!r.ok) return;
-      const got = await BoardNames.unlockNames(await getJSON('data/crew.json'), (await r.json()).pass);
-      if (got && got.turns && PREVIEW) { CREW = got.turns; setMode(mode); }
-    } catch (e) { /* no names: the board as it was */ }
+      if (r.status === 404) return say('The Worker did not give the key. Either this Worker does not have the newest code pasted in, or its variable CREW_NAMES is not set to on.');
+      if (r.status === 503) return say('The crew names passcode is not saved. Type it in "Crew names passcode" under Article 18.6(b) submissions on this page and Save.');
+      if (!r.ok) return say(`The Worker answered ${r.status} when asked for the key.`);
+      const pass = (await r.json()).pass;
+      let locked = null;
+      try { locked = await getJSON('data/crew.json'); } catch (e) { /* said below */ }
+      if (!locked) return say('The laptop has not published the names file yet. It needs the newest code (pull, then restart the checker) and one board check after that.');
+      const got = await BoardNames.unlockNames(locked, pass);
+      if (!got || !got.turns) return say('The saved passcode does not open the names file: it is not the same as BOARD_NAMES_KEY on the laptop. Save the right one under Article 18.6(b) submissions.');
+      const n = Object.keys(got.turns).length;
+      if (PREVIEW) { CREW = got.turns; setMode(mode); }
+      say(n ? `Showing ${n} name${n === 1 ? '' : 's'}, from Call Boards read in the last 14 days (file made ${got.at ? new Date(got.at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'at an unknown time'}).` : 'The names file opened but it is empty: the laptop has read no Call Board names in the last 14 days.');
+    } catch (e) { say(`Could not load the names (${e.message}).`); }
   }
   async function showHealth(after, refreshIndex = false) {
     const request = ++healthRequest;
@@ -4214,7 +4225,15 @@ source().then(async (src) => {
     // alerts while signed in.
     const followsOf = (u) => (!u.follows ? 'No alerts saved while signed in'
       : [u.follows.turns.join(', '), u.follows.people ? `${u.follows.people} name code${u.follows.people === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ') + ` (${u.follows.phones} phone${u.follows.phones === 1 ? '' : 's'})`);
-    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Follows', followsOf(u)]],
+    // Last seen (owner, 2026-11-10): when they last opened the board.
+    const seen = (ms) => {
+      if (!ms) return 'Not since this was added';
+      const d = new Date(ms);
+      const days = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(ms).setHours(0, 0, 0, 0)) / 86400000);
+      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+      return days <= 0 ? `Today ${time}` : days === 1 ? `Yesterday ${time}` : `${day(ms)} (${days} days ago)`;
+    };
+    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)]],
       (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
       + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''));
     view.innerHTML = `<div class="healthpage members">${head}
@@ -4582,7 +4601,7 @@ source().then(async (src) => {
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
       <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${sent}
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${PREVIEW ? `<section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">test site only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>` : ''}${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;

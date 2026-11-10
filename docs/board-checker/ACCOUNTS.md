@@ -43,6 +43,9 @@ stops at 50 people. The accounts are built into the Worker
   any other device: `/account` → Sign in → their email → a 6-digit code by
   email (10 minutes, 5 tries). Signed in until the device goes 30 days
   without opening the site (owner, 2026-11-10); each visit renews it.
+- **Last seen** (owner, 2026-11-10): each member's row in the Members tab
+  shows when they last opened the board (`seenAt`, noted at most once an
+  hour when the page asks `/auth/me`).
 - **One device per account** (owner, 2026-11-10, so accounts aren't
   shared): signing in on another device signs the first one out, and that
   device's sign-in page says why. Each switch costs one emailed code. The
@@ -101,6 +104,9 @@ in CATS.
   beside the turn in pool and spareboard rows, the turn panel, and after a
   turn wherever `markTurn` writes a line (line-up, crews, away lists).
 - **Alerts carry no names**; nothing here touches them.
+- **Not showing?** Page Health on the test site has a "Crew names on the
+  board" box that says which step is missing (Worker / `CREW_NAMES`,
+  passcode not saved, laptop hasn't published, passcode doesn't match).
 - To put it on the main site later: set `CREW_NAMES` = `on` on `board`, and
   in `board.html` let members load it (today `loadCrew` runs only from the
   owner-key `PREVIEW` switch, and `crewTag` / `crewIn` test `PREVIEW`).
