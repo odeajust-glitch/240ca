@@ -4,6 +4,21 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Star Wars, Super Mario and Pokémon page styles, 2026-11-10 evening (owner: "make a star
+wars theme", then "OG Super Mario Brothers and Pokemon"):** three more choices in ⚙
+Settings (`data-theme` `starwars`, `mario`, `pokemon` in `public/board.html`), each the
+look only: no logos, characters, sprites or lettering from the films or games.
+Star Wars: black with faint stars (a repeating tile on `body`), crawl yellow data, pale
+blue labels and links, sabre green / red for ordered / late. Super Mario: sky-blue page,
+black panels, brick-orange headings and tabs with black edges, question-block yellow for
+the picked thing, green day bars. Pokémon: cream page, white text boxes with a thick dark
+double edge, red top band with a yellow title, yellow-and-blue for the picked thing.
+Mario and Pokémon use the pixel font Press Start 2P for headings and times (added to the
+Google Fonts link; a phone only downloads it when one of those styles is on). Checked at
+phone width on sample data: Current drawn, the other main views opened with no sideways
+scroll or script errors. ❓ The pixel digits (0, 6, 8) are harder to tell apart than the
+normal ones: ask him how the times read on his phone. Laptop pull/restart/publish pending.
+
 **Fallout page style, 2026-11-10 evening (owner: "make a fallout theme"):** a ninth choice,
 `data-theme="fallout"` in `public/board.html`: the game's terminal look only (no art, no
 logos). Green-black page, one mint green, tall narrow capitals (Barlow Condensed), faint

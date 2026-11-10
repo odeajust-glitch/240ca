@@ -20,11 +20,11 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Courier+Prime:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   /* Layout: a dispatcher's register. Snapshot rail on the left (chips on a phone),
      the line-up as the main timetable, pools and the call board as compact side sheets. */
@@ -1233,6 +1233,113 @@
   :root[data-theme="fallout"] input, :root[data-theme="fallout"] select, :root[data-theme="fallout"] textarea { background: #04100a !important; color: var(--accent); border: 2px solid var(--rule) !important; }
   :root[data-theme="fallout"] .daybar { background: #0c2616; }
   :root[data-theme="fallout"] .htable td.warn, :root[data-theme="fallout"] .health .warn { color: #ff8a80; }
+  /* Star Wars (owner, 2026-11-10: "make a star wars theme"): the films'
+     opening titles. Black space with a scatter of stars, the crawl's
+     yellow for the data, the pale blue of "A long time ago…" for labels
+     and anything you tap, wide-spaced capital headings, thin blue frames.
+     Ordered is sabre green, late is sabre red, spare is orange. Only the
+     look: none of the films' logos, lettering or art. */
+  :root[data-theme="starwars"] { --bg: #000000; --sheet: rgba(6, 10, 18, 0.88); --ink: #ffe81f; --soft: #4bd5ee; --rule: #1d4f66; --rule-soft: #12303f;
+    --accent: #9fe8ff; --accent-ink: #000000; --accent-tint: #0c2c3a;
+    --amber: #ff9a2e; --amber-tint: #3a2208; --go: #5dff6e; --go-tint: #0c3a14; --stop: #ff4a3d; --stop-tint: #3d0f0c;
+    --plan-tint: #0b1a24; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5dff6e;
+    --display: 'Franklin Gothic Medium', 'Franklin Gothic', 'News Gothic MT', 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color-scheme: dark; }
+  /* The stars: a few small dots on a tile that repeats down the page. */
+  :root[data-theme="starwars"] body { background-color: #000000; background-image:
+    radial-gradient(circle at 23px 31px, rgba(255,255,255,0.55) 0, rgba(255,255,255,0.55) 1.0px, transparent 1.7px), radial-gradient(circle at 97px 143px, rgba(207,230,255,0.5) 0, rgba(207,230,255,0.5) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 171px 67px, rgba(255,255,255,0.55) 0, rgba(255,255,255,0.55) 1.2px, transparent 1.9px), radial-gradient(circle at 241px 201px, rgba(255,246,201,0.5) 0, rgba(255,246,201,0.5) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 139px 257px, rgba(255,255,255,0.55) 0, rgba(255,255,255,0.55) 0.8px, transparent 1.5px), radial-gradient(circle at 61px 229px, rgba(207,230,255,0.5) 0, rgba(207,230,255,0.5) 1.0px, transparent 1.7px),
+    radial-gradient(circle at 283px 109px, rgba(255,255,255,0.55) 0, rgba(255,255,255,0.55) 0.8px, transparent 1.5px);
+    background-size: 310px 290px; }
+  :root[data-theme="starwars"] .top { border-bottom: 1px solid var(--soft); }
+  :root[data-theme="starwars"] .top h1, :root[data-theme="starwars"] .sheet > header h2, :root[data-theme="starwars"] .test-current-box > summary h2 { color: #ffe81f; letter-spacing: 0.14em; font-weight: 600; }
+  :root[data-theme="starwars"] .top h1 { font-size: 22px; letter-spacing: 0.1em; }
+  :root[data-theme="starwars"] .sheet > header h2, :root[data-theme="starwars"] .test-current-box > summary h2 { font-size: 16px; }
+  :root[data-theme="starwars"] .head .when, :root[data-theme="starwars"] .ohead .when, :root[data-theme="starwars"] .thead .when { font-size: 30px; letter-spacing: 0.04em; }
+  :root[data-theme="starwars"] .head .when .num { font-size: 28px; }
+  :root[data-theme="starwars"] .modes button, :root[data-theme="starwars"] .modes a.modelink { color: var(--ink); border-color: var(--rule); text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; }
+  :root[data-theme="starwars"] .modes button[aria-pressed="true"], :root[data-theme="starwars"] .poolfilter button[aria-pressed="true"], :root[data-theme="starwars"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="starwars"] .notes .nkinds button[aria-pressed="true"] { background: #ffe81f; border-color: #ffe81f; color: #000000; }
+  :root[data-theme="starwars"] .poolfilter button, :root[data-theme="starwars"] .rail .hours button, :root[data-theme="starwars"] .gear, :root[data-theme="starwars"] .steps button { background: #05080e; color: var(--ink); }
+  :root[data-theme="starwars"] input, :root[data-theme="starwars"] select, :root[data-theme="starwars"] textarea { background: #05080e !important; color: #ffffff; border-color: var(--rule) !important; }
+  :root[data-theme="starwars"] .daybar { background: #0b1a24; color: var(--soft); }
+  :root[data-theme="starwars"] .settings { background: #070b12; }
+  :root[data-theme="starwars"] .htable td.warn, :root[data-theme="starwars"] .health .warn { color: #ff8a80; }
+  /* Super Mario (owner, 2026-11-10: "OG Super Mario Brothers"): the first
+     game's screen. Sky-blue page, black panels with white letters, brick
+     orange headings and tabs with hard black edges, the picked thing the
+     yellow of a question block, pipe green for the day bars and ordered,
+     blocky game letters for headings and times. Only the look: no
+     characters, sprites or logos. */
+  :root[data-theme="mario"] { --bg: #5c94fc; --sheet: #000000; --ink: #ffffff; --soft: #a8c4ff; --rule: #3c3c3c; --rule-soft: #262626;
+    --accent: #fcbc3c; --accent-ink: #000000; --accent-tint: #3a2a08;
+    --amber: #fc9838; --amber-tint: #3a2208; --go: #3cd04a; --go-tint: #0a3210; --stop: #ff5a4a; --stop-tint: #3d0f0c;
+    --plan-tint: #1c1c1c; --poolA: #6fb7ff; --poolB: #e0a0ff; --poolSR: #3cd04a; color-scheme: dark;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
+  /* The block letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme="mario"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="mario"] .sheet > header h2, :root[data-theme="mario"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="mario"] .head .when, :root[data-theme="mario"] .ohead .when, :root[data-theme="mario"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; }
+  :root[data-theme="mario"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; }
+  :root[data-theme="mario"] h3, :root[data-theme="mario"] .sec-title, :root[data-theme="mario"] .rail h2, :root[data-theme="mario"] th, :root[data-theme="mario"] .daybar, :root[data-theme="mario"] .settings h2, :root[data-theme="mario"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme="mario"] .modes button, :root[data-theme="mario"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme="mario"] .cur2 > summary .t, :root[data-theme="mario"] .train .time, :root[data-theme="mario"] .train-clear .card-duty, :root[data-theme="mario"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; }
+  :root[data-theme="mario"] * { border-radius: 0 !important; }
+  :root[data-theme="mario"] .top { border-bottom: 0; }
+  :root[data-theme="mario"] .top h1 { color: #ffffff; text-shadow: 2px 2px 0 #000000; }
+  :root[data-theme="mario"] .top .where, :root[data-theme="mario"] .top .updated, :root[data-theme="mario"] .turnpick, :root[data-theme="mario"] .daypick, :root[data-theme="mario"] .rail h2, :root[data-theme="mario"] .note, :root[data-theme="mario"] .status-line { color: #ffffff; }
+  :root[data-theme="mario"] .head .when, :root[data-theme="mario"] .ohead .when, :root[data-theme="mario"] .thead .when { color: #ffffff; text-shadow: 2px 2px 0 #000000; }
+  :root[data-theme="mario"] .sheet, :root[data-theme="mario"] .strip, :root[data-theme="mario"] .cur2-strip { border: 3px solid #000000; }
+  :root[data-theme="mario"] .sheet > header, :root[data-theme="mario"] .test-current-box > summary { background: #c84c0c; border-bottom: 3px solid #000000; }
+  :root[data-theme="mario"] .sheet > header h2, :root[data-theme="mario"] .test-current-box > summary h2, :root[data-theme="mario"] .sheet > header .meta, :root[data-theme="mario"] .test-current-box > summary .meta { color: #ffffff; }
+  :root[data-theme="mario"] .test-current-box > summary::before { color: #ffffff; }
+  :root[data-theme="mario"] .modes button, :root[data-theme="mario"] .modes a.modelink { background: #c84c0c; border: 3px solid #000000; color: #ffffff; }
+  :root[data-theme="mario"] .modes button[aria-pressed="true"], :root[data-theme="mario"] .poolfilter button[aria-pressed="true"], :root[data-theme="mario"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="mario"] .notes .nkinds button[aria-pressed="true"] { background: #fcbc3c; border-color: #000000; color: #000000; }
+  :root[data-theme="mario"] .gear, :root[data-theme="mario"] .steps button, :root[data-theme="mario"] .poolfilter button, :root[data-theme="mario"] .rail .hours button, :root[data-theme="mario"] .rail .turnpick button, :root[data-theme="mario"] .screen-group { background: #000000; border: 3px solid #000000; color: #ffffff; }
+  :root[data-theme="mario"] input, :root[data-theme="mario"] select, :root[data-theme="mario"] textarea { background: #000000 !important; color: #ffffff; border: 3px solid #000000 !important; }
+  :root[data-theme="mario"] .turnpick input::placeholder { color: #a8c4ff; }
+  :root[data-theme="mario"] .daybar { background: #00a800; color: #ffffff; }
+  :root[data-theme="mario"] .agebar .sub { color: #ffffff; }
+  :root[data-theme="mario"] .cur2-quiet { color: #ffffff; border-color: #000000; }
+  :root[data-theme="mario"] .htable td.warn, :root[data-theme="mario"] .health .warn { color: #ff8a80; }
+  /* Pokémon (owner, 2026-11-10): the first Game Boy games' menus. Cream
+     page, white text boxes with a thick dark double edge and round
+     corners, a red top band with a yellow title edged in blue, the picked
+     thing yellow with blue letters, blue day bars, blocky game letters
+     for headings and times. Only the look: no creatures, sprites or logos. */
+  :root[data-theme="pokemon"] { --bg: #f4f1e6; --sheet: #ffffff; --ink: #1b1b1b; --soft: #5a5a5a; --rule: #1b1b1b; --rule-soft: #d9d5c7;
+    --accent: #2a44b8; --accent-ink: #ffffff; --accent-tint: #dfe5ff;
+    --amber: #9a5b00; --amber-tint: #fff0c2; --go: #1f8a3b; --go-tint: #d9f2dd; --stop: #cc1f1f; --stop-tint: #fbdcdc;
+    --plan-tint: #ece8da; --poolA: #2a44b8; --poolB: #7a3fa8; --poolSR: #cc1f1f; color-scheme: light;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; }
+  /* The block letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme="pokemon"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="pokemon"] .sheet > header h2, :root[data-theme="pokemon"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="pokemon"] .head .when, :root[data-theme="pokemon"] .ohead .when, :root[data-theme="pokemon"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; }
+  :root[data-theme="pokemon"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; }
+  :root[data-theme="pokemon"] h3, :root[data-theme="pokemon"] .sec-title, :root[data-theme="pokemon"] .rail h2, :root[data-theme="pokemon"] th, :root[data-theme="pokemon"] .daybar, :root[data-theme="pokemon"] .settings h2, :root[data-theme="pokemon"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme="pokemon"] .modes button, :root[data-theme="pokemon"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme="pokemon"] .cur2 > summary .t, :root[data-theme="pokemon"] .train .time, :root[data-theme="pokemon"] .train-clear .card-duty, :root[data-theme="pokemon"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; }
+  :root[data-theme="pokemon"] .top { background: #dc0a2d; border-bottom: 4px solid #1b1b1b; }
+  :root[data-theme="pokemon"] .top h1 { color: #ffde00; text-shadow: 2px 2px 0 #2a44b8; }
+  :root[data-theme="pokemon"] .top .where, :root[data-theme="pokemon"] .top .updated { color: #ffffff; }
+  :root[data-theme="pokemon"] .head .when, :root[data-theme="pokemon"] .ohead .when, :root[data-theme="pokemon"] .thead .when { color: #1b1b1b; }
+  /* Sheets are the games' text boxes: white, a thick dark edge, round corners. */
+  :root[data-theme="pokemon"] .sheet, :root[data-theme="pokemon"] .strip, :root[data-theme="pokemon"] .cur2-strip { border: 3px solid #1b1b1b; border-radius: 10px; box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 4px #b8b4a6; }
+  :root[data-theme="pokemon"] .sheet > header, :root[data-theme="pokemon"] .test-current-box > summary { border-bottom: 3px solid #1b1b1b; }
+  :root[data-theme="pokemon"] .sheet > :first-child { border-top-left-radius: 7px; border-top-right-radius: 7px; }
+  :root[data-theme="pokemon"] .sheet > :last-child { border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; }
+  :root[data-theme="pokemon"] .modes button, :root[data-theme="pokemon"] .modes a.modelink { background: #ffffff; border: 3px solid #1b1b1b; border-radius: 8px; color: #1b1b1b; }
+  :root[data-theme="pokemon"] .modes button[aria-pressed="true"], :root[data-theme="pokemon"] .poolfilter button[aria-pressed="true"], :root[data-theme="pokemon"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="pokemon"] .notes .nkinds button[aria-pressed="true"] { background: #ffde00; border-color: #1b1b1b; color: #2a44b8; }
+  :root[data-theme="pokemon"] .gear, :root[data-theme="pokemon"] .steps button, :root[data-theme="pokemon"] .poolfilter button, :root[data-theme="pokemon"] .rail .hours button, :root[data-theme="pokemon"] .rail .turnpick button { background: #ffffff; border: 2px solid #1b1b1b; border-radius: 8px; color: #1b1b1b; }
+  :root[data-theme="pokemon"] input, :root[data-theme="pokemon"] select, :root[data-theme="pokemon"] textarea { background: #ffffff !important; border: 2px solid #1b1b1b !important; border-radius: 8px; color: #1b1b1b; }
+  :root[data-theme="pokemon"] .daybar { background: #2a44b8; color: #ffffff; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1308,6 +1415,9 @@
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
       <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
       <button type="button" class="sty" data-theme="fallout"><span class="sw" style="background:#06130b;color:#1aff80;border-color:#17633a;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Fallout</button>
+      <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
+      <button type="button" class="sty" data-theme="mario"><span class="sw" style="background:#5c94fc;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">1UP</span>Super Mario</button>
+      <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1366,7 +1476,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
