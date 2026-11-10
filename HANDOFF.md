@@ -82,6 +82,19 @@ callReviewRecord, work-call-timeline) only when he approves. Open with him: head
 notice vs "how early"; notice counted from first lined (not from ordered). Checked here
 on the 27 live days in a browser at phone width; laptop pull/restart needed to see it.
 
+**S501 trip missing from a person / S501-CO search, fixed 2026-11-10 (owner, from the
+train):** L50231 08 and L50131 08 (S501, engineer covered by SA07 = RYPA) showed on
+RYPA's search but not on JUOD's. The turn's trip was saved `workedBy: SA07` and every
+work list drops `workedBy` trips; S501 is two turns with one number. Now, on a shared
+turn with one craft covered, `facts` (public/board-turns.js) leaves `workedBy` empty and
+saves `coveredCraft` + `coveredBy` ("(EN worked by SA07)"); `worked()` and
+`personHistory()` in board.html leave the trip out only for that craft (S501-EN, or a
+person whose own stretch is that craft). Both crafts covered = `workedBy` as before.
+Replayed on the live 7th–9th: S501-CO gets both 08 trips, S502-EN both 09 trips. Turn
+history is rebuilt from the day files each publish: no FORMAT bump, no Worker change.
+Laptop pull/restart pending. Two call-timeline decisions parked on the new
+"Housekeeping list" in TODO.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

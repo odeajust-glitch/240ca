@@ -606,3 +606,14 @@ test('jobs going spare: predicted jobs from the corrected line-up', () => {
     [['M38261 15', 'CO', 'SB02', 'SB', true, 'is on rest until 15th 2300'], ['E27861 15', 'CO', 'SR04', 'SR', true, 'is marked **']]);
   assert.equal(shown.option5Read, false);
 });
+
+// Owner, 2026-11-10: L50231 08, S501 with the engineer covered by SA07. The
+// conductor's trip was hidden as "worked by SA07".
+test('501/502: a fill-in for one craft leaves the other craft its trip', () => {
+  const BoardTurns = require('../../public/board-turns');
+  const s = { taken: '2026-11-08 0308', pools: [], lineup: [], onDuty: [{ train: 'L50231 08', onDuty: '8th 0450', station: 'SARNIA', crew: 'EN S501 · CO S501', backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] };
+  const [f] = BoardTurns.facts(s, 'S501');
+  assert.deepEqual([f.workedBy, f.coveredCraft, f.coveredBy, f.text], ['', 'EN', 'SA07', 'On duty on L50231 08 at Sarnia, 8th 0450 (EN worked by SA07)']);
+  const both = { ...s, onDuty: [{ ...s.onDuty[0], backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }, { craft: 'CO', job: 'S501', turn: 'B119' }] }] };
+  assert.equal(BoardTurns.facts(both, 'S501')[0].workedBy, 'SA07');
+});

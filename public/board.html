@@ -1501,11 +1501,12 @@ function personHistory(stretches, all, myCraft = null) {
     // that turn (owner, 2026-11-03: JUOD bumped back onto S501 was shown
     // working L50131 02, which went on duty at Garnet hours before).
     const theirs = (o) => (o.onDuty ? within(o.onDutySeen, e) : within(o.first, e) || within(o.last, e));
-    rec.orders.push(...r.orders.filter(theirs).map(tag));
     // 501/502: only their craft's rests (owner, 2026-11-03), when known: the
     // stretch's craft, or for the newest stretch the newest check's.
     const newest = !stretches.some((x) => x.turn === e.turn && x.to > e.to);
     const craft = e.craft || (newest && BoardTurns.SHARED.test(e.turn) && myCraft ? myCraft(e.turn) : '');
+    // And not a trip a fill-in worked in their craft (owner, 2026-11-10).
+    rec.orders.push(...r.orders.filter((o) => theirs(o) && !(craft && e.own && o.coveredCraft === craft)).map(tag));
     rec.rests.push(...r.rests.filter((x) => within(x.seen, e) && (!craft || !x.craft || x.craft === craft)).map(tag));
     rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
   }
@@ -1547,7 +1548,8 @@ const callBefore = (stamp, mins) => {
 function worked(rec, turn = '') {
   // "S501-CO": only trains with that craft on that turn (owner, 2026-10-25).
   const { base, craft } = BoardTurns.splitCraft(turn);
-  return (rec ? rec.orders : []).filter((o) => o.onDuty && !o.workedBy && (!craft || !o.crew || BoardTurns.crewHasCraft(o.crew, base, craft)))
+  // A 501/502 trip where a fill-in covered that craft isn't that craft's.
+  return (rec ? rec.orders : []).filter((o) => o.onDuty && !o.workedBy && !(craft && o.coveredCraft === craft) && (!craft || !o.crew || BoardTurns.crewHasCraft(o.crew, base, craft)))
     .map((o) => ({ ...o, at: BoardTrains.resolve(o.onDutyAt, o.onDutySeen) || o.onDutySeen }))
     .sort((a, b) => (a.at < b.at ? 1 : -1));
 }

@@ -5,6 +5,16 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
+
+Small decisions parked for a housekeeping pass; ask, don't build.
+
+1. **Call timeline headline for early calls:** notice given ("Called with 48 m
+   notice", now, when under 8 h) or always how early ("Called 11 h 05 m early").
+2. **Call timeline, where notice starts:** from the turn first lined up for the train
+   (now) or from when the train was ordered.
+
+
 - **Call timeline, new layout** (owner screenshots 2026-11-10): in Test, awaiting his
   review; on approval swap the regular page to `renderCallTimelineV2`. See HANDOFF.
 
@@ -179,6 +189,11 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **501/502 trip missing when one craft was covered** (owner: his
+  L50231 08 as S501 conductor was on RYPA's search, not his). A fill-in for one craft
+  no longer hides the trip from the other craft (`coveredCraft` / `coveredBy`,
+  public/board-turns.js).
 
 - 2026-11-10: **Call stability for 501/502** (owner): last-minute crew swaps no
   longer count as "removed from lineup", S5 fill-ins per craft, L501 home not scored

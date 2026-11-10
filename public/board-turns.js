@@ -43,11 +43,17 @@
     for (const t of s.onDuty || []) {
       // A spare person filling in shows under the job's turn (owner, 2026-10-24).
       const fill = (t.backfill || []).find((b) => b.turn === turn);
-      const by = (t.backfill || []).find((b) => b.job === turn);
+      const bys = (t.backfill || []).filter((b) => b.job === turn);
+      // 501/502 is two turns with one number: a fill-in for one craft leaves
+      // the other craft's trip theirs (owner, 2026-11-10: JUOD's L50231 08
+      // as S501 conductor vanished because SA07 covered the engineer).
+      const crafts = [...new Set(bys.map((b) => (b.craft === 'CO' ? 'CO' : 'EN')))];
+      const part = SHARED.test(turn) && crafts.length === 1 ? { coveredCraft: crafts[0], coveredBy: bys[0].turn } : null;
+      const by = part ? null : bys[0];
       // crew / at / station / job: for the work history (owner, 2026-10-25).
       const base = { kind: 'onDuty', train: t.train, crew: t.crew, at: t.onDuty, station: t.station };
       if (fill) out.push({ ...base, job: fill.job, text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}, working ${fill.job} (${fill.craft})` });
-      else if (turnIn(t.crew, turn)) out.push({ ...base, workedBy: by ? by.turn : '', text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}${by ? ` (worked by ${by.turn})` : ''}` });
+      else if (turnIn(t.crew, turn)) out.push({ ...base, workedBy: by ? by.turn : '', ...(part || {}), text: `On duty on ${t.train} at ${title(t.station)}, ${t.onDuty}${by ? ` (worked by ${by.turn})` : part ? ` (${part.coveredCraft} worked by ${part.coveredBy})` : ''}` });
     }
     // Yard jobs (owner, 2026-10-24), taken as 8 h: a crew on one, or the job itself.
     for (const j of s.yardJobs || []) {
@@ -150,7 +156,7 @@
             if (x.kind === 'onDuty' && !o.onDuty) {
               o.onDuty = x.text.replace(/^On duty on \S+ \S+ /, '');
               o.onDutySeen = s.taken;
-              Object.assign(o, { onDutyAt: x.at || '', station: x.station || '', crew: x.crew || '', job: x.job || '', workedBy: x.workedBy || '', yard: !!x.yard });
+              Object.assign(o, { onDutyAt: x.at || '', station: x.station || '', crew: x.crew || '', job: x.job || '', workedBy: x.workedBy || '', yard: !!x.yard, ...(x.coveredCraft ? { coveredCraft: x.coveredCraft, coveredBy: x.coveredBy } : {}) });
             }
             if (x.kind === 'sequence') o.called = x.text.replace(/^Called on \S+ \S+ /, '');
           }
