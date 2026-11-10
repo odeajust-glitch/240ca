@@ -4,6 +4,13 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Zelda page style, 2026-11-10 evening (owner: "make a zelda theme"):** one more choice,
+`data-theme="zelda"` in `public/board.html`, the look only (no characters, symbols or
+logos): deep green page, parchment sheets with a gold edge, gold pixel headings (Press
+Start 2P, as Mario and Pokémon), the picked thing gold with green letters, green day
+bars. Checked at phone width on sample data like the three below; same ❓ about the pixel
+digits. Laptop pull/restart/publish pending.
+
 **Star Wars, Super Mario and Pokémon page styles, 2026-11-10 evening (owner: "make a star
 wars theme", then "OG Super Mario Brothers and Pokemon"):** three more choices in ⚙
 Settings (`data-theme` `starwars`, `mario`, `pokemon` in `public/board.html`), each the

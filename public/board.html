@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1340,6 +1340,41 @@
   :root[data-theme="pokemon"] .gear, :root[data-theme="pokemon"] .steps button, :root[data-theme="pokemon"] .poolfilter button, :root[data-theme="pokemon"] .rail .hours button, :root[data-theme="pokemon"] .rail .turnpick button { background: #ffffff; border: 2px solid #1b1b1b; border-radius: 8px; color: #1b1b1b; }
   :root[data-theme="pokemon"] input, :root[data-theme="pokemon"] select, :root[data-theme="pokemon"] textarea { background: #ffffff !important; border: 2px solid #1b1b1b !important; border-radius: 8px; color: #1b1b1b; }
   :root[data-theme="pokemon"] .daybar { background: #2a44b8; color: #ffffff; }
+  /* Zelda (owner, 2026-11-10: "make a zelda theme"): the first game's
+     colours as a map-and-scroll look. Deep forest-green page, parchment
+     sheets with dark brown letters and a gold edge, gold blocky headings,
+     the picked thing gold with green letters, green day bars, heart red
+     for late. Only the look: no characters, symbols, sprites or logos. */
+  :root[data-theme="zelda"] { --bg: #0e3a26; --sheet: #f3e7c3; --ink: #2b1d0e; --soft: #6b5536; --rule: #b8962e; --rule-soft: #dccb96;
+    --accent: #1f6b3a; --accent-ink: #ffffff; --accent-tint: #d5e6c4;
+    --amber: #96520a; --amber-tint: #f6dfa6; --go: #1f6b3a; --go-tint: #d5e6c4; --stop: #b3201b; --stop-tint: #f3d2c6;
+    --plan-tint: #e6d8ae; --poolA: #2a52a8; --poolB: #7a3fa8; --poolSR: #1f6b3a;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; }
+  /* The block letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme="zelda"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; color: #f8c838; text-shadow: 2px 2px 0 #06210f; }
+  :root[data-theme="zelda"] .sheet > header h2, :root[data-theme="zelda"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="zelda"] .head .when, :root[data-theme="zelda"] .ohead .when, :root[data-theme="zelda"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; color: #f8c838; text-shadow: 2px 2px 0 #06210f; }
+  :root[data-theme="zelda"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; }
+  :root[data-theme="zelda"] h3, :root[data-theme="zelda"] .sec-title, :root[data-theme="zelda"] .rail h2, :root[data-theme="zelda"] th, :root[data-theme="zelda"] .daybar, :root[data-theme="zelda"] .settings h2, :root[data-theme="zelda"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme="zelda"] .modes button, :root[data-theme="zelda"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme="zelda"] .cur2 > summary .t, :root[data-theme="zelda"] .train .time, :root[data-theme="zelda"] .train-clear .card-duty, :root[data-theme="zelda"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; }
+  :root[data-theme="zelda"] * { border-radius: 0 !important; }
+  :root[data-theme="zelda"] .top { border-bottom: 3px solid #b8962e; }
+  /* Text that sits on the green page itself, not on a sheet. */
+  :root[data-theme="zelda"] .top .where, :root[data-theme="zelda"] .top .updated, :root[data-theme="zelda"] .turnpick, :root[data-theme="zelda"] .daypick, :root[data-theme="zelda"] .rail h2, :root[data-theme="zelda"] .status-line, :root[data-theme="zelda"] .agebar .sub, :root[data-theme="zelda"] .cur2-quiet, :root[data-theme="zelda"] main > .note { color: #e9dfb8; }
+  :root[data-theme="zelda"] .cur2-quiet { border-color: #b8962e; }
+  :root[data-theme="zelda"] .sheet, :root[data-theme="zelda"] .strip, :root[data-theme="zelda"] .cur2-strip { border: 3px solid #b8962e; box-shadow: 0 0 0 2px #06210f; }
+  :root[data-theme="zelda"] .sheet > header, :root[data-theme="zelda"] .test-current-box > summary { background: #1f6b3a; border-bottom: 3px solid #b8962e; }
+  :root[data-theme="zelda"] .sheet > header h2, :root[data-theme="zelda"] .test-current-box > summary h2 { color: #f8c838; }
+  :root[data-theme="zelda"] .sheet > header .meta, :root[data-theme="zelda"] .test-current-box > summary .meta, :root[data-theme="zelda"] .test-current-box > summary::before { color: #f3e7c3; }
+  :root[data-theme="zelda"] .modes button, :root[data-theme="zelda"] .modes a.modelink { background: #06210f; border: 2px solid #b8962e; color: #f3e7c3; }
+  :root[data-theme="zelda"] .modes button[aria-pressed="true"], :root[data-theme="zelda"] .poolfilter button[aria-pressed="true"], :root[data-theme="zelda"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="zelda"] .notes .nkinds button[aria-pressed="true"] { background: #f8c838; border-color: #f8c838; color: #0e3a26; }
+  :root[data-theme="zelda"] .gear, :root[data-theme="zelda"] .steps button, :root[data-theme="zelda"] .rail .hours button, :root[data-theme="zelda"] .rail .turnpick button, :root[data-theme="zelda"] .screen-group { background: #06210f; border: 2px solid #b8962e; color: #f3e7c3; }
+  :root[data-theme="zelda"] .screen-group summary { color: #f3e7c3; }
+  :root[data-theme="zelda"] .rail input, :root[data-theme="zelda"] .rail select { background: #f3e7c3 !important; border: 2px solid #b8962e !important; color: #2b1d0e; }
+  :root[data-theme="zelda"] .daybar { background: #1f6b3a; color: #f3e7c3; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1418,6 +1453,7 @@
       <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
       <button type="button" class="sty" data-theme="mario"><span class="sw" style="background:#5c94fc;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">1UP</span>Super Mario</button>
       <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
+      <button type="button" class="sty" data-theme="zelda"><span class="sw" style="background:#0e3a26;color:#f8c838;border-color:#b8962e;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Zelda</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1476,7 +1512,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d', zelda: '#0e3a26' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
