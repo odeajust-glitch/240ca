@@ -832,6 +832,15 @@
   .ana2 .cs2-morebox { border-top: 1px solid var(--rule-soft); }
   .ana2 .cs2-morebox > summary { cursor: pointer; color: var(--accent); padding: 10px 14px; font-size: 13.5px; }
   .ana2 details.cur2 .fold .ana2-lazybox .ct2 > summary { display: none; }
+  .ana2 .tl2 { padding: 4px 0 0; margin-bottom: 18px; }
+  .ana2 .tl2-group { padding: 8px 14px 6px; border-bottom: 1px solid var(--rule-soft); }
+  .ana2 .tl2-group h3 { margin: 0 0 4px; font: 600 11.5px/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+  .ana2 .tl2-group > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; font-size: 14px; }
+  .ana2 .tl2-group > div + div { border-top: 1px solid var(--rule-soft); }
+  .ana2 .tl2-group span { color: var(--ink); min-width: 0; }
+  .ana2 .tl2-group span small, .ana2 .tl2-group b small { color: var(--soft); font-weight: 400; font-size: 12px; }
+  .ana2 .tl2-group b { font-family: var(--mono); white-space: nowrap; text-align: right; }
+  .ana2 .tl2-group .alert b { color: var(--stop); }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -2192,6 +2201,31 @@ function anaTable(runs, kind) {
     <div class="scroll"><table class="orders"><thead><tr><th>On duty</th><th>Train</th><th>${kind === 'train' ? 'Crew' : 'Worked with'}</th><th>First plan vs on duty</th><th>Time on duty</th><th>Off duty in Toronto</th></tr></thead>
     <tbody>${rows}</tbody></table></div></section>`;
 }
+// A turn's, person's or train's numbers as short labelled lines in groups
+// (Test preview; owner, 2026-11-10: "tidy the other tiles too"). The same
+// figures as the tiles, one to a line, so nothing sits uneven on a phone.
+function anaFacts2(st, kind, extra = {}) {
+  const d = durOr;
+  const row = (label, value, alert) => `<div${alert ? ' class="alert"' : ''}><span>${label}</span><b>${value}</b></div>`;
+  const group = (title, rows) => (rows.length ? `<div class="tl2-group"><h3>${title}</h3>${rows.join('')}</div>` : '');
+  const t = st.time;
+  const pct = (x) => (x.n ? `${pctOf(x)}% <small>(${x.hit} of ${x.n})</small>` : '—');
+  const work = kind === 'train'
+    ? [row('Went on duty', `${st.ran} <small>of ${st.seen} seen</small>`), row('Never ran (cancelled, or on duty between checks)', String(st.cancelled), st.cancelled > 0),
+      ...(st.nonSarnia || st.possibleNonSarnia ? [row('Went to a non-Sarnia crew', `${st.nonSarnia}${st.possibleNonSarnia ? ` <small>+ ${st.possibleNonSarnia} possibly</small>` : ''}`)] : [])]
+    : [row('Trains worked', `${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`), row('Deadheads', String(st.deadheads)),
+      row('Usually on duty', t ? `${t.from}–${t.to}` : '—'), row('Earliest to latest on duty', t ? `${t.earliest}–${t.latest}` : '—')];
+  const duty = [row(`Average time on duty to Toronto${st.timeOnDuty.n ? ` <small>(${st.timeOnDuty.n} trips)</small>` : ''}`, d(st.timeOnDuty.avg)), row('Longest time on duty', d(st.timeOnDuty.max)),
+    row(`Average held in Toronto${st.held.n ? ` <small>(${st.held.n} stays)</small>` : ''}`, d(st.held.avg)), row('Held 14 h or more', `${st.held.over14} <small>of ${st.held.n}</small>`, st.held.over14 > 0)];
+  const plan = [row('First plan against on duty, average apart', `${d(st.offPlan.avg)}${st.offPlan.n ? ` <small>(${st.offPlan.late} later, ${st.offPlan.early} earlier)</small>` : ''}`),
+    row('First order against on duty, average', `${d(st.offOrder.avg)} <small>(${st.offOrder.n} compared)</small>`), row('Order time changed after ordering', String(st.orderChanged)),
+    row('Conductor predicted right', pct(st.pred.co)), ...(st.pred.en.n ? [row('Engineer predicted right', pct(st.pred.en))] : [])];
+  const b = extra.between;
+  const between = kind === 'train' || !b ? [] : [row(`Average time between trains${b.n ? ` <small>(${b.n})</small>` : ''}`, d(b.avg)), row('Shortest time between trains', d(b.min)),
+    ...(extra.spares == null ? [] : [row('Times it went spare', String(extra.spares)), row('Trains it took out of sequence', String(extra.took), extra.took > 0)])];
+  return `<section class="sheet tl2">${group(kind === 'train' ? 'The train' : 'Work', work)}${group('On duty and Toronto', duty)}${group('Plan against what happened', plan)}${group('Between trains', between)}
+    <p class="anote" style="margin:8px 14px 12px">"Usually on duty" is the middle half of the on-duty times. Between trains is on duty to the next on duty. Hold figures leave out unknown times and count a stay still going at its time so far.</p></section>`;
+}
 // The whole answer for one search. kind: 'train' | 'turn' | 'code'.
 // extra: { between, spares, took } for a turn (spares/took left out for a person);
 // { runarounds } for a train number.
@@ -2209,7 +2243,7 @@ function analyticsView(runs, kind, title, note, extra = {}) {
     : `<div class="strip${extra.spares == null ? ' two' : ''}">${anaTile(durOr(b.avg), `Average time between trains${b.n ? ` (${b.n})` : ''}, on duty to next on duty`)}${anaTile(durOr(b.min), 'Shortest time between trains')}${
       extra.spares == null ? '' : anaTile(extra.spares, 'Times it went spare (B0, ** or its train going spare)') + anaTile(extra.took, 'Trains it took out of sequence')}</div>`;
   return `<p class="anote"><b>${esc(title)}</b>${span ? ` · on duty ${span}` : ''}${note ? ` · ${note}` : ''}</p>
-    ${anaTiles(st, kind)}${more}${extra.sleep ? sleepSection(extra.sleep) : ''}${anaCharts(runs)}
+    ${ANA2 ? anaFacts2(st, kind, extra) + (kind === 'train' ? more : '') : anaTiles(st, kind) + more}${extra.sleep ? sleepSection(extra.sleep) : ''}${anaCharts(runs)}
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${lists.join('')}</div></section>
     ${anaTable(runs, kind)}`;
 }

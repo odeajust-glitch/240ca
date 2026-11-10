@@ -298,6 +298,14 @@ suggestions and put it in the test tab"):**
   at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
   `testPreview` state and `mode !== 'test'` checks: pass the target through).
 
+**Analytics preview in Test, fourth round, 2026-11-10 (owner: "Tidy the other tiles too").
+Test only.** Under a turn, person or train search the four tile grids are grouped lines
+(`anaFacts2`, `.tl2`): Work (or The train), On duty and Toronto, Plan against what
+happened, Between trains; label left, value right, the same figures, shorter labels, the
+explanations in one note underneath. `analyticsView` picks it when `ANA2`. Checked on live
+data for SD11, 148 and a name code at phone width in the iPhone style: no errors; the
+regular tab still has its tiles.
+
 **Analytics preview in Test, third round, 2026-11-10 (owner screenshot of a turn search,
 SD11: "clean up the call stability area and make it more mobile friendly. Put the changes
 in the test tab"). Test only.** Under a turn or person search the Call stability box is
