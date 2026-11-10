@@ -5,8 +5,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
-- **Page Health new top** (verdict line, code version in words): in Test since 2026-11-10,
-  awaiting his review; then promote. Names for followers: three answers pending. See HANDOFF.
+- **Names for followers on Page Health:** three answers pending from the owner (capture
+  names for everyone each check; OWNER_EMAIL deleted on `board`; layout). See HANDOFF.
 
 ### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
 
@@ -192,6 +192,9 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Page Health new top** (verdict line, code version in words, name codes
+  kept over a restart): approved in Test and promoted.
 
 - 2026-11-10: **501/502 trip missing when one craft was covered** (owner: his
   L50231 08 as S501 conductor was on RYPA's search, not his). A fill-in for one craft

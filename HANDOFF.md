@@ -101,6 +101,12 @@ three places that draw a call (callReviewRecord, the Turn History call history, 
 preview). The old function stays in board-analytics.js only because its tests still use it.
 Suite 276 of 290 (same 14 failing). Live after the laptop pull and the next publish.
 
+**Page Health new top promoted, 2026-11-10 (owner: "Test page looks good. Push"):** the
+verdict line and the code version in words are on the regular Page Health (`renderHealth`
+calls `healthRows(h, now, true)`, `healthVerdict(rows)` above the table). Test is back to
+"No items awaiting review." Laptop pull/restart pending; ❓ the "GitHub" row on Windows.
+The note below is how it was built.
+
 **Page Health: new top — in Test, awaiting Justin's phone review (2026-11-10, he said yes
 to items 1–3 of a review):** (1) a verdict line, "All good" or "N things need you" listing
 the red rows (`healthVerdict`); (2) the code version in words: "Running code" (date, commit

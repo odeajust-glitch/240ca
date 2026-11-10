@@ -3498,7 +3498,7 @@ source().then(async (src) => {
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
-    const rows = healthRows(h, now, false);
+    const rows = healthRows(h, now, true);
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
     const S = L.subscribers;
@@ -3527,7 +3527,7 @@ source().then(async (src) => {
     const Q = L.questions || [];
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
-      <section class="sheet"><header><h2>The board checker</h2></header>${healthTable(rows)}</section>${who}
+      <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
@@ -4418,15 +4418,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else if (!healthData.laptop) view.innerHTML = '<p class="empty">Waiting for the laptop’s first health report.</p>';
-    else {
-      // Owner, 2026-11-10: Page Health with one verdict line on top and the
-      // code version in words. The regular Page Health is unchanged.
-      const rows = healthRows(healthData, Date.now(), true);
-      view.innerHTML = '<section class="sheet"><header><h2>Page Health: new top</h2><span class="meta">preview</span></header>' +
-        '<p class="anote" style="margin:10px 14px">One line that says whether anything needs you, then the same table with the code version spelled out. Who gets alerts keeps its name codes over a restart once the laptop runs this code (nothing to see here for that).</p>' +
-        '<div style="padding:0 14px 14px">' + healthVerdict(rows) + '</div>' + healthTable(rows) + '</section>';
-    }
+    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
   }
   async function renderOrderSummary(target) {
