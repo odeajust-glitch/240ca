@@ -235,6 +235,12 @@ test('an Admin approves and removes members; only the owner key makes or removes
   assert.equal((await act(owner, b.id, 'role', { role: 'member' })).status, 200);
   assert.equal((await act(helper, b.id, 'remove')).status, 200);
   assert.equal((await call('/data/index.json', { cookie: b.cookie })).status, 401);
+  // An Admin may be signed in on more than one device.
+  store.delete(`accounts/codes/${a.id}.json`);
+  await call('/auth/code', { body: { email: 'pate1@example.com' } });
+  const other = cookieOf(await call('/auth/verify', { body: { email: 'pate1@example.com', code: codeIn(mails) } }));
+  assert.equal((await call('/data/index.json', { cookie: other })).status, 200);
+  assert.equal((await call('/data/index.json', helper)).status, 200);
   // Removed Admin: no list any more.
   assert.equal((await act(owner, a.id, 'remove')).status, 200);
   assert.equal((await call('/health/accounts', helper)).status, 404);

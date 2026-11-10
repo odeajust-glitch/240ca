@@ -1304,7 +1304,9 @@ async function authVerify(request, env, now = Date.now()) {
     }
   } else {
     user.lastSignIn = now;
-    user.key = b64(crypto.getRandomValues(new Uint8Array(12))); // signs the other device out
+    // Signs the other device out. Not for an Admin (owner, 2026-11-10:
+    // "admin accounts don't have the 1 device restriction").
+    if (user.role !== 'admin') user.key = b64(crypto.getRandomValues(new Uint8Array(12)));
   }
   await saveUser(env, id, user, now);
   const res = json({ ok: true, status: user.status });

@@ -46,7 +46,8 @@ stops at 50 people. The accounts are built into the Worker
 - **One device per account** (owner, 2026-11-10, so accounts aren't
   shared): signing in on another device signs the first one out, and that
   device's sign-in page says why. Each switch costs one emailed code. The
-  owner-key devices are not counted.
+  owner-key devices are not counted, and an Admin may be signed in on
+  any number of devices.
 - **Emails** go through the same Gmail script as 18.6(b) (EMAIL.md), at
   most 70 a day for accounts. A sign-up costs two emails (the code and the
   approval), so about 35 new people a day;
