@@ -149,6 +149,23 @@ Current page's Garnet "call" is order − 2 h (15 min later than this): ask befo
 The fold-out he asked for again was already pushed (board notes); it shows once the laptop
 publishes. Rebuilt from the day files: no FORMAT bump, no Worker change.
 
+**Call stability: a "Why" under the graph, 2026-11-10 (owner: "add reasoning ... do not
+change the graph ... ie job showing spare before call time or someone coming off the
+spareboard in front of you unexpectedly. Or a train or extra job showing up"):** shown for
+a call over an hour early or late, or with under 8 h notice. The tracker says why at the
+check each change happened (`whyFor` in `sleepCheck`, lib/board/insights.js), from that
+check and the one before (`state.sleepWhy`: seats by train and craft / spare-list job, first
+seen, which lists were read): the train or job is new on its list; who had the seat before
+and where they are now (skipped reason, another train, called, pool status); who has the
+seat they left and whether that turn was on any list before; a straight trade; the train's
+own time moved. Saved as `firstWhy`, `firstTrain`, `calledWhy` on the record and `why` on
+each timeline change. The page only words them (`callReasons`, `renderCallReasons`,
+`.ct2-why`; first lining, a fold of the middle, the last four). Nothing is guessed: a
+change with no reason is listed bare. Replayed on the live days: 459 of 612 calls get a
+Why, 429 with a reason on every line. On the regular page (he asked for it directly), not
+Test. Rebuilt from the day files: no FORMAT bump, no Worker change. ❓ Ask him how the
+wording reads on real calls; long back-and-forth runs between pool turns are noisy.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

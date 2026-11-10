@@ -371,3 +371,27 @@ test('insights: L501 home is scored against the Garnet line-up, for whoever took
   // Planned call 1915 (order 2130 − 15 min − 2 h); called 2030: 1 h 15 m late, one move.
   assert.deepStrictEqual(list, [['S501-CO', '2026-11-08 1915', '2026-11-08 2030', 75, 1], ['SA07', '2026-11-08 1915', '2026-11-08 2030', 75, 1]]);
 });
+
+// Owner, 2026-11-10: "have a reasoning. ie job showing spare before call
+// time ... or a train or extra job showing up". Live, 8th Nov: EN09 expected
+// to fill M39491 at 9th 0205, then YMXS02 showed going spare for 8th 1500.
+test('insights: a call that moved says why (a job new on the spare list, who took the old one)', () => {
+  const A = require('../../public/board-analytics');
+  const snap = (taken, x) => ({ taken, lineup: [], onDuty: [], screens: ['terminal'], vacancies: [], ...x });
+  const job = (train, at, call, turn) => ({ pos: '001', at, train, cc: 'EN', fill: { turn, call, skipped: [] } });
+  const st = Insights.collect([
+    snap('2026-11-08 1405'),
+    snap('2026-11-08 1412', { vacancies: [job('M39491', '9th 0420', '9th 0205', 'EN09')] }),
+    snap('2026-11-08 1421', { vacancies: [job('YMXS02', '8th 1700', '8th 1500', 'EN09'), job('M39491', '9th 0420', '9th 0205', 'EN06')] }),
+    snap('2026-11-08 1510', { yardJobs: [{ job: 'YMXS02', onDuty: '8th 1700', crew: 'EN EN09' }] }),
+  ]);
+  const [z] = Insights.finish(st).sleep.filter((x) => x.turn === 'EN09');
+  assert.deepStrictEqual([z.firstTrain, z.firstWhy], ['M39491', 'M39491 first showed going spare at this check']);
+  assert.strictEqual(z.timelineChanges[0].why, 'YMXS02 first showed going spare at this check; EN06 is on M39491 now (not on a list the check before)');
+  const r = A.callReasons(z);
+  assert.strictEqual(r.what, 'Called 11 h 05 m earlier than first planned');
+  assert.deepStrictEqual(r.lines.map((l) => l.text), ['First lined up for M39491, call 9th 0205, only 48 m before the actual call', 'Moved to YMXS02, call 8th 1500']);
+  assert.ok(A.renderCallTimelineV2(z).includes('class="ct2-why"'));
+  // On time with plenty of notice: no Why block.
+  assert.strictEqual(A.callReasons({ ...z, firstSeen: '2026-11-08 0100', firstCall: '2026-11-08 1500', expected: '2026-11-08 1500', timelineChanges: [] }), null);
+});

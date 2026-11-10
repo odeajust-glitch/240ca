@@ -526,10 +526,51 @@
     return `<details class="call-timeline ct2"><summary>Show call timeline</summary><p class="ct2-who"><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b></p>
       <p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>
       <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${mark}${below}</svg>
-      <div class="ct2-key">${keyHtml}</div><div class="ct2-facts">${facts}</div>
+      <div class="ct2-key">${keyHtml}</div><div class="ct2-facts">${facts}</div>${renderCallReasons(z)}
       <details><summary>Marker times (${events.length})</summary><ul class="timeline-events">${events.map(c => `<li>${e(c.text)}</li>`).join('') || '<li>No saved marker times.</li>'}</ul></details>
       <details><summary>Recorded changes (${m.changes.length})</summary>${list ? `<ul class="timeline-events">${list}</ul>` : '<p class="anote">No saved changes.</p>'}</details>
       <details><summary>About this timeline</summary><p class="anote">The white bar is the actual call: on duty minus two hours. Green is the eight hours before the planned call. Red (yellow for 30 minutes or less) runs from an early call to the planned call: the time the plan said they still had. A dashed green box is a planned window the call came before. Purple is waiting past the planned call. Notice given is from the first check that lined the turn up to the call. Dots mark changes of the expected call over 30 minutes. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'}</p></details></details>`;
+  }
+  // Why a call landed where it did (owner, 2026-11-10): for a call more than
+  // an hour early or late, or with under 8 h notice, the reasons the tracker
+  // saved at each change (lib/board/insights.js whyFor). Nothing is guessed
+  // here: a change with no saved reason is listed without one.
+  function callReasons(z0) {
+    const z = cleanCallRecord(z0);
+    if (z.comparisonUnavailable || z.takenOff) return null;
+    const m = callTimeline(z);
+    if (!m || m.end == null) return null;
+    const gap = m.end - m.expected, notice = Math.max(0, m.end - m.first);
+    if (!(gap < -60 || gap > 60 || notice < 480)) return null;
+    const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th');
+    const fmt = t => { const s = typeof t === 'number' ? T.fromMin(t) : String(t || ''); return /^\d{4}-\d{2}-\d{2} \d{4}$/.test(s) ? ord(+s.slice(8,10)) + ' ' + s.slice(11) : s; };
+    const d = n => { n = Math.round(Math.abs(n)); const h = Math.floor(n/60), mm = n % 60; return h ? `${h} h ${String(mm).padStart(2,'0')} m` : `${mm} m`; };
+    const lines = [];
+    if (notice < 480 || z.firstWhy) lines.push({ at: m.first, text: `First lined up${z.firstTrain ? ` for ${z.firstTrain}, call ${fmt(z.firstCall)}` : ''}${notice < 480 ? `, only ${d(notice)} before the actual call` : ''}`, why: z.firstWhy || '' });
+    let prevCall = T.toMin(z.firstCall), prevTrain = z.firstTrain || null;
+    for (const c of m.changes.filter(c => c.at <= m.end)) {
+      const call = T.toMin(c.call);
+      const moved = prevTrain != null && c.train && c.train !== prevTrain;
+      const big = call != null && prevCall != null && Math.abs(call - prevCall) > 30;
+      if (c.at > m.first && (moved || big)) lines.push({ at: c.at, text: moved ? `Moved to ${c.train}, call ${fmt(c.call)}` : `Call moved ${fmt(prevCall)} → ${fmt(c.call)}`, why: c.why || '' });
+      if (call != null) prevCall = call;
+      if (c.train) prevTrain = c.train;
+    }
+    if (z.calledWhy) lines.push({ at: m.end, text: 'The call', why: z.calledWhy });
+    if (gap > 60 && prevCall != null && m.end - prevCall > 60) lines.push({ at: m.end, text: `Still not called ${d(m.end - prevCall)} after the last time it showed`, why: 'the train stayed on the line-up past its call until it was called' });
+    const what = gap < -60 ? `Called ${d(gap)} earlier than first planned` : gap > 60 ? `Called ${d(gap)} later than first planned` : `Under 8 h notice (${d(notice)})`;
+    return { what, lines: lines.map(l => ({ ...l, when: fmt(l.at) })) };
+  }
+  function renderCallReasons(z) {
+    const r = callReasons(z);
+    if (!r) return '';
+    const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    const li = l => `<li><b>${e(l.when)}</b> ${e(l.text)}${l.why ? `: <span class="ct2-because">${e(l.why)}</span>` : ''}</li>`;
+    // The first lining and the last changes before the call say the most;
+    // a long run in between folds away.
+    const many = r.lines.length > 6;
+    const top = many ? r.lines.slice(0, 1) : r.lines, mid = many ? r.lines.slice(1, -4) : [], end = many ? r.lines.slice(-4) : [];
+    return `<div class="ct2-why"><p><b>Why</b> · ${e(r.what)}</p>${r.lines.length ? `<ul>${top.map(li).join('')}</ul>${mid.length ? `<details><summary>${mid.length} changes in between</summary><ul>${mid.map(li).join('')}</ul></details>` : ''}${end.length ? `<ul>${end.map(li).join('')}</ul>` : ''}` : '<p class="anote">No reason was saved for this call.</p>'}</div>`;
   }
   function planReliability(list) {
     const rows = list.map(cleanCallRecord).filter(z => !z.comparisonUnavailable && !z.takenOff && T.toMin(z.firstCall) != null && T.toMin(z.call) != null)
@@ -622,7 +663,7 @@
 
   const api = { cleanCallRecord, planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
-    renderCallTimelineV2, sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
+    renderCallTimelineV2, callReasons, renderCallReasons, sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);
