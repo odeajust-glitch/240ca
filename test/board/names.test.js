@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { parseGrid } = require('../../lib/board/grid');
 const S = require('../../lib/board/screens');
-const { recordNames, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
+const { recordNames, recordBoardCrew, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
 const { unlockNames } = require('../../public/board-names');
 const { buildSite } = require('../../lib/board/site');
 
@@ -109,4 +109,27 @@ test('names: each turn\'s latest name as "Last, F", a 501/502 turn by craft', ()
   assert.equal(later.S502, undefined);
   // Not seen for 14 days: no name.
   assert.deepEqual(namesByTurn(store, new Date('2026-11-20T06:00:00Z')), {});
+});
+
+// Owner, 2026-11-10: SA05 showed an older Call Board name; his photo of the
+// A pool screen has the person CATS shows on it now.
+test('names: the pool screen\'s own name for a turn wins over an older Call Board one', () => {
+  const POOL = [
+    '100 | 20:CC | 60:TURN | 110:T | 130:POS | 200:EMPLOYEE NAME | 420:ST',
+    '140 | 20:EN',
+    '160 | 20:CO | 60:SA05 | 110:0 | 130:001 | 180:ALLEN*+ | 300:(NET)B | 380:BEN',
+    '180 | 20:B1',
+    '200 | 20:CO | 60:SA06 | 110:0 | 130:002 | 180:BORODY*+ | 340:R | 380:ROBER',
+    '220 | 20:CO | 60:SA07 | 110:0 | 130:003 | 180:PAVEY*+ | 340:R | 380:RYAN | 460:HT',
+    '240 | 20:EN | 60:S501 | 110:0 | 130:001 | 180:LEE | 380:ANN',
+    '260 | 20:CO | 60:S501 | 110:0 | 130:001 | 180:O\'DEA | 380:JUSTIN',
+  ];
+  const crew = S.parseBoardCrew(parseGrid(POOL));
+  assert.deepEqual(crew.map((c) => `${c.craft} ${c.turn} ${c.name}`), ['CO SA05 Ben Allen', 'CO SA06 Rober Borody', 'CO SA07 Ryan Pavey', 'EN S501 Ann Lee', "CO S501 Justin O'Dea"]);
+  // Thompson worked SA05 two days ago; the pool screen shows Allen on it today.
+  const store = recordNames({}, [{ symbol: 'A42431', originDay: '08', crew: [{ craft: 'CO', turn: 'SA05', name: 'Chris Thompson' }, { craft: 'CO', turn: 'SB09', name: 'Away Person' }] }], new Date('2026-11-08T12:00:00Z'));
+  recordBoardCrew(store, crew, new Date('2026-11-10T23:00:00Z'));
+  assert.deepEqual(namesByTurn(store, new Date('2026-11-10T23:05:00Z')), { 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SA05: 'Allen, B', SA06: 'Borody, R', SA07: 'Pavey, R', SB09: 'Person, A' });
+  // The 18.6(b) names don't use the board's: still the trip's.
+  assert.deepEqual(namesForHeld([{ id: 'Q9 07', month: '2026-11', co: 'SA05', heldMin: 900 }], store, 840, new Date('2026-11-10T23:05:00Z')), { 'Q9 07 2026-11': { co: 'Chris Thompson', en: null, turnOnly: true } });
 });

@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, saveNames } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -426,6 +426,9 @@ async function runRoute(page, opts = {}) {
     const rows = await unmaskedRows();
     if (!rows) return;
     boardNames.push(...S.parseBoardNames(rows)); // learned once, at the end
+    // Who each turn shows, by name, for the crew names on the board
+    // (members only, locked on the site): carried with the Call Board names.
+    if (opts.names) { try { (opts.names.board = opts.names.board || []).push(...S.parseBoardCrew(rows)); } catch { /* the board can do without */ } }
   };
   // `label` tells the loader which screens are Mac yard's (they look like
   // Sarnia's 23 and 41).
@@ -1792,7 +1795,7 @@ async function main() {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
       try {
-        saveNames(NAMES_FILE, recordNames(loadNames(NAMES_FILE), names));
+        saveNames(NAMES_FILE, recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []));
       } catch (err) {
         console.log(`  (crew names not saved: ${err.message})`);
       }

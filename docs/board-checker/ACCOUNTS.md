@@ -91,6 +91,13 @@ turns seen on a Call Board in the last 14 days is fine for a first version;
 reason it is all right: every approved member can already see these names
 in CATS.
 
+- **Where the names come from** (changed 2026-11-10 after SA05 showed an
+  older Call Board name; the owner's photo of the A pool had the right
+  one): every pool and spareboard screen the checker already reads
+  unmasked gives who CATS shows on each turn now (`screens.js`
+  `parseBoardCrew`, kept as `@board|<turn>` in the laptop's names.json by
+  `recordBoardCrew`); a turn not on those screens falls back to its last
+  Call Board name. The 18.6(b) names don't use the board entries.
 - **Laptop** (`lib/board/names.js` `namesByTurn`, `lib/board/site.js`): each
   turn's latest name as "Last, F" goes out as `data/crew.json`, locked with
   `BOARD_NAMES_KEY` like the 18.6(b) names. A 501/502 turn is two people:
