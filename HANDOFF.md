@@ -4,6 +4,30 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Call stability, 501/502 fix, 2026-11-10 (owner: "the 502 / 501 call stability data is
+messed up", then "fix the tracker"):** on the live data 22 of 39 S5 records were "removed
+from lineup", 8 "unavailable", and no L502 call was recorded after 4th Nov. Causes, all
+in `sleepCheck` (lib/board/insights.js): (1) the line-up swapped the two 501/502 crews in
+the last check or two before the call (5th 0046, 8th 0259, 9th 0058), the real crew was
+logged "taken off" and its wait thrown away minutes before the Call Board showed it; (2)
+a fill-in on S501 dropped both crafts (same turn number); (3) L501 home was scored
+against the next L502 ("30 h early"). Now: someone else shown on a turn's train waits
+`SWAP_WAIT` (30 min) for the Call Board or the line-up to settle it (`offAt`); back on
+the same train = same wait; a turn on a train for under 30 min when it goes with others
+is no wait at all; an S5 fill-in replaces only its own craft; an L501 on duty never ends
+an L502 wait (L501 itself is not scored: no expected call for it). Replayed over all 27
+live day files: S5 → 19 calls + 14 taken off (each one a job a spare or MU crew filled),
+0 unavailable; other pools lose 81 "removed" records, 74 of them a one-check flicker or
+a turn that then worked that train (this also answers the old "one-check flickers" ❓).
+Rebuilt from the day files every publish: no FORMAT bump, no Worker change. Laptop
+pull/restart pending. 274 of 288 tests pass here (the same 14 fail without the change).
+**Not fixed, ask Justin:** (a) the line-up itself still swaps the S5 crew right at the
+call (Current and alerts see it; the 9th's swap came after the 8th's engine fixes, but the
+laptop's version then isn't known); (b) `isDone` ignores a spare lined up for the same
+yard job again within 3 days (yard job ids have no date; seen: B116 YPRS30 7th → 9th).
+Also: this cloud session started on the stale 3rd Nov checkout again and was reset to
+the GitHub branch (never push from that state).
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

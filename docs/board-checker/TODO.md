@@ -5,6 +5,13 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
+  the other crew shown for one or two checks, then the Call Board has the first). Call
+  stability no longer believes it; Current and alerts still see it. Check after the
+  laptop runs the 8th's engine fixes.
+- **Call stability: same yard job again within 3 days is ignored** (`isDone` in
+  insights.js; yard job ids carry no date). Found 2026-11-10, B116 YPRS30 7th → 9th.
+
 1. **Runaround log: check it on real runs**, then decide on alerts (to the
    passed-over turn? the rep?), claim time limits and an evidence page.
 2. **Turn History housekeeping** (owner, 2026-11-03: "we will get back to it
@@ -169,6 +176,10 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Call stability for 501/502** (owner): last-minute crew swaps no
+  longer count as "removed from lineup", S5 fill-ins per craft, L501 home not scored
+  against the next L502. Details in HANDOFF.
 
 - 2026-11-09: **Pool filter on "Pools at Sarnia"** (was #25). The pool buttons
   switch each pool on or off and the boards stack in pool order, with All /

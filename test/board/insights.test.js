@@ -310,3 +310,47 @@ test('insights: runaround log, the whole crew from another pool is explained', (
   const same = [snaps[0], { ...snaps[1], onDuty: [{ train: 'M30241 19', onDuty: '21st 0345', crew: 'EN S105 · CO SA07' }] }];
   assert.ok(Insights.finish(Insights.collect(same)).runLog.every((r) => r.result === 'likely'));
 });
+
+// Owner, 2026-11-10: "the 502 / 501 call stability data is messed up". Live
+// data, 5th / 8th / 9th Nov: the line-up swapped the two 501/502 crews
+// minutes before the call, then the Call Board showed the first crew.
+test('insights: a last-minute crew swap on the line-up is not "taken off"', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const l502 = (call, turn, status = 'PLN') => ({ train: 'L50231 08', call, status, crew: { co: turn, en: turn } });
+  const st = Insights.collect([
+    snap('2026-11-07 1745', { lineup: [l502('8th 0145', 'S501')] }), // 8 h out: asleep for 0145
+    snap('2026-11-08 0223', { lineup: [l502('8th 0245', 'S501', 'ORD')] }),
+    snap('2026-11-08 0259', { lineup: [l502('8th 0245', 'S502', 'ORD')] }), // swapped
+    // S501 went; its engineer's job was filled by SA07.
+    snap('2026-11-08 0308', { onDuty: [{ train: 'L50231 08', onDuty: '8th 0450', crew: 'EN S501 · CO S501', backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] }),
+    snap('2026-11-08 0401', { lineup: [{ train: 'L50231 09', call: '9th 0145', status: 'PLN', crew: { co: 'S502', en: 'S502' } }] }),
+    // L501 home is not the call for the L502 they wait on.
+    snap('2026-11-08 2052', { lineup: [{ train: 'L50231 09', call: '9th 0145', status: 'PLN', crew: { co: 'S502', en: 'S502' } }], onDuty: [{ train: 'L50131 08', onDuty: '8th 2230', crew: 'EN S502 · CO S502' }] }),
+    snap('2026-11-09 0107', { onDuty: [{ train: 'L50231 09', onDuty: '9th 0245', crew: 'EN S502 · CO S502', backfill: [{ craft: 'CO', job: 'S502', turn: 'B119' }] }] }),
+  ]);
+  const list = Insights.finish(st).sleep.map((z) => [z.turn, z.train, !!z.takenOff, z.expected, z.call || null, z.off ?? null]).sort();
+  assert.deepStrictEqual(list, [
+    // The conductor's real call, against the call slept on.
+    ['S501-CO', 'L50231 08', false, '2026-11-08 0145', '2026-11-08 0250', 65],
+    // The engineer's job went to a spare: taken off, at the swap.
+    ['S501-EN', 'L50231 08', true, '2026-11-08 0145', null, null],
+    // S502 on the 8th's train for one check is nothing; the 9th is its own
+    // wait, each craft apart (the conductor's job was filled by B119).
+    ['S502-EN', 'L50231 09', false, '2026-11-09 0145', '2026-11-09 0045', -60],
+    ['S502-CO', 'L50231 09', true, '2026-11-09 0145', null, null],
+  ].sort());
+});
+
+// One check with someone else on the train, then back: one wait, not two.
+test('insights: off a train for one check and back on it keeps the wait', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], vacancies: [], onDuty: [], ...x });
+  const m1 = (en) => ({ train: 'M1 20', call: '20th 0600', crew: { co: 'SR01', en } });
+  const st = Insights.collect([
+    snap('2026-10-20 0000', { lineup: [m1('SD10')] }),
+    snap('2026-10-20 0300', { lineup: [m1('SD07')] }),
+    snap('2026-10-20 0310', { lineup: [m1('SD10')] }),
+    snap('2026-10-20 0610', { onDuty: [{ train: 'M1 20', onDuty: '20th 0800', crew: 'EN SD10 · CO SR01' }] }),
+  ]);
+  const list = Insights.finish(st).sleep.filter((z) => z.turn === 'SD10');
+  assert.deepStrictEqual(list.map((z) => [!!z.takenOff, z.sleepAt, z.expected, z.off]), [[false, '2026-10-20 0000', '2026-10-20 0600', 0]]);
+});
