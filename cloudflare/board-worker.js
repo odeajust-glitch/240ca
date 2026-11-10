@@ -1128,7 +1128,13 @@ const SESSION_RENEW_MS = 86400000;
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
 const CODE_DAY_MAX = 20;
-const ACC_MAIL_DAY_MAX = 70; // Gmail allows about 100 a day; 18.6(b) has its own 30
+// Account emails a day. Gmail allows about 100 a day in all and 18.6(b) has
+// its own 30, hence 70. The variable MAIL_DAY_MAX changes it without a
+// paste (owner, 2026-11-10: "in case 70 is not enough" on lock night, to be
+// lowered again after): above 70 it eats into 18.6(b)'s share, and Google
+// still stops at about 100 whatever this says.
+const ACC_MAIL_DAY_MAX = 70;
+const mailDayMax = (env) => { const n = Math.round(Number(env.MAIL_DAY_MAX)); return Number.isFinite(n) && n >= 1 && n <= 2000 ? n : ACC_MAIL_DAY_MAX; };
 // Per internet address. 40, not 5: a crew room's Wi-Fi or a phone company
 // puts many people behind one address (found planning the lock, 2026-11-10).
 const SIGNUP_IP_MAX = 40;
@@ -1198,7 +1204,7 @@ async function accountMail(env, to, subject, body, now = Date.now()) {
   if (!mailReady(env)) return 'off';
   const key = `${ACC}mail/${torontoDay(now)}.json`;
   const count = (await readJson(env, key)) || { n: 0 };
-  if (count.n >= ACC_MAIL_DAY_MAX) return 'cap';
+  if (count.n >= mailDayMax(env)) return 'cap';
   try {
     const res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: '', replyTo: '', subject, body, name: 'Account' }) });
@@ -1362,7 +1368,7 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     } while (subCursor);
     for (const u of users) { const f = follows.get(u.id); if (f) u.follows = { phones: f.phones, turns: [...f.turns].sort(), people: f.people.size }; }
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
-    return json({ you, users, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: ACC_MAIL_DAY_MAX });
+    return json({ you, users, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env) });
   }
   if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
   const b = await bodyJson(request);

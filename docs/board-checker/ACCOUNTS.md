@@ -82,6 +82,7 @@ stops at 50 people. The accounts are built into the Worker
 | `OWNER_KEY` | Secret | Needed: opens the approval list and signs the cookies. |
 | `AUTH_SECRET` | Secret, optional | Signs the cookies instead of `OWNER_KEY`. Changing whichever is used signs everyone out. |
 | `MAIL_SCRIPT_URL`, `MAIL_SCRIPT_KEY` | Secrets | The Gmail script (EMAIL.md). |
+| `MAIL_DAY_MAX` | Variable, optional | Account emails a day; 70 if not set. Gmail stops at about 100 a day in all and 18.6(b) is allowed 30, so above 70 the two compete. Raised for the lock (2026-11-10); delete it again once things settle. |
 | `SITE_URL` | Variable | The address put in the emails. |
 
 Stays open when locked: `/account`, `/auth/*`, the app icon / manifest /

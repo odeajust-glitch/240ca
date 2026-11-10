@@ -344,3 +344,15 @@ test('a signed-in member\'s follows are kept with their account and listed for t
   assert.deepEqual(list.users.find((u) => u.id === id).follows, { phones: 1, turns: ['SD05', 'SR03'], people: 1 });
   assert.equal(list.unknownPhones, 1);
 });
+
+// Owner, 2026-11-10: more emails on lock night, by a setting.
+test('MAIL_DAY_MAX sets how many account emails go in a day', async () => {
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  for (const [setting, sent, want] of [[undefined, 70, 503], [undefined, 69, 200], ['95', 70, 200], ['95', 95, 503], ['nonsense', 70, 503]]) {
+    const { call, store } = await setup(setting === undefined ? {} : { MAIL_DAY_MAX: setting });
+    store.set(`accounts/mail/${day}.json`, JSON.stringify({ n: sent }));
+    assert.equal((await call('/auth/signup', { body: person(`m${sent}${setting || ''}`), ip: '7.7.7.7' })).status, want, `${setting} at ${sent}`);
+  }
+  const { call } = await setup({ MAIL_DAY_MAX: '95' });
+  assert.equal((await (await call('/health/accounts', { key: OWNER_KEY })).json()).mailMax, 95);
+});
