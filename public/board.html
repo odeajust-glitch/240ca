@@ -141,6 +141,9 @@
   .health .who { margin-top: 4px; }
   .downbanner { background: #b3261e; color: #fff; padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; }
   .downbanner[hidden] { display: none; }
+  .signnote { background: var(--accent); color: var(--accent-ink, #fff); padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .signnote[hidden] { display: none; }
+  .signnote a { color: inherit; font-weight: 700; border: 1px solid currentColor; border-radius: 8px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
   .healthpage { max-width: 900px; }
   .healthpage .hpt { font: 600 22px/1.2 var(--display); margin: 0 0 12px; }
   .healthpage .hpt .muted { font-size: 13px; font-weight: 400; }
@@ -816,6 +819,7 @@
   </div>
 </div>
 <div class="downbanner" id="downbanner" role="alert" hidden></div>
+<div class="signnote" id="signnote" hidden></div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
     <div class="turnpick">
@@ -1410,7 +1414,9 @@ function strip(s, preview = false) {
   </div>`;
 }
 
-const getJSON = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+// 401: the site is locked and this device is signed out (owner, 2026-11-09,
+// accounts): off to the sign-in page, which comes back here afterwards.
+const getJSON = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (r.status === 401) location.replace('account?next=' + encodeURIComponent(location.pathname)); if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
 
 // Live site: data/index.json lists the days, data/<day>.json holds each day's
 // snapshots. Without it (the sample page) everything comes from board-sample.json.
@@ -4854,6 +4860,14 @@ source().then(async (src) => {
   fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me || !me.ready) return;
     if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
+    // "Sign up to keep access" (owner, 2026-11-09: people make an account
+    // before the lock goes on): the Worker's SIGNUP_NOTICE=on switches it on.
+    if (me.notice && !me.lock && !me.signedIn && !OwnerKey.has()) {
+      const note = document.getElementById('signnote');
+      note.innerHTML = me.status === 'pending' ? '<span><b>Your sign-up is waiting for approval.</b> Nothing more to do: this device keeps its access once you’re approved.</span>'
+        : '<span><b>Soon you’ll need an account to see this site.</b> Sign up now to keep your access.</span><a href="account#signup">Sign up</a>';
+      note.hidden = false;
+    }
     const who = document.getElementById('profwho');
     const btn = document.getElementById('profbtn');
     if (me.signedIn) {

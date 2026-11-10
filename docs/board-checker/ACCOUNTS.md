@@ -56,7 +56,7 @@ stops at 50 people. The accounts are built into the Worker
 | Name | Type | What |
 | --- | --- | --- |
 | `LOCK` | Variable | `on` = only approved accounts (and your owner-key devices) see the site. Anything else = open. |
-| `SIGNUP_NOTICE` | Variable | `on` = `/auth/me` reports it, for the page's "sign up to keep access" line (the line itself is not built yet). |
+| `SIGNUP_NOTICE` | Variable | `on` = `/auth/me` reports it, the board page shows its "sign up to keep access" banner to anyone not signed in. |
 | `OWNER_KEY` | Secret | Needed: opens the approval list and signs the cookies. |
 | `AUTH_SECRET` | Secret, optional | Signs the cookies instead of `OWNER_KEY`. Changing whichever is used signs everyone out. |
 | `MAIL_SCRIPT_URL`, `MAIL_SCRIPT_KEY` | Secrets | The Gmail script (EMAIL.md). |
@@ -76,8 +76,10 @@ passes. Phones already getting alerts keep getting them.
    time. Then the notice line on the page (Test tab first).
 3. **Lock:** add `LOCK=on` on `board`. To undo, delete it.
 
-Before step 3: have `board.html` send people to `/account` when a check
-comes back 401 (signed out while the page is open).
+Built 2026-11-10 in `board.html`: the notice banner (`SIGNUP_NOTICE=on`,
+not locked, not signed in, no owner key; a waiting sign-up sees "waiting
+for approval" instead) and the hop to `/account` when data comes back 401
+(signed out while the page is open).
 
 RailroadTracker is set aside (owner, 2026-11-09: "Let's forget about the
 railroad app for now"): the lock does not wait on it. If the app reads the
