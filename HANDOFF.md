@@ -4,6 +4,13 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Fallout page style, 2026-11-10 evening (owner: "make a fallout theme"):** a ninth choice,
+`data-theme="fallout"` in `public/board.html`: the game's terminal look only (no art, no
+logos). Green-black page, one mint green, tall narrow capitals (Barlow Condensed), faint
+scan lines over the page (`body::after`, taps pass through), the picked thing a solid
+green bar, 2px square frames, yellow and red unchanged. Opt-in per phone. Checked at
+phone width on sample data, Current only. Laptop pull/restart/publish pending.
+
 **Matrix page style, 2026-11-10 evening (owner: "make a matrix theme"):** an eighth choice,
 `data-theme="matrix"` in `public/board.html`: black page, fixed-width green letters, a
 glow on headings and big times, pale green for anything tapped, yellow and red unchanged,

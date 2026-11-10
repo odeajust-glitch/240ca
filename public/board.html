@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1197,6 +1197,42 @@
   :root[data-theme="matrix"] input, :root[data-theme="matrix"] select, :root[data-theme="matrix"] textarea { background: #000000 !important; color: #d2ffdc; border-color: var(--soft) !important; }
   :root[data-theme="matrix"] .daybar { background: #03140a; }
   :root[data-theme="matrix"] .htable td.warn, :root[data-theme="matrix"] .health .warn { color: #ff8a80; }
+  /* Fallout (owner, 2026-11-10: "make a fallout theme"): the game's wrist
+     computer and wall terminals. A green-black tube, one mint green for
+     everything, tall narrow capitals (Barlow Condensed, near the game's
+     own face), faint scan lines over the page, the picked thing as a solid
+     green bar with dark letters, square 2px frames. Only the look: none of
+     the game's art or logos. Yellow and red keep their meaning. Unlike
+     Matrix: tinted screen, capitals, scan lines, no fixed-width letters. */
+  :root[data-theme="fallout"] { --bg: #06130b; --sheet: #0a1d11; --ink: #1aff80; --soft: #14ab58; --rule: #17633a; --rule-soft: #0e3d23;
+    --accent: #a8ffcf; --accent-ink: #04120a; --accent-tint: #0f4226;
+    --amber: #ffd24a; --amber-tint: #332b08; --go: #a8ffcf; --go-tint: #115030; --stop: #ff5f4f; --stop-tint: #3d120d;
+    --plan-tint: #0c2616; --poolA: #6fd6ff; --poolB: #dba6ff; --poolSR: #1aff80;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --mono: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    color-scheme: dark; }
+  :root[data-theme="fallout"] body::after { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0, rgba(0, 0, 0, 0.22) 1px, transparent 1px, transparent 3px); }
+  :root[data-theme="fallout"] * { border-radius: 0 !important; }
+  :root[data-theme="fallout"] *, :root[data-theme="fallout"] *::before, :root[data-theme="fallout"] *::after { font-weight: 500 !important; }
+  :root[data-theme="fallout"] body { font-size: 17px; text-transform: uppercase; letter-spacing: 0.03em; }
+  :root[data-theme="fallout"] .num, :root[data-theme="fallout"] .mono { font-variant-numeric: tabular-nums; }
+  :root[data-theme="fallout"] button, :root[data-theme="fallout"] select, :root[data-theme="fallout"] summary { text-transform: inherit; letter-spacing: inherit; }
+  :root[data-theme="fallout"] details.why p, :root[data-theme="fallout"] .note, :root[data-theme="fallout"] .foot, :root[data-theme="fallout"] .alertnote, :root[data-theme="fallout"] .notes .why, :root[data-theme="fallout"] .ntext, :root[data-theme="fallout"] .qbody, :root[data-theme="fallout"] .qtext, :root[data-theme="fallout"] .askanswer, :root[data-theme="fallout"] .asktx, :root[data-theme="fallout"] .asknote, :root[data-theme="fallout"] .askhint,
+  :root[data-theme="fallout"] .asktip, :root[data-theme="fallout"] .calling-list, :root[data-theme="fallout"] .ct2-why, :root[data-theme="fallout"] .boardnotes, :root[data-theme="fallout"] .test-notes-list, :root[data-theme="fallout"] .flags, :root[data-theme="fallout"] .overview-guide-card p,
+  :root[data-theme="fallout"] textarea, :root[data-theme="fallout"] input:not(#turn) { text-transform: none; letter-spacing: 0; }
+  :root[data-theme="fallout"] .top { border-bottom: 2px solid var(--ink); }
+  :root[data-theme="fallout"] .top h1, :root[data-theme="fallout"] .sheet > header h2, :root[data-theme="fallout"] .test-current-box > summary h2, :root[data-theme="fallout"] .head .when, :root[data-theme="fallout"] .ohead .when, :root[data-theme="fallout"] .thead .when,
+  :root[data-theme="fallout"] .head .when .num, :root[data-theme="fallout"] .train-clear .card-duty, :root[data-theme="fallout"] .train .time, :root[data-theme="fallout"] .stat .v, :root[data-theme="fallout"] .rail .t { text-shadow: 0 0 9px rgba(26, 255, 128, 0.55); }
+  :root[data-theme="fallout"] .sheet, :root[data-theme="fallout"] .strip { border-width: 2px; }
+  :root[data-theme="fallout"] .sheet > header { border-bottom: 2px solid var(--rule); }
+  :root[data-theme="fallout"] .modes button, :root[data-theme="fallout"] .modes a.modelink { color: var(--ink); border: 2px solid var(--rule); }
+  :root[data-theme="fallout"] .modes button[aria-pressed="true"], :root[data-theme="fallout"] .poolfilter button[aria-pressed="true"], :root[data-theme="fallout"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="fallout"] .notes .nkinds button[aria-pressed="true"], :root[data-theme="fallout"] .tabs button[aria-selected="true"] { background: #1aff80; border-color: #1aff80; color: #04120a; }
+  :root[data-theme="fallout"] .poolfilter button, :root[data-theme="fallout"] .rail .hours button { color: var(--ink); }
+  :root[data-theme="fallout"] input, :root[data-theme="fallout"] select, :root[data-theme="fallout"] textarea { background: #04100a !important; color: var(--accent); border: 2px solid var(--rule) !important; }
+  :root[data-theme="fallout"] .daybar { background: #0c2616; }
+  :root[data-theme="fallout"] .htable td.warn, :root[data-theme="fallout"] .health .warn { color: #ff8a80; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1271,6 +1307,7 @@
       <button type="button" class="sty" data-theme="iphonelight"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone Light</button>
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
       <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
+      <button type="button" class="sty" data-theme="fallout"><span class="sw" style="background:#06130b;color:#1aff80;border-color:#17633a;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Fallout</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1329,7 +1366,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
