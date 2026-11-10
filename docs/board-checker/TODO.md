@@ -5,6 +5,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Current, new layout:** in Test since 2026-11-10, awaiting his review; includes the
+  Toronto / Garnet call 15 min earlier (his rule to confirm). See HANDOFF.
+
 - **Names for followers on Page Health:** three answers pending from the owner (capture
   names for everyone each check; OWNER_EMAIL deleted on `board`; layout). See HANDOFF.
 

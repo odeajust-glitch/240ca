@@ -230,6 +230,23 @@ duty. Replayed on the live days: 59 calls gained for spares and 59 false "remove
 gone for holders who were never there; 5 calls and 6 "removed" went the other way (a ride
 remembered a little too long). Suite 283 of 297, same 14 failing.
 
+**Current, new layout — in Test, awaiting Justin's phone review (2026-11-10; he said "do
+all but don't change the main current tab ... put it in the test tab"):** the real Current
+is untouched. Test → `testCurrent` (board.html) draws the newest check with `strip2`
+(counts on one line), `lineup2` (one two-line row per train, `cur2Row`; tap = the same
+Why), `toronto2` (same rows; position, off duty, on-the-way estimate and the skipped list
+folded under Details; "How crews are picked" folded), `garnet2` + `garnetCrew` (the
+501/502 turn shown away on its own board, and who is filling in, when the Garnet board
+wasn't read), `changes2` and empty boxes as one grey line (`.cur2-quiet`), headings without
+the CATS option numbers, and on a phone the tab bar in one swipeable row while Test is open
+(`body.nav-one-row`). Toronto and Garnet calls in the preview are on duty − 2 h (`awayCall`:
+order − 15 min − 2 h for a train, order − 2 h for a deadhead), 15 min earlier than Current's
+order − 2 h: ❓ his settled rule, confirm before promoting. The other boxes are the real
+ones; folding uses the same per-phone memory Current already has. Measured on the live
+09:42 check at phone width: page 7,989 → 5,597 px, line-up 1,400 → 644 px, Toronto about
+2,000 → 866 px. To promote: swap `lineup`, `toronto`, `garnet`, `changes`, `strip` in
+`SECTIONS` / `show` for the `…2` versions and decide on the tab bar. Suite 283 of 297.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

@@ -727,6 +727,32 @@
   .ct2-why li { margin: 5px 0; }
   .ct2-why .ct2-because { color: var(--ink); }
   .ct2-why summary { cursor: pointer; color: var(--accent); margin-top: 6px; }
+  /* Current, new layout (Test preview). */
+  details.cur2 { border-bottom: 1px solid var(--rule-soft); }
+  details.cur2 > summary { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 0 10px; padding: 9px 14px; cursor: pointer; list-style: none; align-items: start; }
+  details.cur2 > summary::-webkit-details-marker { display: none; }
+  details.cur2.hit > summary { background: var(--amber-tint); box-shadow: inset 3px 0 0 var(--amber); }
+  details.cur2 .t { font: 800 21px/1.2 var(--mono); }
+  details.cur2 .b { display: grid; gap: 3px; min-width: 0; }
+  details.cur2 .sym { font: 600 15px/1.3 var(--mono); }
+  details.cur2 .sym .od { color: var(--soft); font-weight: 400; }
+  details.cur2 .l2 { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 13.5px; }
+  details.cur2 .l2 .crew-divider { display: none; }
+  details.cur2 .l2 .call { color: var(--soft); }
+  details.cur2 > summary::after { content: '▾'; color: var(--accent); font-size: 15px; line-height: 1.5; }
+  details.cur2[open] > summary::after { content: '▴'; }
+  details.cur2 .fold { padding: 2px 14px 12px 86px; font-size: 13px; }
+  details.cur2 .fold .foldname { display: block; font: 600 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--soft); margin: 4px 0; }
+  details.cur2 .fold p { margin: 4px 0; color: var(--soft); }
+  details.cur2 .fold ul, details.cur2 .fold ol { margin: 4px 0; padding-left: 18px; }
+  .cur2-how { padding: 8px 14px 10px; }
+  .cur2-quiet { margin: 0 0 14px; padding: 8px 14px; color: var(--soft); font-size: 13px; border: 1px dashed var(--rule); }
+  .cur2-strip { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 14px; margin-bottom: 14px; border: 1px solid var(--rule); background: var(--sheet); font-size: 13.5px; color: var(--soft); }
+  .cur2-strip b { color: var(--ink); font-family: var(--mono); }
+  @media (max-width: 700px) { details.cur2 .fold { padding-left: 14px; }
+    body.nav-one-row .modes { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    body.nav-one-row .modes::-webkit-scrollbar { display: none; }
+    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; white-space: nowrap; } }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -1272,6 +1298,139 @@ function toronto(s) {
     ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
 }
 
+// ---- Current, new layout: Test preview only (owner, 2026-11-10: "build this
+// tab and put it in the test tab to view before we make any changes to the
+// actual current tab"). The real Current above is untouched. One short row
+// per train with the detail folded under it, Toronto and Garnet the same
+// way, one line for the counts, quiet empty boxes.
+// A call away from home as it really comes: on duty − 2 h, and on duty is 15
+// min before the order for a train, at the order for a deadhead.
+const awayCall = (s, t) => {
+  const o = BoardTrains.resolve(t.order, s.taken);
+  if (!o) return t.call || '';
+  return dt(BoardTrains.fromMin(stampMin(o) - (t.deadhead || /^DH/.test(t.train || '') ? 0 : 15) - 120));
+};
+const cur2Row = ({ hit, time, train, od, chips, line2, fold, foldName = 'Why' }) =>
+  `<details class="cur2${hit ? ' hit' : ''}"><summary><span class="t">${esc(time)}</span><span class="b"><span class="sym">${esc(train)}${od ? ` <span class="od">${esc(od)}</span>` : ''} ${chips || ''}</span><span class="l2">${line2}</span></span></summary><div class="fold"><b class="foldname">${esc(foldName)}</b>${fold}</div></details>`;
+function lineup2(s) {
+  if (!s.lineup.length) return '';
+  let day = null;
+  const rows = s.lineup.map((t) => {
+    const [d, dutyTime] = split(t.order);
+    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    day = d;
+    const [sym, od] = split(t.train);
+    const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}`;
+    const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}`;
+    return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
+      fold: lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
+  }).join('');
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
+    <div class="foot">The big time is on duty (planned or ordered). CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
+}
+function toronto2(s) {
+  const trains = s.macLineup || [];
+  const crews = s.bunkhouse || [];
+  const readB = (s.screens || []).includes('bunkhouse');
+  const readM = (s.screens || []).includes('macLineup');
+  if (!readB && !readM) return '<p class="cur2-quiet">Toronto: the bunkhouse and Mac yard line-up weren’t read in this check.</p>';
+  const byPos = new Map(crews.map((c) => [c.pos, c]));
+  let day = null;
+  const rows = trains.map((t) => {
+    const [d, time] = split(t.order);
+    const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+    day = d;
+    const [sym, od] = split(t.train);
+    const call = awayCall(s, t);
+    const x = t.crewExpected;
+    const c = x ? null : byPos.get(t.crewPos);
+    const skipped = t.skipped && t.skipped.length ? `<p><b>Skipped, on rest at the call:</b></p><ul>${t.skipped.map((k) => `<li>${esc(k)}</li>`).join('')}</ul>` : '';
+    let crew, state, detail, hit = false;
+    if (x) {
+      hit = t.crew.split(' + ').some(marked);
+      crew = markTurn(t.crew);
+      state = `<span class="chip">on the way</span> rested ~${esc(x.rested)}`;
+      detail = `<p>An estimate. On duty at Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}.</p>`;
+    } else if (c) {
+      hit = marked(c.en) || marked(c.co);
+      crew = markTurn([c.en, c.co].filter(Boolean).join(' + '));
+      state = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
+      detail = `<p>Bunkhouse position ${esc(c.pos)}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}.</p>`;
+    } else if (t.status === 'ORD' && !t.deadhead) {
+      crew = '<span class="spare">possible Toronto South crew</span>';
+      state = 'no rested crew by the call';
+      detail = t.south ? `<p>First in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}.</p>` : '';
+    } else {
+      crew = '<span class="muted">no crew yet</span>';
+      state = t.skipped && t.skipped.length ? 'no rested crew by the call' : 'none in the bunkhouse yet';
+      detail = '';
+    }
+    const warn = torontoRestWarning(s, t, x ? x.rested : c && c.rested);
+    return bar + cur2Row({ hit, time, train: sym, od, chips: `<span class="st ${esc(t.status)}">${esc(t.status)}</span>${t.deadhead ? ' <span class="chip">DH</span>' : ''}${staleChip(s, t)}`,
+      line2: `<span class="crew-craft">${crew}</span><span class="call">${state}</span><span class="call">call ~${esc(call)}</span>`, foldName: 'Details',
+      fold: `${detail}${warn}${skipped}<p>CATS details: ${esc(t.info)} · from ${esc(t.orstn)}</p>` });
+  }).join('');
+  const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
+  const extra = crews.filter((c) => !taken.has(c.pos));
+  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
+  const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
+  const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
+  const missing = !readB ? 'The bunkhouse wasn’t read in this check, so no crews are shown.' : !readM ? 'The Mac yard line-up wasn’t read in this check, so no trains are shown.' : '';
+  return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
+    ${rows || '<p class="empty">No trains on the Toronto line-up.</p>'}${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}
+    <details class="why cur2-how"><summary>How crews are picked</summary><p>Crews take these trains in bunkhouse order: first crew home, first train. After the bunkhouse come the crews still on their way, as estimates: a Sarnia train is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h) and to be rested 8 h after that. A planned train stays with the next crew in line. An ordered train goes to the next crew rested by the call; one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. The call here is 2 h before on duty (on duty is 15 min before the order for a train).</p></details></section>`;
+}
+// Who is in Garnet when the Garnet board wasn't read: the 501/502 turns
+// shown away on their own board, with anyone filling in from the Call Board.
+function garnetCrew(s) {
+  const away = [];
+  for (const p of s.pools || []) for (const t of p.turns || []) {
+    if (!/^S5\d{2}$/.test(t.turn) || !/away|out working on L502/.test(t.status || '')) continue;
+    away.push({ turn: t.turn, craft: t.craft === 'CO' ? 'CO' : 'EN', status: t.status });
+  }
+  if (!away.length) return null;
+  const turn = away[0].turn;
+  const out = (s.onDuty || []).find((r) => /^L502/.test(r.train || '') && (r.crew || '').includes(turn));
+  const fills = out ? (out.backfill || []).filter((b) => b.job === turn) : [];
+  return { turn, rows: away.filter((a) => a.turn === turn), fills };
+}
+function garnet2(s) {
+  const g = s.garnetHome;
+  const read = (s.screens || []).includes('garnetLineup');
+  if (!g && !read) return '';
+  if (!g) return '<p class="cur2-quiet">Garnet: no L501 planned home in the next 24 h.</p>';
+  const [d, time] = split(g.order);
+  const [sym, od] = split(g.train);
+  const c = g.crew;
+  const guess = c ? null : garnetCrew(s);
+  const crew = c ? markTurn(c.turn) : guess ? markTurn(guess.turn) : '<span class="muted">crew not known</span>';
+  const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
+    : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
+  const detail = c ? `<p>${esc(c.crafts)} · from the Garnet board.</p>`
+    : guess ? `<p>The Garnet board wasn’t read in this check. ${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.</p>` : '<p>The Garnet board wasn’t read in this check and no 501/502 turn is shown away.</p>';
+  return `<section class="sheet" id="sec-garnet"><header><h2>Garnet line-up · L501 home</h2></header><div class="daybar">${esc(d)}</div>
+    ${cur2Row({ hit: !!(c ? marked(c.turn) : guess && marked(guess.turn)), time, train: sym, od, chips: `<span class="st ${esc(g.status)}">${esc(g.status)}</span>`,
+      line2: `<span class="crew-craft">${crew}</span>${state ? `<span class="call">${state}</span>` : ''}<span class="call">call ~${esc(awayCall(s, { order: g.order, train: g.train }))}</span>`, foldName: 'Details', fold: detail })}
+    <div class="foot">The 501/502 crew that took L502 out brings the next L501 home.</div></section>`;
+}
+function changes2(s) {
+  if (!s.changes) return '<p class="cur2-quiet">Changes: first snapshot, nothing earlier to compare.</p>';
+  const w = when(s.prevTaken);
+  if (!s.changes.length) return `<p class="cur2-quiet">No changes since ${esc(w.time)}.</p>`;
+  return changes(s);
+}
+function strip2(s) {
+  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
+  const spare = (craft) => {
+    const turns = new Map();
+    for (const p of s.pools.filter((q) => q.name.startsWith(`${craft} fast board`) || q.name.startsWith(`${craft} slow board`))) for (const t of p.turns) turns.set(t.turn, t);
+    if (!turns.size) return '—';
+    return `<b>${[...turns.values()].filter((t) => t.status === 'available').length}</b> / ${turns.size}`;
+  };
+  return `<div class="cur2-strip"><span><b>${s.lineup.length}</b> ${s.lineup.length === 1 ? 'train' : 'trains'} · <b>${ord}</b> ordered</span><span>Conductors free ${spare('Conductor')}</span><span>Engineers free ${spare('Engineer')}</span></div>`;
+}
 function dot(status) {
   if (/out working/.test(status)) return 'out';
   if (/spare|B0/.test(status)) return 'spare';
@@ -4488,8 +4647,27 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
+    else testCurrent(view);
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
+  }
+  // Test preview: Current, new layout (functions lineup2 … strip2 above).
+  function testCurrent(view) {
+    const s = list && list[list.length - 1];
+    if (!s) { view.innerHTML = '<p class="empty">No check loaded yet. Open Current once, then Test.</p>'; return; }
+    setMarks();
+    if (!poolPicks) { const mine = s.pools.find((q) => q.turns.some((t) => marked(t.turn, t.craft))) || s.pools[0]; if (mine) poolPicks = [poolShort(mine)]; }
+    const w = when(s.taken);
+    const boxes = [['lineup', lineup2(s)], ['toronto', toronto2(s)], ['garnet', garnet2(s)], ['changes', changes2(s)], ['flags', flags(s)], ['pools', pools(s, poolPicks || [])],
+      ['vacancies', vacancies(s).replace('Jobs going spare · 5', 'Jobs going spare')], ['daysoff', daysOff(s)], ['callboard', onDuty(s)], ['yard', yardJobs(s)], ['sequence', sequence(s)]];
+    view.innerHTML = `<section class="sheet"><header><h2>Current: new layout</h2><span class="meta">preview</span></header>
+      <p class="anote" style="margin:10px 14px">Owner, 2026-11-10. The real Current tab is unchanged. Here: one short row per train (tap it for the detail), Toronto and Garnet the same way with their call as on duty − 2 h, who is in Garnet when its board wasn’t read, one line of counts, empty boxes as one grey line, no CATS option numbers in the headings, and on a phone the tabs above in one row you swipe (only while Test is open). Boxes stay folded the way you leave them, as on Current.</p></section>
+      <div class="head"><div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div></div></div>
+      ${strip2(s)}
+      <div class="grid"><div class="col">${boxes.filter(([, html]) => html).map(([k, html]) => `<div class="secwrap" data-sec="${k}">${html}</div>`).join('')}</div></div>`;
+    wireCurrentBoxes(view, currentBoxOpen);
+    view.querySelectorAll('[data-poolpick]').forEach((b) => { b.onclick = () => { const k = poolShort(s.pools[+b.dataset.poolpick]); poolPicks = (poolPicks || []).includes(k) ? poolPicks.filter((x) => x !== k) : [...(poolPicks || []), k]; testCurrent(view); }; });
+    view.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; testCurrent(view); }; });
+    view.querySelectorAll('[data-poolall]').forEach((b) => { b.onclick = () => { poolPicks = b.dataset.poolall === 'all' ? s.pools.map(poolShort) : []; testCurrent(view); }; });
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4584,6 +4762,7 @@ source().then(async (src) => {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
+    document.body.classList.toggle('nav-one-row', mode === 'test'); // Test preview: the tabs in one row on a phone
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
     modeTurns.setAttribute('aria-pressed', mode === 'turns');
