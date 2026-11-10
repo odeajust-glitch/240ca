@@ -3518,15 +3518,26 @@ source().then(async (src) => {
     const lookup = S?.error ? 'latest lookup failed' : S?.stale ? 'last known lookup' : '';
     const subscriberSummary = [count, lookup, S?.confirmedAt ? 'last confirmed ' + stamp(S.confirmedAt) : 'confirmation time unavailable'].filter(Boolean).join(' · ');
     const expanded = view.querySelector('[data-health-followed]')?.open;
+    // Tidied (owner, 2026-11-10: "can we clean up this"): one table of turns
+    // and one of people instead of two run-on lists; people the checker has
+    // not seen on a board yet are one counted line, not "not seen yet" each.
+    const phonesOf = (n) => `${n} phone${n === 1 ? '' : 's'}`;
+    const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+    const turnRows = [...turns].sort((x, y) => byName(x[0], y[0]));
+    const named = people.filter(p => p.code).sort((x, y) => byName(x.code, y.code));
+    const unnamed = people.filter(p => !p.code);
+    const unnamedOn = unnamed.filter(p => p.turn).map(p => p.turn).sort(byName);
+    const followed = `${turnRows.length ? `<h3 class="hsub">Turns followed (${turnRows.length})</h3>
+        <table class="htable hhist"><thead><tr><th>Turn</th><th>Phones</th></tr></thead><tbody>${turnRows.map(([t, n]) => `<tr><td>${esc(t)}</td><td>${n}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${people.length ? `<h3 class="hsub">People followed (${people.length})</h3>
+        ${named.length ? `<table class="htable hhist"><thead><tr><th>Name code</th><th>On turn now</th><th>Phones</th></tr></thead><tbody>${named.map(p => `<tr><td>${esc(p.code)}</td><td>${p.turn ? esc(p.turn) : '<span class="muted">not on a turn</span>'}</td><td>${p.phones}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${unnamed.length ? `<p class="muted">${unnamed.length} more ${unnamed.length === 1 ? 'person' : 'people'} followed by ${phonesOf(unnamed.reduce((n, p) => n + p.phones, 0))}: name code not known yet (not seen on a board since they were followed)${unnamedOn.length ? `; on ${esc(unnamedOn.join(', '))}` : ''}.</p>` : ''}` : ''}`;
     const who = `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">
       <p>${esc(subscriberSummary)}</p>
-      ${known && S.phones > 0 && (turns.length || people.length) ? '<details data-health-followed' + (expanded ? ' open' : '') + '><summary>Followed turns and people</summary>' : ''}
-      ${turns.length ? `<p><b>Turns:</b> ${turns.map(([t, n]) => `${esc(t)}${n > 1 ? ` ×${n}` : ''}`).join(', ')}</p>` : ''}
-      ${people.length ? `<p><b>People:</b> ${people.map(p => `${esc(p.code || 'not seen yet')}${p.turn ? ` (on ${esc(p.turn)})` : ''}${p.phones > 1 ? ` ×${p.phones}` : ''}`).join(', ')}</p>` : ''}
-      ${known && S.phones > 0 && (turns.length || people.length) ? '</details>' : ''}
+      ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
-      <p class="anote">${S?.checkedAt ? `Last checked: ${esc(ago(S.checkedAt))}. ` : ''}${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>
-      <p class="muted">Report received ${esc(ago(L.at))}. Phones are anonymous: this shows what they follow, not whose they are. ×2 = two phones.</p></div></section>`;
+      ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
+      <p class="muted">Phones are anonymous: this shows what they follow, not whose they are. A phone can follow several.</p></div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
     const sent = `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
