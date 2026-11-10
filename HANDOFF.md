@@ -470,6 +470,35 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Data study, 2026-11-10 (owner: "look up different things that would be useful to track
+especially ... sleep ... the spareboard. Examine all the data ... find patterns or ways to
+predict line ups"). Nothing built; 26 live days (16 Oct – 10 Nov), about 1,060 calls.**
+Findings he was given (worked out in a scratch session from the day files, trains.json,
+resets.json and a replay of `sleepCheck`):
+- Sarnia plans drift late: on duty against the first plan, median +1.0 h; 57% more than
+  30 min later, 18% earlier. By train number (n ≥ 19): x278 +6.3 h (95% later), x396 +2.8 h,
+  x148 +1.8 h, x382 +1.3 h, x394 +0.9 h, x302 +0.3 h, x424 on time (84% within 30 min), x502
+  about 1 h 15 m EARLIER every time (planned 0400, on duty 0245). Toronto: median 0.
+  Adding a train's usual drift to its plan helps only a little (within 1 h: 41% → 47%).
+- The time shown, by how far out: 16–24 h before on duty it is 2 h+ off 40% of the time;
+  6–8 h, 17%; 3–4 h, 11%; 2–3 h, 9%. ORD is first seen a median 2.3 h before on duty and
+  then holds (93% within 30 min): it is the call, not a warning.
+- Crew prediction 8 h out is right 34% (conductor and engineer alike); at the last check
+  82% / 80%. The spare expected to fill a job was the one 57% of 54.
+- Spareboard, first available turn: conductor fast board on duty in a median 5.0 h (78%
+  within 8 h); 2nd 8.0 h; 3rd 10.5 h; 4–5th 14.7 h; 6–8th 21.5 h (8% within 8 h). Engineer
+  boards are far slower: 1st 8.3 h, 2nd 19.6 h (14% within 8 h), 3rd 32 h.
+- Spare jobs show a median 11.8 h (yard) / 7.1 h (road) before they start; a quarter under
+  4 h, 3–4% under 2 h. Yard starts going spare most: 1600, 0800, 2359, 1500/1445.
+- Notice: pool from Sarnia median 20.4 h (9% under 8 h); from Toronto 10.1 h; spare on a
+  road job 9.1 h (35% under 8 h); spare on a yard job 5.7 h (62% under 8 h, 24% under 2 h).
+- 36% of Sarnia pool calls land 0000–0459. 23% of calls come within 10 h of going off
+  duty, about 40% within 12 h.
+Ideas offered, awaiting his pick: odds of working by board position; a train's usual
+drift beside its time; a confidence note by how far out; weekly sleep figures (lost to
+early calls, waiting on late ones, night calls, shortest time off, short notice).
+Weekday patterns are too thin to trust yet (3–4 of each weekday).
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
