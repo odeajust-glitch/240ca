@@ -26,7 +26,7 @@ test('patterns: board position to time on duty, train habit, miss by lead', () =
   assert.deepEqual(p.drift.M278, { n: 10, median: 360, later: 100, earlier: 0, within30: 0 });
   assert.equal(p.drift['278'], undefined);
   assert.equal(Patterns.rankOf(7), '6th–8th');
-  assert.deepEqual(Patterns.finish({}, []), { board: {}, drift: {}, predict: { trains: {}, all: {} }, spare: { job: {}, wait: {} }, lead: [] });
+  assert.deepEqual(Patterns.finish({}, []), { board: {}, drift: {}, predict: { trains: {}, all: {} }, score: Patterns.score([]), spare: { job: {}, wait: {} }, lead: [] });
   // The same train, planned and 6 to 10 h away (0100 → 1000): it went 6 h after the shown time every run.
   const w = p.predict.trains.M278['6-10'];
   assert.deepEqual([w.n, w.mid, w.lo, w.hi, w.held], [10, 360, 360, 360, 10]);
@@ -68,4 +68,30 @@ test('patterns: when a spare is called, by the job shown or by its place', () =>
   assert.equal(spare.wait['Conductor|2nd'], undefined);
   // A turn that only shows with VIEW TIME is left out; so is a spare never seen working.
   assert.equal(Object.keys(spare.wait).length, 1);
+});
+
+// Owner, 2026-11-10: "track it for 2 weeks ... test to see how accurate the
+// predictions are". Each run is scored against a window from the runs before it.
+test('patterns: the likely-call window scored forward, against the shown time', () => {
+  const pad = (n) => String(n).padStart(2, '0');
+  const run = (d, onDuty) => ({ id: `M27831 ${pad(d)}`, from: 'sarnia', onDuty: `2026-11-${pad(d)} ${onDuty}`,
+    events: [{ kind: 'seen', taken: `2026-11-${pad(d)} 0100`, at: `2026-11-${pad(d)} 1000` }, { kind: 'ordered', taken: `2026-11-${pad(d)} 0330`, at: `2026-11-${pad(d)} ${onDuty}` }] });
+  // Shown 1000 from 0100 (6 to 10 h away). Days 1 to 9 it went at 1600, 6 h later; day 10 at 0900, an hour early; day 11 at 1600 again.
+  const trains = [...Array.from({ length: 9 }, (_, i) => run(i + 1, '1600')), run(10, '0900'), run(11, '1600')];
+  const s = Patterns.score(trains, { from: '2026-11-07 0000', days: 14 });
+  // The first six runs have too little behind them to be given a window; day 7 on is scored, in the test dates.
+  assert.equal(s.before.checks, 0);
+  assert.deepEqual([s.test.checks, s.test.trains], [5, 5]);
+  // The window (+6 h every time) held for days 7, 8, 9 and 11; day 10 was called 7 h before it.
+  assert.equal(s.test.held, 4);
+  // The shown time was never within an hour except day 10; the "most often" time was right the other four times.
+  assert.deepEqual([s.test.shown.within60, s.test.likely.within60, s.test.closer, s.test.further], [20, 80, 4, 1]);
+  // Day 10 came over 30 min before the shown time, and the window had not allowed for it.
+  assert.deepEqual([s.test.early, s.test.earlyCovered], [1, 0]);
+  assert.equal(s.test.byAway[0].away, '6-10');
+  // Newest first, each with its checks: day 11's window was built from days 1 to 10.
+  assert.equal(s.runs[0].id, 'M27831 11');
+  assert.deepEqual([s.runs[0].checks[0].lo, s.runs[0].checks[0].mid, s.runs[0].checks[0].held, s.runs[0].checks[0].own], [-60, 360, true, true]);
+  // A deadhead or a Toronto train is not scored.
+  assert.equal(Patterns.score([{ ...run(1, '1600'), deadhead: true }, { ...run(2, '1600'), from: 'toronto' }]).before.checks, 0);
 });

@@ -470,6 +470,42 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Likely-call window on a two-week test, 2026-11-10 (owner: "track it for 2 weeks. Use
+the data its collecting and test to see how accurate the predictions are. If its more
+beneficial than the time it shows over 2 weeks maybe we can push it [to] the main site, in
+the test tab on the test site, clear it out and add a way to track it").** **The test runs
+2026-11-11 to 2026-11-24 (`TEST_FROM`, `TEST_DAYS` in lib/board/patterns.js); decide on
+promoting the train window to the main site when it ends, not before.**
+- `Patterns.score(trains)` → `score` in data/patterns.json, rebuilt from the saved days on
+  every publish (no state to lose). Every planned Sarnia run (no deadheads) is scored once
+  at each distance it was seen planned (`runFigures`: the middle of its hourly looks there),
+  against a window built only from runs already on duty before the first of those looks
+  (its own symbol with 6 runs or more, else all trains; fewer than 6 → not scored, the
+  page showed no window). `test` = runs on duty in the test dates, `before` = the same
+  replay over the days saved before it, `runs` = the test's trains with each check.
+- Three yardsticks against the shown call: `held` (real call inside the window; `width`
+  its typical size); `likely.within60` vs `shown.within60` (the window's "most often"
+  time vs the call the line-up showed, with `closer` / `further` counts past a 10 min tie);
+  `earlyCovered` of `early` (calls over 30 min before the shown call that the window's
+  early edge allowed for). The shown call is the order − 2 h 15, the real call on duty −
+  2 h, so the shown call's miss is `miss + 15` (first cut forgot the 15; fixed before push).
+- The Test tab on the test site now shows this (`likelyTest` in board.html, drawn by
+  `renderTest` when `PREVIEW`): day N of 14, three tiles, a one-line reading, a table by
+  distance, each train so far (opens to its checks: shown call, window, held / called
+  earlier / called later), the "before the test" replay, and how it is scored. The
+  Analytics preview that was in Test is gone there (Analytics on the test site is already
+  that layout). **On the main site the Test tab is unchanged.**
+- The replay over the 26 saved days (207 trains, 896 checks): the window held 78% (a
+  typical 4.3 h wide); the "most often" time within an hour 54% vs the shown call 49%
+  (374 checks closer, 233 further); 126 of 154 early calls covered. By distance the single
+  time helps most 6–16 h out (55% vs 48%, 51% vs 43%) and not at all under 3 h (66% vs 66%).
+  So the case for promoting rests on the window and the early calls, not on a better
+  single time. This is lower than the 81% in the note below because that one tested each
+  run against all the others, later ones included.
+- Simulated here on live data (today: "Starts Nov 11" + the replay; with the start moved
+  back a week to see it filled: 68 trains, no page errors, no sideways scroll). Suite 292
+  of 304, the same 12 failing. A check-in is scheduled for 2026-11-25 to read the result.
+
 **Spareboard predictions switched off, 2026-11-10 (owner: "take the working predictions
 off the spareboard for now").** `SPARE_PREDICT = false` in board.html: neither the "likely
 call … · held X of N" line (`spareCall`) nor the older "typically works in …" line
