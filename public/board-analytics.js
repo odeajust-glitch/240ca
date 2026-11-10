@@ -462,7 +462,7 @@
   // from the actual call to the planned call whatever the window; the
   // headline is the notice given; the times sit under their points and in a
   // table with fixed rows; the key lists only what is drawn.
-  function renderCallTimelineV2(z) {
+  function renderCallTimelineV2(z, opts = {}) {
     z = cleanCallRecord(z);
     if (z.comparisonUnavailable) return '<p class="anote">Original prediction unavailable: historical train/trip mismatch. Excluded from call comparisons.</p>';
     const m = callTimeline(z);
@@ -524,6 +524,9 @@
       + (called ? row(early ? 'Earlier than planned' : late ? 'Later than planned' : 'Against the plan', gap ? d(gap) : 'on time') : '');
     const events = [...m.markers.map(c => ({ at: c.at, text: `Change: ${fmt(c.at)} → call ${c.call.slice(5)}` })), ...m.changes.filter(c => c.ordered).map(c => ({ at: c.at, text: `Ordered observed: ${fmt(c.at)} · call ${c.call.slice(5)}` }))];
     const list = m.changes.map(c => `<li><b>${e(fmt(c.at))}</b> → call <b>${e(c.call.slice(5))}</b>${c.ordered ? ' · ordered' : ''}${c.train ? ` · ${e(c.train)}` : ''}</li>`).join('');
+    // The graph alone, for the "how to read it" examples.
+    if (opts.bare) return `<div class="call-timeline ct2 ct2-bare"><p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>
+      <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${mark}${below}</svg><div class="ct2-key">${keyHtml}</div></div>`;
     return `<details class="call-timeline ct2"><summary>Show call timeline</summary><p class="ct2-who"><b>${e(z.turn)} · ${e(z.train || z.expectedTrain)}</b></p>
       <p class="ct2-head" style="color:${tone}">${e(head)}</p><p class="ct2-sub">${e(sub)}</p>
       <svg width="100%" height="100" role="img" aria-label="${e(head)}. ${e(sub)}"><line x1="3%" x2="97%" y1="45" y2="45" stroke="var(--soft)"/>${bands}${inside}${dots}${squares}${mark}${below}</svg>

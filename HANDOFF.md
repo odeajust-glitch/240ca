@@ -298,6 +298,33 @@ suggestions and put it in the test tab"):**
   at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
   `testPreview` state and `mode !== 'test'` checks: pass the target through).
 
+**Analytics preview in Test, second round, 2026-11-10 (owner: "do all the changes in the
+test tab ... separate the trains ordered out of sarnia and ... mac yard ... simplify it and
+add a visual explanation ... Dont push anything thats currently in the test tab to the main
+page"). Still Test only; nothing promoted.**
+- **Call stability** (`ana2CallPage`): first a "Sarnia and Mac yard, apart" box, one card
+  each (`ana2OriginStats`, `ana2OriginCard`): % called within 30 min of the first plan, a
+  five-band bar (over 1 h early … over 1 h late), under-8-h-notice share, typical early
+  call; Garnet and yard jobs counted on their own in one line. On the live 90 days:
+  Sarnia 19% within 30 min of 481 calls (31% over 1 h early, 35% over 1 h late, 16% under
+  8 h notice); Mac yard 54% of 435 (17% / 19%, 4%). One measure throughout, the graph's:
+  actual call against the first planned call (the older eight-hour-baseline figures are
+  under "More numbers"). Then "How to read the call graph": the six parts and four made-up
+  calls drawn by the real code (`ana2Examples`, `renderCallTimelineV2(z, { bare: true })`),
+  open until he folds it (`analytics2How`). Then the filters, "Calls by how far off the
+  plan", By turn, Latest calls; the baseline groups, "Changes during the original plan"
+  and the tiles fold into "More numbers".
+- **My week** (`anaMyWeek2`): opens on this week; every trip's hours from the reset
+  tracker's off-duty times (501/502 and yard jobs included; ~ = an estimate); two-line
+  trips with the call result from Call stability and its graph and Why inside; the reset
+  due on top; shortest time off between trips; one line per rest or hold; the person's
+  record from `personHistory` (trains worked while filling in; a 501/502 craft someone
+  else covered left out). Checked with JUOD + SR03 followed: JUOD this week 3 trips, 24 h
+  20 m on duty, reset needed by 15th 0449.
+Checked in a browser on live data at phone width: no page errors; the regular My week and
+Call stability are unchanged. Suite 286 of 298, the same 12 failing. The note below is the
+first round.
+
 **Analytics, new layout — in Test, awaiting Justin's phone review (2026-11-10; a review of
 the tab, then "do all the changes in the test tab"):** the regular Analytics tab runs the
 same code with `ANA2` off. Test → `renderTest` sets `ANA2 = true` and calls
