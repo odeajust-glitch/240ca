@@ -221,6 +221,15 @@ worked that used to be carried into the Toronto prediction (e.g. SD03 DHT039C 09
 went). Not done: a spare working a pool turn to Toronto gets no record for the train home
 (the line-up lists the turn, the Call Board the spare). Suite 282 of 296, same 14 failing.
 
+**A spare on a pool turn to Toronto now gets the graph for the train home, 2026-11-10
+(owner: "is there a fix for this"):** `sleepCheck` keeps who is working a turn in its
+holder's place from the Call Board's backfill (`state.sleepRiding`: turn → spare, ended
+when the turn is seen on duty on another train with no fill-in, or after 2 days). A Toronto
+line-up row for that turn opens the wait under the spare, with the turn's bunkhouse off
+duty. Replayed on the live days: 59 calls gained for spares and 59 false "removed" records
+gone for holders who were never there; 5 calls and 6 "removed" went the other way (a ride
+remembered a little too long). Suite 283 of 297, same 14 failing.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
