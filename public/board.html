@@ -878,8 +878,15 @@
   :root[data-theme="tablet"] textarea, :root[data-theme="tablet"] input:not(#turn) { text-transform: none; letter-spacing: 0; }
   :root[data-theme="tablet"] .top { border-bottom: 1px solid var(--rule); }
   :root[data-theme="tablet"] .top h1 { background: #b8e4f8; color: #1560c4; font-size: 22px; padding: 4px 28px; }
-  :root[data-theme="tablet"] .sheet > header, :root[data-theme="tablet"] .test-current-box > summary, :root[data-theme="tablet"] table thead th { background: none; color: var(--soft); }
-  :root[data-theme="tablet"] .sheet > header h2, :root[data-theme="tablet"] .test-current-box > summary h2 { color: var(--ink); font-size: 20px; }
+  :root[data-theme="tablet"] .sheet > header, :root[data-theme="tablet"] .test-current-box > summary { background: none; color: var(--soft); }
+  /* Third photo (Pool Maintenance Inquiry, same day): each screen's title
+     sits in a pale bar, the column headings are sky-blue bars with blue
+     letters, and in the rows only the turn is pale: the rest is sky blue. */
+  :root[data-theme="tablet"] .sheet > header h2, :root[data-theme="tablet"] .test-current-box > summary h2 { background: #b8e4f8; color: #1560c4; font-size: 18px; padding: 3px 12px; }
+  :root[data-theme="tablet"] table thead th { background: #2fb8ee; color: #0b4fb8; }
+  :root[data-theme="tablet"] td { color: var(--accent); }
+  :root[data-theme="tablet"] td b { color: var(--ink); }
+  :root[data-theme="tablet"] td .chip { background: none; color: var(--accent); padding-inline: 0; }
   :root[data-theme="tablet"] .sheet > header .meta, :root[data-theme="tablet"] .test-current-box > summary .meta { color: var(--soft); }
   :root[data-theme="tablet"] h3, :root[data-theme="tablet"] .sec-title { color: var(--soft); }
   :root[data-theme="tablet"] .head .when, :root[data-theme="tablet"] .ohead .when, :root[data-theme="tablet"] .thead .when { font-size: 28px; }
@@ -895,7 +902,7 @@
   /* F-key chips; pool letters as plain coloured letters. */
   :root[data-theme="tablet"] .chip { background: #c9d6df; color: #0b1c2a; }
   :root[data-theme="tablet"] .pool { background: none; padding-inline: 0; color: var(--poolA); }
-  :root[data-theme="tablet"] .crew { color: var(--ink); }
+  :root[data-theme="tablet"] .crew { color: var(--accent); }
   :root[data-theme="tablet"] .pool.B { color: var(--poolB); } :root[data-theme="tablet"] .pool.SR { color: var(--poolSR); }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey

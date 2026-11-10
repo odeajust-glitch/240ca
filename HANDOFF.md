@@ -23,7 +23,9 @@ near, not exact): data pale blue-white #d9ecfa, menu choices / links sky blue #1
 (was a greener #3fe0d8), labels blue #2b8fff, title a pale blue bar with blue letters,
 views as pale blue rounded PF keys, the current one sky blue. One weight, capitals, no
 cyan bars across the section headings, pool letters plain. Green / yellow / red left as
-they were. Checked here at phone width with the real Barlow Condensed font, Current only.
+they were. A third photo (Pool Maintenance Inquiry) then added: each sheet's title in a pale bar,
+column headings as sky-blue bars with blue letters, table rows sky blue with only the
+turn pale. Checked here at phone width with the real Barlow Condensed font, Current only.
 Same branch caveat as below. ❓ Waiting on him: do both match.
 
 **Retro page style, second pass, 2026-11-10 (owner: "2 themes already on the site that
