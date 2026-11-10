@@ -858,6 +858,45 @@
   :root[data-theme="retro"] .train .sym .od, :root[data-theme="retro"] .crew { color: #000000; }
   :root[data-theme="retro"] .top .sample { background: #ffff00; color: #000000; }
   :root[data-theme="retro"] .tabs button[aria-selected="true"] { background: #ffff00; border-bottom-color: transparent; }
+  /* Retro Tablet, second pass (owner, 2026-11-10, two photos of GLINK on
+     the company phone: the main menu and the Call Board). Read from the
+     photos: black screen; data and numbers a pale blue-white; the menu's
+     choices and the status line sky blue; labels and the F-key line a
+     deeper blue; the title a pale blue bar with blue letters; the F-key
+     numbers on small pale chips; the PF keys pale blue with rounded
+     corners. One weight, all capitals, tall narrow letters, no bars across
+     the sections. Green / yellow / red stay as they were (his earlier
+     photos). Sentences meant to be read keep their small letters. */
+  :root[data-theme="tablet"] { --ink: #d9ecfa; --soft: #2b8fff; --rule: #123a66; --rule-soft: #0b2440;
+    --accent: #18c1ff; --accent-ink: #000000; --accent-tint: #06304a; --plan-tint: transparent;
+    --poolA: #2b8fff; --poolSR: #18c1ff; }
+  :root[data-theme="tablet"] *, :root[data-theme="tablet"] *::before, :root[data-theme="tablet"] *::after { font-weight: 500 !important; }
+  :root[data-theme="tablet"] body { text-transform: uppercase; letter-spacing: 0.02em; }
+  :root[data-theme="tablet"] button, :root[data-theme="tablet"] select, :root[data-theme="tablet"] summary { text-transform: inherit; letter-spacing: inherit; }
+  :root[data-theme="tablet"] details.why p, :root[data-theme="tablet"] .note, :root[data-theme="tablet"] .foot, :root[data-theme="tablet"] .alertnote, :root[data-theme="tablet"] .notes .why, :root[data-theme="tablet"] .ntext, :root[data-theme="tablet"] .qbody, :root[data-theme="tablet"] .qtext, :root[data-theme="tablet"] .askanswer, :root[data-theme="tablet"] .asktx, :root[data-theme="tablet"] .asknote, :root[data-theme="tablet"] .askhint,
+  :root[data-theme="tablet"] .asktip, :root[data-theme="tablet"] .calling-list, :root[data-theme="tablet"] .ct2-why, :root[data-theme="tablet"] .boardnotes, :root[data-theme="tablet"] .test-notes-list, :root[data-theme="tablet"] .flags, :root[data-theme="tablet"] .overview-guide-card p,
+  :root[data-theme="tablet"] textarea, :root[data-theme="tablet"] input:not(#turn) { text-transform: none; letter-spacing: 0; }
+  :root[data-theme="tablet"] .top { border-bottom: 1px solid var(--rule); }
+  :root[data-theme="tablet"] .top h1 { background: #b8e4f8; color: #1560c4; font-size: 22px; padding: 4px 28px; }
+  :root[data-theme="tablet"] .sheet > header, :root[data-theme="tablet"] .test-current-box > summary, :root[data-theme="tablet"] table thead th { background: none; color: var(--soft); }
+  :root[data-theme="tablet"] .sheet > header h2, :root[data-theme="tablet"] .test-current-box > summary h2 { color: var(--ink); font-size: 20px; }
+  :root[data-theme="tablet"] .sheet > header .meta, :root[data-theme="tablet"] .test-current-box > summary .meta { color: var(--soft); }
+  :root[data-theme="tablet"] h3, :root[data-theme="tablet"] .sec-title { color: var(--soft); }
+  :root[data-theme="tablet"] .head .when, :root[data-theme="tablet"] .ohead .when, :root[data-theme="tablet"] .thead .when { font-size: 28px; }
+  :root[data-theme="tablet"] .head .when .num { font-size: 28px; }
+  :root[data-theme="tablet"] .train-clear .card-duty, :root[data-theme="tablet"] .stat .v { font-size: 24px; }
+  :root[data-theme="tablet"] .daybar { background: none; color: var(--soft); }
+  /* The views are the PF keys. */
+  :root[data-theme="tablet"] .modes button, :root[data-theme="tablet"] .modes a.modelink { background: #d4e8f8; border-color: #d4e8f8; color: #2a587f; border-radius: 5px !important; }
+  :root[data-theme="tablet"] .modes button[aria-pressed="true"], :root[data-theme="tablet"] .poolfilter button[aria-pressed="true"], :root[data-theme="tablet"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="tablet"] .notes .nkinds button[aria-pressed="true"] { background: #18c1ff; border-color: #18c1ff; color: #000000; }
+  :root[data-theme="tablet"] input, :root[data-theme="tablet"] select { border: 1px solid #2b8fff !important; color: var(--ink); }
+  :root[data-theme="tablet"] .gear, :root[data-theme="tablet"] .steps button, :root[data-theme="tablet"] .rail .hours button, :root[data-theme="tablet"] .poolfilter button, :root[data-theme="tablet"] .rail .turnpick button, :root[data-theme="tablet"] .sharebtn { background: #000000; border: 1px solid #2b8fff; color: var(--ink); }
+  /* F-key chips; pool letters as plain coloured letters. */
+  :root[data-theme="tablet"] .chip { background: #c9d6df; color: #0b1c2a; }
+  :root[data-theme="tablet"] .pool { background: none; padding-inline: 0; color: var(--poolA); }
+  :root[data-theme="tablet"] .crew { color: var(--ink); }
+  :root[data-theme="tablet"] .pool.B { color: var(--poolB); } :root[data-theme="tablet"] .pool.SR { color: var(--poolSR); }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for

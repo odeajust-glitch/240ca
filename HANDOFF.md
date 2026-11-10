@@ -16,6 +16,16 @@ only (the branch this cloud session was given, fast-forwarded to
 not have it until it is merged there. Not done: the Worker's sign-in page and
 grievance.html only know light/dark, so with iPhone picked they show light.
 
+**Retro Tablet page style, second pass, 2026-11-10 (owner, two photos of GLINK on the
+company phone: main menu and Call Board):** in `public/board.html` ("Retro Tablet, second
+pass" block near the end of the style sheet). Colours read from the photos (a camera, so
+near, not exact): data pale blue-white #d9ecfa, menu choices / links sky blue #18c1ff
+(was a greener #3fe0d8), labels blue #2b8fff, title a pale blue bar with blue letters,
+views as pale blue rounded PF keys, the current one sky blue. One weight, capitals, no
+cyan bars across the section headings, pool letters plain. Green / yellow / red left as
+they were. Checked here at phone width with the real Barlow Condensed font, Current only.
+Same branch caveat as below. ❓ Waiting on him: do both match.
+
 **Retro page style, second pass, 2026-11-10 (owner: "2 themes already on the site that
 don't match how I want", then four screenshots of CATS in Chrome on his phone, "Here is
 one"):** the colours were already right to the pixel (#f1f1f1, #000000, #000080, #800000,
