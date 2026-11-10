@@ -1172,8 +1172,14 @@ async function sessionOf(request, env, now = Date.now(), fresh = false) {
   try { p = JSON.parse(new TextDecoder().decode(ub64(m[1]))); } catch { return null; }
   if (!p || typeof p.u !== 'string' || !(now - p.t < SESSION_DAYS * 86400000)) return null;
   if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member', t: p.t };
-  const user = await userById(env, p.u, now, fresh);
-  if (!user || user.key !== p.k || user.status === 'removed') return null;
+  let user = await userById(env, p.u, now, fresh);
+  // One device at a time (owner, 2026-11-10: "only one device can be logged
+  // in per account … that will make sure they don't share their account"):
+  // signing in elsewhere changes the account's key, so this cookie's key no
+  // longer matches. Checked against the account itself, not the kept copy.
+  if (user && user.key !== p.k && !fresh) user = await userById(env, p.u, now, true);
+  if (!user || user.status === 'removed') return null;
+  if (user.key !== p.k) return user.status === 'approved' ? { id: p.u, status: 'elsewhere' } : null;
   return { id: p.u, key: p.k, t: p.t, status: user.status, name: user.name, email: user.email, role: user.role === 'admin' ? 'admin' : 'member' };
 }
 
@@ -1296,7 +1302,10 @@ async function authVerify(request, env, now = Date.now()) {
     if (env.NTFY_TOPIC) {
       try { await fetch(`https://ntfy.sh/${encodeURIComponent(env.NTFY_TOPIC)}`, { method: 'POST', body: 'Someone is waiting for approval. Open the account page to check them.', headers: { Title: 'New sign-up', Priority: 'default' } }); } catch { /* the list still shows it */ }
     }
-  } else user.lastSignIn = now;
+  } else {
+    user.lastSignIn = now;
+    user.key = b64(crypto.getRandomValues(new Uint8Array(12))); // signs the other device out
+  }
   await saveUser(env, id, user, now);
   const res = json({ ok: true, status: user.status });
   res.headers.append('set-cookie', await sessionCookie(env, { u: id, k: user.key, t: now }));
@@ -1367,7 +1376,7 @@ async function accounts(request, env, url) {
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);
-    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
+    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
     if (s && s.status === 'approved' && Date.now() - s.t > SESSION_RENEW_MS) res.headers.append('set-cookie', await sessionCookie(env, s.id === 'owner' ? { u: 'owner', t: Date.now() } : { u: s.id, k: s.key, t: Date.now() }));
     return res;
   }
@@ -1553,7 +1562,8 @@ p { margin: .4rem 0; }
         show('wait');
       } else {
         show('forms');
-        if (me.status === 'declined') { say('Your sign-up could not be confirmed: the details did not match. You can sign up again.', true); tab(true); }
+        if (me.status === 'elsewhere') say('This device was signed out because your account signed in on another device. Only one device can be signed in at a time. Sign in here to use this one instead.', true);
+        else if (me.status === 'declined') { say('Your sign-up could not be confirmed: the details did not match. You can sign up again.', true); tab(true); }
         else if (!me.ready) say('Accounts are not set up on this site yet.', true);
         else if (location.hash === '#signup') tab(true);
       }

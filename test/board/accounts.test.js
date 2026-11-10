@@ -137,6 +137,10 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal(res.status, 200);
   const second = cookieOf(res);
   assert.equal((await call('/data/index.json', { cookie: second })).status, 200);
+  // One device at a time: the first one is signed out, and told why.
+  assert.equal((await call('/data/index.json', { cookie })).status, 401);
+  const out = await (await call('/auth/me', { cookie })).json();
+  assert.deepEqual([out.signedIn, out.status, out.name, out.email], [false, 'elsewhere', null, null]);
   assert.equal((await call('/auth/verify', { body: { email: 'patb@example.com', code } })).status, 400); // once only
   // A second code within the minute isn't sent, and the page says so.
   res = await call('/auth/code', { body: { email: 'patb@example.com' } });
