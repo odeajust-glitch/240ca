@@ -443,3 +443,20 @@ test('insights: the spare who took a turn to Toronto gets the wait for the train
   const list = Insights.finish(st).sleep.filter((z) => z.train === 'B73111 08').map((z) => [z.turn, z.firstSeen, z.firstFrom, z.call, z.off]).sort();
   assert.deepStrictEqual(list, [['EN02', '2026-11-09 0829', 'offDuty', '2026-11-09 1900', 0], ['SR07', '2026-11-09 0829', 'offDuty', '2026-11-09 1900', 0]]);
 });
+
+// Owner, 2026-11-10: a yard job's id has no day in it. B116 worked YPRS30 on
+// the 7th; lined up for it again on the 9th, nothing was recorded.
+test('insights: the same yard job again two days later is its own call', () => {
+  const snap = (taken, x) => ({ taken, lineup: [], onDuty: [], screens: ['terminal'], vacancies: [], ...x });
+  const job = (at, call) => ({ pos: '001', at, train: 'YPRS30', cc: 'CO', yard: true, fill: { turn: 'B116', call, skipped: [] } });
+  const st = Insights.collect([
+    snap('2026-11-07 0700', { vacancies: [job('7th 1445', '7th 1245')] }),
+    snap('2026-11-07 1300', { yardJobs: [{ job: 'YPRS30', onDuty: '7th 1445', crew: 'CO B116' }] }),
+    // Still on the board for its shift: the same call, not a second one.
+    snap('2026-11-07 1800', { yardJobs: [{ job: 'YPRS30', onDuty: '7th 1445', crew: 'CO B116' }] }),
+    snap('2026-11-09 0520', { vacancies: [job('9th 1445', '9th 1245')] }),
+    snap('2026-11-09 1300', { yardJobs: [{ job: 'YPRS30', onDuty: '9th 1445', crew: 'CO B116' }] }),
+  ]);
+  const list = Insights.finish(st).sleep.filter((z) => z.turn === 'B116').map((z) => [z.train, z.onDuty, z.expected, z.off]);
+  assert.deepStrictEqual(list, [['YPRS30', '2026-11-07 1445', '2026-11-07 1245', 0], ['YPRS30', '2026-11-09 1445', '2026-11-09 1245', 0]]);
+});

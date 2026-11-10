@@ -318,6 +318,14 @@ calls" table still drew the old call graph (missed when the new one was promoted
 To promote: drop the `ANA2` switch (make its branches the only path) and call `ana2Pass`
 from `drawAnalytics` always.
 
+**Call stability: the same yard job again within 3 days, fixed 2026-11-10 (owner: "do the
+fix and push it"):** `sleepCheck` kept its "already called" note as turn + train for 3
+days; a yard job's id has no day in it, so a spare lined up for the same job again was
+ignored. `doneKey` now adds the on-duty day for an id with no day (road trains as before);
+the notes are pruned after 4 days. Replayed on the live days: 11 calls recovered, 5 false
+"removed" records became the calls they were, B116's 9th Nov YPRS30 wait is recorded
+(removed 0947 when B108 got it). Suite 286 of 298, the same 12 failing.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in

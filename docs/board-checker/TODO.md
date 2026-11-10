@@ -31,8 +31,6 @@ Small decisions parked for a housekeeping pass; ask, don't build.
   the other crew shown for one or two checks, then the Call Board has the first). Call
   stability no longer believes it; Current and alerts still see it. Check after the
   laptop runs the 8th's engine fixes.
-- **Call stability: same yard job again within 3 days is ignored** (`isDone` in
-  insights.js; yard job ids carry no date). Found 2026-11-10, B116 YPRS30 7th → 9th.
 
 1. **Runaround log: check it on real runs**, then decide on alerts (to the
    passed-over turn? the rep?), claim time limits and an evidence page.
@@ -198,6 +196,8 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Call stability, same yard job again within 3 days**: counted as its own call.
 
 - 2026-11-10: **Order summary, new layout** (two-line rows, groups, sort, search as you
   type, the crew's call in each train) and its opened-detail fix: approved and promoted.
