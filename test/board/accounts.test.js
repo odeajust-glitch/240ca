@@ -236,3 +236,30 @@ test('an Admin approves and removes members; only the owner key makes or removes
   assert.equal((await call('/health/accounts', helper)).status, 404);
   assert.equal(JSON.parse(store.get(`accounts/users/${a.id}.json`)).role, 'member');
 });
+
+// Owner, 2026-11-10: members vanished. The laptop's site update deletes what
+// isn't a site file, and accounts/ wasn't on its keep list.
+test('the laptop site update never deletes account files', async () => {
+  const os = require('os');
+  const crypto = require('crypto');
+  const { deployR2, KEEP_PREFIXES } = require('../../lib/board/r2');
+  assert.ok(KEEP_PREFIXES.includes('accounts/'));
+  const objects = new Map(Object.entries({ 'accounts/users/abc.json': '{}', 'accounts/codes/abc.json': '{}', 'old.html': 'x' }).map(([k, v]) => [k, Buffer.from(v)]));
+  const md5 = (b) => crypto.createHash('md5').update(b).digest('hex');
+  const fetchImpl = async (url, opts = {}) => {
+    const u = new URL(url);
+    const method = opts.method || 'GET';
+    const key = decodeURIComponent(u.pathname.replace(/^\/board-site\/?/, ''));
+    if (method === 'GET' && u.searchParams.get('list-type') === '2') {
+      const items = [...objects].map(([k, b]) => `<Contents><Key>${k}</Key><ETag>&quot;${md5(b)}&quot;</ETag></Contents>`).join('');
+      return { ok: true, status: 200, text: async () => `<ListBucketResult>${items}<IsTruncated>false</IsTruncated></ListBucketResult>` };
+    }
+    if (method === 'PUT') { objects.set(key, Buffer.from(opts.body)); return { ok: true, status: 200 }; }
+    if (method === 'DELETE') { objects.delete(key); return { ok: true, status: 204 }; }
+    return { ok: false, status: 400 };
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'site-'));
+  fs.writeFileSync(path.join(dir, 'index.html'), '<p>hi</p>');
+  await deployR2({ dir, r2: { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'S' }, fetchImpl });
+  assert.deepEqual([...objects.keys()].sort(), ['accounts/codes/abc.json', 'accounts/users/abc.json', 'index.html']);
+});
