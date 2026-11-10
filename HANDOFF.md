@@ -69,6 +69,19 @@ when first seen ordered" as a general rule did worse than today's (18 vs 23 of 2
 so it was **not built**. Asked Justin for the cut-off; do not change `spareFills` on rest
 until he gives one.
 
+**Page Health → Who gets alerts tidied, 2026-11-10 (same session; Justin: "can we clean up
+this. Maybe show who's following what turn on the members page"):** in `public/board.html`
+(renderHealth) the two run-on lists are now a Turns table (turn, phones) and a People table
+(name code, on turn now, phones), A–Z; people with no name code yet are one counted line.
+"Last checked" / "Report received" lines dropped (the summary line has the time). Checked
+in a phone-sized browser on sample data. Laptop pull/restart/publish pending; no Worker
+change. **Not built, asked Justin first:** follows on the Members tab. A subscription
+(`subs/`) carries no account, so the Worker's `subscribe()` would have to stamp the
+signed-in account on it and `/health/accounts` return each member's follows: a change in
+the accounts session's files, a paste into both Workers, only for phones that save their
+alerts again while signed in, and it ends "phones are anonymous" (wording on Page Health
+and Notifications).
+
 **Call timeline, new layout — in Test, awaiting Justin's phone review (2026-11-10):** he
 sent three screenshots: a call before the eight-hour window (EN09 YMXS02, 48 min notice)
 drew as a tick beside a red bar that didn't reach it, and the six facts wrapped badly.
