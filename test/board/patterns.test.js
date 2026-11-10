@@ -22,7 +22,9 @@ test('patterns: board position to time on duty, train habit, miss by lead', () =
   // First available (the resting turn ahead doesn't count): on duty 8 h later; second: 16 h.
   assert.deepEqual([fast['1st'].n, fast['1st'].median, fast['1st'].in8], [20, 480, 100]);
   assert.deepEqual([fast['2nd'].median, fast['2nd'].in8], [960, 0]);
-  assert.deepEqual(p.drift['278'], { n: 10, median: 360, later: 100, earlier: 0, within30: 0 });
+  // Kept by letters and number: an extra (X278) would be its own train.
+  assert.deepEqual(p.drift.M278, { n: 10, median: 360, later: 100, earlier: 0, within30: 0 });
+  assert.equal(p.drift['278'], undefined);
   assert.equal(Patterns.rankOf(7), '6th–8th');
   assert.deepEqual(Patterns.finish({}, []), { board: {}, drift: {}, lead: [] });
 });

@@ -2403,13 +2403,14 @@ function boardOdds(poolName, rank) {
 }
 // A Sarnia train's habit against its first plan, and how far the shown time can be trusted this far out.
 function trainHabit(train) {
-  const num = (/^[A-Z]+(\d{3})/.exec(train || '') || [])[1];
+  // The letters matter: X278 is an extra, not E278. Each is looked up as itself.
+  const num = (/^([A-Z]+\d{3})/.exec(train || '') || [])[1];
   const d = PREVIEW && PATTERNS && num ? (PATTERNS.drift || {})[num] : null;
   if (!d) return null;
   const text = d.within30 >= 70 ? `usually on its first plan (${d.within30}% within 30 min)` : d.median >= 45 ? `usually goes about ${hrs(d.median)} later than first planned (${d.later}% go later)`
     : d.median <= -45 ? `usually goes about ${hrs(-d.median)} earlier than first planned (${d.earlier}% go earlier)` : `no steady habit: ${d.later}% later, ${d.earlier}% earlier than first planned`;
   const chip = d.within30 >= 70 ? '<span class="chip habit ok">holds its plan</span>' : d.median >= 45 ? `<span class="chip habit late">usually +${hrs(d.median)}</span>` : d.median <= -45 ? `<span class="chip habit early">usually −${hrs(-d.median)}</span>` : '';
-  return { chip, text: `x${num} ${text}, over ${d.n} runs.` };
+  return { chip, text: `${num} ${text}, over ${d.n} runs.` };
 }
 function planTrust(s, t) {
   const od = BoardTrains.resolve(t.order, s.taken);
