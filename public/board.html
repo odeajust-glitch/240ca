@@ -847,6 +847,37 @@
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
   @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
   .odds { display: block; font-size: 12px; color: var(--accent); margin-top: 2px; }
+  .ae2-count { margin: 0 0 10px; font-size: 13.5px; color: var(--soft); }
+  .ae2-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  .ae2-chips button { border: 1px solid var(--rule); background: none; color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 13px/1.2 var(--body); cursor: pointer; }
+  .ae2-chips button b { font-family: var(--mono); color: var(--soft); margin-left: 3px; }
+  .ae2-chips button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
+  .ae2-chips button[aria-pressed="true"] b { color: inherit; }
+  details.ae2 { border-bottom: 1px solid var(--rule-soft); }
+  details.ae2:last-of-type { border-bottom: 0; }
+  details.ae2 > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; padding: 10px 14px; cursor: pointer; list-style: none; align-items: start; }
+  details.ae2 > summary::-webkit-details-marker { display: none; }
+  details.ae2 .b { display: grid; gap: 3px; min-width: 0; }
+  details.ae2 .sym { font: 15px/1.3 var(--mono); }
+  details.ae2 .sym .od { color: var(--soft); font-size: 12.5px; white-space: nowrap; }
+  details.ae2 .l2 { font-size: 13.5px; color: var(--soft); }
+  details.ae2 .sts { display: grid; gap: 4px; justify-items: end; }
+  .ae2-st { font: 600 11.5px/1 var(--body); padding: 4px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+  .ae2-st.bad { color: var(--stop); }
+  .ae2-st.warn { color: var(--amber); }
+  .ae2-st.ok { color: var(--go); }
+  .ae2-st.none { color: var(--soft); }
+  .ae2-body { padding: 0 14px 12px; display: grid; gap: 10px; }
+  .ae2-card { border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; }
+  .ae2-card h4 { margin: 0 0 6px; font: 600 14px/1.4 var(--body); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .ae2-card h4 small { font-weight: 400; color: var(--soft); font-size: 12.5px; }
+  .ae2-card dl { margin: 0; display: grid; gap: 4px; font-size: 13.5px; }
+  .ae2-card dl > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px; }
+  .ae2-card dt { color: var(--soft); font-size: 12.5px; }
+  .ae2-card dd { margin: 0; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  .ae2-card .nw { white-space: nowrap; }
+  .ae2-card .muted { color: var(--soft); }
+  .ae2-card .ae2-end { margin: 7px 0 0; font-size: 13.5px; }
   details.splikely { font: 12px/1.35 var(--body); margin: 1px 0 3px; }
   details.splikely summary { color: var(--accent); font-weight: 600; cursor: pointer; list-style: none; }
   details.splikely summary::-webkit-details-marker { display: none; }
@@ -2556,7 +2587,7 @@ function analyticsOverviewGuide({ preview = false, callCount = '', numbers = nul
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
+  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: ANA2 ? anaAssignments2 : anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
   const coverage = o.sec === 'overview' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
@@ -2667,6 +2698,85 @@ function anaAssignments({ runarounds = [], catsErrors = [], catsMissing = [], pr
       ${g.wrong.length ? '<h3 style="padding:0 14px">Wrong spare-job turn</h3>' + anaCats({catsErrors:g.wrong,catsMissing:[]}) : ''}
       ${g.missing.length ? catsMissingView(g.missing) : ''}
       </details></section>`).join('') : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
+}
+// Assignment errors on the test site (owner, 2026-11-10: "clean up the
+// assignment errors tab in the test site, make it simpler to read"). The same
+// three checks and the same outcome for each finding as anaAssignments, said
+// in plain words: one short row a train, chips in place of the status list,
+// and each finding as a few labelled lines with what happened in the end. The
+// explanation is given once, under "About these numbers", not in every train.
+const AE2 = { // plain status → [chip class, the statuses of anaAssignments it stands for]
+  'Showing now': ['bad', ['Still observed']],
+  'Needs a look': ['warn', ['Observed at departure', 'Pool sequence needs review']],
+  "Can't tell": ['none', ['Outcome unknown', 'Final crew unverified']],
+  'Stopped showing': ['ok', ['Cleared']],
+  'Fine in the end': ['ok', ['Final pool sequence correct']],
+};
+const ae2Of = (status) => Object.keys(AE2).find((k) => AE2[k][1].includes(status)) || "Can't tell";
+const ae2Chip = (k) => `<span class="ae2-st ${AE2[k][0]}">${esc(k)}</span>`;
+function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], latestCheck = '' }) {
+  const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
+  const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
+  const line = (label, html) => `<div><dt>${label}</dt><dd>${html}</dd></div>`;
+  const went = (r) => line('Crew that went', r.onDuty ? `${esc(r.crew || 'not shown')} <span class="muted">· on duty ${esc(dt(r.onDuty))}</span>` : '<span class="muted">not on duty yet</span>');
+  const span = (a, b) => `${stampBtn(a)}${b && b !== a ? ` – ${stampBtn(b)}` : ''}`;
+  const card = (title, sub, st, lines, end) => `<div class="ae2-card"><h4>${title}${sub ? ` <small>${esc(sub)}</small>` : ''} ${ae2Chip(st)}</h4><dl>${lines.join('')}</dl><p class="ae2-end">${end}</p></div>`;
+  const pool = (r) => {
+    const status = reviewedPoolOutcome(r, latestCheck);
+    const st = ae2Of(status);
+    const sts = r.stretches || [];
+    const shown = sts.length ? sts.map((x) => `${span(x.from, x.to)} <span class="muted nw">(${plural(x.checks, 'check')})</span>`).join('<br>') : stampBtn(r.taken);
+    const end = { 'Final pool sequence correct': 'It went as the sequence said, so this one is not an error.',
+      'Pool sequence needs review': 'The crew that went is from a pool, but the saved checks do not confirm it matched the sequence. Worth a look.',
+      'Final crew unverified': r.onDuty ? 'The crew that went cannot be matched to a pool from the saved checks.' : 'It stopped showing wrong; the train has not gone yet.',
+      'Still observed': 'Still showing wrong at the latest check.' }[status] || 'It dropped off the saved checks before the outcome could be seen.';
+    return { st, kind: 'Wrong pool', html: card('Wrong pool', '', st, [
+      line('Line-up showed', `${poolName(r.actual)}${r.turn ? ` · <button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : ''}`),
+      line('Sequence said', poolName(r.expected)), line('Shown wrong', shown), went(r)], end) };
+  };
+  const wrong = (r) => {
+    const st = ae2Of(assignmentStatus('wrong', r, latestCheck));
+    const end = r.fixed && r.onDuty && r.fixed > r.onDuty ? `It stopped showing ${esc(dt(r.fixed))}, after the train was on duty.` : r.fixed ? `It stopped showing ${esc(dt(r.fixed))}.`
+      : r.onDuty ? `Still listed wrong when last seen (${esc(dt(r.last))}); the train then went.` : st === 'Showing now' ? 'Still listed wrong at the latest check.' : `Last seen wrong ${esc(dt(r.last))}; nothing saved after that.`;
+    return { st, kind: 'CATS listed the wrong turn', html: card('CATS listed the wrong turn', craft(r.craft), st, [
+      line('CATS had', r.cats ? `<b>${esc(r.cats)}</b> going spare` : `a job in the <b>${esc(r.catsPool || 'other')}</b> pool going spare`),
+      line('The order has', `<button type="button" class="qbtn" data-q="${esc(r.order)}" data-kind="turn">${esc(r.order)}</button>${r.orderSpare ? ' (going spare)' : ''}`),
+      line('Shown wrong', `${span(r.first, r.last)} <span class="muted nw">(${plural(r.checks, 'check')})</span>`),
+      ...(r.wouldCall ? [line('CATS would call', `${esc(r.wouldCall)} <span class="muted">· call ~${esc(r.call)}</span>`)] : []), went(r)], end) };
+  };
+  const missing = (r) => {
+    const st = ae2Of(assignmentStatus('missing', r, latestCheck));
+    const end = r.listedAt ? `CATS listed it ${esc(dt(r.listedAt))}${r.onDuty && r.listedAt > r.onDuty ? ', after the train was on duty' : ''}.` : r.ended ? 'The job stopped going spare before CATS listed it.' : r.onDuty ? 'Never listed before the train went.' : 'Still not listed.';
+    return { st, kind: 'Spare job missing from CATS', html: card('Spare job missing from CATS', craft(r.craft), st, [
+      line('Going spare', `<button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>`),
+      line('Missing from', `${stampBtn(r.first)} <span class="muted">· for</span> <b>${long(r.minutes)}</b>`), went(r)], end) };
+  };
+  // One row a train and observation month, as before; every finding kept.
+  const groups = new Map();
+  const add = (rows, make, stamp) => rows.forEach((r) => {
+    const key = `${r.train || ''}|${String(r[stamp] || '').slice(0, 7)}`;
+    if (!groups.has(key)) groups.set(key, { train: r.train, latest: '', onDuty: '', finds: [] });
+    const g = groups.get(key);
+    g.finds.push(make(r));
+    if ((r[stamp] || '') > g.latest) g.latest = r[stamp] || '';
+    if (r.onDuty) g.onDuty = r.onDuty;
+  });
+  add(runarounds, pool, 'taken'); add(catsErrors, wrong, 'first'); add(catsMissing, missing, 'first');
+  const items = [...groups.values()].sort((a, b) => b.latest.localeCompare(a.latest));
+  const order = Object.keys(AE2);
+  const count = (k) => items.filter((g) => g.finds.some((f) => f.st === k)).length;
+  const chips = [['All', items.length], ...order.map((k) => [k, count(k)])].filter(([k, n]) => k === 'All' || n)
+    .map(([k, n]) => `<button type="button" data-ae2="${esc(k)}" aria-pressed="false">${esc(k)} <b>${n}</b></button>`).join('');
+  const rows = items.map((g) => {
+    const sts = order.filter((k) => g.finds.some((f) => f.st === k));
+    const kinds = [...new Set(g.finds.map((f) => f.kind))];
+    return `<details class="ae2" data-ae2-st="${esc(sts.join('|'))}"><summary><span class="b"><span class="sym"><b>${esc(g.train)}</b> <span class="od">${g.onDuty ? `on duty ${esc(dt(g.onDuty))}` : 'not on duty yet'}</span></span>
+      <span class="l2">${esc(kinds.join(' · '))}</span></span><span class="sts">${sts.map(ae2Chip).join('')}</span></summary><div class="ae2-body">${g.finds.map((f) => f.html).join('')}</div></details>`;
+  }).join('');
+  return `<p class="anote">Three checks on every train, kept apart. <b>Wrong pool</b>: the line-up showed the train for one pool when the calling sequence said another. <b>CATS listed the wrong turn</b>: CATS's jobs going spare (option 5) had a job under a turn the order doesn't have on that train; a one-check blip isn't counted. <b>Spare job missing from CATS</b>: the order says a job goes spare and CATS didn't list it for 30 minutes or more.</p>
+    <p class="anote"><b>Showing now</b>: in the latest check. <b>Needs a look</b>: still wrong when the train went, or a pool crew went and the checks don't show it matching the sequence. <b>Stopped showing</b>: the mismatch went away before the train went; that is not proof the right crew was called. <b>Fine in the end</b>: the train went as the sequence said. <b>Can't tell</b>: the saved checks don't show how it ended. A train can carry more than one.</p>
+    ${items.length ? `<p class="ae2-count">${plural(items.length, 'train')} with something flagged in these dates. Tap a train for what was wrong and how it ended.</p>
+    <div class="ae2-chips">${chips}</div><section class="sheet ae2-list">${rows}<p class="empty" data-ae2-empty hidden>No trains with that outcome.</p></section>` : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
 }
 function anaRunarounds({ runarounds }) {
   runarounds = runarounds.map(r => ({ ...r, statusUncertain: !!(r.onDuty && r.last && r.last > r.onDuty) }));
@@ -5715,7 +5825,20 @@ source().then(async (src) => {
       const latest = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Latest calls');
       if (latest) { [...latest.children].forEach((el) => { if (!el.matches('header')) el.remove(); }); latest.insertAdjacentHTML('beforeend', ana2CallList(calls, true)); }
     } else if (who) ana2SearchCalls(view, calls, who);
-    // Assignment errors: open on what still needs a look.
+    // Assignment errors: the outcome chips; open on what is showing now, else what needs a look.
+    const chips = [...view.querySelectorAll('[data-ae2]')];
+    if (chips.length) {
+      const show = (k) => {
+        let n = 0;
+        view.querySelectorAll('[data-ae2-st]').forEach((g) => { g.hidden = k !== 'All' && !g.dataset.ae2St.split('|').includes(k); if (!g.hidden) n++; });
+        chips.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ae2 === k)));
+        const none = view.querySelector('[data-ae2-empty]');
+        if (none) none.hidden = n > 0;
+      };
+      const has = (k) => chips.some((b) => b.dataset.ae2 === k);
+      chips.forEach((b) => { b.onclick = () => { ana2.ae = b.dataset.ae2; show(ana2.ae); }; });
+      show(ana2.ae && has(ana2.ae) ? ana2.ae : ['Showing now', 'Needs a look'].find(has) || 'All');
+    }
     const status = view.querySelector('[data-test-status]');
     if (status) {
       const has = (name) => [...view.querySelectorAll('[data-statuses]')].some((g) => g.dataset.statuses.split('|').includes(name));

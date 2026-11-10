@@ -470,6 +470,31 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Assignment errors, simpler on the test site, 2026-11-10 (owner: "clean up the assignment
+errors tab in the test site, make it simpler to read. push the changes to the test
+site").** Preview only: `anaAssignments2` in board.html, used when `ANA2` is on; the
+regular tab still draws `anaAssignments` (checked here: unchanged). Why it was the way it
+was: the 2026-11-07 merge of Out of sequence + CATS errors reused the three old pages
+inside every opened train, so each train repeated the page's explanation and a row of
+tiles, and the 2026-11-08 audit wording ("Final pool sequence correct", "Outcome unknown")
+went on screen as written. The audit's rules are kept (`reviewedPoolOutcome`,
+`assignmentStatus` decide every outcome; nothing is deduplicated; grouping is still train
++ observation month); only the reading changed:
+- One short row a train: symbol, on duty, which checks flagged it, an outcome chip each.
+- Five plain outcomes in place of eight (`AE2`): Showing now (Still observed), Needs a
+  look (Observed at departure, Pool sequence needs review), Can't tell (Outcome unknown,
+  Final crew unverified), Stopped showing (Cleared), Fine in the end (Final pool sequence
+  correct). Filter chips with counts replace the dropdown and the five tiles; it opens on
+  Showing now, else Needs a look, else All (`ana2.ae`).
+- Opened: one card a finding (Wrong pool / CATS listed the wrong turn / Spare job missing
+  from CATS), a few labelled lines and one sentence for how it ended. Snapshot times and
+  turns are still tappable.
+- The explanation is given once, under "About these numbers".
+On live data at phone width, last 90 days: 142 trains; 14 need a look, 31 can't tell, 66
+stopped showing, 73 fine in the end; the page opens 1,720 px tall (was 2,158) and an opened
+train is about a screen (was several). No page errors in dark or light. Suite 291 of 303.
+Not changed: TODO 21's open audit points (month-boundary identity; "cleared" is not proof).
+
 **Likely-call window for spares, test site, 2026-11-10 (owner: "can you do the same for
 the spareboard. Push changes to the test site").** `Patterns.collect` now also keeps one
 look an hour for each spare over both of its boards (`state.spares`: craft, turn, the

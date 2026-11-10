@@ -198,6 +198,9 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-10: **Assignment errors, simpler layout** (test site only, not promoted): short
+  rows, five plain outcomes as chips, one card a finding; see HANDOFF.
+
 - 2026-11-10: **Likely-call window for spares** (test site only, not promoted): each spare
   row on Current shows when its call is likely and how often that window has held; see
   HANDOFF "Likely-call window for spares".
