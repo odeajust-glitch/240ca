@@ -5,8 +5,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
-- **Current, new layout:** in Test since 2026-11-10, awaiting his review; includes the
-  Toronto / Garnet call 15 min earlier (his rule to confirm). See HANDOFF.
+- **Snapshots tab:** still the older layout after Current's was changed 2026-11-10; ask
+  whether to switch it too.
 
 - **Names for followers on Page Health:** three answers pending from the owner (capture
   names for everyone each check; OWNER_EMAIL deleted on `board`; layout). See HANDOFF.
@@ -195,6 +195,9 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Current, new layout** (short rows, Toronto and Garnet folded, who is in
+  Garnet, counts on one line, tab bar in one row): approved in Test and promoted.
 
 - 2026-11-10: **Page Health new top** (verdict line, code version in words, name codes
   kept over a restart): approved in Test and promoted.

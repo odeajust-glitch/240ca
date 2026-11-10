@@ -230,6 +230,18 @@ duty. Replayed on the live days: 59 calls gained for spares and 59 false "remove
 gone for holders who were never there; 5 calls and 6 "removed" went the other way (a ride
 remembered a little too long). Suite 283 of 297, same 14 failing.
 
+**Current, new layout promoted, 2026-11-10 (owner: "Push this to the main current tab and
+clear out the test tab"):** `sectionsGrid` uses `lineup2`, `toronto2`, `garnet2`,
+`changes2` and the "Jobs going spare" heading when `mode === 'current'`; `show` uses
+`strip2`. **Snapshots still draw the older layout** (same data, older functions): ask
+whether to switch them too. The Toronto / Garnet call on Current is now on duty − 2 h (15
+min earlier for a train): this replaces the settled "Mac yard call = order − 2 h" on that
+page, approved by the push. On a phone the tab bar is one swipeable row on every tab
+(`body.nav-one-row`, the open tab scrolled into view). Test is back to "No items awaiting
+review." Checked in a browser on live data: Current draws 17 rows with no page errors, a
+row opens, Snapshots and Analytics still draw. Laptop pull/restart pending. The note below
+is how it was built.
+
 **Current, new layout — in Test, awaiting Justin's phone review (2026-11-10; he said "do
 all but don't change the main current tab ... put it in the test tab"):** the real Current
 is untouched. Test → `testCurrent` (board.html) draws the newest check with `strip2`
@@ -499,7 +511,9 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   they're off duty.
 - Toronto: PLN train → next crew in bunkhouse order even if resting; ORD →
   next crew rested by the call; none rested → possible Toronto South crew.
-  Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h.
+  Mac yard call = order − 2 h; Sarnia = order − 15 min prep − 2 h. (2026-11-10:
+  Current and Call stability show the Toronto and Garnet call as on duty − 2 h,
+  order − 15 min − 2 h for a train; the engine's crew pick still uses order − 2 h.)
 - Yard jobs are 8 h, **YSBY jobs 12 h** by default (owner, 2026-11-03;
   site.js yardMinutes).
 - A/B slots per road day: first 3 after 0459 → A, next 2 → B; called trains

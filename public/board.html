@@ -727,7 +727,7 @@
   .ct2-why li { margin: 5px 0; }
   .ct2-why .ct2-because { color: var(--ink); }
   .ct2-why summary { cursor: pointer; color: var(--accent); margin-top: 6px; }
-  /* Current, new layout (Test preview). */
+  /* Current, the short rows (2026-11-10). */
   details.cur2 { border-bottom: 1px solid var(--rule-soft); }
   details.cur2 > summary { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 0 10px; padding: 9px 14px; cursor: pointer; list-style: none; align-items: start; }
   details.cur2 > summary::-webkit-details-marker { display: none; }
@@ -1298,9 +1298,9 @@ function toronto(s) {
     ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
 }
 
-// ---- Current, new layout: Test preview only (owner, 2026-11-10: "build this
-// tab and put it in the test tab to view before we make any changes to the
-// actual current tab"). The real Current above is untouched. One short row
+// ---- Current, the layout since 2026-11-10 (owner; built in Test first, then
+// "push this to the main current tab"). Snapshots still use the functions
+// above. One short row
 // per train with the detail folded under it, Toronto and Garnet the same
 // way, one line for the counts, quiet empty boxes.
 // A call away from home as it really comes: on duty − 2 h, and on duty is 15
@@ -4391,7 +4391,10 @@ source().then(async (src) => {
   function sectionsGrid(s, arrange = arranging, previewS5 = false) {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
-    const built = order.map((k) => ({ ...byK[k], body: k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
+    // Current (owner, 2026-11-10, approved in Test): the short rows. Snapshots keep the older layout.
+    const fresh = mode === 'current';
+    const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x).replace('Jobs going spare · 5', 'Jobs going spare') };
+    const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
     if (arrange) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
@@ -4489,7 +4492,7 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${strip(s, mode === 'current')}
+      ${mode === 'current' ? strip2(s) : strip(s, false)}
       ${arrangeBar()}
       ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
@@ -4647,27 +4650,8 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else testCurrent(view);
+    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-  }
-  // Test preview: Current, new layout (functions lineup2 … strip2 above).
-  function testCurrent(view) {
-    const s = list && list[list.length - 1];
-    if (!s) { view.innerHTML = '<p class="empty">No check loaded yet. Open Current once, then Test.</p>'; return; }
-    setMarks();
-    if (!poolPicks) { const mine = s.pools.find((q) => q.turns.some((t) => marked(t.turn, t.craft))) || s.pools[0]; if (mine) poolPicks = [poolShort(mine)]; }
-    const w = when(s.taken);
-    const boxes = [['lineup', lineup2(s)], ['toronto', toronto2(s)], ['garnet', garnet2(s)], ['changes', changes2(s)], ['flags', flags(s)], ['pools', pools(s, poolPicks || [])],
-      ['vacancies', vacancies(s).replace('Jobs going spare · 5', 'Jobs going spare')], ['daysoff', daysOff(s)], ['callboard', onDuty(s)], ['yard', yardJobs(s)], ['sequence', sequence(s)]];
-    view.innerHTML = `<section class="sheet"><header><h2>Current: new layout</h2><span class="meta">preview</span></header>
-      <p class="anote" style="margin:10px 14px">Owner, 2026-11-10. The real Current tab is unchanged. Here: one short row per train (tap it for the detail), Toronto and Garnet the same way with their call as on duty − 2 h, who is in Garnet when its board wasn’t read, one line of counts, empty boxes as one grey line, no CATS option numbers in the headings, and on a phone the tabs above in one row you swipe (only while Test is open). Boxes stay folded the way you leave them, as on Current.</p></section>
-      <div class="head"><div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div></div></div>
-      ${strip2(s)}
-      <div class="grid"><div class="col">${boxes.filter(([, html]) => html).map(([k, html]) => `<div class="secwrap" data-sec="${k}">${html}</div>`).join('')}</div></div>`;
-    wireCurrentBoxes(view, currentBoxOpen);
-    view.querySelectorAll('[data-poolpick]').forEach((b) => { b.onclick = () => { const k = poolShort(s.pools[+b.dataset.poolpick]); poolPicks = (poolPicks || []).includes(k) ? poolPicks.filter((x) => x !== k) : [...(poolPicks || []), k]; testCurrent(view); }; });
-    view.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; testCurrent(view); }; });
-    view.querySelectorAll('[data-poolall]').forEach((b) => { b.onclick = () => { poolPicks = b.dataset.poolall === 'all' ? s.pools.map(poolShort) : []; testCurrent(view); }; });
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4762,7 +4746,9 @@ source().then(async (src) => {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
-    document.body.classList.toggle('nav-one-row', mode === 'test'); // Test preview: the tabs in one row on a phone
+    document.body.classList.add('nav-one-row'); // on a phone the tabs are one row to swipe (owner, 2026-11-10)
+    // Keep the open tab in sight in the row (after the buttons below are marked).
+    setTimeout(() => { try { const on = document.querySelector('.modes [aria-pressed="true"]'); if (on && window.matchMedia('(max-width: 700px)').matches) on.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* older browsers */ } }, 0);
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
     modeTurns.setAttribute('aria-pressed', mode === 'turns');
