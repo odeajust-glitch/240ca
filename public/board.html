@@ -16,8 +16,9 @@
 <script>
   // Page style picked in ⚙ Settings (owner, 2026-10-26): light, dark, retro
   // (CATS's own colours) or retro tablet (CATS in the GLINK 3270 app).
+  // iPhone (owner, 2026-11-10): the look of the phone's own apps.
   // Not picked: follows the phone.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -809,6 +810,54 @@
   @media (prefers-reduced-motion: no-preference) {
     .rail button, .tabs button { transition: background-color 0.12s, border-color 0.12s; }
   }
+  /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
+     Stocks): Apple's system font and colours, white rounded cards on a grey
+     page (black in the dark), the views as a segmented control, blue for
+     anything you can tap. Light or dark follows the phone. It sits last in
+     the sheet so it wins over the rules above. */
+  :root[data-theme="iphone"] {
+    --bg: #f2f2f7; --sheet: #ffffff; --ink: #000000; --soft: #6c6c70; --rule: #c6c6c8; --rule-soft: #e5e5ea;
+    --accent: #007aff; --accent-ink: #ffffff; --accent-tint: #e5f1ff;
+    --amber: #b25000; --amber-tint: #fff0d9; --go: #248a3d; --go-tint: #e2f6e7; --stop: #d70015; --stop-tint: #ffe5e3;
+    --plan-tint: #e9e9eb; --poolA: #5856d6; --poolB: #8944ab; --poolSR: #008299;
+    --seg: rgba(118, 118, 128, 0.12); --seg-on: #ffffff;
+    --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, 'Helvetica Neue', Roboto, sans-serif;
+    --body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Helvetica Neue', Roboto, sans-serif;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root[data-theme="iphone"] {
+    --bg: #000000; --sheet: #1c1c1e; --ink: #ffffff; --soft: #98989f; --rule: #38383a; --rule-soft: #2c2c2e;
+    --accent: #0a84ff; --accent-ink: #ffffff; --accent-tint: #0a2a4d;
+    --amber: #ff9f0a; --amber-tint: #3a2a08; --go: #30d158; --go-tint: #0d3018; --stop: #ff453a; --stop-tint: #3d1512;
+    --plan-tint: #2c2c2e; --poolA: #5e5ce6; --poolB: #9d4fc9; --poolSR: #0a8fa8;
+    --seg: rgba(118, 118, 128, 0.24); --seg-on: #636366;
+    color-scheme: dark; }
+    :root[data-theme="iphone"] .htable td.warn, :root[data-theme="iphone"] .health .warn { color: #ff6961; } }
+  :root[data-theme="iphone"] body { -webkit-font-smoothing: antialiased; }
+  :root[data-theme="iphone"] .top { border-bottom: 1px solid var(--rule); }
+  :root[data-theme="iphone"] .top h1 { font-size: 32px; letter-spacing: -0.02em; text-transform: none; }
+  :root[data-theme="iphone"] .head .when, :root[data-theme="iphone"] .ohead .when, :root[data-theme="iphone"] .thead .when { letter-spacing: -0.02em; }
+  :root[data-theme="iphone"] .sheet > header h2, :root[data-theme="iphone"] .test-current-box > summary h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
+  /* Cards: no outline, round corners. The first and last piece are rounded
+     too (not overflow: hidden, which would cut off the tables' sideways scroll hints and outlines). */
+  :root[data-theme="iphone"] .sheet, :root[data-theme="iphone"] .strip { border-color: transparent; border-radius: 12px; }
+  :root[data-theme="iphone"] .sheet.turnpanel { border-color: var(--amber); }
+  :root[data-theme="iphone"] .sheet > :first-child, :root[data-theme="iphone"] .test-current-box:not([open]) > summary { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+  :root[data-theme="iphone"] .sheet > :last-child, :root[data-theme="iphone"] .test-current-box:not([open]) > summary { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+  :root[data-theme="iphone"] .strip .stat:first-child { border-radius: 11px 0 0 11px; }
+  :root[data-theme="iphone"] .strip .stat:last-child { border-radius: 0 11px 11px 0; }
+  :root[data-theme="iphone"] button, :root[data-theme="iphone"] input, :root[data-theme="iphone"] select, :root[data-theme="iphone"] textarea,
+  :root[data-theme="iphone"] .newer, :root[data-theme="iphone"] .screen-group, :root[data-theme="iphone"] .greviewbox { border-radius: 10px; }
+  :root[data-theme="iphone"] .settings { border-radius: 14px; }
+  :root[data-theme="iphone"] .chip, :root[data-theme="iphone"] .st, :root[data-theme="iphone"] .pool, :root[data-theme="iphone"] .agebar .age,
+  :root[data-theme="iphone"] .stalechip, :root[data-theme="iphone"] .top .sample { border-radius: 6px; }
+  /* The views: a segmented control. */
+  :root[data-theme="iphone"] .modes { background: var(--seg); border-radius: 9px; padding: 2px; gap: 2px; }
+  :root[data-theme="iphone"] .modes button, :root[data-theme="iphone"] .modes a.modelink { border-color: transparent; border-radius: 7px; color: var(--ink); font-weight: 500; }
+  :root[data-theme="iphone"] .modes button[aria-pressed="true"] { background: var(--seg-on); border-color: transparent; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14); }
+  :root[data-theme="iphone"] .poolfilter button { border-radius: 999px; padding-inline: 14px; }
+  :root[data-theme="iphone"] .poolfilter button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  :root[data-theme="iphone"] .rail button { border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -831,6 +880,7 @@
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
       <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
+      <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -894,7 +944,8 @@ const OwnerKey = (() => {
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
     const now = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', COLORS[now]);
+    // iPhone goes light or dark with the phone; the bar above the page matches it.
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', now === 'iphone' ? (matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#f2f2f7') : COLORS[now]);
     box.querySelectorAll('button.sty[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
     note.innerHTML = t ? 'Kept on this phone. <button type="button" id="styauto">Follow the phone\'s setting instead</button>' : 'Following the phone\'s light or dark setting. Pick one to keep it.';
     const auto = document.getElementById('styauto');

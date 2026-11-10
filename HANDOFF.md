@@ -4,6 +4,18 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**iPhone page style, 2026-11-10 (owner: "Add a iPhone theme to the board checker website"):**
+a fifth choice in ⚙ Settings → Page style, `data-theme="iphone"` in `public/board.html`
+(the block at the end of the style sheet): Apple's system font and colours, rounded cards
+with no outline, the views as a segmented control, blue for anything tapped; light or dark
+goes with the phone. Opt-in per phone (`boardTheme`), nobody's page changes until they
+pick it. Checked here in a phone-sized and a desktop browser on sample data, light and
+dark (Current only); not yet seen on a real iPhone. ⚠ Pushed to **`ccr-2f227f1e-8taof0`**
+only (the branch this cloud session was given, fast-forwarded to
+`claude/vigilant-planck-zawrj4` at 8123afc + this one commit): the laptop's branch does
+not have it until it is merged there. Not done: the Worker's sign-in page and
+grievance.html only know light/dark, so with iPhone picked they show light.
+
 **Call stability, 501/502 fix, 2026-11-10 (owner: "the 502 / 501 call stability data is
 messed up", then "fix the tracker"):** on the live data 22 of 39 S5 records were "removed
 from lineup", 8 "unavailable", and no L502 call was recorded after 4th Nov. Causes, all
