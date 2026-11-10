@@ -497,6 +497,32 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**SA07 was sent S501's L501 alert: a stand-in remembered two days too long, fixed
+2026-11-10 (owner's lock-screen picture: "SA07 time change: L50131 10 ordered for 10th
+2200, expected call 10th 2000 (was 10th 2130, call 10th 1930)"; "figure out the
+problem").** Traced on the saved checks: on the 8th SA07's holder worked S501's engineer
+job (L50231 08 out, L50131 08 home; backfill last seen 9th 0610). Today S501's own crew
+is at Garnet (L50231 10, no backfill) and SA07 sits 3rd out in the A pool at home, lined
+up for Z14891 10. The fill-in memory (`fill-ins.json`, key `S501-EN → SA07`) had no way to
+end but the 48 h limit: `updateFillIns` ends a trip when the job's turn is on a home board
+(the key `S501-EN` never is) or the stand-in is back on a spareboard (SA07 is a pool turn).
+So `turnStates` still gave the Garnet crew's L501 to SA07 too, and because that line-up is
+set first, **it also hid SA07's real train (Z148) from SA07's phones.** Fix
+(lib/board/fillins.js, scripts/board-auto.js): a stand-in on a shared turn (S5xx, MUxx)
+now ends when that craft's row is home on the 501/502 board (`sharedHome`), when the L501
+it came home on has left the Call Board, or when the job is on the Call Board on another
+train with nobody standing in. Test added (alerts.test.js). **Needs the laptop to pull and
+restart**; the stale entry then clears on the first check. Not seen on the laptop itself:
+`fill-ins.json` is not readable from here, so the cause is from the saved checks and the
+code, not from the file.
+❓ **Open, his call: the Garnet call in alerts.** The alert said call 2000 for an order of
+2200 (`GARNET_CALL_MIN`, "order − 2 h", his rule of 11-04). Every L501 in the saved checks
+went on duty 15 min before its order (4th 2130→2115, 7th 2330→2315, 8th 2245→2230, 9th
+2130→2115), so the real call was order − 2 h 15: 1945 tonight, which is what Current
+shows. Alerts and the reminder run 15 min late for the Garnet crew. Asked 2026-11-10
+whether to move the alerts to order − 2 h 15; not changed. Toronto alerts use the same
+"order − 2 h" (`torontoCallTime`) and likely have the same gap.
+
 **Tabs broken for about half an hour by the commit below, fixed, 2026-11-10 (owner: "the
 tabs are all messed up ... the links are wrong they lead to the wrong page").** Taking out
 `if (mode === 'test') renderTest();` in `setMode` removed the head of the `else if` chain

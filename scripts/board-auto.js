@@ -801,6 +801,8 @@ function answer(summary, me, nowOverride) {
     backfill: summary.backfill || [], bunk: summary.bunkFill || [], callBoard: input.callBoard, now: input.now,
     homeTurns: new Set([input.chainGangHome, input.aHome, input.bHome, input.sdHome, input.s1Home, input.s3Home].flatMap(home)),
     spareTurns: new Set(Object.values(input.spareboards || {}).flatMap(home)),
+    // 501/502: each craft's row that is home in Sarnia (not at Garnet, not working).
+    sharedHome: new Set((input.s5 || []).filter((t) => !t.working && !t.terminal && /^(EN|LE|CO)$/.test(t.craft || '')).map((t) => `${t.turn}-${t.craft === 'CO' ? 'CO' : 'EN'}`)),
   });
   try { FillIns.saveFillIns(FILLINS_FILE, fillIns); } catch (err) { console.log(`  (fill-ins not saved: ${err.message})`); }
   const cur = snapshot(result, result.me ? describeMe(result.me) : []);

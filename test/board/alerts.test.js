@@ -485,6 +485,39 @@ test('fill-ins: the bunkhouse by name', () => {
   assert.deepEqual(updateFillIns(had, { bunk: [{ job: 'SB04', turn: 'SB04' }], now }), {});
 });
 
+// Owner's screenshot, 2026-11-10: "SA07 time change: L50131 10 ordered for
+// 10th 2200". SA07's holder had worked S501's engineer job to Garnet on the
+// 8th; two days later SA07 was third out in the A pool at home and S501's own
+// crew was at Garnet, but the fill-in was still remembered.
+test('fill-ins: a stand-in on a 501/502 job ends when the job is home, or out again with its own crew', () => {
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const l502 = (day, onDuty) => ({ symbol: 'L50231', originDay: day, station: 'SARNIA', onDuty, crew: [{ craft: 'EN', turn: 'S501' }, { craft: 'CO', turn: 'S501' }] });
+  const t0 = at(2026, 11, 8, 3, 8);
+  let fills = updateFillIns({}, { backfill: [{ train: 'L50231 08', craft: 'EN', job: 'S501', turn: 'SA07' }], callBoard: [l502('08', at(2026, 11, 8, 4, 50))], now: t0 });
+  assert.deepEqual(Object.keys(fills), ['S501-EN']);
+  // At Garnet, the train out off the Call Board: still the stand-in's trip (S501's engineer row is away).
+  fills = updateFillIns(fills, { callBoard: [], sharedHome: new Set(['S502-EN', 'S502-CO']), homeTurns: new Set(['SA07']), now: t0 + 600 });
+  assert.equal(fills['S501-EN'].turn, 'SA07');
+  // Home again: S501's engineer row is back on the 501/502 board in Sarnia.
+  assert.deepEqual(updateFillIns(fills, { callBoard: [], sharedHome: new Set(['S501-EN', 'S501-CO']), now: t0 + 1700 }), {});
+  // Missed coming home, then S501 goes out again with nobody standing in: its own crew is on it.
+  const again = updateFillIns(fills, { backfill: [], callBoard: [l502('10', at(2026, 11, 10, 2, 45))], now: t0 + 2700 });
+  assert.deepEqual(again, {});
+  // Out again with the same stand-in: kept, on the new train.
+  const same = updateFillIns(fills, { backfill: [{ train: 'L50231 10', craft: 'EN', job: 'S501', turn: 'SA07' }], callBoard: [l502('10', at(2026, 11, 10, 2, 45))], now: t0 + 2700 });
+  assert.equal(same['S501-EN'].train, 'L50231 10');
+  // What happened on the 9th: the stand-in came home on L501, and once that left the Call Board the trip was over,
+  // even with S501's row away again on its next trip (so never seen home between checks).
+  const l501 = { symbol: 'L50131', originDay: '08', station: 'GARNET', crew: [{ craft: 'EN', turn: 'S501' }, { craft: 'CO', turn: 'S501' }] };
+  let home = updateFillIns(fills, { backfill: [{ train: 'L50131 08', craft: 'EN', job: 'S501', turn: 'SA07' }], callBoard: [l501], now: t0 + 1100 });
+  assert.equal(home['S501-EN'].train, 'L50131 08');
+  home = updateFillIns(home, { callBoard: [], now: t0 + 1700 });
+  assert.deepEqual(home, {});
+  // The conductor's job on that train says nothing about the engineer's stand-in.
+  const coOnly = { symbol: 'L50231', originDay: '10', crew: [{ craft: 'CO', turn: 'S501' }] };
+  assert.equal(updateFillIns(fills, { callBoard: [coOnly], now: t0 + 2700 })['S501-EN'].turn, 'SA07');
+});
+
 // Owner, 2026-10-25: alerts can follow a person instead of a turn: the phone
 // keeps '@<hash>', and each check that becomes their own turn now.
 test('turn alerts: following a person across turns', () => {
