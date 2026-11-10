@@ -470,6 +470,20 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Call-time prediction, backtested, not built (2026-11-10; owner: "are you able to make a
+prediction on when trains will be called based on historical data ... on the current tab
+... with an indication of accuracy").** Method tried: at any look, the shown on-duty time
+plus what that train (letters + number), at that distance and status, did from there on
+its other runs; each run tested against the rest (4,976 hourly looks, 218 Sarnia trains).
+A single predicted time barely beats the shown one (within 1 h: 36 → 41% at 16–24 h, 39 →
+42% at 10–16 h, 45 → 51% at 6–10 h, 46 → 63% in the last 3 h). A window is the useful
+form: half of calls landed in a window about 2.8 h wide at 16–24 h, 2.2 h at 10–16 h, 1.4 h
+at 6–10 h; the "8 in 10" window (6.0 / 4.5 / 3.2 h wide) held 69–75% of the time, a little
+under its name with only 17–25 runs a train. Trains differ a lot at 10–16 h out: A424 8 in
+10 between 30 min early and on time; Z148 1.7–5.5 h later; M396 0.7 h early to 4.3 h later;
+E278 1.6–12.8 h later. Once ordered the shown time is right (93% within an hour). Offered:
+a "likely" window per train on the test site that scores itself as trains go.
+
 **Patterns on the test site, and two tracker fixes, 2026-11-10 (owner: "Push this to the
 test site"; then, from board-test on his phone: separate yard / Sarnia / Mac yard under a
 search, and "502 got messed up ... the train goes every day it doesn't get removed").**
