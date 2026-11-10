@@ -58,6 +58,16 @@ does not use resets.json; only reset-alerts.js does (yard 8 h / YSBY 12 h / road
 so Current's "Filled by" can still show a spare who would be reset. Offered to make
 spareFills pass those over; waiting for his answer. This cloud session too began on the
 stale 3rd Nov checkout (kept locally as branch `stale-2026-11-03-backup`, never pushed).
+Later the same day, Justin: "a DH should go to the slow board always" (already so) and "if
+they were on rest that's why they didn't get it, they need to be available". B111's rest
+ended 0600, an hour before the 0700 call, so the open point is **available by when**. The
+site's rule (rested by the call) was replayed over all 25 live day files: only two road
+spare jobs had the first spare still on rest while the job was ordered but rested by the
+call. M39491 29: B104, rest until 0600, ordered seen 0517, call 0615 → **got it**.
+DHT040B 31: B111, rest until 0600, ordered seen from 0154, call 0700 → **passed**. "Free
+when first seen ordered" as a general rule did worse than today's (18 vs 23 of 29 right),
+so it was **not built**. Asked Justin for the cut-off; do not change `spareFills` on rest
+until he gives one.
 
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
