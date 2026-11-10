@@ -18,7 +18,9 @@
   // (CATS's own colours) or retro tablet (CATS in the GLINK 3270 app).
   // iPhone (owner, 2026-11-10): the look of the phone's own apps.
   // Not picked: follows the phone.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|board)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
+  // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
+  // phone is set to: the same style with data-shade="light" on the page.
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1182,14 +1184,14 @@
     --body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Helvetica Neue', Roboto, sans-serif;
     --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
     color-scheme: light; }
-  @media (prefers-color-scheme: dark) { :root[data-theme="iphone"] {
+  @media (prefers-color-scheme: dark) { :root[data-theme="iphone"]:not([data-shade="light"]) {
     --bg: #000000; --sheet: #1c1c1e; --ink: #ffffff; --soft: #98989f; --rule: #38383a; --rule-soft: #2c2c2e;
     --accent: #0a84ff; --accent-ink: #ffffff; --accent-tint: #0a2a4d;
     --amber: #ff9f0a; --amber-tint: #3a2a08; --go: #30d158; --go-tint: #0d3018; --stop: #ff453a; --stop-tint: #3d1512;
     --plan-tint: #2c2c2e; --poolA: #5e5ce6; --poolB: #9d4fc9; --poolSR: #0a8fa8;
     --seg: rgba(118, 118, 128, 0.24); --seg-on: #636366;
     color-scheme: dark; }
-    :root[data-theme="iphone"] .htable td.warn, :root[data-theme="iphone"] .health .warn { color: #ff6961; } }
+    :root[data-theme="iphone"]:not([data-shade="light"]) .htable td.warn, :root[data-theme="iphone"]:not([data-shade="light"]) .health .warn { color: #ff6961; } }
   :root[data-theme="iphone"] body { -webkit-font-smoothing: antialiased; }
   :root[data-theme="iphone"] .top { border-bottom: 1px solid var(--rule); }
   :root[data-theme="iphone"] .top h1 { font-size: 32px; letter-spacing: -0.02em; text-transform: none; }
@@ -1237,7 +1239,8 @@
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
       <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
-      <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
+      <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:linear-gradient(90deg,#f2f2f7 50%,#000000 50%);color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
+      <button type="button" class="sty" data-theme="iphonelight"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone Light</button>
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
     </div>
     <p class="note" id="stynote"></p>
@@ -1300,10 +1303,11 @@ const OwnerKey = (() => {
   const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
-    if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
+    if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; else delete document.documentElement.dataset.shade;
     const now = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     // iPhone goes light or dark with the phone; the bar above the page matches it.
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', now === 'iphone' ? (matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#f2f2f7') : COLORS[now]);
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', now === 'iphonelight' ? '#f2f2f7' : now === 'iphone' ? (matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#f2f2f7') : COLORS[now]);
     box.querySelectorAll('button.sty[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
     note.innerHTML = t ? 'Kept on this phone. <button type="button" id="styauto">Follow the phone\'s setting instead</button>' : 'Following the phone\'s light or dark setting. Pick one to keep it.';
     const auto = document.getElementById('styauto');

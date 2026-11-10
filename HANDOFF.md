@@ -4,6 +4,14 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**iPhone Light page style, 2026-11-10 evening (owner: "add an iphone theme that is light as
+well"; his phone is set dark, so iPhone always drew dark for him):** a seventh choice,
+saved as `boardTheme = iphonelight`. It is the iPhone style with `data-shade="light"` on
+the page, which switches off that style's dark block (`:not([data-shade="light"])` in
+`public/board.html`); "iPhone" still goes light or dark with the phone (its swatch is now
+half and half). Checked on a dark and a light phone setting, and switching between
+styles. Laptop pull/restart/publish pending.
+
 **Pool buttons two to a row, 2026-11-10 evening (owner, after a sample: "looks good, push
 it"):** on a phone the Pools at Sarnia filter buttons sit two to a row in his order: A
 pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot` and the
