@@ -753,9 +753,13 @@
   .cur2-strip { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 8px 14px; margin-bottom: 14px; border: 1px solid var(--rule); background: var(--sheet); font-size: 13.5px; color: var(--soft); }
   .cur2-strip b { color: var(--ink); font-family: var(--mono); }
   @media (max-width: 700px) { details.cur2 .fold { padding-left: 14px; }
-    body.nav-one-row .modes { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-    body.nav-one-row .modes::-webkit-scrollbar { display: none; }
-    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; white-space: nowrap; } }
+    /* The tabs wrap onto as many rows as they need, each row filled edge to
+       edge (owner, 2026-11-10 evening, from his phone: the one swipe row
+       "runs off the screen", half a tab cut at the edge with nothing to
+       say there was more). Replaces the swipe row of that morning. */
+    /* The top bar keeps 48px free on the right for the gear; the tabs sit below it, so they take that back. */
+    body.nav-one-row .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-right: -48px; width: calc(100% + 48px); }
+    body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; } }
   /* Order summary, the two-line rows (2026-11-10). */
   .os2-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
   .os2-filters label { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; }
@@ -5553,9 +5557,7 @@ source().then(async (src) => {
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
     document.body.classList.toggle('current', mode === 'current');
-    document.body.classList.add('nav-one-row'); // on a phone the tabs are one row to swipe (owner, 2026-11-10)
-    // Keep the open tab in sight in the row (after the buttons below are marked).
-    setTimeout(() => { try { const on = document.querySelector('.modes [aria-pressed="true"]'); if (on && window.matchMedia('(max-width: 700px)').matches) on.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* older browsers */ } }, 0);
+    document.body.classList.add('nav-one-row'); // on a phone the tabs wrap into full rows (owner, 2026-11-10; the class keeps its first name)
     document.body.classList.toggle('turns', mode === 'turns');
     modeCurrent.setAttribute('aria-pressed', mode === 'current');
     modeTurns.setAttribute('aria-pressed', mode === 'turns');

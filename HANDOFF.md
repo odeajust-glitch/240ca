@@ -4,6 +4,15 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Tab bar on a phone wraps again, 2026-11-10 evening (owner, screenshot from his phone:
+"fix the tabs at the top so they don't run off the screen"):** the one swipe row promoted
+that morning cut a tab in half at the edge ("Article 1…"). Now the tabs wrap into as many
+rows as they need (three on his phone), each row filled edge to edge, and the bar uses the
+48px the top bar keeps for the gear (`body.nav-one-row .modes` in `public/board.html`; the
+class kept its name, the scroll-into-view line is gone). **This supersedes "one swipeable
+row" in the notes below.** Measured in all six styles at phone width: no tab past the
+edge, nothing to scroll. Laptop pull/restart/publish pending.
+
 **Page styles pushed to the laptop's branch, 2026-11-10 (owner: "Push them all to the real
 site"):** `ccr-2f227f1e-8taof0` (Retro second pass, Retro Tablet second pass, Departure
 Board; iPhone was already here) was merged with `claude/vigilant-planck-zawrj4` and pushed
