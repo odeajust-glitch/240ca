@@ -198,6 +198,10 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-10: **Likely-call window for spares** (test site only, not promoted): each spare
+  row on Current shows when its call is likely and how often that window has held; see
+  HANDOFF "Likely-call window for spares".
+
 - 2026-11-10: **Call stability, same yard job again within 3 days**: counted as its own call.
 
 - 2026-11-10: **Order summary, new layout** (two-line rows, groups, sort, search as you

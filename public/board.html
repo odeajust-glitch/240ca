@@ -847,6 +847,12 @@
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
   @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
   .odds { display: block; font-size: 12px; color: var(--accent); margin-top: 2px; }
+  details.splikely { font: 12px/1.35 var(--body); margin: 1px 0 3px; }
+  details.splikely summary { color: var(--accent); font-weight: 600; cursor: pointer; list-style: none; }
+  details.splikely summary::-webkit-details-marker { display: none; }
+  details.splikely.tight summary { color: var(--go); }
+  details.splikely summary small { font-weight: 400; color: var(--soft); font-size: inherit; }
+  details.splikely p { margin: 4px 0 6px; padding-left: 8px; border-left: 3px solid var(--accent); color: var(--soft); }
   .chip.habit.late { background: #2a2247; color: #c9b8fb; }
   .chip.habit.early { background: var(--stop-tint); color: var(--stop); }
   .chip.habit.ok { background: var(--go-tint); color: var(--go); }
@@ -1693,12 +1699,17 @@ function poolBody(s, p) {
   let out = 0; // place among the turns available now (test site: how soon such a turn has worked)
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
-    const odds = !t.left && t.status === 'available' ? boardOdds(p.name, ++out) : '';
+    const open = !t.left && t.status === 'available';
+    if (open) out++;
+    // Test site: when this spare is likely to be called, and how often that window has held.
+    const likely = spareCall(s, p, t);
+    const odds = !likely && open ? boardOdds(p.name, out) : '';
+    const likelyHtml = likely ? `<details class="splikely${likely.tight ? ' tight' : ''}"><summary>likely call ${esc(likely.window)} <small>· held ${likely.held} of ${likely.n}</small></summary><p>${esc(likely.text)}</p></details>` : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job
+    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
-      ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2"><div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div></td></tr>` : ''}`;
+      ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2">${t.job ? `<div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div>` : ''}${likelyHtml}</td></tr>` : ''}`;
   }).join('');
   const away = /Chain Gang/.test(p.name) && (s.returning.length || s.away.length)
     ? `<div class="away">${s.returning.length ? `<div><b>Coming home</b> ${markTurn(s.returning.join(', '))}</div>` : ''}${s.away.length ? `<div><b>In Toronto</b> ${markTurn(s.away.join(', '))}</div>` : ''}</div>` : '';
@@ -2438,6 +2449,71 @@ function likelyCall(s, t) {
   return { own: !!own, wide: span(x.lo, x.hi), likely: span(x.likelyLo, x.likelyHi), mid: dt(at(x.mid)), held: x.held, n: x.n, who,
     tight: x.hi - x.lo <= 60,
     text: `Call likely ${span(x.lo, x.hi)}, most often about ${dt(at(x.mid))}. From ${who === sym ? `${sym}'s` : 'all Sarnia trains’'} ${x.n} runs planned this far out: that window held ${x.held} of ${x.n} times when each run was checked against the others; half fell in ${span(x.likelyLo, x.likelyHi)}.${own ? '' : ` ${sym || 'This train'} has too few runs of its own yet.`}` };
+}
+// The same for a spare (patterns.json spare; owner, 2026-11-10: "can you do
+// the same for the spareboard"). With a job showing beside the spare: the
+// call shown plus how far the real call landed from it for spares shown a
+// yard job or a train this far ahead. With nothing showing and the spare
+// available: now plus how long spares at this place waited for the call. The
+// spareboard is far less steady than a train, so the window shown is the
+// near-certain one only while that is 6 h wide or less; past that it is the
+// window half the calls fell in, and "held X of N" says which it is.
+const SPARE_BOARD = /^(Conductor|Engineer) (fast|slow) board/;
+const SPARE_PLACES = new WeakMap(); // snapshot → turn → its better place among the available turns on its two boards
+function sparePlace(s, turn) {
+  let m = SPARE_PLACES.get(s);
+  if (!m) {
+    m = {};
+    for (const p of s.pools || []) {
+      if (!SPARE_BOARD.test(p.name || '')) continue;
+      let n = 0;
+      for (const t of p.turns || []) { if (t.left || t.status !== 'available') continue; n++; m[t.turn] = Math.min(m[t.turn] || Infinity, n); }
+    }
+    SPARE_PLACES.set(s, m);
+  }
+  return m[turn];
+}
+const SPARE_WIDE_MAX = 360;
+function spareCall(s, p, t) {
+  const P = PREVIEW && PATTERNS && PATTERNS.spare;
+  const m = SPARE_BOARD.exec(p.name || '');
+  if (!P || !m || t.left) return null;
+  const now = stampMin(s.sameUntil || s.taken);
+  const craft = m[1].toLowerCase();
+  let x; let base; let lead;
+  if (t.job) {
+    const shown = BoardTrains.resolve(t.job.call, s.taken);
+    if (!shown) return null;
+    base = stampMin(shown);
+    const hours = (base - now) / 60;
+    const b = hours < 0 ? 'past' : hours < 3 ? '0-3' : hours < 6 ? '3-6' : hours < 10 ? '6-10' : hours < 16 ? '10-16' : hours < 24 ? '16-24' : '24+';
+    const kind = t.job.yard ? 'yard' : 'train';
+    const own = (P.job || {})[`${m[1]}|${kind}|${b}`];
+    x = own || (P.job || {})[`${kind}|${b}`];
+    lead = `${t.turn} shows for ${t.job.train}, call about ${t.job.call}. From ${own ? `${craft} spares` : 'spares'} shown a ${kind === 'yard' ? 'yard job' : 'train'} ${b === 'past' ? 'whose shown call had passed' : `${b.replace('-', ' to ').replace('+', ' or more')} h ahead`}`;
+  } else if (t.status === 'available') {
+    const place = sparePlace(s, t.turn);
+    if (!place) return null;
+    const name = place <= 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place <= 5 ? '4th–5th' : place <= 8 ? '6th–8th' : '9th or more';
+    base = now;
+    x = (P.wait || {})[`${m[1]}|${name}`];
+    lead = `No job shows beside ${t.turn} yet. From available ${craft} spares ${name} out with nothing showing`;
+  }
+  if (!x) return null;
+  const floor = Math.ceil(now / 5) * 5; // a call can't come before now
+  const at = (gap) => Math.max(floor, Math.round((base + gap) / 5) * 5);
+  const span = (a, z) => {
+    if (at(z) <= floor) return 'any time now';
+    const A = BoardTrains.fromMin(at(a)); const Z = BoardTrains.fromMin(at(z));
+    return A === Z ? dt(A) : A.slice(0, 10) === Z.slice(0, 10) ? `${dt(A)}–${Z.slice(11)}` : `${dt(A)} – ${dt(Z)}`;
+  };
+  const sure = at(x.hi) - at(x.lo) <= SPARE_WIDE_MAX; // as shown: what is left of the window after now
+  const [lo, hi, held] = sure ? [x.lo, x.hi, x.held] : [x.likelyLo, x.likelyHi, x.likelyHeld];
+  const other = sure ? '' : ` The window that held ${x.held} of ${x.n}: ${span(x.lo, x.hi)}.`;
+  const early = t.job && !t.job.yard ? ' A spare shown a train often goes on another job first, or the train goes to someone else.' : '';
+  const sleep = x.in8 != null ? ` ${x.in8}% were called within 8 hours.` : '';
+  return { window: span(lo, hi), held, n: x.n, tight: at(hi) - at(lo) <= 60 && held * 10 >= x.n * 8,
+    text: `${lead}: the call fell in ${span(lo, hi)} on ${held} of ${x.n} past waits, each checked against the others; most often about ${dt(BoardTrains.fromMin(at(x.mid)))}.${other}${sleep}${early}` };
 }
 function planTrust(s, t) {
   const od = BoardTrains.resolve(t.order, s.taken);

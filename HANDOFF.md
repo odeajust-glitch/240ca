@@ -470,6 +470,33 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Likely-call window for spares, test site, 2026-11-10 (owner: "can you do the same for
+the spareboard. Push changes to the test site").** `Patterns.collect` now also keeps one
+look an hour for each spare over both of its boards (`state.spares`: craft, turn, the
+better of its two places among the available turns, and the job the site showed beside it
+with its call); a resting spare counts when a job shows beside it. `spareCalls` matches
+each look to the next time that turn was on duty within 3 days (call = on duty − 2 h) and
+writes `spare` into data/patterns.json, one figure a wait, 6 waits or more, same stat shape
+as `predict`: `job` = real call less the call shown, keyed `Conductor|yard|3-6` (craft,
+yard job or train, how far ahead the shown call was) plus `yard|3-6` without the craft as
+the fallback; `wait` = minutes from the look to the call for an available spare with
+nothing showing, keyed `Conductor|4th–5th`, with `in8` (share called within 8 h). On the
+test site each spare row gets a line under the turn, "likely call 10th 2130 – 11th 0505 ·
+held 27 of 56", that opens to the full sentence (`spareCall`, `sparePlace` in board.html;
+it replaces the "typically works in" line, which stays as the fallback when the file has
+no `spare`). What the 26 live days say, and why the window differs from the trains': a
+yard job showing is steady (0–3 h ahead: 90 of 100 inside a window 1.3 h wide); a train
+showing is not (the spare got that train only 43% of the time; the near-certain window is
+20–60 h wide, the middle half 2–8 h, and from 10 h or more out the call usually comes
+earlier, on another job); nothing showing runs from a typical 7.7 h (1st out, 54% within
+8 h) to 34.5 h (9th or more, 2%). So the page shows the near-certain window (5th–95th)
+only while what is left of it after now is 6 h or less, and otherwise the middle-half
+window, and "held X of N" says which: about 87% for the first, about half for the second.
+Green = an hour wide or less and held 8 in 10. The same turn shows the same window on the
+fast and the slow board. Simulated here on live data, no page errors; not seen on the real
+board-test until the laptop pulls and publishes. Suite 291 of 303 (the same 12 failing).
+Not tried: a model that counts the yard shifts ahead of a spare instead of hours.
+
 **Likely-call window built on the test site, 2026-11-10 (owner: "Build it on the test
 site").** `Patterns.predict(trains)` (lib/board/patterns.js) goes into data/patterns.json
 as `predict: { trains: { M396: { '6-10': { n, mid, lo, hi, likelyLo, likelyHi, held,
