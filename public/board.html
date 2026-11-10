@@ -5572,7 +5572,7 @@ source().then(async (src) => {
     // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
     if (!ANA2) document.getElementById('view').classList.remove('ana2');
-    else if (mode === 'members') renderMembers();
+    if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
     else if (mode === 'review') renderReview();

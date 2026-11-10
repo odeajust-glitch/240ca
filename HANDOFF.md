@@ -470,6 +470,20 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Tabs broken for about half an hour by the commit below, fixed, 2026-11-10 (owner: "the
+tabs are all messed up ... the links are wrong they lead to the wrong page").** Taking out
+`if (mode === 'test') renderTest();` in `setMode` removed the head of the `else if` chain
+that draws each tab, and the chain attached itself to the line above (`if (!ANA2) …`). So
+only Analytics drew; every other tab left the last page on screen. It reached the live
+site because the laptop had pulled. Fix: the chain starts again with `if (mode ===
+'members')`. **Why the check missed it:** the simulation after the change clicked the
+other tabs but only read the layout class and the address, not what was on the page.
+**From now on, after any change to `setMode` or the tab bar, click every tab and read the
+page's heading** (scratch script `tabs1.js` did this: all eight public tabs on both sites,
+crossing Analytics three times, each showing its own page, no errors). The four owner
+tabs (Page Health, Search Review, Notifications, Members) sit in the same chain but
+cannot be opened here without the owner key: not checked on a real phone.
+
 **Analytics new layout promoted, Test tab removed, 2026-11-10 (owner, from the Test tab on
 the main site: "i like the assigment errors tab ... push the test tab on the main site to
 the main site. then get rid of the test tab on the main site and the test site, all the
