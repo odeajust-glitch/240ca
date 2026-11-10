@@ -719,6 +719,7 @@
   .hverdict.bad { border-left-color: var(--stop); background: var(--stop-tint); }
   .hverdict ul { margin: 6px 0 0; padding-left: 18px; }
   .hverdict li { margin: 4px 0; }
+  .boardnotes > summary { cursor: pointer; font-weight: 600; color: var(--accent); padding: 6px 0; }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -1510,7 +1511,7 @@ function personHistory(stretches, all, myCraft = null) {
     const newest = !stretches.some((x) => x.turn === e.turn && x.to > e.to);
     const craft = e.craft || (newest && BoardTurns.SHARED.test(e.turn) && myCraft ? myCraft(e.turn) : '');
     // And not a trip a fill-in worked in their craft (owner, 2026-11-10).
-    rec.orders.push(...r.orders.filter((o) => theirs(o) && !(craft && e.own && o.coveredCraft === craft)).map(tag));
+    rec.orders.push(...r.orders.filter((o) => theirs(o) && !(craft && e.own && o.coveredCraft === craft)).map((o) => ({ ...tag(o), ...(craft ? { craft } : {}) })));
     rec.rests.push(...r.rests.filter((x) => within(x.seen, e) && (!craft || !x.craft || x.craft === craft)).map(tag));
     rec.spares.push(...r.spares.filter((x) => within(x.seen, e) || within(x.last, e)).map(tag));
   }
@@ -1616,8 +1617,9 @@ function callHistory(rec, rows, i) {
     ...rec.rests.filter((r) => inWin(r.seen)).map((r) => ({ taken: r.seen, text: `${r.kind} until ${r.until}${r.where ? ` (${r.where})` : ''}` })),
   ].sort((a, b) => (a.taken < b.taken ? -1 : a.taken > b.taken ? 1 : 0));
   const head = [o.projected && `Projected: ${o.projected}`, o.called && `Called: ${o.called}`, `On duty ${o.onDuty}`].filter(Boolean);
+  // Folded away (owner, 2026-11-10: "so it's not a long run of information").
   return `<h4>${esc(o.train)}: ${head.map(esc).join(' · ')}</h4>${items.length
-    ? `<ul>${items.map((x) => `<li>${stampBtn(x.taken)}<span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
+    ? `<details class="boardnotes"><summary>What the board showed before this call (${items.length})</summary><ul>${items.map((x) => `<li>${stampBtn(x.taken)}<span>${markTurn(x.text)}</span></li>`).join('')}</ul></details>`
     : '<p class="empty" style="padding:0">Nothing else recorded before it in the saved checks.</p>'}`;
 }
 function wireWork(box, rec, turn) {
@@ -4647,7 +4649,18 @@ source().then(async (src) => {
   function matchingCallRecords(all, turn, trip) {
     const annotation = / \(([A-Z]+\d+(?:-(?:EN|CO))?)\)$/.exec(trip.train || '');
     const train = String(trip.train || '').replace(/ \([^)]*\)$/, '');
-    return all.filter((z) => !z.takenOff && z.turn === (annotation ? annotation[1] : turn) && z.train === train && z.onDuty === trip.at);
+    const want = annotation ? annotation[1] : turn;
+    // 501/502 call records are kept per craft (S501-CO, S501-EN). A plain
+    // S501 trip matched none of them (owner, 2026-11-10: every 501/502 trip
+    // on his own search read "Timeline unavailable"): take the person's
+    // craft when known, else either craft that worked it themselves.
+    const fits = (z) => {
+      if (z.turn === want) return true;
+      if (!BoardTurns.SHARED.test(want)) return false;
+      const { base, craft } = BoardTurns.splitCraft(z.turn);
+      return base === want && !!craft && (trip.craft ? craft === trip.craft : craft !== trip.coveredCraft);
+    };
+    return all.filter((z) => !z.takenOff && fits(z) && z.train === train && z.onDuty === trip.at);
   }
   window.addEventListener('work-call-results', async (event) => {
     const { box, turn, trips } = event.detail;
@@ -4664,7 +4677,8 @@ source().then(async (src) => {
         const timelines = records.map((z) => BoardAnalytics.callTimeline(z)).filter((m) => m && m.expected != null && m.end != null);
         const gaps = [...new Set(timelines.map((m) => m.end - m.expected))];
         el.classList.remove('spare', 'ok');
-        if (!gaps.length) { el.textContent = 'Timeline unavailable'; return; }
+        // L501 home has no expected call to compare with (not scored).
+        if (!gaps.length) { el.textContent = /^L501/.test(trip.train || '') ? 'Not scored: L501 home has no expected call' : 'Timeline unavailable'; return; }
         if (gaps.length !== 1) { el.textContent = 'Multiple call records — open to review'; return; }
         const gap = gaps[0];
         el.textContent = gap < 0 ? 'Called ' + dur(gap) + ' early' : gap > 0 ? dur(gap) + ' late' : 'At original expected call time';
@@ -4681,12 +4695,8 @@ source().then(async (src) => {
       const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: day, to: day })]);
       if (!box.isConnected) return;
       const all = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []);
-      // Person history appends the source turn to the displayed train id.
-      const annotation = / \(([A-Z]+\d+(?:-(?:EN|CO))?)\)$/.exec(trip.train || '');
-      const trainId = String(trip.train || '').replace(/ \([^)]*\)$/, '');
-      const sourceTurn = annotation ? annotation[1] : turn;
-      const matches = all.filter(z => !z.takenOff && z.turn === sourceTurn && z.train === trainId && z.onDuty === trip.at);
-      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>')).join('') : '<p class="anote">No saved call-stability record for this trip. The call-history notes below are still available; a graph cannot be drawn without saved predictions.</p>';
+      const matches = matchingCallRecords(all, turn, trip);
+      box.innerHTML = matches.length ? matches.map(z => BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>')).join('') : (/^L501/.test(trip.train || '') ? '<p class="anote">L501 home from Garnet is not scored: the site has no expected call for it to compare with. The board notes below are still available.</p>' : '<p class="anote">No saved call-stability record for this trip. The board notes below are still available; a graph cannot be drawn without saved predictions.</p>');
     } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call timeline could not be loaded. Close and reopen this train to retry.</p>'; }
   });
   async function loadArchive(range) {

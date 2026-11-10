@@ -126,6 +126,16 @@ warning row for OWNER_EMAIL with Access off, reorder. Real names for followers w
 three answers (capture names for everyone each check; OWNER_EMAIL deleted on `board`;
 layout).
 
+**Turn History, 2026-11-10 (owner, two screenshots):** (1) every 501/502 trip on his own
+search read "Timeline unavailable": call records are kept per craft (`S501-CO`) and the
+trip row says plain `S501`, so `matchingCallRecords` (board.html) matched nothing. It now
+takes the person's craft (personHistory puts `craft` on each trip) or, for a plain S501
+turn search, either craft that worked it; the opened train uses the same function. L501
+trips say "Not scored: L501 home has no expected call" (by design, see the Call
+stability note). Checked against the live records: L50231 04, 08 and 10 match S501-CO.
+(2) The long list under an opened train is folded into "What the board showed before
+this call (N)" (`callHistory`, `.boardnotes`). Laptop pull/restart pending.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
