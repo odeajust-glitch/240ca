@@ -298,6 +298,28 @@ suggestions and put it in the test tab"):**
   at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
   `testPreview` state and `mode !== 'test'` checks: pass the target through).
 
+**The test site, 2026-11-10 (owner: "go, owner key only, keep the test tab for now ...
+make changes to the test site only and I'll push it when you're ready"):** `board-test`
+and `board` serve one bucket, so the page tells them apart itself: `PREVIEW_HOST`
+(`location.hostname` starts with `board-test.`) and the owner key verified (`healthData &&
+OwnerKey.has()`, set in the health handler) make `PREVIEW` true and redraw. Everywhere else
+it is false. With it on (board.html):
+- **Analytics** tab = the new layout (`setMode` turns `ANA2` on with `ana2.mode =
+  'analytics'`; the Test tab still shows the same preview at the normal address).
+- **Snapshots** = Current's short rows (`sectionsGrid` / `strip2` / `wireCurrentBoxes`).
+- **Article 18.6(b)** = rows, no sideways table (`ana2Stack(view, { all: true })`).
+- **"A newer version of the site is ready" bar** (`checkSiteVersion`: a HEAD of the page
+  every 5 min and on coming back into view; a changed ETag shows Reload).
+- **Header**: a TEST SITE chip, smaller title, no subtitle, tighter sign-up banner.
+- **A search's figures** (`anaFacts2`) cut at his screenshot: no usual / earliest–latest on
+  duty, no crew predicted right, no times it went spare / out of sequence.
+Simulated here (the switch forced on, live data, phone width): each of the above shows; at
+the normal address none do; no page errors either way. **Not checked: the real
+`board-test`** (this session cannot reach it). He needs the owner key saved on that
+address once (`#ownerkey=…`), and ❓ whether the Worker answers a HEAD for the page with an
+ETag (if not, the bar never shows). Turn History was left as it is (its table fits a
+phone). To promote any of it: replace its `PREVIEW` test with `true`. Suite 288 of 300.
+
 **Analytics preview in Test, fourth round, 2026-11-10 (owner: "Tidy the other tiles too").
 Test only.** Under a turn, person or train search the four tile grids are grouped lines
 (`anaFacts2`, `.tl2`): Work (or The train), On duty and Toronto, Plan against what

@@ -5,6 +5,10 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Test site** (board-test + owner key shows every preview): built 2026-11-10, ❓ not yet
+  seen on the real address. On it, awaiting his go to promote: Analytics, Snapshots rows,
+  18.6(b) rows, the newer-version bar, the compact header. See HANDOFF.
+
 - **Analytics, new layout:** in Test since 2026-11-10, awaiting his review. See HANDOFF.
 
 

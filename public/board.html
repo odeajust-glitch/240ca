@@ -841,6 +841,11 @@
   .ana2 .tl2-group span small, .ana2 .tl2-group b small { color: var(--soft); font-weight: 400; font-size: 12px; }
   .ana2 .tl2-group b { font-family: var(--mono); white-space: nowrap; text-align: right; }
   .ana2 .tl2-group .alert b { color: var(--stop); }
+  /* The test site (board-test with the owner key). */
+  body.preview-site .top h1::after { content: 'TEST SITE'; margin-left: 10px; padding: 2px 7px; border-radius: 4px; background: var(--amber-tint); color: var(--amber); font: 700 11px/1.6 var(--body); letter-spacing: .08em; vertical-align: middle; }
+  .newversion { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 18px rgba(0, 0, 0, .35); font-size: 14px; font-weight: 600; }
+  .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -2208,23 +2213,18 @@ function anaFacts2(st, kind, extra = {}) {
   const d = durOr;
   const row = (label, value, alert) => `<div${alert ? ' class="alert"' : ''}><span>${label}</span><b>${value}</b></div>`;
   const group = (title, rows) => (rows.length ? `<div class="tl2-group"><h3>${title}</h3>${rows.join('')}</div>` : '');
-  const t = st.time;
-  const pct = (x) => (x.n ? `${pctOf(x)}% <small>(${x.hit} of ${x.n})</small>` : '—');
   const work = kind === 'train'
     ? [row('Went on duty', `${st.ran} <small>of ${st.seen} seen</small>`), row('Never ran (cancelled, or on duty between checks)', String(st.cancelled), st.cancelled > 0),
       ...(st.nonSarnia || st.possibleNonSarnia ? [row('Went to a non-Sarnia crew', `${st.nonSarnia}${st.possibleNonSarnia ? ` <small>+ ${st.possibleNonSarnia} possibly</small>` : ''}`)] : [])]
-    : [row('Trains worked', `${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`), row('Deadheads', String(st.deadheads)),
-      row('Usually on duty', t ? `${t.from}–${t.to}` : '—'), row('Earliest to latest on duty', t ? `${t.earliest}–${t.latest}` : '—')];
+    : [row('Trains worked', `${st.ran - st.yard}${st.yard ? ` <small>+ ${st.yard} yard</small>` : ''}`), row('Deadheads', String(st.deadheads))];
   const duty = [row(`Average time on duty to Toronto${st.timeOnDuty.n ? ` <small>(${st.timeOnDuty.n} trips)</small>` : ''}`, d(st.timeOnDuty.avg)), row('Longest time on duty', d(st.timeOnDuty.max)),
     row(`Average held in Toronto${st.held.n ? ` <small>(${st.held.n} stays)</small>` : ''}`, d(st.held.avg)), row('Held 14 h or more', `${st.held.over14} <small>of ${st.held.n}</small>`, st.held.over14 > 0)];
   const plan = [row('First plan against on duty, average apart', `${d(st.offPlan.avg)}${st.offPlan.n ? ` <small>(${st.offPlan.late} later, ${st.offPlan.early} earlier)</small>` : ''}`),
-    row('First order against on duty, average', `${d(st.offOrder.avg)} <small>(${st.offOrder.n} compared)</small>`), row('Order time changed after ordering', String(st.orderChanged)),
-    row('Conductor predicted right', pct(st.pred.co)), ...(st.pred.en.n ? [row('Engineer predicted right', pct(st.pred.en))] : [])];
+    row('First order against on duty, average', `${d(st.offOrder.avg)} <small>(${st.offOrder.n} compared)</small>`), row('Order time changed after ordering', String(st.orderChanged))];
   const b = extra.between;
-  const between = kind === 'train' || !b ? [] : [row(`Average time between trains${b.n ? ` <small>(${b.n})</small>` : ''}`, d(b.avg)), row('Shortest time between trains', d(b.min)),
-    ...(extra.spares == null ? [] : [row('Times it went spare', String(extra.spares)), row('Trains it took out of sequence', String(extra.took), extra.took > 0)])];
+  const between = kind === 'train' || !b ? [] : [row(`Average time between trains${b.n ? ` <small>(${b.n})</small>` : ''}`, d(b.avg)), row('Shortest time between trains', d(b.min))];
   return `<section class="sheet tl2">${group(kind === 'train' ? 'The train' : 'Work', work)}${group('On duty and Toronto', duty)}${group('Plan against what happened', plan)}${group('Between trains', between)}
-    <p class="anote" style="margin:8px 14px 12px">"Usually on duty" is the middle half of the on-duty times. Between trains is on duty to the next on duty. Hold figures leave out unknown times and count a stay still going at its time so far.</p></section>`;
+    <p class="anote" style="margin:8px 14px 12px">Between trains is on duty to the next on duty. Hold figures leave out unknown times and count a stay still going at its time so far.</p></section>`;
 }
 // The whole answer for one search. kind: 'train' | 'turn' | 'code'.
 // extra: { between, spares, took } for a turn (spares/took left out for a person);
@@ -2253,10 +2253,17 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 // changes in the test tab"). ANA2 is on only while Test is drawing it; the
 // regular Analytics tab runs the same code with it off.
 let ANA2 = false;
+// The test site (owner, 2026-11-10: "go, owner key only, keep the test tab
+// for now"): the same page opened at board-test.sarniaboard.workers.dev, on a
+// device with the owner key, shows every preview across the whole site (the
+// two Workers serve one bucket, so the page tells them apart by its address).
+// Everywhere else PREVIEW stays false and nothing below changes.
+const PREVIEW_HOST = /^board-test\./.test(location.hostname);
+let PREVIEW = false;
 const ANA2_PAGE = 20;
 let ANA2_CALLS = []; // call records whose graph is drawn when opened
 let ANA2_MORE = []; // "show more" lists
-const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false };
+const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'test' };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'Drags (SD)'], ['S1', '1st Manifest (S1)'], ['S3', '3rd Manifest (S3)'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null } = {}) {
@@ -3493,6 +3500,9 @@ source().then(async (src) => {
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
     document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
+    // The test site's previews: this address and the owner key, nothing else.
+    const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
+    if (preview !== PREVIEW) { PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW); if (PREVIEW) checkSiteVersion(); setTimeout(() => setMode(mode), 0); }
     membersOwner = !!(h && OwnerKey.has());
     document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
     const note = document.getElementById('keynote');
@@ -4588,7 +4598,7 @@ source().then(async (src) => {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
     // Current (owner, 2026-11-10, approved in Test): the short rows. Snapshots keep the older layout.
-    const fresh = mode === 'current';
+    const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too
     const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x).replace('Jobs going spare · 5', 'Jobs going spare') };
     const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
@@ -4688,11 +4698,11 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${mode === 'current' ? strip2(s) : strip(s, false)}
+      ${mode === 'current' || PREVIEW ? strip2(s) : strip(s, false)}
       ${arrangeBar()}
       ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
-    if (mode === 'current' && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
+    if ((mode === 'current' || PREVIEW) && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
     tickAges();
     paintTracked(s);
     wireArrange();
@@ -4846,7 +4856,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else { ANA2 = true; renderAnalytics(); return; } // Analytics in a new layout (ana2Pass)
+    else { ANA2 = true; ana2.mode = 'test'; renderAnalytics(); return; } // Analytics in a new layout (ana2Pass)
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
   }
   // Order summary, the layout since 2026-11-10 (owner; reviewed in Test, then
@@ -5000,7 +5010,8 @@ source().then(async (src) => {
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
-    ANA2 = false; document.getElementById('view').classList.remove('ana2'); // only Test turns the Analytics preview on
+    ANA2 = false; document.getElementById('view').classList.remove('ana2'); // only Test, or the test site, turns the Analytics preview on
+    if (PREVIEW && mode === 'analytics') { ANA2 = true; ana2.mode = 'analytics'; }
     if (mode === 'test') renderTest();
     else if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
@@ -5062,6 +5073,7 @@ source().then(async (src) => {
     const selected = heldOpen && heldRows(all).find(row => heldKey(row) === heldOpen);
     if (selected && (!selected.offDuty || selected.offDuty < callBefore(latest, 7 * 24 * 60))) heldPeriod = 'all';
     view.innerHTML = heldView(all, heldOpen, latest, names, state, heldCraft, heldPeriod);
+    if (PREVIEW) { view.classList.add('ana2'); ana2Stack(view, { all: true }); } // the test site: rows in place of the sideways table
     view.querySelector('[data-held-period]').onclick = () => {
       heldOpen = null;
       heldPeriod = heldPeriod === 'week' ? 'all' : 'week';
@@ -5204,12 +5216,35 @@ source().then(async (src) => {
   view0.addEventListener('focusout', () => { tip.hidden = true; });
   window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
 
+  // "A newer version of the site is ready" (test site only for now; owner
+  // review, 2026-11-10: twice a phone kept an older copy of the page after
+  // the laptop published). The page's own headers are asked every 5 minutes
+  // and when the page comes back into view; a change shows a bar to reload.
+  let siteStamp = null;
+  async function checkSiteVersion() {
+    if (!PREVIEW || document.getElementById('newversion')) return;
+    try {
+      const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const tag = r.ok && (r.headers.get('etag') || r.headers.get('last-modified') || r.headers.get('content-length'));
+      if (!tag) return;
+      if (siteStamp == null) { siteStamp = tag; return; }
+      if (tag === siteStamp) return;
+      const bar = document.createElement('div');
+      bar.id = 'newversion';
+      bar.className = 'newversion';
+      bar.innerHTML = '<span>A newer version of the site is ready.</span><button type="button">Reload</button>';
+      bar.querySelector('button').onclick = () => location.reload();
+      document.body.appendChild(bar);
+    } catch (e) { /* offline: ask again later */ }
+  }
+  setInterval(checkSiteVersion, 5 * 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkSiteVersion(); });
   // Analytics, new layout (Test preview): what is done to the drawn page.
   // Nothing here runs for the regular Analytics tab.
-  function ana2Stack(root) {
+  function ana2Stack(root, opts = {}) {
     // Turns side by side stays a table: reading across the turns is its point.
-    if (ana.sec === 'turns' && !ana.q.trim()) return;
-    const LIST = 10; // rows of a summary list before "show more"
+    if (!opts.all && ana.sec === 'turns' && !ana.q.trim()) return;
+    const LIST = opts.all ? Infinity : 10; // rows of a summary list before "show more"
     root.querySelectorAll('table').forEach((table) => {
       const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' '));
       if (!heads.length) return;
@@ -5369,7 +5404,7 @@ source().then(async (src) => {
     }
     const banner = document.createElement('p');
     banner.className = 'cur2-quiet';
-    banner.textContent = 'Preview of Analytics in a new layout. The regular Analytics tab is unchanged.';
+    banner.textContent = ana2.mode === 'test' ? 'Preview of Analytics in a new layout. The regular Analytics tab is unchanged.' : 'Test site: Analytics in the new layout.';
     view.prepend(banner);
     // Call stability: by where the call was, pool and craft.
     const panel = view.querySelector('[data-call-detail]');
@@ -5450,7 +5485,7 @@ source().then(async (src) => {
     try {
       [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), loadArchive(anaDates())]);
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
-    if (mode !== (ANA2 ? 'test' : 'analytics')) return;
+    if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
     found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
@@ -5527,7 +5562,7 @@ source().then(async (src) => {
             weeks.push({ name: t, resetKey: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });
           }
         }
-        if (mode !== (ANA2 ? 'test' : 'analytics')) return;
+        if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       }
       body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
@@ -5552,7 +5587,7 @@ source().then(async (src) => {
       // A person: the live stretches (people.json) and the archive's.
       const ok = /^[A-Z]{4}$/.test(q) && window.crypto && crypto.subtle;
       const [list, h] = ok ? await Promise.all([Person.find(q), Person.hash(q)]) : [null, null];
-      if (mode !== (ANA2 ? 'test' : 'analytics')) return;
+      if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       const old = (h && arch.people[h]) || [];
       const stretches = [...(list || []), ...old];
       if (!stretches.length) body = '<p class="empty">Nothing found for that name code in the saved checks.</p>';
@@ -5578,7 +5613,7 @@ source().then(async (src) => {
           <div class="abtns">${q ? '<button type="button" id="aclear">Clear search</button>' : ''}${anaCsv && anaCsv.runs.length ? '<button type="button" id="acsv">⬇ Spreadsheet</button>' : ''}</div>
         </div>
       </div>${body}`;
-    try { history.replaceState(null, '', ANA2 ? '#test' : '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    try { history.replaceState(null, '', ANA2 && ana2.mode === 'test' ? '#test' : '#analytics'); } catch (e) { /* not allowed in some frames */ }
     const callPanel = view.querySelector('[data-call-detail]');
     if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
