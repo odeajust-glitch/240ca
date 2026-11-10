@@ -16,8 +16,9 @@ styles. Laptop pull/restart/publish pending.
 it"):** on a phone the Pools at Sarnia filter buttons sit two to a row in his order: A
 pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot` and the
 `--o` order on each button in `public/board.html`; a pool not named comes after 501/502).
-Buttons only: the boards under them still open in the old pool order (asked him). A
-computer is unchanged. Laptop pull/restart/publish pending.
+Then ("make the boards open in the same order as the buttons"): the boards under them
+open in that order too, and the button order now holds on a computer as well (one order
+everywhere; a computer keeps its single line of buttons). Laptop pull/restart/publish pending.
 
 **Tab bar on a phone wraps again, 2026-11-10 evening (owner, screenshot from his phone:
 "fix the tabs at the top so they don't run off the screen"):** the one swipe row promoted
