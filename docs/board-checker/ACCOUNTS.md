@@ -54,8 +54,9 @@ stops at 50 people. The accounts are built into the Worker
   (removed), asked less than a minute ago, or twenty codes today already.
 - `board-test` and `board` share one bucket, so they share the same
   accounts: someone approved or removed on one is the same on the other.
-- The sign-up banner is switched off in `board.html` (`SIGNUP_BANNER`)
-  until the owner says the login works.
+- The sign-up banner has a second switch in `board.html` (`SIGNUP_BANNER`,
+  on since 2026-11-10); the Worker's `SIGNUP_NOTICE=on` is the one the
+  owner uses.
 - **Limits:** 5 sign-ups a day per internet address, 150 a day in all.
 - Account files are in R2 under `accounts/` and are never served.
 - Only the owner key opens the list (not the Cloudflare Access email).
