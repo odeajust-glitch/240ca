@@ -1150,6 +1150,11 @@ const health = { lastCheck: null, lastProblem: null, phones: null, subscribers: 
 // history; it goes no further than the owner-only health line.
 const codeByHash = new Map();
 const SUBSCRIBER_HEALTH_FILE = path.join(DATA_DIR, 'subscriber-health.json');
+// Followed people's name codes, kept over a restart (owner, 2026-11-10). On
+// the laptop only, like the cached report beside it; never on the site.
+const SUBSCRIBER_CODES_FILE = path.join(DATA_DIR, 'subscriber-codes.json');
+let savedCodes = {};
+try { savedCodes = JSON.parse(fs.readFileSync(SUBSCRIBER_CODES_FILE, 'utf8')) || {}; for (const [h, code] of Object.entries(savedCodes)) codeByHash.set(h, code); } catch { /* first run */ }
 try {
   const saved = JSON.parse(fs.readFileSync(SUBSCRIBER_HEALTH_FILE, 'utf8'));
   if (saved && typeof saved.phones === 'number') {
@@ -1166,6 +1171,7 @@ async function refreshSubscriberHealth(r2) {
     const value = { ...Health.subscribersOf(subs, people, codeByHash), confirmedAt: checkedAt, checkedAt, stale: false, error: null };
     health.subscribers = value;
     health.phones = value.phones;
+    try { savedCodes = Health.followedCodes(subs, codeByHash, savedCodes); fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(SUBSCRIBER_CODES_FILE, JSON.stringify(savedCodes)); } catch { /* shown as "not seen yet" after the next restart */ }
     try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(SUBSCRIBER_HEALTH_FILE, JSON.stringify(value)); }
     catch { console.log('Subscriber report could not be cached; current report is still available.'); }
   } catch (err) {
@@ -1176,12 +1182,35 @@ async function refreshSubscriberHealth(r2) {
 }
 
 try { health.version = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', timeout: 5000 }).trim(); } catch { /* not a git copy */ }
+// The running code in words (owner, 2026-11-10: the short hash said nothing):
+// when it's from and what it was, the folder's code now (newer = pulled but
+// not restarted), and how many updates GitHub has that the folder doesn't.
+const REPO_DIR = path.join(__dirname, '..');
+const gitNow = (args) => { try { return require('child_process').execFileSync('git', args, { cwd: REPO_DIR, encoding: 'utf8', timeout: 5000 }).trim(); } catch { return ''; } };
+const runningCode = (() => { const [hash, date, ...subject] = gitNow(['log', '-1', '--format=%h%n%cI%n%s']).split('\n'); return hash ? { hash, date: date || null, subject: subject.join(' ').slice(0, 120) } : null; })();
+let codeBehind = { behind: null, behindAt: null, behindError: null };
+let behindChecked = 0;
+// Asks GitHub at most every 30 minutes, in the background; never prompts.
+function refreshCodeBehind() {
+  if (!runningCode || Date.now() - behindChecked < 30 * 60000) return;
+  behindChecked = Date.now();
+  const { execFile } = require('child_process');
+  const opts = { cwd: REPO_DIR, encoding: 'utf8', timeout: 30000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } };
+  const branch = gitNow(['rev-parse', '--abbrev-ref', 'HEAD']);
+  if (!branch || branch === 'HEAD') { codeBehind = Health.behindOf('', 'not on a branch'); return; }
+  execFile('git', ['fetch', '--quiet', 'origin', branch], opts, (err) => {
+    if (err) { codeBehind = Health.behindOf('', err.killed ? 'GitHub did not answer in time' : (err.stderr || err.message)); return; }
+    execFile('git', ['rev-list', '--count', 'HEAD..FETCH_HEAD'], opts, (err2, out) => { codeBehind = Health.behindOf(err2 ? '' : out, err2 && (err2.stderr || err2.message)); });
+  });
+}
 function healthNow() {
+  try { refreshCodeBehind(); } catch { /* the check matters more */ }
   const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
   const today = new Date().toLocaleDateString('en-CA');
   const todayToronto = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
   return Health.healthOf({
     ...health,
+    code: runningCode ? { ...runningCode, folder: gitNow(['rev-parse', '--short', 'HEAD']) || runningCode.hash, ...codeBehind } : null,
     signIn: SignIn.loadState(SIGNIN_FILE),
     signInHours: SignIn.signInHours(),
     restarts: Health.restartsToday(read(path.join(OUT_DIR, 'restarts.log')), today),

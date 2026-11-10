@@ -715,6 +715,10 @@
   .ct2-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0 24px; margin: 0 0 8px; }
   .ct2-facts div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--rule-soft); }
   .ct2-facts span { color: var(--soft); }
+  .hverdict { padding: 10px 12px; border-radius: 8px; margin: 10px 0 0; border-left: 5px solid var(--go); background: var(--go-tint); }
+  .hverdict.bad { border-left-color: var(--stop); background: var(--stop-tint); }
+  .hverdict ul { margin: 6px 0 0; padding-left: 18px; }
+  .hverdict li { margin: 4px 0; }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -3422,26 +3426,17 @@ source().then(async (src) => {
       })
       .catch((err) => { if (qbox.isConnected) qbox.innerHTML = `<p class="muted">Can't load the questions: ${esc(err.message || err)}.</p>`; });
   }
-  // The Page Health tab: everything the laptop and the Worker know.
-  async function renderHealth() {
-    const view = document.getElementById('view');
-    const h = healthData;
-    const notice = healthUnavailable ? '<p class="warn" role="status">Couldn’t refresh Page Health. ' +
-      (h?.laptop?.at ? 'Showing the report from ' + esc(healthClock(h.laptop.at)) + '. ' : '') + retryButton + '</p>' : '';
-    if (!h || !h.laptop) {
-      view.innerHTML = notice || (h ? '<p class="empty">Waiting for the laptop’s first health report.</p>' : '<p class="empty">Page Health is only for the owner.</p>');
-      wireHealthRetry(view);
-      return;
-    }
+  // The board checker's rows: [{ label, text, bad }]. next: the Test preview
+  // (owner, 2026-11-10), with the code version spelled out.
+  function healthRows(h, now, next) {
     const L = h.laptop;
-    const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const rows = [];
-    const row = (label, text, bad) => rows.push(`<tr><th>${esc(label)}</th><td${bad ? ' class="warn"' : ''}>${esc(text)}</td></tr>`);
+    const row = (label, text, bad) => rows.push({ label, text, bad: !!bad });
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
     row('Laptop last checked', stamp(L.lastCheck), !L.lastCheck || now - L.lastCheck > 20 * 60000);
     row('Website last published', stamp(publishedAt));
-    row('Laptop code version', L.version || 'Unavailable');
+    if (next) codeRows(L, row, now, ago); else row('Laptop code version', L.version || 'Unavailable');
     // The Worker's 10-minute timer (owner, 2026-11-03: the 30 min ntfy never came).
     const W = h.watch;
     row('Worker timer', W ? `ran ${ago(W.at)}; ntfy topic ${W.ntfy ? 'set' : 'NOT set (no 30 min message)'}; push key ${W.push ? 'set' : 'NOT set (no phone alerts)'}` : 'never ran: no Cron Trigger on the Worker?', !W || now - W.at > 25 * 60000 || !W.ntfy || !W.push);
@@ -3467,6 +3462,43 @@ source().then(async (src) => {
     if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
     row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
     row('Health sent', ago(L.at));
+    return rows;
+  }
+  // The code the checker is running, in words: when it's from, whether the
+  // folder has newer code waiting for a restart, whether GitHub has more.
+  function codeRows(L, row, now, ago) {
+    const c = L.code;
+    if (!c || !c.hash) { row('Laptop code version', (L.version || 'Unavailable') + ' · details arrive once the laptop runs the newer code (pull, then restart)'); return; }
+    const when = c.date ? new Date(c.date).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '';
+    row('Running code', [when && 'from ' + when, c.subject && '“' + c.subject + '”', c.hash].filter(Boolean).join(' · '));
+    const waiting = c.folder && c.folder !== c.hash;
+    if (waiting) row('Restart needed', 'Newer code was pulled (' + c.folder + ') but the checker is still running ' + c.hash + ': Ctrl+C and start it again', true);
+    if (c.behind == null) row('GitHub', c.behindError ? 'Could not check GitHub: ' + c.behindError : 'Not checked yet');
+    else row('GitHub', (c.behind > 0 ? c.behind + ' newer update' + (c.behind === 1 ? '' : 's') + ' waiting: git pull, then restart' : 'Up to date') + (c.behindAt ? ' · checked ' + ago(c.behindAt) : ''), c.behind > 0);
+  }
+  // "All good", or the rows that need the owner, in one line.
+  function healthVerdict(rows) {
+    const bad = rows.filter((r) => r.bad);
+    return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li><b>${esc(r.label)}:</b> ${esc(r.text)}</li>`).join('')}</ul></div>`
+      : '<div class="hverdict ok" role="status"><b>All good</b> · nothing needs you right now</div>';
+  }
+  const healthTable = (rows) => `<table class="htable"><tbody>${rows.map((r) => `<tr><th>${esc(r.label)}</th><td${r.bad ? ' class="warn"' : ''}>${esc(r.text)}</td></tr>`).join('')}</tbody></table>`;
+  // The Page Health tab: everything the laptop and the Worker know.
+  async function renderHealth() {
+    const view = document.getElementById('view');
+    const h = healthData;
+    const notice = healthUnavailable ? '<p class="warn" role="status">Couldn’t refresh Page Health. ' +
+      (h?.laptop?.at ? 'Showing the report from ' + esc(healthClock(h.laptop.at)) + '. ' : '') + retryButton + '</p>' : '';
+    if (!h || !h.laptop) {
+      view.innerHTML = notice || (h ? '<p class="empty">Waiting for the laptop’s first health report.</p>' : '<p class="empty">Page Health is only for the owner.</p>');
+      wireHealthRetry(view);
+      return;
+    }
+    const L = h.laptop;
+    const now = Date.now();
+    const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
+    const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
+    const rows = healthRows(h, now, false);
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
     const S = L.subscribers;
@@ -3495,7 +3527,7 @@ source().then(async (src) => {
     const Q = L.questions || [];
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
-      <section class="sheet"><header><h2>The board checker</h2></header><table class="htable"><tbody>${rows.join('')}</tbody></table></section>${who}
+      <section class="sheet"><header><h2>The board checker</h2></header>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section>${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
@@ -4385,35 +4417,17 @@ source().then(async (src) => {
   function renderTest() {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
-    view.innerHTML = owner ? '<section class="sheet"><header><h2>Call timeline: new layout</h2><span class="meta">preview</span></header>' +
-      '<p class="anote" style="margin:10px 14px">Owner, 2026-11-10: a tidier call timeline that shows how short a short call was. Real calls from Call stability, drawn the new way; the regular Analytics page is unchanged until approved.</p>' +
-      '<div data-test-timelines style="padding:0 14px 14px"><p class="anote">Loading call records…</p></div></section>' :
-      '<p class="empty">Test previews require a verified owner key on this browser.</p>';
+    if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
+    else if (!healthData.laptop) view.innerHTML = '<p class="empty">Waiting for the laptop’s first health report.</p>';
+    else {
+      // Owner, 2026-11-10: Page Health with one verdict line on top and the
+      // code version in words. The regular Page Health is unchanged.
+      const rows = healthRows(healthData, Date.now(), true);
+      view.innerHTML = '<section class="sheet"><header><h2>Page Health: new top</h2><span class="meta">preview</span></header>' +
+        '<p class="anote" style="margin:10px 14px">One line that says whether anything needs you, then the same table with the code version spelled out. Who gets alerts keeps its name codes over a restart once the laptop runs this code (nothing to see here for that).</p>' +
+        '<div style="padding:0 14px 14px">' + healthVerdict(rows) + '</div>' + healthTable(rows) + '</section>';
+    }
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
-    if (owner) testTimelines(view.querySelector('[data-test-timelines]'));
-  }
-  // Test preview: the new call timeline on the calls that test it hardest.
-  async function testTimelines(box) {
-    try {
-      const [live, archive] = await Promise.all([src.analytics(), loadArchive({})]);
-      if (!box.isConnected) return;
-      const all = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []).map(BoardAnalytics.cleanCallRecord)
-        .filter((z) => !z.comparisonUnavailable && BoardAnalytics.callTimeline(z)).reverse();
-      const min = BoardTrains.toMin;
-      const calls = all.filter((z) => !z.takenOff && z.call && z.firstCall);
-      const gap = (z) => min(z.call) - min(z.firstCall);
-      const notice = (z) => min(z.call) - min(z.firstSeen);
-      const groups = [
-        ['Shortest notice, called before the 8 h window began', calls.filter((z) => gap(z) < -480 && notice(z) >= 0).sort((a, b) => notice(a) - notice(b))],
-        ['Called early, inside the 8 h window', calls.filter((z) => gap(z) < -30 && gap(z) >= -480)],
-        ['Called late', calls.filter((z) => gap(z) > 60).sort((a, b) => gap(b) - gap(a))],
-        ['Within 30 minutes of the plan', calls.filter((z) => Math.abs(gap(z)) <= 30)],
-        ['Removed from the line-up', all.filter((z) => z.takenOff)],
-      ];
-      const open = (html) => html.replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>');
-      box.innerHTML = groups.map(([name, list]) => '<h3>' + esc(name) + ' <span class="muted">· ' + list.length + '</span></h3>' +
-        (list.slice(0, 4).map((z) => open(BoardAnalytics.renderCallTimelineV2(z))).join('') || '<p class="anote">None saved.</p>')).join('');
-    } catch (e) { if (box.isConnected) box.innerHTML = '<p class="anote">Call records could not be loaded. Reopen Test to retry.</p>'; }
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;

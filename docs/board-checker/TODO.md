@@ -5,6 +5,9 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Page Health new top** (verdict line, code version in words): in Test since 2026-11-10,
+  awaiting his review; then promote. Names for followers: three answers pending. See HANDOFF.
+
 ### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
 
 Small decisions parked for a housekeeping pass; ask, don't build.

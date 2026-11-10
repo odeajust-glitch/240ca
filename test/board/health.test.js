@@ -16,3 +16,17 @@ test('alert history: both logs, last 30 days, the JSON copy wins', () => {
   const h = H2.alertHistory(txt, json, { days: 30, now: Date.UTC(2026, 10, 5, 18) });
   assert.deepEqual(h.alerts.map((a) => [a.at, a.turn, a.why || null]), [['2026-11-05 01:40', 'SD08', 'The Call Board shows it.'], ['2026-11-04 19:46', 'EN03', null]]);
 });
+
+// Owner, 2026-11-10: name codes of followed people kept over a restart.
+test('health: followed people keep their name codes over a restart', () => {
+  const Health = require('../../lib/board/health');
+  const subs = [{ turns: ['SR03', '@aaa', '@bbb'] }, { turns: ['@ccc'] }];
+  assert.deepStrictEqual(Health.followedCodes(subs, new Map([['aaa', 'JUOD'], ['zzz', 'NOPE']]), { bbb: 'RYPA', old: 'GONE' }), { aaa: 'JUOD', bbb: 'RYPA' });
+});
+test('health: how far behind GitHub, or why it is not known', () => {
+  const Health = require('../../lib/board/health');
+  assert.deepStrictEqual(Health.behindOf('3\n', null, 5), { behind: 3, behindAt: 5, behindError: null });
+  assert.deepStrictEqual(Health.behindOf('0', null, 5), { behind: 0, behindAt: 5, behindError: null });
+  assert.deepStrictEqual(Health.behindOf('', 'fatal: unable to access\nmore', 5), { behind: null, behindAt: 5, behindError: 'fatal: unable to access' });
+  assert.strictEqual(Health.healthOf({ code: { hash: 'abc' } }).code.hash, 'abc');
+});

@@ -101,6 +101,25 @@ three places that draw a call (callReviewRecord, the Turn History call history, 
 preview). The old function stays in board-analytics.js only because its tests still use it.
 Suite 276 of 290 (same 14 failing). Live after the laptop pull and the next publish.
 
+**Page Health: new top — in Test, awaiting Justin's phone review (2026-11-10, he said yes
+to items 1–3 of a review):** (1) a verdict line, "All good" or "N things need you" listing
+the red rows (`healthVerdict`); (2) the code version in words: "Running code" (date, commit
+title, hash), "Restart needed" when the folder was pulled but the checker still runs older
+code, "GitHub" = how many updates are waiting (`codeRows`; laptop: `runningCode`,
+`refreshCodeBehind` in scripts/board-auto.js, a background `git fetch` at most every 30
+min, `GIT_TERMINAL_PROMPT=0`; health report field `code`); (3) followed people's name
+codes kept over a restart (`Health.followedCodes`, BoardChecker\subscriber-codes.json, on
+the laptop and in its private backup only). The rows now come from `healthRows(h, now,
+next)`; the regular Page Health calls it with next = false and looks the same. To promote:
+call it with true in `renderHealth` and put `healthVerdict(rows)` above the table. Test's
+call-timeline preview is gone (promoted). Checked here in a browser with made-up reports
+(old laptop code, all good, four things wrong); the git fetch has only run on Linux here,
+❓ confirm the "GitHub" row on the Windows laptop. Suite 278 of 292, the same 14 failing.
+Other Page Health ideas offered, not built: follower table, failed alerts by who, a
+warning row for OWNER_EMAIL with Access off, reorder. Real names for followers wait on
+three answers (capture names for everyone each check; OWNER_EMAIL deleted on `board`;
+layout).
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
