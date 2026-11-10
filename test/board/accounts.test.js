@@ -90,12 +90,15 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.doesNotMatch(pings[0], /Pat|123456/);
   assert.equal((await (await call('/auth/me', { cookie })).json()).status, 'pending');
   assert.equal((await call('/data/index.json', { cookie })).status, 401);
-  // The same email again: the same answer, but no way in and nothing changed.
+  // The same email again: told why, no way in and nothing changed.
   res = await call('/auth/signup', { body: { ...person('b'), name: 'Someone Else' } });
-  assert.equal(res.status, 200);
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /waiting for approval/);
   assert.equal(res.headers.get('set-cookie'), null);
-  // No sign-in code for someone not approved yet.
-  assert.equal((await call('/auth/code', { body: { email: 'patb@example.com' } })).status, 200);
+  // No sign-in code for someone not approved yet, and the page says so.
+  res = await call('/auth/code', { body: { email: 'patb@example.com' } });
+  assert.equal(res.status, 404);
+  assert.match((await res.json()).error, /waiting for approval/);
   assert.equal(mails.length, 1);
 
   // Only the owner key sees the list (not an Access email header).
@@ -135,11 +138,14 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   const second = cookieOf(res);
   assert.equal((await call('/data/index.json', { cookie: second })).status, 200);
   assert.equal((await call('/auth/verify', { body: { email: 'patb@example.com', code } })).status, 400); // once only
-  // A second code within the minute isn't sent.
-  await call('/auth/code', { body: { email: 'patb@example.com' } });
+  // A second code within the minute isn't sent, and the page says so.
+  res = await call('/auth/code', { body: { email: 'patb@example.com' } });
+  assert.equal(res.status, 429);
+  assert.match((await res.json()).error, /less than a minute ago/);
   assert.equal(mails.length, 3);
-  // Unknown email: the same answer, no email.
-  assert.equal((await call('/auth/code', { body: { email: 'nobody@example.com' } })).status, 200);
+  // Unknown email: sent to Sign up, no email.
+  res = await call('/auth/code', { body: { email: 'nobody@example.com' } });
+  assert.deepEqual([res.status, (await res.json()).use], [404, 'signup']);
   assert.equal(mails.length, 3);
 
   // Removed: out on every device at once, and can't sign up again.
@@ -148,7 +154,9 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal((await call('/data/index.json', { cookie })).status, 401);
   assert.equal((await call('/data/index.json', { cookie: second })).status, 401);
   res = await call('/auth/signup', { body: person('b') });
+  assert.equal(res.status, 409);
   assert.equal(res.headers.get('set-cookie'), null);
+  assert.equal((await call('/auth/code', { body: { email: 'patb@example.com' } })).status, 404);
   assert.equal((await call('/health/accounts', { key: OWNER_KEY, body: { id: u.id, action: 'approve' } })).status, 409);
   assert.equal((await call('/health/accounts', { key: OWNER_KEY, body: { id: u.id, action: 'delete' } })).status, 200);
   assert.equal(store.has(`accounts/users/${u.id}.json`), false);

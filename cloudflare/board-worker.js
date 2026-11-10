@@ -1204,26 +1204,39 @@ async function authSignup(request, env, now = Date.now()) {
   today.n += 1;
   today.ips[ip] = (today.ips[ip] || 0) + 1;
   await putJson(env, dayKey, today);
-  // The same answer whether or not the email is already known, so nobody
-  // can find out who has an account. The email is confirmed with a code
-  // (owner, 2026-11-09: "can we verify emails") before the owner sees it.
+  // The email is confirmed with a code (owner, 2026-11-09: "can we verify
+  // emails") before the owner sees it. The page says plainly why no code
+  // goes (owner, twice: "I'm requesting a new email code and it's not being
+  // sent"): clear beats hiding who has an account.
   const id = await uidOf(email);
   const old = await readJson(env, userKey(id));
-  if (old && old.status !== 'declined' && old.status !== 'unverified') return json({ ok: true });
+  if (old && old.status !== 'declined' && old.status !== 'unverified') return json({ error: NO_CODE[old.status] || NO_CODE.removed, use: old.status === 'approved' ? 'signin' : undefined }, 409);
   const sent = await sendCode(env, id, email, now);
-  if (sent !== 'sent' && sent !== 'wait') return json({ error: 'The confirmation email couldn\'t be sent right now. Try again later.' }, 503);
+  if (NO_CODE[sent]) return json({ error: NO_CODE[sent] }, 429);
+  if (sent !== 'sent') return json({ error: 'The confirmation email couldn\'t be sent right now. Try again later.' }, 503);
   await saveUser(env, id, { email, name, pin, hireDate, status: 'unverified', key: b64(crypto.getRandomValues(new Uint8Array(12))), requestedAt: now }, now);
   return json({ ok: true });
 }
 
-// A 6-digit code to that address: 'sent', 'wait' (one a minute, six a day)
-// or why the email didn't go.
+// Why no code went, in words for the page.
+const NO_CODE = {
+  soon: 'A code was emailed to that address less than a minute ago. Check your inbox and junk mail, or wait a minute and ask again.',
+  max: 'Too many codes have gone to that address today. Try again tomorrow.',
+  none: 'There\'s no account with that email. Check the spelling, or use Sign up.',
+  pending: 'That email is still waiting for approval. You get an email once you\'re approved.',
+  approved: 'That email already has an account. Use Sign in.',
+  declined: 'That sign-up wasn\'t approved. Use Sign up to try again.',
+  removed: 'That email can\'t be used here. Ask whoever gave you this address.',
+};
+// A 6-digit code to that address: 'sent', 'soon' (one a minute), 'max' (six
+// a day) or why the email didn't go.
 async function sendCode(env, id, email, now = Date.now()) {
   const codeKey = `${ACC}codes/${id}.json`;
   const rec = (await readJson(env, codeKey)) || {};
   const day = torontoDay(now);
   const n = rec.day === day ? rec.n || 0 : 0;
-  if ((rec.sentAt && now - rec.sentAt < 60000) || n >= CODE_DAY_MAX) return 'wait';
+  if (n >= CODE_DAY_MAX) return 'max';
+  if (rec.sentAt && now - rec.sentAt < 60000) return 'soon';
   const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
   const sent = await accountMail(env, email, `${code} is your code`,
     `Your code is ${code}\n\nIt works for ${CODE_MINUTES} minutes. If you didn't ask for it, ignore this email.`, now);
@@ -1239,9 +1252,10 @@ async function authCode(request, env, now = Date.now()) {
   if (email.length > 120 || !EMAIL_RE.test(email)) return json({ error: 'That email doesn\'t look right.' }, 400);
   const id = await uidOf(email);
   const user = await readJson(env, userKey(id));
-  if (!user || user.status !== 'approved') return json({ ok: true });
+  if (!user || user.status !== 'approved') { const why = !user || user.status === 'unverified' ? 'none' : user.status; return json({ error: NO_CODE[why] || NO_CODE.removed, use: why === 'none' || why === 'declined' ? 'signup' : undefined }, 404); }
   const sent = await sendCode(env, id, email, now);
-  if (sent !== 'sent' && sent !== 'wait') return json({ error: 'The sign-in email couldn\'t be sent right now. Try again later.' }, 503);
+  if (NO_CODE[sent]) return json({ error: NO_CODE[sent] }, 429);
+  if (sent !== 'sent') return json({ error: 'The sign-in email couldn\'t be sent right now. Try again later.' }, 503);
   return json({ ok: true });
 }
 
@@ -1541,8 +1555,8 @@ p { margin: .4rem 0; }
     e.preventDefault(); say(''); busy(this, true); var f = this;
     api('/auth/code', { email: $('inEmail').value }).then(function (r) {
       busy(f, false);
-      if (r.error) { say(r.error, true); return; }
-      askCode($('inEmail').value, 'If that email has an approved account, a 6-digit code is on its way. Give it a minute, and look in junk mail too.');
+      if (r.error) { if (r.use === 'signup') { tab(true); $('upEmail').value = $('inEmail').value; } say(r.error, true); return; }
+      askCode($('inEmail').value, 'A 6-digit code is on its way to your email. Give it a minute, and look in junk mail too.');
     });
   };
   $('back').onclick = function () { say(''); tab($('tabUp').getAttribute('aria-pressed') === 'true'); };
@@ -1559,7 +1573,7 @@ p { margin: .4rem 0; }
     e.preventDefault(); say(''); busy(this, true); var f = this;
     api('/auth/signup', { name: $('upName').value, email: $('upEmail').value, pin: $('upPin').value, hireDate: $('upHire').value }).then(function (r) {
       busy(f, false);
-      if (r.error) { say(r.error, true); return; }
+      if (r.error) { if (r.use === 'signin') { tab(false); $('inEmail').value = $('upEmail').value; } say(r.error, true); return; }
       askCode($('upEmail').value, 'Almost done: a 6-digit code was emailed to you to confirm your address. Enter it here. Give it a minute, and look in junk mail too.');
     });
   };

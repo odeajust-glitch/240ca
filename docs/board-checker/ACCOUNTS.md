@@ -47,6 +47,14 @@ stops at 50 people. The accounts are built into the Worker
   approval), so about 35 new people a day;
   if the allowance runs out the approval still works, the page tells you
   the email didn't go.
+- **When no code is sent the page says why** (owner, 2026-11-10, after two
+  silent failures): no account with that email (and it switches to Sign
+  up), still waiting for approval, already has an account, can't be used
+  (removed), asked less than a minute ago, or six codes today already.
+- `board-test` and `board` share one bucket, so they share the same
+  accounts: someone approved or removed on one is the same on the other.
+- The sign-up banner is switched off in `board.html` (`SIGNUP_BANNER`)
+  until the owner says the login works.
 - **Limits:** 5 sign-ups a day per internet address, 150 a day in all.
 - Account files are in R2 under `accounts/` and are never served.
 - Only the owner key opens the list (not the Cloudflare Access email).

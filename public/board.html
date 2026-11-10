@@ -4862,7 +4862,10 @@ source().then(async (src) => {
     if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
     // "Sign up to keep access" (owner, 2026-11-09: people make an account
     // before the lock goes on): the Worker's SIGNUP_NOTICE=on switches it on.
-    if (me.notice && !me.lock && !me.signedIn && !OwnerKey.has()) {
+    // Off for now (owner, 2026-11-10: "take the banner off until we get the
+    // login issues resolved"): set SIGNUP_BANNER to true to bring it back.
+    const SIGNUP_BANNER = false;
+    if (SIGNUP_BANNER && me.notice && !me.lock && !me.signedIn && !OwnerKey.has()) {
       const note = document.getElementById('signnote');
       note.innerHTML = me.status === 'pending' ? '<span><b>Your sign-up is waiting for approval.</b> Nothing more to do: this device keeps its access once you’re approved.</span>'
         : '<span><b>Soon you’ll need an account to see this site.</b> Sign up now to keep your access.</span><a href="account#signup">Sign up</a>';
