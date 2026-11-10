@@ -4,6 +4,16 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Minecraft and Naruto page styles, 2026-11-10 evening (owner: "make a minecraft theme and
+a Naruto theme"):** two more choices (`data-theme` `minecraft`, `naruto` in
+`public/board.html`), the look only (no blocks, characters, symbols or logos).
+Minecraft: dirt-brown page, light grey bevelled panels, grey stone buttons with white
+shadowed pixel letters, grass green headings and picked thing. Naruto: orange top band,
+white comic panels with a thick black outline and hard drop shadow, heavy slanted
+capitals (Barlow Condensed), the open tab black with orange letters, black day bars.
+Checked at phone width on sample data like the others. Laptop pull/restart/publish
+pending.
+
 **Zelda page style, 2026-11-10 evening (owner: "make a zelda theme"):** one more choice,
 `data-theme="zelda"` in `public/board.html`, the look only (no characters, symbols or
 logos): deep green page, parchment sheets with a gold edge, gold pixel headings (Press
