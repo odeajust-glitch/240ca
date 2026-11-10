@@ -1200,11 +1200,17 @@ async function sessionOf(request, env, now = Date.now(), fresh = false) {
 
 // One email through the Gmail script, counted against the day's allowance:
 // 'sent', or why not ('off', 'cap', 'failed').
-async function accountMail(env, to, subject, body, now = Date.now()) {
+// spare: an email the person can do without (the "you're approved" /
+// "couldn't be confirmed" notes: an approved device opens by itself). These
+// stop at 60% of the day's allowance and return 'saved', so the rest is
+// kept for sign-up and sign-in codes, which nobody can do without (found
+// the evening of the lock, 2026-11-10: 118 devices a day, about 100 emails).
+async function accountMail(env, to, subject, body, now = Date.now(), spare = false) {
   if (!mailReady(env)) return 'off';
   const key = `${ACC}mail/${torontoDay(now)}.json`;
   const count = (await readJson(env, key)) || { n: 0 };
   if (count.n >= mailDayMax(env)) return 'cap';
+  if (spare && count.n >= Math.floor(mailDayMax(env) * 0.6)) return 'saved';
   try {
     const res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: '', replyTo: '', subject, body, name: 'Account' }) });
@@ -1383,12 +1389,12 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     const { pin, hireDate, ...rest } = user;
     await saveUser(env, id, { ...rest, status: 'approved', approvedAt: now }, now);
     mail = await accountMail(env, user.email, 'You\'re approved',
-      `Hi ${user.name},\n\nYour sign-up is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now);
+      `Hi ${user.name},\n\nYour sign-up is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now, true);
   } else if (action === 'decline' && user.status === 'pending') {
     const { pin, hireDate, ...rest } = user;
     await saveUser(env, id, { ...rest, status: 'declined', declinedAt: now }, now);
     mail = await accountMail(env, user.email, 'Your sign-up couldn\'t be confirmed',
-      `Hi ${user.name},\n\nYour sign-up couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, PIN and hire date.`, now);
+      `Hi ${user.name},\n\nYour sign-up couldn't be confirmed: the details didn't match.\n\nIf that's a mistake, sign up again at ${site}/account and check your name, PIN and hire date.`, now, true);
   } else if (action === 'role' && user.status === 'approved') {
     if (you !== 'owner') return json({ error: 'Only the owner changes who is an Admin.' }, 403);
     await saveUser(env, id, { ...user, role: b.role === 'admin' ? 'admin' : 'member' }, now);
@@ -1692,6 +1698,7 @@ p { margin: .4rem 0; }
     api('/health/accounts', { id: id, action: action }, { 'x-owner-key': ownerKey() }).then(function (r) {
       if (r.error) say(r.error, true);
       else if (r.mail === 'sent') say('Done. They have been emailed.');
+      else if (r.mail === 'saved') say('Done. No email was sent, to keep today\'s emails for sign-in codes. Their device opens by itself.');
       else if (r.mail) say('Done, but the email did not go (' + (r.mail === 'cap' ? 'today\'s email allowance is used up' : r.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed') + '). Let them know yourself.', true);
       else say('Done.');
       loadOwner();

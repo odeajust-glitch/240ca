@@ -4261,6 +4261,7 @@ source().then(async (src) => {
       if (mode !== 'members') return;
       renderMembers(out.error ? { bad: true, text: out.error }
         : out.mail === 'sent' ? { text: `Done: ${name} has been emailed.` }
+          : out.mail === 'saved' ? { text: `Done. No email was sent to ${name}, to keep today’s emails for sign-in codes. Their device opens by itself.` }
           : out.mail ? { bad: true, text: `Done, but the email to ${name} did not go (${out.mail === 'cap' ? 'today’s email allowance is used up' : out.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed'}). Let them know yourself.` }
             : { text: action === 'role' ? `${name} is now ${extra.role === 'admin' ? 'an Admin' : 'a Member'}.` : 'Done.' });
     };

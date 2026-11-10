@@ -443,3 +443,22 @@ test('a member opening the board is noted as last seen, at most once an hour', a
   } finally { Date.now = realNow; }
   assert.equal((await call('/data/index.json', { cookie })).status, 200);
 });
+
+// The evening of the lock, 2026-11-10: keep the last of the day's emails for codes.
+test('approval notes stop at 60% of the day\'s emails; codes go on to the limit', async () => {
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const body = person('r1');
+  await call('/auth/signup', { body, ip: '11.1.1.1' });
+  const cookie = cookieOf(await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } }));
+  const id = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === body.email).id;
+  store.set(`accounts/mail/${day}.json`, JSON.stringify({ n: 42 })); // 60% of 70
+  const sent = mails.length;
+  const res = await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+  assert.deepEqual(await res.json(), { ok: true, mail: 'saved' });
+  assert.equal(mails.length, sent);
+  assert.equal((await call('/data/index.json', { cookie })).status, 200); // approved all the same
+  // A sign-up code still goes.
+  assert.equal((await call('/auth/signup', { body: person('r2'), ip: '11.1.1.2' })).status, 200);
+  assert.equal(mails.length, sent + 1);
+});
