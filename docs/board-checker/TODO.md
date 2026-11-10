@@ -5,7 +5,6 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
-- **Order summary, new layout:** in Test since 2026-11-10, awaiting his review. See HANDOFF.
 
 - **Snapshots tab:** still the older layout after Current's was changed 2026-11-10; ask
   whether to switch it too.
@@ -197,6 +196,9 @@ Not wanted (owner, 2026-10-26): a pay period view (A6) and hours on duty
 per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
+
+- 2026-11-10: **Order summary, new layout** (two-line rows, groups, sort, search as you
+  type, the crew's call in each train) and its opened-detail fix: approved and promoted.
 
 - 2026-11-10: **Current, new layout** (short rows, Toronto and Garnet folded, who is in
   Garnet, counts on one line, tab bar in one row): approved in Test and promoted.

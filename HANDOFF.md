@@ -259,6 +259,19 @@ ones; folding uses the same per-phone memory Current already has. Measured on th
 2,000 → 866 px. To promote: swap `lineup`, `toronto`, `garnet`, `changes`, `strip` in
 `SECTIONS` / `show` for the `…2` versions and decide on the tab bar. Suite 283 of 297.
 
+**Order summary new layout promoted, 2026-11-10 (owner: "My bad. Push the updates"):**
+`renderOrderSummary` always ends in `orderSummary2(view, preview, all, days, labels,
+target)`; the six-column table is gone. A shared link or a search still opens its train
+(`preview.open` → the row opened, its group opened, scrolled to; the remembered From /
+Status are not applied then, so it can't be filtered away); Share is in each train's
+detail. Test is back to "No items awaiting review." Checked in a browser on live data: 20
+trains in four groups, page a screen wide, `#train=Q13931-10` opens that train, no page
+errors. **Worker:** nothing in this session touched `cloudflare/board-worker.js`; the live
+`board` Worker serves the "one device per account" wording (commit 361e039 or later).
+❓ Not verifiable from here: whether it has ee8a13a (Admins not held to one device, 8 min
+later) and what `board-test` runs (this session can't reach that address). The note below
+is how it was built.
+
 **Order summary, 2026-11-10 (owner asked for a review, then "do the fix and build the
 suggestions and put it in the test tab"):**
 - **Fixed on the regular tab:** an opened train's detail was broken apart. `story()`

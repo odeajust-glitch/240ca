@@ -756,7 +756,7 @@
     body.nav-one-row .modes { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     body.nav-one-row .modes::-webkit-scrollbar { display: none; }
     body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; white-space: nowrap; } }
-  /* Order summary, new layout (Test preview). */
+  /* Order summary, the two-line rows (2026-11-10). */
   .os2-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
   .os2-filters label { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; }
   .os2-filters label.wide { grid-column: 1 / -1; }
@@ -4669,12 +4669,11 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else { renderOrderSummary('test'); return; }
+    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
   }
-  // Order summary, new layout: Test preview only (owner, 2026-11-10: "build
-  // the suggestions and put it in the test tab for review"). The regular
-  // Order summary above is unchanged. No table to scroll sideways: each train
+  // Order summary, the layout since 2026-11-10 (owner; reviewed in Test, then
+  // "push the updates"). No table to scroll sideways: each train
   // is two lines with the comparison on the second; short status chips; the
   // day in groups (to come, on duty, completed, dropped) that stay folded the
   // way they were left; a sort by biggest change; filters on one row with a
@@ -4682,12 +4681,13 @@ source().then(async (src) => {
   // inside the train's detail.
   const OS2_SHORT = { planned: 'Planned', ordered: 'Ordered', onDuty: 'On duty', completed: 'Completed', disappeared: 'Dropped' };
   const OS2_GROUPS = [['coming', 'Still to come', ['planned', 'ordered'], true], ['onDuty', 'On duty', ['onDuty'], true], ['completed', 'Completed', ['completed'], false], ['disappeared', 'Dropped off the line-up', ['disappeared'], false]];
-  async function orderSummary2(view, preview, all, days, labels) {
+  async function orderSummary2(view, preview, all, days, labels, target) {
     const saved = local.get('orderSummary2') || {};
-    if (preview.sort == null) Object.assign(preview, { sort: saved.sort || 'time', from: saved.from || preview.from, status: saved.status || preview.status });
+    // The last filters on this phone, unless a link or a search opened one train (it must not be filtered away).
+    if (preview.sort == null) Object.assign(preview, { sort: saved.sort || 'time' }, preview.open ? {} : { from: saved.from || preview.from, status: saved.status || preview.status });
     let calls = [];
     try { const [live, archive] = await Promise.all([src.analytics(), loadArchive({ from: preview.day, to: preview.day })]); calls = BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []); } catch (e) { /* the trains still show */ }
-    if (mode !== 'test') return;
+    if (mode !== target) return;
     const hm = (stamp) => (stamp ? stamp.slice(11) : '—');
     const moved = (r) => { const latest = r.order || r.firstOrder; const d = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null; return Math.abs(r.offPlan ?? d ?? 0); };
     const rows = all.filter((r) => r.day === preview.day && (preview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === preview.from) &&
@@ -4720,19 +4720,21 @@ source().then(async (src) => {
         : r.onDuty ? '<p class="anote">No Call stability record is saved for this train’s crew.</p>' : '';
       const fold = `<p class="anote">${esc(r.from === 'mac' ? 'Toronto' : 'Sarnia')} · ${esc(labels[status])}</p><div class="ct2-facts">${facts}</div>${crewCalls}
         <h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections.</p><div class="story">${noShare(storyBody({ ...r, events: previewMajorEvents(r) }))}</div>
-        <details class="os2-all"><summary>All recorded changes (${(r.events || []).length})</summary><div class="story">${noShare(storyBody(r))}</div></details>`;
+        <details class="os2-all"><summary>All recorded changes (${(r.events || []).length})</summary><div class="story">${noShare(storyBody(r))}</div></details>
+        <p><button type="button" class="sharebtn" data-preview-share="${esc(r.id)}">🔗 Share this train</button></p>`;
+      const isOpen = preview.open === r.id + ' ' + r.month;
       return cur2Row({ time: hm(time), train: sym, od, chips: `<span class="st os2-${status}">${esc(OS2_SHORT[status])}</span>${r.from === 'mac' ? ' <span class="chip">Toronto</span>' : ''}${r.deadhead ? ' <span class="chip">DH</span>' : ''}`,
-        line2: `<span>${steps || 'no time saved'}</span>${result ? `<span>${result}</span>` : ''}`, foldName: 'Details', fold }).replace('<details class="cur2', `<details data-os2="${esc(r.id.toUpperCase().replace(/\s+/g, ''))}" class="cur2`);
+        line2: `<span>${steps || 'no time saved'}</span>${result ? `<span>${result}</span>` : ''}`, foldName: 'Details', fold }).replace('<details class="cur2', `<details data-os2="${esc(r.id.toUpperCase().replace(/\s+/g, ''))}"${isOpen ? ' open data-os2open' : ''} class="cur2`);
     };
     const groups = OS2_GROUPS.map(([k, name, kinds, openByDefault]) => {
       const list = rows.filter((r) => kinds.includes(previewOrderStatus(r)));
       if (!list.length) return '';
       const was = local.get('orderSummary2Open:' + k);
-      return `<details class="sheet test-current-box os2-group" data-os2group="${k}"${(typeof was === 'boolean' ? was : openByDefault) ? ' open' : ''}><summary><h2>${esc(name)}</h2><span class="meta"><span data-os2count>${list.length}</span> ${list.length === 1 ? 'train' : 'trains'}</span></summary>${list.map(one).join('')}</details>`;
+      const holdsOpen = list.some((r) => preview.open === r.id + ' ' + r.month);
+      return `<details class="sheet test-current-box os2-group" data-os2group="${k}"${holdsOpen || (typeof was === 'boolean' ? was : openByDefault) ? ' open' : ''}><summary><h2>${esc(name)}</h2><span class="meta"><span data-os2count>${list.length}</span> ${list.length === 1 ? 'train' : 'trains'}</span></summary>${list.map(one).join('')}</details>`;
     }).join('');
     const select = (id, name, items, selected) => `<label>${name}<select id="${id}">${items.map(([value, label]) => `<option value="${esc(value)}"${value === selected ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select></label>`;
-    view.innerHTML = `<section class="sheet"><header><h2>Order summary: new layout</h2><span class="meta">preview</span></header>
-      <p class="anote" style="margin:10px 14px">Owner, 2026-11-10. The regular Order summary is unchanged (apart from its opened detail being put right). Here: no sideways scrolling, two lines a train with plan → order → on duty and the result, short status chips, the day in groups that stay folded as you leave them, a sort by biggest change, a search that works as you type, your last filters remembered on this phone, and the crew’s call graph inside each train.</p></section>
+    view.innerHTML = `
       <div class="ohead"><div><div class="eyebrow">Order summary</div><div class="when">${esc(preview.day ? when(preview.day + ' 0000').long : 'No saved day')}</div></div></div>
       <div class="os2-filters">${select('os2-day', 'Day', days.map((d) => [d, when(d + ' 0000').day]), preview.day)}${select('os2-from', 'From', [['all', 'All'], ['sarnia', 'Sarnia'], ['mac', 'Toronto']], preview.from)}
         ${select('os2-status', 'Status', [['all', 'All'], ...Object.entries(OS2_SHORT)], preview.status)}${select('os2-sort', 'Sort', [['time', 'By time'], ['change', 'Biggest change']], preview.sort)}
@@ -4742,7 +4744,8 @@ source().then(async (src) => {
     const apply = () => {
       Object.assign(preview, { day: document.getElementById('os2-day').value, from: document.getElementById('os2-from').value, status: document.getElementById('os2-status').value, sort: document.getElementById('os2-sort').value });
       local.set('orderSummary2', { from: preview.from, status: preview.status, sort: preview.sort });
-      renderOrderSummary('test');
+      preview.open = null;
+      renderOrderSummary(target);
     };
     for (const id of ['os2-day', 'os2-from', 'os2-status', 'os2-sort']) document.getElementById(id).onchange = apply;
     // The search hides rows as you type; nothing is redrawn, so the box keeps its place.
@@ -4762,6 +4765,10 @@ source().then(async (src) => {
     if (preview.find) filter();
     view.querySelectorAll('.os2-group').forEach((g) => { g.addEventListener('toggle', () => { if (!find.value.trim()) local.set('orderSummary2Open:' + g.dataset.os2group, g.open); }); });
     view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
+    view.querySelectorAll('[data-preview-share]').forEach((button) => { button.onclick = () => shareLink('#train=' + encodeURIComponent(button.dataset.previewShare.replace(/\s+/g, '-')), 'Train ' + button.dataset.previewShare, button); });
+    // Opened from a link or a search: bring that train into view.
+    const opened = view.querySelector('[data-os2open]');
+    if (opened) setTimeout(() => opened.scrollIntoView({ block: 'start' }), 50);
   }
   async function renderOrderSummary(target) {
     const preview = target === 'test' ? testPreview : orderSummaryState;
@@ -4791,69 +4798,7 @@ source().then(async (src) => {
     const days = [...new Set(all.map((r) => r.day).filter(Boolean))].sort().reverse();
     if (!days.includes(preview.day)) preview.day = (all.find((r) => r.onDuty) || all[0] || {}).day;
     const labels = { planned: 'Planned / no order observed', ordered: 'Order observed', onDuty: 'On duty / tie-up not recorded', completed: 'Completed', disappeared: 'Off lineup / no call observed' };
-    const query = preview.find.trim().toUpperCase().replace(/\s+/g, '');
-    const rows = all.filter((r) => r.day === preview.day &&
-      (preview.from === 'all' || (r.from === 'mac' ? 'mac' : 'sarnia') === preview.from) &&
-      (preview.status === 'all' || previewOrderStatus(r) === preview.status) &&
-      (!query || r.id.toUpperCase().replace(/\s+/g, '').includes(query))).sort((a,b) => {
-      const due = r => r.onDuty || r.order || r.plan || r.firstSeen;
-      return String(due(a)).localeCompare(String(due(b)));
-    });
-    if (target === 'test') { await orderSummary2(view, preview, all, days, labels); return; }
-    const select = (id, name, items, selected) => '<label>' + name + '<select id="' + id + '">' +
-      items.map(([value, label]) => '<option value="' + esc(value) + '"' + (value === selected ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></label>';
-    const body = rows.map((r) => {
-      const key = r.id + ' ' + r.month;
-      const open = preview.open === key;
-      const latest = r.order || r.firstOrder;
-      const delta = latest && r.onDuty ? BoardTrains.off(latest, r.onDuty) : null;
-      const status = previewOrderStatus(r);
-      const row = '<tr class="row' + (open ? ' open' : '') + '" tabindex="0" role="button" aria-expanded="' + open + '" data-preview-key="' + esc(key) + '">' +
-        '<td><b class="num">' + esc(r.id) + '</b><div class="crew">' + (r.from === 'mac' ? 'Toronto' : 'Sarnia') + ' · ' + labels[status] + '</div></td>' +
-        '<td class="num">' + esc(dt(r.firstPlan)) + '</td><td class="num">' + esc(dt(latest)) + '</td><td class="num">' + esc(dt(r.onDuty)) + '</td>' +
-        '<td>' + offCell(r.offPlan) + '</td><td>' + offCell(delta) + '</td></tr>';
-      if (!open) return row;
-      // storyBody, not story: a table row inside this cell broke the table
-      // apart on the page (owner review, 2026-11-10: the fold-out and Share
-      // landed above the column headings).
-      const noShare = (html) => html.replace(/<button[^>]*data-share[^>]*>[\s\S]*?<\/button>/g, '');
-      const major = '<div class="story">' + noShare(storyBody({ ...r, events: previewMajorEvents(r) })) + '</div>';
-      const full = '<div class="story">' + noShare(storyBody(r)) + '</div>';
-      return row + '<tr><td colspan="6" class="preview-order-details">' +
-        '<div class="timeline-facts"><span>First seen: <b>' + esc(dt(r.firstSeen)) + '</b></span><span>First plan: <b>' + esc(dt(r.firstPlan)) + '</b></span>' +
-        '<span>First order: <b>' + esc(dt(r.firstOrder)) + '</b></span><span>Latest order: <b>' + esc(dt(latest)) + '</b></span>' +
-        '<span>Actual on duty: <b>' + esc(dt(r.onDuty)) + '</b></span><span>Compared with first order: ' + offCell(r.offOrder) + '</span>' +
-        '<span>Compared with latest order: ' + offCell(delta) + '</span><span>Toronto off duty: <b>' + (r.noOffDuty ? 'Not applicable' : r.offDuty ? esc(dt(r.offDuty)) : r.dataIssue ? 'Needs review' : 'Not recorded') + '</b></span>' +
-        '<span>Time on duty: <b>' + (r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + '</b></span><span>Crew: <b>' + esc(r.crew || 'Not recorded') + '</b></span></div>' +
-        '<h3>Key events</h3><p class="anote">Time movements over 30 minutes, ordering, duty and crew corrections. All smaller movements remain below.</p>' + major +
-        '<details><summary>All recorded changes (' + (r.events || []).length + ')</summary>' + full + '</details>' + (target === 'orders' ? '<button type="button" data-preview-share="' + esc(r.id) + '">🔗 Share this train</button>' : '') + '</td></tr>';
-    }).join('');
-    view.innerHTML = (target === 'test' ? '<h2>Test · Order summary</h2><p class="anote"><b>Preview only.</b> This matches the approved regular Order summary.</p>' : '<div class="ohead"><div><div class="eyebrow">Order summary</div><div class="when">' + esc(preview.day ? when(preview.day + ' 0000').long : 'No saved day') + '</div></div></div>') +
-      '<p class="anote">Times are railway time. “Order” is the lineup time, not the moment a call was made. Comparisons use actual on-duty time.</p>' +
-      '<div class="preview-order-filters">' + select('test-order-day', 'Day', days.map((day) => [day, when(day + ' 0000').day]), preview.day) +
-      select('test-order-from', 'Trains from', [['all','Sarnia and Toronto'],['sarnia','Sarnia'],['mac','Toronto']], preview.from) +
-      select('test-order-status', 'Status', [['all','All statuses'], ...Object.entries(labels)], preview.status) +
-      '<label>Find within day<input id="test-order-find" placeholder="X39491 06" value="' + esc(preview.find) + '"></label><button type="button" id="test-order-show">Apply</button></div>' +
-      '<section class="sheet"><header><h2>' + esc(preview.day ? when(preview.day + ' 0000').day : 'No saved day') + '</h2><span class="meta">' + rows.length + ' trains · tap a row for details</span></header>' +
-      '<div class="scroll"><table class="orders"><thead><tr><th>Train / status</th><th>First plan</th><th>Latest order</th><th>Actual on duty</th><th>Vs first plan</th><th>Vs latest order</th></tr></thead><tbody>' +
-      (body || '<tr><td colspan="6">No trains match these filters.</td></tr>') + '</tbody></table></div></section>' +
-      '<p class="anote">Completed means a usable tie-up is recorded. “No call observed” does not prove cancellation or that nobody was called. Order observed describes saved evidence, not a live dispatcher status.</p>';
-    const apply = () => {
-      preview.day = document.getElementById('test-order-day').value;
-      preview.from = document.getElementById('test-order-from').value;
-      preview.status = document.getElementById('test-order-status').value;
-      preview.find = document.getElementById('test-order-find').value;
-      preview.open = null; renderOrderSummary(target);
-    };
-    for (const id of ['test-order-day','test-order-from','test-order-status']) document.getElementById(id).onchange = apply;
-    document.getElementById('test-order-show').onclick = apply;
-    document.getElementById('test-order-find').onkeydown = (event) => { if (event.key === 'Enter') apply(); };
-    view.querySelectorAll('[data-preview-key]').forEach((row) => {
-      row.onclick = () => { preview.open = preview.open === row.dataset.previewKey ? null : row.dataset.previewKey; renderOrderSummary(target); };
-      row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); } };
-    });
-    view.querySelectorAll('[data-preview-share]').forEach((button) => { button.onclick = () => shareLink('#train=' + encodeURIComponent(button.dataset.previewShare.replace(/\s+/g, '-')), 'Train ' + button.dataset.previewShare, button); });
-    view.querySelectorAll('button[data-taken]').forEach((button) => { button.onclick = () => jumpTo(button.dataset.taken); });
+    await orderSummary2(view, preview, all, days, labels, target);
   }
 
   function setMode(m) {
