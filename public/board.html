@@ -769,6 +769,36 @@
   details.cur2 .fold h3 { margin: 12px 0 4px; font-size: 14px; }
   details.cur2 .fold .os2-all > summary { cursor: pointer; color: var(--accent); padding: 8px 0; }
   details.cur2[hidden] { display: none; }
+  /* Analytics, new layout (Test preview): everything under #view.ana2. */
+  .ana2 .ana2-about { margin: 0 0 14px; }
+  .ana2 .ana2-about > summary { cursor: pointer; color: var(--accent); font-size: 13.5px; padding: 6px 0; }
+  .ana2 .ana2-number { font: 600 15px/1.3 var(--mono); color: var(--ink); }
+  .ana2 .ana2-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+  .ana2 .ana2-filters label, .ana2 label:has(> select[data-test-status]) { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; margin-bottom: 8px; }
+  .ana2 select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px; min-height: 40px; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .ana2 .ana2-more { padding: 10px 14px; margin: 0; }
+  /* An odd tile out fills its row instead of leaving a gap. */
+  .ana2 .strip > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  @media (max-width: 700px) {
+    .ana2 .ohead.ana .ctl { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; width: 100%; margin: 8px 0 0; }
+    .ana2 .ohead.ana .ctl label { min-width: 0; }
+    .ana2 .ohead.ana .ctl input, .ana2 .ohead.ana .ctl select { width: 100%; min-width: 0; box-sizing: border-box; }
+    .ana2 .ohead.ana .ctl .abtns { grid-column: 1 / -1; }
+    .ana2 .anatabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .ana2 .anatabs::-webkit-scrollbar { display: none; }
+    .ana2 .anatabs button { flex: 0 0 auto; white-space: nowrap; }
+    /* No table scrolls sideways: each row is a block, the first cell its title, the rest "label value". */
+    .ana2 .scroll.ana2-open { overflow: visible; }
+    .ana2 table.ana2-stack, .ana2 table.ana2-stack tbody { display: block; width: 100%; }
+    .ana2 table.ana2-stack thead { display: none; }
+    .ana2 table.ana2-stack tbody > tr { display: flex; flex-wrap: wrap; gap: 1px 12px; padding: 7px 14px; border-bottom: 1px solid var(--rule-soft); font-size: 13.5px; }
+    .ana2 table.ana2-stack tbody > tr[hidden] { display: none; }
+    .ana2 table.ana2-stack td { display: block; padding: 0; border: 0; white-space: normal; min-width: 0; background: none; }
+    .ana2 table.ana2-stack td:first-child, .ana2 table.ana2-stack td.full { flex: 0 0 100%; }
+    .ana2 table.ana2-stack td:first-child { font-weight: 600; }
+    .ana2 table.ana2-stack td[data-label]::before { content: attr(data-label) ' '; color: var(--soft); font-size: 12px; font-weight: 400; }
+    .ana2 table.ana2-stack td.stick { position: static; }
+  }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -2152,9 +2182,17 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
+// Analytics, new layout: Test preview only (owner, 2026-11-10: "do all the
+// changes in the test tab"). ANA2 is on only while Test is drawing it; the
+// regular Analytics tab runs the same code with it off.
+let ANA2 = false;
+const ANA2_PAGE = 20;
+let ANA2_CALLS = []; // call records whose graph is drawn when opened
+let ANA2_MORE = []; // "show more" lists
+const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'Drags (SD)'], ['S1', '1st Manifest (S1)'], ['S3', '3rd Manifest (S3)'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
-function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
+function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
     week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
@@ -2167,15 +2205,15 @@ function analyticsOverviewGuide({ preview = false, callCount = '' } = {}) {
   const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
   return '<p class="anote">' + (preview ? 'Preview only. ' : '') + 'Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
     groups.map(group => {
-      const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group).map(([key,label]) => {
+      const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group && !(numbers && key === 'overview')).map(([key,label]) => {
         const [,question,description] = descriptions[key];
         return '<article class="overview-guide-card"><h3>' + esc(label) + '</h3><p><b>' + esc(question) +
           '</b></p><p>' + esc(description) + '</p>' +
-          (key === 'sleep' ? (preview ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '<p>' + esc(callCount) + '</p>') : '') +
+          (numbers ? (numbers[key] ? '<p class="ana2-number">' + esc(numbers[key]) + '</p>' : '') : key === 'sleep' ? (preview ? '<p data-test-call-count aria-live="polite">Loading call records…</p>' : '<p>' + esc(callCount) + '</p>') : '') +
           '<button type="button" class="qbtn" data-overview-open="' + esc(key) +
           '">Open ' + esc(label) + ' →</button></article>';
       }).join('');
-      return '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>';
+      return cards ? '<section class="sheet overview-guide"><header><h2>' + esc(group) + '</h2></header><div class="overview-guide-grid">' + cards + '</div></section>' : '';
     }).join('') +
     '<section class="sheet overview-guide"><header><h2>Using the records</h2></header><div class="overview-guide-note"><p><b>Dates:</b> choose the reporting range after opening a page. My week has its own week selector.</p><p><b>Find a specific record:</b> use Analytics search for a train number, turn or name code. Full dated train IDs help distinguish separate trips.</p><p><b>Coverage:</b> trackers can cover different dates. Missing checks or missing on-duty records can leave outcomes unknown; disappearance alone is not proof of cancellation.</p></div></section>';
 }
@@ -2188,7 +2226,20 @@ function analyticsOverview(o) {
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
-function anaHome({ sleep }) { return analyticsOverviewGuide({ callCount: callReviewData(sleep).headline }); }
+function anaHome(o) {
+  const { sleep = [] } = o;
+  if (!ANA2) return analyticsOverviewGuide({ callCount: callReviewData(sleep).headline });
+  // Test preview: each page's headline on its card.
+  const ran = (o.runs || []).filter((r) => r.ran).length;
+  const waiting = (o.stale || []).length;
+  const open = (o.runarounds || []).filter((r) => !r.fixed).length + (o.catsErrors || []).filter((r) => !r.fixed).length + (o.catsMissing || []).filter((r) => !r.listedAt).length;
+  return analyticsOverviewGuide({ numbers: {
+    trains: `${ran} train${ran === 1 ? '' : 's'} on duty in these dates`,
+    sleep: callReviewData(sleep).headline,
+    stale: `${waiting} train${waiting === 1 ? '' : 's'} left waiting past the call`,
+    assignments: `${open} finding${open === 1 ? '' : 's'} not cleared`,
+  } });
+}
 
 function anaTrains({ runs }) {
   const st = BoardAnalytics.stats(runs);
@@ -2570,7 +2621,9 @@ function sleepTiles(st) {
 // Each call, newest first, with every move of the expected call after they went to sleep.
 function sleepTable(list, showTurn) {
   if (!list.length) return '<p class="empty">No calls tracked in the dates picked yet. A call counts once the turn was on a line-up (or expected to fill a job going spare) before it went on duty.</p>';
-  const rows = [...list].map(BoardAnalytics.cleanCallRecord).reverse().slice(0, 200).map((z) => {
+  const newest = [...list].map(BoardAnalytics.cleanCallRecord).reverse();
+  // Test preview: 20 at a time, each graph drawn when it is opened.
+  const rows = newest.slice(0, ANA2 ? ANA2_PAGE : 200).map((z) => {
     const moves = (z.shifts || []).map((x) => `<li>${esc(dt(x.taken))}: call ${esc(dt(x.call))}${x.train !== z.expectedTrain ? ` (${esc(x.train)})` : ''}</li>`).join('');
     const start = z.noWindow ? '<span class="muted">no eight-hour baseline recorded</span>'
       : `${esc(dt(z.sleepAt))}${z.short ? ` <span class="chip">short notice ${esc(dur(z.notice))}</span>` : ''}`;
@@ -2580,9 +2633,9 @@ function sleepTable(list, showTurn) {
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (historical train/trip mismatch)' : z.noWindow || !z.sleepAt ? 'No recorded baseline' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td class="num">${start}</td>
-      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${BoardAnalytics.renderCallTimeline(z)}</td></tr>`;
+      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${(ANA2 ? `<details class="call-timeline ana2-lazy" data-lazy-call="${ANA2_CALLS.push(z) - 1}"><summary>Show call timeline</summary></details>` : BoardAnalytics.renderCallTimelineV2(z))}</td></tr>`;
   }).join('');
-  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>${ANA2 && newest.length > ANA2_PAGE ? `<p class="ana2-more"><button type="button" class="qbtn" data-ana2-more="${ANA2_MORE.push({ list: newest, showTurn, at: ANA2_PAGE }) - 1}">Show 20 more of ${newest.length}</button></p>` : ''}`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
     <p class="anote" style="margin:10px 14px">${SLEEP_NOTE}</p><div style="padding:0 14px"><div data-call-detail></div>${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(baselineStatsRows(list)))}</div>${sleepTable(list, false)}</section>`;
@@ -3339,7 +3392,8 @@ source().then(async (src) => {
       const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
-    if (mode === 'test') renderTest();
+    // A health refresh redraws Test, but not over a preview already on screen (it would lose your place).
+    if (mode === 'test' && !document.querySelector('#view.ana2 .ohead.ana')) renderTest();
     if (mode === 'health') renderHealth();
     if (h && mode === 'notes' && !notesData) renderNotes();
   }
@@ -4669,7 +4723,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     const owner = healthData && OwnerKey.has();
     if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    else view.innerHTML = '<p class="empty">No items awaiting review.</p>';
+    else { ANA2 = true; renderAnalytics(); return; } // Analytics in a new layout (ana2Pass)
     try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
   }
   // Order summary, the layout since 2026-11-10 (owner; reviewed in Test, then
@@ -4823,6 +4877,7 @@ source().then(async (src) => {
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
+    ANA2 = false; document.getElementById('view').classList.remove('ana2'); // only Test turns the Analytics preview on
     if (mode === 'test') renderTest();
     else if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
@@ -5026,6 +5081,96 @@ source().then(async (src) => {
   view0.addEventListener('focusout', () => { tip.hidden = true; });
   window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
 
+  // Analytics, new layout (Test preview): what is done to the drawn page.
+  // Nothing here runs for the regular Analytics tab.
+  function ana2Stack(root) {
+    // Turns side by side stays a table: reading across the turns is its point.
+    if (ana.sec === 'turns' && !ana.q.trim()) return;
+    const LIST = 10; // rows of a summary list before "show more"
+    root.querySelectorAll('table').forEach((table) => {
+      const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' '));
+      if (!heads.length) return;
+      table.classList.add('ana2-stack');
+      if (table.closest('.scroll')) table.closest('.scroll').classList.add('ana2-open');
+      table.querySelectorAll('tbody > tr').forEach((tr) => {
+        [...tr.children].forEach((td, i) => { if (td.colSpan > 1) td.classList.add('full'); else if (i && heads[i] && !td.dataset.label) td.dataset.label = heads[i]; });
+      });
+      // A long list: 10 rows, then 20 more on request (the calls table pages itself).
+      const body = table.querySelector('tbody');
+      const rows = body ? [...body.children] : [];
+      const own = table.parentElement.nextElementSibling;
+      if (rows.length <= LIST || table.dataset.ana2Paged || (own && own.classList.contains('ana2-more')) || rows.some((tr) => tr.querySelector('.ana2-lazy'))) return;
+      table.dataset.ana2Paged = '1';
+      rows.slice(LIST).forEach((tr) => { tr.hidden = true; });
+      const more = document.createElement('p');
+      more.className = 'ana2-more';
+      more.innerHTML = `<button type="button" class="qbtn">Show 20 more of ${rows.length - LIST} left</button>`;
+      more.firstChild.onclick = () => {
+        const hidden = rows.filter((tr) => tr.hidden);
+        hidden.slice(0, ANA2_PAGE).forEach((tr) => { tr.hidden = false; });
+        if (hidden.length <= ANA2_PAGE) more.remove(); else more.firstChild.textContent = `Show 20 more of ${hidden.length - ANA2_PAGE} left`;
+      };
+      (table.closest('.scroll') || table).after(more);
+    });
+  }
+  function ana2Pass(view, callPage) {
+    local.set('analytics2', { range: ana.range, sec: ana.sec });
+    // The explanations, folded: the number comes first.
+    const pick = view.querySelector('.secpick');
+    const notes = [...view.children].filter((el) => el.matches('p.anote') && pick && (el.compareDocumentPosition(pick) & Node.DOCUMENT_POSITION_FOLLOWING));
+    if (pick) { let el = pick.nextElementSibling; while (el && el.matches('p.anote')) { notes.push(el); el = el.nextElementSibling; } }
+    if (pick && notes.length) {
+      const about = document.createElement('details');
+      about.className = 'ana2-about';
+      about.innerHTML = '<summary>About these numbers</summary>';
+      notes.forEach((el) => about.appendChild(el));
+      pick.after(about);
+    }
+    const banner = document.createElement('p');
+    banner.className = 'cur2-quiet';
+    banner.textContent = 'Preview of Analytics in a new layout. The regular Analytics tab is unchanged.';
+    view.prepend(banner);
+    // Call stability: by where the call was, pool and craft.
+    const panel = view.querySelector('[data-call-detail]');
+    if (callPage && panel) {
+      const sel = (key, name, items) => `<label>${name}<select data-ana2="${key}">${items.map(([v, l]) => `<option value="${v}"${ana2[key] === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+      panel.insertAdjacentHTML('beforebegin', `<div class="ana2-filters">${sel('origin', 'Called at', [['all', 'Everywhere'], ['sarnia', 'Sarnia trains'], ['toronto', 'Toronto'], ['garnet', 'Garnet (L501)'], ['yard', 'Yard jobs']])}${sel('pool', 'Pool', [['all', 'All pools'], ...ANA_POOLS])}${sel('craft', 'Craft', [['all', 'Both'], ['CO', 'Conductors'], ['EN', 'Engineers']])}</div>`);
+      view.querySelectorAll('[data-ana2]').forEach((el) => { el.onchange = () => { ana2[el.dataset.ana2] = el.value; renderAnalytics(); }; });
+    }
+    // Assignment errors: open on what still needs a look.
+    const status = view.querySelector('[data-test-status]');
+    if (status) {
+      const has = (name) => [...view.querySelectorAll('[data-statuses]')].some((g) => g.dataset.statuses.split('|').includes(name));
+      const want = ana2.finding || ['Still observed', 'Pool sequence needs review'].find(has) || 'All findings';
+      if ([...status.options].some((o) => o.value === want || o.textContent === want)) status.value = want;
+      const filter = status.onchange;
+      status.onchange = () => { ana2.finding = status.value; if (filter) filter(); };
+      if (filter) filter();
+    }
+    ana2Stack(view);
+    if (view.dataset.ana2Wired) return;
+    view.dataset.ana2Wired = '1';
+    // A call's graph is drawn when it is opened; 20 more calls on request.
+    view.addEventListener('toggle', (e) => {
+      const d = e.target;
+      if (!ANA2 || !d.matches || !d.matches('details.ana2-lazy') || !d.open) return;
+      const z = ANA2_CALLS[+d.dataset.lazyCall];
+      if (z) d.outerHTML = BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>');
+    }, true);
+    view.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('[data-ana2-more]');
+      if (!ANA2 || !btn) return;
+      const more = ANA2_MORE[+btn.dataset.ana2More];
+      const tbody = btn.closest('.ana2-more').previousElementSibling.querySelector('tbody');
+      if (!more || !tbody) return;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = sleepTable(more.list.slice(more.at, more.at + ANA2_PAGE).reverse(), more.showTurn);
+      const rows = tmp.querySelector('tbody');
+      if (rows) { const holder = document.createElement('table'); holder.innerHTML = '<thead>' + tbody.parentElement.querySelector('thead').innerHTML + '</thead>'; holder.appendChild(rows); ana2Stack(holder); [...rows.children].forEach((tr) => tbody.appendChild(tr)); }
+      more.at += ANA2_PAGE;
+      if (more.at >= more.list.length) btn.closest('.ana2-more').remove(); else btn.textContent = `Show 20 more of ${more.list.length - more.at} left`;
+    });
+  }
   async function renderAnalytics() {
     try { await drawAnalytics(); } catch (e) {
       // Never leave the tab on "Loading…" (owner, 2026-10-26).
@@ -5035,6 +5180,10 @@ source().then(async (src) => {
   }
   async function drawAnalytics() {
     const view = document.getElementById('view');
+    view.classList.toggle('ana2', ANA2);
+    ANA2_CALLS = []; ANA2_MORE = [];
+    // Test preview: the dates and page last used on this phone.
+    if (ANA2 && !ana2.loaded) { const was = local.get('analytics2') || {}; if (RANGES.some((r) => r[0] === was.range && r[0] !== 'custom')) ana.range = was.range; if (ANA_SECS.some((x) => x[0] === was.sec)) ana.sec = was.sec; ana2.loaded = true; }
     if (!view.querySelector('.ohead.ana')) view.innerHTML = '<p class="empty">Loading…</p>';
     let live;
     let turnsAll;
@@ -5043,7 +5192,7 @@ source().then(async (src) => {
     try {
       [live, turnsAll, found, arch] = await Promise.all([src.trains(), src.turns().catch(() => ({})), src.analytics(), loadArchive(anaDates())]);
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
-    if (mode !== 'analytics') return;
+    if (mode !== (ANA2 ? 'test' : 'analytics')) return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
     found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
@@ -5055,7 +5204,13 @@ source().then(async (src) => {
     const inDates = (st) => { const d = (st || '').slice(0, 10); return !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to); };
     const runarounds = joinOld('runarounds', arch.runarounds, found.runarounds).filter((r) => inDates(r.taken));
     const spareJobs = joinOld('spareJobs', arch.spareJobs, found.spareJobs).filter((j) => inDates(j.first));
-    const sleep = callRecordsInRange(arch, found, range);
+    const sleepInDates = callRecordsInRange(arch, found, range);
+    // Test preview: Call stability by where the call was, pool and craft.
+    const fromToronto = new Set(all.filter((r) => r.from === 'mac').map((r) => r.id));
+    const originOf = (z) => (z.yard ? 'yard' : /^L501/.test(z.train || '') ? 'garnet' : fromToronto.has(z.train) || z.firstFrom === 'offDuty' ? 'toronto' : 'sarnia');
+    const craftOf = (t) => (/-EN$/.test(t) || /^(SD|S1|S3|EN)/.test(t) ? 'EN' : 'CO');
+    const poolKey = (t) => (/^S5/.test(t) ? 'S5' : /^(B|EN)\d/.test(t) ? 'B' : t.slice(0, 2));
+    const sleep = !ANA2 ? sleepInDates : sleepInDates.filter((z) => (ana2.origin === 'all' || originOf(z) === ana2.origin) && (ana2.pool === 'all' || poolKey(z.turn) === ana2.pool) && (ana2.craft === 'all' || craftOf(z.turn) === ana2.craft));
     let detailSleep = sleep;
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
@@ -5105,7 +5260,7 @@ source().then(async (src) => {
             weeks.push({ name: t, sum: BoardWeek.weekSummary({ ...lists, rec: turnsAll[base] || { orders: [], rests: [], spares: [] }, turns: [t], week }) });
           }
         }
-        if (mode !== 'analytics') return;
+        if (mode !== (ANA2 ? 'test' : 'analytics')) return;
       }
       body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
     } else if (kind === 'train') {
@@ -5130,7 +5285,7 @@ source().then(async (src) => {
       // A person: the live stretches (people.json) and the archive's.
       const ok = /^[A-Z]{4}$/.test(q) && window.crypto && crypto.subtle;
       const [list, h] = ok ? await Promise.all([Person.find(q), Person.hash(q)]) : [null, null];
-      if (mode !== 'analytics') return;
+      if (mode !== (ANA2 ? 'test' : 'analytics')) return;
       const old = (h && arch.people[h]) || [];
       const stretches = [...(list || []), ...old];
       if (!stretches.length) body = '<p class="empty">Nothing found for that name code in the saved checks.</p>';
@@ -5156,10 +5311,11 @@ source().then(async (src) => {
           <div class="abtns">${q ? '<button type="button" id="aclear">Clear search</button>' : ''}${anaCsv && anaCsv.runs.length ? '<button type="button" id="acsv">⬇ Spreadsheet</button>' : ''}</div>
         </div>
       </div>${body}`;
-    try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    try { history.replaceState(null, '', ANA2 ? '#test' : '#analytics'); } catch (e) { /* not allowed in some frames */ }
     const callPanel = view.querySelector('[data-call-detail]');
     if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
+    if (ANA2) ana2Pass(view, !q && ana.sec === 'sleep');
     const box = document.getElementById('aq');
     const go = () => { ana.q = box.value; renderAnalytics(); };
     box.onkeydown = (e) => { if (e.key === 'Enter') go(); };

@@ -5,6 +5,8 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 ## To do
 
+- **Analytics, new layout:** in Test since 2026-11-10, awaiting his review. See HANDOFF.
+
 
 - **Snapshots tab:** still the older layout after Current's was changed 2026-11-10; ask
   whether to switch it too.

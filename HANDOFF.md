@@ -291,6 +291,33 @@ suggestions and put it in the test tab"):**
   at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
   `testPreview` state and `mode !== 'test'` checks: pass the target through).
 
+**Analytics, new layout — in Test, awaiting Justin's phone review (2026-11-10; a review of
+the tab, then "do all the changes in the test tab"):** the regular Analytics tab runs the
+same code with `ANA2` off. Test → `renderTest` sets `ANA2 = true` and calls
+`renderAnalytics`; `setMode` turns it off again; `ana2Pass(view)` then reworks the drawn
+page (board.html):
+1. Call stability: "Latest calls" 20 at a time (`ANA2_PAGE`, "Show 20 more"), each call's
+   graph drawn only when opened (`details.ana2-lazy`, `ANA2_CALLS`).
+2. No sideways scrolling: every table becomes stacked rows on a phone (`ana2Stack`, each
+   cell labelled from its column heading; summary lists show 10 rows then "Show 20 more").
+   **Turns side by side is left a table on purpose** (reading across the turns is its point).
+3. The explanations fold under "About these numbers".
+4. Overview: each card carries its page's number; no card for Overview itself (`anaHome`).
+5. Call stability filters: Called at (Sarnia / Toronto / Garnet / yard), Pool, Craft (`ana2`).
+6. Assignment errors: opens on "Still observed", else "Pool sequence needs review"; the
+   dropdown styled; the odd tile fills its row.
+7. Controls on one row, section tabs one swipe row, dates and page remembered per phone
+   (`analytics2`).
+8. The two Overview tests that had failed for days were written for the dashboard the guide
+   replaced: rewritten (test/board/overview.test.js). Suite 285 of 297, 12 failing.
+Measured at phone width on live data, regular → preview: Call stability 27,251 → 8,175 px,
+Assignment errors 12,008 → 2,226, Stale trains 6,841 → 3,988, Trains 4,398 → 4,900 (taller:
+stacked rows, but nothing off the side). Call stability headline by origin: everywhere 43%
+within 30 min, Toronto 53%, Sarnia 28%. **Also fixed on the regular tab:** the "Latest
+calls" table still drew the old call graph (missed when the new one was promoted).
+To promote: drop the `ANA2` switch (make its branches the only path) and call `ana2Pass`
+from `drawAnalytics` always.
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
