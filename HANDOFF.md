@@ -259,6 +259,25 @@ ones; folding uses the same per-phone memory Current already has. Measured on th
 2,000 → 866 px. To promote: swap `lineup`, `toronto`, `garnet`, `changes`, `strip` in
 `SECTIONS` / `show` for the `…2` versions and decide on the tab bar. Suite 283 of 297.
 
+**Order summary, 2026-11-10 (owner asked for a review, then "do the fix and build the
+suggestions and put it in the test tab"):**
+- **Fixed on the regular tab:** an opened train's detail was broken apart. `story()`
+  returns a table row and was put inside a cell, so the browser threw "All recorded
+  changes" and Share above the column headings. `storyBody(r)` is now the inside and
+  `story` wraps it; the detail also stays a screen wide while the table scrolls sideways.
+- **New layout in Test, awaiting his phone review** (`orderSummary2`, reached through
+  `renderOrderSummary('test')`; regular tab otherwise unchanged): no table; each train two
+  lines (`cur2Row`): plan → order → on duty and the result against the first plan; short
+  status chips (`OS2_SHORT`; the careful wording he approved on the 8th stays in the
+  detail and the footnote); the day in four groups that stay folded as left
+  (`orderSummary2Open:*`; completed and dropped start folded); sort by time or biggest
+  change; filters on one row, remembered per phone (`orderSummary2`); search that hides
+  rows as you type; and each crew's Call stability graph inside the train's detail.
+  Checked in a browser on the live 10th at phone width: 21 trains, no sideways scroll, no
+  page errors, search and sort work. Not built: nothing from the old count tiles (removed
+  at his ask 3rd Nov). To promote: call `orderSummary2` for `orders` too (it reads
+  `testPreview` state and `mode !== 'test'` checks: pass the target through).
+
 **Pool filter promoted, 2026-11-09:** Justin approved the Test preview on his phone
 ("The change looks good. Update it on the real site"). Current and Snapshots → Pools at
 Sarnia: the pool buttons are a filter (`pools(s, picked)`, `poolBody`, `poolPicks` in
