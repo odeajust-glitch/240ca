@@ -50,7 +50,7 @@ stops at 50 people. The accounts are built into the Worker
 - **When no code is sent the page says why** (owner, 2026-11-10, after two
   silent failures): no account with that email (and it switches to Sign
   up), still waiting for approval, already has an account, can't be used
-  (removed), asked less than a minute ago, or six codes today already.
+  (removed), asked less than a minute ago, or twenty codes today already.
 - `board-test` and `board` share one bucket, so they share the same
   accounts: someone approved or removed on one is the same on the other.
 - The sign-up banner is switched off in `board.html` (`SIGNUP_BANNER`)

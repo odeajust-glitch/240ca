@@ -1115,7 +1115,7 @@ const SESSION_COOKIE = 'bsess';
 const SESSION_DAYS = 90;
 const CODE_MINUTES = 10;
 const CODE_TRIES = 5;
-const CODE_DAY_MAX = 6;
+const CODE_DAY_MAX = 20;
 const ACC_MAIL_DAY_MAX = 70; // Gmail allows about 100 a day; 18.6(b) has its own 30
 const SIGNUP_IP_MAX = 5;
 const SIGNUP_DAY_MAX = 150;
@@ -1228,7 +1228,7 @@ const NO_CODE = {
   declined: 'That sign-up wasn\'t approved. Use Sign up to try again.',
   removed: 'That email can\'t be used here. Ask whoever gave you this address.',
 };
-// A 6-digit code to that address: 'sent', 'soon' (one a minute), 'max' (six
+// A 6-digit code to that address: 'sent', 'soon' (one a minute), 'max' (twenty
 // a day) or why the email didn't go.
 async function sendCode(env, id, email, now = Date.now()) {
   const codeKey = `${ACC}codes/${id}.json`;
