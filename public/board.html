@@ -761,8 +761,9 @@
     /* The top bar keeps 48px free on the right for the gear; the tabs sit below it, so they take that back. */
     body.nav-one-row .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-right: -48px; width: calc(100% + 48px); }
     body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
-    /* The pool buttons line up the same way: rows filled edge to edge (owner, 2026-11-10). */
-    .poolfilter button { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }
+    /* The pool buttons: two to a row, in the owner's order (POOL_SPOTS). */
+    .poolfilter button { flex: 1 1 calc(50% - 3px); min-width: 0; min-height: 40px; order: var(--o, 50); }
+    .poolfilter button.all { order: 99; }
     /* Current and Turn History share the first row, half each (owner, 2026-11-10). */
     body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); } }
   /* Order summary, the two-line rows (2026-11-10). */
@@ -1863,12 +1864,18 @@ const poolShort = (q) => q.name.replace(' · conductors', '').replace(' · engin
 // wording: the saved name stays, so jumps and saved picks still match.
 const POOL_LABELS = { SD: 'Drags (SD)', 'S1 (A)': '1st Manifest (S1)', 'S3 (B)': '3rd Manifest (S3)' };
 const poolLabel = (q) => POOL_LABELS[poolShort(q)] || poolShort(q);
+// Where each pool's button sits on a phone, two to a row (owner, 2026-11-10):
+// A pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All. A conductors'
+// pool on the left, the engineers who go with it on the right. A pool not
+// named here comes after 501/502, before All.
+const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6, '501/502 (S5)': 7 };
+const poolSpot = (q) => POOL_SPOTS[poolShort(q)] || 50;
 function pools(s, picked) {
   if (!s.pools.length) return '';
   askResets(s);
   const on = s.pools.filter((q) => picked.includes(poolShort(q)));
   const all = on.length === s.pools.length;
-  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}">${esc(poolLabel(q))}</button>`).join('');
+  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}" style="--o:${poolSpot(q)}">${esc(poolLabel(q))}</button>`).join('');
   const boards = on.map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolLabel(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${on.length} of ${s.pools.length} pools · ${on.reduce((n, p) => n + p.turns.length, 0)} turns</span></header>
     <div class="poolfilter" role="group" aria-label="Pools to show">${btns}<button type="button" class="all" data-poolall="${all ? 'none' : 'all'}">${all ? 'Clear' : 'All'}</button></div>
