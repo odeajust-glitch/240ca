@@ -880,7 +880,7 @@
   .work2-more { margin: 10px 14px 12px; }
   .tn2-recent button { padding: 4px 9px; border: 1px solid var(--rule); border-radius: 4px; background: none; color: var(--ink); font: 13px/1.3 var(--mono); cursor: pointer; }
   .lt2 { max-width: 760px; }
-  .lt2 h2 { margin: 0 0 4px; }
+  .lt2 h2.lt2-h { margin: 0 0 4px; font: 800 26px/1.15 var(--display); }
   .lt2-when { margin: 0 0 14px; color: var(--soft); font-size: 14px; }
   .lt2-when b { color: var(--ink); }
   .lt2-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px; }
@@ -1211,7 +1211,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeTest" type="button" aria-pressed="false" hidden>Test</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2514,9 +2514,10 @@ function analyticsView(runs, kind, title, note, extra = {}) {
 }
 
 // Nothing searched: everything, in sections.
-// Analytics, new layout: Test preview only (owner, 2026-11-10: "do all the
-// changes in the test tab"). ANA2 is on only while Test is drawing it; the
-// regular Analytics tab runs the same code with it off.
+// Analytics, new layout (owner, 2026-11-10: built in the Test tab, then "push
+// the test tab on the main site to the main site"). ANA2 is on whenever
+// Analytics is drawing; the older layout is what runs with it off, kept for
+// now so the change can be backed out by one line in setMode.
 let ANA2 = false;
 // The test site (owner, 2026-11-10: "go, owner key only, keep the test tab
 // for now"): the same page opened at board-test.sarniaboard.workers.dev, on a
@@ -2638,14 +2639,15 @@ function spareCall(s, p, t) {
   return { window: span(lo, hi), held, n: x.n, tight: at(hi) - at(lo) <= 60 && held * 10 >= x.n * 8,
     text: `${lead}: the call fell in ${span(lo, hi)} on ${held} of ${x.n} past waits, each checked against the others; most often about ${dt(BoardTrains.fromMin(at(x.mid)))}.${other}${sleep}${early}` };
 }
-// The Test tab on the test site (owner, 2026-11-10: "track it for 2 weeks ...
+// Analytics → Likely-call test, on the test site only (it began in the Test tab; that tab
+// came off both sites the same day). Owner, 2026-11-10: "track it for 2 weeks ...
 // test to see how accurate the predictions are. If its more beneficial than
 // the time it shows over 2 weeks maybe we can push it [to] the main site").
 // patterns.json score: every train since the test began, checked once at each
 // distance it was seen planned, against the window the page had at the time.
 function likelyTest() {
   const S = PATTERNS && PATTERNS.score;
-  if (!S) return '<div class="lt2"><div class="ohead"><div><div class="eyebrow">Test</div><div class="when">Likely-call test</div></div></div><p class="empty">The test figures arrive with the next publish from the laptop.</p></div>';
+  if (!S) return '<div class="lt2"><h2 class="lt2-h">Likely-call test</h2><p class="empty">The test figures arrive with the next publish from the laptop.</p></div>';
   const AWAYS = { past: 'Past its shown time', '0-3': 'Under 3 h away', '3-6': '3 to 6 h away', '6-10': '6 to 10 h away', '10-16': '10 to 16 h away', '16-24': '16 to 24 h away', '24+': 'Over a day away' };
   const pct = (n, d) => (d ? `${Math.round((100 * n) / d)}%` : '—');
   const start = stampMin(S.from);
@@ -2682,7 +2684,7 @@ function likelyTest() {
   };
   const T = S.test; const B = S.before;
   const runs = S.runs || [];
-  return `<div class="lt2"><div class="ohead"><div><div class="eyebrow">Test</div><div class="when">Likely-call test</div></div></div>
+  return `<div class="lt2"><h2 class="lt2-h">Likely-call test</h2>
     <p class="lt2-when"><b>${when}</b> · ${day(start)} to ${day(start + (S.days - 1) * 1440)} · planned Sarnia trains</p>
     ${T.checks ? `${tiles(T)}<p class="lt2-verdict">${esc(verdict(T))}</p>
       <section class="sheet"><header><h2>By how far away the train was</h2><span class="meta">${plural(T.trains, 'train')}</span></header>${table(T)}</section>
@@ -2705,7 +2707,7 @@ function planTrust(s, t) {
 const ANA2_PAGE = 20;
 let ANA2_CALLS = []; // call records whose graph is drawn when opened
 let ANA2_MORE = []; // "show more" lists
-const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'test' };
+const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'analytics' };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'Drags (SD)'], ['S1', '1st Manifest (S1)'], ['S3', '3rd Manifest (S3)'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
 function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null } = {}) {
@@ -2736,9 +2738,9 @@ function analyticsOverviewGuide({ preview = false, callCount = '', numbers = nul
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: ANA2 ? anaAssignments2 : anaAssignments, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
+  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: ANA2 ? anaAssignments2 : anaAssignments, likely: PREVIEW ? likelyTest : anaHome, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
-  const coverage = o.sec === 'overview' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
+  const coverage = o.sec === 'overview' || o.sec === 'likely' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
@@ -4045,11 +4047,13 @@ source().then(async (src) => {
     document.getElementById('modeHealth').hidden = !(h || (OwnerKey.has() && healthUnavailable));
     document.getElementById('modeReview').hidden = !h;
     document.getElementById('modeNotes').hidden = !h;
-    document.getElementById('modeTest').hidden = !(h && OwnerKey.has());
     // The test site's previews: this address and the owner key, nothing else.
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
+      // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
+      const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
+      if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }
@@ -4075,8 +4079,6 @@ source().then(async (src) => {
       const leftTxt = left > 0 ? `${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m left` : 'due now';
       box.innerHTML = `<span class="${left < 2 * 3600000 ? 'warn' : ''}">Microsoft sign-in: ${esc(leftTxt)}</span> <span class="muted">(runs out ~${esc(healthClock(S.endsAt))})</span>`;
     }
-    // A health refresh redraws Test, but not over a preview already on screen (it would lose your place).
-    if (mode === 'test' && !document.querySelector('#view.ana2 .ohead.ana, #view .lt2')) renderTest();
     if (mode === 'health') renderHealth();
     if (h && mode === 'notes' && !notesData) renderNotes();
   }
@@ -5320,7 +5322,6 @@ source().then(async (src) => {
   const modeHealth = document.getElementById('modeHealth');
   const modeReview = document.getElementById('modeReview');
   const modeNotes = document.getElementById('modeNotes');
-  const modeTest = document.getElementById('modeTest');
   const modeMembers = document.getElementById('modeMembers');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
@@ -5417,16 +5418,6 @@ source().then(async (src) => {
     };
     const jump = panel.querySelector('[data-jump-stale]');
     if (jump) jump.onclick = () => { const heading = panel.querySelector('[data-stale-records]'); heading.focus(); heading.scrollIntoView({ block: 'start' }); };
-  }
-  function renderTest() {
-    const view = document.getElementById('view');
-    const owner = healthData && OwnerKey.has();
-    if (!owner) view.innerHTML = '<p class="empty">Test previews require a verified owner key on this browser.</p>';
-    // The test site: Analytics there is already the new layout, so Test holds the
-    // two-week check of the likely-call window instead (owner, 2026-11-10).
-    else if (PREVIEW) { view.innerHTML = likelyTest(); view.querySelectorAll('[data-lt2-more]').forEach((b) => { b.onclick = () => { view.querySelectorAll('details.lt2-run[hidden]').forEach((d) => { d.hidden = false; }); b.remove(); }; }); }
-    else { ANA2 = true; ana2.mode = 'test'; renderAnalytics(); return; } // Analytics in a new layout (ana2Pass)
-    try { history.replaceState(null, '', '#test'); } catch (e) { /* unavailable */ }
   }
   // Order summary, the layout since 2026-11-10 (owner; reviewed in Test, then
   // "push the updates"). No table to scroll sideways: each train
@@ -5575,13 +5566,12 @@ source().then(async (src) => {
     modeHealth.setAttribute('aria-pressed', mode === 'health');
     modeReview.setAttribute('aria-pressed', mode === 'review');
     modeNotes.setAttribute('aria-pressed', mode === 'notes');
-    modeTest.setAttribute('aria-pressed', mode === 'test');
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
-    ANA2 = false; document.getElementById('view').classList.remove('ana2'); // only Test, or the test site, turns the Analytics preview on
-    if (PREVIEW && mode === 'analytics') { ANA2 = true; ana2.mode = 'analytics'; }
-    if (mode === 'test') renderTest();
+    // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
+    ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
+    if (!ANA2) document.getElementById('view').classList.remove('ana2');
     else if (mode === 'members') renderMembers();
     else if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
@@ -5825,7 +5815,7 @@ source().then(async (src) => {
     const LIST = opts.all ? Infinity : 10; // rows of a summary list before "show more"
     root.querySelectorAll('table').forEach((table) => {
       const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' '));
-      if (!heads.length) return;
+      if (!heads.length || table.classList.contains('lt2-table')) return; // the test's small table fits a phone as it is
       table.classList.add('ana2-stack');
       if (table.closest('.scroll')) table.closest('.scroll').classList.add('ana2-open');
       table.querySelectorAll('tbody > tr').forEach((tr) => {
@@ -5984,10 +5974,6 @@ source().then(async (src) => {
       notes.forEach((el) => about.appendChild(el));
       pick.after(about);
     }
-    const banner = document.createElement('p');
-    banner.className = 'cur2-quiet';
-    banner.textContent = ana2.mode === 'test' ? 'Preview of Analytics in a new layout. The regular Analytics tab is unchanged.' : 'Test site: Analytics in the new layout.';
-    view.prepend(banner);
     // Call stability: by where the call was, pool and craft.
     const panel = view.querySelector('[data-call-detail]');
     if (callPage && panel) ana2CallPage(view, panel);
@@ -6002,6 +5988,7 @@ source().then(async (src) => {
       const latest = [...view.querySelectorAll('section.sheet')].find((x) => (x.querySelector(':scope > header h2') || {}).textContent === 'Latest calls');
       if (latest) { [...latest.children].forEach((el) => { if (!el.matches('header')) el.remove(); }); latest.insertAdjacentHTML('beforeend', ana2CallList(calls, true)); }
     } else if (who) ana2SearchCalls(view, calls, who);
+    view.querySelectorAll('[data-lt2-more]').forEach((b) => { b.onclick = () => { view.querySelectorAll('details.lt2-run[hidden]').forEach((d) => { d.hidden = false; }); b.remove(); }; });
     // Assignment errors: the outcome chips; open on what is showing now, else what needs a look.
     const chips = [...view.querySelectorAll('[data-ae2]')];
     if (chips.length) {
@@ -6210,7 +6197,7 @@ source().then(async (src) => {
           <div class="abtns">${q ? '<button type="button" id="aclear">Clear search</button>' : ''}${anaCsv && anaCsv.runs.length ? '<button type="button" id="acsv">⬇ Spreadsheet</button>' : ''}</div>
         </div>
       </div>${body}`;
-    try { history.replaceState(null, '', ANA2 && ana2.mode === 'test' ? '#test' : '#analytics'); } catch (e) { /* not allowed in some frames */ }
+    try { history.replaceState(null, '', '#analytics'); } catch (e) { /* not allowed in some frames */ }
     const callPanel = view.querySelector('[data-call-detail]');
     if (callPanel) showCallReview(callPanel, detailSleep, range);
     wireFindingControls(view);
@@ -6261,7 +6248,6 @@ source().then(async (src) => {
   modeHealth.onclick = () => setMode('health');
   modeReview.onclick = () => setMode('review');
   modeNotes.onclick = () => setMode('notes');
-  modeTest.onclick = () => setMode('test');
   modeMembers.onclick = () => setMode('members');
   // A member the owner made an Admin sees the Members tab too.
   // and Profile in ⚙ Settings (owner, 2026-11-09: "a profile button … in the
@@ -6341,7 +6327,7 @@ source().then(async (src) => {
   else if (wantRef) setMode('ref');
   else if (wantAsk) setMode('ask');
   else if (wantNotes) setMode('notes');
-  else if (wantTest) setMode('test');
+  else if (wantTest) setMode('analytics'); // the Test tab is gone (owner, 2026-11-10); an old link to it lands on Analytics
 
   // A newer board published while this page is open (live site only). On
   // the Current tab it loads by itself (owner, 2026-10-30: two phones showed

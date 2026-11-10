@@ -198,6 +198,9 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-10: **Analytics new layout promoted to the main site; Test tab removed from both
+  sites.** Previews go to the test site only from now on; see HANDOFF.
+
 - 2026-11-10: **Turn History, new layout** (test site only, not promoted): now first,
   short trip rows with the calls added up, notes folded, recent lookups; see HANDOFF.
 

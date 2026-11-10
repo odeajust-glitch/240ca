@@ -470,6 +470,38 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Analytics new layout promoted, Test tab removed, 2026-11-10 (owner, from the Test tab on
+the main site: "i like the assigment errors tab ... push the test tab on the main site to
+the main site. then get rid of the test tab on the main site and the test site, all the
+tested stuff will just goto the test site from now on, so we dont have any overlap with
+the test tab and accidently overwrite something").**
+- **Working rule from here on: previews go to the test site only
+  (https://board-test.sarniaboard.workers.dev, behind `PREVIEW`). There is no Test tab.**
+  Don't build a preview into a tab on the main site again.
+- **Promoted to the main site:** everything the Test tab showed, i.e. the whole Analytics
+  new layout that ran under `ANA2`: explanations folded under "About these numbers",
+  stacked rows in place of sideways tables, Overview cards with numbers, Call stability by
+  where the call was (cards, filters, short call rows, the yard / Sarnia / Mac yard split
+  under a search), the new My week, and the simpler Assignment errors (`anaAssignments2`).
+  `setMode` now sets `ANA2 = mode === 'analytics'` on both sites; the banner is gone. The
+  older layout's code is still there with `ANA2` off (back out = that one line); it can be
+  deleted once he has lived with this a while.
+- **His first ask ("push [Assignment errors] to the board test site") needed nothing:**
+  both sites run the same files from the same bucket, so the test site already had it.
+- **Test tab removed from both sites:** the button, `renderTest`, its health-refresh
+  redraw. An old `#test` link lands on Analytics. (`renderOrderSummary('test')` and
+  `testPreview` are dead code left in place.)
+- **The likely-call test moved** to Analytics → "Likely-call test", a page that exists on
+  the test site only (`ANA_SECS` gets it when `PREVIEW` turns on; `likelyTest`). Same
+  content; its table is kept out of `ana2Stack`.
+- **Still test-site only (not promoted, he has not asked):** the likely-call window and
+  habit chip on Current, My week's "Sleep this week" box, Snapshots rows, 18.6(b) rows,
+  the newer-version bar, the compact header, the Turn History layout below, spareboard
+  predictions (off).
+- Simulated here on live data, both sites, every Analytics page plus a turn search: no
+  page errors, no sideways scroll; the main site shows no Likely-call test page and no
+  Test tab. Suite 292 of 304, the same 12 failing.
+
 **Turn History, improved on the test site, 2026-11-10 (owner: "come up with improvments to
 the turn history tab and push those to the test site").** Preview only, every change
 behind `PREVIEW` in board.html; the regular site draws Turn History as before (checked
@@ -496,14 +528,13 @@ graph. Suite 292 of 304 (no automated test covers this layout).
 
 **Where everything on the test site stands, 2026-11-10 (owner: "update the handoff file
 once this is done").** Nothing below is on the main site; promote only on his say-so.
-- Analytics new layout (incl. Call stability by origin, My week, the simpler Assignment
-  errors), Snapshots rows, 18.6(b) rows, the newer-version bar, the compact header.
+- Snapshots rows, 18.6(b) rows, the newer-version bar, the compact header, My week's sleep
+  box. (The Analytics new layout itself was promoted later the same day; note above.)
 - Current: train habit chip and the likely-call window on planned Sarnia trains (**on a
   two-week test, 2026-11-11 to 11-24, read in the Test tab; check-in booked 11-25**).
 - Spareboards: predictions built but **switched off** (`SPARE_PREDICT = false`).
 - Turn History: the layout above.
-- Test tab: the likely-call test (on the main site the Test tab is still the old
-  Analytics preview).
+- Analytics → Likely-call test (the Test tab is gone from both sites; see the note above).
 Laptop: he pulls and restarts after each push; `data/patterns.json` (board, drift,
 predict, score, spare, lead) is written on every publish.
 
