@@ -515,13 +515,19 @@ train with nobody standing in. Test added (alerts.test.js). **Needs the laptop t
 restart**; the stale entry then clears on the first check. Not seen on the laptop itself:
 `fill-ins.json` is not readable from here, so the cause is from the saved checks and the
 code, not from the file.
-❓ **Open, his call: the Garnet call in alerts.** The alert said call 2000 for an order of
-2200 (`GARNET_CALL_MIN`, "order − 2 h", his rule of 11-04). Every L501 in the saved checks
-went on duty 15 min before its order (4th 2130→2115, 7th 2330→2315, 8th 2245→2230, 9th
-2130→2115), so the real call was order − 2 h 15: 1945 tonight, which is what Current
-shows. Alerts and the reminder run 15 min late for the Garnet crew. Asked 2026-11-10
-whether to move the alerts to order − 2 h 15; not changed. Toronto alerts use the same
-"order − 2 h" (`torontoCallTime`) and likely have the same gap.
+**The Garnet and Toronto call in alerts: 2 h before on duty, since 2026-11-10 (owner:
+"yes move it to 2 hours 15, check toronto too").** The alert above said call 2000 for an
+order of 2200 ("order − 2 h", his rule of 11-04 for Garnet and 10-29 for Toronto). Checked
+on every saved day, order time against the Call Board's on duty: Garnet L501 6 of 6 on
+duty 15 min before the order; Toronto trains 178 of 179 (the one at its order was a rescue
+train, RM30241 01); Toronto deadheads at their order 24 of 27. So: `GARNET_CALL_MIN` is
+135; `torontoCallTime(order, cfg, deadhead)` is order − prep (15 train, 0 deadhead) − 2 h,
+the same sum as a Sarnia call. It feeds the alerts (lined up, time change, the reminder
+before the call), "rested by its call" for an ordered Toronto train (`torontoCrews`,
+`torontoSouth`), Garnet's "late" flag, and the `call` saved in each snapshot. A rescue
+train out of Toronto keeps order − 2 h. Current already showed these times (`awayCall`),
+so **the question "does Current's Toronto/Garnet call change stand" is answered: yes.**
+Six tests that pinned the old rule were rewritten to the new one. Suite 299 of 311.
 
 **Tabs broken for about half an hour by the commit below, fixed, 2026-11-10 (owner: "the
 tabs are all messed up ... the links are wrong they lead to the wrong page").** Taking out

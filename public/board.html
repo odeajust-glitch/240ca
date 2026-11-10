@@ -1598,7 +1598,7 @@ function garnet(s) {
   return `<section class="sheet" id="sec-garnet">${head}
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Crew in Garnet</th></tr></thead><tbody>
     <tr${c && marked(c.turn) ? ' class="hit"' : ''}><td class="num">${esc(g.order)}</td><td><span class="st ${esc(g.status)}">${esc(g.status)}</span></td><td><b class="num">${esc(g.train)}</b></td><td>${crew}</td></tr></tbody></table></div>
-    <div class="foot">Garnet's line-up (option 41, station 47956) and the Garnet board (31). Only one crew is ever in Garnet: the 501/502 crew that took L502 out brings the next L501 home. Call = order − 2 h.</div></section>`;
+    <div class="foot">Garnet's line-up (option 41, station 47956) and the Garnet board (31). Only one crew is ever in Garnet: the 501/502 crew that took L502 out brings the next L501 home. Call = order − 2 h 15 (on duty is 15 min before the order).</div></section>`;
 }
 
 function torontoRestWarning(s, t, rested) {

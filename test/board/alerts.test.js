@@ -402,7 +402,7 @@ test('turn alerts: Toronto South may get an ordered train', () => {
   const st = (status) => turnStates({ now, predictions: [] }, [], { macLineup: [{ ...train, status }], bunkhouse: bunk });
   const r = turnEvents({}, st('ORD'), { lineupRead: true });
   assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall').map((e) => e.turn).sort(), ['SD13', 'SR02']);
-  assert.match(r.events.find((e) => e.turn === 'SD13').text, /M38331 24 is ordered for 24th 1830 \(call 24th 1630\) and no crew in the bunkhouse is rested by then \(you're on rest until 24th 1644\): a Toronto South crew may get it\./);
+  assert.match(r.events.find((e) => e.turn === 'SD13').text, /M38331 24 is ordered for 24th 1830 \(call 24th 1615\) and no crew in the bunkhouse is rested by then \(you're on rest until 24th 1644\): a Toronto South crew may get it\./);
   assert.deepEqual(turnEvents(r.told, st('ORD'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // once
   assert.deepEqual(turnEvents({}, st('PLN'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // planned: stays theirs
 });
@@ -415,11 +415,11 @@ test('turn alerts: lined up home from Toronto', () => {
   const train = (status) => ({ symbol: 'M39931', originDay: '25', status, order: at(2026, 10, 25, 2, 0), deadhead: false });
   const st = (status) => turnStates({ now, predictions: [] }, [], { macLineup: [train(status)], bunkhouse: bunk });
   let r = turnEvents({}, st('PLN'), { lineupRead: true });
-  assert.deepEqual(r.events.filter((e) => e.turn === 'SR02').map((e) => e.text), ['SR02 lined up home from Toronto: M39931 25 planned for 25th 0200, expected call 25th 0000.']);
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SR02').map((e) => e.text), ['SR02 lined up home from Toronto: M39931 25 planned for 25th 0200, expected call 24th 2345.']);
   r = turnEvents(r.told, st('ORD'), { lineupRead: true });
   assert.deepEqual(r.events.filter((e) => e.turn === 'SR02').map((e) => e.kind), ['ordered']);
   // And the reminder, on a phone that asked for it.
-  const p = phoneEvents([], { turns: ['SR02'], prefs: { SR02: { before: 60 } } }, st('ORD'), {}, { now: at(2026, 10, 24, 23, 0) });
+  const p = phoneEvents([], { turns: ['SR02'], prefs: { SR02: { before: 60 } } }, st('ORD'), {}, { now: at(2026, 10, 24, 22, 45) }); // an hour before the 2345 call
   assert.match(p.events[0].text, /^SR02: about 60 min to your expected call: M39931 25 ordered/);
 });
 
@@ -459,8 +459,8 @@ test('turn alerts: a spare filling in, through Toronto and back', () => {
   const home = { symbol: 'M39931', originDay: '26', status: 'PLN', order: at(2026, 10, 26, 6, 0), deadhead: false };
   r = turnEvents(r.told, turnStates({ now: later, predictions: [] }, [], { macLineup: [home], bunkhouse: [{ pos: 1, en: 'S301', co: 'SB04', restUntil: null }], fillIns: fills }), { lineupRead: true });
   assert.deepEqual(r.events.filter((e) => e.kind === 'lineup').map((e) => e.text).sort(), [
-    'B119 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0400.',
-    'S301 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0400.',
+    'B119 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0345.',
+    'S301 lined up home from Toronto: M39931 26 planned for 26th 0600, expected call 26th 0345.',
   ]);
   assert.ok(!r.events.some((e) => e.turn === 'SB04')); // SB04's holder isn't the one in Toronto
   // 4. Back in Sarnia: both on their boards again.
@@ -710,11 +710,12 @@ test('Garnet: the crew there is lined up home on the next L501', () => {
   const lineup = [{ symbol: 'L50131', originDay: '04', status: 'PLN', order: 2000 }, { symbol: 'L50131', originDay: '05', status: 'PLN', order: 3500 }];
   const board = [{ turn: 'S501', craft: 'EN', pos: 1, restUntil: 1700 }, { turn: 'S501', craft: 'CO', pos: 1, restUntil: 1750 }];
   const g = garnetHome(lineup, board);
-  assert.deepEqual([g.train.originDay, g.call, g.crew.turn, g.crew.en, g.crew.co, g.crew.restUntil], ['04', 1880, 'S501', true, true, 1750]);
+  // Call = order − 2 h 15 (owner, 2026-11-10): on duty at Garnet is 15 min before the order.
+  assert.deepEqual([g.train.originDay, g.call, g.crew.turn, g.crew.en, g.crew.co, g.crew.restUntil], ['04', 1865, 'S501', true, true, 1750]);
   assert.equal(garnetHome([], board), null);
   const st = turnStates({ predictions: [], now: 1000 }, [], { garnetLineup: lineup, garnet: board });
   assert.equal(st['S501-CO'].lineup.home, 'Garnet');
-  assert.equal(st['S501-CO'].lineup.call, 1880);
+  assert.equal(st['S501-CO'].lineup.call, 1865);
   const { events } = turnEvents({}, st, { lineupRead: true, now: 1000 });
   const e = events.find((x) => x.turn === 'S501-CO' && x.kind === 'lineup');
   assert.match(e.text, /^S501-CO lined up home from Garnet: L50131 04/);

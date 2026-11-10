@@ -666,13 +666,16 @@ test('a called train keeps its slot ahead of a line-up train planned earlier', (
   assert.equal(r.predictions.find((p) => p.symbol === 'X30241').pool, 'SR');
 });
 
-// Owner, 2026-10-29: out of Mac yard (bunkhouse crews) the expected call is
-// just order − 2 h, train or deadhead; Sarnia keeps order − 15 min prep − 2 h.
-test('Toronto call: order less 2 hours; Sarnia unchanged', () => {
+// Owner, 2026-10-29: out of Mac yard the expected call was order − 2 h, train
+// or deadhead. Owner, 2026-11-10 ("move it to 2 hours 15, check toronto too"):
+// a Toronto train is on duty 15 min before its order (178 of 179 on the saved
+// days), a deadhead at its order, so the call is the same sum as Sarnia's.
+test('Toronto call: 2 hours before on duty, like Sarnia', () => {
   const { torontoCallTime, callTime } = require('../../lib/board/engine');
   const config = require('../../lib/board/config');
   const order = at(2026, 10, 29, 14, 0);
-  assert.equal(order - torontoCallTime(order, config), 120);
+  assert.equal(order - torontoCallTime(order, config), 135);
+  assert.equal(order - torontoCallTime(order, config, true), 120);
   assert.equal(order - callTime(order, false, config), 135);
   assert.equal(order - callTime(order, true, config), 120);
 });
