@@ -3153,15 +3153,22 @@ source().then(async (src) => {
     const approved = d.users.filter((u) => u.status === 'approved').sort((a, b) => a.name.localeCompare(b.name));
     const other = d.users.filter((u) => u.status !== 'pending' && u.status !== 'approved');
     const owner = d.you === 'owner';
+    // Admins in a list of their own (owner, 2026-11-10: "can you make an
+    // admin list too").
+    const admins = approved.filter((u) => u.role === 'admin');
+    const plain = approved.filter((u) => u.role !== 'admin');
+    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)]],
+      (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
+      + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''));
     view.innerHTML = `<div class="healthpage members">${head}
       <p class="muted">The site is ${d.lock ? '<b>locked</b>: only approved members get in' : 'open to everyone (not locked yet)'}. Emails sent today: ${esc(d.mailToday)} of ${esc(d.mailMax)}${d.mailReady ? '' : ' · <b>the email sender is not set up</b>'}.</p>
       ${said ? `<p class="mmsg${said.bad ? ' bad' : ''}" role="status">${esc(said.text)}</p>` : ''}
       <h2>Waiting for approval (${waiting.length})</h2>
       ${waiting.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Asked', day(u.requestedAt)]], '<button type="button" class="go" data-act="approve">Approve</button><button type="button" data-act="decline">Decline</button>')).join('') || '<p class="muted">Nobody is waiting.</p>'}
-      <h2>Approved members (${approved.length})</h2>
-      ${approved.map((u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)]],
-        (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
-        + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''))).join('') || '<p class="muted">Nobody yet.</p>'}
+      <h2>Admins (${admins.length})</h2>
+      ${admins.map(approvedRow).join('') || '<p class="muted">No Admins. Pick Admin under Access on a member to make one.</p>'}
+      <h2>Members (${plain.length})</h2>
+      ${plain.map(approvedRow).join('') || '<p class="muted">Nobody yet.</p>'}
       ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
