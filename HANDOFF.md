@@ -4,6 +4,20 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Game Boy, The Simpsons, Windows 95, Teletext and Tron page styles; Settings list
+grouped, 2026-11-10 evening (owner picked them from a list of ideas):** five more choices
+(`data-theme` `gameboy`, `simpsons`, `win95`, `teletext`, `tron` in `public/board.html`),
+the look only. Game Boy: four greens, pixel headings. Simpsons: yellow top band, sky-blue
+page, white round panels with black outlines, round letters (`ui-rounded` on an iPhone).
+Windows 95: teal page, grey bevelled windows with navy title bars, buttons that sink when
+picked. Teletext: black with the eight pure colours, blue bars with yellow headings. Tron:
+near-black with glowing cyan outlines and a faint grid. That makes 20 styles, so the list
+in ⚙ Settings is now in five groups (Everyday, CATS, Old screens, Games, Films and shows:
+`.stygroup`) and the Settings box scrolls inside the screen. ⚠ When adding a style that
+changes the gap between the tabs, check Current and Turn History still share the first
+row (they are `calc(50% - 3px)` wide, so a gap over 6px breaks it). Checked at phone
+width on sample data like the others. Laptop pull/restart/publish pending.
+
 **Minecraft and Naruto page styles, 2026-11-10 evening (owner: "make a minecraft theme and
 a Naruto theme"):** two more choices (`data-theme` `minecraft`, `naruto` in
 `public/board.html`), the look only (no blocks, characters, symbols or logos).

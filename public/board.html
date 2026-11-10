@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto|gameboy|simpsons|win95|teletext|tron)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,6 +128,10 @@
   .settings[hidden] { display: none; }
   .settings h2 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
   .settings .styles { display: grid; gap: 6px; }
+  /* The styles in groups (2026-11-10: twenty of them). */
+  .settings .stygroup { margin: 8px 0 0; font-size: 12px; color: var(--soft); }
+  .settings .stygroup:first-child { margin-top: 0; }
+  .settings { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); overflow-y: auto; }
   .settings button.sty { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; min-height: 44px;
     background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; font-size: 14px; }
   .settings button.sty[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 600; }
@@ -1439,6 +1443,141 @@
   :root[data-theme="naruto"] input, :root[data-theme="naruto"] select, :root[data-theme="naruto"] textarea { background: #ffffff !important; border: 2px solid #141414 !important; border-radius: 0; color: #141414; }
   :root[data-theme="naruto"] .daybar { background: #141414; color: #ff9a3d; }
   :root[data-theme="naruto"] .grid, :root[data-theme="naruto"] .col { gap: 26px; }
+  /* Game Boy (owner, 2026-11-10): the first handheld's screen, four shades
+     of green and nothing else: the page, panels and letters are all cut
+     from them, the picked thing is the darkest shade with pale letters.
+     Late and spare keep a dull red and brown so they still mean something. */
+  :root[data-theme="gameboy"] { --bg: #8bac0f; --sheet: #9bbc0f; --ink: #0f380f; --soft: #2c5a2c; --rule: #0f380f; --rule-soft: #7d9c0e;
+    --accent: #1e4a1e; --accent-ink: #9bbc0f; --accent-tint: #7d9c0e;
+    --amber: #5a3d00; --amber-tint: #b4b40f; --go: #0f380f; --go-tint: #6f940c; --stop: #7a1c08; --stop-tint: #b8a02a;
+    --plan-tint: #8bac0f; --poolA: #0f380f; --poolB: #306230; --poolSR: #1e4a1e;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; }
+  /* The block letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme="gameboy"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="gameboy"] .sheet > header h2, :root[data-theme="gameboy"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme="gameboy"] .head .when, :root[data-theme="gameboy"] .ohead .when, :root[data-theme="gameboy"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; }
+  :root[data-theme="gameboy"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; }
+  :root[data-theme="gameboy"] h3, :root[data-theme="gameboy"] .sec-title, :root[data-theme="gameboy"] .rail h2, :root[data-theme="gameboy"] th, :root[data-theme="gameboy"] .daybar, :root[data-theme="gameboy"] .settings h2, :root[data-theme="gameboy"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme="gameboy"] .modes button, :root[data-theme="gameboy"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme="gameboy"] .cur2 > summary .t, :root[data-theme="gameboy"] .train .time, :root[data-theme="gameboy"] .train-clear .card-duty, :root[data-theme="gameboy"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; }
+  :root[data-theme="gameboy"] * { border-radius: 0 !important; }
+  :root[data-theme="gameboy"] .top { border-bottom: 4px solid #0f380f; }
+  :root[data-theme="gameboy"] .sheet, :root[data-theme="gameboy"] .strip, :root[data-theme="gameboy"] .cur2-strip { border: 3px solid #0f380f; }
+  :root[data-theme="gameboy"] .sheet > header, :root[data-theme="gameboy"] .test-current-box > summary { background: #306230; border-bottom: 3px solid #0f380f; }
+  :root[data-theme="gameboy"] .sheet > header h2, :root[data-theme="gameboy"] .test-current-box > summary h2, :root[data-theme="gameboy"] .sheet > header .meta, :root[data-theme="gameboy"] .test-current-box > summary .meta, :root[data-theme="gameboy"] .test-current-box > summary::before { color: #9bbc0f; }
+  :root[data-theme="gameboy"] .modes button, :root[data-theme="gameboy"] .modes a.modelink { background: #9bbc0f; border: 3px solid #0f380f; color: #0f380f; }
+  :root[data-theme="gameboy"] .modes button[aria-pressed="true"], :root[data-theme="gameboy"] .poolfilter button[aria-pressed="true"], :root[data-theme="gameboy"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="gameboy"] .notes .nkinds button[aria-pressed="true"] { background: #0f380f; border-color: #0f380f; color: #9bbc0f; }
+  :root[data-theme="gameboy"] .gear, :root[data-theme="gameboy"] .steps button, :root[data-theme="gameboy"] .rail .hours button, :root[data-theme="gameboy"] .rail .turnpick button, :root[data-theme="gameboy"] .poolfilter button { background: #9bbc0f; border: 2px solid #0f380f; color: #0f380f; }
+  :root[data-theme="gameboy"] input, :root[data-theme="gameboy"] select, :root[data-theme="gameboy"] textarea { background: #9bbc0f !important; border: 2px solid #0f380f !important; color: #0f380f; }
+  :root[data-theme="gameboy"] .daybar { background: #306230; color: #9bbc0f; }
+  /* The Simpsons (owner, 2026-11-10): the show's flat cartoon colours.
+     Sky-blue page, white panels with a thick black outline and round
+     corners, bright yellow headings and picked thing, pink day bars,
+     round friendly letters. Only the look: no characters or logos. */
+  :root[data-theme="simpsons"] { --bg: #70d1fe; --sheet: #ffffff; --ink: #151515; --soft: #4a4a4a; --rule: #151515; --rule-soft: #d9e6ee;
+    --accent: #0b5fa8; --accent-ink: #ffffff; --accent-tint: #d6ecfb;
+    --amber: #9a4a00; --amber-tint: #ffe9a8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c9211a; --stop-tint: #fbd8d5;
+    --plan-tint: #eef3f6; --poolA: #0b5fa8; --poolB: #8a3fa8; --poolSR: #c9211a;
+    --display: ui-rounded, 'Arial Rounded M:root[data-theme="simpsons"] Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    --body: ui-rounded, 'Arial Rounded M:root[data-theme="simpsons"] Bold', 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; color-scheme: light; }
+  :root[data-theme="simpsons"] .top { border-bottom: 4px solid #151515; background: #fed90f; }
+  :root[data-theme="simpsons"] .top h1 { text-transform: none; font-size: 28px; letter-spacing: 0; }
+  :root[data-theme="simpsons"] .top .where, :root[data-theme="simpsons"] .top .updated { color: #151515; }
+  :root[data-theme="simpsons"] .sheet, :root[data-theme="simpsons"] .strip, :root[data-theme="simpsons"] .cur2-strip { border: 3px solid #151515; border-radius: 14px; }
+  :root[data-theme="simpsons"] .sheet > header, :root[data-theme="simpsons"] .test-current-box > summary { background: #fed90f; border-bottom: 3px solid #151515; }
+  :root[data-theme="simpsons"] .sheet > :first-child { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+  :root[data-theme="simpsons"] .sheet > :last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+  :root[data-theme="simpsons"] .sheet > header h2, :root[data-theme="simpsons"] .test-current-box > summary h2 { text-transform: none; letter-spacing: 0; }
+  :root[data-theme="simpsons"] .sheet > header .meta, :root[data-theme="simpsons"] .test-current-box > summary .meta { color: #151515; }
+  :root[data-theme="simpsons"] .modes button, :root[data-theme="simpsons"] .modes a.modelink { background: #ffffff; border: 3px solid #151515; border-radius: 999px; color: #151515; }
+  :root[data-theme="simpsons"] .modes button[aria-pressed="true"], :root[data-theme="simpsons"] .poolfilter button[aria-pressed="true"], :root[data-theme="simpsons"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="simpsons"] .notes .nkinds button[aria-pressed="true"] { background: #0b5fa8; border-color: #151515; color: #ffffff; }
+  :root[data-theme="simpsons"] .gear, :root[data-theme="simpsons"] .steps button, :root[data-theme="simpsons"] .rail .hours button, :root[data-theme="simpsons"] .rail .turnpick button, :root[data-theme="simpsons"] .poolfilter button { background: #ffffff; border: 2px solid #151515; border-radius: 999px; color: #151515; }
+  :root[data-theme="simpsons"] input, :root[data-theme="simpsons"] select, :root[data-theme="simpsons"] textarea { background: #ffffff !important; border: 2px solid #151515 !important; border-radius: 12px; color: #151515; }
+  :root[data-theme="simpsons"] .turnpick, :root[data-theme="simpsons"] .daypick, :root[data-theme="simpsons"] .rail h2, :root[data-theme="simpsons"] .status-line, :root[data-theme="simpsons"] .agebar .sub, :root[data-theme="simpsons"] .cur2-quiet, :root[data-theme="simpsons"] main > .note { color: #10384f; }
+  :root[data-theme="simpsons"] .daybar { background: #ff8fcf; color: #151515; }
+  /* Windows 95 (owner, 2026-11-10): the old desktop. Teal page, grey
+     windows with a raised edge and a navy title bar with white letters,
+     raised grey buttons that sink in when picked, white sunken entry
+     boxes, the plain system face. Only the look: no logos or icons. */
+  :root[data-theme="win95"] { --bg: #008080; --sheet: #c0c0c0; --ink: #000000; --soft: #404040; --rule: #808080; --rule-soft: #a8a8a8;
+    --accent: #000080; --accent-ink: #ffffff; --accent-tint: #b0b8e0;
+    --amber: #6b4a00; --amber-tint: #f0e0a0; --go: #006400; --go-tint: #b4dcb4; --stop: #b00000; --stop-tint: #f0c0c0;
+    --plan-tint: #b0b0b0; --poolA: #000080; --poolB: #800080; --poolSR: #006400;
+    --display: 'MS Sans Serif', Tahoma, 'Segoe UI', Arial, sans-serif; --body: 'MS Sans Serif', Tahoma, 'Segoe UI', Arial, sans-serif;
+    --mono: 'Courier New', 'Courier Prime', monospace; color-scheme: light; }
+  :root[data-theme="win95"] * { border-radius: 0 !important; }
+  :root[data-theme="win95"] .top { border-bottom: 0; }
+  :root[data-theme="win95"] .top h1 { color: #ffffff; text-transform: none; font-size: 24px; letter-spacing: 0; }
+  :root[data-theme="win95"] .top .where, :root[data-theme="win95"] .top .updated, :root[data-theme="win95"] .turnpick, :root[data-theme="win95"] .daypick, :root[data-theme="win95"] .rail h2, :root[data-theme="win95"] .status-line, :root[data-theme="win95"] .agebar .sub, :root[data-theme="win95"] .cur2-quiet, :root[data-theme="win95"] main > .note,
+  :root[data-theme="win95"] .head .when, :root[data-theme="win95"] .ohead .when, :root[data-theme="win95"] .thead .when { color: #ffffff; }
+  :root[data-theme="win95"] .sheet, :root[data-theme="win95"] .strip, :root[data-theme="win95"] .cur2-strip, :root[data-theme="win95"] .settings { border: 2px solid; border-color: #ffffff #404040 #404040 #ffffff; box-shadow: 0 0 0 1px #000000; }
+  :root[data-theme="win95"] .sheet > header, :root[data-theme="win95"] .test-current-box > summary { background: #000080; border-bottom: 0; padding: 7px 10px; align-items: center; }
+  :root[data-theme="win95"] .sheet > header h2, :root[data-theme="win95"] .test-current-box > summary h2 { color: #ffffff; text-transform: none; font: 700 15px/1.2 var(--display); letter-spacing: 0; }
+  :root[data-theme="win95"] .sheet > header .meta, :root[data-theme="win95"] .test-current-box > summary .meta, :root[data-theme="win95"] .test-current-box > summary::before { color: #ffffff; }
+  :root[data-theme="win95"] .modes button, :root[data-theme="win95"] .modes a.modelink, :root[data-theme="win95"] .gear, :root[data-theme="win95"] .steps button, :root[data-theme="win95"] .rail .hours button, :root[data-theme="win95"] .rail .turnpick button, :root[data-theme="win95"] .poolfilter button, :root[data-theme="win95"] .settings button.sty, :root[data-theme="win95"] .screen-group {
+    background: #c0c0c0; border: 2px solid; border-color: #ffffff #404040 #404040 #ffffff; box-shadow: 0 0 0 1px #000000; color: #000000; }
+  :root[data-theme="win95"] .modes button[aria-pressed="true"], :root[data-theme="win95"] .poolfilter button[aria-pressed="true"], :root[data-theme="win95"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="win95"] .notes .nkinds button[aria-pressed="true"], :root[data-theme="win95"] .settings button.sty[aria-pressed="true"] { background: #d8d8d8; border-color: #404040 #ffffff #ffffff #404040; color: #000000; font-weight: 700; }
+  :root[data-theme="win95"] input, :root[data-theme="win95"] select, :root[data-theme="win95"] textarea { background: #ffffff !important; border: 2px solid !important; border-color: #404040 #ffffff #ffffff #404040 !important; color: #000000; }
+  :root[data-theme="win95"] .daybar { background: #808080; color: #ffffff; }
+  /* Teletext (owner, 2026-11-10): the old TV text pages. Black screen and
+     the eight pure colours only: white letters, cyan labels, yellow for
+     anything you tap, a blue bar with yellow letters over each section,
+     green and red at full strength, magenta for spare. Heavy fixed-width
+     letters, square everything. */
+  :root[data-theme="teletext"] { --bg: #000000; --sheet: #000000; --ink: #ffffff; --soft: #00ffff; --rule: #0000ff; --rule-soft: #00007a;
+    --accent: #ffff00; --accent-ink: #000000; --accent-tint: #000090;
+    --amber: #ff00ff; --amber-tint: #3a003a; --go: #00ff00; --go-tint: #003a00; --stop: #ff0000; --stop-tint: #3a0000;
+    --plan-tint: #00004a; --poolA: #00ffff; --poolB: #ff00ff; --poolSR: #00ff00;
+    --display: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; }
+  :root[data-theme="teletext"] * { border-radius: 0 !important; }
+  :root[data-theme="teletext"] body { font-size: 14px; font-weight: 500; }
+  :root[data-theme="teletext"] .top { border-bottom: 4px solid #0000ff; }
+  :root[data-theme="teletext"] .top h1 { display: inline-block; background: #0000ff; color: #ffff00; padding: 4px 10px; font-size: 22px; letter-spacing: 0.04em; }
+  :root[data-theme="teletext"] .head .when, :root[data-theme="teletext"] .ohead .when, :root[data-theme="teletext"] .thead .when { font-size: 24px; color: #ffff00; }
+  :root[data-theme="teletext"] .head .when .num { font-size: 24px; color: #ffffff; }
+  :root[data-theme="teletext"] .sheet, :root[data-theme="teletext"] .strip, :root[data-theme="teletext"] .cur2-strip { border: 2px solid #0000ff; }
+  :root[data-theme="teletext"] .sheet > header, :root[data-theme="teletext"] .test-current-box > summary { background: #0000ff; border-bottom: 0; }
+  :root[data-theme="teletext"] .sheet > header h2, :root[data-theme="teletext"] .test-current-box > summary h2 { color: #ffff00; font-size: 17px; letter-spacing: 0.04em; }
+  :root[data-theme="teletext"] .sheet > header .meta, :root[data-theme="teletext"] .test-current-box > summary .meta, :root[data-theme="teletext"] .test-current-box > summary::before { color: #ffffff; }
+  :root[data-theme="teletext"] .modes button, :root[data-theme="teletext"] .modes a.modelink { background: #000000; border: 2px solid #00ffff; color: #00ffff; text-transform: uppercase; font-weight: 600; }
+  :root[data-theme="teletext"] .modes button[aria-pressed="true"], :root[data-theme="teletext"] .poolfilter button[aria-pressed="true"], :root[data-theme="teletext"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="teletext"] .notes .nkinds button[aria-pressed="true"] { background: #ffff00; border-color: #ffff00; color: #000000; }
+  :root[data-theme="teletext"] .gear, :root[data-theme="teletext"] .steps button, :root[data-theme="teletext"] .rail .hours button, :root[data-theme="teletext"] .rail .turnpick button, :root[data-theme="teletext"] .poolfilter button { background: #000000; border: 2px solid #00ffff; color: #00ffff; }
+  :root[data-theme="teletext"] input, :root[data-theme="teletext"] select, :root[data-theme="teletext"] textarea { background: #000000 !important; border: 2px solid #ffffff !important; color: #ffffff; }
+  :root[data-theme="teletext"] .daybar { background: #00ff00; color: #000000; font-weight: 600; }
+  :root[data-theme="teletext"] .htable td.warn, :root[data-theme="teletext"] .health .warn { color: #ff5555; }
+  /* Tron (owner, 2026-11-10): the film's light grid. Near-black blue page,
+     thin glowing cyan outlines round every panel, pale blue-white letters,
+     wide-spaced narrow capitals for headings, the picked thing solid cyan,
+     orange (the other side's colour) for spare, a faint grid behind it
+     all. Only the look: no characters or logos. */
+  :root[data-theme="tron"] { --bg: #01060d; --sheet: #030d18; --ink: #dff8ff; --soft: #6fb9cc; --rule: #1a6f86; --rule-soft: #0c3442;
+    --accent: #6fe9ff; --accent-ink: #00141a; --accent-tint: #073442;
+    --amber: #ff9a2e; --amber-tint: #3a2208; --go: #5dffb5; --go-tint: #06382a; --stop: #ff5252; --stop-tint: #3d0f12;
+    --plan-tint: #071c28; --poolA: #6fe9ff; --poolB: #c9a0ff; --poolSR: #ff9a2e;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; color-scheme: dark; }
+  :root[data-theme="tron"] body { background-color: #01060d; background-image: linear-gradient(rgba(111, 233, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(111, 233, 255, 0.07) 1px, transparent 1px); background-size: 34px 34px; }
+  :root[data-theme="tron"] * { border-radius: 2px !important; }
+  :root[data-theme="tron"] .top { border-bottom: 1px solid #6fe9ff; box-shadow: 0 1px 12px rgba(111, 233, 255, 0.55); }
+  :root[data-theme="tron"] .top h1, :root[data-theme="tron"] .sheet > header h2, :root[data-theme="tron"] .test-current-box > summary h2 { color: #6fe9ff; letter-spacing: 0.2em; font-weight: 500; text-shadow: 0 0 10px rgba(111, 233, 255, 0.7); }
+  :root[data-theme="tron"] .top h1 { font-size: 24px; }
+  :root[data-theme="tron"] .sheet > header h2, :root[data-theme="tron"] .test-current-box > summary h2 { font-size: 17px; }
+  :root[data-theme="tron"] .head .when, :root[data-theme="tron"] .ohead .when, :root[data-theme="tron"] .thead .when { font-weight: 500; letter-spacing: 0.08em; font-size: 30px; }
+  :root[data-theme="tron"] .head .when .num, :root[data-theme="tron"] .cur2 > summary .t, :root[data-theme="tron"] .train .time, :root[data-theme="tron"] .train-clear .card-duty, :root[data-theme="tron"] .stat .v { color: #6fe9ff; text-shadow: 0 0 8px rgba(111, 233, 255, 0.6); }
+  :root[data-theme="tron"] .sheet, :root[data-theme="tron"] .strip, :root[data-theme="tron"] .cur2-strip { border: 1px solid #6fe9ff; box-shadow: 0 0 10px rgba(111, 233, 255, 0.35), inset 0 0 14px rgba(111, 233, 255, 0.06); }
+  :root[data-theme="tron"] .modes button, :root[data-theme="tron"] .modes a.modelink { background: #030d18; border: 1px solid #1a6f86; color: #dff8ff; text-transform: uppercase; letter-spacing: 0.12em; font: 500 14px/1.1 var(--display); }
+  :root[data-theme="tron"] .modes button[aria-pressed="true"], :root[data-theme="tron"] .poolfilter button[aria-pressed="true"], :root[data-theme="tron"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="tron"] .notes .nkinds button[aria-pressed="true"] { background: #6fe9ff; border-color: #6fe9ff; color: #00141a; box-shadow: 0 0 12px rgba(111, 233, 255, 0.7); }
+  :root[data-theme="tron"] .gear, :root[data-theme="tron"] .steps button, :root[data-theme="tron"] .rail .hours button, :root[data-theme="tron"] .rail .turnpick button, :root[data-theme="tron"] .poolfilter button { background: #030d18; border: 1px solid #1a6f86; color: #dff8ff; }
+  :root[data-theme="tron"] input, :root[data-theme="tron"] select, :root[data-theme="tron"] textarea { background: #01060d !important; border: 1px solid #1a6f86 !important; color: #dff8ff; }
+  :root[data-theme="tron"] .daybar { background: #071c28; color: #6fe9ff; letter-spacing: 0.2em; }
+  :root[data-theme="tron"] .settings { background: #030d18; }
+  :root[data-theme="tron"] .htable td.warn, :root[data-theme="tron"] .health .warn { color: #ff8a80; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1505,21 +1644,31 @@
     </div>
     <h2 id="styhead">Page style</h2>
     <div class="styles">
+      <p class="stygroup">Everyday</p>
       <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
-      <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
-      <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
       <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:linear-gradient(90deg,#f2f2f7 50%,#000000 50%);color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
       <button type="button" class="sty" data-theme="iphonelight"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone Light</button>
+      <p class="stygroup">CATS</p>
+      <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
+      <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
+      <p class="stygroup">Old screens</p>
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
       <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
       <button type="button" class="sty" data-theme="fallout"><span class="sw" style="background:#06130b;color:#1aff80;border-color:#17633a;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Fallout</button>
-      <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
+      <button type="button" class="sty" data-theme="win95"><span class="sw" style="background:#000080;color:#ffffff;border-color:#c0c0c0;font-family:Tahoma,Arial,sans-serif">Aa</span>Windows 95</button>
+      <button type="button" class="sty" data-theme="teletext"><span class="sw" style="background:#0000ff;color:#ffff00;border-color:#00ffff">100</span>Teletext</button>
+      <p class="stygroup">Games</p>
+      <button type="button" class="sty" data-theme="gameboy"><span class="sw" style="background:#9bbc0f;color:#0f380f;border-color:#0f380f;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Game Boy</button>
       <button type="button" class="sty" data-theme="mario"><span class="sw" style="background:#5c94fc;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">1UP</span>Super Mario</button>
       <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
       <button type="button" class="sty" data-theme="zelda"><span class="sw" style="background:#0e3a26;color:#f8c838;border-color:#b8962e;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Zelda</button>
       <button type="button" class="sty" data-theme="minecraft"><span class="sw" style="background:#7a7a7a;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Minecraft</button>
+      <p class="stygroup">Films and shows</p>
+      <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
+      <button type="button" class="sty" data-theme="tron"><span class="sw" style="background:#01060d;color:#6fe9ff;border-color:#6fe9ff;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Tron</button>
       <button type="button" class="sty" data-theme="naruto"><span class="sw" style="background:#ff7a1a;color:#141414;border-color:#141414;font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:700;font-size:14px">Aa</span>Naruto</button>
+      <button type="button" class="sty" data-theme="simpsons"><span class="sw" style="background:#fed90f;color:#151515;border-color:#151515;border-radius:8px">Aa</span>The Simpsons</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1578,7 +1727,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d', zelda: '#0e3a26', minecraft: '#6b4a32', naruto: '#ff7a1a' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d', zelda: '#0e3a26', minecraft: '#6b4a32', naruto: '#ff7a1a', gameboy: '#8bac0f', simpsons: '#fed90f', win95: '#008080', teletext: '#000000', tron: '#01060d' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
