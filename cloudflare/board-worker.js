@@ -1131,8 +1131,8 @@ const sameText = (a, b) => { if (a.length !== b.length) return false; let d = 0;
 const bodyJson = async (request) => { const t = await request.text(); if (t.length > 4000) return null; try { const b = JSON.parse(t); return b && typeof b === 'object' ? b : null; } catch { return null; } };
 
 const userCache = new Map();
-async function userById(env, id, now = Date.now()) {
-  const hit = userCache.get(id);
+async function userById(env, id, now = Date.now(), fresh = false) {
+  const hit = fresh ? null : userCache.get(id);
   // Only an approved member is remembered: someone waiting is looked up
   // every time, so an approval lets them in at once (owner, 2026-11-10:
   // "Not approved yet" a moment after he had approved the account).
@@ -1154,7 +1154,10 @@ async function sessionCookie(env, payload) {
 const CLEAR_COOKIE = `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
 // Who the cookie says this is: { id, status, name } or null. The account is
 // looked up each time (kept a minute), so Remove works at once.
-async function sessionOf(request, env, now = Date.now()) {
+// fresh: read the account itself, not the minute-old copy (who am I, and
+// the Members list: a new Admin sees the tab on the next reload, and one
+// who is no longer Admin loses it at once).
+async function sessionOf(request, env, now = Date.now(), fresh = false) {
   const secret = authSecret(env);
   if (!secret) return null;
   const m = new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([A-Za-z0-9_-]+)\\.([A-Za-z0-9_-]+)`).exec(request.headers.get('cookie') || '');
@@ -1164,7 +1167,7 @@ async function sessionOf(request, env, now = Date.now()) {
   try { p = JSON.parse(new TextDecoder().decode(ub64(m[1]))); } catch { return null; }
   if (!p || typeof p.u !== 'string' || !(now - p.t < SESSION_DAYS * 86400000)) return null;
   if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member' };
-  const user = await userById(env, p.u, now);
+  const user = await userById(env, p.u, now, fresh);
   if (!user || user.key !== p.k || user.status === 'removed') return null;
   return { id: p.u, status: user.status, name: user.name, email: user.email, role: user.role === 'admin' ? 'admin' : 'member' };
 }
@@ -1301,7 +1304,7 @@ async function authVerify(request, env, now = Date.now()) {
 // members; only the owner key changes who is an Admin or removes one.
 async function accountsAdmin(request, env, url, now = Date.now()) {
   let you = keyMatches(request, env) ? 'owner' : null;
-  if (!you) { const who = await sessionOf(request, env, now); if (who && who.status === 'approved' && who.role === 'admin') you = 'admin'; }
+  if (!you) { const who = await sessionOf(request, env, now, true); if (who && who.status === 'approved' && who.role === 'admin') you = 'admin'; }
   if (!you) return json({ error: 'not found' }, 404);
   if (request.method === 'GET') {
     const users = [];
@@ -1358,7 +1361,7 @@ async function accounts(request, env, url) {
   if (p === '/account') return new Response(ACCOUNT_PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'same-origin' } });
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/auth/me') {
-    const s = await sessionOf(request, env);
+    const s = await sessionOf(request, env, Date.now(), true);
     return json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: s ? s.name : null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
   }
   if (p.startsWith('/auth/')) {

@@ -277,4 +277,11 @@ test('an approval made elsewhere lets a waiting device in at once', async () => 
   store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), status: 'approved' }));
   assert.equal((await (await call('/auth/me', { cookie })).json()).signedIn, true);
   assert.equal((await call('/data/index.json', { cookie })).status, 200);
+  // Made an Admin by another copy of the Worker: seen on the next look.
+  assert.equal((await (await call('/auth/me', { cookie })).json()).role, 'member');
+  store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), role: 'admin' }));
+  assert.equal((await (await call('/auth/me', { cookie })).json()).role, 'admin');
+  assert.equal((await call('/health/accounts', { cookie })).status, 200);
+  store.set(key, JSON.stringify({ ...JSON.parse(store.get(key)), role: 'member' }));
+  assert.equal((await call('/health/accounts', { cookie })).status, 404);
 });
