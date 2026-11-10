@@ -18,7 +18,7 @@
   // (CATS's own colours) or retro tablet (CATS in the GLINK 3270 app).
   // iPhone (owner, 2026-11-10): the look of the phone's own apps.
   // Not picked: follows the phone.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|board)$/.test(t || '')) document.documentElement.dataset.theme = t; } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -904,6 +904,30 @@
   :root[data-theme="tablet"] .pool { background: none; padding-inline: 0; color: var(--poolA); }
   :root[data-theme="tablet"] .crew { color: var(--accent); }
   :root[data-theme="tablet"] .pool.B { color: var(--poolB); } :root[data-theme="tablet"] .pool.SR { color: var(--poolSR); }
+  /* Departure Board (owner, 2026-11-10: "make up one more theme that would
+     be popular"): a station's departure board. True black (easy on the
+     eyes on a night call, and on the battery), amber letters in a
+     fixed-width face, white for headings and anything you tap, green and
+     red kept for ordered / late. The big times glow a little. */
+  :root[data-theme="board"] { --bg: #000000; --sheet: #0b0b0b; --ink: #ffbf3c; --soft: #b98d35; --rule: #3a2d0e; --rule-soft: #221a08;
+    --accent: #ffffff; --accent-ink: #000000; --accent-tint: #2b2209;
+    --amber: #ff8a2a; --amber-tint: #331a05; --go: #5fe07a; --go-tint: #0c2a14; --stop: #ff5a4f; --stop-tint: #3a100d;
+    --plan-tint: #1c1606; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5fe0d0;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark; }
+  :root[data-theme="board"] * { border-radius: 2px !important; }
+  :root[data-theme="board"] body { font-size: 14px; }
+  :root[data-theme="board"] .top { border-bottom: 1px solid var(--ink); }
+  :root[data-theme="board"] .top h1, :root[data-theme="board"] .sheet > header h2, :root[data-theme="board"] .test-current-box > summary h2, :root[data-theme="board"] .head .when, :root[data-theme="board"] .ohead .when, :root[data-theme="board"] .thead .when { color: #ffffff; letter-spacing: 0.06em; }
+  :root[data-theme="board"] .head .when .num, :root[data-theme="board"] .train-clear .card-duty, :root[data-theme="board"] .train .time, :root[data-theme="board"] .stat .v, :root[data-theme="board"] .rail .t { color: #ffd257; text-shadow: 0 0 10px rgba(255, 176, 0, 0.45); }
+  :root[data-theme="board"] .modes button, :root[data-theme="board"] .modes a.modelink { color: var(--ink); border-color: var(--rule); text-transform: uppercase; letter-spacing: 0.04em; }
+  :root[data-theme="board"] .modes button[aria-pressed="true"], :root[data-theme="board"] .poolfilter button[aria-pressed="true"], :root[data-theme="board"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="board"] .notes .nkinds button[aria-pressed="true"] { background: #ffbf3c; border-color: #ffbf3c; color: #000000; }
+  :root[data-theme="board"] .poolfilter button, :root[data-theme="board"] .rail .hours button { color: var(--ink); }
+  :root[data-theme="board"] input, :root[data-theme="board"] select, :root[data-theme="board"] textarea { background: #000000 !important; color: #ffffff; border-color: var(--soft) !important; }
+  :root[data-theme="board"] .daybar { background: #171204; color: #ffffff; }
+  :root[data-theme="board"] .htable td.warn, :root[data-theme="board"] .health .warn { color: #ff8a80; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -975,6 +999,7 @@
       <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
       <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
+      <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1033,7 +1058,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;

@@ -16,6 +16,14 @@ only (the branch this cloud session was given, fast-forwarded to
 not have it until it is merged there. Not done: the Worker's sign-in page and
 grievance.html only know light/dark, so with iPhone picked they show light.
 
+**Departure Board page style, 2026-11-10 (owner liked both retro passes, then: "make up
+one more theme that would be popular"):** a sixth choice in ⚙ Settings,
+`data-theme="board"` in `public/board.html` (block near the end of the style sheet): a
+station departure board. True black, amber fixed-width letters (IBM Plex Mono, already
+loaded), white headings and links, big times with a slight glow, green / red kept. Opt-in
+per phone. Checked here at phone width, Current only. Same branch caveat as below.
+❓ Waiting on him: does he like it.
+
 **Retro Tablet page style, second pass, 2026-11-10 (owner, two photos of GLINK on the
 company phone: main menu and Call Board):** in `public/board.html` ("Retro Tablet, second
 pass" block near the end of the style sheet). Colours read from the photos (a camera, so
