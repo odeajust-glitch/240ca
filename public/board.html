@@ -851,6 +851,9 @@
   .chip.habit.early { background: var(--stop-tint); color: var(--stop); }
   .chip.habit.ok { background: var(--go-tint); color: var(--go); }
   .habitnote { border-left: 3px solid var(--accent); padding-left: 8px; }
+  details.cur2 .l2 .likely { flex: 0 0 100%; color: #c9b8fb; font-weight: 600; }
+  details.cur2 .l2 .likely.tight { color: var(--go); }
+  details.cur2 .l2 .likely small { font-weight: 400; color: var(--soft); }
   .call-timeline-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
   .call-timeline li { margin: 6px 0; }
   .ctable { margin-top: 6px; font-size: 13px; }
@@ -1540,9 +1543,10 @@ function lineup2(s) {
     const habit = t.deadhead ? null : trainHabit(t.train);
     const lead = planTrust(s, t);
     const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}${habit && t.status !== 'ORD' ? ` ${habit.chip}` : ''}`;
-    const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}`;
+    const likely = likelyCall(s, t);
+    const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
     return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
-      fold: (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
+      fold: (likely ? `<p class="habitnote"><b>When it is likely to be called:</b> ${esc(likely.text)}</p>` : '') + (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
@@ -2411,6 +2415,29 @@ function trainHabit(train) {
     : d.median <= -45 ? `usually goes about ${hrs(-d.median)} earlier than first planned (${d.earlier}% go earlier)` : `no steady habit: ${d.later}% later, ${d.earlier}% earlier than first planned`;
   const chip = d.within30 >= 70 ? '<span class="chip habit ok">holds its plan</span>' : d.median >= 45 ? `<span class="chip habit late">usually +${hrs(d.median)}</span>` : d.median <= -45 ? `<span class="chip habit early">usually −${hrs(-d.median)}</span>` : '';
   return { chip, text: `${num} ${text}, over ${d.n} runs.` };
+}
+// When a planned Sarnia train is likely to be called (patterns.json predict):
+// the shown time plus what this train did from this far out on its other
+// runs, as a window with how often it held. Nothing for an ordered train (its
+// time is the answer) or one with too few runs and no fallback.
+function likelyCall(s, t) {
+  const P = PREVIEW && PATTERNS && PATTERNS.predict;
+  const order = BoardTrains.resolve(t.order, s.taken);
+  if (!P || !order || t.status === 'ORD' || t.deadhead) return null;
+  const hours = (stampMin(order) - stampMin(s.sameUntil || s.taken)) / 60;
+  const b = hours < 0 ? 'past' : hours < 3 ? '0-3' : hours < 6 ? '3-6' : hours < 10 ? '6-10' : hours < 16 ? '10-16' : hours < 24 ? '16-24' : '24+';
+  const sym = (/^([A-Z]+\d{3})/.exec(t.train || '') || [])[1];
+  const own = sym && P.trains && P.trains[sym] && P.trains[sym][b];
+  const x = own || (P.all || {})[b];
+  if (!x) return null;
+  // The saved gaps are the real on-duty time less the shown order time. The
+  // call is 2 h before on duty, so: shown order + gap − 2 h.
+  const at = (gap) => BoardTrains.fromMin(stampMin(order) + Math.round(gap / 5) * 5 - 120);
+  const span = (a, z) => { const A = at(a), Z = at(z); return A === Z ? dt(A) : A.slice(0, 10) === Z.slice(0, 10) ? `${dt(A)}–${Z.slice(11)}` : `${dt(A)} – ${dt(Z)}`; };
+  const who = own ? sym : 'Sarnia trains';
+  return { own: !!own, wide: span(x.lo, x.hi), likely: span(x.likelyLo, x.likelyHi), mid: dt(at(x.mid)), held: x.held, n: x.n, who,
+    tight: x.hi - x.lo <= 60,
+    text: `Call likely ${span(x.lo, x.hi)}, most often about ${dt(at(x.mid))}. From ${who === sym ? `${sym}'s` : 'all Sarnia trains’'} ${x.n} runs planned this far out: that window held ${x.held} of ${x.n} times when each run was checked against the others; half fell in ${span(x.likelyLo, x.likelyHi)}.${own ? '' : ` ${sym || 'This train'} has too few runs of its own yet.`}` };
 }
 function planTrust(s, t) {
   const od = BoardTrains.resolve(t.order, s.taken);

@@ -26,5 +26,12 @@ test('patterns: board position to time on duty, train habit, miss by lead', () =
   assert.deepEqual(p.drift.M278, { n: 10, median: 360, later: 100, earlier: 0, within30: 0 });
   assert.equal(p.drift['278'], undefined);
   assert.equal(Patterns.rankOf(7), '6th–8th');
-  assert.deepEqual(Patterns.finish({}, []), { board: {}, drift: {}, lead: [] });
+  assert.deepEqual(Patterns.finish({}, []), { board: {}, drift: {}, predict: { trains: {}, all: {} }, lead: [] });
+  // The same train, planned and 6 to 10 h away (0100 → 1000): it went 6 h after the shown time every run.
+  const w = p.predict.trains.M278['6-10'];
+  assert.deepEqual([w.n, w.mid, w.lo, w.hi, w.held], [10, 360, 360, 360, 10]);
+  // Still planned after its shown time had passed (1000 to 1330): its own group, the gap the same 6 h.
+  assert.equal(p.predict.trains.M278.past.mid, 360);
+  assert.equal(p.predict.all['6-10'].n, 10);
+  assert.equal(Patterns.awayOf(-1), 'past');
 });

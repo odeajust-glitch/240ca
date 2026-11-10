@@ -470,6 +470,21 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
+**Likely-call window built on the test site, 2026-11-10 (owner: "Build it on the test
+site").** `Patterns.predict(trains)` (lib/board/patterns.js) goes into data/patterns.json
+as `predict: { trains: { M396: { '6-10': { n, mid, lo, hi, likelyLo, likelyHi, held,
+likelyHeld } } }, all: {…} }`: per train (letters + number) and per distance of the shown
+time (`awayOf`: past, 0-3, 3-6, 6-10, 10-16, 16-24, 24+ h), the gap between the shown time
+while still planned and the real on-duty time, one figure a run, 6 runs or more. The wide
+window is the 5th–95th of those; `held` is how many runs fell inside when each was checked
+against the others (81% over all trains and distances on the live days; the middle-half
+window 54%). On the test site each planned Sarnia row shows "likely call 11th 0450–0915 ·
+held 19 of 24" (`likelyCall` in board.html; green when the window is an hour or less;
+"(all trains)" when the train has too few runs of its own), with the full sentence on
+opening the row. Ordered trains and deadheads show nothing. Call = shown order + gap − 2 h.
+Simulated here on live data: no page errors. Suite 290 of 302. The note below is the
+backtest that came first.
+
 **Call-time prediction, backtested, not built (2026-11-10; owner: "are you able to make a
 prediction on when trains will be called based on historical data ... on the current tab
 ... with an indication of accuracy").** Method tried: at any look, the shown on-duty time
