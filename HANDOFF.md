@@ -4,6 +4,11 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Windows 3.1 page style, 2026-11-11 (owner):** a kit style (`k-win31`, Old screens
+group): grey page, white windows with a thin black frame and navy title bars, grey push
+buttons with a lit edge, the picked thing navy. 47 styles. He wants about 10 more: more
+ideas were listed in chat; build only what he picks. Laptop pull/restart/publish pending.
+
 **24 more page styles on one shared set of rules; Settings groups fold, 2026-11-11 (owner
 ticked them on the list of ideas):** Amber Terminal, Commodore 64, Blue Screen, DOS,
 Classic Mac, Nokia Phone, Calculator, Subway Map, Tetris, Sonic, Donkey Kong, Space

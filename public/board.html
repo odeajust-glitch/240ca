@@ -1842,6 +1842,20 @@
     --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #f85b1a;
     --k-top-bg: #f85b1a; --k-title: #ffffff; --k-glow: 3px 3px 0 #1c3f94; --k-top-ink: #14182a; --k-hstyle: italic; --k-h1: 33px; --k-edge: 3px solid #1c3f94; --k-head-bg: #1c3f94; --k-head-ink: #ffd23c; --k-head-ink2: #ffffff; --k-head-edge: 0; --k-tab-bg: #ffffff; --k-tab-ink: #1c3f94; --k-tab-edge: 3px solid #1c3f94; --k-pick-bg: #ffd23c; --k-pick-ink: #1c3f94; --k-pick-edge: #1c3f94; --k-tcase: uppercase; --k-bar-bg: #f85b1a; --k-bar-ink: #ffffff; --k-top-edge: 4px solid #1c3f94; }
   :root[data-theme="k-dragonball"] .modes button { font: 700 15px/1.1 var(--display); font-style: italic; }
+  /* Windows 3.1 (owner, 2026-11-11): the desktop before Windows 95. Grey
+     page, white windows with a thin black frame and a navy title bar with
+     white letters, grey push buttons with a black outline and a lit edge,
+     the picked thing navy with white letters like a chosen menu line,
+     heavy plain lettering. */
+  :root[data-theme="k-win31"] { --bg: #c0c0c0; --sheet: #ffffff; --ink: #000000; --soft: #404040; --rule: #000000; --rule-soft: #c8c8c8; --accent: #000080; --accent-ink: #ffffff; --accent-tint: #c6c6e8;
+    --amber: #6b4a00; --amber-tint: #f0e0a0; --go: #006400; --go-tint: #c0e0c0; --stop: #b00000; --stop-tint: #f0c8c8; --plan-tint: #e4e4e4; --poolA: #000080; --poolB: #800080; --poolSR: #006400;
+    --display: 'MS Sans Serif', 'Helvetica Neue', Arial, sans-serif; --body: 'MS Sans Serif', 'Helvetica Neue', Arial, sans-serif; --mono: 'Courier New', 'Courier Prime', monospace; color-scheme: light; --k-meta: #c0c0c0;
+    --k-edge: 1px solid #000000; --k-head-bg: #000080; --k-head-ink: #ffffff; --k-head-edge: 1px solid #000000; --k-hcase: none; --k-h1: 24px; --k-track: 0; --k-title: #000000; --k-tab-bg: #c0c0c0; --k-tab-ink: #000000; --k-tab-edge: 1px solid #000000; --k-pick-bg: #000080; --k-pick-ink: #ffffff; --k-pick-edge: #000000; --k-bar-bg: #c0c0c0; --k-bar-ink: #000000; --k-top-edge: 1px solid #000000; --k-field-bg: #ffffff; }
+  :root[data-theme="k-win31"] body { font-weight: 600; }
+  :root[data-theme="k-win31"] .sheet > header, :root[data-theme="k-win31"] .test-current-box > summary { padding: 6px 10px; align-items: center; }
+  :root[data-theme="k-win31"] .sheet > header h2, :root[data-theme="k-win31"] .test-current-box > summary h2 { font: 700 15px/1.2 var(--display); }
+  :root[data-theme="k-win31"] .modes button, :root[data-theme="k-win31"] .gear, :root[data-theme="k-win31"] .steps button, :root[data-theme="k-win31"] .rail .hours button, :root[data-theme="k-win31"] .rail .turnpick button, :root[data-theme="k-win31"] .poolfilter button, :root[data-theme="k-win31"] .screen-group { box-shadow: inset 1px 1px 0 #ffffff, inset -2px -2px 0 #808080; font-weight: 700; }
+  :root[data-theme="k-win31"] .modes button[aria-pressed="true"], :root[data-theme="k-win31"] .poolfilter button[aria-pressed="true"], :root[data-theme="k-win31"] .rail .hours button[aria-pressed="true"] { box-shadow: none; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1922,10 +1936,11 @@
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
       <button type="button" class="sty" data-theme="k-subway"><span class="sw" style="background:#111111;color:#ffffff;border-color:#111111;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:12px">Aa</span>Subway Map</button>
       </details>
-      <details class="stygrp"><summary>Old screens <span>11</span></summary>
+      <details class="stygrp"><summary>Old screens <span>12</span></summary>
       <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
       <button type="button" class="sty" data-theme="fallout"><span class="sw" style="background:#06130b;color:#1aff80;border-color:#17633a;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Fallout</button>
       <button type="button" class="sty" data-theme="win95"><span class="sw" style="background:#000080;color:#ffffff;border-color:#c0c0c0;font-family:Tahoma,Arial,sans-serif">Aa</span>Windows 95</button>
+      <button type="button" class="sty" data-theme="k-win31"><span class="sw" style="background:#000080;color:#ffffff;border-color:#000000;font-family:Arial,sans-serif;font-weight:700">Aa</span>Windows 3.1</button>
       <button type="button" class="sty" data-theme="teletext"><span class="sw" style="background:#0000ff;color:#ffff00;border-color:#00ffff">100</span>Teletext</button>
       <button type="button" class="sty" data-theme="k-amber"><span class="sw" style="background:#0a0600;color:#ffb000;border-color:#5a3d00;font-family:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;font-size:12px">Aa</span>Amber Terminal</button>
       <button type="button" class="sty" data-theme="k-px-c64"><span class="sw" style="background:#3e31a2;color:#d2ccff;border-color:#7c70da;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Commodore 64</button>
