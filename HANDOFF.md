@@ -59,6 +59,14 @@ trains on the Call Board).
   everyone else; (b) when a code is on two own turns at once, the page asks "which one?"
   by turn. Either changes the hash the laptop saves and the page's lookup.
 
+- **One test fails by the clock, not by this work:** `the Worker counts visits per day and
+  never serves the files` (test/board/r2.test.js) gives 29 days, not 30, when run between
+  23:00 and midnight Toronto until about 2026-12-01 (it fails the same on `f5b27e2`; the
+  suite was 372 of 372 at 21:44). `/stats/days` steps back 24 h at a time, and from that
+  hour the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so Page Health's
+  visits table is a day short (31 Oct missing) in that hour. Not fixed: it is in
+  `cloudflare/board-worker.js` (accounts session's file, needs a paste into both Workers).
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
