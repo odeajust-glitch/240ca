@@ -125,6 +125,11 @@ trains on the Call Board).
     table with made-up counts, no page errors. **Not checked:** the real counts (nothing
     readable until the paste).
 
+- **Line-up, a job going spare: "goes" dropped, 2026-11-11 (owner quoted the line without
+  it and said yes when asked): "EN (SD04 Name spare) · EN05 Name".** One word in
+  `lineupCrew` (board.html); both sites; shows after the laptop's next pull and publish.
+  The crew names note near the top of this file still quotes the older wording.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**

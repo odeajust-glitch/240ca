@@ -28,8 +28,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    open turn will clear up tomorrow". Look when one shows; fix only if wrong.
    Done 2026-11-11: the "goes spare" line (seen on the live site: "CO (SA07 … goes spare)
    · B132 …", and he quoted the same lines back) and both names on 501 (his word: "Yes
-   there are names on 501"). ❓ He quoted the spare line without "goes" ("M spare"):
-   asked whether he wants that word dropped; not changed. One name there had no first
+   there are names on 501"). He quoted the spare line without "goes" and said yes to dropping
+   it: the line-up now reads "EN (SD04 Name spare) · EN05 Name" (2026-11-11). One name there had no first
    initial (B132's): not looked into.
 2. **Visits table a day short late in the evening: FIXED in the Worker 2026-11-11
    (`bc9e72d`), live once Justin pastes it into both Workers; then take this off.** (owner,

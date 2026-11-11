@@ -2475,7 +2475,8 @@ function lineupCrew(t, s) {
     const value = spare
       // With the covering spare named, the leading "spare" and "likely" are
       // dropped (owner, 2026-11-10: "(SD06 Hamel, C goes spare) · EN03 Sywak, M").
-      ? (cover && !/^(spareboard |spare$)/.test(turn) ? '' : '<span class="spare">spare</span>') + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' goes spare)') + cover
+      // "goes" dropped too (owner, 2026-11-11): "EN (SD04 Name spare) · EN05 Name".
+      ? (cover && !/^(spareboard |spare$)/.test(turn) ? '' : '<span class="spare">spare</span>') + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' spare)') + cover
       : named(turn) + cover;
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
