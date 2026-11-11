@@ -2046,6 +2046,11 @@
       <h2>Profile</h2>
       <p class="profwho" id="profwho"></p>
       <p><button type="button" class="sty" id="profbtn" style="width:auto;padding:8px 12px"></button></p>
+      <div id="profcode" hidden>
+        <p class="profwho"><label for="profcodebox"><b>Name code</b></label><span>For your job posting alerts: the first two letters of your first name and the first two of your last name.</span></p>
+        <p><input id="profcodebox" maxlength="4" size="6" autocomplete="off" spellcheck="false" placeholder="e.g. JUOD" style="padding:7px 8px;width:6.5em;text-transform:uppercase"> <button type="button" class="sty" id="profcodesave" style="width:auto;padding:8px 12px">Save</button></p>
+        <p class="profwho"><span id="profcodemsg" role="status"></span></p>
+      </div>
     </div>
     <h2 id="styhead">Page style</h2>
     <div class="styles">
@@ -2955,8 +2960,8 @@ function postingAlertsBox() {
     : Alerts.deviceOn() || Alerts.turns().length ? 'This device gets your alerts.' : 'This device is not set up for alerts yet: tick the box above and allow notifications when asked.';
   const on = !!(me.postings && me.postings.on);
   return `<section class="sheet" id="postalerts"><header><h2>Alerts</h2><span class="meta">${on ? 'on' : 'off'}</span></header><div class="hbody" style="padding:10px 14px">
-    <p><label>Your name code <input id="postcode" maxlength="4" size="6" autocomplete="off" spellcheck="false" value="${esc(me.code || '')}" placeholder="e.g. JUOD"></label> <button type="button" class="linkbtn" id="postcodesave">Save</button></p>
-    <p class="muted">The first two letters of your first name and the first two of your last name. The site uses it to see whether you are an engineer or a conductor, and where you work, so you only hear about jobs you can post for.</p>
+    ${me.code ? '' : `<p><label>Your name code <input id="postcode" maxlength="4" size="6" autocomplete="off" spellcheck="false" value="" placeholder="e.g. JUOD"></label> <button type="button" class="linkbtn" id="postcodesave">Save</button></p>
+    <p class="muted">The first two letters of your first name and the first two of your last name. The site uses it to see whether you are an engineer or a conductor, and where you work, so you only hear about jobs you can post for. Once saved it moves to ⚙ Settings, where you can change it.</p>`}
     <p><label class="nocount"><input type="checkbox" id="poston"${on ? ' checked' : ''}${me.code ? '' : ' disabled'}> Alert me when a job I can post for goes up</label></p>
     <p class="muted">${esc(device)} Alerts go to every device you are signed in on that has alerts allowed. Jobs already listed are not sent again; pick "Remind me" on a job below for a reminder before it closes.</p>
     <p id="postmsg" role="status">${esc(POST_SAID)}</p></div></section>`;
@@ -5211,6 +5216,7 @@ source().then(async (src) => {
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
       if (PREVIEW) loadCrew();
+      if (PREVIEW) loadPostMe(); // the name code in Settings, the alerts on the Job postings tab
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }
@@ -6629,6 +6635,30 @@ source().then(async (src) => {
     if (!r.ok) throw new Error(out.error || `the site answered ${r.status}`);
     POST_ME = { ...POST_ME, code: out.code, postings: out.postings };
   }
+  // The name code in ⚙ Settings → Profile (owner, 2026-11-11: "once they put
+  // their name code in here, can you move that to the settings where they can
+  // update it, but its not on that page anymore"). Shown to a signed-in member
+  // where the job posting alerts are (the test site for now).
+  function paintProfileCode() {
+    const box = document.getElementById('profcode');
+    if (!box) return;
+    const me = POST_ME;
+    box.hidden = !(PREVIEW && me && me.signedIn);
+    if (box.hidden) return;
+    document.getElementById('profile').hidden = false;
+    const input = document.getElementById('profcodebox');
+    const msg = document.getElementById('profcodemsg');
+    if (document.activeElement !== input) input.value = me.code || '';
+    document.getElementById('profcodesave').onclick = async () => {
+      msg.textContent = 'Saving…';
+      try {
+        await postProfile({ code: clean(input.value) });
+        msg.textContent = POST_ME.code ? `Saved: ${POST_ME.code}.` : 'Removed. Job posting alerts need a name code.';
+        input.value = POST_ME.code || '';
+        if (mode === 'postings') renderPostings();
+      } catch (e) { msg.textContent = `Not saved: ${e.message}`; }
+    };
+  }
   // Who is signed in here, with their code and choices. The owner's own
   // device signs itself in with its key first, as the account page does.
   let postMeAsked = false;
@@ -6643,6 +6673,7 @@ source().then(async (src) => {
       }
       POST_ME = me;
     } catch (e) { POST_ME = { signedIn: false }; }
+    paintProfileCode();
     if (mode === 'postings') renderPostings();
   }
   function renderPostings() {
@@ -6658,7 +6689,7 @@ source().then(async (src) => {
     const device = async () => { if (!Alerts.deviceOn()) await Alerts.device(true); };
     const code = document.getElementById('postcode');
     const save = document.getElementById('postcodesave');
-    if (save) save.onclick = () => run(() => postProfile({ code: clean(code.value) }), 'Name code saved.');
+    if (save) save.onclick = () => run(async () => { await postProfile({ code: clean(code.value) }); paintProfileCode(); }, 'Name code saved. You can change it in ⚙ Settings.');
     const on = document.getElementById('poston');
     if (on) on.onchange = () => { const want = on.checked; run(async () => { if (want) await device(); await postProfile({ postings: { on: want } }); }, want ? 'Alerts are on. You will hear about new postings you can post for.' : 'Alerts are off.'); };
     view.querySelectorAll('[data-remind]').forEach((sel) => {

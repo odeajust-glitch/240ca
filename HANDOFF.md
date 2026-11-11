@@ -382,6 +382,14 @@ trains on the Call Board).
       (kind `postingCancelled`). On the tab it is struck through under the open ones,
       marked cancelled, not counted, no reminder choice. Laptop and page only: no Worker
       change. Suite 383 of 383.
+    - **The name code lives in ⚙ Settings → Profile once saved (owner, 18:40: "once they
+      put their name code in here, can you move that to the settings where they can
+      update it, but its not on that page anymore"):** the Job postings tab's Alerts box
+      asks for the code only while the account has none; after Save it is gone from
+      that page and shown in Settings (`#profcode`, `paintProfileCode`; test site only,
+      like the rest), where it can be changed or cleared. Tried in a browser with the
+      account calls answered locally: saved on the tab → gone from the tab → in
+      Settings → changed there; hidden on the main site.
     - **Not built:** setting a member's code from the Members tab; showing on the tab
       what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
       listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in
