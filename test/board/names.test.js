@@ -164,6 +164,7 @@ test('yard jobs: whose job it is, from the crews in town, not who is on duty', (
     'YARD  :  XSAS01   REL#1   TH/FR   OFF     RESTED/STATUS',
     '      TT   <<  OPEN  TURN  >>              <<TEMP  VCNY>>',
     '      FO   LAKE*+    (NET)  C   CLAYTON  <<  VACANCY  >>',
+    '      EN   <<  OPEN  TURN  >>',
     '      S1   FIELD*+(NET)        PAUL     <<TEMP  VCNY>>',
     'YARD  :  YEBS30   REL#3   MO/TU   OFF     RESTED/STATUS',
     '      FO   VAN  DE  MEADOW+  J  JEREMY   ***  OFF  ***',
@@ -173,11 +174,11 @@ test('yard jobs: whose job it is, from the crews in town, not who is on duty', (
   const rows = lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${m[0]}`)].join(' | '));
   const owners = S.parseYardOwners([parseGrid(rows)]);
   assert.deepEqual(owners.map((o) => `${o.job} ${o.craft} ${o.name}`), [
-    'XSAS01 TT open turn', 'XSAS01 FO Clayton Lake', 'XSAS01 S1 Paul Field', 'YEBS30 FO Jeremy van de Meadow', 'YEBS30 S1 Tristan Grove']);
+    'XSAS01 FO Clayton Lake', 'XSAS01 EN open turn', 'XSAS01 S1 Paul Field', 'YEBS30 FO Jeremy van de Meadow', 'YEBS30 S1 Tristan Grove']);
   const at = new Date('2026-11-11T03:00:00Z');
   const store = recordYardCrew(recordBoardCrew({}, [{ turn: 'SA05', craft: 'CO', name: 'Ben Allen' }], at), owners, at);
   assert.deepEqual(namesByTurn(store, new Date('2026-11-11T03:05:00Z')), {
-    SA05: 'Allen, B', 'XSAS01-FO': 'Lake, C', 'XSAS01-S1': 'Field, P', 'XSAS01-TT': 'open turn', 'YEBS30-FO': 'van de Meadow, J', 'YEBS30-S1': 'Grove, T' });
+    SA05: 'Allen, B', 'XSAS01-EN': 'open turn', 'XSAS01-FO': 'Lake, C', 'XSAS01-S1': 'Field, P', 'YEBS30-FO': 'van de Meadow, J', 'YEBS30-S1': 'Grove, T' });
   // Not seen for 14 days: gone.
   assert.deepEqual(namesByTurn(store, new Date('2026-12-01T03:00:00Z')), {});
 });

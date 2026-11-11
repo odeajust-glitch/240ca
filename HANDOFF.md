@@ -42,6 +42,23 @@ trains on the Call Board).
   laptop has pulled: do the names read right, and should relief jobs (`REL#`) or trainees
   (TT) be shown differently.
 
+- **Seen working on the real test site after his pull, 2026-11-10 22:50:** 84 yard entries
+  (e.g. Days off: `YEBS30 S1 Mackenzie, A`; Yard jobs: "Assigned: FO … · S1 …"), no page
+  errors. Empty trainee slots read "TT open turn" on most jobs, so an open TT / ET is now
+  left out (needs another laptop pull; the old entries age out of names.json in 14 days).
+  ❓ `Wallis, B` shows as FO on both YBHS31 and YPRS60: one person on two jobs, or two people?
+- **Name code COBR is two people (owner: "We have 2 name codes that have the same name. Can
+  you check COBR"). Confirmed, nothing built.** people.json has that one code on SB06
+  (`Brooks, C`, own turn since 25 Oct) and SR11 (`Brad, C`, own turn since 2 Nov) at the
+  same time, both "now". A code is first two letters of each name, so the two share it:
+  a COBR search, My week and a followed COBR alert mix both. Across all 160 codes, 7 sit
+  on two of their own turns at once for a day or more (YFLS01 + XSAS02, YBHS31 + SR08,
+  SR11 + SB06, SD02 + YPRS02, B105 + YSBY02, B111 + YMPS31, S108 + S301): likely shared
+  codes, not each checked. Offered, waiting for his pick: (a) a longer code only for
+  people who collide (e.g. three letters of the surname), old codes keep working for
+  everyone else; (b) when a code is on two own turns at once, the page asks "which one?"
+  by turn. Either changes the hash the laptop saves and the page's lookup.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
