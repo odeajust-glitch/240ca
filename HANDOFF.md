@@ -153,6 +153,14 @@ trains on the Call Board).
   Toronto to read the checks to 1400**: if both were called, propose the rule (the other
   of FO / S1 added as a predicted job going spare for a YFX job, filled from the same
   board) and build it on his word; if not, build nothing.
+  **How to tell an extra yard job (his question, answered from the 27 live days, not yet
+  confirmed by him):** not by craft (FO / S1 are the same codes); by the job id, third
+  letter X: YFXS01, YFXS03, YMXS01, YMXS02 (beside the regular YFLS.. / YMPS..). None of
+  the four is in the crews in town at all, each ran 1 to 5 days of 27 (regular jobs 12 to
+  20), and option 5 listed every craft for them: FO + S1 on YFX, EN + FO + S1 on YMX.
+  Second signal: no people under the job in the crews in town. ❓ YBHS61 and YEBS04 are in
+  the crews in town with every craft an open turn (4 days each): same treatment or not?
+  YSBY05 (once) looks like an extra tower job, yardmasters, not ours.
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
