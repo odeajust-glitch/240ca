@@ -414,6 +414,20 @@ trains on the Call Board).
       it has none; an account with a different code keeps its own and the line says so.
       It is the same switch as the Job postings tab's, not a second setting. Checked in
       a browser with the push step stood in for: sends `{ code, postings: { on: true } }`.
+    - **New postings shown on the page itself, TEST SITE ONLY, awaiting Justin (owner,
+      18:50: asked how the alerts work without notifications; "Yes. Build it for the test
+      site"):** for people who never allow phone notifications. Kept on the device
+      (`postingsSeen` in localStorage: the circular numbers this device has shown).
+      `paintNewPostings` / `markPostingsSeen` / `POST_NEW` in board.html, behind
+      `PREVIEW`: the tab reads "Job postings · N", a line above Current says "N new job
+      postings since you last looked" with a button that opens the tab, and each new row
+      has a "new" chip until the tab is left. A device's first visit starts with
+      everything as seen; a cancelled posting never counts. **Every open posting counts,
+      both crafts:** the who-may-post rules run on the laptop, not on the page (told
+      him; narrowing it is a possible second step). Per device, not per account: a
+      posting seen on the phone is still "new" on the tablet. Checked in a browser with
+      a made-up list: first visit nothing, a new one → count, line and chip, gone after
+      the tab is opened; nothing of it on the main site. Suite 384 of 384.
     - **Not built:** setting a member's code from the Members tab; showing on the tab
       what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
       listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in

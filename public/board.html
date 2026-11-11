@@ -150,6 +150,8 @@
   .health .who { margin-top: 4px; }
   .downbanner { background: #b3261e; color: #fff; padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; }
   .downbanner[hidden] { display: none; }
+  .postnote button { background: none; border: 1px solid currentColor; border-radius: 4px; padding: 4px 10px; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+  .postnote[hidden] { display: none; }
   .signnote { background: var(--accent); color: var(--accent-ink, #fff); padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
   .signnote[hidden] { display: none; }
   .signnote a { color: inherit; font-weight: 700; border: 1px solid currentColor; border-radius: 8px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
@@ -997,6 +999,7 @@
   details.splikely.tight summary { color: var(--go); }
   details.splikely summary small { font-weight: 400; color: var(--soft); font-size: inherit; }
   details.splikely p { margin: 4px 0 6px; padding-left: 8px; border-left: 3px solid var(--accent); color: var(--soft); }
+  .chip.new { background: var(--accent); color: var(--accent-ink, #fff); }
   .chip.habit.late { background: #2a2247; color: #c9b8fb; }
   .chip.habit.early { background: var(--stop-tint); color: var(--stop); }
   .chip.habit.ok { background: var(--go-tint); color: var(--go); }
@@ -2161,6 +2164,7 @@
 </div>
 <div class="downbanner" id="downbanner" role="alert" hidden></div>
 <div class="signnote" id="signnote" hidden></div>
+<div class="signnote postnote" id="postnote" hidden></div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
     <div class="turnpick">
@@ -2953,7 +2957,7 @@ function jobPostings() {
     const list = (g.list || []).filter(open);
     const off = (g.list || []).filter((j) => listed(j) && gone(j));
     const rows = list.map((j) => { const n = daysTo(j.closes); return `<tr data-posting="${esc(j.number)}"${marked(j.turn) || POST_FOCUS === j.number ? ' class="hit"' : ''}><td class="num">${esc(dayName(j.closes))}<div class="crew">${n <= 0 ? '<span class="spare">closes today 1200</span>' : n === 1 ? '<span class="spare">closes tomorrow 1200</span>' : `in ${n} days, 1200`}</div></td>
-      <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div>${remindPick(j)}</td></tr>`; }).join('');
+      <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span>${POST_NEW.has(j.number) ? ' <span class="chip new">new</span>' : ''}<div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div>${remindPick(j)}</td></tr>`; }).join('');
     return `<h3 class="off-heading">${name} · ${list.length}</h3><div class="scroll"><table><thead><tr><th>Closes</th><th>Job</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">Nothing up for bid.</td></tr>'}${off.map((j) => `<tr data-posting="${esc(j.number)}" class="muted"><td class="num"><s>${esc(dayName(j.closes))}</s><div class="crew"><span class="spare">cancelled</span></div></td><td><b class="num"><s>${esc(j.turn)}</s></b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">Cancelled in CATS: it can no longer be posted for · circular ${esc(j.number)}</div></td></tr>`).join('')}</tbody></table></div>
       ${g.complete === false ? '<p class="anote" style="margin:4px 14px 10px">The end of the list was not reached, so there may be more.</p>' : ''}`;
   };
@@ -2967,6 +2971,14 @@ function jobPostings() {
 // /auth/profile), so every device signed in to it gets them; the board
 // checker works out from the code what they may post for. On both sites
 // since 2026-11-11 ("everything else looks good, push to the main page").
+// Postings this device has not shown yet (owner, 2026-11-11: a way to hear
+// about new postings on the page itself, with no phone notifications: "Yes.
+// Build it for the test site"). Kept on the device (localStorage
+// `postingsSeen`: the circular numbers shown so far). A count on the tab, a
+// line above Current, and "new" beside each until the tab has been opened.
+// Every open posting counts, both crafts: the who-may-post rules run on the
+// laptop, not here. The first visit starts with everything as seen.
+let POST_NEW = new Set();
 let POST_ME = null; // /auth/me: { signedIn, code, postings: { on, remind } }
 let POST_FOCUS = ''; // a posting opened from an alert (#postings=<number>)
 let POST_SAID = '';
@@ -5240,6 +5252,7 @@ source().then(async (src) => {
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
       if (PREVIEW) loadCrew();
+      paintNewPostings();
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }
@@ -6666,8 +6679,43 @@ source().then(async (src) => {
       const changed = !POSTINGS || POSTINGS.at !== x.at;
       POSTINGS = x;
       modePost.hidden = false;
+      paintNewPostings();
       if (redraw && changed && mode === 'postings') renderPostings();
     }).catch(() => {});
+  }
+  // --- New postings, shown on the page (test site) ---
+  const SEEN_KEY = 'postingsSeen';
+  let postMarked = false;
+  const openPostings = () => {
+    if (!POSTINGS) return [];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+    const pastNoon = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) >= 12;
+    return ['co', 'en'].flatMap((k) => (POSTINGS[k] && POSTINGS[k].list) || []).filter((j) => !/C/.test(j.cia || '') && (j.closes > today || (j.closes === today && !pastNoon)));
+  };
+  const seenPostings = () => { try { const v = JSON.parse(localStorage.getItem(SEEN_KEY)); return Array.isArray(v) ? v : null; } catch (e) { return null; } };
+  const keepSeen = (list) => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-200))); } catch (e) { /* not kept */ } };
+  // Which open postings this device has not shown; the tab's count and the line above Current.
+  function paintNewPostings() {
+    const note = document.getElementById('postnote');
+    const open = openPostings().map((j) => j.number);
+    let seen = seenPostings();
+    if (PREVIEW && POSTINGS && !seen) { seen = open; keepSeen(seen); } // first visit: nothing is "new"
+    const fresh = PREVIEW && seen ? open.filter((n) => !seen.includes(n)) : [];
+    if (mode !== 'postings') postMarked = false;
+    if (!postMarked) POST_NEW = new Set(fresh); // once the tab has shown them, its "new" marks stay put until it is left
+    modePost.textContent = fresh.length && mode !== 'postings' ? `Job postings · ${fresh.length}` : 'Job postings';
+    note.hidden = !(fresh.length && mode === 'current');
+    if (!note.hidden) {
+      note.innerHTML = `<span><b>${fresh.length} new job posting${fresh.length === 1 ? '' : 's'}</b> since you last looked.</span><button type="button">See ${fresh.length === 1 ? 'it' : 'them'}</button>`;
+      note.querySelector('button').onclick = () => setMode('postings');
+    }
+  }
+  // The tab was opened: what it shows now counts as seen (the marks stay until it is left).
+  function markPostingsSeen() {
+    if (!PREVIEW || !POSTINGS) return;
+    const seen = seenPostings() || [];
+    keepSeen([...new Set([...seen, ...openPostings().map((j) => j.number)])]);
+    postMarked = true;
   }
   async function postProfile(body) {
     const r = await fetch('auth/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -6718,7 +6766,9 @@ source().then(async (src) => {
   function renderPostings() {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', POST_FOCUS ? `#postings=${POST_FOCUS}` : '#postings'); } catch (e) { /* not allowed in some frames */ }
+    paintNewPostings();
     view.innerHTML = `<div class="thead"><div class="when">Job postings</div></div>${postingAlertsBox()}${jobPostings() || '<p class="empty">No job postings have been read yet. The checker reads them from CATS about once an hour.</p>'}`;
+    markPostingsSeen();
     loadPostings(true);
     loadPostMe();
     const say = (t) => { POST_SAID = t; const m = document.getElementById('postmsg'); if (m) m.textContent = t; };
@@ -6970,6 +7020,7 @@ source().then(async (src) => {
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modePost.setAttribute('aria-pressed', mode === 'postings');
+    paintNewPostings();
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
     // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
