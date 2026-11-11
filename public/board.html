@@ -2166,6 +2166,14 @@ let CREW = null;
 let CREW_NOTE = 'Not asked for yet.';
 let crewAsked = false;
 const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
+// Both people on a 501/502 turn where the page shows just the turn (the
+// Garnet line-up's "S501"; owner, 2026-11-10: "can you add the crew names
+// here"): "CO Last, F · EN Last, F".
+function crewBoth(turn) {
+  if (!CREW || !/^S5\d{2}$/.test(turn || '')) return '';
+  const parts = [['CO', CREW[`${turn}-CO`]], ['EN', CREW[`${turn}-EN`]]].filter(([, n]) => n).map(([c, n]) => `${c} ${esc(n)}`);
+  return parts.length ? ` <span class="crewnm">${parts.join(' · ')}</span>` : '';
+}
 // The name after each turn in a line of text ("CO SR05 · EN SD11"). A
 // 501/502 turn is two people: named only where the text says which
 // ("CO S501", "S501-EN").
@@ -2352,7 +2360,7 @@ function garnet(s) {
   if (!g) return `<section class="sheet" id="sec-garnet">${head}<p class="empty">No L501 planned out of Garnet in the next 24 h.</p></section>`;
   const c = g.crew;
   const rest = !c ? '' : !c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`;
-  const crew = c ? `<b class="num">${markTurn(c.turn)}</b> <span class="muted">${esc(c.crafts)}</span><div class="crew">${rest} · call ~${esc(g.call)}</div>`
+  const crew = c ? `<b class="num">${markTurn(c.turn)}</b>${crewBoth(c.turn)} <span class="muted">${esc(c.crafts)}</span><div class="crew">${rest} · call ~${esc(g.call)}</div>`
     : '<span class="muted">no crew read on the Garnet board (31)</span>';
   return `<section class="sheet" id="sec-garnet">${head}
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Crew in Garnet</th></tr></thead><tbody>
@@ -2532,7 +2540,7 @@ function garnet2(s) {
   const [sym, od] = split(g.train);
   const c = g.crew;
   const guess = c ? null : garnetCrew(s);
-  const crew = c ? markTurn(c.turn) : guess ? markTurn(guess.turn) : '<span class="muted">crew not known</span>';
+  const crew = c ? markTurn(c.turn) + crewBoth(c.turn) : guess ? markTurn(guess.turn) + crewBoth(guess.turn) : '<span class="muted">crew not known</span>';
   const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
     : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
   const detail = c ? `<p>${esc(c.crafts)} · from the Garnet board.</p>`
