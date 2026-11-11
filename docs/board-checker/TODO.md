@@ -38,6 +38,15 @@ Small decisions parked for a housekeeping pass; ask, don't build.
      ("S501 CO Name · EN Name"), and they are the two actually working the trip.
    While there: does a turn out working show the person on the Call Board and go back
    to its owner once home (his rule); any spot still showing a turn with no name.
+4. **Visits table a day short late in the evening; one test fails then** (owner,
+   2026-11-10: "Put the test failure fix in housekeeping"). `/stats/days` in
+   `cloudflare/board-worker.js` steps back 24 h at a time; run between 23:00 and
+   midnight Toronto, the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so
+   Page Health's visits table has 29 days (31 Oct missing) and `the Worker counts
+   visits per day and never serves the files` (test/board/r2.test.js) fails in that
+   hour until about 2026-12-01, and again after each autumn clock change. Fix: count
+   back by calendar day, not by 24 h. Worker change: needs a paste into both Workers
+   (accounts session's file).
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two

@@ -66,6 +66,7 @@ trains on the Call Board).
   hour the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so Page Health's
   visits table is a day short (31 Oct missing) in that hour. Not fixed: it is in
   `cloudflare/board-worker.js` (accounts session's file, needs a paste into both Workers).
+  **On the Housekeeping list in [TODO](docs/board-checker/TODO.md), item 4 (his ask).**
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
