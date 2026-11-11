@@ -61,7 +61,9 @@ trains on the Call Board).
   which person gets which code.** Method: people.json (161 codes) against the crew names
   file opened on the test site; a conflict = one code that is on two own turns in the last
   day whose names differ but share first initial + first two letters of the surname.
-  By turn (names are in the crew file, not here): **SR08 with the FO of YBHS31 / YPRS60;
+  By turn (names are in the crew file, not here): **SR08 with the FO of YBHS31 and the FO of
+  YPRS60 (three people on one code: Justin, 2026-11-11, the two FOs are two people with one
+  surname, first names differing at the third letter);
   B105 with YSBY02's YA; XSAS02's FO with YFLS01's FO; B111 with YMPS31's TT; SD02 with
   YPRS02's S1** (the last from Justin: two people with one surname and the same first two
   letters, so the names file reads the same for both and the check took them for one). Looked
