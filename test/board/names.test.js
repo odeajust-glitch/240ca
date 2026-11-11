@@ -121,16 +121,20 @@ test('names: the pool screen\'s own name for a turn wins over an older Call Boar
     '180 | 20:B1',
     '200 | 20:CO | 60:SA06 | 110:0 | 130:002 | 180:BORODY*+ | 340:R | 380:ROBER',
     '220 | 20:CO | 60:SA07 | 110:0 | 130:003 | 180:PAVEY*+ | 340:R | 380:RYAN | 460:HT',
+    // The initial in the surname's own cell (the site showed "Borody R, R"), and a two-word surname.
+    '230 | 20:CO | 60:SR01 | 110:0 | 130:004 | 180:LANGIS*+     M | 380:MARC',
+    '232 | 20:CO | 60:SB01 | 110:0 | 130:005 | 180:CHAD T | 380:TOM',
+    '234 | 20:CO | 60:SR05 | 110:0 | 130:006 | 180:DE MAN* | 340:D | 380:MIKE',
     '240 | 20:EN | 60:S501 | 110:0 | 130:001 | 180:LEE | 380:ANN',
     '260 | 20:CO | 60:S501 | 110:0 | 130:001 | 180:O\'DEA | 380:JUSTIN',
   ];
   const crew = S.parseBoardCrew(parseGrid(POOL));
-  assert.deepEqual(crew.map((c) => `${c.craft} ${c.turn} ${c.name}`), ['CO SA05 Ben Allen', 'CO SA06 Rober Borody', 'CO SA07 Ryan Pavey', 'EN S501 Ann Lee', "CO S501 Justin O'Dea"]);
-  assert.deepEqual(crew.map((c) => c.working), [false, false, false, false, false]);
+  assert.deepEqual(crew.map((c) => `${c.craft} ${c.turn} ${c.name}`), ['CO SA05 Ben Allen', 'CO SA06 Rober Borody', 'CO SA07 Ryan Pavey', 'CO SR01 Marc Langis', 'CO SB01 Tom Chad', 'CO SR05 Mike de Man', 'EN S501 Ann Lee', "CO S501 Justin O'Dea"]);
+  assert.ok(crew.every((c) => c.working === false));
   // Thompson worked SA05 two days ago; the pool screen shows Allen on it today.
   const store = recordNames({}, [{ symbol: 'A42431', originDay: '08', crew: [{ craft: 'CO', turn: 'SA05', name: 'Chris Thompson' }, { craft: 'CO', turn: 'SB09', name: 'Away Person' }] }], new Date('2026-11-08T12:00:00Z'));
   recordBoardCrew(store, crew, new Date('2026-11-10T23:00:00Z'));
-  assert.deepEqual(namesByTurn(store, new Date('2026-11-10T23:05:00Z')), { 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SA05: 'Allen, B', SA06: 'Borody, R', SA07: 'Pavey, R', SB09: 'Person, A' });
+  assert.deepEqual(namesByTurn(store, new Date('2026-11-10T23:05:00Z')), { 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SA05: 'Allen, B', SA06: 'Borody, R', SA07: 'Pavey, R', SB01: 'Chad, T', SB09: 'Person, A', SR01: 'Langis, M', SR05: 'de Man, M' });
   // Owner: "when a job is working, put the name of the person who's working
   // … when the turn is back home, the person whose turn it is."
   // SA06 goes out with a spare on it: the Call Board has Sam Spare, the pool screen still Borody.

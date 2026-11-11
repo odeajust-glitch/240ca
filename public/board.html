@@ -1927,7 +1927,7 @@ function staleChip(s, t) {
 }
 // Crew order in calling-rule text is conductor, then engineer. Keep eligibility
 // decisions and their full explanation unchanged; label each craft explicitly.
-function lineupCrew(t) {
+function lineupCrew(t, s) {
   const raw = t.rules || '';
   const body = raw.replace(/^(?:A pool: |B pool: |Chain Gang: |S5: |Rescue: )/, '');
   const parts = body.split(' + ');
@@ -1935,9 +1935,21 @@ function lineupCrew(t) {
   const craft = (part, label) => {
     const spare = /\(goes spare[^)]*\)|^spareboard \(no |^spare$/.test(part);
     const turn = part.replace(/\s*\(goes spare[^)]*\)/g, '').trim();
+    const cc = label === 'Conductor' ? 'CO' : 'EN';
+    // Crew names (members): a 501/502 turn is two people, so its name goes
+    // by the craft of this line; and for a job going spare, who is likely
+    // to work it (owner, 2026-11-10: "add the name of who is going to work
+    // the spare turn"), from the same cover the fold below works out.
+    const named = (x) => markTurn(x) + (/^S5\d{2}$/.test(x) ? crewTag(`${x}-${cc}`) : '');
+    let cover = '';
+    if (spare && CREW && s) {
+      const job = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].find((v) => (v.cc === 'EN' ? 'EN' : 'CO') === cc && v.fill && v.fill.turn
+        && ((v.trainDay || v.train) === t.train || (v.train === String(t.train).split(' ')[0] && v.at === t.order)));
+      if (job) { const m = markTurn(job.fill.turn); cover = ' · likely ' + m + (m.includes('crewnm') ? '' : crewTag(job.fill.turn)); }
+    }
     const value = spare
-      ? '<span class="spare">spare</span>' + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + markTurn(turn) + ' goes spare)')
-      : markTurn(turn);
+      ? '<span class="spare">spare</span>' + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' goes spare)') + cover
+      : named(turn);
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
   return craft(parts[0], 'Conductor') + '<span class="crew-divider"> · </span>' + craft(parts[1], 'Engineer');
@@ -2119,7 +2131,7 @@ function lineup2(s) {
     const lead = planTrust(s, t);
     const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}${habit && t.status !== 'ORD' ? ` ${habit.chip}` : ''}`;
     const likely = likelyCall(s, t);
-    const line2 = `${lineupCrew(t).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
+    const line2 = `${lineupCrew(t, s).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
     return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
       fold: (likely ? `<p class="habitnote"><b>When it is likely to be called:</b> ${esc(likely.text)}</p>` : '') + (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
   }).join('');
