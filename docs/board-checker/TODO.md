@@ -27,6 +27,17 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 2. **Call timeline, where notice starts: DECIDED 2026-11-10, keep it as it is** (from the
    turn first lined up; out of Toronto from off duty at the bunkhouse). Alternative was
    from when the train was ordered.
+3. **Crew names: three things pushed 2026-11-10 that Justin hasn't yet said he's seen
+   working on the real site** (owner, that evening: "add it to the housekeeping list
+   for a check later"). Ask him, or look with him; fix only if one is wrong:
+   - an open turn reads "open turn" with the covering spare after it
+     ("EN S502 open turn · SE12 Name"), not "<< Open Turn, >";
+   - a job going spare reads "EN (SD06 Hamel, C goes spare) · EN03 Sywak, M"
+     (no leading "spare", no "likely"), and stays "EN spare (…)" when no cover is known;
+   - the Garnet line-up's L501 row shows both people on the turn
+     ("S501 CO Name · EN Name"), and they are the two actually working the trip.
+   While there: does a turn out working show the person on the Call Board and go back
+   to its owner once home (his rule); any spot still showing a turn with no name.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
