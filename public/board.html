@@ -684,6 +684,13 @@
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
   .heldlog { list-style: none; margin: 0 0 8px; padding: 0; } .heldlog li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; } .heldlog li > div { margin: 1px 0; }
+  .infoline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .infoline > label { flex: 1 1 0; min-width: 10em; }
+  .infotip { display: contents; }
+  .infotip > summary { list-style: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1.5px solid var(--soft); border-radius: 50%; color: var(--soft); font: italic 700 14px/1 Georgia, 'Times New Roman', serif; cursor: pointer; user-select: none; flex: none; }
+  .infotip > summary::-webkit-details-marker { display: none; }
+  .infotip[open] > summary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .infotip > p { flex-basis: 100%; margin: 4px 0 0; color: var(--soft); font-size: 0.94em; }
   .codegroup ul { margin: 6px 0 0; padding-left: 18px; } .codegroup li { margin: 3px 0; }
   .crewnm { color: var(--soft); font-weight: 400; font-size: 0.92em; white-space: nowrap; letter-spacing: 0; text-transform: none; }
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
@@ -2959,11 +2966,16 @@ function postingAlertsBox() {
   const device = state === 'none' ? 'Alerts are not set up on this site.' : state === 'ios-home' ? 'On an iPhone, add this site to your Home Screen and open it from there: alerts only arrive that way.' : state === 'unsupported' ? 'This browser can\'t show alerts.'
     : Alerts.deviceOn() || Alerts.turns().length ? 'This device gets your alerts.' : 'This device is not set up for alerts yet: tick the box above and allow notifications when asked.';
   const on = !!(me.postings && me.postings.on);
+  // The explanation folds under a round "i" (owner, 2026-11-11: "a compacted i
+  // with the circle they can click"). What stops alerts on this device stays in view.
+  const blocked = state === 'none' || state === 'ios-home' || state === 'unsupported';
   return `<section class="sheet" id="postalerts"><header><h2>Alerts</h2><span class="meta">${on ? 'on' : 'off'}</span></header><div class="hbody" style="padding:10px 14px">
     ${me.code ? '' : `<p><label>Your name code <input id="postcode" maxlength="4" size="6" autocomplete="off" spellcheck="false" value="" placeholder="e.g. JUOD"></label> <button type="button" class="linkbtn" id="postcodesave">Save</button></p>
     <p class="muted">The first two letters of your first name and the first two of your last name. The site uses it to see whether you are an engineer or a conductor, and where you work, so you only hear about jobs you can post for. Once saved it moves to ⚙ Settings, where you can change it.</p>`}
-    <p><label class="nocount"><input type="checkbox" id="poston"${on ? ' checked' : ''}${me.code ? '' : ' disabled'}> Alert me when a job I can post for goes up</label></p>
-    <p class="muted">${esc(device)} Alerts go to every device you are signed in on that has alerts allowed. Jobs already listed are not sent again; pick "Remind me" on a job below for a reminder before it closes.</p>
+    <p class="infoline"><label class="nocount"><input type="checkbox" id="poston"${on ? ' checked' : ''}${me.code ? '' : ' disabled'}> Alert me when a job I can post for goes up</label>
+      <details class="infotip"><summary aria-label="About these alerts" title="About these alerts">i</summary>
+        <p>${esc(device)} Alerts go to every device you are signed in on that has alerts allowed. Jobs already listed are not sent again; pick "Remind me" on a job below for a reminder before it closes.</p></details></p>
+    ${blocked ? `<p class="warn">${esc(device)}</p>` : ''}
     <p id="postmsg" role="status">${esc(POST_SAID)}</p></div></section>`;
 }
 

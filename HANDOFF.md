@@ -390,6 +390,11 @@ trains on the Call Board).
       like the rest), where it can be changed or cleared. Tried in a browser with the
       account calls answered locally: saved on the tab → gone from the tab → in
       Settings → changed there; hidden on the main site.
+    - **The explanation is under a round "i" beside the tick box (owner, 18:55: "can you
+      add this info in like a compacted i with the circle they can click"):**
+      `details.infotip` in `postingAlertsBox`; closed until tapped. What stops alerts on a
+      device (iPhone not on the Home Screen, a browser that can't, alerts not set up on
+      the site) stays in view as a line of its own.
     - **Not built:** setting a member's code from the Members tab; showing on the tab
       what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
       listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in
