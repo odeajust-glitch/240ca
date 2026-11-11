@@ -89,6 +89,12 @@ trains on the Call Board).
     rebuild on the laptop (no real history here), BRW1 / BRW2 / the others appearing
     after the restart. Look at people.json after his pull: each new code on one turn,
     the shared ones no longer on two.
+  - **Booked into this session: 2026-11-11 21:30 Toronto, review each group's turn history
+    with Justin** (his ask: "After a day would you be able to review their turn history and
+    manually correct things. We can walk thru it. Some of the people work steady yard jobs
+    so it will be easy to separate"). Show him each code's turns with dates, he says which
+    stretches move. Manual moves need rules by turn **with a date range** (`retie` is
+    turn-only now): build that then, not before.
   - Also fixed, found on the way: the alert box's Save button threw and stayed greyed
     out when alerts could not be set up (`e.currentTarget` after a wait).
   - Looked alike but have different codes, nothing to do: B106 / SB03, B129 / B134, S101
