@@ -473,8 +473,12 @@ trains on the Call Board).
   rescue takes the normal sequence unless option 5 lists both crafts spare with no turn.
   In the saved days 13 Sarnia rescues were called: 9 went to the Chain Gang, 2 to B, 1 to
   A, 1 unclear (two entries for one train), so "a rescue goes to the Chain Gang and uses
-  no A or B slot" fits most but not all. **Asked him for the rule; do not change the
-  sequence until he gives it.**
+  no A or B slot" fits most but not all. **Answered 2026-11-11 18:25: "the rule is right, I think
+  the crew office ordered the train incorrectly but I will keep track".** So the sequence
+  is NOT changed: a rescue still takes the normal A/B sequence unless option 5 lists both
+  crafts spare with no turn, and today's flags were the site correctly pointing at a
+  train ordered to the wrong pool (and the knock-on of that). He is keeping his own
+  tally; do not reopen the rule unless he does.
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
