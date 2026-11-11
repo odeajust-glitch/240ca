@@ -296,9 +296,14 @@ trains on the Call Board).
     sites, saying "Nothing up for bid": wrong until fixed.** `2d24cd0`: when the first page
     gives no jobs the checker keeps `sample` in postings.json for that craft: the masked
     screen (`lines`, A / 9 only), the text boxes with where they sit and their masked
-    values (`boxes`) and the row count. **Next: after his pull and restart, read
-    `data/postings.json` → `co.sample`, fit the reader or the box filling to it, and take
-    the sample code out once it reads.**
+    values (`boxes`) and the row count. **Read at 17:05 (the laptop had pulled): the
+    boxes fill correctly and the list comes back, eight conductor lines and two engineer
+    lines (SDSD07 closing 26 Nov, SDSD11 29 Nov; the engineers' screen is "CIRCULAR
+    INQUIRY- ENGINE", same layout). The cause: in the grid every text box is its own cell
+    in square brackets, so each line began `[] 785410 …` and the reader wanted the number
+    first. Fixed `e564cec` (`parseCircularInquiry` leaves box cells out; a test uses the
+    laptop's own lines). Needs one more pull and restart. Then check postings.json has
+    8 + 2, and take the `sample` code out of board-auto.js.**
   - **Alerts, his answers 2026-11-11 16:35 (nothing built):** (1) "When a new one goes
     up, and can we do something that the person can select to have an addition reminder X
     hours before the posting closes each job at the time of the first notification": an
