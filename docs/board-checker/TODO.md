@@ -31,33 +31,23 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    there are names on 501"). He quoted the spare line without "goes" and said yes to dropping
    it: the line-up now reads "EN (SD04 Name spare) · EN05 Name" (2026-11-11). One name there had no first
    initial (B132's): not looked into.
-2. **Visits table a day short late in the evening: FIXED in the Worker 2026-11-11
-   (`bc9e72d`), live once Justin pastes it into both Workers; then take this off.** (owner,
-   2026-11-10: "Put the test failure fix in housekeeping"). `/stats/days` in
-   `cloudflare/board-worker.js` steps back 24 h at a time; run between 23:00 and
-   midnight Toronto, the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so
-   Page Health's visits table has 29 days (31 Oct missing) and `the Worker counts
-   visits per day and never serves the files` (test/board/r2.test.js) fails in that
-   hour until about 2026-12-01, and again after each autumn clock change. Fix: count
-   back by calendar day, not by 24 h. Worker change: needs a paste into both Workers
-   (accounts session's file).
-3. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
+2. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
    name codes split"). The turn-history walk-through with Justin is booked for
    2026-11-11 21:30. Still to ask him: MAR2 for YSBY02's YA (his rule gave MAR1, taken by
    the second of MARI); whether to send a notice to the people whose code changed (phones
    following the old code do not move); the three codes seen on two yard jobs each
    (YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03), likely trainees moving.
-4. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
+3. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
    show relief jobs (`REL#`) or trainees differently. Not yet looked at on the real site:
    a yard job's heading in Turn History, a followed yard job on Page Health.
-5. **Unfilled yard jobs (YBHS61, YEBS04): the watch, then decide** (owner, 2026-11-11:
+4. **Unfilled yard jobs (YBHS61, YEBS04): the watch, then decide** (owner, 2026-11-11:
    "check our predictions against what actually happened and then decide if the rule
    would be a net positive"). The site records `vacanciesWatch` in a check whenever
    option 5 lists one of FO / S1 on a job with nobody on it and not the other; nothing
    acts on it. When two or three have happened, compare each with who worked the job
    and show him: right spare, wrong spare, or no call at all. Then he says whether it
    becomes a real prediction. Details in HANDOFF, "Extra yard jobs".
-6. **Extra yard jobs, two questions still open:** which job is called first when two
+5. **Extra yard jobs, two questions still open:** which job is called first when two
    start at the same time (11 Nov: the first spare out got YEBS30, not YFXS01's FO);
    whether a YMX job always takes an S1 (YMXS02 8 Nov showed EN + FO only).
 

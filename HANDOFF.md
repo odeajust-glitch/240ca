@@ -193,11 +193,34 @@ trains on the Call Board).
     **To score it:** in the day files, each `vacanciesWatch` job against that job's later
     `yardJobs` entry (same job, on duty within 3 h): did a spare work that craft, and
     was it `wouldCall`; and whether the spares below were one place off without it. On
-    the Housekeeping list (item 5): look when two or three have happened, then he
+    the Housekeeping list (item 4): look when two or three have happened, then he
     decides. One case so far (YBHS61 24 Oct, before this was recorded); (3) the order between
     jobs at the same time: today B134 (first out) got YEBS30 S1, B133 YFXS01's S1, B130
     its FO; the site would have said B134 FO, B133 S1, B130 YEBS30 (same three spares,
     different jobs); (4) a YMX job's S1: YMXS02 8 Nov showed only EN EN09 · FO B113 on duty.
+
+- **Both sites checked after his pull and the Worker paste, 2026-11-11 15:30 ("pulled and
+  restarted, check the site").** Newest check 1524; all 12 tabs on `board` and
+  `board-test` draw their own page, no page errors, no failed requests, no sideways
+  scroll; Page Health says "All good".
+  - **Worker `d6687dc` is pasted on both:** the 18.6(b) box shows the counts (0 today, 9
+    in the last 7 and 30 days, 3 days with any) and "Who submitted: nothing recorded yet".
+    So Housekeeping item 2 (visits a day short) is live: taken off the list.
+  - **Split name codes are working and the history is re-tied:** COBD on SR11 (with SA07
+    from October), BRW1 on YBHS31, JAM1 on YFLS01, MAD1 on YMPS31, MAR1 on YPRS02, MAR2 on
+    YSBY02, each with that turn's earlier sightings moved over; the shared codes are down
+    to one own turn each, **except BRWA, still on SR08 and YPRS60: BRW2 had no sightings.**
+    The second person with that surname did not match "first three letters of the first
+    name" (CATS must spell it another way than he gave). Fixed in `OWN_CODES`: anyone
+    else with that surname under BRWA is BRW2 (keyed on code + surname). **Needs one more
+    pull and restart**; YPRS60's history moves once BRW2 is seen there.
+  - **Line-up reads "(SD01 … spare)"**, no "goes" (his change). The changes list still
+    says "(goes spare)": that is the saved rule text, a different line, left alone.
+  - **Yard job names (test site):** 23 empty trainee slots still showed "TT / ET open
+    turn" from names saved before the fix; `namesByTurn` now leaves them out, so they
+    go at the next publish after the pull instead of in 14 days.
+  - Not looked at: the extra-job prediction (no extra job listed since the pull) and
+    `vacanciesWatch` (none yet).
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
