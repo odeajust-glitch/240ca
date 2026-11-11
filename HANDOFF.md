@@ -341,9 +341,8 @@ call-timeline preview is gone (promoted). Checked here in a browser with made-up
 (old laptop code, all good, four things wrong); the git fetch has only run on Linux here,
 ❓ confirm the "GitHub" row on the Windows laptop. Suite 278 of 292, the same 14 failing.
 Other Page Health ideas offered, not built: follower table, failed alerts by who, a
-warning row for OWNER_EMAIL with Access off, reorder. Real names for followers wait on
-three answers (capture names for everyone each check; OWNER_EMAIL deleted on `board`;
-layout).
+warning row for OWNER_EMAIL with Access off, reorder. Real names for followers: built 2026-11-11 from the crew-names file (note near the
+top); the three answers it waited on are no longer needed.
 
 **Turn History, 2026-11-10 (owner, two screenshots):** (1) every 501/502 trip on his own
 search read "Timeline unavailable": call records are kept per craft (`S501-CO`) and the
@@ -610,6 +609,30 @@ moved; of 264 removed waits 187 name who took the job and 19 are the job itself 
 Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bump, no
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
+
+**Page Health → Who gets alerts: names beside the turns and name codes, 2026-11-11 (owner,
+pasting the two tables: "put their names beside the turn. So the name code put their name,
+and just the turns put whos currently on that turn").** This answers the "real names for
+followers" question left open on 11-10. `renderHealth` in board.html, both sites (Page
+Health is owner-key only; it was not put behind `PREVIEW`). Nothing new is published and
+no name goes into the health report: the names come from the locked `data/crew.json`
+(turn → "Last, F", the accounts session's crew-names file), opened in the browser.
+- Turns table gains "On it now": the name the boards show on that turn; a plain 501/502
+  turn shows both ("CO … · EN …"); "open turn" as read; "no name read" when there is none.
+- People table gains "Name": the name on that person's turn when it fits the code (first
+  initial + first two letters of the surname; only the initial is in the file). When the
+  turn shows someone else, the one name on the boards that fits; otherwise "more than one
+  fits" or "not on the names list", never a guess.
+- Where the site's crew names are off (`CREW_NAMES`), Page Health opens its own copy with
+  the passcode the owner key already reads for 18.6(b) (`loadHealthCrew`, `healthCrew`),
+  so names in this table do not switch names on across the page. No passcode saved → the
+  tables show as before with one line saying why.
+Checked here with a made-up names file and report in three states (site names off, on, no
+passcode): right names, no page errors. Not seen with the real file. Suite 299 of 311.
+**The main site is locked since the evening of 11-10 (page and data answer 401 without an
+account), so a browser check from a session must be fed its own copies of the data files;
+the live fetches earlier notes describe no longer work.** The test site's address is not
+reachable from here either.
 
 **SA07 was sent S501's L501 alert: a stand-in remembered two days too long, fixed
 2026-11-10 (owner's lock-screen picture: "SA07 time change: L50131 10 ordered for 10th

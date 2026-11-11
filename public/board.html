@@ -5007,6 +5007,23 @@ source().then(async (src) => {
       say(n ? `Showing ${n} name${n === 1 ? '' : 's'}, from Call Boards read in the last 14 days (file made ${got.at ? new Date(got.at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'at an unknown time'}).` : 'The names file opened but it is empty: the laptop has read no Call Board names in the last 14 days.');
     } catch (e) { say(`Could not load the names (${e.message}).`); }
   }
+  // Page Health's own copy of the crew names, for the owner key only: used when the site's
+  // crew names are off (CREW_NAMES), so turning names on in "Who gets alerts" does not
+  // turn them on across the page. The passcode is the one the owner key already reads
+  // for the 18.6(b) names (heldNames).
+  let healthCrew = null;
+  let healthCrewAsked = false;
+  async function loadHealthCrew() {
+    if (CREW || healthCrew || healthCrewAsked || !window.BoardNames || !OwnerKey.has()) return;
+    healthCrewAsked = true;
+    try {
+      const r = await fetch('health/held186', { cache: 'no-store', headers: OwnerKey.headers() });
+      const pass = r.ok ? (await r.json()).namesPass : null;
+      if (!pass) return;
+      const got = await BoardNames.unlockNames(await getJSON('data/crew.json'), pass);
+      if (got && got.turns) { healthCrew = got.turns; if (mode === 'health') renderHealth(); }
+    } catch (e) { /* the tables show without names */ }
+  }
   async function showHealth(after, refreshIndex = false) {
     const request = ++healthRequest;
     const hadReport = !!healthData;
@@ -5503,10 +5520,34 @@ source().then(async (src) => {
     const named = people.filter(p => p.code).sort((x, y) => byName(x.code, y.code));
     const unnamed = people.filter(p => !p.code);
     const unnamedOn = unnamed.filter(p => p.turn).map(p => p.turn).sort(byName);
-    const followed = `${turnRows.length ? `<h3 class="hsub">Turns followed (${turnRows.length})</h3>
-        <table class="htable hhist"><thead><tr><th>Turn</th><th>Phones</th></tr></thead><tbody>${turnRows.map(([t, n]) => `<tr><td>${esc(t)}</td><td>${n}</td></tr>`).join('')}</tbody></table>` : ''}
+    // Names beside them (owner, 2026-11-10: "put their names beside the turn. So the name
+    // code put their name, and just the turns put whos currently on that turn"). From the
+    // locked crew names file, opened in this browser with the owner key; nothing new is
+    // published and no name goes into the health report. A turn shows who the boards have
+    // on it now. A name code shows the name on that person's turn when it fits the code
+    // (first initial, first two letters of the surname); when the turn shows someone else,
+    // the one name on the boards that fits, or nothing rather than the wrong person.
+    const NAMES = CREW || healthCrew;
+    if (!NAMES) loadHealthCrew();
+    const fits = (code, name) => { const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
+    const onTurn = (t) => {
+      if (!NAMES) return '';
+      if (NAMES[t]) return esc(NAMES[t]);
+      const both = [['CO', NAMES[`${t}-CO`]], ['EN', NAMES[`${t}-EN`]]].filter(([, n]) => n);
+      return both.length ? both.map(([c, n]) => `${c} ${esc(n)}`).join(' · ') : '<span class="muted">no name read</span>';
+    };
+    const nameOf = (p) => {
+      if (!NAMES) return '';
+      const own = p.turn && NAMES[p.turn.replace(/-(TT|ET)$/, '')];
+      if (fits(p.code, own)) return esc(own);
+      const hits = [...new Set(Object.values(NAMES).filter((n) => fits(p.code, n)))];
+      return hits.length === 1 ? esc(hits[0]) : `<span class="muted">${hits.length ? 'more than one fits' : 'not on the names list'}</span>`;
+    };
+    const followed = `${NAMES ? '' : '<p class="muted">Names are not loaded on this device yet, so only turns and codes show. They need the crew names passcode saved under Article 18.6(b) submissions on this page, and the laptop on its newest code.</p>'}
+      ${turnRows.length ? `<h3 class="hsub">Turns followed (${turnRows.length})</h3>
+        <table class="htable hhist"><thead><tr><th>Turn</th>${NAMES ? '<th>On it now</th>' : ''}<th>Phones</th></tr></thead><tbody>${turnRows.map(([t, n]) => `<tr><td>${esc(t)}</td>${NAMES ? `<td>${onTurn(t)}</td>` : ''}<td>${n}</td></tr>`).join('')}</tbody></table>` : ''}
       ${people.length ? `<h3 class="hsub">People followed (${people.length})</h3>
-        ${named.length ? `<table class="htable hhist"><thead><tr><th>Name code</th><th>On turn now</th><th>Phones</th></tr></thead><tbody>${named.map(p => `<tr><td>${esc(p.code)}</td><td>${p.turn ? esc(p.turn) : '<span class="muted">not on a turn</span>'}</td><td>${p.phones}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${named.length ? `<table class="htable hhist"><thead><tr><th>Name code</th>${NAMES ? '<th>Name</th>' : ''}<th>On turn now</th><th>Phones</th></tr></thead><tbody>${named.map(p => `<tr><td>${esc(p.code)}</td>${NAMES ? `<td>${nameOf(p)}</td>` : ''}<td>${p.turn ? esc(p.turn) : '<span class="muted">not on a turn</span>'}</td><td>${p.phones}</td></tr>`).join('')}</tbody></table>` : ''}
         ${unnamed.length ? `<p class="muted">${unnamed.length} more ${unnamed.length === 1 ? 'person' : 'people'} followed by ${phonesOf(unnamed.reduce((n, p) => n + p.phones, 0))}: name code not known yet (not seen on a board since they were followed)${unnamedOn.length ? `; on ${esc(unnamedOn.join(', '))}` : ''}.</p>` : ''}` : ''}`;
     const who = `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">
       <p>${esc(subscriberSummary)}</p>
