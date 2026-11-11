@@ -57,15 +57,17 @@ trains on the Call Board).
   a COBR search still lists SR11 up to the restart (the saved checks hold only the hash);
   a phone following COBR for him must follow COBD instead.
 - **All name codes checked for more shared ones, 2026-11-11 00:05 (owner: "check all name
-  codes and find anymore conflicts"). Four found, nothing built: waiting for him to say
+  codes and find anymore conflicts"). Five found, nothing built: waiting for him to say
   which person gets which code.** Method: people.json (161 codes) against the crew names
   file opened on the test site; a conflict = one code that is on two own turns in the last
   day whose names differ but share first initial + first two letters of the surname.
   By turn (names are in the crew file, not here): **SR08 with the FO of YBHS31 / YPRS60;
-  B105 with YSBY02's YA; XSAS02's FO with YFLS01's FO; B111 with YMPS31's TT.** Looked
+  B105 with YSBY02's YA; XSAS02's FO with YFLS01's FO; B111 with YMPS31's TT; SD02 with
+  YPRS02's S1** (the last from Justin: two people with one surname and the same first two
+  letters, so the names file reads the same for both and the check took them for one). Looked
   alike but have different codes (first names differ): B106 / SB03, B129 / B134, S101 /
   YSTY01, S502-CO / YINS60's S1, XSAS03's FO / YEBS30's S1, SD10 against B105, XSAS05's FO
-  against B111. Not conflicts: SD02 + YPRS02 (one person shown on both), SB01 + SB03 (one
+  against B111. Not conflicts: SB01 + SB03 (one
   person, moved 10 Nov 1658). Not settled: one code each on YFLS01 + YPRS30, YEBS03 +
   YFLS01, YBHS01 + YEBS03 since 8 to 10 Nov, no two names there fit one code (trainees
   moved between jobs is the likely reading). Blind spot: a person the boards have not
