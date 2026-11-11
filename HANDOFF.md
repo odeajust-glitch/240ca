@@ -309,6 +309,18 @@ trains on the Call Board).
     ids (`TURN` regex: 2 to 6 letters / digits), so a topic such as `BIDCO` / `BIDEN`
     needs no Worker change, but per-job reminders and any filter beyond craft are new
     settings: either kept on the phone and sent as their own follows, or a Worker paste.
+    **Who may post for what, his rules 2026-11-11 16:50 (word for word in parts; the
+    alert goes only to people who could bid the job):** first know whether the person is a
+    conductor or an engineer; "If their spot is unknown, for the purposes of these
+    notifications only, use their last known craft". **Engineers** "can post for road or
+    yard turns, regardless of where they are currently". **Conductors:** on the
+    spareboard → road or yard; in the yard → "can only goto other yard tvs", an FO only
+    to FO postings, an S1 (switchman) to either FO or S1; on the road → "can only post to
+    road tvs": "Anyone on the road can post for 502/501 tv, any A or B pool TVs. Chain
+    gang cannot post to another chain gang tv". Asked him, not answered yet: do permanent
+    postings (P) follow the same rules as TVs; may a spareboard conductor take both FO and
+    S1 yard postings; may an A / B / 501-502 conductor post to a Chain Gang TV (read as
+    yes); and that the person is known from the name code a phone follows.
     Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
     that tapping the alert opens the Job postings tab on that job with a "Remind me"
     choice there.
