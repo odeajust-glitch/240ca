@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { parseGrid } = require('../../lib/board/grid');
 const S = require('../../lib/board/screens');
-const { recordNames, recordBoardCrew, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
+const { recordNames, recordBoardCrew, recordYardCrew, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
 const { unlockNames } = require('../../public/board-names');
 const { buildSite } = require('../../lib/board/site');
 
@@ -154,4 +154,30 @@ test('names: the pool screen\'s own name for a turn wins over an older Call Boar
   assert.equal(namesByTurn(store, home).SA06, 'Borody, R');
   // The 18.6(b) names don't use the board's: still the trip's.
   assert.deepEqual(namesForHeld([{ id: 'Q9 07', month: '2026-11', co: 'SA05', heldMin: 900 }], store, 840, new Date('2026-11-10T23:05:00Z')), { 'Q9 07 2026-11': { co: 'Chris Thompson', en: null, turnOnly: true } });
+});
+
+test('yard jobs: whose job it is, from the crews in town, not who is on duty', () => {
+  const lines = [
+    'CREWS  IN  TOWN',
+    'POOL:  1ST  MANIF                         RESTED/STATUS',
+    '01  EN  S105  HILL*+          TR  TREVOR   ** RESTED  **',
+    'YARD  :  XSAS01   REL#1   TH/FR   OFF     RESTED/STATUS',
+    '      TT   <<  OPEN  TURN  >>              <<TEMP  VCNY>>',
+    '      FO   LAKE*+    (NET)  C   CLAYTON  <<  VACANCY  >>',
+    '      S1   FIELD*+(NET)        PAUL     <<TEMP  VCNY>>',
+    'YARD  :  YEBS30   REL#3   MO/TU   OFF     RESTED/STATUS',
+    '      FO   VAN  DE  MEADOW+  J  JEREMY   ***  OFF  ***',
+    'TEMP  FO   BROOKS+         D   DRAKE     ** RESTED  **',
+    '      S1   GROVE+          TR  TRISTAN   26/11/03-0953',
+  ];
+  const rows = lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${m[0]}`)].join(' | '));
+  const owners = S.parseYardOwners([parseGrid(rows)]);
+  assert.deepEqual(owners.map((o) => `${o.job} ${o.craft} ${o.name}`), [
+    'XSAS01 TT open turn', 'XSAS01 FO Clayton Lake', 'XSAS01 S1 Paul Field', 'YEBS30 FO Jeremy van de Meadow', 'YEBS30 S1 Tristan Grove']);
+  const at = new Date('2026-11-11T03:00:00Z');
+  const store = recordYardCrew(recordBoardCrew({}, [{ turn: 'SA05', craft: 'CO', name: 'Ben Allen' }], at), owners, at);
+  assert.deepEqual(namesByTurn(store, new Date('2026-11-11T03:05:00Z')), {
+    SA05: 'Allen, B', 'XSAS01-FO': 'Lake, C', 'XSAS01-S1': 'Field, P', 'XSAS01-TT': 'open turn', 'YEBS30-FO': 'van de Meadow, J', 'YEBS30-S1': 'Grove, T' });
+  // Not seen for 14 days: gone.
+  assert.deepEqual(namesByTurn(store, new Date('2026-12-01T03:00:00Z')), {});
 });

@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, saveNames } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordYardCrew, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -779,6 +779,8 @@ async function runRoute(page, opts = {}) {
     sight(n.code, n.turn || n.job, !n.temp, { craft: n.craft });
   }
   if (town.length) console.log(`  Crews in town: ${town.length} people read.`);
+  // Whose yard job it is, by name (crew names on the board; laptop only).
+  if (opts.names) { try { opts.names.yard = S.parseYardOwners(townPages); } catch { /* the board can do without */ } }
   // Days off seen in earlier checks, kept until each ends (a line can leave
   // option 4's "upcoming" list once it starts): turn, craft, times only.
   const daysOffKnown = DaysOff.load(DAYS_OFF_FILE);
@@ -1795,7 +1797,7 @@ async function main() {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
       try {
-        saveNames(NAMES_FILE, recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []));
+        saveNames(NAMES_FILE, recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []));
       } catch (err) {
         console.log(`  (crew names not saved: ${err.message})`);
       }

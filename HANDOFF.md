@@ -17,6 +17,31 @@ Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-S
 - **Still open:** (1) `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token; harmless while `OWNER_EMAIL` is unset (it is unset on `board`), but fix `accessEmail()` or never set that variable with Access off. (2) Hash links (`#…`) are dropped on the way through sign-in. (3) An iPhone home-screen app is a separate "device" from Safari under the one-device rule. (4) RailroadTracker set aside by Justin; if it reads the site's files it stopped at the lock. (5) A removed member who kept the crew names passcode could open a saved copy of the file; changing `BOARD_NAMES_KEY` and the saved passcode ends that. (6) `OWNER_KEY` on `board` is a plain Variable, not a Secret; changing its value signs everyone out. (7) Followed name codes show only as a count on the Members tab.
 - **Tests:** `test/board/accounts.test.js` (Worker, 13 tests) and `test/board/names.test.js`. Whole suite 370 of 371 on 2026-11-10 evening; the one failing, `Mac yard: a crew on rest at the call is skipped and keeps its place`, came in with `0c75432` (alerts work), not from the accounts session. **Fixed 2026-11-10 20:15 by the board/checker session (the test still used order − 2 h; it now uses the new rule): 371 of 371.**
 
+**Yard job names: whose job it is — on the test site only, awaiting Justin, 2026-11-10 late
+evening (owner: "do it ... The on-duty crews isnt necessarily the actual person who owns
+that yard turn. those names will be a bit further in the option 6 screen").** Before this a
+yard job never had a name anywhere (names came only from pool / spareboard screens and
+trains on the Call Board).
+- **Laptop:** `parseYardOwners` (lib/board/screens.js) reads each yard job's own people by
+  craft from the crews in town at the end of option 6 (unmasked, in memory; a `TEMP` line
+  is a fill-in and is left out; an open craft reads "open turn"). `recordYardCrew`
+  (lib/board/names.js) keeps them in names.json as `@yard|<job>|<craft>`; `namesByTurn`
+  puts them in the locked `data/crew.json` as `<job>-<craft>` (`YEBS30-S1`), 14 days like
+  the rest. Two lines in scripts/board-auto.js (`opts.names.yard`, and where names.json is
+  saved). **Needs the laptop to pull and restart**; names appear after the next check.
+- **Page (public/board.html), behind `PREVIEW`** (`yardOwners`, `yardTag`): Current → Days
+  off shows the name beside a yard job's row (job + craft); Current → Yard jobs adds an
+  "Assigned: FO … · S1 …" line under the crew on duty; a yard job opened in Turn History
+  has its people in the heading. Page Health's "On it now" (owner only, both sites) lists a
+  followed yard job's people. To promote: drop the `PREVIEW` test in `yardOwners`.
+- **Checked:** test added (names.test.js), suite 372 of 372. On the real test site with
+  made-up yard names put into the page at phone width: Days off and Yard jobs show them,
+  no page errors, no sideways scroll. **Not checked:** the real crews-in-town screen with
+  names (the reader is built from the made-up layout in screens-extra.test.js: surname,
+  initials, first name), the Turn History heading, Page Health's row. ❓ Ask him once the
+  laptop has pulled: do the names read right, and should relief jobs (`REL#`) or trainees
+  (TT) be shown differently.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**

@@ -2354,6 +2354,19 @@ let CREW = null;
 let CREW_NOTE = 'Not asked for yet.';
 let crewAsked = false;
 const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
+// Whose yard job it is (owner, 2026-11-11: the crew on duty on a yard job
+// "isn't necessarily the actual person who owns that yard turn"). The names
+// file keys them "<job>-<craft>" (YEBS30-S1), from the crews in town.
+// Test site only until he promotes it.
+function yardOwners(job, craft) {
+  if (!PREVIEW || !CREW || !job || /^[A-Z][A-Z0-9]\d{2}$/.test(job)) return [];
+  return Object.keys(CREW).filter((k) => k.startsWith(`${job}-`) && (!craft || k === `${job}-${craft}`)).sort()
+    .map((k) => [k.slice(job.length + 1), CREW[k]]);
+}
+function yardTag(job, craft) {
+  const o = yardOwners(job, craft);
+  return o.length ? ` <span class="crewnm">${o.map(([c, n]) => (craft ? esc(n) : `${esc(c)} ${esc(n)}`)).join(' · ')}</span>` : '';
+}
 // Both people on a 501/502 turn where the page shows just the turn (the
 // Garnet line-up's "S501"; owner, 2026-11-10: "can you add the crew names
 // here"): "CO Last, F · EN Last, F".
@@ -2880,7 +2893,7 @@ function daysOff(s) {
   const list = s.daysOff || [];
   const active = list.filter((d) => d.on);
   const upcoming = list.filter((d) => !d.on);
-  const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span></td></tr>').join('');
+  const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span>' + (d.yard ? yardTag(d.turn, d.craft) : '') + '</td></tr>').join('');
   const group = (name, items) => '<h3 class="off-heading">' + name + ' · ' + items.length + '</h3><div class="scroll"><table><thead><tr><th>From</th><th>Ends</th><th>Turn</th></tr></thead><tbody>' + (rows(items) || '<tr><td colspan="3" class="muted">None in this check.</td></tr>') + '</tbody></table></div>';
   return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${active.length} active · ${upcoming.length} upcoming</span></header>
     ${group('Active now', active)}${group('Upcoming', upcoming)}
@@ -2891,7 +2904,7 @@ function daysOff(s) {
 function yardJobs(s) {
   if (!(s.yardJobs || []).length) return '';
   const rows = s.yardJobs.map((j) => `<tr${marked(j.job) || markedIn(j.crew) ? ' class="hit"' : ''}><td class="num">${esc(j.onDuty || '—')}</td>
-    <td><b class="num">${markTurn(j.job)}</b><div class="crew mono">${markTurn(j.crew)}</div></td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
+    <td><b class="num">${markTurn(j.job)}</b><div class="crew mono">${markTurn(j.crew)}</div>${yardOwners(j.job).length ? `<div class="crew">Assigned: ${yardOwners(j.job).map(([c, n]) => `<span style="white-space:nowrap">${esc(c)} ${esc(n)}</span>`).join(' · ')}</div>` : ''}</td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
   return `<section class="sheet" id="sec-yard"><header><h2>Yard jobs · on duty</h2><span class="meta">${s.yardJobs.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>Job · crew</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="foot">Off duty: 8 hours after on duty, 12 hours in the tower (YSBY).</div></section>`;
@@ -3034,7 +3047,7 @@ function turnPanel(s) {
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
   // The test site (owner, 2026-11-10: "improvements to the turn history tab"): where the turn
   // stands now comes first, under its name; the board's notes fold away under the work history.
-  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus) || yardTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div class="tn2-now"><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
@@ -3043,7 +3056,7 @@ function turnPanel(s) {
     <div id="held186" class="work"></div>
     <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></details>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus) || yardTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
     <div id="alertnote" class="alertnote" hidden></div>
@@ -5581,7 +5594,9 @@ source().then(async (src) => {
       if (!NAMES) return '';
       if (NAMES[t]) return esc(NAMES[t]);
       const both = [['CO', NAMES[`${t}-CO`]], ['EN', NAMES[`${t}-EN`]]].filter(([, n]) => n);
-      return both.length ? both.map(([c, n]) => `${c} ${esc(n)}`).join(' · ') : '<span class="muted">no name read</span>';
+      if (both.length) return both.map(([c, n]) => `${c} ${esc(n)}`).join(' · ');
+      const yard = Object.keys(NAMES).filter((k) => k.startsWith(`${t}-`)).sort(); // a yard job: its people by craft
+      return yard.length ? yard.map((k) => `${esc(k.slice(t.length + 1))} ${esc(NAMES[k])}`).join(' · ') : '<span class="muted">no name read</span>';
     };
     const nameOf = (p) => {
       if (!NAMES) return '';
