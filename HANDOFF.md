@@ -28,12 +28,25 @@ note further down (search for the words in bold).**
   371**. One test did break with the Garnet/Toronto call change (`0c75432`), in a file
   that could not load here; the accounts session found it, fixed in `test/board/site.test.js`.
   **A cloud session must run `npm ci` before trusting `npm test`.**
-- **The live site cannot be loaded from a session any more** (locked: page and data answer
-  401; `board-test` is not reachable at all). A browser check needs its own copies of the
-  data files routed in. **This also blocks the two booked check-ins below**: they read the
-  live day files and `data/patterns.json`. Not solved; options are Justin pasting the
-  figures, or the owner key given to the session through the credential form (never typed
-  in chat). Ask him before the first one is due.
+- **A session can read both real sites again: Justin saved the owner key for
+  `board.sarniaboard.workers.dev` and `board-test.sarniaboard.workers.dev` on his Default
+  cloud environment, 2026-11-10 20:20 ("lets give you the owners key so you can do updates,
+  lets do it for both the test site and the main").** The session's proxy adds it as
+  `x-owner-key` to every request to those two hosts; no session ever sees the value, and
+  it is not in any variable or file. So: plain `curl https://board…/data/…` works through
+  the lock, and so does a browser launched through `HTTPS_PROXY`. For the page's own owner
+  features (owner tabs, `PREVIEW` on the test site) put any placeholder in
+  `localStorage.boardOwnerKey`; the proxy overwrites the header. **Read only: open tabs and
+  fetch files; never press Save, approve a member or send anything from a session.** Every
+  session in that environment has this access, the accounts session included.
+- **First real check with it, 2026-11-10 20:25, all 12 tabs on both sites, each showing its
+  own page, no page errors, no failed requests, no sideways scroll.** That confirms the
+  four owner tabs (Page Health, Search Review, Notifications, Members) after the tab fix.
+  Main site: no preview features, Analytics has the new layout and seven pages, the pool
+  buttons pair up, Page Health's follower tables have names (30 of 33 rows filled). Test
+  site: the TEST SITE badge, 8 likely-call lines and 6 habit chips on Current, no
+  spareboard predictions, Analytics has the eighth page (Likely-call test), Turn History
+  in the new layout.
 - **Live on the main site since 2026-11-10:** the Analytics new layout (everything that was
   in the Test tab, with the simpler Assignment errors); the Test tab is gone from both
   sites; Garnet and Toronto alerts use a call of 2 h before on duty (order − 2 h 15 for a
@@ -54,12 +67,11 @@ note further down (search for the words in bold).**
   over 2 weeks maybe we can push it [to] the main site."
 - **Booked check-ins into this session:** the S5 swap watch (next: L50231 11, lined up for
   S502; four nights more to reach five clean) and 2026-11-25 09:00 Toronto to read the
-  likely-call test. Both need the data access problem above solved.
+  likely-call test. Both can read the live files now (the saved owner key, above).
 - **After any change to `setMode` or the tab bar: click every tab and read the page's
   heading.** Removing the Test tab broke every tab but Analytics on the live site for
   about half an hour because the check read the address, not the page.
-- **Waiting on Justin:** tap Search Review, Notifications and Members once (same code
-  path as the tab fix; Page Health is confirmed); whether rescue trains out of Toronto
+- **Waiting on Justin:** whether rescue trains out of Toronto
   should also use order − 2 h 15 (left at order − 2 h on one example); what Page Health's
   "GitHub" row says on the Windows laptop; whether a renumbered train (DH27331 → X27331)
   counts as one job; whether crews that turn straight back at Toronto count from arrival;
@@ -600,9 +612,8 @@ pull, 2026-11-10 evening: "names are showing".** (That also shows the Page Healt
 the tab fix; Search Review, Notifications and Members are still unconfirmed.) Suite 299 of
 311.
 **The main site is locked since the evening of 11-10 (page and data answer 401 without an
-account), so a browser check from a session must be fed its own copies of the data files;
-the live fetches earlier notes describe no longer work.** The test site's address is not
-reachable from here either.
+account).** For an hour that evening a session could not load it; the saved owner key
+(top of this file) ended that the same night, for both sites.
 
 **SA07 was sent S501's L501 alert: a stand-in remembered two days too long, fixed
 2026-11-10 (owner's lock-screen picture: "SA07 time change: L50131 10 ordered for 10th
