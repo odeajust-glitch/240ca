@@ -2240,15 +2240,31 @@ function lineupCrew(t, s) {
     // to work it (owner, 2026-11-10: "add the name of who is going to work
     // the spare turn"), from the same cover the fold below works out.
     const named = (x) => markTurn(x) + (/^S5\d{2}$/.test(x) ? crewTag(`${x}-${cc}`) : '');
-    let cover = '';
-    if (spare && CREW && s) {
+    // The spare likely to work it: the order's cover for this train and
+    // craft, else the spare the boards show lined into this turn's job.
+    const coverFor = (x) => {
+      if (!CREW || !s) return '';
+      const sym = String(t.train).split(' ')[0];
       const job = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].find((v) => (v.cc === 'EN' ? 'EN' : 'CO') === cc && v.fill && v.fill.turn
-        && ((v.trainDay || v.train) === t.train || (v.train === String(t.train).split(' ')[0] && v.at === t.order)));
-      if (job) { const m = markTurn(job.fill.turn); cover = ' · likely ' + m + (m.includes('crewnm') ? '' : crewTag(job.fill.turn)); }
-    }
+        && ((v.trainDay || v.train) === t.train || (v.train === sym && v.at === t.order)));
+      let by = job ? job.fill.turn : '';
+      if (!by) {
+        const want = cc === 'EN' ? /engineer/i : /conductor/i;
+        const rows = (s.pools || []).flatMap((p) => (p.turns || []).filter((r) => r.job && r.job.covers === x && String(r.job.train || '').split(' ')[0] === sym).map((r) => ({ r, p })));
+        const pick = rows.find(({ p }) => want.test(p.name)) || (rows.length === 1 ? rows[0] : null);
+        by = pick ? pick.r.turn : '';
+      }
+      if (!by) return '';
+      const m = markTurn(by);
+      return ' · likely ' + m + (m.includes('crewnm') ? '' : crewTag(by));
+    };
+    // An open turn (nobody holds it; owner, 2026-11-10: "open turn should
+    // show the spare person in it"): the spare likely to work it, as above.
+    const isOpen = (x) => !!CREW && (CREW[/^S5\d{2}$/.test(x) ? `${x}-${cc}` : x] === 'open turn');
+    const cover = spare || isOpen(turn) ? coverFor(turn) : '';
     const value = spare
       ? '<span class="spare">spare</span>' + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' goes spare)') + cover
-      : named(turn);
+      : named(turn) + cover;
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
   return craft(parts[0], 'Conductor') + '<span class="crew-divider"> · </span>' + craft(parts[1], 'Engineer');
