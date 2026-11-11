@@ -5375,6 +5375,25 @@ source().then(async (src) => {
   // health page to input and update the emails"): the conductors' and the
   // engineers' rep, and the crew-names passcode so the owner key opens the
   // names on any of the owner's devices. Kept by the Worker (R2 settings/).
+  // How many were sent to the rep (owner, 2026-11-11: "Add tracking how many
+  // grievances being submitted"): the Worker's own daily count, the last 30
+  // days. Counts only. Conductor / engineer are kept from 2026-11-11; a day
+  // before that has only its total. A text file someone exports and emails
+  // themselves is not counted (it never passes the site).
+  function heldSent(sent) {
+    if (!Array.isArray(sent)) return '<p class="muted">How many were sent: needs the newest Worker (re-paste cloudflare/board-worker.js).</p>';
+    const sum = (list, k) => list.reduce((a, d) => a + (+d[k] || 0), 0);
+    const split = (list) => { const co = sum(list, 'co'); const en = sum(list, 'en'); return co + en ? ` <span class="muted">(${co} conductor, ${en} engineer${co + en < sum(list, 'n') ? `, ${sum(list, 'n') - co - en} before the split was kept` : ''})</span>` : ''; };
+    const days = sent.filter((d) => d.n > 0);
+    const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return `<h3 class="hsub">Sent to the rep</h3>
+      <table class="htable hhist"><tbody>
+        <tr><td>Today</td><td>${sum(sent.slice(0, 1), 'n')}${split(sent.slice(0, 1))}</td></tr>
+        <tr><td>Last 7 days</td><td>${sum(sent.slice(0, 7), 'n')}${split(sent.slice(0, 7))}</td></tr>
+        <tr><td>Last 30 days</td><td>${sum(sent, 'n')}${split(sent)}</td></tr></tbody></table>
+      ${days.length ? `<details class="moredet"><summary>By day (${days.length})</summary><table class="htable hhist"><thead><tr><th>Day</th><th>Sent</th><th>Conductor</th><th>Engineer</th></tr></thead><tbody>${days.map((d) => `<tr><td>${esc(dayName(d.day))}</td><td>${d.n}</td><td>${d.co + d.en ? d.co : '—'}</td><td>${d.co + d.en ? d.en : '—'}</td></tr>`).join('')}</tbody></table></details>` : '<p class="muted">None sent in the last 30 days.</p>'}
+      <p class="muted">Counts only, never who. A text file someone exports and emails themselves is not counted.</p>`;
+  }
   async function paintHeldSettings() {
     const box = document.getElementById('h186set');
     if (!box) return;
@@ -5387,7 +5406,7 @@ source().then(async (src) => {
       <label>Engineers' rep email<input type="email" name="en" value="${esc(cur.en)}" placeholder="rep@example.com"></label>
       <label>Crew names passcode <span class="muted">(${cur.namesPass ? 'saved: your owner key opens the names' : 'not saved'})</span><input type="password" name="namesPass" placeholder="${cur.namesPass ? 'leave blank to keep it' : 'the BOARD_NAMES_KEY passcode'}" autocomplete="new-password"></label>
       <p><button type="submit" class="linkbtn" id="h186save">Save</button> <span id="h186msg" role="status"></span></p>
-      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>`;
+      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>${heldSent(cur.sent)}`;
     const form = document.getElementById('h186form');
     form.onsubmit = async () => {
       const msg = document.getElementById('h186msg');
@@ -5634,7 +5653,7 @@ source().then(async (src) => {
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
       <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}${sent}
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them · how many were sent</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}${sent}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;

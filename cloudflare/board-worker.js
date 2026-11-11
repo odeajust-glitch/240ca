@@ -895,6 +895,13 @@ async function ask(request, env, ctx, { fetchImpl = fetch } = {}) {
 
 const torontoDay = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
 const STATS_DAYS = 30;
+// The last n days in Toronto, today first, counted by the calendar: stepping
+// back 24 h at a time landed on the 25-hour day of the autumn clock change
+// twice late in the evening and lost a day (found 2026-11-10).
+function lastDays(n, now = Date.now()) {
+  const [y, m, d] = torontoDay(now).split('-').map(Number);
+  return Array.from({ length: n }, (_, i) => new Date(Date.UTC(y, m - 1, d - i)).toISOString().slice(0, 10));
+}
 
 async function readDay(env, day) {
   const o = await env.SITE.get(`stats/${day}.json`);
@@ -918,10 +925,7 @@ async function statsHit(request, env) {
 }
 
 async function statsDays(env) {
-  const now = Date.now();
-  const days = [];
-  for (let i = 0; i < STATS_DAYS; i++) days.push(torontoDay(now - i * 864e5));
-  const counts = await Promise.all([...new Set(days)].map(async (day) => ({ day, ...(await readDay(env, day)) })));
+  const counts = await Promise.all(lastDays(STATS_DAYS).map(async (day) => ({ day, ...(await readDay(env, day)) })));
   return json({ days: counts });
 }
 
@@ -1027,7 +1031,17 @@ async function held186Settings(request, env) {
     if (b.clearNamesPass) delete s.namesPass;
     await env.SITE.put(HELD186_KEY, JSON.stringify(s), { httpMetadata: { contentType: 'application/json' } });
   }
-  return json({ co: s.co || '', en: s.en || '', namesPass: s.namesPass || '', mail: mailReady(env) });
+  return json({ co: s.co || '', en: s.en || '', namesPass: s.namesPass || '', mail: mailReady(env), sent: await held186Sent(env) });
+}
+// How many were sent to the rep each day, the last 30 days, today first
+// (owner, 2026-11-11: "Add tracking how many grievances being submitted").
+// Counts only: never who, never the claim. co / en are kept from the day this
+// was added; a day before that has only its total.
+async function held186Sent(env) {
+  return Promise.all(lastDays(STATS_DAYS).map(async (day) => {
+    const d = (await readJson(env, `stats/held186/${day}.json`)) || {};
+    return { day, n: +d.n || 0, co: +d.co || 0, en: +d.en || 0 };
+  }));
 }
 async function held186Submit(request, env) {
   const text0 = await request.text();
@@ -1079,6 +1093,7 @@ async function held186Submit(request, env) {
     return json({ error: `The email didn't go: ${why}. Export the text file instead.` }, 502);
   }
   today.n += 1;
+  if (craft === 'EN') today.en = (today.en || 0) + 1; else today.co = (today.co || 0) + 1;
   today.ips[ip] = (today.ips[ip] || 0) + 1;
   sent[claim] = now;
   await env.SITE.put(countKey, JSON.stringify(today), { httpMetadata: { contentType: 'application/json' } });

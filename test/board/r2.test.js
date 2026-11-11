@@ -490,7 +490,11 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
   assert.equal((await call('/health/held186')).status, 404);
   assert.equal((await call('/health/held186', { method: 'POST', headers: owner, body: JSON.stringify({ co: 'not an email' }) })).status, 400);
   let r = await call('/health/held186', { method: 'POST', headers: owner, body: JSON.stringify({ co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret' }) });
-  assert.deepEqual(await r.json(), { co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret', mail: true });
+  const saved = await r.json();
+  assert.equal(saved.sent.length, 30); // how many were sent each day, today first: none yet
+  assert.ok(saved.sent.every((d) => d.n === 0));
+  delete saved.sent;
+  assert.deepEqual(saved, { co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret', mail: true });
   assert.equal((await call('/settings/held186.json')).status, 404);
   assert.deepEqual(await (await call('/api/held186')).json(), { CO: true, EN: true });
   // Submit: to the engineers' rep, a copy to the member.
@@ -515,6 +519,9 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
     assert.equal((await from(9)).status, 429);
     assert.equal(sent.length, 6);
     assert.ok(![...store.values()].some((v) => String(v).includes('203.0.113.9'))); // never the address itself
+    // The count for Page Health: today's total and by craft, the owner only.
+    const today = (await (await call('/health/held186', { headers: owner })).json()).sent[0];
+    assert.deepEqual(today, { day: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' }), n: 6, co: 5, en: 1 });
     // Why it didn't go, from what Google answered.
     const why = async (resp) => { globalThis.fetch = async () => resp; return (await (await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'Pat', text: 'x' }) })).json()).error; };
     assert.match(await why(new Response(JSON.stringify({ ok: false, error: 'key' }))), /key in the script doesn't match MAIL_SCRIPT_KEY/);
