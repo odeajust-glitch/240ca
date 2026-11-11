@@ -61,6 +61,12 @@ note further down (search for the words in bold).**
   screen), then the four steps of the Track box, and one line for alerts that don't
   arrive. The rail's `ol` rule strips numbers, hence the longer selector. Checked on the
   real site's data in two styles on a phone and on a computer; he has not seen it yet.
+  **Name codes are explained there too since 21:20 (owner: "you can add instructions for
+  the name code now since the site isnt public anymore"):** how the code is made (first
+  two letters of each name), that it follows the person across turns, which button to
+  pick, and that it works in Turn History and Analytics. The name-code search was kept
+  unadvertised while the page was open to anyone; with the lock on that no longer applies.
+  A typed code is still never kept in the address bar or the recent-lookups list.
 - **Rule from Justin, 2026-11-10: previews go to the test site only (behind `PREVIEW`),
   never a tab on the main site.** Small things he asks for directly, and owner-only pages,
   have gone to both sites, said plainly each time.
