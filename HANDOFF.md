@@ -143,24 +143,36 @@ trains on the Call Board).
   `lineupCrew` (board.html); both sites; shows after the laptop's next pull and publish.
   The crew names note near the top of this file still quotes the older wording.
 
-- **YFXS01 listed with one craft on option 5 — watch booked, 2026-11-11 13:17 (owner: "I
-  think I found a mistake in cats. The YFXS01 should have a fo and S1 going spare to the
-  tail end board but it only has one job listed"; "put a check ... to see if it calls
-  both a FO and S1 by 1400 if it does let's make a rule to correct that").** The site
-  matches CATS: option 5 has had only `YFXS01 FO 11th 1530` since the 1212 check. On the
-  5th option 5 listed FO and S1 together and FO B105 + S1 B110 worked it; on the 7th FO
-  B128 + S1 B131 did. He says today's S1 was not assigned. **This session wakes at 14:06
-  Toronto to read the checks to 1400**: if both were called, propose the rule (the other
-  of FO / S1 added as a predicted job going spare for a YFX job, filled from the same
-  board) and build it on his word; if not, build nothing.
-  **How to tell an extra yard job (his question, answered from the 27 live days, not yet
-  confirmed by him):** not by craft (FO / S1 are the same codes); by the job id, third
-  letter X: YFXS01, YFXS03, YMXS01, YMXS02 (beside the regular YFLS.. / YMPS..). None of
-  the four is in the crews in town at all, each ran 1 to 5 days of 27 (regular jobs 12 to
-  20), and option 5 listed every craft for them: FO + S1 on YFX, EN + FO + S1 on YMX.
-  Second signal: no people under the job in the crews in town. ❓ YBHS61 and YEBS04 are in
-  the crews in town with every craft an open turn (4 days each): same treatment or not?
-  YSBY05 (once) looks like an extra tower job, yardmasters, not ours.
+- **Extra yard jobs: the crafts option 5 leaves out are predicted — built 2026-11-11 14:55
+  (owner: "I think I found a mistake in cats. The YFXS01 should have a fo and S1 going
+  spare ... but it only has one job listed"; "see if it calls both a FO and S1 by 1400 if
+  it does let's make a rule to correct that"). Needs the laptop to pull and restart.**
+  - **What happened:** option 5 listed only `YFXS01 FO 11th 1530` from the 1212 check to
+    1406 (16 checks, never the S1). At the 1414 check it was on the Call Board, moved to
+    1600, with FO B130 · S1 B133; YEBS30's S1 went to B134. The fast board had been B134,
+    B133, B130: three spares went, where the site expected two and had B130 down for
+    YINS60 (it went to B115's spot instead).
+  - **The rule** (lib/board/spares.js `isExtraYard`, `extraYardJobs`, inside
+    `expectedJobs`): a yard job whose id has X as its third letter (`Y?X…`: YFXS01,
+    YFXS03, YMXS01, YMXS02 in the 27 live days) with nobody under it in the crews in town
+    is an extra job: his words, "Extra jobs don't have anyone on their turn they just get
+    called spare". Its whole crew is expected to go spare (FO + S1; EN + FO + S1 on a YMX
+    job). Any of those option 5 does not list at that time is added as a predicted job
+    (`extra: true`), filled with the listed ones in time order, so Current's Jobs going
+    spare ("+ N predicted", worded from `why`), the expected cover, the spareboards'
+    "lined into" and the spares' alerts all count it. Nothing is added once the job is on
+    the Call Board. Regular jobs are untouched.
+  - **Checked:** test added (spares.test.js, today's case: four spares for four jobs),
+    suite 373 of 373. Against the 27 live day files the rule fires on today's job only
+    while it was open; the two other times part of an extra job's crew was missing from
+    option 5 (YFXS03 25 Oct 0734, YMXS01 8 Nov 0620) the job was already called. **Not
+    checked:** on the laptop with real screens (no raw history here).
+  - **Not settled, ask him:** (1) is X the right tell and are YFX / YMX the only extra
+    jobs; (2) YBHS61 and YEBS04: in the crews in town with every craft an open turn, four
+    days each: extra or regular-but-unfilled (left alone for now); (3) the order between
+    jobs at the same time: today B134 (first out) got YEBS30 S1, B133 YFXS01's S1, B130
+    its FO; the site would have said B134 FO, B133 S1, B130 YEBS30 (same three spares,
+    different jobs); (4) a YMX job's S1: YMXS02 8 Nov showed only EN EN09 · FO B113 on duty.
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
