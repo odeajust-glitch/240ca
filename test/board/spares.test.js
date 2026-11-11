@@ -58,3 +58,15 @@ test('an extra yard job: the crafts option 5 does not list are predicted, and co
   // A regular job with one craft listed is left alone.
   assert.deepEqual(S.extraYardJobs([job('YEBS30', 'S1', 16, 0)], town), []);
 });
+
+test('an extra yard job: the spare lined up for the unlisted craft is told it is not on CATS yet', () => {
+  const A = require('../../lib/board/alerts');
+  const { at } = require('../../lib/board/time');
+  const job = (train, cc, h, m) => ({ pos: 1, at: at(2026, 11, 11, h, m), status: 'PLANNED', train, pool: 'YD', cc, turn: train, yard: true, st: '', returns: null });
+  const now = at(2026, 11, 11, 12, 12);
+  const states = A.turnStates({ predictions: [], now }, [], { spareboards: { coFast: [{ turn: 'B134', pos: 1 }, { turn: 'B133', pos: 2 }], coSlow: [] }, vacancies: [job('YFXS01', 'FO', 15, 30)], yardJobs: [], crewsInTown: [] });
+  const out = A.turnEvents({}, states, { lineupRead: true, now });
+  const texts = Object.fromEntries((out.events || out).map((e) => [e.turn, e.text]));
+  assert.equal(texts.B134, 'B134 lined up: YFXS01 planned for 11th 1530, expected call 11th 1330.');
+  assert.equal(texts.B133, "B133 lined up: YFXS01 planned for 11th 1530, expected call 11th 1330. Its S1 job isn't on CATS yet, but YFXS01 is an extra job and its whole crew comes off the spareboard: expect a call.");
+});

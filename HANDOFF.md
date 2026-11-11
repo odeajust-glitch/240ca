@@ -167,7 +167,14 @@ trains on the Call Board).
     while it was open; the two other times part of an extra job's crew was missing from
     option 5 (YFXS03 25 Oct 0734, YMXS01 8 Nov 0620) the job was already called. **Not
     checked:** on the laptop with real screens (no raw history here).
-  - **Not settled, ask him:** (1) is X the right tell and are YFX / YMX the only extra
+  - **The alert** (owner: "what will the notifications say"): the spare lined up for the
+    unlisted craft hears "B133 lined up: YFXS01 planned for 11th 1530, expected call 11th
+    1330. Its S1 job isn't on CATS yet, but YFXS01 is an extra job and its whole crew
+    comes off the spareboard: expect a call." (`lineup.extra` in alerts.js; the listed
+    craft's alert is unchanged; the Notifications tab's reason quotes the same). Shown to
+    him 2026-11-11; ask if he wants it reworded.
+  - **X is the tell: confirmed by Justin 2026-11-11 ("Yes X is the tell for extra jobs").**
+  - **Not settled, ask him:** (1) are YFX / YMX the only extra
     jobs; (2) YBHS61 and YEBS04: in the crews in town with every craft an open turn, four
     days each: extra or regular-but-unfilled (left alone for now); (3) the order between
     jobs at the same time: today B134 (first out) got YEBS30 S1, B133 YFXS01's S1, B130
