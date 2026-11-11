@@ -147,7 +147,12 @@ last). **The last three rows are from 2026-11-10 evening (owner, a phone screens
 conductor fast and slow in the same row. Do the same with engineers"):** Garnet moved up
 beside 501/502 so each craft's two spareboards pair up, and a hidden gap (`.poolgap`, spot
 9) keeps them paired on a saved day with no Garnet board. Both sites; checked in two
-styles on a phone and on a computer, from saved copies of the data. The boards under them open in that
+styles on a phone and on a computer, from saved copies of the data. **Changed again
+minutes later (his screenshot with no Garnet button, 501/502 alone on its row: "move 502
+down beside all"):** the order is now A, S1 / B, S3 / Chain Gang, Drags / Conductor fast,
+slow / Engineer fast, slow / 501/502, then Garnet when its board is there, then All. With
+no Garnet board 501/502 and All share the bottom row; with one, 501/502 and Garnet pair
+and All follows on its own. The boards under them open in that
 same order, whatever order they were switched on in, and a computer uses the same order
 (in its single line of buttons).
 

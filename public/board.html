@@ -2797,8 +2797,11 @@ const poolLabel = (q) => POOL_LABELS[poolShort(q)] || poolShort(q);
 // the same with engineers"), which is why Garnet moved up beside 501/502. A
 // pool not named here comes last, before All. Spot 9 is the gap that keeps
 // the spareboards paired when the buttons before them are an odd number.
-const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6, '501/502 (S5)': 7, Garnet: 8,
-  'Conductor fast board': 10, 'Conductor slow board': 11, 'Engineer fast board': 12, 'Engineer slow board': 13 };
+// Then (owner, 2026-11-10, later the same evening, with Garnet's button gone because the
+// crew had left: "move 502 down beside all"): 501/502 sits last, so with no Garnet board
+// it shares the bottom row with All; with one, 501/502 and Garnet pair up and All follows.
+const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6,
+  'Conductor fast board': 10, 'Conductor slow board': 11, 'Engineer fast board': 12, 'Engineer slow board': 13, '501/502 (S5)': 14, Garnet: 15 };
 const poolSpot = (q) => POOL_SPOTS[poolShort(q)] || 50;
 function pools(s, picked) {
   if (!s.pools.length) return '';
