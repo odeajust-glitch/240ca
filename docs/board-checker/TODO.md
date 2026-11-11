@@ -47,6 +47,15 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    hour until about 2026-12-01, and again after each autumn clock change. Fix: count
    back by calendar day, not by 24 h. Worker change: needs a paste into both Workers
    (accounts session's file).
+5. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
+   name codes split"). The turn-history walk-through with Justin is booked for
+   2026-11-11 21:30. Still to ask him: MAR2 for YSBY02's YA (his rule gave MAR1, taken by
+   the second of MARI); whether to send a notice to the people whose code changed (phones
+   following the old code do not move); the three codes seen on two yard jobs each
+   (YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03), likely trainees moving.
+6. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
+   show relief jobs (`REL#`) or trainees differently. Not yet looked at on the real site:
+   a yard job's heading in Turn History, a followed yard job on Page Health.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
