@@ -229,17 +229,47 @@ trains on the Call Board).
   are told apart by turn too. Takes effect at the next pull and restart (every day file
   rebuilt once more); nothing else waits on it.
 
-- **Job postings (jobs up for bid): asked for 2026-11-11, NOT STARTED, waiting on the
-  screens.** Owner: "i wanna add a check that just shows job postings that are up, incase
-  guys want to post for something"; "basic info essentially the job thats up for bid and
-  the close date, and then we can add options for notifications". Route from the main
-  menu, his words: conductors **3 then 8**, engineers **1 then 8**; "Both screens will
-  need a few boxes filled, but then the rest of the information needed will be on just
-  one screen". Plan agreed: the checker reads both on each check, keeps only the job and
-  the close date (no names), a "Job postings" box on the test site first, alert options
-  after. **Still needed from him before any code:** what goes in each box of the prompt,
-  and a photo of the prompt and of the list with a posting on it (and how it shows a
-  second page). The laptop was on `1402ef9` at 16:00 (`fc88224` not pulled yet).
+- **Job postings (jobs up for bid): BUILT 2026-11-11 16:20 from his three photos, on the
+  test site only. NOT YET RUN AGAINST REAL CATS: needs the laptop to pull and restart,
+  then read the first check's log line.** Owner: "i wanna add a check that just shows job
+  postings that are up, incase guys want to post for something"; "basic info essentially
+  the job thats up for bid and the close date, and then we can add options for
+  notifications". Notes on the screen are in lib/board/screens.js above
+  `parseCircularInquiry`.
+  - **Route (his words):** conductors main menu 3 then 8, engineers 1 then 8. The screen is
+    CIRCULAR INQUIRY- TRAIN/YARD (PSTS02T). His photos: DIST 45 / SUB-DIST SA prefilled;
+    "*" typed in LOCAL/REG, PERM/TEMP, ASGN/POOL/SPARE and CHG CARD/746/OTHER; today's date
+    (YYMMDD) in the first SEARCH CLOSE DATES box, the second left empty; Enter. The list
+    ends "END OF RECORDS FOR THIS CRITERIA"; PF8 scrolls.
+  - **Laptop** (scripts/board-auto.js, in `runRoute` before the spareboards; about once an
+    hour, `postingsReadAt`): `chooseFromMenus(page, 8, 3 | 1)`, `fillCircularInquiry`
+    (finds the boxes by where they sit: rows of 2 / 2 / 4 text boxes; anything else is
+    logged as "boxes by row …" and skipped), Enter, F8 to the end (12 pages at most). Read
+    **unmasked in memory** (the masked copy would lose the descriptions; the screen has no
+    names) and only the parsed lines are kept, in BoardChecker\postings.json: `{ at, co:
+    { read, from, complete, list }, en: {…} }`, each job `{ number, description, ddsd,
+    assignment, pool, turn, yard, cc, kind (A/U/X), change (1/2/3), closes (YYYY-MM-DD),
+    term (P/T), cia }`. Nothing of it goes into the saved check or history. A craft that
+    fails keeps its last list. Log line: "Job postings, conductors (3 → 8): N up for bid".
+  - **Site:** `buildSite({ postings })` copies it to `data/postings.json`. Page
+    (`jobPostings`, `POSTINGS`, box `postings` in `SECTIONS`, **behind `PREVIEW`**):
+    Current → Job postings, conductors then engineers, by closing date, "closes today /
+    tomorrow" in colour; turn, craft, CATS's description, permanent / temporary,
+    assignment / pool turn / spareboard, circular number. **No crew names beside the
+    turns** (told him names stay off this box). To promote: drop the `PREVIEW` tests in
+    `jobPostings` and where postings.json is loaded.
+  - **Checked:** parser test from his photo (screens-extra.test.js), suite 376 of 376; the
+    box on the real test site with his photo's eight conductor postings fed in (phone
+    width, no errors, no sideways scroll; not shown on the main site).
+  - **Not checked / guesses to confirm on the first real run:** that the engineers' menu
+    1 → 8 is the same screen and takes the same boxes (he sent the conductor one); that
+    the box rows come out 2 / 2 / 4; that Enter and F8 behave as on the other screens;
+    what the list shows when nothing is up; the meaning of the 1/2/3 and CIA columns (kept
+    raw, CIA not shown). **If the log says "skipped job postings …", the message says
+    which step.**
+  - **Next, on his word only:** alert options (a new posting; a posting closing soon;
+    per craft). Not built.
+  - The laptop was on `1402ef9` at 16:00 (`fc88224` and this not pulled yet).
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated

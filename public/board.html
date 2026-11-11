@@ -2903,6 +2903,33 @@ function daysOff(s) {
     <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call still takes it and goes spare; a spare off then is passed over. A trainee (ET / TT) off changes nothing: their jobs never go spare.</div></section>`;
 }
 
+// Jobs up for bid (owner, 2026-11-11: "a check that just shows job postings
+// that are up, incase guys want to post for something"; "the job thats up for
+// bid and the close date"). From CATS's Circular Inquiry, read about once an
+// hour for conductors (3 → 8) and engineers (1 → 8): data/postings.json. No
+// names on it. Test site only until he promotes it. Bidding is done in CATS.
+let POSTINGS = null;
+function jobPostings() {
+  if (!PREVIEW || !POSTINGS) return '';
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const daysTo = (d) => Math.round((Date.parse(`${d}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
+  const KIND = { A: 'assignment', U: 'pool turn', X: 'spareboard' };
+  const group = (name, g) => {
+    if (!g) return `<h3 class="off-heading">${name}</h3><p class="anote" style="margin:4px 14px 10px">Not read yet.</p>`;
+    const list = (g.list || []).filter((j) => j.closes >= today);
+    const rows = list.map((j) => { const n = daysTo(j.closes); return `<tr${marked(j.turn) ? ' class="hit"' : ''}><td class="num">${esc(dayName(j.closes))}<div class="crew">${n <= 0 ? '<span class="spare">closes today</span>' : n === 1 ? '<span class="spare">closes tomorrow</span>' : `in ${n} days`}</div></td>
+      <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div></td></tr>`; }).join('');
+    const read = g.read ? new Date(g.read).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '';
+    return `<h3 class="off-heading">${name} · ${list.length}</h3><div class="scroll"><table><thead><tr><th>Closes</th><th>Job</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">Nothing up for bid.</td></tr>'}</tbody></table></div>
+      <p class="anote" style="margin:4px 14px 10px">Read from CATS ${esc(read)}${g.complete === false ? '; the end of the list was not reached, so there may be more' : ''}.</p>`;
+  };
+  const n = ['co', 'en'].reduce((a, k) => a + ((POSTINGS[k] && POSTINGS[k].list) || []).filter((j) => j.closes >= today).length, 0);
+  return `<section class="sheet" id="sec-postings"><header><h2>Job postings</h2><span class="meta">${n} up for bid</span></header>
+    ${group('Conductors', POSTINGS.co)}${group('Engineers', POSTINGS.en)}
+    <div class="foot">Jobs up for bid in CATS's circular inquiry, read about once an hour. The closing date is CATS's; bid in CATS before then.</div></section>`;
+}
+
 // Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
 function yardJobs(s) {
   if (!(s.yardJobs || []).length) return '';
@@ -5133,6 +5160,7 @@ source().then(async (src) => {
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
       if (PREVIEW) loadCrew();
+      if (PREVIEW) getJSON('data/postings.json').then((x) => { if (x && (x.co || x.en)) { POSTINGS = x; setMode(mode); } }).catch(() => {});
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }
@@ -6334,6 +6362,7 @@ source().then(async (src) => {
     { k: 'pools', name: 'Pools', col: 2, html: (s) => pools(s, poolPicks || []) },
     { k: 'vacancies', name: 'Jobs going spare', col: 2, html: (s) => vacancies(s) },
     { k: 'daysoff', name: 'Days off', col: 2, html: (s) => daysOff(s) },
+    { k: 'postings', name: 'Job postings', col: 2, html: () => jobPostings() },
     { k: 'callboard', name: 'Call board', col: 2, html: (s) => onDuty(s) },
     { k: 'yard', name: 'Yard jobs', col: 2, html: (s) => yardJobs(s) },
     { k: 'sequence', name: 'Calling sequence', col: 2, html: (s) => sequence(s) },

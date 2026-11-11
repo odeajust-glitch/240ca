@@ -50,6 +50,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 5. **Extra yard jobs, two questions still open:** which job is called first when two
    start at the same time (11 Nov: the first spare out got YEBS30, not YFXS01's FO);
    whether a YMX job always takes an S1 (YMXS02 8 Nov showed EN + FO only).
+6. **Job postings (test site only since 2026-11-11).** After the first real read: does
+   it list what CATS lists, for both crafts; then promote to the main site or not, and
+   which alerts he wants (new posting, closing soon). Details in HANDOFF.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both

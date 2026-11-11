@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -380,6 +380,36 @@ async function fillByLabel(page, values) {
   }, values);
 }
 
+// The Circular Inquiry's boxes (owner's photos, 2026-11-11), found by where
+// they sit, since CATS renames them: the row with DIST / SUB-DIST, then
+// LOCAL/REG and ASGN/POOL/SPARE, then PERM/TEMP, CHG CARD/746/OTHER and the
+// two SEARCH CLOSE DATES boxes. The four letters get "*", the first date
+// today's (YYMMDD), the second is left empty. → '' or what didn't fit.
+async function fillCircularInquiry(page, today) {
+  return catsFrame(page).evaluate((date) => {
+    const boxes = [...document.querySelectorAll('input[type=text]')].map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter((b) => b.r.width > 0 && b.r.height > 0).sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left);
+    const rows = [];
+    for (const b of boxes) {
+      const mid = (b.r.top + b.r.bottom) / 2;
+      const row = rows.find((x) => Math.abs(x.mid - mid) < 10);
+      if (row) row.list.push(b); else rows.push({ mid, list: [b] });
+    }
+    for (const x of rows) x.list.sort((a, b) => a.r.left - b.r.left);
+    // The date boxes can sit a little lower than PERM/TEMP's line: the same row.
+    if (rows.length > 3 && rows[2].list.length === 2 && rows[3].list.length === 2 && rows[3].mid - rows[2].mid < 26 && rows[3].list[0].r.left > rows[2].list[1].r.right) {
+      rows[2].list.push(...rows[3].list); rows.splice(3, 1);
+    }
+    const shape = rows.slice(0, 4).map((x) => x.list.length).join('/');
+    if (rows.length < 3 || rows[0].list.length !== 2 || rows[1].list.length !== 2 || rows[2].list.length !== 4) return `boxes by row ${shape}, expected 2/2/4`;
+    const set = (b, v) => { b.el.value = v; };
+    set(rows[1].list[0], '*'); set(rows[1].list[1], '*');
+    set(rows[2].list[0], '*'); set(rows[2].list[1], '*');
+    set(rows[2].list[2], date); set(rows[2].list[3], '');
+    return '';
+  }, today);
+}
+
 async function chooseFromMenus(page, option, menu = 3) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: String(menu) });
@@ -404,6 +434,7 @@ async function chooseFromMenus(page, option, menu = 3) {
 // turns of the same kind is left unmatched.
 let holders = null;
 let assignReadAt = 0; // the assignment history (3 → 7) is read about once an hour
+let postingsReadAt = 0; // the jobs up for bid (3 → 8, 1 → 8) are read about once an hour
 const knownPeople = {
   get: (key) => Holders.turnOf(holders || (holders = Holders.loadHolders(HOLDERS_FILE)), key),
 };
@@ -631,6 +662,49 @@ async function runRoute(page, opts = {}) {
       console.log(`  Assignment history${assignFill ? ` backfill from ${assignFill.start}` : ''} (3 → 7): ${uniq.size} trains read, ${[...uniq.values()].filter((r) => r.off != null).length} with their off duty.`);
       if (assignFill) { try { fs.rmSync(path.join(DATA_DIR, 'assign-backfill.json')); } catch { /* gone */ } }
     }
+  }
+
+  // Jobs up for bid (owner, 2026-11-11): the Circular Inquiry, conductors
+  // 3 → 8 and engineers 1 → 8, about once an hour. Read unmasked, in memory
+  // (the masked copy would lose the job descriptions; there are no names on
+  // this screen), and only the parsed lines are kept: BoardChecker\postings.json.
+  // Nothing of it goes into the saved check. Trouble with it only skips it.
+  if (Date.now() - postingsReadAt > 55 * 60000) {
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA', { timeZone: 'America/Toronto' }).replace(/-/g, '').slice(2);
+    let kept = {};
+    try { kept = JSON.parse(fs.readFileSync(POSTINGS_FILE, 'utf8')); } catch { /* none yet */ }
+    let read = 0;
+    for (const [craft, menu, name] of [['co', 3, 'conductors'], ['en', 1, 'engineers']]) {
+      try {
+        let c = await chooseFromMenus(page, 8, menu);
+        if (!S.isCircularInquiry(c.text)) throw new Error('not the Circular Inquiry screen');
+        const wrong = await fillCircularInquiry(page, today);
+        if (wrong) throw new Error(wrong);
+        c = await press(page, 'Enter');
+        if (!S.isCircularInquiry(c.text)) throw new Error('not the Circular Inquiry screen after Enter');
+        const list = new Map();
+        let ended = false;
+        for (let pageNo = 0; pageNo < 12; pageNo++) {
+          const rows = await unmaskedRows();
+          for (const j of rows ? S.parseCircularInquiry(rows) : []) list.set(j.number, j);
+          if (/END\s+OF\s+RECORDS/.test(c.text)) { ended = true; break; }
+          const next = await press(page, 'F8').catch(() => null);
+          if (!next || !S.isCircularInquiry(next.text) || next.text === c.text) break;
+          c = next;
+        }
+        const said = (c.text.match(/(NO\s+RECORDS[^=]{0,60}|INVALID[^=]{0,60}|ERROR[^=]{0,60})/) || [])[0];
+        kept[craft] = { read: now.toISOString(), from: today, complete: ended, list: [...list.values()].sort((a, b) => (a.closes < b.closes ? -1 : a.closes > b.closes ? 1 : a.number < b.number ? -1 : 1)) };
+        console.log(`  Job postings, ${name} (${menu} → 8): ${list.size} up for bid${ended ? '' : ' (the end of the list was not reached)'}${said ? ` (CATS: ${said.trim()})` : ''}.`);
+        read++;
+      } catch (err) {
+        if (err instanceof NeedSignIn) throw err;
+        console.log(`  (skipped job postings, ${name} (${menu} → 8): ${err.message})`);
+      }
+    }
+    // Tried, read or not: not again for an hour (a screen that doesn't fit is logged once an hour, not every check).
+    postingsReadAt = Date.now();
+    if (read) { try { fs.writeFileSync(POSTINGS_FILE, JSON.stringify({ ...kept, at: now.toISOString() })); } catch (err) { console.log(`  (job postings not saved: ${err.message})`); } }
   }
 
   // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and
@@ -909,7 +983,7 @@ async function publishSite(changed) {
     const dir = path.join(OUT_DIR, 'site');
     // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
     const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, splits: CODE_SPLITS_FILE });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, splits: CODE_SPLITS_FILE, postings: POSTINGS_FILE });
     // The owner's health line: on Cloudflare only, where the Worker keeps it
     // to the owner's email (status/ is never served as a file).
     const healthFile = path.join(dir, 'status', 'health.json');

@@ -643,3 +643,35 @@ test('501/502: a fill-in for one craft leaves the other craft its trip', () => {
   const both = { ...s, onDuty: [{ ...s.onDuty[0], backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }, { craft: 'CO', job: 'S501', turn: 'B119' }] }] };
   assert.equal(BoardTurns.facts(both, 'S501')[0].workedBy, 'SA07');
 });
+
+// The Circular Inquiry (jobs up for bid), laid out as in the owner's photo of
+// 2026-11-11: number, description, district, assignment, craft, A/U/X, 1/2/3,
+// closing date, P/T, CIA.
+test('job postings: the Circular Inquiry gives each job up for bid and its closing date', () => {
+  const lines = [
+    'DIST:  45  SUB-DIST:  SA  CIRCULAR  INQUIRY-  TRAIN/YARD                    PSTS02T',
+    'LOCAL/REG(L/R):  *     ASGN/POOL/SPARE   (A/U/X):  *        SEARCH  CLOSE  DATES',
+    'PERM/TEMP(P/T):  *     CHG  CARD/746/OTHER(1/2/3):  *     (  261111  -        )',
+    'X  CIRCULAR  DESCRIPTION            D/SD   ASGNMT  CC  A/U/X  1/2/3  CLOSED  P/T  CIA',
+    '   785410   1445  PLANK  YDH   W/T   45SA   YPRS30  S1    A      3    261112   P',
+    '   786099   502/501  CREW  B   CO    45SA   S5S502  CO    U      3    261114   T',
+    '   785587   0800  BUNKH.YDH   S/S    45SA   YBHS01  S1    A      3    261115   T',
+    '   785550   CDR  CHAIN  GANG         45SA   SRSR05  CO    U      3    261116   T',
+    '   785549   CDR  CHAIN  GANG         45SA   SRSR11  CO    U      3    261116   T     C',
+    '   785578   0800   BUNKH.YDF   S/S   45SA   YBHS01  FO    A      3    261122   T',
+    '  ENTER=INQUIRE/PROCESS    PF1=HELP    PF3=EXIT    PF8=SCROLL    PF11=PREV  MENU',
+    'END  OF  RECORDS  FOR  THIS    CRITERIA',
+  ];
+  const rows = parseGrid(lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${m[0]}`)].join(' | ')));
+  assert.equal(S.isCircularInquiry(rows.map((r) => r.text).join(' ')), true);
+  const list = S.parseCircularInquiry(rows);
+  assert.deepEqual(list.map((j) => `${j.number} ${j.description} | ${j.turn} ${j.cc} ${j.kind} ${j.closes} ${j.term}${j.cia ? ` ${j.cia}` : ''}`), [
+    '785410 1445 PLANK YDH W/T | YPRS30 S1 A 2026-11-12 P',
+    '786099 502/501 CREW B CO | S502 CO U 2026-11-14 T',
+    '785587 0800 BUNKH.YDH S/S | YBHS01 S1 A 2026-11-15 T',
+    '785550 CDR CHAIN GANG | SR05 CO U 2026-11-16 T',
+    '785549 CDR CHAIN GANG | SR11 CO U 2026-11-16 T C',
+    '785578 0800 BUNKH.YDF S/S | YBHS01 FO A 2026-11-22 T',
+  ]);
+  assert.deepEqual([list[0].yard, list[0].pool, list[1].yard, list[1].pool, list[3].pool], [true, '', false, 'S5', 'SR']);
+});
