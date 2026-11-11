@@ -628,7 +628,10 @@ no name goes into the health report: the names come from the locked `data/crew.j
   so names in this table do not switch names on across the page. No passcode saved → the
   tables show as before with one line saying why.
 Checked here with a made-up names file and report in three states (site names off, on, no
-passcode): right names, no page errors. Not seen with the real file. Suite 299 of 311.
+passcode): right names, no page errors. **Confirmed by Justin on the real page after his
+pull, 2026-11-11: "names are showing".** (That also shows the Page Health tab draws after
+the tab fix; Search Review, Notifications and Members are still unconfirmed.) Suite 299 of
+311.
 **The main site is locked since the evening of 11-10 (page and data answer 401 without an
 account), so a browser check from a session must be fed its own copies of the data files;
 the live fetches earlier notes describe no longer work.** The test site's address is not
