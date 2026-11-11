@@ -460,6 +460,22 @@ trains on the Call Board).
     4.16 is picked, the craft kept over a reload; the main site keeps the old page (the
     picker hidden, all 13 ticked). Suite 383 of 383. To promote: pass `simple: true`.
 
+- **Two "possible problems" flags on 11 Nov traced to one cause, nothing changed, waiting on
+  Justin's rule (he pasted them at 18:15: "A42431 11 … went to A (SA07) but the sequence
+  says B", "E27861 11 … went to B (SB02) but the sequence says SR").** The road day of the
+  11th ran M30241 09 → A, **RM39491 10 (a rescue) → Chain Gang (SR08 + SD04)**, Z14891 10
+  → A, A42431 11 → A, M38261 11 → B, E27861 11 → B. That is three A and two B, in order,
+  if the rescue is not counted. The site counted the rescue as the second A train (it
+  predicted SA08 for it and flagged "went to SR … sequence says A" that morning), so
+  every later train sat one slot late: A42431 looked like the first B and E27861 like a
+  Chain Gang train. The line-up flipped E27861 between SB02 and the Chain Gang all day
+  for the same reason. The rule in force (his, 2026-11-07, `rescueSpare` in engine.js): a
+  rescue takes the normal sequence unless option 5 lists both crafts spare with no turn.
+  In the saved days 13 Sarnia rescues were called: 9 went to the Chain Gang, 2 to B, 1 to
+  A, 1 unclear (two entries for one train), so "a rescue goes to the Chain Gang and uses
+  no A or B slot" fits most but not all. **Asked him for the rule; do not change the
+  sequence until he gives it.**
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
