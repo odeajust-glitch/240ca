@@ -45,13 +45,13 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    now; when it's built, an email notification rather than a phone alert).
 4. **My week for everyone:** the Sunday alert goes only to phones following
    JUOD for now; open it up if the owner likes it.
-0. **Accounts: only approved people see the site** (owner, 2026-11-09).
-   Built in the Worker, not deployed: [ACCOUNTS.md](ACCOUNTS.md). Left:
-   Justin's test on `board-test`; paste into `board` unlocked; the "sign
-   up to keep access" notice and the 401 → `/account` hop in `board.html`
-   (Test tab first); then `LOCK=on` (RailroadTracker set aside by the
-   owner, 2026-11-09). Also:
-   `isOwner()` trusts the Access email header (see HANDOFF).
+0. **Accounts, the lock and crew names** (owner, 2026-11-09 → 11-10). The
+   main site is locked to members since 19:00 on 2026-11-10; state and
+   what is left are at the top of [HANDOFF](../../HANDOFF.md) and in
+   [ACCOUNTS.md](ACCOUNTS.md). Left: `CREW_NAMES` = `on` on `board` once
+   the test site's names look right; delete `MAIL_DAY_MAX` about 11-13;
+   alerts to phones without an account after the week's grace (about
+   11-17, on his say-so); `isOwner()` and the Access email header.
 5. **Analytics: anything more?** The owner's picks are built (see "Done");
    say what to change once it has run on real checks for a while.
 
