@@ -236,6 +236,12 @@
   .daypick { display: grid; gap: 4px; margin-bottom: 12px; font-size: 12px; color: var(--soft); }
   .daypick select { font: inherit; font-size: 14px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
   .turnpick { display: grid; gap: 4px; margin-bottom: 14px; font-size: 12px; color: var(--soft); }
+  .turnhelp { margin-top: 6px; font-size: 13px; }
+  .turnhelp > summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 6px 0; }
+  .turnhelp h4 { margin: 10px 0 4px; font: 600 13px/1.3 var(--body); color: var(--ink); }
+  .rail .turnpick .turnhelp ol { margin: 0; padding: 0 0 0 22px; border-left: 0; display: grid; gap: 4px; color: var(--ink); line-height: 1.4; list-style: decimal outside; }
+  .rail .turnpick .turnhelp ol li { display: list-item; list-style: decimal outside; padding: 0; border: 0; }
+  .turnhelp p { margin: 6px 0 0; color: var(--soft); line-height: 1.4; }
   .turnpick .row { display: flex; gap: 6px; }
   .turnpick input { flex: 1 1 auto; width: 0; min-width: 0; font: 600 15px/1 var(--mono); text-transform: uppercase; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; }
   .turnpick input::placeholder { font-weight: 400; text-transform: none; color: var(--soft); }
@@ -2135,6 +2141,27 @@
       <div class="row"><input id="turn" list="turnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6"><button id="turnclear" type="button" aria-label="Clear turn" hidden>✕</button></div>
       <datalist id="turnlist"></datalist>
       <div id="tracked" class="tracked"></div>
+      <!-- Owner, 2026-11-10: "add instructions beside find a turn to explain how to enable
+           notifications ... and how to add the page as an icon on your homescreen". Folded,
+           so the box stays short; the steps match what the Track box does (openTrack). -->
+      <details class="turnhelp"><summary>How to get alerts on this phone</summary>
+        <h4>iPhone: first, put the site on your Home Screen</h4>
+        <p>An iPhone only sends alerts from the Home Screen icon, not from Safari.</p>
+        <ol><li>Open this site in <b>Safari</b>.</li>
+          <li>Tap the <b>Share</b> button (the square with an arrow).</li>
+          <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+          <li>Open the site from the new icon, sign in, and turn on your alerts there.</li></ol>
+        <h4>Android: add the icon</h4>
+        <ol><li>Open this site in <b>Chrome</b>.</li>
+          <li>Tap the <b>⋮</b> menu, then <b>Add to Home screen</b> (or <b>Install app</b>).</li>
+          <li>Alerts work from Chrome or from the icon.</li></ol>
+        <h4>Then turn on alerts for your turn</h4>
+        <ol><li>Type your turn above (for example SR03) or your name code, and pick it.</li>
+          <li>A box opens. Tick what you want to hear about: lined up, ordered, on duty, and so on.</li>
+          <li>Tap <b>OK</b>. When the phone asks, tap <b>Allow</b> notifications.</li>
+          <li>Your turn then shows under the box with a 🔔. Tap it any time to change or stop its alerts.</li></ol>
+        <p>Not getting alerts? Check the phone's Settings → Notifications for this site, and that Do Not Disturb or a Focus is off.</p>
+      </details>
     </div>
     <h2>Snapshots</h2>
     <label class="daypick" for="day"><span>Day</span><select id="day"></select></label>

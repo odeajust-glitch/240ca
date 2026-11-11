@@ -53,6 +53,14 @@ note further down (search for the words in bold).**
   train); a stand-in on a 501/502 job is forgotten when the trip is over (the SA07 alert);
   names on Page Health's follower tables; the pool buttons with each craft's two
   spareboards on one row.
+- **"How to get alerts on this phone" under Find a turn, 2026-11-10 21:10 (owner: "add
+  instructions beside find a turn to explain how to enable notifications ... and how to add
+  the page as an icon on your homescreen").** A folded `details.turnhelp` in the rail of
+  `public/board.html`, both sites: iPhone first (Safari → Share → Add to Home Screen, open
+  from the icon; an iPhone only alerts from there), Android (Chrome ⋮ → Add to Home
+  screen), then the four steps of the Track box, and one line for alerts that don't
+  arrive. The rail's `ol` rule strips numbers, hence the longer selector. Checked on the
+  real site's data in two styles on a phone and on a computer; he has not seen it yet.
 - **Rule from Justin, 2026-11-10: previews go to the test site only (behind `PREVIEW`),
   never a tab on the main site.** Small things he asks for directly, and owner-only pages,
   have gone to both sites, said plainly each time.
