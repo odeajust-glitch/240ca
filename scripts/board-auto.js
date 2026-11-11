@@ -383,8 +383,8 @@ async function fillByLabel(page, values) {
 // The Circular Inquiry's boxes (owner's photos, 2026-11-11), found by where
 // they sit, since CATS renames them: the row with DIST / SUB-DIST, then
 // LOCAL/REG and ASGN/POOL/SPARE, then PERM/TEMP, CHG CARD/746/OTHER and the
-// two SEARCH CLOSE DATES boxes. The four letters get "*", the first date
-// today's (YYMMDD), the second is left empty. → '' or what didn't fit.
+// two SEARCH CLOSE DATES boxes. The four letters get "*"; the dates are not
+// typed (CATS puts today's in when Enter is pressed). → '' or what didn't fit.
 async function fillCircularInquiry(page, today) {
   return catsFrame(page).evaluate((date) => {
     const boxes = [...document.querySelectorAll('input[type=text]')].map((el) => ({ el, r: el.getBoundingClientRect() }))
@@ -405,7 +405,8 @@ async function fillCircularInquiry(page, today) {
     const set = (b, v) => { b.el.value = v; };
     set(rows[1].list[0], '*'); set(rows[1].list[1], '*');
     set(rows[2].list[0], '*'); set(rows[2].list[1], '*');
-    set(rows[2].list[2], date); set(rows[2].list[3], '');
+    // The close-date boxes are left as they are (owner, 2026-11-11: "the date
+    // will auto generate when enter is hit if nothing is there").
     return '';
   }, today);
 }

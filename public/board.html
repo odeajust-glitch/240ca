@@ -2037,7 +2037,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Reference</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2925,7 +2925,7 @@ function jobPostings() {
       <p class="anote" style="margin:4px 14px 10px">Read from CATS ${esc(read)}${g.complete === false ? '; the end of the list was not reached, so there may be more' : ''}.</p>`;
   };
   const n = ['co', 'en'].reduce((a, k) => a + ((POSTINGS[k] && POSTINGS[k].list) || []).filter((j) => j.closes >= today).length, 0);
-  return `<section class="sheet" id="sec-postings"><header><h2>Job postings</h2><span class="meta">${n} up for bid</span></header>
+  return `<section class="sheet" id="sec-postings"><header><h2>Up for bid</h2><span class="meta">${n} job${n === 1 ? '' : 's'}</span></header>
     ${group('Conductors', POSTINGS.co)}${group('Engineers', POSTINGS.en)}
     <div class="foot">Jobs up for bid in CATS's circular inquiry, read about once an hour. The closing date is CATS's; bid in CATS before then.</div></section>`;
 }
@@ -5159,6 +5159,10 @@ source().then(async (src) => {
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
+      // Test site: the Job postings tab, and Reference is called Job Aids.
+      modePost.hidden = !PREVIEW;
+      modeRef.textContent = PREVIEW ? 'Job Aids' : 'Reference';
+      if (!PREVIEW && mode === 'postings') mode = 'current';
       if (PREVIEW) loadCrew();
       if (PREVIEW) getJSON('data/postings.json').then((x) => { if (x && (x.co || x.en)) { POSTINGS = x; setMode(mode); } }).catch(() => {});
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
@@ -6362,7 +6366,6 @@ source().then(async (src) => {
     { k: 'pools', name: 'Pools', col: 2, html: (s) => pools(s, poolPicks || []) },
     { k: 'vacancies', name: 'Jobs going spare', col: 2, html: (s) => vacancies(s) },
     { k: 'daysoff', name: 'Days off', col: 2, html: (s) => daysOff(s) },
-    { k: 'postings', name: 'Job postings', col: 2, html: () => jobPostings() },
     { k: 'callboard', name: 'Call board', col: 2, html: (s) => onDuty(s) },
     { k: 'yard', name: 'Yard jobs', col: 2, html: (s) => yardJobs(s) },
     { k: 'sequence', name: 'Calling sequence', col: 2, html: (s) => sequence(s) },
@@ -6552,7 +6555,18 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#ref'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
+    // The test site calls this tab Job Aids (owner, 2026-11-11: "can we change
+    // reference to Job Aids, we can try these changes on the test site first").
+    refState.title = PREVIEW ? 'Job Aids' : 'Reference';
     window.BoardRef.render(view, refState);
+  }
+  // Job postings tab (owner, 2026-11-11: "can this information be put on a
+  // tab. the tab can be job postings"): the jobs up for bid. Test site only.
+  const modePost = document.getElementById('modePost');
+  function renderPostings() {
+    const view = document.getElementById('view');
+    try { history.replaceState(null, '', '#postings'); } catch (e) { /* not allowed in some frames */ }
+    view.innerHTML = `<div class="thead"><div class="when">Job postings</div></div>${jobPostings() || '<p class="empty">No job postings have been read yet. The checker reads them from CATS about once an hour.</p>'}`;
   }
   // Owner preview only: show changed notes rather than repeating the whole
   // status. All original observations remain in the full-history disclosure.
@@ -6765,7 +6779,7 @@ source().then(async (src) => {
   function setMode(m) {
     if (mode === 'current') flushCurrentBoxes();
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask');
+    document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask' || mode === 'postings');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.add('nav-one-row'); // on a phone the tabs wrap into full rows (owner, 2026-11-10; the class keeps its first name)
     document.body.classList.toggle('turns', mode === 'turns');
@@ -6780,6 +6794,7 @@ source().then(async (src) => {
     modeNotes.setAttribute('aria-pressed', mode === 'notes');
     modeMembers.setAttribute('aria-pressed', mode === 'members');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
+    modePost.setAttribute('aria-pressed', mode === 'postings');
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
     // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
@@ -6792,6 +6807,7 @@ source().then(async (src) => {
     else if (mode === 'held') renderHeld();
     else if (mode === 'analytics') renderAnalytics();
     else if (mode === 'ref') renderRef();
+    else if (mode === 'postings') renderPostings();
     else if (mode === 'ask') renderAsk();
     else if (mode === 'turns') renderTurns();
     else if (mode === 'current') { if (day === src.days[0] && list.length) show(list.length - 1); else openDay(src.days[0]); }
@@ -7510,6 +7526,7 @@ source().then(async (src) => {
     document.getElementById('styhead').classList.add('vish');
   }).catch(() => {});
   modeRef.onclick = () => setMode('ref');
+  modePost.onclick = () => setMode('postings');
   modeAsk.onclick = () => setMode('ask');
 
   // An hour: its first check.

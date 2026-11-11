@@ -100,7 +100,7 @@
     const penaltyRows = [];
     for (let m = 600; m <= 960; m += 1) penaltyRows.push(`<tr><td class="num">${hm(m)}</td><td class="num">${penalty(m).toFixed(2)}</td></tr>`);
     const steps = [[961, 1020], [1021, 1080], [1081, 1140], [1141, 1200], [1201, 1260], [1261, 1320]].map(([a, b]) => `<tr><td class="num">${hm(a)} – ${hm(b)}</td><td class="num">${penalty(b).toFixed(2)}</td></tr>`).join('');
-    view.innerHTML = `<div class="thead"><div class="when">Reference</div>
+    view.innerHTML = `<div class="thead"><div class="when">${esc(state.title || 'Reference')}</div>
         <div class="turnpick"><label for="refq">Search (a track, a code, a word)</label><div class="row"><input id="refq" placeholder="e.g. R013, 33, vacation" autocomplete="off" spellcheck="false" value="${esc(state.q || '')}"></div></div></div>
       <section class="sheet refpage">
       ${q ? '' : sec('held', 'Held-away penalty (time off duty → penalty miles)', `<div class="refcalc">

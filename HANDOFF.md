@@ -238,8 +238,10 @@ trains on the Call Board).
   `parseCircularInquiry`.
   - **Route (his words):** conductors main menu 3 then 8, engineers 1 then 8. The screen is
     CIRCULAR INQUIRY- TRAIN/YARD (PSTS02T). His photos: DIST 45 / SUB-DIST SA prefilled;
-    "*" typed in LOCAL/REG, PERM/TEMP, ASGN/POOL/SPARE and CHG CARD/746/OTHER; today's date
-    (YYMMDD) in the first SEARCH CLOSE DATES box, the second left empty; Enter. The list
+    "*" typed in LOCAL/REG, PERM/TEMP, ASGN/POOL/SPARE and CHG CARD/746/OTHER; Enter. The
+    SEARCH CLOSE DATES boxes are **not typed** (his word, later that day: "the date will
+    auto generate when enter is hit if nothing is there"; the checker typed it for an hour
+    of code that never ran). The list
     ends "END OF RECORDS FOR THIS CRITERIA"; PF8 scrolls.
   - **Laptop** (scripts/board-auto.js, in `runRoute` before the spareboards; about once an
     hour, `postingsReadAt`): `chooseFromMenus(page, 8, 3 | 1)`, `fillCircularInquiry`
@@ -252,12 +254,21 @@ trains on the Call Board).
     term (P/T), cia }`. Nothing of it goes into the saved check or history. A craft that
     fails keeps its last list. Log line: "Job postings, conductors (3 → 8): N up for bid".
   - **Site:** `buildSite({ postings })` copies it to `data/postings.json`. Page
-    (`jobPostings`, `POSTINGS`, box `postings` in `SECTIONS`, **behind `PREVIEW`**):
-    Current → Job postings, conductors then engineers, by closing date, "closes today /
+    (`jobPostings`, `POSTINGS`, **behind `PREVIEW`**): **its own tab, "Job postings"**
+    (owner, 16:30: "can this information be put on a tab. the tab can be job postings";
+    `modePost`, mode `postings`, `renderPostings`, `#postings`; first built as a box on
+    Current, moved), conductors then engineers, by closing date, "closes today /
     tomorrow" in colour; turn, craft, CATS's description, permanent / temporary,
     assignment / pool turn / spareboard, circular number. **No crew names beside the
     turns** (told him names stay off this box). To promote: drop the `PREVIEW` tests in
-    `jobPostings` and where postings.json is loaded.
+    `jobPostings`, where postings.json is loaded and where `modePost` is un-hidden.
+  - **Reference is called "Job Aids" on the test site** (owner, same message: "can we
+    change reference to Job Aids, we can try these changes on the test site first"): the
+    tab's label and the page's heading (`refState.title`, public/board-ref.js) when
+    `PREVIEW`; the main site still says Reference. To promote: make it the only name.
+  - **Every tab clicked on both sites with this page, 16:40:** 13 on the test site (with
+    Job Aids and Job postings), 12 on the main site, each showing its own heading and its
+    own button lit, no errors, no sideways scroll.
   - **Checked:** parser test from his photo (screens-extra.test.js), suite 376 of 376; the
     box on the real test site with his photo's eight conductor postings fed in (phone
     width, no errors, no sideways scroll; not shown on the main site).
