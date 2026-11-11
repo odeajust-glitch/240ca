@@ -494,6 +494,8 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
   assert.equal(saved.sent.length, 30); // how many were sent each day, today first: none yet
   assert.ok(saved.sent.every((d) => d.n === 0));
   delete saved.sent;
+  assert.deepEqual(saved.log, []); // who submitted, and when: nothing yet
+  delete saved.log;
   assert.deepEqual(saved, { co: 'co.rep@example.com', en: 'en.rep@example.com', namesPass: 'secret', mail: true });
   assert.equal((await call('/settings/held186.json')).status, 404);
   assert.deepEqual(await (await call('/api/held186')).json(), { CO: true, EN: true });
@@ -522,6 +524,16 @@ test('the Worker sends a held claim to the right rep, settings owner only', asyn
     // The count for Page Health: today's total and by craft, the owner only.
     const today = (await (await call('/health/held186', { headers: owner })).json()).sent[0];
     assert.deepEqual(today, { day: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' }), n: 6, co: 5, en: 1 });
+    // Who submitted, and when: every try that reached the limits or the email, newest
+    // first, the owner only. Not the text, the copy address or the internet address.
+    const log = (await (await call('/health/held186', { headers: owner })).json()).log;
+    assert.equal(log.length, 8);
+    const first = log[log.length - 1];
+    assert.deepEqual([first.craft, first.name, first.out, first.result, first.copy], ['EN', 'Pat Doe', 'E27861 03', 'sent', true]);
+    assert.ok(Date.now() - first.at < 60000);
+    assert.deepEqual(log.filter((e) => e.result !== 'sent').map((e) => e.result).sort(), ['not sent: 5 already sent from that connection today', 'not sent: the same claim was already sent']);
+    assert.ok(!JSON.stringify(log).includes('pat@example.com') && !JSON.stringify(log).includes('details') && !JSON.stringify(log).includes('203.0.113.9'));
+    assert.equal((await call('/stats/held186/log/' + new Date().toISOString().slice(0, 7) + '.json')).status, 404); // never served as a file
     // Why it didn't go, from what Google answered.
     const why = async (resp) => { globalThis.fetch = async () => resp; return (await (await call('/api/held186', { method: 'POST', body: JSON.stringify({ craft: 'EN', name: 'Pat', text: 'x' }) })).json()).error; };
     assert.match(await why(new Response(JSON.stringify({ ok: false, error: 'key' }))), /key in the script doesn't match MAIL_SCRIPT_KEY/);

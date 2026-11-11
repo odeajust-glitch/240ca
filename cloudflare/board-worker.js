@@ -1031,7 +1031,7 @@ async function held186Settings(request, env) {
     if (b.clearNamesPass) delete s.namesPass;
     await env.SITE.put(HELD186_KEY, JSON.stringify(s), { httpMetadata: { contentType: 'application/json' } });
   }
-  return json({ co: s.co || '', en: s.en || '', namesPass: s.namesPass || '', mail: mailReady(env), sent: await held186Sent(env) });
+  return json({ co: s.co || '', en: s.en || '', namesPass: s.namesPass || '', mail: mailReady(env), sent: await held186Sent(env), log: await held186LogRecent(env) });
 }
 // How many were sent to the rep each day, the last 30 days, today first
 // (owner, 2026-11-11: "Add tracking how many grievances being submitted").
@@ -1042,6 +1042,32 @@ async function held186Sent(env) {
     const d = (await readJson(env, `stats/held186/${day}.json`)) || {};
     return { day, n: +d.n || 0, co: +d.co || 0, en: +d.en || 0 };
   }));
+}
+// Who submitted what, and when (owner, 2026-11-11: "records who submitted the
+// grievance and the time it was submitted on the site, in case we have any
+// issues"). One line per try that reached the limits or the email: the
+// signed-in member (account id, name, email), the name typed on the form, the
+// craft, the train out, the page's reference and how it ended. Never the
+// claim's text, the PIN or the copy address. Kept by month in R2, 12 months,
+// for the owner only (/health/held186).
+const HELD186_LOG_MONTHS = 12;
+const held186LogKey = (month) => `stats/held186/log/${month}.json`;
+async function held186Log(env, who, entry) {
+  try {
+    const month = torontoDay(entry.at).slice(0, 7);
+    const list = (await readJson(env, held186LogKey(month))) || [];
+    list.push({ ...entry, account: (who && who.id) || '', member: (who && who.name) || '', email: (who && who.email) || '' });
+    await putJson(env, held186LogKey(month), list.slice(-2000));
+    const [y, m] = month.split('-').map(Number);
+    await env.SITE.delete(held186LogKey(new Date(Date.UTC(y, m - 1 - HELD186_LOG_MONTHS, 1)).toISOString().slice(0, 7)));
+  } catch { /* the submission matters more than its record */ }
+}
+// The newest 200 from this month and the two before, newest first.
+async function held186LogRecent(env, now = Date.now()) {
+  const [y, m] = torontoDay(now).slice(0, 7).split('-').map(Number);
+  const months = [0, 1, 2].map((i) => new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7));
+  const lists = await Promise.all(months.map((k) => readJson(env, held186LogKey(k))));
+  return lists.flatMap((l) => (Array.isArray(l) ? l : [])).sort((a, b) => b.at - a.at).slice(0, 200);
 }
 async function held186Submit(request, env) {
   const text0 = await request.text();
@@ -1059,23 +1085,26 @@ async function held186Submit(request, env) {
   if (copy && !EMAIL_RE.test(copy)) return json({ error: 'Your email for a copy doesn\'t look right.' }, 400);
   const now = Date.now();
   const day = torontoDay(now);
+  const who = await sessionOf(request, env).catch(() => null);
+  const entry = { at: now, craft, name, out: String(b.out || '').slice(0, 20), ref: String(b.ref || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 60) };
+  const refuse = async (result, error, status) => { await held186Log(env, who, { ...entry, result }); return json({ error }, status); };
   const countKey = `stats/held186/${day}.json`;
   const today = (await readJson(env, countKey)) || { n: 0, ips: {} };
   today.ips = today.ips || {};
-  if (today.n >= HELD186_DAY_MAX) return json({ error: 'Too many sent today: export the text file and send it to your rep.' }, 429);
+  if (today.n >= HELD186_DAY_MAX) return refuse('not sent: the site\'s limit for the day', 'Too many sent today: export the text file and send it to your rep.', 429);
   const ip = await sha(`held186:${request.headers.get('cf-connecting-ip') || 'unknown'}`);
-  if ((today.ips[ip] || 0) >= HELD186_IP_MAX) return json({ error: `That's ${HELD186_IP_MAX} sent from here today, the most allowed: export the text file for any more.` }, 429);
+  if ((today.ips[ip] || 0) >= HELD186_IP_MAX) return refuse('not sent: 5 already sent from that connection today', `That's ${HELD186_IP_MAX} sent from here today, the most allowed: export the text file for any more.`, 429);
   const claim = await sha(`${craft}|${name.toLowerCase().replace(/\s+/g, ' ')}|${String(b.out || '').toUpperCase().replace(/\s+/g, ' ').trim()}`);
   const sentAll = (await readJson(env, HELD186_SENT_KEY)) || {};
   const sent = Object.fromEntries(Object.entries(sentAll).filter(([, at]) => now - at < HELD186_SENT_DAYS * 86400000));
-  if (sent[claim]) return json({ error: 'This one was already sent to the rep. If something changed, export the text file and send it yourself.' }, 409);
+  if (sent[claim]) return refuse('not sent: the same claim was already sent', 'This one was already sent to the rep. If something changed, export the text file and send it yourself.', 409);
   const subject = `${craft === 'EN' ? 'Engineer' : 'Conductor'}: held 14 h+ at the away terminal · ${name} · ${String(b.out || '').slice(0, 20)}`;
   let res;
   try {
     res = await fetch(env.MAIL_SCRIPT_URL, { method: 'POST', redirect: 'follow', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ key: env.MAIL_SCRIPT_KEY, to, cc: copy || '', replyTo: copy || '', subject, body }) });
   } catch (e) {
-    return json({ error: `The email didn't go (couldn't reach the Google script: ${e.message}). Export the text file instead.` }, 502);
+    return refuse('not sent: the email script could not be reached', `The email didn't go (couldn't reach the Google script: ${e.message}). Export the text file instead.`, 502);
   }
   // Why it didn't go, in words the owner can act on (owner, 2026-11-06:
   // nothing arrived and the page said nothing).
@@ -1090,7 +1119,7 @@ async function held186Submit(request, env) {
             : `the Google script answered ${res.status} with a page, not a result`)
       : out.error === 'key' ? 'the key in the script doesn\'t match MAIL_SCRIPT_KEY'
         : `the Google script said: ${String(out.error || 'no').slice(0, 120)}`;
-    return json({ error: `The email didn't go: ${why}. Export the text file instead.` }, 502);
+    return refuse(`not sent: ${why}`.slice(0, 200), `The email didn't go: ${why}. Export the text file instead.`, 502);
   }
   today.n += 1;
   if (craft === 'EN') today.en = (today.en || 0) + 1; else today.co = (today.co || 0) + 1;
@@ -1098,6 +1127,7 @@ async function held186Submit(request, env) {
   sent[claim] = now;
   await env.SITE.put(countKey, JSON.stringify(today), { httpMetadata: { contentType: 'application/json' } });
   await env.SITE.put(HELD186_SENT_KEY, JSON.stringify(sent), { httpMetadata: { contentType: 'application/json' } });
+  await held186Log(env, who, { ...entry, result: 'sent', copy: !!copy });
   return json({ ok: true, copy: !!copy });
 }
 

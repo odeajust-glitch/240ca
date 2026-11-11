@@ -683,6 +683,7 @@
   .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
+  .heldlog { list-style: none; margin: 0 0 8px; padding: 0; } .heldlog li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; } .heldlog li > div { margin: 1px 0; }
   .codegroup ul { margin: 6px 0 0; padding-left: 18px; } .codegroup li { margin: 3px 0; }
   .crewnm { color: var(--soft); font-weight: 400; font-size: 0.92em; white-space: nowrap; letter-spacing: 0; text-transform: none; }
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
@@ -4791,6 +4792,7 @@ function claimForm(r, craft, pre = {}) {
     <button type="button" class="greview">Review submission</button>
     <section class="greviewbox" hidden aria-label="Review submission"><h3>Review before submitting</h3><div class="greviewfacts"></div>
       <label><input type="checkbox" class="gconfirm"> I have checked the trip and personal details.</label>
+      <p class="muted gkept">The site keeps a record that you submitted this (your account, the name above, the train and the time), in case there is a problem with it. Not the PIN or the claim's text.</p>
       <button type="button" class="gedit">Edit details</button></section>
     <div class="gsum"><span class="gerr" role="alert"></span>
       <button type="button" class="gexport">Export (.txt)</button>
@@ -4908,7 +4910,7 @@ function wireClaim(form, r, { names = null, noNames = false } = {}) {
     send.disabled = true;
     send.textContent = 'Sending…';
     try {
-      const res = await fetch('api/held186', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ craft: d.craft, name: d.name, out: d.outTrain, copy: d.copy, text: claimText(r, d) }) });
+      const res = await fetch('api/held186', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ craft: d.craft, name: d.name, out: d.outTrain, copy: d.copy, ref: reference, text: claimText(r, d) }) });
       const out = await res.json().catch(() => ({}));
       if (!res.ok || !out.ok) throw new Error(out.error || `the site answered ${res.status}`);
       remember(d.turn, d, '');
@@ -5381,7 +5383,27 @@ source().then(async (src) => {
   // days. Counts only. Conductor / engineer are kept from 2026-11-11; a day
   // before that has only its total. A text file someone exports and emails
   // themselves is not counted (it never passes the site).
-  function heldSent(sent) {
+  // Who submitted, and when (owner, 2026-11-11: "records who submitted the
+  // grievance and the time it was submitted on the site, in case we have any
+  // issues"): the Worker's record, newest first, tries that did not go
+  // included. Kept 12 months; this lists up to 200 from the last three.
+  function heldLog(log) {
+    if (!Array.isArray(log)) return '<p class="muted">Who submitted, and when: needs the newest Worker (re-paste cloudflare/board-worker.js).</p>';
+    if (!log.length) return '<h3 class="hsub">Who submitted, and when</h3><p class="muted">Nothing recorded yet. Records start from the day the Worker with this was pasted.</p>';
+    const when = (at) => new Date(at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const who = (e) => (e.member ? `Member: ${esc(e.member)}${e.email ? ` <span class="muted">(${esc(e.email)})</span>` : ''}` : '<span class="muted">Member: not signed in</span>');
+    // One block each, not a table: four columns don't fit a phone.
+    const row = (e) => `<li><div><b>${esc(when(e.at))}</b> · <span${e.result === 'sent' ? '' : ' class="warn"'}>${esc(e.result === 'sent' ? (e.copy ? 'Sent, with a copy to them' : 'Sent') : e.result || '')}</span></div>
+      <div>${who(e)}</div>
+      <div class="muted">On the form: ${esc(e.name || '—')} · ${e.craft === 'EN' ? 'Engineer' : 'Conductor'} · ${esc(e.out || 'no train')}${e.ref ? ` · ref ${esc(e.ref.slice(0, 13))}` : ''}</div></li>`;
+    const shown = log.slice(0, 10);
+    const rest = log.slice(10);
+    return `<h3 class="hsub">Who submitted, and when <span class="muted">(${log.length}, newest first)</span></h3>
+      <ul class="heldlog">${shown.map(row).join('')}</ul>
+      ${rest.length ? `<details class="moredet"><summary>Older (${rest.length})</summary><ul class="heldlog">${rest.map(row).join('')}</ul></details>` : ''}
+      <p class="muted">Toronto time. Kept 12 months. Never the PIN, the claim's text or the copy address.</p>`;
+  }
+  function heldSent(sent, log) {
     if (!Array.isArray(sent)) return '<p class="muted">How many were sent: needs the newest Worker (re-paste cloudflare/board-worker.js).</p>';
     const sum = (list, k) => list.reduce((a, d) => a + (+d[k] || 0), 0);
     const split = (list) => { const co = sum(list, 'co'); const en = sum(list, 'en'); return co + en ? ` <span class="muted">(${co} conductor, ${en} engineer${co + en < sum(list, 'n') ? `, ${sum(list, 'n') - co - en} before the split was kept` : ''})</span>` : ''; };
@@ -5393,7 +5415,7 @@ source().then(async (src) => {
         <tr><td>Last 7 days</td><td>${sum(sent.slice(0, 7), 'n')}${split(sent.slice(0, 7))}</td></tr>
         <tr><td>Last 30 days</td><td>${sum(sent, 'n')}${split(sent)}</td></tr></tbody></table>
       ${days.length ? `<details class="moredet"><summary>By day (${days.length})</summary><table class="htable hhist"><thead><tr><th>Day</th><th>Sent</th><th>Conductor</th><th>Engineer</th></tr></thead><tbody>${days.map((d) => `<tr><td>${esc(dayName(d.day))}</td><td>${d.n}</td><td>${d.co + d.en ? d.co : '—'}</td><td>${d.co + d.en ? d.en : '—'}</td></tr>`).join('')}</tbody></table></details>` : '<p class="muted">None sent in the last 30 days.</p>'}
-      <p class="muted">Counts only, never who. A text file someone exports and emails themselves is not counted.</p>`;
+      <p class="muted">A text file someone exports and emails themselves is not counted.</p>${heldLog(log)}`;
   }
   async function paintHeldSettings() {
     const box = document.getElementById('h186set');
@@ -5407,7 +5429,7 @@ source().then(async (src) => {
       <label>Engineers' rep email<input type="email" name="en" value="${esc(cur.en)}" placeholder="rep@example.com"></label>
       <label>Crew names passcode <span class="muted">(${cur.namesPass ? 'saved: your owner key opens the names' : 'not saved'})</span><input type="password" name="namesPass" placeholder="${cur.namesPass ? 'leave blank to keep it' : 'the BOARD_NAMES_KEY passcode'}" autocomplete="new-password"></label>
       <p><button type="submit" class="linkbtn" id="h186save">Save</button> <span id="h186msg" role="status"></span></p>
-      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>${heldSent(cur.sent)}`;
+      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>${heldSent(cur.sent, cur.log)}`;
     const form = document.getElementById('h186form');
     form.onsubmit = async () => {
       const msg = document.getElementById('h186msg');

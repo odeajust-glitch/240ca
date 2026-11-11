@@ -124,6 +124,21 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.equal((await call('/', { cookie, html: true })).status, 200);
   const me = await (await call('/auth/me', { cookie })).json();
   assert.deepEqual([me.signedIn, me.name, me.email, me.role], [true, 'Pat Example b', 'patb@example.com', 'member']);
+  // An 18.6(b) submission is recorded with the member who sent it and the time
+  // (owner, 2026-11-11), for the owner only; not signed in, it can't be sent at all.
+  store.set('settings/held186.json', JSON.stringify({ co: 'rep@example.com' }));
+  assert.equal((await call('/api/held186', { body: { craft: 'CO', name: 'P Example', out: 'M38331 09', ref: 'H186-abc', text: 'the claim', copy: 'me@example.com' } })).status, 401);
+  const before = Date.now();
+  res = await call('/api/held186', { cookie, body: { craft: 'CO', name: 'P Example', out: 'M38331 09', ref: 'H186-abc', text: 'the claim', copy: 'me@example.com' } });
+  assert.deepEqual(await res.json(), { ok: true, copy: true });
+  assert.equal((await call('/health/held186', { cookie })).status, 404);
+  const log = (await (await call('/health/held186', { key: OWNER_KEY })).json()).log;
+  assert.equal(log.length, 1);
+  assert.deepEqual([log[0].member, log[0].email, log[0].account, log[0].name, log[0].craft, log[0].out, log[0].ref, log[0].result, log[0].copy],
+    ['Pat Example b', 'patb@example.com', u.id, 'P Example', 'CO', 'M38331 09', 'H186-abc', 'sent', true]);
+  assert.ok(log[0].at >= before && log[0].at <= Date.now());
+  assert.ok(!JSON.stringify(log).includes('the claim') && !JSON.stringify(log).includes('me@example.com'));
+  assert.equal(mails.pop().to, 'rep@example.com'); // the claim's own email, set aside for the counts below
   // A cookie that's been altered is no cookie.
   assert.equal((await call('/data/index.json', { cookie: `${cookie.slice(0, -2)}xx` })).status, 401);
 
