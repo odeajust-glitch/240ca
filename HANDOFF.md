@@ -479,6 +479,16 @@ trains on the Call Board).
   crafts spare with no turn, and today's flags were the site correctly pointing at a
   train ordered to the wrong pool (and the knock-on of that). He is keeping his own
   tally; do not reopen the rule unless he does.
+  **But the count changed, 18:35 (owner: "if that happens and an A or b turn gets skipped
+  it sitll has to go out"):** a train really called to another pool than the sequence gave
+  it no longer uses the slot it skipped (engine.js, in the slot loop: `went` = the pool
+  of a train on the Call Board or remembered from it; the count goes by that, the
+  `expected` and the flag stay). So after a mis-ordered train the next one takes the
+  skipped A or B turn, as CATS did on the 11th, and only the wrong train is flagged, not
+  the two after it. An ordered train's crew code still counts by the sequence (his
+  correction of 11-07). Test added (engine.test.js, the 11th's six trains); suite 384 of
+  384. Needs the laptop to pull and restart. Not replayed on the saved days (the engine
+  needs the raw checks, which are only on the laptop).
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated

@@ -831,3 +831,25 @@ test('L502 equal terminal-local position: home crew stays first after Garnet tie
     assert.equal(run(distinct).predictions[0].turn,away);
   }
 });
+
+// Owner, 2026-11-11: RM39491 10 should have been the road day's second A train and
+// the crew office sent it to the Chain Gang. "if that happens and an A or b turn gets
+// skipped it still has to go out": the A pool still got its three (M30241, Z14891,
+// A42431) and the B pool its two (M38261, E27861). The site had counted the rescue as
+// an A train, so the two after it were flagged too and E27861 was shown for the Chain Gang.
+test('a train called to the wrong pool does not use up the turn it skipped', () => {
+  const { stationName } = { stationName: require('../../lib/board/config').homeStation };
+  const on = (h, m, symbol, originDay, co, en) => ({ symbol, trainNo: symbol.replace(/^R/, '').slice(0, -2), originDay, station: stationName, onDuty: at(2026, 11, 11, h, m), crew: [{ craft: 'EN', turn: en }, { craft: 'CO', turn: co }] });
+  const r = runBoardCheck({
+    now: at(2026, 11, 11, 17, 0),
+    seenSince: at(2026, 11, 10, 0, 0),
+    callBoard: [on(5, 45, 'M30241', '09', 'SA05', 'S106'), on(5, 55, 'RM39491', '10', 'SR08', 'SD04'), on(9, 30, 'Z14891', '10', 'SA06', 'S107'), on(10, 15, 'A42431', '11', 'SA07', 'S108'), on(15, 15, 'M38261', '11', 'SB01', 'S301'), on(18, 45, 'E27861', '11', 'SB02', 'S302')],
+    chainGangHome: [{ craft: 'CO', turn: 'SR07', terminal: 0, pos: 1, restUntil: null, statusUntil: null }],
+    bHome: [{ craft: 'CO', turn: 'SB03', pos: 1 }],
+    lineup: [{ order: at(2026, 11, 11, 23, 22), symbol: 'M39671', trainNo: 'M396', originDay: '10', status: 'PLN', deadhead: false }],
+  });
+  // Only the train that really went to the wrong pool is flagged.
+  assert.deepEqual(r.flags.filter((f) => f.rule === 'pool').map((f) => f.text.replace(/ \(ordered[^)]*\)/, '')), ['RM39491 10 went to SR (SR08) but the sequence says A.']);
+  // Three A and two B are used: the next train is the Chain Gang's.
+  assert.deepEqual(r.predictions.map((p) => [p.symbol, p.pool]), [['M39671', 'SR']]);
+});
