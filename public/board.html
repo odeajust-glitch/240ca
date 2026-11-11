@@ -5589,7 +5589,9 @@ source().then(async (src) => {
     // the one name on the boards that fits, or nothing rather than the wrong person.
     const NAMES = CREW || healthCrew;
     if (!NAMES) loadHealthCrew();
-    const fits = (code, name) => { const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
+    // A code given by hand where two names made the same one (lib/board/people.js OWN_CODES).
+    const OWN_CODE_LETTERS = { COBD: 'COBR' };
+    const fits = (code0, name) => { const code = OWN_CODE_LETTERS[code0] || code0; const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
     const onTurn = (t) => {
       if (!NAMES) return '';
       if (NAMES[t]) return esc(NAMES[t]);

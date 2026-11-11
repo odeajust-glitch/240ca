@@ -47,18 +47,18 @@ trains on the Call Board).
   errors. Empty trainee slots read "TT open turn" on most jobs, so an open TT / ET is now
   left out (needs another laptop pull; the old entries age out of names.json in 14 days).
   ❓ `Wallis, B` shows as FO on both YBHS31 and YPRS60: one person on two jobs, or two people?
-- **Name code COBR is two people (owner: "We have 2 name codes that have the same name. Can
-  you check COBR"). Confirmed, nothing built.** people.json has that one code on SB06
-  (`Brooks, C`, own turn since 25 Oct) and SR11 (`Brad, C`, own turn since 2 Nov) at the
-  same time, both "now". A code is first two letters of each name, so the two share it:
-  a COBR search, My week and a followed COBR alert mix both. Across all 160 codes, 7 sit
-  on two of their own turns at once for a day or more (YFLS01 + XSAS02, YBHS31 + SR08,
-  SR11 + SB06, SD02 + YPRS02, B105 + YSBY02, B111 + YMPS31, S108 + S301): likely shared
-  codes, not each checked. Offered, waiting for his pick: (a) a longer code only for
-  people who collide (e.g. three letters of the surname), old codes keep working for
-  everyone else; (b) when a code is on two own turns at once, the page asks "which one?"
-  by turn. Either changes the hash the laptop saves and the page's lookup.
-
+- **Name code COBR was two people; the second is now COBD (owner's word, 2026-11-10: SB06's
+  holder stays COBR, SR11's becomes COBD).** people.json had the one code on SB06 and SR11
+  at the same time. `OWN_CODES` in lib/board/people.js gives one person a code of their
+  own, keyed by a one-way hash of the name (`nameHash`), so no name is in the code; the
+  comment there has the one-line command to add another. Page Health's name fit knows
+  COBD too (`OWN_CODE_LETTERS` in board.html). **Needs the laptop to pull and restart.**
+  From then on SR11's holder is seen as COBD. **Not changed:** what was already saved, so
+  a COBR search still lists SR11 up to the restart (the saved checks hold only the hash);
+  a phone following COBR for him must follow COBD instead. Six more pairs look shared
+  (one code on two own turns at once for a day or more: YFLS01 + XSAS02, YBHS31 + SR08,
+  SD02 + YPRS02, B105 + YSBY02, B111 + YMPS31, S108 + S301): not each checked, some may be
+  one person who really holds both; he has not asked for those.
 - **One test fails by the clock, not by this work:** `the Worker counts visits per day and
   never serves the files` (test/board/r2.test.js) gives 29 days, not 30, when run between
   23:00 and midnight Toronto until about 2026-12-01 (it fails the same on `f5b27e2`; the

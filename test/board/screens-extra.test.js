@@ -215,6 +215,12 @@ test('person codes and sightings', () => {
   assert.equal(personCode("O'DEA", 'JUSTIN'), 'JUOD');
   assert.equal(personCode('DE MAN', 'MIKE'), 'MIDE');
   assert.equal(personCode('LI', 'J'), null); // first name cut to an initial: no code
+  // Two people, one code (owner, 2026-11-10): a listed person has a code of their
+  // own, looked up by a one-way hash of the name; everyone else the usual one.
+  const { nameHash } = require('../../lib/board/people');
+  assert.equal(nameHash("O'DEA*+", 'JUSTIN'), nameHash('ODEA', 'JUST'));
+  assert.notEqual(nameHash('ODEA', 'JUSTIN'), nameHash('ODEB', 'JUSTIN'));
+  assert.equal(personCode('TESTER', 'SAM'), 'SATE');
   assert.equal(personHash('juod'), personHash('JUOD'));
   assert.equal(personHash('JUOD').length, 16);
   const h = personHash('JUOD');
