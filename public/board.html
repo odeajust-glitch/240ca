@@ -2256,14 +2256,16 @@ function lineupCrew(t, s) {
       }
       if (!by) return '';
       const m = markTurn(by);
-      return ' · likely ' + m + (m.includes('crewnm') ? '' : crewTag(by));
+      return ' · ' + m + (m.includes('crewnm') ? '' : crewTag(by));
     };
     // An open turn (nobody holds it; owner, 2026-11-10: "open turn should
     // show the spare person in it"): the spare likely to work it, as above.
     const isOpen = (x) => !!CREW && (CREW[/^S5\d{2}$/.test(x) ? `${x}-${cc}` : x] === 'open turn');
     const cover = spare || isOpen(turn) ? coverFor(turn) : '';
     const value = spare
-      ? '<span class="spare">spare</span>' + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' goes spare)') + cover
+      // With the covering spare named, the leading "spare" and "likely" are
+      // dropped (owner, 2026-11-10: "(SD06 Hamel, C goes spare) · EN03 Sywak, M").
+      ? (cover && !/^(spareboard |spare$)/.test(turn) ? '' : '<span class="spare">spare</span>') + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' goes spare)') + cover
       : named(turn) + cover;
     return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
   };
