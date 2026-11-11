@@ -321,7 +321,12 @@ trains on the Call Board).
     postings (P) follow the same rules as TVs; may a spareboard conductor take both FO and
     S1 yard postings; what a conductor with no known position gets; and that the person is known from the
     name code a phone follows. **Answered 17:00: "A conductor in the A or B pool, or on
-    501/502 can also post to chain gang".**
+    501/502 can also post to chain gang".** **Permanent postings, 17:05: "we will need to
+    review but for now any perms show to in their specific craft and location. Engineer,
+    Conductor Yard and Conductor Road"**: a permanent posting goes by three groups only
+    (engineers; yard conductors for a yard job; road conductors for a road job), without
+    the finer TV rules (FO / S1, chain gang). To be reviewed with him later. Read as: a
+    spareboard conductor gets both yard and road perms (not confirmed).
     Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
     that tapping the alert opens the Job postings tab on that job with a "Remind me"
     choice there.
