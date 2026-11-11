@@ -2931,7 +2931,7 @@ function jobPostings() {
   const gone = (j) => /C/.test(j.cia || '');
   const open = (j) => listed(j) && !gone(j);
   const remindOf = (n) => ((POST_ME && POST_ME.postings && POST_ME.postings.remind) || {})[n] || 0;
-  const remindPick = (j) => (!PREVIEW || !POST_ME || !POST_ME.signedIn ? '' : `<div class="crew"><label>Remind me <select data-remind="${esc(j.number)}">${[[0, 'no reminder'], [2, '2 h before it closes'], [6, '6 h before'], [12, '12 h before'], [24, '24 h before'], [48, '48 h before']].map(([h, t]) => `<option value="${h}"${remindOf(j.number) === h ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>`);
+  const remindPick = (j) => (!POST_ME || !POST_ME.signedIn ? '' : `<div class="crew"><label>Remind me <select data-remind="${esc(j.number)}">${[[0, 'no reminder'], [2, '2 h before it closes'], [6, '6 h before'], [12, '12 h before'], [24, '24 h before'], [48, '48 h before']].map(([h, t]) => `<option value="${h}"${remindOf(j.number) === h ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>`);
   const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const daysTo = (d) => Math.round((Date.parse(`${d}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
   const KIND = { A: 'assignment', U: 'pool turn', X: 'spareboard' };
@@ -2952,13 +2952,12 @@ function jobPostings() {
 // Job posting alerts (owner, 2026-11-11: "build the account way"): the
 // member's name code and choices are on their account (the Worker's
 // /auth/profile), so every device signed in to it gets them; the board
-// checker works out from the code what they may post for. Test site only
-// until he promotes it.
+// checker works out from the code what they may post for. On both sites
+// since 2026-11-11 ("everything else looks good, push to the main page").
 let POST_ME = null; // /auth/me: { signedIn, code, postings: { on, remind } }
 let POST_FOCUS = ''; // a posting opened from an alert (#postings=<number>)
 let POST_SAID = '';
 function postingAlertsBox() {
-  if (!PREVIEW) return '';
   const me = POST_ME;
   if (!me) return '<section class="sheet"><header><h2>Alerts</h2></header><div class="hbody" style="padding:10px 14px"><p class="muted">Loading…</p></div></section>';
   if (!me.signedIn) return '<section class="sheet"><header><h2>Alerts</h2></header><div class="hbody" style="padding:10px 14px"><p>Sign in to get an alert when a job you can post for goes up.</p></div></section>';
@@ -5228,7 +5227,6 @@ source().then(async (src) => {
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
       if (PREVIEW) loadCrew();
-      if (PREVIEW) loadPostMe(); // the name code in Settings, the alerts on the Job postings tab
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
       setTimeout(() => setMode(mode), 0);
     }
@@ -6030,6 +6028,17 @@ source().then(async (src) => {
     const chain = isPerson(turn) || !/^(SA|SB|S1|S3|S5|MU)/.test(turn);
     const p = Alerts.prefs(turn);
     const box = (k, label) => `<label><input type="checkbox" data-k="${k}" ${p[k] ? 'checked' : ''}> ${label}</label>`;
+    // Job postings, for a name code (owner, 2026-11-11: "I want the option for
+    // job posting notifications to be off by default for those tracking name
+    // codes"; "I dont see anything that lets you track notifications here").
+    // The choice is the member's account's (the Job postings tab's own switch):
+    // off until ticked. Ticking it here also saves this code as the account's
+    // name code when it has none; an account with another code keeps its own.
+    const myCode = isPerson(turn) ? (codes()[turn] || '') : '';
+    const me = POST_ME && POST_ME.signedIn ? POST_ME : null;
+    const postWas = !!(me && me.postings && me.postings.on);
+    const otherCode = me && me.code && myCode && me.code !== myCode ? me.code : '';
+    const postOpt = !isPerson(turn) || !me || !myCode ? '' : `<label><input type="checkbox" id="dlgpost" ${postWas ? 'checked' : ''}> a job ${otherCode ? `${esc(otherCode)} (your own name code, in ⚙ Settings)` : 'they'} can post for goes up <span class="muted">(job postings)</span></label>`;
     dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(label(turn))}">
       <header><h2>Track <span class="num">${esc(label(turn))}</span></h2></header>
       <div class="alertopts"><span class="lbl">Alert me when ${esc(label(turn))}:</span>
@@ -6040,7 +6049,8 @@ source().then(async (src) => {
         ${isPerson(turn) ? box('held', 'was held 14 h+ at the away terminal (to send it to the rep)') : ''}
         ${box('stale', 'is lined up for a train 15 min past its planned call and still not ordered')}
         <label>call time moves <select data-k="time">${TIMES.map(([m, l]) => `<option value="${m}" ${m === p.time ? 'selected' : ''}>${l}</option>`).join('')}</select> or more</label>
-        <label>remind me <select data-k="before">${BEFORE.map(([m, l]) => `<option value="${m}" ${m === p.before ? 'selected' : ''}>${l}</option>`).join('')}</select> before the expected call</label></div>
+        <label>remind me <select data-k="before">${BEFORE.map(([m, l]) => `<option value="${m}" ${m === p.before ? 'selected' : ''}>${l}</option>`).join('')}</select> before the expected call</label>
+        ${postOpt}</div>
       <div id="dlgnote" class="alertnote" hidden></div>
       <div class="btns"><button type="button" class="ok" id="dlgok">OK</button><button type="button" id="dlgcancel">Cancel</button>${was ? '<button type="button" class="stop" id="dlgstop">Stop tracking</button>' : ''}</div></div>`;
     dlg.hidden = false;
@@ -6061,12 +6071,17 @@ source().then(async (src) => {
       dlg.querySelectorAll('[data-k]').forEach((el) => { change[el.dataset.k] = el.type === 'checkbox' ? el.checked : +el.value; });
       Alerts.keepPrefs(turn, change);
       keepTracked([...new Set([...tracked(), turn])]);
-      if (Alerts.state(turn) !== 'on' && Alerts.state(turn) !== 'off') return done();
+      // The job postings choice goes to the account, only when it was changed.
+      const postBox = document.getElementById('dlgpost');
+      const postWant = postBox ? postBox.checked : postWas;
+      const savePost = async () => { if (postBox && postWant !== postWas) await postProfile({ ...(me.code ? {} : { code: myCode }), postings: { on: postWant } }); };
+      if (Alerts.state(turn) !== 'on' && Alerts.state(turn) !== 'off') { try { await savePost(); } catch (err) { /* said on the Job postings tab */ } return done(); }
       const btn = e.currentTarget; // gone from the event once this waits
       btn.disabled = true;
       say('Setting up alerts…');
       try {
         await Alerts.set(turn, true);
+        await savePost();
         done();
       } catch (err) {
         say(`${esc(label(turn))} is tracked on this page, but alerts couldn't be set up: ${esc(err.message)}.`, 'bad');
@@ -6649,13 +6664,12 @@ source().then(async (src) => {
   }
   // The name code in ⚙ Settings → Profile (owner, 2026-11-11: "once they put
   // their name code in here, can you move that to the settings where they can
-  // update it, but its not on that page anymore"). Shown to a signed-in member
-  // where the job posting alerts are (the test site for now).
+  // update it, but its not on that page anymore"). Shown to a signed-in member.
   function paintProfileCode() {
     const box = document.getElementById('profcode');
     if (!box) return;
     const me = POST_ME;
-    box.hidden = !(PREVIEW && me && me.signedIn);
+    box.hidden = !(me && me.signedIn);
     if (box.hidden) return;
     document.getElementById('profile').hidden = false;
     const input = document.getElementById('profcodebox');
@@ -6693,7 +6707,7 @@ source().then(async (src) => {
     try { history.replaceState(null, '', POST_FOCUS ? `#postings=${POST_FOCUS}` : '#postings'); } catch (e) { /* not allowed in some frames */ }
     view.innerHTML = `<div class="thead"><div class="when">Job postings</div></div>${postingAlertsBox()}${jobPostings() || '<p class="empty">No job postings have been read yet. The checker reads them from CATS about once an hour.</p>'}`;
     loadPostings(true);
-    if (PREVIEW) loadPostMe();
+    loadPostMe();
     const say = (t) => { POST_SAID = t; const m = document.getElementById('postmsg'); if (m) m.textContent = t; };
     // On trouble the page is drawn again as it really is (a switch that did not take goes back).
     const run = async (work, done) => { try { say('Saving…'); await work(); POST_SAID = done; } catch (e) { POST_SAID = `Not saved: ${e.message}`; } renderPostings(); };
@@ -6715,6 +6729,7 @@ source().then(async (src) => {
     if (POST_FOCUS) { const row = view.querySelector(`[data-posting="${POST_FOCUS}"]`); if (row) row.scrollIntoView({ block: 'center' }); }
   }
   loadPostings(false);
+  loadPostMe(); // the name code in Settings, the job posting choices (both sites since 2026-11-11)
   // Owner preview only: show changed notes rather than repeating the whole
   // status. All original observations remain in the full-history disclosure.
   const testPreview = { day: null, from: 'all', status: 'all', find: '', open: null };

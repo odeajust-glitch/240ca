@@ -52,8 +52,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    whether a YMX job always takes an S1 (YMXS02 8 Nov showed EN + FO only).
 6. **Job postings (both sites since 2026-11-11; the tab appears once the laptop has read
    CATS).** After the first real read: does it list what CATS lists, for both crafts;
-   then the alerts (built 2026-11-11, test site only, by account): try them on his own
-   phone end to end, then promote. Rules for permanent postings are "for now": review.
+   then the alerts (built 2026-11-11, by account, on both sites that evening at his
+   word): confirm one real alert and one reminder arrive on his own phone. Rules for permanent postings are "for now": review.
    Details in HANDOFF.
 
 

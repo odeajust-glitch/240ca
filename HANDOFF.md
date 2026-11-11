@@ -343,8 +343,8 @@ trains on the Call Board).
     **ALERTS BUILT 2026-11-11 18:00, THE ACCOUNT WAY (owner, mid-build: "build the account
     way, that sounds amazing"; closing time: "the time is always 1200"). WORKER CHANGE
     `08e6109`: needs a paste into both Workers (copy page republished, 1918 lines) AND a
-    laptop pull and restart. Controls on the TEST SITE ONLY (`PREVIEW`). Nothing has been
-    sent to a real phone yet.**
+    laptop pull and restart. Controls were on the test site only at first; ON BOTH SITES
+    since 19:10 (below). Nothing has been confirmed on a real phone yet.**
     - **Worker** (cloudflare/board-worker.js; the accounts session's file): `POST
       /auth/profile` (a signed-in approved member, or the owner's own session) saves
       `code` (name code) and `postings: { on, remind: { <circular>: hours 1 to 168 } }` on
@@ -397,6 +397,23 @@ trains on the Call Board).
       `details.infotip` in `postingAlertsBox`; closed until tapped. What stops alerts on a
       device (iPhone not on the Home Screen, a browser that can't, alerts not set up on
       the site) stays in view as a line of its own.
+    - **ON BOTH SITES since 19:10 (owner: "everything else looks good, push to the main
+      page").** The `PREVIEW` tests are gone from `postingAlertsBox`, `remindPick`,
+      `renderPostings` and `paintProfileCode`; `loadPostMe` runs for everyone at start.
+      The Worker with `/auth/profile` answers on both `board` and `board-test` (checked
+      19:05), so no paste is waiting. Still test-site only: yard job names, and the older
+      previews. Clicked through with this page: 13 tabs on each site open their own page,
+      no errors, the alerts box and reminder choices show on the main site, a cancelled
+      posting is struck through and not counted.
+    - **The Track box has the option too (owner, quoting the box for 👤 JUOD: "I dont see
+      anything that lets you track notifications here"; earlier: "I want the option for
+      job posting notifications to be off by default for those tracking name codes"):**
+      for a name code, a last line "a job they can post for goes up (job postings)",
+      unticked unless the account already has it on (`#dlgpost` in `openTrack`). OK saves
+      it to the account (`postProfile`), with this code as the account's name code when
+      it has none; an account with a different code keeps its own and the line says so.
+      It is the same switch as the Job postings tab's, not a second setting. Checked in
+      a browser with the push step stood in for: sends `{ code, postings: { on: true } }`.
     - **Not built:** setting a member's code from the Members tab; showing on the tab
       what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
       listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in
