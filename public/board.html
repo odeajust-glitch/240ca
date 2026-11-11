@@ -2912,21 +2912,50 @@ let POSTINGS = null;
 function jobPostings() {
   if (!POSTINGS) return '';
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  // A posting closes at 1200 on its closing date (owner, 2026-11-11).
+  const pastNoon = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) >= 12;
+  const open = (j) => j.closes > today || (j.closes === today && !pastNoon);
+  const remindOf = (n) => ((POST_ME && POST_ME.postings && POST_ME.postings.remind) || {})[n] || 0;
+  const remindPick = (j) => (!PREVIEW || !POST_ME || !POST_ME.signedIn ? '' : `<div class="crew"><label>Remind me <select data-remind="${esc(j.number)}">${[[0, 'no reminder'], [2, '2 h before it closes'], [6, '6 h before'], [12, '12 h before'], [24, '24 h before'], [48, '48 h before']].map(([h, t]) => `<option value="${h}"${remindOf(j.number) === h ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>`);
   const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const daysTo = (d) => Math.round((Date.parse(`${d}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86400000);
   const KIND = { A: 'assignment', U: 'pool turn', X: 'spareboard' };
   const group = (name, g) => {
     if (!g) return `<h3 class="off-heading">${name}</h3><p class="anote" style="margin:4px 14px 10px">Not read yet.</p>`;
-    const list = (g.list || []).filter((j) => j.closes >= today);
-    const rows = list.map((j) => { const n = daysTo(j.closes); return `<tr${marked(j.turn) ? ' class="hit"' : ''}><td class="num">${esc(dayName(j.closes))}<div class="crew">${n <= 0 ? '<span class="spare">closes today</span>' : n === 1 ? '<span class="spare">closes tomorrow</span>' : `in ${n} days`}</div></td>
-      <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div></td></tr>`; }).join('');
+    const list = (g.list || []).filter(open);
+    const rows = list.map((j) => { const n = daysTo(j.closes); return `<tr data-posting="${esc(j.number)}"${marked(j.turn) || POST_FOCUS === j.number ? ' class="hit"' : ''}><td class="num">${esc(dayName(j.closes))}<div class="crew">${n <= 0 ? '<span class="spare">closes today 1200</span>' : n === 1 ? '<span class="spare">closes tomorrow 1200</span>' : `in ${n} days, 1200`}</div></td>
+      <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div>${remindPick(j)}</td></tr>`; }).join('');
     return `<h3 class="off-heading">${name} · ${list.length}</h3><div class="scroll"><table><thead><tr><th>Closes</th><th>Job</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">Nothing up for bid.</td></tr>'}</tbody></table></div>
       ${g.complete === false ? '<p class="anote" style="margin:4px 14px 10px">The end of the list was not reached, so there may be more.</p>' : ''}`;
   };
-  const n = ['co', 'en'].reduce((a, k) => a + ((POSTINGS[k] && POSTINGS[k].list) || []).filter((j) => j.closes >= today).length, 0);
+  const n = ['co', 'en'].reduce((a, k) => a + ((POSTINGS[k] && POSTINGS[k].list) || []).filter(open).length, 0);
   return `<section class="sheet" id="sec-postings"><header><h2>Up for bid</h2><span class="meta">${n} job${n === 1 ? '' : 's'}</span></header>
     ${group('Conductors', POSTINGS.co)}${group('Engineers', POSTINGS.en)}
-    <div class="foot">Jobs up for bid in CATS's circular inquiry, read about once an hour. The closing date is CATS's; bid in CATS before then.</div></section>`;
+    <div class="foot">Jobs up for bid in CATS's circular inquiry, read about once an hour. A posting closes at 1200 on its closing date; bid in CATS before then.</div></section>`;
+}
+// Job posting alerts (owner, 2026-11-11: "build the account way"): the
+// member's name code and choices are on their account (the Worker's
+// /auth/profile), so every device signed in to it gets them; the board
+// checker works out from the code what they may post for. Test site only
+// until he promotes it.
+let POST_ME = null; // /auth/me: { signedIn, code, postings: { on, remind } }
+let POST_FOCUS = ''; // a posting opened from an alert (#postings=<number>)
+let POST_SAID = '';
+function postingAlertsBox() {
+  if (!PREVIEW) return '';
+  const me = POST_ME;
+  if (!me) return '<section class="sheet"><header><h2>Alerts</h2></header><div class="hbody" style="padding:10px 14px"><p class="muted">Loading…</p></div></section>';
+  if (!me.signedIn) return '<section class="sheet"><header><h2>Alerts</h2></header><div class="hbody" style="padding:10px 14px"><p>Sign in to get an alert when a job you can post for goes up.</p></div></section>';
+  const state = Alerts.state('');
+  const device = state === 'none' ? 'Alerts are not set up on this site.' : state === 'ios-home' ? 'On an iPhone, add this site to your Home Screen and open it from there: alerts only arrive that way.' : state === 'unsupported' ? 'This browser can\'t show alerts.'
+    : Alerts.deviceOn() || Alerts.turns().length ? 'This device gets your alerts.' : 'This device is not set up for alerts yet: tick the box above and allow notifications when asked.';
+  const on = !!(me.postings && me.postings.on);
+  return `<section class="sheet" id="postalerts"><header><h2>Alerts</h2><span class="meta">${on ? 'on' : 'off'}</span></header><div class="hbody" style="padding:10px 14px">
+    <p><label>Your name code <input id="postcode" maxlength="4" size="6" autocomplete="off" spellcheck="false" value="${esc(me.code || '')}" placeholder="e.g. JUOD"></label> <button type="button" class="linkbtn" id="postcodesave">Save</button></p>
+    <p class="muted">The first two letters of your first name and the first two of your last name. The site uses it to see whether you are an engineer or a conductor, and where you work, so you only hear about jobs you can post for.</p>
+    <p><label class="nocount"><input type="checkbox" id="poston"${on ? ' checked' : ''}${me.code ? '' : ' disabled'}> Alert me when a job I can post for goes up</label></p>
+    <p class="muted">${esc(device)} Alerts go to every device you are signed in on that has alerts allowed. Jobs already listed are not sent again; pick "Remind me" on a job below for a reminder before it closes.</p>
+    <p id="postmsg" role="status">${esc(POST_SAID)}</p></div></section>`;
 }
 
 // Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
@@ -4631,13 +4660,18 @@ const Alerts = (() => {
   const allPrefs = () => { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; } };
   const prefs = (turn) => ({ ...DEFAULT, ...(allPrefs()[turn] || {}) });
   const keepPrefs = (turn, p) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ ...allPrefs(), [turn]: p })); } catch { /* not kept */ } };
+  // This device takes its signed-in member's own alerts (the job postings;
+  // owner, 2026-11-11), even with no turn followed: kept on the phone and sent
+  // with every save, so the site keeps the device.
+  const DEVICE_KEY = 'alertDevice';
+  const deviceOn = () => { try { return localStorage.getItem(DEVICE_KEY) === '1'; } catch { return false; } };
   const bytes = (b64u) => Uint8Array.from(atob(b64u.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64u.length % 4)) % 4)), (c) => c.charCodeAt(0));
   async function save(list) {
     const reg = await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
     const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(key) });
     const res = await fetch('push/subscribe', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ subscription: sub.toJSON(), turns: list, prefs: Object.fromEntries(list.map((t) => [t, prefs(t)])) }) });
+      body: JSON.stringify({ subscription: sub.toJSON(), turns: list, prefs: Object.fromEntries(list.map((t) => [t, prefs(t)])), device: deviceOn() }) });
     if (!res.ok) throw new Error(`the site answered ${res.status}`);
     const out = await res.json();
     keep(out.turns || []);
@@ -4666,6 +4700,20 @@ const Alerts = (() => {
     async replace(turn, list) {
       for (const x of list) keepPrefs(x, prefs(turn));
       return save([...turns().filter((t) => t !== turn && !list.includes(t)), ...list]);
+    },
+    deviceOn,
+    // Alerts for this member's account on this device: asks to allow
+    // notifications (straight from the tap) and registers the device.
+    async device(on) {
+      if (on) {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') throw new Error('alerts are blocked for this site; allow notifications for it in the phone\'s settings');
+      }
+      const was = deviceOn();
+      const keepFlag = (v) => { try { if (v) localStorage.setItem(DEVICE_KEY, '1'); else localStorage.removeItem(DEVICE_KEY); } catch { /* not kept */ } };
+      keepFlag(on);
+      // Not registered after all: this device is not marked as set up.
+      try { return await save(turns()); } catch (e) { keepFlag(was); throw e; }
     },
     async set(turn, on) {
       const now = turns();
@@ -6571,11 +6619,53 @@ source().then(async (src) => {
       if (redraw && changed && mode === 'postings') renderPostings();
     }).catch(() => {});
   }
+  async function postProfile(body) {
+    const r = await fetch('auth/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(out.error || `the site answered ${r.status}`);
+    POST_ME = { ...POST_ME, code: out.code, postings: out.postings };
+  }
+  // Who is signed in here, with their code and choices. The owner's own
+  // device signs itself in with its key first, as the account page does.
+  let postMeAsked = false;
+  async function loadPostMe() {
+    if (postMeAsked) return;
+    postMeAsked = true;
+    try {
+      let me = await (await fetch('auth/me', { cache: 'no-store' })).json();
+      if (!me.signedIn && OwnerKey.has()) {
+        await fetch('auth/owner', { method: 'POST', headers: { ...OwnerKey.headers(), 'content-type': 'application/json' }, body: '{}' });
+        me = await (await fetch('auth/me', { cache: 'no-store' })).json();
+      }
+      POST_ME = me;
+    } catch (e) { POST_ME = { signedIn: false }; }
+    if (mode === 'postings') renderPostings();
+  }
   function renderPostings() {
     const view = document.getElementById('view');
-    try { history.replaceState(null, '', '#postings'); } catch (e) { /* not allowed in some frames */ }
-    view.innerHTML = `<div class="thead"><div class="when">Job postings</div></div>${jobPostings() || '<p class="empty">No job postings have been read yet. The checker reads them from CATS about once an hour.</p>'}`;
+    try { history.replaceState(null, '', POST_FOCUS ? `#postings=${POST_FOCUS}` : '#postings'); } catch (e) { /* not allowed in some frames */ }
+    view.innerHTML = `<div class="thead"><div class="when">Job postings</div></div>${postingAlertsBox()}${jobPostings() || '<p class="empty">No job postings have been read yet. The checker reads them from CATS about once an hour.</p>'}`;
     loadPostings(true);
+    if (PREVIEW) loadPostMe();
+    const say = (t) => { POST_SAID = t; const m = document.getElementById('postmsg'); if (m) m.textContent = t; };
+    // On trouble the page is drawn again as it really is (a switch that did not take goes back).
+    const run = async (work, done) => { try { say('Saving…'); await work(); POST_SAID = done; } catch (e) { POST_SAID = `Not saved: ${e.message}`; } renderPostings(); };
+    // This device registered for the account's alerts (asks to allow notifications).
+    const device = async () => { if (!Alerts.deviceOn()) await Alerts.device(true); };
+    const code = document.getElementById('postcode');
+    const save = document.getElementById('postcodesave');
+    if (save) save.onclick = () => run(() => postProfile({ code: clean(code.value) }), 'Name code saved.');
+    const on = document.getElementById('poston');
+    if (on) on.onchange = () => { const want = on.checked; run(async () => { if (want) await device(); await postProfile({ postings: { on: want } }); }, want ? 'Alerts are on. You will hear about new postings you can post for.' : 'Alerts are off.'); };
+    view.querySelectorAll('[data-remind]').forEach((sel) => {
+      sel.onchange = () => {
+        const hours = +sel.value;
+        const remind = { ...((POST_ME && POST_ME.postings && POST_ME.postings.remind) || {}) };
+        if (hours) remind[sel.dataset.remind] = hours; else delete remind[sel.dataset.remind];
+        run(async () => { if (hours) await device(); await postProfile({ postings: { remind } }); }, hours ? `Reminder set: ${hours} h before it closes.` : 'Reminder removed.');
+      };
+    });
+    if (POST_FOCUS) { const row = view.querySelector(`[data-posting="${POST_FOCUS}"]`); if (row) row.scrollIntoView({ block: 'center' }); }
   }
   loadPostings(false);
   // Owner preview only: show changed notes rather than repeating the whole
@@ -7562,6 +7652,8 @@ source().then(async (src) => {
   const wantAna = location.hash === '#analytics' || location.hash === '#week';
   if (location.hash === '#week') ana.sec = 'week'; // the Sunday alert opens My week
   const wantRef = location.hash === '#ref';
+  const wantPost = /^#postings(=(\d{5,7}))?$/.exec(location.hash);
+  if (wantPost) POST_FOCUS = wantPost[2] || '';
   const wantAsk = location.hash === '#agreements';
   const wantNotes = location.hash === '#notifications';
   const wantTest = location.hash === '#test';
@@ -7569,12 +7661,13 @@ source().then(async (src) => {
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
-  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk && !wantNotes) setMode('current'); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk && !wantNotes && !wantPost) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
   else if (wantTurns) setMode('turns');
   else if (wantAna) setMode('analytics');
   else if (wantRef) setMode('ref');
+  else if (wantPost) setMode('postings');
   else if (wantAsk) setMode('ask');
   else if (wantNotes) setMode('notes');
   else if (wantTest) setMode('analytics'); // the Test tab is gone (owner, 2026-11-10); an old link to it lands on Analytics

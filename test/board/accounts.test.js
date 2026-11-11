@@ -139,6 +139,33 @@ test('locked: strangers go to the sign-in page, a sign-up waits, and approval le
   assert.ok(log[0].at >= before && log[0].at <= Date.now());
   assert.ok(!JSON.stringify(log).includes('the claim') && !JSON.stringify(log).includes('me@example.com'));
   assert.equal(mails.pop().to, 'rep@example.com'); // the claim's own email, set aside for the counts below
+  // Job posting alerts live on the account (owner, 2026-11-11): the member's name code
+  // and choices, for every device signed in to it; listed for the board checker.
+  assert.equal((await call('/auth/profile', { body: { code: 'PAEX' } })).status, 401);
+  let prof = await (await call('/auth/me', { cookie })).json();
+  assert.deepEqual([prof.code, prof.postings], ['', { on: false, remind: {} }]);
+  assert.equal((await call('/auth/profile', { cookie, body: { code: 'P1' } })).status, 400);
+  res = await call('/auth/profile', { cookie, body: { code: 'paex', postings: { on: true, remind: { 785410: 24, 12: 5, 786099: 9999 } } } });
+  assert.deepEqual(await res.json(), { ok: true, code: 'PAEX', postings: { on: true, remind: { 785410: 24 } } });
+  prof = await (await call('/auth/me', { cookie })).json();
+  assert.deepEqual([prof.code, prof.postings], ['PAEX', { on: true, remind: { 785410: 24 } }]);
+  assert.deepEqual(JSON.parse(store.get('accounts/postings.json')), { [u.id]: 1 });
+  assert.equal(JSON.parse(store.get(`accounts/users/${u.id}.json`)).status, 'approved'); // the account itself is untouched otherwise
+  // A change to one part keeps the other; switched off with no reminders, it leaves the checker's list.
+  res = await call('/auth/profile', { cookie, body: { postings: { on: false } } });
+  assert.deepEqual(await res.json(), { ok: true, code: 'PAEX', postings: { on: false, remind: { 785410: 24 } } });
+  assert.deepEqual(JSON.parse(store.get('accounts/postings.json')), { [u.id]: 1 });
+  await call('/auth/profile', { cookie, body: { postings: { on: false, remind: {} } } });
+  assert.deepEqual(JSON.parse(store.get('accounts/postings.json')), {});
+  assert.equal((await call('/accounts/postings.json', { cookie })).status, 404); // never served as a file
+  // This device takes the account's alerts with no turn followed: kept, with the account on it.
+  const dev = { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/dev1', keys: { p256dh: 'p', auth: 'a' } }, turns: [] };
+  assert.deepEqual(await (await call('/push/subscribe', { cookie, body: { ...dev, device: true } })).json(), { ok: true, turns: [], prefs: {} });
+  const subKey = [...store.keys()].find((k) => k.startsWith('subs/'));
+  assert.equal(JSON.parse(store.get(subKey)).account, u.id);
+  // Without that (or not signed in), a device following nothing is forgotten, as before.
+  await call('/push/subscribe', { cookie, body: dev });
+  assert.equal([...store.keys()].some((k) => k.startsWith('subs/')), false);
   // A cookie that's been altered is no cookie.
   assert.equal((await call('/data/index.json', { cookie: `${cookie.slice(0, -2)}xx` })).status, 401);
 

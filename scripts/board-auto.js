@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -50,7 +50,7 @@ const ResetAlerts = require('../lib/board/reset-alerts');
 const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
-const { listSubscriptions, deleteObject, retryingFetch } = require('../lib/board/r2');
+const { listSubscriptions, listPostingAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
 const { loadNames, recordNames, recordBoardCrew, recordYardCrew, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
@@ -58,6 +58,7 @@ const path = require('path');
 const { describeFrame } = require('../lib/board/capture');
 const { parseGrid } = require('../lib/board/grid');
 const People = require('../lib/board/people');
+const Postings = require('../lib/board/postings');
 const OwnerNotify = require('../lib/board/owner-notify');
 const Trainees = require('../lib/board/trainees');
 const S = require('../lib/board/screens');
@@ -1202,6 +1203,39 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
         errors.add(r.message);
         nextPending.push({ at, phone: s.key, event: e }); // that phone, next check
       }
+    }
+    // Job posting alerts (owner, 2026-11-11; lib/board/postings.js): a new
+    // posting to every device of an account whose person may post for it, and
+    // the reminders the member picked. Each person's last turn and craft and
+    // what each account was told are kept on the laptop (hashes and numbers).
+    try {
+      const read = JSON.parse(fs.readFileSync(POSTINGS_FILE, 'utf8'));
+      const memory = TurnAlerts.loadTold(POSTING_ALERTS_FILE) || {};
+      const people = Postings.rememberPeople(memory.people, sightings);
+      const jobs = [...((read.co && read.co.list) || []), ...((read.en && read.en.list) || [])];
+      const accounts = await listPostingAccounts(settings.r2, retryingFetch(fetch));
+      const nextTold = {};
+      for (const acc of accounts) {
+        const mine = Postings.accountEvents(acc, jobs, people, (memory.accounts || {})[acc.id] || null, People.personHash);
+        if (!mine.told) continue;
+        nextTold[acc.id] = mine.told;
+        const devices = subs.filter((x) => x.account === acc.id && nextBases[x.key] !== undefined);
+        for (const e of mine.events) {
+          let went = false;
+          for (const d of devices) {
+            const r = await sendPush(d, { title: 'Job posting', body: e.text, tag: `posting-${e.number}`, url: e.url }, { keys, sub });
+            const l = log.get(e.text) || { turn: 'JOBS', kind: e.kind, phones: 0, failed: 0 };
+            log.set(e.text, l);
+            if (r.ok) { l.phones++; sent++; went = true; said.add(e.text); continue; }
+            l.failed++;
+            if (r.gone) { await deleteObject(settings.r2, d.key); delete nextBases[d.key]; dropped++; } else errors.add(r.message);
+          }
+          if (went) Postings.sent(mine.told, e); // no device reached: it goes with the next check
+        }
+      }
+      TurnAlerts.saveTold(POSTING_ALERTS_FILE, { people, accounts: nextTold });
+    } catch (err) {
+      if (err.code !== 'ENOENT') console.log(`  (job posting alerts skipped: ${err.message})`);
     }
     try { TurnAlerts.saveTold(PHONES_FILE, nextBases); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
     writeAlertsLog(log);

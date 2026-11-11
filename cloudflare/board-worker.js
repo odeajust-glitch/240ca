@@ -101,7 +101,12 @@ async function subscribe(request, env) {
   }
   const key = await subKey(sub.endpoint);
   const turns = [...new Set((Array.isArray(body.turns) ? body.turns : []).map((t) => (String(t).startsWith('@') ? String(t).toLowerCase() : String(t).toUpperCase())))].filter((t) => TURN.test(t)).slice(0, MAX_TURNS);
-  if (!turns.length) {
+  // A device that follows nothing is forgotten, unless it is a signed-in
+  // member's and takes that account's own alerts (the job postings; owner,
+  // 2026-11-11): then it is kept with no follows.
+  const member = await sessionOf(request, env);
+  const ownAlerts = body.device === true && !!member && member.status === 'approved';
+  if (!turns.length && !ownAlerts) {
     await env.SITE.delete(key);
     return json({ ok: true, turns: [] });
   }
@@ -128,9 +133,12 @@ async function subscribe(request, env) {
   // members page"): the signed-in member's account id, kept with the
   // follows. A save while signed out keeps the id already there.
   let account;
-  const who = await sessionOf(request, env);
-  if (who && who.status === 'approved' && who.id !== 'owner') account = who.id;
-  else { const old = await readJson(env, key); if (old && typeof old.account === 'string') account = old.account; }
+  const who = member;
+  const old = await readJson(env, key);
+  // The owner's own device counts as the account "owner" only when it asks
+  // for its account's alerts (the Members list knows no such account).
+  if (who && who.status === 'approved' && (who.id !== 'owner' || ownAlerts)) account = who.id;
+  else if (old && typeof old.account === 'string') account = old.account;
   await env.SITE.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, turns, prefs, account, updated: new Date().toISOString() }),
     { httpMetadata: { contentType: 'application/json' } });
   return json({ ok: true, turns, prefs });
@@ -1475,6 +1483,58 @@ async function crewKey(request, env) {
 // the address of the alerts this phone already has; the signed-in member's
 // account id is written beside them. Turns, choices and keys are copied back
 // exactly as they were; a phone with no saved alerts is left with none.
+// A member's own settings for job posting alerts (owner, 2026-11-11: "build
+// the account way"): their name code, whether they want an alert when a job
+// they could post for goes up, and a reminder some hours before a posting
+// closes, chosen job by job. Kept on the account ({ code, postings: { on,
+// remind: { <circular number>: hours } } }; the owner's own in
+// accounts/owner.json), so every device signed in to it gets them. The
+// accounts that have set any of this are listed in accounts/postings.json for
+// the board checker, which works out from the code where the person stands
+// and what they may post for (lib/board/postings.js).
+const OWNER_PROFILE_KEY = `${ACC}owner.json`;
+const POSTINGS_INDEX_KEY = `${ACC}postings.json`;
+const CODE_RE = /^[A-Z]{3}[A-Z1-9]$/;
+function cleanPostings(p, was) {
+  const base = was && typeof was === 'object' ? was : { on: false, remind: {} };
+  if (!p || typeof p !== 'object') return { on: base.on === true, remind: base.remind || {} };
+  const remind = {};
+  for (const [k, v] of Object.entries(p.remind && typeof p.remind === 'object' ? p.remind : base.remind || {}).slice(0, 40)) {
+    const h = Math.round(Number(v));
+    if (/^\d{5,7}$/.test(k) && h >= 1 && h <= 168) remind[k] = h;
+  }
+  return { on: p.on === undefined ? base.on === true : p.on === true, remind };
+}
+async function profileOf(env, who) {
+  const rec = who.id === 'owner' ? await readJson(env, OWNER_PROFILE_KEY) : await userById(env, who.id, Date.now(), true);
+  return { code: (rec && rec.code) || '', postings: cleanPostings(null, rec && rec.postings) };
+}
+async function authProfile(request, env) {
+  const who = await sessionOf(request, env, Date.now(), true);
+  if (!who || who.status !== 'approved') return json({ error: 'Sign in first.' }, 401);
+  const b = await bodyJson(request);
+  if (!b) return json({ error: 'not JSON' }, 400);
+  const owner = who.id === 'owner';
+  const rec = owner ? ((await readJson(env, OWNER_PROFILE_KEY)) || {}) : await readJson(env, userKey(who.id));
+  if (!rec) return json({ error: 'Sign in first.' }, 401);
+  const next = { ...rec };
+  if (b.code !== undefined) {
+    const code = String(b.code || '').toUpperCase().replace(/\s+/g, '');
+    if (code && !CODE_RE.test(code)) return json({ error: 'A name code is four characters: the first two letters of your first name and the first two of your last name (the last one can be a number where two people share a code).' }, 400);
+    if (code) next.code = code; else delete next.code;
+  }
+  if (b.postings !== undefined) next.postings = cleanPostings(b.postings, rec.postings);
+  if (owner) await putJson(env, OWNER_PROFILE_KEY, next); else await saveUser(env, who.id, next);
+  // The checker's list of accounts to look at.
+  const index = (await readJson(env, POSTINGS_INDEX_KEY)) || {};
+  const wants = !!next.code && !!next.postings && (next.postings.on === true || Object.keys(next.postings.remind || {}).length > 0);
+  if (wants !== !!index[who.id]) {
+    if (wants) index[who.id] = 1; else delete index[who.id];
+    await putJson(env, POSTINGS_INDEX_KEY, index);
+  }
+  return json({ ok: true, code: next.code || '', postings: cleanPostings(null, next.postings) });
+}
+
 async function claimPhone(request, env) {
   const who = await sessionOf(request, env);
   if (!who || who.status !== 'approved' || who.id === 'owner') return json({ ok: true, matched: false });
@@ -1505,7 +1565,7 @@ async function accounts(request, env, url) {
       const u = await userById(env, s.id, Date.now(), true);
       if (u && u.status === 'approved' && !(Date.now() - u.seenAt < 3600000)) await saveUser(env, s.id, { ...u, seenAt: Date.now() });
     }
-    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null });
+    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null, ...(s && s.status === 'approved' ? await profileOf(env, s) : {}) });
     if (s && s.status === 'approved' && Date.now() - s.t > SESSION_RENEW_MS) res.headers.append('set-cookie', await sessionCookie(env, s.id === 'owner' ? { u: 'owner', t: Date.now() } : { u: s.id, k: s.key, t: Date.now() }));
     return res;
   }
@@ -1514,6 +1574,7 @@ async function accounts(request, env, url) {
     if (p === '/auth/signup') return authSignup(request, env);
     if (p === '/auth/code') return authCode(request, env);
     if (p === '/auth/verify') return authVerify(request, env);
+    if (p === '/auth/profile') return authProfile(request, env);
     if (p === '/auth/logout') { const res = json({ ok: true }); res.headers.append('set-cookie', CLEAR_COOKIE); return res; }
     if (p === '/auth/owner') {
       // The owner's device: its key gets it in without an email.
