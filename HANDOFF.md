@@ -112,10 +112,23 @@ trains on the Call Board).
   file someone exports and sends themselves; a day before the paste has its total but no
   craft split. Owner page, so both sites. He was not asked where he wanted it: Page
   Health was my pick; say so if he wants it elsewhere (Analytics, members).
+  - **Who submitted, and when, added 2026-11-11 04:40 (owner: "records who submitted the
+    grievance and the time ... incase we have any issues"). WORKER CHANGE `d6687dc`, the
+    version on the copy page now; paste that one (it includes `bc9e72d`).** Every try that
+    reaches the limits or the email is kept (`held186Log`, R2 `stats/held186/log/<month>.json`,
+    12 months, never served as a file): time, the signed-in member (account id, name,
+    email, from `sessionOf`), the name typed on the form, craft, train out, the page's
+    reference, and the result ("sent", or "not sent: why"). Never the claim's text, the
+    PIN, the copy address or the internet address. `/health/held186` returns `log` (newest
+    200 of the last three months); Page Health lists them under the counts (`heldLog`).
+    The form's review box now tells the member a record is kept (`.gkept`): my addition,
+    not asked for; say so. Records start at the paste: nothing before it can be recovered
+    (only daily totals were kept). Tests: r2.test.js and accounts.test.js (a signed-in
+    member's name is on the record; not signed in on a locked site it cannot be sent).
   - **The same paste fixes the visits table a day short late in the evening** (`lastDays`:
     counted by calendar day, used by `/stats/days` too): Housekeeping item 2, done once
     pasted. The r2 test no longer depends on the hour.
-  - **Copy page rebuilt and republished at the same link** (version `bc9e72d`, 1827 lines,
+  - **Copy page rebuilt and republished at the same link** (now version `d6687dc`, 1857 lines; first `bc9e72d`,
     checked to decode to exactly the file; the previous page decoded to exactly `5c0fde0`,
     so this commit is the only Worker difference). There was no make-copy-page.py in this
     session: the page was rebuilt from the published one (replace the base64 on the
