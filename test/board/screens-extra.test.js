@@ -674,4 +674,21 @@ test('job postings: the Circular Inquiry gives each job up for bid and its closi
     '785578 0800 BUNKH.YDF S/S | YBHS01 FO A 2026-11-22 T',
   ]);
   assert.deepEqual([list[0].yard, list[0].pool, list[1].yard, list[1].pool, list[3].pool], [true, '', false, 'S5', 'SR']);
+  // As the checker really reads it (the laptop's first run, 2026-11-11): each text
+  // box is a cell of its own in square brackets, the line's X box first.
+  const real = parseGrid([
+    '1 | 10:DIST: | 64:[45] | 91:SUB-DIST: | 190:[SA] | 217:CIRCULAR INQUIRY- ENGINE | 640:PSTS02T',
+    '37 | 10:PERM/TEMP(P/T): | 154:[*] | 226:CHG | 262:CARD/746/OTHER(1/2/3): | 469:[*] | 541:( | 559:[261111] | 622:- | 640:[] | 703:)',
+    '73 | 10:[] | 28:785410 | 109:1445 PLANK YDH | 244:W/T | 298:45SA | 352:YPRS30 | 415:S1 | 469:A | 523:3 | 559:261112 | 631:P',
+    '163 | 10:[] | 28:785549 | 109:CDR CHAIN GANG | 298:45SA | 352:SRSR11 | 415:CO | 469:U | 523:3 | 559:261116 | 631:T | 676:C',
+    '199 | 10:[] | 28:785578 | 109:0800 | 154:BUNKH.YDF | 244:S/S | 298:45SA | 352:YBHS01 | 415:FO | 469:A | 523:3 | 559:261122 | 631:T',
+    '73 | 10:[] | 28:786301 | 109:ENG | 145:DRAG | 190:POOL | 298:45SA | 352:SDSD07 | 415:EN | 469:U | 523:3 | 559:261126 | 631:T',
+    '397 | 19:ENTER=INQUIRE/PROCESS | 235:PF1=HELP | 334:PF3=EXIT | 433:PF8=SCROLL | 541:PF11=PREV | 631:MENU',
+  ]);
+  assert.deepEqual(S.parseCircularInquiry(real).map((j) => `${j.number} ${j.description} | ${j.turn} ${j.cc} ${j.kind} ${j.closes} ${j.term}${j.cia ? ` ${j.cia}` : ''}`), [
+    '785410 1445 PLANK YDH W/T | YPRS30 S1 A 2026-11-12 P',
+    '785549 CDR CHAIN GANG | SR11 CO U 2026-11-16 T C',
+    '785578 0800 BUNKH.YDF S/S | YBHS01 FO A 2026-11-22 T',
+    '786301 ENG DRAG POOL | SD07 EN U 2026-11-26 T',
+  ]);
 });
