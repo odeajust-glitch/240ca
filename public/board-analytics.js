@@ -33,7 +33,7 @@
     if (/^\d+$/.test(q) || / /.test(q) || q === 'DH') return 'train';
     const base = q.replace(/-(EN|CO)$/, '');
     if (knownTurns.includes(base)) return 'turn';
-    if (/^[A-Z]{4}$/.test(q)) return 'code';
+    if (/^[A-Z]{3}[A-Z1-9]$/.test(q)) return 'code';
     if (/^[A-Z]{1,2}\d{4,}$/.test(q) || trains.some((r) => trainMatches(r.id, q))) return 'train';
     return 'turn';
   }

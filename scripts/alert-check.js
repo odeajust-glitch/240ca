@@ -19,7 +19,7 @@ const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
   if (!want) { console.log('Use: node scripts/alert-check.js WADE   (or a turn, e.g. S501)'); process.exit(1); }
   const settings = siteSettings();
   if (!settings.r2) { console.log('Cloudflare isn\'t set up in .env, so there are no phones to reach.'); process.exit(1); }
-  const code = /^[A-Z]{4}$/.test(want) && !/\d/.test(want);
+  const code = /^[A-Z]{3}[A-Z1-9]$/.test(want);
   const key = code ? `@${People.personHash(want)}` : want;
   const subs = await listSubscriptions(settings.r2, retryingFetch(fetch));
   const following = subs.filter((s) => (s.turns || []).some((t) => t === key || (!code && t.replace(/-(CO|EN|TT|ET)$/, '') === want)));

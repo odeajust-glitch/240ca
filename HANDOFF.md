@@ -47,34 +47,54 @@ trains on the Call Board).
   errors. Empty trainee slots read "TT open turn" on most jobs, so an open TT / ET is now
   left out (needs another laptop pull; the old entries age out of names.json in 14 days).
   ❓ `Wallis, B` shows as FO on both YBHS31 and YPRS60: one person on two jobs, or two people?
-- **Name code COBR was two people; the second is now COBD (owner's word, 2026-11-10: SB06's
-  holder stays COBR, SR11's becomes COBD).** people.json had the one code on SB06 and SR11
-  at the same time. `OWN_CODES` in lib/board/people.js gives one person a code of their
-  own, keyed by a one-way hash of the name (`nameHash`), so no name is in the code; the
-  comment there has the one-line command to add another. Page Health's name fit knows
-  COBD too (`OWN_CODE_LETTERS` in board.html). **Needs the laptop to pull and restart.**
-  From then on SR11's holder is seen as COBD. **Not changed:** what was already saved, so
-  a COBR search still lists SR11 up to the restart (the saved checks hold only the hash);
-  a phone following COBR for him must follow COBD instead.
-- **All name codes checked for more shared ones, 2026-11-11 00:05 (owner: "check all name
-  codes and find anymore conflicts"). Five found, nothing built: waiting for him to say
-  which person gets which code.** Method: people.json (161 codes) against the crew names
-  file opened on the test site; a conflict = one code that is on two own turns in the last
-  day whose names differ but share first initial + first two letters of the surname.
-  By turn (names are in the crew file, not here): **SR08 with the FO of YBHS31 and the FO of
-  YPRS60 (three people on one code: Justin, 2026-11-11, the two FOs are two people with one
-  surname, first names differing at the third letter);
-  B105 with YSBY02's YA; XSAS02's FO with YFLS01's FO; B111 with YMPS31's TT; SD02 with
-  YPRS02's S1** (the last from Justin: two people with one surname and the same first two
-  letters, so the names file reads the same for both and the check took them for one). Looked
-  alike but have different codes (first names differ): B106 / SB03, B129 / B134, S101 /
-  YSTY01, S502-CO / YINS60's S1, XSAS03's FO / YEBS30's S1, SD10 against B105, XSAS05's FO
-  against B111. Not conflicts: SB01 + SB03 (one
-  person, moved 10 Nov 1658). Not settled: one code each on YFLS01 + YPRS30, YEBS03 +
-  YFLS01, YBHS01 + YEBS03 since 8 to 10 Nov, no two names there fit one code (trainees
-  moved between jobs is the likely reading). Blind spot: a person the boards have not
-  named, or not seen in the last day. To split one: add its `nameHash` to `OWN_CODES`
-  (people.js) and its letters to `OWN_CODE_LETTERS` (board.html).
+- **Shared name codes split, 2026-11-11 00:45 (owner: "Person 1 keeps their code. Person 2
+  replaces the last letter with number 1 ... Person 3 replaces the last letter with 2.
+  Whenever anyone searchs the name code for anyone in person 1. Prompt the other name
+  codes ... Make sure all the logs and turn history are tied to the correct code").
+  Needs the laptop to pull and restart. Both sites (his direct ask, not a preview).**
+  - **The groups** (`CODE_GROUPS`, the same list in lib/board/people.js and
+    public/board.html): COBR + COBD (his own choice the evening before, kept), BRWA +
+    BRW1 + BRW2, JAMC + JAM1, MADE + MAD1, MARI + MAR1, MARO + **MAR2** (his rule gives
+    MAR1, which MARI's second already has: ❓ tell him, ask if he wants another). Who is
+    who was found on 2026-11-11 by turn: SB06 / SR11; SR08 / the FOs of YBHS31 and YPRS60;
+    XSAS02's FO / YFLS01's FO; B111 / YMPS31's TT; SD02 / YPRS02's S1; B105 / YSBY02's YA.
+    Each split-off person is found by a one-way hash (`OWN_CODES`), so no name is in the
+    code: first three letters of the first name + surname where the surname is shared
+    (his word for the first names), else the usual code + surname. The comment there has
+    the command to add one; add the group to both `CODE_GROUPS` lists.
+  - **A code can end in 1 to 9 now** (`isCode` in board.html, `kindOf` in
+    board-analytics.js, BOARD_WEEKLY_CODES, scripts/alert-check.js, scripts/trainee.js).
+    No Worker change: a followed person is `@` + a hash there.
+  - **The prompt** (`codeGroupNote`): searching any code in a group, in the alert box
+    under Find a turn and in Turn History's person panel, lists every code in the group
+    with the turn its person is on now, the name where crew names are on, and in the
+    alert box a "Track XXXX instead" button.
+  - **History.** Checks saved before the split hold the shared hash for everyone. The
+    site build re-ties them by turn (`People.retie` in lib/board/site.js, before the
+    sightings, the reset tracker and "now"): rules = shared hash → turn → new hash. The
+    laptop learns the turns itself (`learnSplit`, BoardChecker\code-splits.json: where
+    each split-off code is on a turn of its own during its first 24 h), plus `SEED` (COBD:
+    SA07 and SR11). New checks carry `peopleV: 2` and are never re-tied. Day files keep
+    the rules' signature (`retie`): **every day is rebuilt once after the pull, and again
+    whenever a turn is learned in that first day** (like a FORMAT bump, a slower publish).
+  - **Limits, told to him:** before the restart the two could only be told apart by
+    turn, so a person-1 spare who worked the other's yard job then is counted to the
+    other; a split-off person's earlier turns (before the one they hold now) stay with
+    person 1, except COBD's SA07; SR01 / SB03 on 24 to 25 Oct stay with COBR. **Phones
+    following a shared code for person 2 or 3 must follow the new code**; nothing moved
+    them (can't tell who a phone meant). Not announced to anyone.
+  - **Checked:** suite 372 of 372 (tests for the codes, `retie`, `learnSplit`). On the
+    real test site with this page: COBR, BRWA, MARI and MAR2 show the prompt in both
+    places, JUOD shows none, no page errors, no sideways scroll. **Not checked:** the
+    rebuild on the laptop (no real history here), BRW1 / BRW2 / the others appearing
+    after the restart. Look at people.json after his pull: each new code on one turn,
+    the shared ones no longer on two.
+  - Also fixed, found on the way: the alert box's Save button threw and stayed greyed
+    out when alerts could not be set up (`e.currentTarget` after a wait).
+  - Looked alike but have different codes, nothing to do: B106 / SB03, B129 / B134, S101
+    / YSTY01, S502-CO / YINS60's S1, XSAS03's FO / YEBS30's S1, SD10, XSAS05's FO. One
+    code each on YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03 (8 to 10 Nov) is not
+    settled: no two names fit; trainees moving between jobs is the likely reading.
 - **One test fails by the clock, not by this work:** `the Worker counts visits per day and
   never serves the files` (test/board/r2.test.js) gives 29 days, not 30, when run between
   23:00 and midnight Toronto until about 2026-12-01 (it fails the same on `f5b27e2`; the

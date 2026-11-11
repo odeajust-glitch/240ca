@@ -20,7 +20,7 @@ async function main() {
   const outDir = arg('--out') || path.join(DATA_DIR, 'site');
   const settings = siteSettings();
   const { days } = settings;
-  const built = buildSite({ historyDir: arg('--history') || HISTORY_DIR, outDir, days, names: { file: NAMES_FILE, key: settings.namesKey } });
+  const built = buildSite({ historyDir: arg('--history') || HISTORY_DIR, outDir, days, names: { file: NAMES_FILE, key: settings.namesKey }, splits: require('../lib/board/paths').CODE_SPLITS_FILE });
   console.log(`Built ${built.snapshots} snapshots over ${built.days} days in ${outDir}${built.latest ? ` (latest ${built.latest})` : ''}.`);
   for (const s of built.skipped) console.log(`  Skipped ${s}`);
   if (!process.argv.includes('--deploy')) return;

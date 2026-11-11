@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -742,8 +742,10 @@ async function runRoute(page, opts = {}) {
   // turns); train: the Call Board train their name is on (owner, 2026-11-03:
   // JUOD bumped back onto S501 CO was shown "on duty on L50131", the train
   // the previous holder was still working).
+  const codeSeen = []; // code + turn, in memory: where a split-off code's person is (people.js learnSplit)
   const sight = (code, turn, own, extra = {}) => {
     if (!code || !turn) return;
+    codeSeen.push({ code, turn, own: !!own });
     const h = People.personHash(code);
     codeByHash.set(h, code); // memory only: the owner's "who gets alerts"
     const k = `${h}/${turn}`;
@@ -784,7 +786,13 @@ async function runRoute(page, opts = {}) {
   // Days off seen in earlier checks, kept until each ends (a line can leave
   // option 4's "upcoming" list once it starts): turn, craft, times only.
   const daysOffKnown = DaysOff.load(DAYS_OFF_FILE);
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], ...(daysOffKnown.length ? { daysOffKnown } : {}) };
+  // Which turns each split-off name code is on, so the checks saved before
+  // the split can be told apart by turn (hashes and turns only).
+  try {
+    const codeSplits = People.loadSplits(CODE_SPLITS_FILE);
+    if (People.learnSplit(codeSplits, codeSeen, Date.now() / 60000)) fs.writeFileSync(CODE_SPLITS_FILE, JSON.stringify(codeSplits));
+  } catch (err) { console.log(`  (name code splits not saved: ${err.message})`); }
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, ...(daysOffKnown.length ? { daysOffKnown } : {}) };
 }
 
 // The full view, plus what changed since the previous check (kept in
@@ -901,7 +909,7 @@ async function publishSite(changed) {
     const dir = path.join(OUT_DIR, 'site');
     // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
     const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, splits: CODE_SPLITS_FILE });
     // The owner's health line: on Cloudflare only, where the Worker keeps it
     // to the owner's email (status/ is never served as a file).
     const healthFile = path.join(dir, 'status', 'health.json');
@@ -947,7 +955,7 @@ async function sendWeekly() {
   const turnsAll = read('turns.json').turns || {};
   const trains = read('trains.json').trains || [];
   const found = read('analytics.json');
-  const codes = String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',').map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{4}$/.test(c));
+  const codes = String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',').map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{3}[A-Z1-9]$/.test(c));
   try {
     const subs = await listSubscriptions(settings.r2);
     const keys = loadOrCreateKeys(PUSH_KEYS_FILE);

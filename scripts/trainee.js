@@ -25,14 +25,14 @@ if (cmd === 'list') {
 } else if (cmd === 'add') {
   const turn = String(turn0 || '').toUpperCase();
   const craft = String(craft0 || '').toUpperCase();
-  if (!/^[A-Z]{4}$/.test(code) || !/^[A-Z][A-Z0-9]\d{2}$/.test(turn) || !/^(TT|ET)$/.test(craft)) usage();
+  if (!/^[A-Z]{3}[A-Z1-9]$/.test(code) || !/^[A-Z][A-Z0-9]\d{2}$/.test(turn) || !/^(TT|ET)$/.test(craft)) usage();
   const m = load();
   const now = Date.now();
   m[People.personHash(code)] = { slot: `${turn}-${craft}`, base: turn, craft, at: now, seen: now, byHand: true };
   save(m);
   console.log(`${code} kept on ${turn} · ${craft} (trainee) from the next check, while ${turn} is away; let go 30 min after it's back in Sarnia unless crews in town shows ${code} there.`);
 } else if (cmd === 'remove') {
-  if (!/^[A-Z]{4}$/.test(code)) usage();
+  if (!/^[A-Z]{3}[A-Z1-9]$/.test(code)) usage();
   const m = load();
   const h = People.personHash(code);
   console.log(m[h] ? `${code} taken off ${m[h].slot}.` : `${code} wasn't kept.`);

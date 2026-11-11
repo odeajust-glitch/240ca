@@ -683,6 +683,7 @@
   .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
+  .codegroup ul { margin: 6px 0 0; padding-left: 18px; } .codegroup li { margin: 3px 0; }
   .crewnm { color: var(--soft); font-weight: 400; font-size: 0.92em; white-space: nowrap; letter-spacing: 0; text-transform: none; }
   .anote { font-size: 13.5px; color: var(--soft); margin: -6px 0 14px; }
   .anote b { color: var(--ink); }
@@ -4472,7 +4473,12 @@ const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) =
 // shown back as a name: the site only has hashes of codes with the turns
 // each person was seen on (data/people.json, lib/board/people.js). What's
 // typed is hashed here the same way and looked up.
-const isCode = (t) => /^[A-Z]{4}$/.test(t || '');
+const isCode = (t) => /^[A-Z]{3}[A-Z1-9]$/.test(t || '');
+// Two or three people whose names make the same code (owner, 2026-11-11):
+// the first keeps it, the second's ends in 1, the third's in 2 (COBD was
+// given by hand before that). The same list as lib/board/people.js.
+const CODE_GROUPS = [['COBR', 'COBD'], ['BRWA', 'BRW1', 'BRW2'], ['JAMC', 'JAM1'], ['MADE', 'MAD1'], ['MARI', 'MAR1'], ['MARO', 'MAR2']];
+const codeGroup = (code) => CODE_GROUPS.find((g) => g.includes(code)) || null;
 const Person = (() => {
   const SALT = '240ca-person:';
   const PICK_KEY = 'personPick';
@@ -5590,8 +5596,7 @@ source().then(async (src) => {
     const NAMES = CREW || healthCrew;
     if (!NAMES) loadHealthCrew();
     // A code given by hand where two names made the same one (lib/board/people.js OWN_CODES).
-    const OWN_CODE_LETTERS = { COBD: 'COBR' };
-    const fits = (code0, name) => { const code = OWN_CODE_LETTERS[code0] || code0; const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
+    const fits = (code0, name) => { const code = (codeGroup(code0) || [code0])[0]; const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
     const onTurn = (t) => {
       if (!NAMES) return '';
       if (NAMES[t]) return esc(NAMES[t]);
@@ -5919,14 +5924,15 @@ source().then(async (src) => {
       Alerts.keepPrefs(turn, change);
       keepTracked([...new Set([...tracked(), turn])]);
       if (Alerts.state(turn) !== 'on' && Alerts.state(turn) !== 'off') return done();
-      e.currentTarget.disabled = true;
+      const btn = e.currentTarget; // gone from the event once this waits
+      btn.disabled = true;
       say('Setting up alerts…');
       try {
         await Alerts.set(turn, true);
         done();
       } catch (err) {
         say(`${esc(label(turn))} is tracked on this page, but alerts couldn't be set up: ${esc(err.message)}.`, 'bad');
-        e.currentTarget.disabled = false;
+        btn.disabled = false;
         paintTracked();
       }
     };
@@ -5944,6 +5950,30 @@ source().then(async (src) => {
   const turnClear = document.getElementById('turnclear');
   // Enter, or a turn picked from the suggestions (not on leaving the box:
   // tapping OK would open it again).
+  // A code more than one person's name makes (owner, 2026-11-11: "Whenever
+  // anyone searches the name code for anyone in person 1, prompt the other name
+  // codes to ensure the person tracks the correct code"): every code in the
+  // group with the turn its person is on now, and the name where the crew
+  // names are on. `pick`: buttons that open the other codes (the alert box).
+  async function codeGroupNote(code, pick) {
+    const g = codeGroup(code);
+    if (!g) return '';
+    const rows = [];
+    for (const c of g) {
+      const list = await Person.find(c);
+      const own = (list || []).filter((e) => e.own).sort((a, b) => (a.to < b.to ? 1 : -1));
+      const newest = own.length ? own[0].to : '';
+      const turns = [...new Set(own.filter((e) => stampMin(newest) - stampMin(e.to) <= 60).map((e) => e.turn))];
+      // The name beside it where the crew names are on: the turn's, or on a
+      // yard job the one of its people whose name fits the code's letters.
+      const fit = (n) => { const m = /^(.*),\s*([A-Za-z])/.exec(n || ''); return !!m && m[2].toUpperCase() === g[0][0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === g[0].slice(2, 4); };
+      const nameOn = (t) => { if (!CREW) return ''; const n = [...new Set([t, `${t}-CO`, `${t}-EN`, ...Object.keys(CREW).filter((k) => k.startsWith(`${t}-`))].map((k) => CREW[k]).filter(fit))]; return n.length === 1 ? ` <span class="crewnm">${esc(n[0])}</span>` : ''; };
+      const where = turns.length ? `on ${turns.map((t) => `<b class="num">${esc(t)}</b>${nameOn(t)}`).join(' / ')}` : '<span class="muted">not seen on a turn yet</span>';
+      rows.push(`<li><b class="num">${esc(c)}</b>${c === code ? ' (this one)' : ''}: ${where}${pick && c !== code ? ` <button type="button" class="linkbtn" data-othercode="${esc(c)}">Track ${esc(c)} instead</button>` : ''}</li>`);
+    }
+    return `<div class="alertnote codegroup"><b>${g.length === 2 ? 'Two' : 'Three'} people's names make the code ${esc(g[0])}, so each has a code of their own.</b> Check you have the right person:<ul>${rows.join('')}</ul></div>`;
+  }
+  const wireOtherCodes = (root) => root.querySelectorAll('[data-othercode]').forEach((b) => { b.onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = b.dataset.othercode; openTrackAny(b.dataset.othercode); }; });
   // A 4-letter code tracks that person's turn (hidden search).
   async function openTrackAny(v) {
     const t = clean(v);
@@ -5951,35 +5981,39 @@ source().then(async (src) => {
     const list = await Person.find(t);
     const h = `@${await Person.hash(t)}`;
     const cur = list && Person.current(list, Person.pickOf(h));
+    const others = await codeGroupNote(t, true);
     if (cur && Person.away(cur, h)) {
       // Seen before but not on a turn now: follow the person only.
       dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
-        <div class="alertnote">${esc(t)} isn't on a turn now (last seen on <b>${esc(cur.turn)}</b> until ${esc(dt(cur.to))}). Follow them anyway? Alerts start when they're seen on a turn of their own.</div>
+        <div class="alertnote">${esc(t)} isn't on a turn now (last seen on <b>${esc(cur.turn)}</b> until ${esc(dt(cur.to))}). Follow them anyway? Alerts start when they're seen on a turn of their own.</div>${others}
         <div class="btns"><button type="button" class="ok" id="dlgperson">👤 Follow ${esc(t)}</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
       dlg.dataset.turn = '';
       dlg.hidden = false;
       const shut = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
       document.getElementById('dlgcancel').onclick = shut;
+      wireOtherCodes(dlg);
       document.getElementById('dlgperson').onclick = () => { shut(); keepCode(h, t); openTrack(h); };
       return;
     }
     if (cur) {
       // Follow the person (alerts move with their home turn) or just the turn they're on now.
       dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
-        <div class="alertnote">${esc(t)} is on <b>${esc(cur.turn)}</b> now. Follow:</div>
+        <div class="alertnote">${esc(t)} is on <b>${esc(cur.turn)}</b> now. Follow:</div>${others}
         <div class="btns"><button type="button" class="ok" id="dlgperson">👤 ${esc(t)} (alerts move with their turn)</button>
           <button type="button" id="dlgturn">Turn ${esc(cur.turn)} only</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
       dlg.dataset.turn = '';
       dlg.hidden = false;
       const shut = () => { dlg.hidden = true; dlg.innerHTML = ''; };
       document.getElementById('dlgcancel').onclick = () => { shut(); turnBox.value = ''; turnClear.hidden = true; };
+      wireOtherCodes(dlg);
       document.getElementById('dlgturn').onclick = () => { shut(); openTrack(cur.turn); };
       document.getElementById('dlgperson').onclick = () => { shut(); keepCode(h, t); personNow[h] = cur.turn; openTrack(h); };
       return;
     }
-    dlg.innerHTML = '<div class="dlg" role="dialog" aria-modal="true"><header><h2>Not found</h2></header><div class="alertnote">Nothing found for that in the saved checks. Type a turn, e.g. SR03.</div><div class="btns"><button type="button" class="ok" id="dlgcancel">OK</button></div></div>';
+    dlg.innerHTML = '<div class="dlg" role="dialog" aria-modal="true"><header><h2>Not found</h2></header><div class="alertnote">Nothing found for that in the saved checks. Type a turn, e.g. SR03.</div>' + others + '<div class="btns"><button type="button" class="ok" id="dlgcancel">OK</button></div></div>';
     dlg.dataset.turn = '';
     dlg.hidden = false;
+    wireOtherCodes(dlg);
     document.getElementById('dlgcancel').onclick = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
   }
   turnBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openTrackAny(turnBox.value); } });
@@ -6107,8 +6141,9 @@ source().then(async (src) => {
     const box = document.getElementById('person');
     const list = await Person.find(code);
     await loadResets();
+    const others = await codeGroupNote(code, false);
     if (!box || focus !== code) return;
-    if (!list) { box.innerHTML = '<p class="empty">Nothing found for that in the saved checks.</p>'; return; }
+    if (!list) { box.innerHTML = others + '<p class="empty">Nothing found for that in the saved checks.</p>'; return; }
     const all = await src.turns().catch(() => ({}));
     const hash = await Person.hash(code);
     if (focus !== code || !box.isConnected) return; // looked up again meanwhile
@@ -6160,6 +6195,7 @@ source().then(async (src) => {
     focus = live ? cur.turn : '';
     setMarks();
     box.innerHTML = `<section class="sheet turnpanel${PREVIEW ? ' tn2' : ''}"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
+      ${others}
       ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
         <div><h3>Status</h3>${status}</div></div>
@@ -7273,7 +7309,7 @@ source().then(async (src) => {
       }
     } else {
       // A person: the live stretches (people.json) and the archive's.
-      const ok = /^[A-Z]{4}$/.test(q) && window.crypto && crypto.subtle;
+      const ok = isCode(q) && window.crypto && crypto.subtle;
       const [list, h] = ok ? await Promise.all([Person.find(q), Person.hash(q)]) : [null, null];
       if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       const old = (h && arch.people[h]) || [];

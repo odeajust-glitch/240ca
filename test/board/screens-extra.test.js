@@ -108,7 +108,7 @@ test('Call Board: yard jobs after the trains, stop at the crews in town', () => 
 
 test('yard crews matched to turns by name, in memory only', () => {
   const yard = S.parseYardCrewNames(grid(yardPage, false));
-  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key} ${y.code}`), ['YPRS60 FO DESCHENES/M/MAT MADE', 'YPRS60 S1 JOSEPH/B/BRA BRJO', 'YSBY04 YA ROBBINS/M/MAR MARO']);
+  assert.deepEqual(yard.map((y) => `${y.job} ${y.craft} ${y.key} ${y.code}`), ['YPRS60 FO DESCHENES/M/MAT MADE', 'YPRS60 S1 JOSEPH/B/BRA BRJO', 'YSBY04 YA ROBBINS/M/MAR MAR2']);
   const people = S.parseBoardNames(grid([
     '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST',
     'DESCHENES+     M    MATT   B138  001',
@@ -118,7 +118,7 @@ test('yard crews matched to turns by name, in memory only', () => {
   assert.deepEqual(people, [
     { key: 'DESCHENES/M/MAT', turn: 'B138', code: 'MADE', own: true, from: 'spare' },
     { key: 'JACOBSEN/N/NEI', turn: 'B142', code: 'NEJA', own: true, from: 'spare' },
-    { key: 'ROBBINS/M/MAR', turn: 'MU01', craft: 'EN', code: 'MARO', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
+    { key: 'ROBBINS/M/MAR', turn: 'MU01', craft: 'EN', code: 'MAR2', own: false, tv: false, from: 'pool' }, // away and working: maybe covering a trip
   ]);
 });
 
@@ -221,6 +221,26 @@ test('person codes and sightings', () => {
   assert.equal(nameHash("O'DEA*+", 'JUSTIN'), nameHash('ODEA', 'JUST'));
   assert.notEqual(nameHash('ODEA', 'JUSTIN'), nameHash('ODEB', 'JUSTIN'));
   assert.equal(personCode('TESTER', 'SAM'), 'SATE');
+  // History from before a split is told apart by turn; checks saved since are left alone.
+  const P = require('../../lib/board/people');
+  const shared = P.personHash('COBR');
+  const split = P.personHash('COBD');
+  const rules = P.emptySplits();
+  assert.equal(rules.map[shared].SR11, split); // known from before
+  const old = [{ h: shared, turn: 'SB06', own: true }, { h: shared, turn: 'SR11', own: true }, { h: 'x', turn: 'SR11', own: true }];
+  assert.deepEqual(P.retie(old, rules).map((p) => p.h), [shared, split, 'x']);
+  assert.deepEqual(P.retie(old, rules, P.PEOPLE_V).map((p) => p.h), [shared, shared, 'x']);
+  assert.equal(old[1].h, shared); // a copy, the saved check is not changed
+  // The laptop learns where a split-off person is, on a turn of their own, for a day.
+  const sigBefore = P.splitsSig(rules);
+  assert.equal(P.learnSplit(rules, [{ code: 'BRW1', turn: 'YBHS31', own: true }, { code: 'BRW2', turn: 'YPRS60', own: true }, { code: 'BRW1', turn: 'SA01', own: false }, { code: 'BRWA', turn: 'SR08', own: true }, { code: 'JUOD', turn: 'S501', own: true }], 1000), true);
+  const brwa = P.personHash('BRWA');
+  assert.deepEqual(rules.map[brwa], { YBHS31: P.personHash('BRW1'), YPRS60: P.personHash('BRW2') });
+  assert.notEqual(P.splitsSig(rules), sigBefore);
+  assert.equal(P.learnSplit(rules, [{ code: 'BRW1', turn: 'YBHS31', own: true }], 1100), false);
+  assert.equal(P.learnSplit(rules, [{ code: 'BRW1', turn: 'YFLS01', own: true }], 1000 + 25 * 60), false); // moved later: old checks not touched
+  assert.equal(rules.map[brwa].YFLS01, undefined);
+  assert.deepEqual(P.retie([{ h: brwa, turn: 'YPRS60' }, { h: brwa, turn: 'SR08' }], rules).map((p) => p.h), [P.personHash('BRW2'), brwa]);
   assert.equal(personHash('juod'), personHash('JUOD'));
   assert.equal(personHash('JUOD').length, 16);
   const h = personHash('JUOD');
