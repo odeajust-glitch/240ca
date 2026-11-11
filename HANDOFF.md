@@ -15,7 +15,60 @@ Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-S
 - **Files this touched outside the accounts area, in small marked places** (board/checker session, please keep them): `lib/board/screens.js` (`boardPersonName`, `parseBoardCrew`), `lib/board/names.js` (`recordNames` keeps `crafts`; `recordBoardCrew`, `shortName`, `namesByTurn`; `byTurn` skips `@board|` keys), `lib/board/site.js` (writes `data/crew.json`, locked), `lib/board/r2.js` (`accounts/` in `KEEP_PREFIXES`: without it every publish deleted every account), `scripts/board-auto.js` (two lines: `learn()` and where names.json is saved), `scripts/announce.js` (new), and in `board.html`: `CREW` / `crewTag` / `crewBoth` / `crewIn` at `markTurn`, `lineupCrew(t, s)`, one `crewTag` in `poolBody` and the turn panels, `crewBoth` in the two Garnet rows, `loadCrew`, `renderMembers`, Profile and the sign-up banner in the `auth/me` handler, the 401 hop in `getJSON`.
 - **Seen by Justin on the real test site:** names show; SA05 → Allen after the pool-screen source; 501/502 names; the covering spare's name. **Pushed but not yet confirmed by him:** open turn wording, the reworded spare line, the Garnet row's names (he pulled and restarted at `4024f2d`).
 - **Still open:** (1) `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token; harmless while `OWNER_EMAIL` is unset (it is unset on `board`), but fix `accessEmail()` or never set that variable with Access off. (2) Hash links (`#…`) are dropped on the way through sign-in. (3) An iPhone home-screen app is a separate "device" from Safari under the one-device rule. (4) RailroadTracker set aside by Justin; if it reads the site's files it stopped at the lock. (5) A removed member who kept the crew names passcode could open a saved copy of the file; changing `BOARD_NAMES_KEY` and the saved passcode ends that. (6) `OWNER_KEY` on `board` is a plain Variable, not a Secret; changing its value signs everyone out. (7) Followed name codes show only as a count on the Members tab.
-- **Tests:** `test/board/accounts.test.js` (Worker, 13 tests) and `test/board/names.test.js`. Whole suite 370 of 371 on 2026-11-10 evening; the one failing, `Mac yard: a crew on rest at the call is skipped and keeps its place`, came in with `0c75432` (alerts work), not from the accounts session.
+- **Tests:** `test/board/accounts.test.js` (Worker, 13 tests) and `test/board/names.test.js`. Whole suite 370 of 371 on 2026-11-10 evening; the one failing, `Mac yard: a crew on rest at the call is skipped and keeps its place`, came in with `0c75432` (alerts work), not from the accounts session. **Fixed 2026-11-10 20:15 by the board/checker session (the test still used order − 2 h; it now uses the new rule): 371 of 371.**
+
+**Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
+`public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
+note further down (search for the words in bold).**
+
+- **Test counts in this session's notes are wrong, and one real failure hid behind them.**
+  This session's container had no `node_modules`, so 60 tests in files that need a package
+  (`dotenv` and others) never ran, and every note from it says "N of M, the same 12
+  failing". Those 12 were the container, not the code. With `npm ci` the suite is **371 of
+  371**. One test did break with the Garnet/Toronto call change (`0c75432`), in a file
+  that could not load here; the accounts session found it, fixed in `test/board/site.test.js`.
+  **A cloud session must run `npm ci` before trusting `npm test`.**
+- **The live site cannot be loaded from a session any more** (locked: page and data answer
+  401; `board-test` is not reachable at all). A browser check needs its own copies of the
+  data files routed in. **This also blocks the two booked check-ins below**: they read the
+  live day files and `data/patterns.json`. Not solved; options are Justin pasting the
+  figures, or the owner key given to the session through the credential form (never typed
+  in chat). Ask him before the first one is due.
+- **Live on the main site since 2026-11-10:** the Analytics new layout (everything that was
+  in the Test tab, with the simpler Assignment errors); the Test tab is gone from both
+  sites; Garnet and Toronto alerts use a call of 2 h before on duty (order − 2 h 15 for a
+  train); a stand-in on a 501/502 job is forgotten when the trip is over (the SA07 alert);
+  names on Page Health's follower tables; the pool buttons with each craft's two
+  spareboards on one row.
+- **Rule from Justin, 2026-11-10: previews go to the test site only (behind `PREVIEW`),
+  never a tab on the main site.** Small things he asks for directly, and owner-only pages,
+  have gone to both sites, said plainly each time.
+- **On the test site only, not promoted (he has not asked):** the likely-call window and
+  habit chip on Current; the new Turn History layout; My week's "Sleep this week" box; the
+  Snapshots and 18.6(b) row layouts; the newer-version bar; the compact header; Analytics
+  → Likely-call test. Spareboard predictions are built but **switched off**
+  (`SPARE_PREDICT = false`), on his word.
+- **The two-week likely-call test: 2026-11-11 to 2026-11-24** (`TEST_FROM`, `TEST_DAYS`
+  in lib/board/patterns.js; `score` in data/patterns.json). Decide on promoting the train
+  window when it ends, not before. He said: "If its more beneficial than the time it shows
+  over 2 weeks maybe we can push it [to] the main site."
+- **Booked check-ins into this session:** the S5 swap watch (next: L50231 11, lined up for
+  S502; four nights more to reach five clean) and 2026-11-25 09:00 Toronto to read the
+  likely-call test. Both need the data access problem above solved.
+- **After any change to `setMode` or the tab bar: click every tab and read the page's
+  heading.** Removing the Test tab broke every tab but Analytics on the live site for
+  about half an hour because the check read the address, not the page.
+- **Waiting on Justin:** tap Search Review, Notifications and Members once (same code
+  path as the tab fix; Page Health is confirmed); whether rescue trains out of Toronto
+  should also use order − 2 h 15 (left at order − 2 h on one example); what Page Health's
+  "GitHub" row says on the Windows laptop; whether a renumbered train (DH27331 → X27331)
+  counts as one job; whether crews that turn straight back at Toronto count from arrival;
+  CATS option 29 at his next call (S5 watch).
+- **Not started, offered only:** `isOwner()` / `accessEmail()` in the Worker; deleting the
+  older Analytics layout's code (still there with `ANA2` off); the dead
+  `renderOrderSummary('test')` path; a spareboard model that counts yard shifts ahead.
+- **Dated:** delete the suspended Render service 2026-11-23; Pushover trial ends about
+  2026-12-04.
 
 **Page styles, phone tab bar and pool buttons — one session, 2026-11-10 → 11 (owner,
 from his phone). All approved by him and on `claude/vigilant-planck-zawrj4`; laptop
@@ -78,7 +131,7 @@ in the notes below.**
 *3. Pools at Sarnia.* On a phone the filter buttons sit two to a row in his order: A pool,
 S1 / B pool, S3 / Chain Gang, Drags / 501/502, Garnet / Conductor fast, slow / Engineer
 fast, slow / All (`POOL_SPOTS`, `poolSpot`, `--o` on each button; a pool not named comes
-last). **The last three rows are from 2026-11-11 (owner, a phone screenshot: "put
+last). **The last three rows are from 2026-11-10 evening (owner, a phone screenshot: "put
 conductor fast and slow in the same row. Do the same with engineers"):** Garnet moved up
 beside 501/502 so each craft's two spareboards pair up, and a hidden gap (`.poolgap`, spot
 9) keeps them paired on a saved day with no Garnet board. Both sites; checked in two
@@ -255,7 +308,7 @@ call-timeline preview is gone (promoted). Checked here in a browser with made-up
 (old laptop code, all good, four things wrong); the git fetch has only run on Linux here,
 ❓ confirm the "GitHub" row on the Windows laptop. Suite 278 of 292, the same 14 failing.
 Other Page Health ideas offered, not built: follower table, failed alerts by who, a
-warning row for OWNER_EMAIL with Access off, reorder. Real names for followers: built 2026-11-11 from the crew-names file (note near the
+warning row for OWNER_EMAIL with Access off, reorder. Real names for followers: built 2026-11-10 evening from the crew-names file (note near the
 top); the three answers it waited on are no longer needed.
 
 **Turn History, 2026-11-10 (owner, two screenshots):** (1) every 501/502 trip on his own
@@ -524,7 +577,7 @@ Suite 288 of 300, the same 12 failing. Rebuilt from the day files: no FORMAT bum
 Worker change. ❓ His check on real calls: a renumbered train (DH27331 09 → X27331 09) reads
 as pulled then lined up for the new number.
 
-**Page Health → Who gets alerts: names beside the turns and name codes, 2026-11-11 (owner,
+**Page Health → Who gets alerts: names beside the turns and name codes, 2026-11-10 evening (owner,
 pasting the two tables: "put their names beside the turn. So the name code put their name,
 and just the turns put whos currently on that turn").** This answers the "real names for
 followers" question left open on 11-10. `renderHealth` in board.html, both sites (Page
@@ -543,7 +596,7 @@ no name goes into the health report: the names come from the locked `data/crew.j
   tables show as before with one line saying why.
 Checked here with a made-up names file and report in three states (site names off, on, no
 passcode): right names, no page errors. **Confirmed by Justin on the real page after his
-pull, 2026-11-11: "names are showing".** (That also shows the Page Health tab draws after
+pull, 2026-11-10 evening: "names are showing".** (That also shows the Page Health tab draws after
 the tab fix; Search Review, Notifications and Members are still unconfirmed.) Suite 299 of
 311.
 **The main site is locked since the evening of 11-10 (page and data answer 401 without an
@@ -658,7 +711,7 @@ once this is done").** Nothing below is on the main site; promote only on his sa
 - Snapshots rows, 18.6(b) rows, the newer-version bar, the compact header, My week's sleep
   box. (The Analytics new layout itself was promoted later the same day; note above.)
 - Current: train habit chip and the likely-call window on planned Sarnia trains (**on a
-  two-week test, 2026-11-11 to 11-24, read in the Test tab; check-in booked 11-25**).
+  two-week test, 2026-11-11 to 11-24, read under Analytics → Likely-call test; check-in booked 11-25**).
 - Spareboards: predictions built but **switched off** (`SPARE_PREDICT = false`).
 - Turn History: the layout above.
 - Analytics → Likely-call test (the Test tab is gone from both sites; see the note above).
