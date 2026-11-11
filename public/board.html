@@ -471,6 +471,7 @@
   .poolfilter button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
   .poolfilter button { order: var(--o, 50); } /* the owner's order (POOL_SPOTS), on every screen */
   .poolfilter button.all { border-style: dashed; order: 99; }
+  .poolfilter .poolgap { display: none; order: var(--o, 50); }
   .poolhead { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px 6px; font-weight: 600; font-size: 14px; border-top: 2px solid var(--rule); }
   .poolfilter + .poolhead { border-top: 0; }
   .poolhead .meta { font-weight: 400; font-size: 12.5px; color: var(--soft); }
@@ -772,6 +773,7 @@
     body.nav-one-row .modes button, body.nav-one-row .modes a.modelink { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
     /* The pool buttons: two to a row, in the owner's order (POOL_SPOTS). */
     .poolfilter button { flex: 1 1 calc(50% - 3px); min-width: 0; min-height: 40px; }
+    .poolfilter .poolgap { display: block; flex: 1 1 calc(50% - 3px); }
     /* Current and Turn History share the first row, half each (owner, 2026-11-10). */
     body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); } }
   /* Order summary, the two-line rows (2026-11-10). */
@@ -2788,17 +2790,23 @@ const POOL_LABELS = { SD: 'Drags (SD)', 'S1 (A)': '1st Manifest (S1)', 'S3 (B)':
 const poolLabel = (q) => POOL_LABELS[poolShort(q)] || poolShort(q);
 // Where each pool's button sits, two to a row on a phone, and the order its
 // board opens in (owner, 2026-11-10):
-// A pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All. A conductors'
-// pool on the left, the engineers who go with it on the right. A pool not
-// named here comes after 501/502, before All.
-const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6, '501/502 (S5)': 7 };
+// A pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, Garnet / Conductor
+// fast, slow / Engineer fast, slow / All. A conductors' pool on the left, the
+// engineers who go with it on the right; each craft's two spareboards share a
+// row (owner, 2026-11-11: "put conductor fast and slow in the same row. Do
+// the same with engineers"), which is why Garnet moved up beside 501/502. A
+// pool not named here comes last, before All. Spot 9 is the gap that keeps
+// the spareboards paired when the buttons before them are an odd number.
+const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6, '501/502 (S5)': 7, Garnet: 8,
+  'Conductor fast board': 10, 'Conductor slow board': 11, 'Engineer fast board': 12, 'Engineer slow board': 13 };
 const poolSpot = (q) => POOL_SPOTS[poolShort(q)] || 50;
 function pools(s, picked) {
   if (!s.pools.length) return '';
   askResets(s);
   const on = s.pools.filter((q) => picked.includes(poolShort(q)));
   const all = on.length === s.pools.length;
-  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}" style="--o:${poolSpot(q)}">${esc(poolLabel(q))}</button>`).join('');
+  const gap = s.pools.filter((q) => poolSpot(q) < 9).length % 2 ? '<i class="poolgap" style="--o:9" aria-hidden="true"></i>' : '';
+  const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}" style="--o:${poolSpot(q)}">${esc(poolLabel(q))}</button>`).join('') + gap;
   // The boards open in the buttons' order (owner, 2026-11-10), whatever order they were switched on in.
   const boards = [...on].sort((a, b) => poolSpot(a) - poolSpot(b)).map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolLabel(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${on.length} of ${s.pools.length} pools · ${on.reduce((n, p) => n + p.turns.length, 0)} turns</span></header>

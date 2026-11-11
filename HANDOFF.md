@@ -76,8 +76,13 @@ kept its name, the scroll-into-view line is gone). **This supersedes "one swipea
 in the notes below.**
 
 *3. Pools at Sarnia.* On a phone the filter buttons sit two to a row in his order: A pool,
-S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot`, `--o` on
-each button; a pool not named comes after 501/502). The boards under them open in that
+S1 / B pool, S3 / Chain Gang, Drags / 501/502, Garnet / Conductor fast, slow / Engineer
+fast, slow / All (`POOL_SPOTS`, `poolSpot`, `--o` on each button; a pool not named comes
+last). **The last three rows are from 2026-11-11 (owner, a phone screenshot: "put
+conductor fast and slow in the same row. Do the same with engineers"):** Garnet moved up
+beside 501/502 so each craft's two spareboards pair up, and a hidden gap (`.poolgap`, spot
+9) keeps them paired on a saved day with no Garnet board. Both sites; checked in two
+styles on a phone and on a computer, from saved copies of the data. The boards under them open in that
 same order, whatever order they were switched on in, and a computer uses the same order
 (in its single line of buttons).
 
