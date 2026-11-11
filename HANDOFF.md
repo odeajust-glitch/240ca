@@ -4,6 +4,20 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**18 more kit page styles, 2026-11-11 (owner ticked them on the second list of ideas):**
+Windows XP, Apple II, Typewriter (Old screens); Blueprint, Train Order, Caboose (Railway);
+SimCity, Fortnite, GTA, Cyberpunk (Games); Transformers, The Terminator, Alien, RoboCop,
+Top Gun, Stranger Things, The Mandalorian, Rick and Morty (Films and shows). 65 styles in
+all. All are `k-…` variable blocks on the shared kit rules in `public/board.html`, a few
+with rules of their own (Apple II's block cursor, RoboCop's corner brackets, Top Gun's
+stripe, Cyberpunk's cut-corner tabs, Stranger Things' outlined title). ⚠ Kit gotcha: a
+gradient for a heading bar goes in `--k-head-img`, not `--k-head-bg` (the shared rule sets
+`background-image` after `background`, which wipes a gradient put in the first). Checked
+at phone width on sample data like the 24 before: no script errors, no sideways scroll on
+Current / Turn History / Order summary / Analytics, first tab row intact, each looked at
+on a contact sheet (top of the page and the line-up only). Laptop pull/restart/publish
+pending.
+
 **Windows 3.1 page style, 2026-11-11 (owner):** a kit style (`k-win31`, Old screens
 group): grey page, white windows with a thin black frame and navy title bars, grey push
 buttons with a lit edge, the picked thing navy. 47 styles. He wants about 10 more: more
