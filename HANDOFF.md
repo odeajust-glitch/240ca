@@ -288,8 +288,30 @@ trains on the Call Board).
     what the list shows when nothing is up; the meaning of the 1/2/3 and CIA columns (kept
     raw, CIA not shown). **If the log says "skipped job postings …", the message says
     which step.**
-  - **Next, on his word only:** alert options (a new posting; a posting closing soon;
-    per craft). Not built.
+  - **FIRST REAL READ, 16:30 (laptop on `deae9cf`): both routes reached the screen and
+    "END OF RECORDS", but 0 jobs for conductors and 0 for engineers, where his photo an
+    hour earlier had eight conductor postings. So either the list really came back empty
+    (the "*" boxes or the date not taking) or the lines do not fit `CIRCULAR_ROW`. Because
+    the published file has both crafts (empty), the Job postings tab IS showing on both
+    sites, saying "Nothing up for bid": wrong until fixed.** `2d24cd0`: when the first page
+    gives no jobs the checker keeps `sample` in postings.json for that craft: the masked
+    screen (`lines`, A / 9 only), the text boxes with where they sit and their masked
+    values (`boxes`) and the row count. **Next: after his pull and restart, read
+    `data/postings.json` → `co.sample`, fit the reader or the box filling to it, and take
+    the sample code out once it reads.**
+  - **Alerts, his answers 2026-11-11 16:35 (nothing built):** (1) "When a new one goes
+    up, and can we do something that the person can select to have an addition reminder X
+    hours before the posting closes each job at the time of the first notification": an
+    alert for a new posting, and from that alert the member can choose an extra reminder
+    X hours before that job closes, job by job. (2) who hears about which postings: "We
+    will go thru this, its more complicated for conductors but we will make rules": wait
+    for his rules. Notes for the design: the Worker keeps a phone's follows as turn-like
+    ids (`TURN` regex: 2 to 6 letters / digits), so a topic such as `BIDCO` / `BIDEN`
+    needs no Worker change, but per-job reminders and any filter beyond craft are new
+    settings: either kept on the phone and sent as their own follows, or a Worker paste.
+    Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
+    that tapping the alert opens the Job postings tab on that job with a "Remind me"
+    choice there.
   - The laptop was on `1402ef9` at 16:00 (`fc88224` and this not pulled yet).
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
