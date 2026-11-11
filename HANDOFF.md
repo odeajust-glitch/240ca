@@ -319,8 +319,9 @@ trains on the Call Board).
     road tvs": "Anyone on the road can post for 502/501 tv, any A or B pool TVs. Chain
     gang cannot post to another chain gang tv". Asked him, not answered yet: do permanent
     postings (P) follow the same rules as TVs; may a spareboard conductor take both FO and
-    S1 yard postings; may an A / B / 501-502 conductor post to a Chain Gang TV (read as
-    yes); and that the person is known from the name code a phone follows.
+    S1 yard postings; what a conductor with no known position gets; and that the person is known from the
+    name code a phone follows. **Answered 17:00: "A conductor in the A or B pool, or on
+    501/502 can also post to chain gang".**
     Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
     that tapping the alert opens the Job postings tab on that job with a "Remind me"
     choice there.
