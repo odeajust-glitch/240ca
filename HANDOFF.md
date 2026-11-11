@@ -4,200 +4,96 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
-**18 more kit page styles, 2026-11-11 (owner ticked them on the second list of ideas):**
-Windows XP, Apple II, Typewriter (Old screens); Blueprint, Train Order, Caboose (Railway);
-SimCity, Fortnite, GTA, Cyberpunk (Games); Transformers, The Terminator, Alien, RoboCop,
-Top Gun, Stranger Things, The Mandalorian, Rick and Morty (Films and shows). 65 styles in
-all. All are `k-…` variable blocks on the shared kit rules in `public/board.html`, a few
-with rules of their own (Apple II's block cursor, RoboCop's corner brackets, Top Gun's
-stripe, Cyberpunk's cut-corner tabs, Stranger Things' outlined title). ⚠ Kit gotcha: a
-gradient for a heading bar goes in `--k-head-img`, not `--k-head-bg` (the shared rule sets
-`background-image` after `background`, which wipes a gradient put in the first). Checked
-at phone width on sample data like the 24 before: no script errors, no sideways scroll on
-Current / Turn History / Order summary / Analytics, first tab row intact, each looked at
-on a contact sheet (top of the page and the line-up only). Laptop pull/restart/publish
-pending.
+**Page styles, phone tab bar and pool buttons — one session, 2026-11-10 → 11 (owner,
+from his phone). All approved by him and on `claude/vigilant-planck-zawrj4`; laptop
+pull/restart/publish pending. This replaces that session's 18 separate notes.** Only
+`public/board.html` changed (plus this file). 299 of 311 tests pass, the same 12 failing
+as the branch without these changes.
 
-**Windows 3.1 page style, 2026-11-11 (owner):** a kit style (`k-win31`, Old screens
-group): grey page, white windows with a thin black frame and navy title bars, grey push
-buttons with a lit edge, the picked thing navy. 47 styles. He wants about 10 more: more
-ideas were listed in chat; build only what he picks. Laptop pull/restart/publish pending.
+*1. Page styles: 65 choices in ⚙ Settings → Page style* (was 4). Opt-in per phone
+(localStorage `boardTheme`); nobody's page changes until they pick one.
+- **Settings list:** six folded groups (`details.stygrp`) with a count each: Everyday 4,
+  CATS 2, Railway 5, Old screens 15, Games 19, Films and shows 20. Everyday starts open;
+  the group holding the style in use opens itself. The Settings box scrolls inside the
+  screen.
+- **Hand-written styles (22), each its own block near the end of the style sheet:**
+  light, dark, retro, tablet, iphone (+ iphonelight), board (Departure Board), matrix,
+  fallout, starwars, mario, pokemon, zelda, minecraft, naruto, gameboy, simpsons, win95,
+  teletext, tron, pacman, startrek.
+  - **Retro and Retro Tablet were redone from his own pictures** (four CATS screenshots,
+    three GLINK photos) and he said "I like them both". Retro: the colours were already
+    exact (#f1f1f1, #000000, #000080, #800000, #ffff00); what changed is one thin weight,
+    capitals with wide spacing, no frames, views as maroon words with the open one on a
+    yellow bar. Retro Tablet: colours read from photos, so near not exact (data #d9ecfa,
+    choices #18c1ff, labels #2b8fff); title and section titles in pale bars, table
+    headings as sky-blue bars, table rows sky blue with only the turn pale. In both,
+    sentences meant to be read (reasons, notes, agreement answers) keep small letters.
+  - **iPhone** goes light or dark with the phone; **iPhone Light** is the same style held
+    light (`boardTheme = iphonelight` → `data-theme="iphone"` + `data-shade="light"`).
+- **Kit styles (43), `data-theme` starting `k-`:** each is only a block of colour tokens,
+  three typefaces and a few `--k-…` variables (frame, heading bar, tabs, the picked thing,
+  day bars, glow); the rules under `:root[data-theme^="k-"]` (the "Kit styles" block) draw
+  them. `k-px-…` ones also get the small sizes the pixel font needs. Some have a few rules
+  of their own (Subway's route lines, Tetris's block tabs, Donkey Kong's girders, Classic
+  Mac's striped title bars, RoboCop's corner brackets, Top Gun's stripe, Apple II's
+  cursor, Cyberpunk's cut-corner tabs, Stranger Things' outlined title).
+  - **To add one:** a variable block there and a button in the right group of the Settings
+    list (bump the group's count). Nothing in the script: the name check is
+    `k-[a-z0-9-]+` and the browser-bar colour comes from `--k-meta`.
+  - ⚠ A gradient for a heading bar goes in `--k-head-img`, not `--k-head-bg` (the shared
+    rule sets `background-image` after `background`, which wipes it).
+- **Rules he has been told and accepted:** every themed style copies a look only (colours,
+  shapes, lettering): no characters, logos, sprites or art. Late / spare / ordered keep a
+  distinct colour in every style, even "one-colour" ones (Game Boy, Classic Mac, Nokia).
+- **Fonts:** Press Start 2P (pixel) was added to the Google Fonts link for the game
+  styles; a phone only downloads it when one of those styles is on. Several styles name
+  typefaces a phone may not have (Courier New, Brush Script, Benguiat, Tahoma, Chicago)
+  and fall back to a plainer one.
+- ⚠ **When adding or changing a style, check on a phone-width screen** that Current and
+  Turn History still share the first tab row: they are `calc(50% - 3px)` wide, so a tab
+  gap over 6px breaks it (it did, three times).
+- **Not done:** the Worker's sign-in page and grievance.html only know light / dark, so
+  with any other style picked they show light.
 
-**24 more page styles on one shared set of rules; Settings groups fold, 2026-11-11 (owner
-ticked them on the list of ideas):** Amber Terminal, Commodore 64, Blue Screen, DOS,
-Classic Mac, Nokia Phone, Calculator, Subway Map, Tetris, Sonic, Donkey Kong, Space
-Invaders, Halo, Doom, GoldenEye, Mortal Kombat, Animal Crossing, South Park, Blade Runner,
-Batman, Back to the Future, Jurassic Park, Ghostbusters, Dragon Ball. 46 styles in all.
-- **How they are built ("kit" styles, `public/board.html`, the "Kit styles" block):** a
-  style whose `data-theme` starts `k-` only sets the colour tokens, three typefaces and a
-  few `--k-…` variables (frame, heading bar, tabs, the picked thing, day bars, glow); the
-  rules under `:root[data-theme^="k-"]` do the rest. `k-px-…` styles also get the small
-  sizes the pixel font needs. A handful have a few rules of their own (Subway's route
-  lines, Tetris's block tabs, Donkey Kong's girders, Classic Mac's striped title bars).
-  **To add one:** a block of variables there and a button in the Settings list; nothing in
-  the script (the name check is `k-[a-z0-9-]+`, the browser-bar colour comes from
-  `--k-meta`). The 22 older styles are still hand-written blocks.
-- **Settings list:** six folded groups (`details.stygrp`: Everyday, CATS, Railway, Old
-  screens, Games, Films and shows) with a count each; Everyday starts open and the group
-  holding the style in use opens itself.
-- Each copies a look only: no characters, logos or art. Classic Mac keeps a dark red and
-  green for late / ordered (true black-and-white would hide them): told him.
-- Checked at phone width on sample data: each of the 24 loads with no script errors,
-  Current / Turn History / Order summary / Analytics have no sideways scroll, Current and
-  Turn History share the first tab row, and all were looked at on contact sheets (top of
-  the page and the line-up). Not checked: the other tabs, a computer-width screen, a real
-  phone. Laptop pull/restart/publish pending.
+*2. Tab bar on a phone.* The one swipe row promoted on the morning of the 10th cut a tab
+in half at the screen edge ("fix the tabs at the top so they don't run off the screen").
+The tabs now wrap into full rows, Current and Turn History share the first row, and the
+bar uses the 48px the top bar keeps for the gear (`body.nav-one-row .modes`; the class
+kept its name, the scroll-into-view line is gone). **This supersedes "one swipeable row"
+in the notes below.**
 
-**Pac-Man and Star Trek page styles, 2026-11-11 (owner: "make a pac-man theme and a star
-trek theme, make more suggestions"):** two more choices (`data-theme` `pacman`,
-`startrek` in `public/board.html`), the look only. Pac-Man (Games group): black, panels
-with a double blue maze-wall outline, yellow pixel headings and times, dotted lines
-between rows, ghost colours for the pool letters. Star Trek (Films and shows group): the
-ship-display look: each sheet hangs on a thick coloured bar down its left side with a
-rounded elbow, headings are solid rounded bars with black capitals on the right, the tabs
-are coloured pills with the open one white. 22 styles now. More ideas were listed for him
-in chat; build only the ones he picks. Checked at phone width on sample data like the
-others. Laptop pull/restart/publish pending.
+*3. Pools at Sarnia.* On a phone the filter buttons sit two to a row in his order: A pool,
+S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot`, `--o` on
+each button; a pool not named comes after 501/502). The boards under them open in that
+same order, whatever order they were switched on in, and a computer uses the same order
+(in its single line of buttons).
 
-**Game Boy, The Simpsons, Windows 95, Teletext and Tron page styles; Settings list
-grouped, 2026-11-10 evening (owner picked them from a list of ideas):** five more choices
-(`data-theme` `gameboy`, `simpsons`, `win95`, `teletext`, `tron` in `public/board.html`),
-the look only. Game Boy: four greens, pixel headings. Simpsons: yellow top band, sky-blue
-page, white round panels with black outlines, round letters (`ui-rounded` on an iPhone).
-Windows 95: teal page, grey bevelled windows with navy title bars, buttons that sink when
-picked. Teletext: black with the eight pure colours, blue bars with yellow headings. Tron:
-near-black with glowing cyan outlines and a faint grid. That makes 20 styles, so the list
-in ⚙ Settings is now in five groups (Everyday, CATS, Old screens, Games, Films and shows:
-`.stygroup`) and the Settings box scrolls inside the screen. ⚠ When adding a style that
-changes the gap between the tabs, check Current and Turn History still share the first
-row (they are `calc(50% - 3px)` wide, so a gap over 6px breaks it). Checked at phone
-width on sample data like the others. Laptop pull/restart/publish pending.
+*How it was checked, and what was not.* Every style was loaded at phone width on the
+sample data (three pools, names masked): no script errors, no sideways scroll on Current /
+Turn History / Order summary / Analytics, and the top of Current plus the line-up looked
+at in a screenshot. **Not checked:** the other tabs (Article 18.6(b), Agreements,
+Reference, Snapshots, Page Health, Test) in any of the new styles, a computer-width
+screen, live data, a real phone.
 
-**Minecraft and Naruto page styles, 2026-11-10 evening (owner: "make a minecraft theme and
-a Naruto theme"):** two more choices (`data-theme` `minecraft`, `naruto` in
-`public/board.html`), the look only (no blocks, characters, symbols or logos).
-Minecraft: dirt-brown page, light grey bevelled panels, grey stone buttons with white
-shadowed pixel letters, grass green headings and picked thing. Naruto: orange top band,
-white comic panels with a thick black outline and hard drop shadow, heavy slanted
-capitals (Barlow Condensed), the open tab black with orange letters, black day bars.
-Checked at phone width on sample data like the others. Laptop pull/restart/publish
-pending.
+*Open with Justin (ask, do not build):*
+- ❓ The pixel digits (0, 6, 8 look alike) in the big times of Super Mario, Pokémon, Zelda,
+  Minecraft, Game Boy, Pac-Man, Commodore 64, Nokia Phone, Tetris, Donkey Kong, Space
+  Invaders and Apple II. Offered: keep the pixel letters for headings, normal numbers for
+  times.
+- ❓ Game Boy's low contrast in daylight; Cyberpunk's bright yellow page at night; the
+  strength of Fallout's scan lines and Star Wars' stars on a real screen.
+- ❓ Retro Tablet's line-up rows are pale, its table rows sky blue: a photo of option 41
+  in GLINK would settle the line-up.
+- More style ideas he has not picked (listed for him in chat): split-flap board,
+  timetable, signal lights, hi-vis, more games and films, sports teams, seasonal. Build
+  only what he names.
 
-**Zelda page style, 2026-11-10 evening (owner: "make a zelda theme"):** one more choice,
-`data-theme="zelda"` in `public/board.html`, the look only (no characters, symbols or
-logos): deep green page, parchment sheets with a gold edge, gold pixel headings (Press
-Start 2P, as Mario and Pokémon), the picked thing gold with green letters, green day
-bars. Checked at phone width on sample data like the three below; same ❓ about the pixel
-digits. Laptop pull/restart/publish pending.
-
-**Star Wars, Super Mario and Pokémon page styles, 2026-11-10 evening (owner: "make a star
-wars theme", then "OG Super Mario Brothers and Pokemon"):** three more choices in ⚙
-Settings (`data-theme` `starwars`, `mario`, `pokemon` in `public/board.html`), each the
-look only: no logos, characters, sprites or lettering from the films or games.
-Star Wars: black with faint stars (a repeating tile on `body`), crawl yellow data, pale
-blue labels and links, sabre green / red for ordered / late. Super Mario: sky-blue page,
-black panels, brick-orange headings and tabs with black edges, question-block yellow for
-the picked thing, green day bars. Pokémon: cream page, white text boxes with a thick dark
-double edge, red top band with a yellow title, yellow-and-blue for the picked thing.
-Mario and Pokémon use the pixel font Press Start 2P for headings and times (added to the
-Google Fonts link; a phone only downloads it when one of those styles is on). Checked at
-phone width on sample data: Current drawn, the other main views opened with no sideways
-scroll or script errors. ❓ The pixel digits (0, 6, 8) are harder to tell apart than the
-normal ones: ask him how the times read on his phone. Laptop pull/restart/publish pending.
-
-**Fallout page style, 2026-11-10 evening (owner: "make a fallout theme"):** a ninth choice,
-`data-theme="fallout"` in `public/board.html`: the game's terminal look only (no art, no
-logos). Green-black page, one mint green, tall narrow capitals (Barlow Condensed), faint
-scan lines over the page (`body::after`, taps pass through), the picked thing a solid
-green bar, 2px square frames, yellow and red unchanged. Opt-in per phone. Checked at
-phone width on sample data, Current only. Laptop pull/restart/publish pending.
-
-**Matrix page style, 2026-11-10 evening (owner: "make a matrix theme"):** an eighth choice,
-`data-theme="matrix"` in `public/board.html`: black page, fixed-width green letters, a
-glow on headings and big times, pale green for anything tapped, yellow and red unchanged,
-"ordered" in bright pale green. Opt-in per phone. Checked at phone width on sample data,
-Current only. Laptop pull/restart/publish pending.
-
-**iPhone Light page style, 2026-11-10 evening (owner: "add an iphone theme that is light as
-well"; his phone is set dark, so iPhone always drew dark for him):** a seventh choice,
-saved as `boardTheme = iphonelight`. It is the iPhone style with `data-shade="light"` on
-the page, which switches off that style's dark block (`:not([data-shade="light"])` in
-`public/board.html`); "iPhone" still goes light or dark with the phone (its swatch is now
-half and half). Checked on a dark and a light phone setting, and switching between
-styles. Laptop pull/restart/publish pending.
-
-**Pool buttons two to a row, 2026-11-10 evening (owner, after a sample: "looks good, push
-it"):** on a phone the Pools at Sarnia filter buttons sit two to a row in his order: A
-pool, S1 / B pool, S3 / Chain Gang, Drags / 501/502, All (`POOL_SPOTS`, `poolSpot` and the
-`--o` order on each button in `public/board.html`; a pool not named comes after 501/502).
-Then ("make the boards open in the same order as the buttons"): the boards under them
-open in that order too, and the button order now holds on a computer as well (one order
-everywhere; a computer keeps its single line of buttons). Laptop pull/restart/publish pending.
-
-**Tab bar on a phone wraps again, 2026-11-10 evening (owner, screenshot from his phone:
-"fix the tabs at the top so they don't run off the screen"):** the one swipe row promoted
-that morning cut a tab in half at the edge ("Article 1…"). Now the tabs wrap into as many
-rows as they need (three on his phone), each row filled edge to edge, and the bar uses the
-48px the top bar keeps for the gear (`body.nav-one-row .modes` in `public/board.html`; the
-class kept its name, the scroll-into-view line is gone). Then, from a second
-screenshot: "Make current and turn history take up the first row": those two are half the
-row each, the rest wrap under them. **This supersedes "one swipeable
-row" in the notes below.** Measured in all six styles at phone width: no tab past the
-edge, nothing to scroll. Laptop pull/restart/publish pending.
-
-**Page styles pushed to the laptop's branch, 2026-11-10 (owner: "Push them all to the real
-site"):** `ccr-2f227f1e-8taof0` (Retro second pass, Retro Tablet second pass, Departure
-Board; iPhone was already here) was merged with `claude/vigilant-planck-zawrj4` and pushed
-to it as a fast-forward. The "pushed to ccr-… only" caveats in the notes below no longer
-hold. Checked after the merge: all four styles load and Current / Turn History / Order
-summary / Analytics open at phone width with no script errors; 289 of 301 tests, the same
-12 failing as the branch before the merge. **Laptop pull/restart/publish pending.**
-
-**iPhone page style, 2026-11-10 (owner: "Add a iPhone theme to the board checker website"):**
-a fifth choice in ⚙ Settings → Page style, `data-theme="iphone"` in `public/board.html`
-(the block at the end of the style sheet): Apple's system font and colours, rounded cards
-with no outline, the views as a segmented control, blue for anything tapped; light or dark
-goes with the phone. Opt-in per phone (`boardTheme`), nobody's page changes until they
-pick it. Checked here in a phone-sized and a desktop browser on sample data, light and
-dark (Current only); not yet seen on a real iPhone. ⚠ Pushed to **`ccr-2f227f1e-8taof0`**
-only (the branch this cloud session was given, fast-forwarded to
-`claude/vigilant-planck-zawrj4` at 8123afc + this one commit): the laptop's branch does
-not have it until it is merged there. Not done: the Worker's sign-in page and
-grievance.html only know light/dark, so with iPhone picked they show light.
-
-**Departure Board page style, 2026-11-10 (owner liked both retro passes, then: "make up
-one more theme that would be popular"):** a sixth choice in ⚙ Settings,
-`data-theme="board"` in `public/board.html` (block near the end of the style sheet): a
-station departure board. True black, amber fixed-width letters (IBM Plex Mono, already
-loaded), white headings and links, big times with a slight glow, green / red kept. Opt-in
-per phone. Checked here at phone width, Current only. Same branch caveat as below.
-❓ Waiting on him: does he like it.
-
-**Retro Tablet page style, second pass, 2026-11-10 (owner, two photos of GLINK on the
-company phone: main menu and Call Board):** in `public/board.html` ("Retro Tablet, second
-pass" block near the end of the style sheet). Colours read from the photos (a camera, so
-near, not exact): data pale blue-white #d9ecfa, menu choices / links sky blue #18c1ff
-(was a greener #3fe0d8), labels blue #2b8fff, title a pale blue bar with blue letters,
-views as pale blue rounded PF keys, the current one sky blue. One weight, capitals, no
-cyan bars across the section headings, pool letters plain. Green / yellow / red left as
-they were. A third photo (Pool Maintenance Inquiry) then added: each sheet's title in a pale bar,
-column headings as sky-blue bars with blue letters, table rows sky blue with only the
-turn pale. Checked here at phone width with the real Barlow Condensed font, Current only.
-Same branch caveat as below. ❓ Waiting on him: do both match.
-
-**Retro page style, second pass, 2026-11-10 (owner: "2 themes already on the site that
-don't match how I want", then four screenshots of CATS in Chrome on his phone, "Here is
-one"):** the colours were already right to the pixel (#f1f1f1, #000000, #000080, #800000,
-#ffff00, white fields with black edges). Changed in `public/board.html` (the "Retro,
-second pass" block near the end of the style sheet): one thin weight (no bold anywhere),
-capitals with wide spacing, smaller headings, no frames round the sheets (a faint line
-between rows kept), views as maroon menu words with the current one black on yellow,
-pressable things as white boxes with black edges, pool letters as plain coloured letters.
-Sentences meant to be read (reasons, notes, agreement answers) keep small letters.
-Checked here at phone width on sample data, Current only; the sandbox has no Courier New,
-so the real phone will draw thinner letters. Same branch caveat as the iPhone style
-below. ❓ Waiting on him: does it match, and samples for the second one (Retro Tablet,
-presumably).
+*Working notes for the next session.* This session's branch was `ccr-2f227f1e-8taof0`; it
+is level with `claude/vigilant-planck-zawrj4`, where everything was pushed as
+fast-forwards (the other session kept pushing there too: fetch and merge before each
+push). He likes a phone-sized screenshot of each change. For a change to how an existing
+page looks for everyone he asked to see a sample before the push; new opt-in styles went
+straight out.
 
 **Call stability, 501/502 fix, 2026-11-10 (owner: "the 502 / 501 call stability data is
 messed up", then "fix the tracker"):** on the live data 22 of 39 S5 records were "removed
