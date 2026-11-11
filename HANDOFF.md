@@ -143,6 +143,17 @@ trains on the Call Board).
   `lineupCrew` (board.html); both sites; shows after the laptop's next pull and publish.
   The crew names note near the top of this file still quotes the older wording.
 
+- **YFXS01 listed with one craft on option 5 — watch booked, 2026-11-11 13:17 (owner: "I
+  think I found a mistake in cats. The YFXS01 should have a fo and S1 going spare to the
+  tail end board but it only has one job listed"; "put a check ... to see if it calls
+  both a FO and S1 by 1400 if it does let's make a rule to correct that").** The site
+  matches CATS: option 5 has had only `YFXS01 FO 11th 1530` since the 1212 check. On the
+  5th option 5 listed FO and S1 together and FO B105 + S1 B110 worked it; on the 7th FO
+  B128 + S1 B131 did. He says today's S1 was not assigned. **This session wakes at 14:06
+  Toronto to read the checks to 1400**: if both were called, propose the rule (the other
+  of FO / S1 added as a predicted job going spare for a YFX job, filled from the same
+  board) and build it on his word; if not, build nothing.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
