@@ -4,6 +4,17 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**Pac-Man and Star Trek page styles, 2026-11-11 (owner: "make a pac-man theme and a star
+trek theme, make more suggestions"):** two more choices (`data-theme` `pacman`,
+`startrek` in `public/board.html`), the look only. Pac-Man (Games group): black, panels
+with a double blue maze-wall outline, yellow pixel headings and times, dotted lines
+between rows, ghost colours for the pool letters. Star Trek (Films and shows group): the
+ship-display look: each sheet hangs on a thick coloured bar down its left side with a
+rounded elbow, headings are solid rounded bars with black capitals on the right, the tabs
+are coloured pills with the open one white. 22 styles now. More ideas were listed for him
+in chat; build only the ones he picks. Checked at phone width on sample data like the
+others. Laptop pull/restart/publish pending.
+
 **Game Boy, The Simpsons, Windows 95, Teletext and Tron page styles; Settings list
 grouped, 2026-11-10 evening (owner picked them from a list of ideas):** five more choices
 (`data-theme` `gameboy`, `simpsons`, `win95`, `teletext`, `tron` in `public/board.html`),

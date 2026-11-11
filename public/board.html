@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto|gameboy|simpsons|win95|teletext|tron)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto|gameboy|simpsons|win95|teletext|tron|pacman|startrek)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1578,6 +1578,77 @@
   :root[data-theme="tron"] .daybar { background: #071c28; color: #6fe9ff; letter-spacing: 0.2em; }
   :root[data-theme="tron"] .settings { background: #030d18; }
   :root[data-theme="tron"] .htable td.warn, :root[data-theme="tron"] .health .warn { color: #ff8a80; }
+  /* Pac-Man (owner, 2026-11-11): the arcade maze. Black screen, panels
+     outlined like maze walls (a double blue line, round corners), white
+     data, yellow for headings, big times and the picked thing, rows parted
+     by a line of dots, the four ghost colours for the pools, blocky game
+     letters. Only the look: no characters, sprites or logos. */
+  :root[data-theme="pacman"] { --bg: #000000; --sheet: #000000; --ink: #ffffff; --soft: #9aa8ff; --rule: #2121de; --rule-soft: #ffb8ae;
+    --accent: #ffff00; --accent-ink: #000000; --accent-tint: #2a2a00;
+    --amber: #ffb852; --amber-tint: #3a2408; --go: #5dff6e; --go-tint: #0c3a14; --stop: #ff3b3b; --stop-tint: #3d0c0c;
+    --plan-tint: #10103a; --poolA: #00ffff; --poolB: #ffb8ff; --poolSR: #ff3b3b;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; }
+  /* The block letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme="pacman"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; color: #ffff00; }
+  :root[data-theme="pacman"] .sheet > header h2, :root[data-theme="pacman"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; color: #ffff00; }
+  :root[data-theme="pacman"] .head .when, :root[data-theme="pacman"] .ohead .when, :root[data-theme="pacman"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; }
+  :root[data-theme="pacman"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; color: #ffff00; }
+  :root[data-theme="pacman"] h3, :root[data-theme="pacman"] .sec-title, :root[data-theme="pacman"] .rail h2, :root[data-theme="pacman"] th, :root[data-theme="pacman"] .daybar, :root[data-theme="pacman"] .settings h2, :root[data-theme="pacman"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme="pacman"] .modes button, :root[data-theme="pacman"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme="pacman"] .cur2 > summary .t, :root[data-theme="pacman"] .train .time, :root[data-theme="pacman"] .train-clear .card-duty, :root[data-theme="pacman"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; color: #ffff00; }
+  :root[data-theme="pacman"] .top { border-bottom: 3px double #2121de; }
+  :root[data-theme="pacman"] .sheet, :root[data-theme="pacman"] .strip, :root[data-theme="pacman"] .cur2-strip { border: 4px double #2121de; border-radius: 12px; }
+  :root[data-theme="pacman"] .sheet > header, :root[data-theme="pacman"] .test-current-box > summary { border-bottom: 4px double #2121de; }
+  /* The dots between rows. */
+  :root[data-theme="pacman"] details.cur2, :root[data-theme="pacman"] .train { border-bottom: 3px dotted #ffb8ae; }
+  :root[data-theme="pacman"] td, :root[data-theme="pacman"] .changes li { border-top: 3px dotted #ffb8ae; }
+  :root[data-theme="pacman"] details.cur2:last-of-type, :root[data-theme="pacman"] .train:last-child, :root[data-theme="pacman"] .changes li:first-child { border-bottom-width: 0; }
+  :root[data-theme="pacman"] .modes button, :root[data-theme="pacman"] .modes a.modelink { background: #000000; border: 2px solid #2121de; border-radius: 8px; color: #ffffff; }
+  :root[data-theme="pacman"] .modes button[aria-pressed="true"], :root[data-theme="pacman"] .poolfilter button[aria-pressed="true"], :root[data-theme="pacman"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme="pacman"] .notes .nkinds button[aria-pressed="true"] { background: #ffff00; border-color: #ffff00; color: #000000; }
+  :root[data-theme="pacman"] .gear, :root[data-theme="pacman"] .steps button, :root[data-theme="pacman"] .rail .hours button, :root[data-theme="pacman"] .rail .turnpick button, :root[data-theme="pacman"] .poolfilter button { background: #000000; border: 2px solid #2121de; border-radius: 8px; color: #ffffff; }
+  :root[data-theme="pacman"] input, :root[data-theme="pacman"] select, :root[data-theme="pacman"] textarea { background: #000000 !important; border: 2px solid #2121de !important; border-radius: 8px; color: #ffffff; }
+  :root[data-theme="pacman"] .daybar { background: #2121de; color: #ffffff; }
+  :root[data-theme="pacman"] .htable td.warn, :root[data-theme="pacman"] .health .warn { color: #ff8a80; }
+  /* Star Trek (owner, 2026-11-11): the starship display panels. Black
+     screen, each section hung on a thick orange bar down its left side
+     with a rounded elbow, headings as solid rounded bars with black
+     capitals set to the right, the tabs as coloured pills (orange,
+     lavender, blue, peach) with the open one white, tall narrow capitals.
+     Only the look: no characters, emblems or logos. */
+  :root[data-theme="startrek"] { --bg: #000000; --sheet: #000000; --ink: #ffe0b8; --soft: #9da4ff; --rule: #6a5a8c; --rule-soft: #2c2640;
+    --accent: #ff9c2a; --accent-ink: #000000; --accent-tint: #3a2408;
+    --amber: #ffcf5c; --amber-tint: #3a2e08; --go: #7dffb0; --go-tint: #0c3a22; --stop: #ff5a4a; --stop-tint: #3d100c;
+    --plan-tint: #1c1830; --poolA: #9da4ff; --poolB: #d6a0d6; --poolSR: #ff9c2a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; color-scheme: dark; }
+  :root[data-theme="startrek"] .top { border-bottom: 0; }
+  :root[data-theme="startrek"] .top h1 { color: #ff9c2a; font-weight: 600; letter-spacing: 0.08em; font-size: 30px; }
+  :root[data-theme="startrek"] .head .when, :root[data-theme="startrek"] .ohead .when, :root[data-theme="startrek"] .thead .when { color: #ffcf9a; font-weight: 500; letter-spacing: 0.04em; font-size: 32px; }
+  :root[data-theme="startrek"] .head .when .num { color: #9da4ff; font-size: 30px; }
+  :root[data-theme="startrek"] .cur2 > summary .t, :root[data-theme="startrek"] .train .time, :root[data-theme="startrek"] .train-clear .card-duty, :root[data-theme="startrek"] .stat .v { color: #ffcf9a; }
+  :root[data-theme="startrek"] .sheet, :root[data-theme="startrek"] .strip, :root[data-theme="startrek"] .cur2-strip { border: 0; border-left: 14px solid #ff9c2a; border-radius: 22px 0 0 22px; }
+  :root[data-theme="startrek"] .col > .secwrap:nth-child(3n+2) .sheet, :root[data-theme="startrek"] .col > .sheet:nth-child(3n+2) { border-left-color: #b89adf; }
+  :root[data-theme="startrek"] .col > .secwrap:nth-child(3n) .sheet, :root[data-theme="startrek"] .col > .sheet:nth-child(3n) { border-left-color: #9da4ff; }
+  :root[data-theme="startrek"] .sheet > header, :root[data-theme="startrek"] .test-current-box > summary { background: #ff9c2a; border-bottom: 0; border-radius: 0 16px 16px 0; padding: 7px 16px 7px 12px; margin: 0 0 6px 0; flex-direction: row-reverse; align-items: center; }
+  :root[data-theme="startrek"] .col > .secwrap:nth-child(3n+2) .sheet > header, :root[data-theme="startrek"] .col > .secwrap:nth-child(3n+2) .test-current-box > summary { background: #b89adf; }
+  :root[data-theme="startrek"] .col > .secwrap:nth-child(3n) .sheet > header, :root[data-theme="startrek"] .col > .secwrap:nth-child(3n) .test-current-box > summary { background: #9da4ff; }
+  :root[data-theme="startrek"] .sheet > header h2, :root[data-theme="startrek"] .test-current-box > summary h2 { color: #000000; font-weight: 600; font-size: 20px; letter-spacing: 0.06em; }
+  :root[data-theme="startrek"] .sheet > header .meta, :root[data-theme="startrek"] .test-current-box > summary .meta { color: #000000; margin-left: 0; margin-right: auto; }
+  :root[data-theme="startrek"] .test-current-box > summary::before { color: #000000; }
+  :root[data-theme="startrek"] .modes button, :root[data-theme="startrek"] .modes a.modelink { border: 0; border-radius: 999px; background: #ff9c2a; color: #000000; font: 600 15px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; }
+  :root[data-theme="startrek"] .modes button:nth-child(4n+2) { background: #b89adf; }
+  :root[data-theme="startrek"] .modes button:nth-child(4n+3) { background: #9da4ff; }
+  :root[data-theme="startrek"] .modes button:nth-child(4n) { background: #ffcf9a; }
+  :root[data-theme="startrek"] .modes button[aria-pressed="true"] { background: #ffffff; color: #000000; }
+  :root[data-theme="startrek"] .poolfilter button, :root[data-theme="startrek"] .rail .hours button { border: 0; border-radius: 999px; background: #3c3556; color: #ffe0b8; }
+  :root[data-theme="startrek"] .poolfilter button[aria-pressed="true"], :root[data-theme="startrek"] .rail .hours button[aria-pressed="true"], :root[data-theme="startrek"] .notes .nkinds button[aria-pressed="true"] { background: #ff9c2a; color: #000000; }
+  :root[data-theme="startrek"] .gear, :root[data-theme="startrek"] .steps button, :root[data-theme="startrek"] .rail .turnpick button { background: #000000; border: 2px solid #9da4ff; border-radius: 999px; color: #9da4ff; }
+  :root[data-theme="startrek"] input, :root[data-theme="startrek"] select, :root[data-theme="startrek"] textarea { background: #000000 !important; border: 2px solid #9da4ff !important; border-radius: 999px; color: #ffe0b8; padding-left: 14px; }
+  :root[data-theme="startrek"] textarea { border-radius: 14px; }
+  :root[data-theme="startrek"] .daybar { background: #1c1830; color: #b89adf; border-radius: 0 999px 999px 0; margin-right: 14px; }
+  :root[data-theme="startrek"] .settings { border: 2px solid #9da4ff; border-radius: 18px; }
+  :root[data-theme="startrek"] .htable td.warn, :root[data-theme="startrek"] .health .warn { color: #ff8a80; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1664,8 +1735,10 @@
       <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
       <button type="button" class="sty" data-theme="zelda"><span class="sw" style="background:#0e3a26;color:#f8c838;border-color:#b8962e;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Zelda</button>
       <button type="button" class="sty" data-theme="minecraft"><span class="sw" style="background:#7a7a7a;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Minecraft</button>
+      <button type="button" class="sty" data-theme="pacman"><span class="sw" style="background:#000;color:#ffff00;border-color:#2121de;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Pac-Man</button>
       <p class="stygroup">Films and shows</p>
       <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
+      <button type="button" class="sty" data-theme="startrek"><span class="sw" style="background:#ff9c2a;color:#000;border-color:#ff9c2a;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Star Trek</button>
       <button type="button" class="sty" data-theme="tron"><span class="sw" style="background:#01060d;color:#6fe9ff;border-color:#6fe9ff;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Tron</button>
       <button type="button" class="sty" data-theme="naruto"><span class="sw" style="background:#ff7a1a;color:#141414;border-color:#141414;font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:700;font-size:14px">Aa</span>Naruto</button>
       <button type="button" class="sty" data-theme="simpsons"><span class="sw" style="background:#fed90f;color:#151515;border-color:#151515;border-radius:8px">Aa</span>The Simpsons</button>
@@ -1727,7 +1800,7 @@ const OwnerKey = (() => {
   const gear = document.getElementById('gear');
   const box = document.getElementById('settings');
   const note = document.getElementById('stynote');
-  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d', zelda: '#0e3a26', minecraft: '#6b4a32', naruto: '#ff7a1a', gameboy: '#8bac0f', simpsons: '#fed90f', win95: '#008080', teletext: '#000000', tron: '#01060d' };
+  const COLORS = { light: '#0f5c63', dark: '#12191b', retro: '#f1f1f1', tablet: '#000000', board: '#000000', matrix: '#000000', fallout: '#06130b', starwars: '#000000', mario: '#5c94fc', pokemon: '#dc0a2d', zelda: '#0e3a26', minecraft: '#6b4a32', naruto: '#ff7a1a', gameboy: '#8bac0f', simpsons: '#fed90f', win95: '#008080', teletext: '#000000', tron: '#01060d', pacman: '#000000', startrek: '#000000' };
   const picked = () => { try { return localStorage.getItem('boardTheme') || ''; } catch (e) { return ''; } };
   function apply(t) {
     if (t) document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; else delete document.documentElement.dataset.theme;
