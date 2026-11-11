@@ -48,8 +48,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 0. **Accounts, the lock and crew names** (owner, 2026-11-09 → 11-10). The
    main site is locked to members since 19:00 on 2026-11-10; state and
    what is left are at the top of [HANDOFF](../../HANDOFF.md) and in
-   [ACCOUNTS.md](ACCOUNTS.md). Left: `CREW_NAMES` = `on` on `board` once
-   the test site's names look right; delete `MAIL_DAY_MAX` about 11-13;
+   [ACCOUNTS.md](ACCOUNTS.md). Crew names are on for members on the main site.
+   Left: delete `MAIL_DAY_MAX` about 11-13;
    alerts to phones without an account after the week's grace (about
    11-17, on his say-so); `isOwner()` and the Access email header.
 5. **Analytics: anything more?** The owner's picks are built (see "Done");
