@@ -33,7 +33,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
      ("S501 CO Name · EN Name"), and they are the two actually working the trip.
    While there: does a turn out working show the person on the Call Board and go back
    to its owner once home (his rule); any spot still showing a turn with no name.
-2. **Visits table a day short late in the evening; one test fails then** (owner,
+2. **Visits table a day short late in the evening: FIXED in the Worker 2026-11-11
+   (`bc9e72d`), live once Justin pastes it into both Workers; then take this off.** (owner,
    2026-11-10: "Put the test failure fix in housekeeping"). `/stats/days` in
    `cloudflare/board-worker.js` steps back 24 h at a time; run between 23:00 and
    midnight Toronto, the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so

@@ -101,14 +101,29 @@ trains on the Call Board).
     / YSTY01, S502-CO / YINS60's S1, XSAS03's FO / YEBS30's S1, SD10, XSAS05's FO. One
     code each on YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03 (8 to 10 Nov) is not
     settled: no two names fit; trainees moving between jobs is the likely reading.
-- **One test fails by the clock, not by this work:** `the Worker counts visits per day and
-  never serves the files` (test/board/r2.test.js) gives 29 days, not 30, when run between
-  23:00 and midnight Toronto until about 2026-12-01 (it fails the same on `f5b27e2`; the
-  suite was 372 of 372 at 21:44). `/stats/days` steps back 24 h at a time, and from that
-  hour the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so Page Health's
-  visits table is a day short (31 Oct missing) in that hour. Not fixed: it is in
-  `cloudflare/board-worker.js` (accounts session's file, needs a paste into both Workers).
-  **On the Housekeeping list in [TODO](docs/board-checker/TODO.md), item 2 (his ask).**
+- **How many 18.6(b) submissions were sent: on Page Health, 2026-11-11 03:50 (owner: "Add
+  tracking how many grievances being submitted"). WORKER CHANGE `bc9e72d`: not live until
+  Justin pastes it into both Workers.** The Worker already kept each day's total
+  (`stats/held186/<day>.json`, for the 30-a-day limit); it now also keeps `co` / `en` in
+  it and `/health/held186` (owner only) returns `sent`: the last 30 days, today first
+  (`held186Sent`). Page Health → Article 18.6(b) submissions shows Today / Last 7 days /
+  Last 30 days and a folded table by day (`heldSent` in board.html); with the older
+  Worker it says "needs the newest Worker". Counts only, never who. Not counted: a text
+  file someone exports and sends themselves; a day before the paste has its total but no
+  craft split. Owner page, so both sites. He was not asked where he wanted it: Page
+  Health was my pick; say so if he wants it elsewhere (Analytics, members).
+  - **The same paste fixes the visits table a day short late in the evening** (`lastDays`:
+    counted by calendar day, used by `/stats/days` too): Housekeeping item 2, done once
+    pasted. The r2 test no longer depends on the hour.
+  - **Copy page rebuilt and republished at the same link** (version `bc9e72d`, 1827 lines,
+    checked to decode to exactly the file; the previous page decoded to exactly `5c0fde0`,
+    so this commit is the only Worker difference). There was no make-copy-page.py in this
+    session: the page was rebuilt from the published one (replace the base64 on the
+    `var bytes` line and the version line). The page is in this session's scratchpad only.
+  - **Checked:** suite 372 of 372; on the real test site with this page, the box shows
+    the "needs the newest Worker" line with today's Worker and the three totals + by-day
+    table with made-up counts, no page errors. **Not checked:** the real counts (nothing
+    readable until the paste).
 
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
