@@ -229,8 +229,10 @@ trains on the Call Board).
   are told apart by turn too. Takes effect at the next pull and restart (every day file
   rebuilt once more); nothing else waits on it.
 
-- **Job postings (jobs up for bid): BUILT 2026-11-11 16:20 from his three photos, on the
-  test site only. NOT YET RUN AGAINST REAL CATS: needs the laptop to pull and restart,
+- **Job postings (jobs up for bid): BUILT 2026-11-11 16:20 from his three photos; ON BOTH
+  SITES since 17:00 (owner: "that looks good ... push to the main site"; the notes below
+  that say `PREVIEW` or "test site only" are how it was first built). The tab is hidden
+  on a site until the laptop has published a read. NOT YET RUN AGAINST REAL CATS: needs the laptop to pull and restart,
   then read the first check's log line.** Owner: "i wanna add a check that just shows job
   postings that are up, incase guys want to post for something"; "basic info essentially
   the job thats up for bid and the close date, and then we can add options for
@@ -266,7 +268,15 @@ trains on the Call Board).
     change reference to Job Aids, we can try these changes on the test site first"): the
     tab's label and the page's heading (`refState.title`, public/board-ref.js) when
     `PREVIEW`; the main site still says Reference. To promote: make it the only name.
-  - **Every tab clicked on both sites with this page, 16:40:** 13 on the test site (with
+  - **Promoted 17:00, both names and the tab:** `jobPostings` no longer tests `PREVIEW`;
+    `loadPostings` (board.html) fetches `data/postings.json` for everyone at start and
+    each time the tab is opened, and un-hides `modePost` only when the file is there, so
+    nobody sees an empty tab if the CATS read fails. "Job Aids" is the tab's and the
+    page's only name now (`#ref` unchanged). He approved from the picture, before any
+    real read. Clicked through again: main site with a made-up postings file (13 tabs,
+    the new one draws), main site as it is now (12 tabs, no Job postings tab, Job Aids),
+    test site: each its own heading, no errors.
+  - **Every tab clicked on both sites with the first (test-only) page, 16:40:** 13 on the test site (with
     Job Aids and Job postings), 12 on the main site, each showing its own heading and its
     own button lit, no errors, no sideways scroll.
   - **Checked:** parser test from his photo (screens-extra.test.js), suite 376 of 376; the
