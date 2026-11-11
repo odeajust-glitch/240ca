@@ -108,3 +108,31 @@ test('job posting alerts: a reminder the chosen hours before 1200 on the closing
   assert.deepEqual(P.accountEvents(acc, up, people, r.told, personHash, close - 3600000).events, []); // once
   assert.deepEqual(P.accountEvents(acc, up, people, null, personHash, close + 60000).events, []); // closed: nothing
 });
+
+// Owner, 2026-11-11: "the C means cancelled and are no longer able to post for".
+test('job posting alerts: a cancelled posting is not offered, and those told about it hear once', () => {
+  const { personHash } = require('../../lib/board/people');
+  const people = P.rememberPeople({}, [{ h: personHash('PAEX'), turn: 'SA07', own: true, craft: 'CO' }], 0);
+  const now = Date.parse('2026-11-11T22:00:00Z');
+  const acc = { code: 'PAEX', postings: { on: true, remind: { 786034: 24 } } };
+  const live = job('SR11', 'CO', 'T', { number: '785549', description: 'CDR CHAIN GANG' });
+  const other = job('SR03', 'CO', 'T', { number: '786034', description: 'CDR CHAIN GANG' });
+  assert.equal(P.cancelled({ ...live, cia: 'C' }), true);
+  assert.equal(P.cancelled(live), false);
+  // Up already when they switch on (not sent), then a new one that they are sent.
+  let r = P.accountEvents(acc, [other], people, null, personHash, now);
+  r = P.accountEvents(acc, [other, live], people, r.told, personHash, now + 3600000);
+  assert.deepEqual(r.events.map((e) => e.number), ['785549']);
+  P.sent(r.told, r.events[0]);
+  // Both are cancelled: one line each, for the one they were sent and the one with a reminder.
+  const cut = [{ ...other, cia: 'C' }, { ...live, cia: 'C' }];
+  r = P.accountEvents(acc, cut, people, r.told, personHash, now + 7200000);
+  assert.deepEqual(r.events.map((e) => [e.kind, e.number]), [['postingCancelled', '786034'], ['postingCancelled', '785549']]);
+  assert.equal(r.events[1].text, 'The posting for SR11 CO (CDR CHAIN GANG) was cancelled: it can no longer be posted for.');
+  for (const e of r.events) P.sent(r.told, e);
+  // Said once; and no reminder for a cancelled posting, even inside its hours.
+  assert.deepEqual(P.accountEvents(acc, cut, people, r.told, personHash, P.closeAt('2026-11-16') - 3600000).events, []);
+  // Someone switching on while a cancelled one is listed is not told about it at all.
+  const fresh = P.accountEvents({ code: 'PAEX', postings: { on: true, remind: {} } }, cut, people, null, personHash, now);
+  assert.deepEqual([fresh.events, Object.keys(fresh.told.jobs)], [[], []]);
+});

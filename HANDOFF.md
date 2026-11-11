@@ -375,6 +375,13 @@ trains on the Call Board).
       push registration and the page says so and leaves everything off. Main site: no
       alerts box, no reminder pickers. **Not checked: a real phone end to end** (allow,
       switch on, a new posting arriving, a reminder).
+    - **Cancelled postings (owner, 18:20, pasting two lines of the list: "the C means
+      cancelled and are no longer able to post for"):** a C in the list's last column
+      (`cia`). `Postings.cancelled`; such a posting is never offered or reminded; an
+      account that was sent it, or had a reminder on it, gets one "was cancelled" alert
+      (kind `postingCancelled`). On the tab it is struck through under the open ones,
+      marked cancelled, not counted, no reminder choice. Laptop and page only: no Worker
+      change. Suite 383 of 383.
     - **Not built:** setting a member's code from the Members tab; showing on the tab
       what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
       listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in

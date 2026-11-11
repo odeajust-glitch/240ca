@@ -2914,7 +2914,10 @@ function jobPostings() {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
   // A posting closes at 1200 on its closing date (owner, 2026-11-11).
   const pastNoon = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', hourCycle: 'h23' }).format(new Date())) >= 12;
-  const open = (j) => j.closes > today || (j.closes === today && !pastNoon);
+  const listed = (j) => j.closes > today || (j.closes === today && !pastNoon);
+  // C in CATS's last column: cancelled, "no longer able to post for" (owner, 2026-11-11).
+  const gone = (j) => /C/.test(j.cia || '');
+  const open = (j) => listed(j) && !gone(j);
   const remindOf = (n) => ((POST_ME && POST_ME.postings && POST_ME.postings.remind) || {})[n] || 0;
   const remindPick = (j) => (!PREVIEW || !POST_ME || !POST_ME.signedIn ? '' : `<div class="crew"><label>Remind me <select data-remind="${esc(j.number)}">${[[0, 'no reminder'], [2, '2 h before it closes'], [6, '6 h before'], [12, '12 h before'], [24, '24 h before'], [48, '48 h before']].map(([h, t]) => `<option value="${h}"${remindOf(j.number) === h ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>`);
   const dayName = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -2923,9 +2926,10 @@ function jobPostings() {
   const group = (name, g) => {
     if (!g) return `<h3 class="off-heading">${name}</h3><p class="anote" style="margin:4px 14px 10px">Not read yet.</p>`;
     const list = (g.list || []).filter(open);
+    const off = (g.list || []).filter((j) => listed(j) && gone(j));
     const rows = list.map((j) => { const n = daysTo(j.closes); return `<tr data-posting="${esc(j.number)}"${marked(j.turn) || POST_FOCUS === j.number ? ' class="hit"' : ''}><td class="num">${esc(dayName(j.closes))}<div class="crew">${n <= 0 ? '<span class="spare">closes today 1200</span>' : n === 1 ? '<span class="spare">closes tomorrow 1200</span>' : `in ${n} days, 1200`}</div></td>
       <td><b class="num">${esc(j.turn)}</b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">${j.term === 'P' ? 'Permanent' : 'Temporary'} · ${esc(KIND[j.kind] || j.kind)} · circular ${esc(j.number)}</div>${remindPick(j)}</td></tr>`; }).join('');
-    return `<h3 class="off-heading">${name} · ${list.length}</h3><div class="scroll"><table><thead><tr><th>Closes</th><th>Job</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">Nothing up for bid.</td></tr>'}</tbody></table></div>
+    return `<h3 class="off-heading">${name} · ${list.length}</h3><div class="scroll"><table><thead><tr><th>Closes</th><th>Job</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="muted">Nothing up for bid.</td></tr>'}${off.map((j) => `<tr data-posting="${esc(j.number)}" class="muted"><td class="num"><s>${esc(dayName(j.closes))}</s><div class="crew"><span class="spare">cancelled</span></div></td><td><b class="num"><s>${esc(j.turn)}</s></b> <span class="chip">${esc(j.cc)}</span><div class="crew">${esc(j.description)}</div><div class="crew">Cancelled in CATS: it can no longer be posted for · circular ${esc(j.number)}</div></td></tr>`).join('')}</tbody></table></div>
       ${g.complete === false ? '<p class="anote" style="margin:4px 14px 10px">The end of the list was not reached, so there may be more.</p>' : ''}`;
   };
   const n = ['co', 'en'].reduce((a, k) => a + ((POSTINGS[k] && POSTINGS[k].list) || []).filter(open).length, 0);
