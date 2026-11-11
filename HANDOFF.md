@@ -332,6 +332,22 @@ trains on the Call Board).
     (engineers; yard conductors for a yard job; road conductors for a road job), without
     the finer TV rules (FO / S1, chain gang). To be reviewed with him later. Read as: a
     spareboard conductor gets both yard and road perms (not confirmed).
+    **His answers 17:15:** a spareboard conductor gets both yard and road, permanent and
+    TV, FO and S1 ("yes"); a conductor whose spot is unknown: "use their last known
+    position"; who is who: "name code, but how would the account way work" (explained to
+    him; name code is the plan). **The rules are code now: lib/board/postings.js
+    (`standing`, `mayPost`, `postingText`) with test/board/postings.test.js; nothing calls
+    it yet.** Also at his word: the "Read from CATS …" line is off the tab.
+    **Still to build (the alerts themselves):** (a) the Worker keeps a phone's choice,
+    `postings: { on, remind: { <circular>: hours } }`, beside its follows (a paste into
+    both Workers); (b) the page: a switch on the Job postings tab for the name codes this
+    phone follows, and "Remind me" per job (a tapped alert opens `#postings=<number>`);
+    (c) the laptop: after each hourly read, a posting a phone has not been told about →
+    one alert to each phone whose followed person may post for it (their turn and craft
+    from that check's sightings, else the last known, kept on the laptop); a phone that
+    just switched on is not sent the ones already up; reminders by the chosen hours.
+    **Needed from him first: what time of day a posting closes (the list has only the
+    date).**
     Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
     that tapping the alert opens the Job postings tab on that job with a "Remind me"
     choice there.
