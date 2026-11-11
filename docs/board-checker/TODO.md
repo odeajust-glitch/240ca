@@ -50,6 +50,16 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 4. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
    show relief jobs (`REL#`) or trainees differently. Not yet looked at on the real site:
    a yard job's heading in Turn History, a followed yard job on Page Health.
+5. **Unfilled yard jobs (YBHS61, YEBS04): the watch, then decide** (owner, 2026-11-11:
+   "check our predictions against what actually happened and then decide if the rule
+   would be a net positive"). The site records `vacanciesWatch` in a check whenever
+   option 5 lists one of FO / S1 on a job with nobody on it and not the other; nothing
+   acts on it. When two or three have happened, compare each with who worked the job
+   and show him: right spare, wrong spare, or no call at all. Then he says whether it
+   becomes a real prediction. Details in HANDOFF, "Extra yard jobs".
+6. **Extra yard jobs, two questions still open:** which job is called first when two
+   start at the same time (11 Nov: the first spare out got YEBS30, not YFXS01's FO);
+   whether a YMX job always takes an S1 (YMXS02 8 Nov showed EN + FO only).
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both

@@ -73,8 +73,10 @@ test('an extra yard job: the spare lined up for the unlisted craft is told it is
 
 // Owner, 2026-11-11, of YBHS61 and YEBS04: "regular jobs just unfilled, going spare
 // like a road turn that would go spare". YBHS61 24 Oct: option 5 had only the FO all
-// day and a spare worked the S1.
-test('a regular yard job with nobody on it: its other open craft is predicted when option 5 lists one', () => {
+// day and a spare worked the S1. Watched only, on his word: "keep the first, can check
+// for when that's happening, and then check our predictions against what actually
+// happened and then decide if the rule would be a net positive".
+test('a regular yard job with nobody on it: its other open craft is watched, never predicted or alerted', () => {
   const S = require('../../lib/board/spares');
   const A = require('../../lib/board/alerts');
   const { at } = require('../../lib/board/time');
@@ -83,21 +85,25 @@ test('a regular yard job with nobody on it: its other open craft is predicted wh
   const unfilled = [{ pool: 'YARD YBHS61', yard: 'YBHS61', crews: ['EN', 'ET', 'FO', 'S1', 'TT'].map(open) }];
   assert.deepEqual(S.unfilledCrafts('YBHS61', unfilled), ['FO', 'S1']);
   const listed = [job('YBHS61', 'FO', 23, 0)];
-  const extra = S.extraYardJobs(listed, unfilled);
-  assert.deepEqual(extra.map((j) => [j.train, j.cc, j.extra]), [['YBHS61', 'S1', 'unfilled']]); // not the engineer or the trainee slots
-  assert.match(extra[0].why, /nobody holds its S1 turn either/);
+  const watched = S.watchYardJobs(listed, unfilled);
+  assert.deepEqual(watched.map((j) => [j.train, j.cc, j.extra]), [['YBHS61', 'S1', 'unfilled']]); // not the engineer or the trainee slots
+  assert.match(watched[0].why, /nobody holds its S1 turn either/);
+  // Not a predicted job: nothing for the spareboard or the alerts.
+  assert.deepEqual(S.extraYardJobs(listed, unfilled), []);
+  assert.deepEqual(S.expectedJobs([], listed, unfilled), []);
+  // An extra job is not watched: it is predicted.
+  assert.deepEqual(S.watchYardJobs([job('YFXS01', 'FO', 15, 30)], unfilled), []);
   // Anyone on the job at all (a regular, or a temporary fill-in): left alone.
   const held = [{ pool: 'YARD YBHS31', yard: 'YBHS31', crews: [open('S1'), { craft: 'FO', status: 'rested' }] }];
   assert.equal(S.unfilledCrafts('YBHS31', held), null);
-  assert.deepEqual(S.extraYardJobs([job('YBHS31', 'FO', 16, 0)], held), []);
+  assert.deepEqual(S.watchYardJobs([job('YBHS31', 'FO', 16, 0)], held), []);
   const temp = [{ pool: 'YARD YEBS04', yard: 'YEBS04', crews: [open('FO'), open('S1'), { craft: 'S1', status: 'rested', temp: true }] }];
-  assert.deepEqual(S.extraYardJobs([job('YEBS04', 'FO', 7, 0)], temp), []);
+  assert.deepEqual(S.watchYardJobs([job('YEBS04', 'FO', 7, 0)], temp), []);
   // The crews in town not read: nothing is guessed.
-  assert.deepEqual(S.extraYardJobs(listed, null), []);
-  // The alert to the spare lined up for it.
+  assert.deepEqual(S.watchYardJobs(listed, null), []);
+  // Only the listed job's spare hears anything.
   const now = at(2026, 10, 24, 11, 5);
   const states = A.turnStates({ predictions: [], now }, [], { spareboards: { coFast: [{ turn: 'B120', pos: 1 }, { turn: 'B111', pos: 2 }], coSlow: [] }, vacancies: listed, yardJobs: [], crewsInTown: unfilled });
   const out = A.turnEvents({}, states, { lineupRead: true, now });
-  const texts = Object.fromEntries((out.events || out).map((e) => [e.turn, e.text]));
-  assert.equal(texts.B111, "B111 lined up: YBHS61 planned for 24th 2300, expected call 24th 2100. Its S1 job isn't on CATS yet, but nobody holds that turn on YBHS61, so it goes spare too: expect a call.");
+  assert.deepEqual((out.events || out).map((e) => e.turn), ['B120']);
 });

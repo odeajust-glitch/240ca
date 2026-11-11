@@ -180,16 +180,21 @@ trains on the Call Board).
     should. In the 27 live days they ran 7 times and option 5 listed one only once
     (YBHS61 24 Oct, FO only for 71 checks, and S1 B111 worked it, so the open S1 was not
     listed either); the other six runs were never on option 5 and their crews mostly
-    were not matched to a turn, so how they are filled is not in the data. **Built 2026-11-11 on his
-    "Yes add that"** (`unfilledCrafts` in spares.js, used by `extraYardJobs`; `extra:
-    'unfilled'`): a yard job the crews in town list with every craft an open turn (the
-    trainee slots aside) is a regular job with nobody on it; when option 5 lists one of
-    its FO / S1 and not the other, the other is predicted, exactly as for an extra job.
-    Anyone on the job at all (a regular or a `TEMP`), or the crews in town not read:
-    nothing is added. Never an engineer (YBHS61 lists an open EN, but no run showed one).
-    Its alert: "B111 lined up: YBHS61 planned for 24th 2300, expected call 24th 2100. Its
-    S1 job isn't on CATS yet, but nobody holds that turn on YBHS61, so it goes spare too:
-    expect a call." Rests on one case; suite 375 of 375; (3) the order between
+    were not matched to a turn, so how they are filled is not in the data. **Watched only, by his decision 2026-11-11
+    ("keep the first, can check for when thats happening, and then check our predicitions
+    against what actually happened and then decide if the rule would be a net positive";
+    it was built as a live rule for an hour on his "Yes add that", then pulled back
+    before any laptop pull).** `watchYardJobs` / `unfilledCrafts` (spares.js): a yard job
+    the crews in town list with every craft an open turn (trainee slots aside), where
+    option 5 lists one of FO / S1 and not the other. It is **not** in `expectedJobs`: no
+    predicted row, no cover, no alert, nobody moved on the spareboard. Each check that
+    it would fire, the snapshot carries `vacanciesWatch: [{ at, train, cc, why,
+    wouldCall, call }]` (site.js; `wouldCall` = the spare it would have named).
+    **To score it:** in the day files, each `vacanciesWatch` job against that job's later
+    `yardJobs` entry (same job, on duty within 3 h): did a spare work that craft, and
+    was it `wouldCall`; and whether the spares below were one place off without it. On
+    the Housekeeping list (item 5): look when two or three have happened, then he
+    decides. One case so far (YBHS61 24 Oct, before this was recorded); (3) the order between
     jobs at the same time: today B134 (first out) got YEBS30 S1, B133 YFXS01's S1, B130
     its FO; the site would have said B134 FO, B133 S1, B130 YEBS30 (same three spares,
     different jobs); (4) a YMX job's S1: YMXS02 8 Nov showed only EN EN09 · FO B113 on duty.
