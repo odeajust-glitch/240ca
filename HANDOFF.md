@@ -433,6 +433,32 @@ trains on the Call Board).
   confirmed: an alert arriving on a real phone; the `sample` code in board-auto.js (kept
   when a read gives no jobs) can come out now that the read works.
 
+- **Agreements tab, a simpler document picker: on the test site only, awaiting Justin,
+  2026-11-11 18:10 (owner: "Would there be a better way to lay this page out with the
+  agreements selected. Could have it auto select a few of the more commonly used ones,
+  then you can add in more if needed. And also have a conductor/engineer button").**
+  public/board-ask.js (`COMMON`, `SHORT`, `setCraft`, `paintChips`, `setSimple`; styles
+  `.askpicker …` in board.html); `renderAsk` passes `{ simple: PREVIEW }`.
+  - Under the question box: "I am a" Conductor / Engineer (remembered on the phone,
+    `askCraft`), "Searching" as chips, and a folded "Add more documents". A craft picks
+    its everyday four: conductors → 4.16, its addenda, the conductors' crew calling
+    procedures, duty and rest rules; engineers → 1.1, the mileage guidelines, the
+    engineers' crew calling manual, duty and rest rules. **Which documents count as
+    "commonly used" was my pick, not his: ask.** Until a craft is picked, both sets (7).
+    Everything else (CROR, GOI, dangerous goods, discipline grid, the engineers'
+    operating manual, CROA awards, the two Western agreements) is one tap under Add
+    more. The tick-box list below stays the record of what is searched ("All
+    documents, as a list"); the chips only show and change it. The CROA date boxes
+    move up beside the chips. Was: all 13 ticked.
+  - His question the same hour, answered, nothing changed: does one agreement use fewer
+    tokens. Hardly: the search always sends a fixed number of passages (`TOP_K` 9, deeper
+    24), whatever is ticked; narrowing mostly saves the second, dearer pass a member's
+    question takes when the first finds nothing (the owner's always go deep).
+  - **Checked** in a browser on the test site (no question was sent): the craft buttons,
+    adding CROA and removing the addenda by chip, the Western agreements blocked while
+    4.16 is picked, the craft kept over a reload; the main site keeps the old page (the
+    picker hidden, all 13 ticked). Suite 383 of 383. To promote: pass `simple: true`.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**

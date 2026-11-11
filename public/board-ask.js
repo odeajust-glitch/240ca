@@ -18,6 +18,11 @@
       <section class="sheet askq">
         <label for="askq" class="asklbl">Ask a question about the collective agreements, the rules or CROA awards</label>
         <div class="askrow"><textarea id="askq" maxlength="500" rows="2" placeholder="e.g. How long can I be held at the away-from-home terminal?"></textarea><button type="button" id="askgo" class="askbtn">Ask</button></div>
+        <div class="askpicker" hidden>
+          <div class="askcraft" role="group" aria-label="Your craft"><span class="asklbl2">I am a</span><button type="button" data-craft="conductor" aria-pressed="false">Conductor</button><button type="button" data-craft="engineer" aria-pressed="false">Engineer</button></div>
+          <div class="askchipset"><span class="asklbl2">Searching</span><span class="askchips askon"></span></div>
+          <details class="askmoredocs"><summary>Add more documents <span class="muted askmorecount"></span></summary><div class="askchips askoff"></div><p class="muted askhint">Tap one to add it. Tap a document under Searching to take it out.</p></details>
+        </div>
         <p class="asktip"><b>Tip:</b> you get better answers when you pick just the agreement you need under <button type="button" class="linkbtn askpick">Documents to search</button> (for example only the Conductors agreement 4.16), instead of searching everything.</p>
         <p class="muted askhint">Answers come only from the documents below, with the page for every point. A search aid, not legal advice: for a grievance or claim, confirm with your Local Chairperson.</p>
         <p class="muted askhint">Questions and answers are kept for 60 days to check the answers are right. Don't include names or personal details.</p>
@@ -37,6 +42,7 @@
     // The tip's link opens the document list and brings it into view.
     $('.askpick').onclick = () => { const d = $('.asksrc'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     box.querySelectorAll('[data-pick]').forEach((b) => { b.onclick = () => pick(b.dataset.pick); });
+    box.querySelectorAll('[data-craft]').forEach((b) => { b.onclick = () => setCraft(b.dataset.craft); });
     loadSources();
   }
 
@@ -56,7 +62,7 @@
     list.innerHTML = sources.filter((s) => !s.manualOnly).map(item).join('')
       + (manual.length ? `<h4>Western Canada (pick by hand)</h4>${manual.map(item).join('')}` : '');
     list.querySelectorAll('input').forEach((i) => { i.onchange = refresh; });
-    refresh();
+    if (simple) setCraft(savedCraft(), true); else refresh();
   }
   const checked = () => [...box.querySelectorAll('.asklist input:checked')].map((i) => i.value);
   // Two that can't be searched together (4.3 with 4.16): one blocks the other.
@@ -73,6 +79,57 @@
     box.querySelector('.askdates').hidden = !on.has('croa');
     const n = on.size;
     box.querySelector('.askcount').textContent = `(${n} of ${sources.length})`;
+    paintChips();
+  }
+
+  // --- The simpler picker (owner, 2026-11-11: "Could have it auto select a few
+  // of the more commonly used ones, then you can add in more if needed. And
+  // also have a conductor/engineer button"). Test site first. A craft button
+  // picks that craft's everyday documents: its agreement, the addenda or the
+  // mileage guidelines, its Sarnia crew calling document and the duty and
+  // rest rules. Everything else (the operating rules, dangerous goods, the
+  // discipline grid, the engineers' operating manual, CROA awards, Western
+  // Canada) is under "Add more documents". The tick boxes below stay the one
+  // record of what is searched; the chips only show and change them. The
+  // craft is remembered on this phone.
+  const COMMON = {
+    conductor: ['conductors', 'conductors_addendum', 'crew_calling_cty', 'rest_rules'],
+    engineer: ['engineers', 'mileage_guidelines', 'crew_calling', 'rest_rules'],
+  };
+  const SHORT = { conductors: 'Conductors 4.16', conductors_addendum: '4.16 addenda', crew_calling_cty: 'Crew calling (conductors)', rest_rules: 'Duty & rest rules', engineers: 'Engineers 1.1', mileage_guidelines: 'Mileage guidelines', crew_calling: 'Crew calling (engineers)',
+    cror: 'CROR', goi: 'GOI', dangerous_goods: 'Dangerous goods', disciplinary_grid: 'Discipline grid', le_operating_manual: 'Engineer operating manual', croa: 'CROA awards', agreement_4_3: 'Conductors 4.3 (West)', agreement_1_2: 'Engineers 1.2 (West)' };
+  const CRAFT_KEY = 'askCraft';
+  let simple = false;
+  const savedCraft = () => { try { const c = localStorage.getItem(CRAFT_KEY); return COMMON[c] ? c : ''; } catch (e) { return ''; } };
+  function paintChips() {
+    if (!box || !simple || !sources.length) return;
+    const on = new Set(checked());
+    const chip = (s) => { const i = box.querySelector(`#ai-${CSS.escape(s.id)} input`); const off = i && i.disabled; return `<button type="button" class="askchip${on.has(s.id) ? ' on' : ''}" data-doc="${esc(s.id)}"${off ? ' disabled' : ''} title="${esc(s.name)}">${on.has(s.id) ? '✓ ' : '+ '}${esc(SHORT[s.id] || s.name)}</button>`; };
+    box.querySelector('.askon').innerHTML = sources.filter((s) => on.has(s.id)).map(chip).join('') || '<span class="muted">nothing picked yet</span>';
+    const rest = sources.filter((s) => !on.has(s.id));
+    box.querySelector('.askoff').innerHTML = rest.map(chip).join('') || '<span class="muted">everything is being searched</span>';
+    box.querySelector('.askmorecount').textContent = `(${rest.length})`;
+    box.querySelectorAll('.askchip').forEach((b) => { b.onclick = () => { const i = box.querySelector(`#ai-${CSS.escape(b.dataset.doc)} input`); if (!i || i.disabled) return; i.checked = !i.checked; refresh(); }; });
+    const craft = savedCraft();
+    box.querySelectorAll('[data-craft]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.craft === craft)));
+  }
+  // The craft's everyday documents, or both crafts' until one is picked.
+  function setCraft(craft, keep) {
+    if (craft && !keep) { try { localStorage.setItem(CRAFT_KEY, craft); } catch (e) { /* not kept */ } }
+    const want = new Set(craft ? COMMON[craft] : [...COMMON.conductor, ...COMMON.engineer]);
+    box.querySelectorAll('.asklist input').forEach((i) => { i.checked = want.has(i.value); });
+    refresh();
+  }
+  function setSimple(on) {
+    if (!box || simple === !!on) return;
+    simple = !!on;
+    box.querySelector('.askpicker').hidden = !simple;
+    box.querySelector('.asktip').hidden = simple;
+    box.querySelector('.asksrc > summary').firstChild.textContent = simple ? 'All documents, as a list ' : 'Documents to search ';
+    // The CROA date boxes sit with the chips, so they show when CROA is added there.
+    (simple ? box.querySelector('.askpicker') : box.querySelector('.asksrc')).appendChild(box.querySelector('.askdates'));
+    if (!sources.length) return;
+    if (simple) setCraft(savedCraft(), true); else pick('all');
   }
   function pick(what) {
     box.querySelectorAll('.asklist input').forEach((i) => {
@@ -190,7 +247,7 @@
     const question = box.querySelector('#askq').value.trim();
     if (!question) return;
     const src = checked();
-    if (!src.length) { box.querySelector('.askanswer').innerHTML = ''; error('Pick at least one document to search (Documents to search, below).'); return; }
+    if (!src.length) { box.querySelector('.askanswer').innerHTML = ''; error(simple ? 'Pick at least one document to search: tap Conductor or Engineer, or add one.' : 'Pick at least one document to search (Documents to search, below).'); return; }
     last = { question, sources: src, dateFrom: box.querySelector('.askfrom').value || null, dateTo: box.querySelector('.askto').value || null };
     const go = box.querySelector('#askgo');
     go.disabled = true;
@@ -206,8 +263,10 @@
   }
 
   root.BoardAsk = {
-    render(view) {
+    // opts.simple: the craft buttons and document chips (the test site for now).
+    render(view, opts) {
       if (!box) build();
+      setSimple(!!(opts && opts.simple));
       view.innerHTML = '';
       view.appendChild(box);
     },

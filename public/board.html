@@ -570,6 +570,19 @@
   .askln { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; font-size: 13px; }
   .askln a, .askmore { color: var(--accent); background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
   .asksrc { background: var(--sheet); border: 1px solid var(--rule); margin-top: 14px; }
+  .askpicker { margin: 12px 0 2px; display: grid; gap: 10px; }
+  .askpicker[hidden], .asktip[hidden] { display: none; }
+  .askcraft, .askchipset { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .asklbl2 { font-size: 12px; color: var(--soft); text-transform: uppercase; letter-spacing: 0.08em; flex: 0 0 5.5em; }
+  .askcraft button { flex: 1 1 0; min-height: 44px; background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; color: var(--ink); font: 600 15px/1 var(--body); cursor: pointer; }
+  .askcraft button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .askchipset .asklbl2 { flex-basis: 100%; }
+  .askchips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 14em; }
+  .askchip { background: var(--bg); border: 1px dashed var(--rule); border-radius: 999px; padding: 7px 11px; color: var(--soft); font: 500 13px/1.1 var(--body); cursor: pointer; }
+  .askchip.on { border-style: solid; border-color: var(--accent); color: var(--ink); background: var(--sheet); }
+  .askchip[disabled] { opacity: 0.45; cursor: default; }
+  .askmoredocs > summary { cursor: pointer; font-size: 14px; color: var(--accent); }
+  .askmoredocs .askchips { margin-top: 8px; }
   .askbtns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .askbtns button { background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 10px; color: var(--ink); font: 500 13px/1 var(--body); cursor: pointer; }
   .asklist { display: grid; gap: 6px; margin-bottom: 12px; }
@@ -6626,7 +6639,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#agreements'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardAsk) { view.innerHTML = '<p class="empty">The agreement search isn\'t available right now.</p>'; return; }
-    window.BoardAsk.render(view);
+    window.BoardAsk.render(view, { simple: PREVIEW }); // the craft buttons and document chips: test site first (owner, 2026-11-11)
   }
   const refState = {};
   // Job Aids tab, first called Reference (owner, 2026-11-03; renamed 2026-11-11: "can we
