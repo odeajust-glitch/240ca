@@ -686,16 +686,30 @@ async function runRoute(page, opts = {}) {
         if (!S.isCircularInquiry(c.text)) throw new Error('not the Circular Inquiry screen after Enter');
         const list = new Map();
         let ended = false;
+        let sample = null;
         for (let pageNo = 0; pageNo < 12; pageNo++) {
           const rows = await unmaskedRows();
           for (const j of rows ? S.parseCircularInquiry(rows) : []) list.set(j.number, j);
+          // Nothing read off the first page (first real run, 2026-11-11: both
+          // crafts came back with no jobs while eight were up): keep what the
+          // page looked like, masked (letters and digits only as A and 9, as
+          // every saved screen is), and what is in the boxes, so the reader can
+          // be fitted to it. Shown to the owner key only on the page.
+          if (pageNo === 0 && !list.size) {
+            try {
+              const masked = (await describeFrame(catsFrame(page))).screenGrid || [];
+              const boxes = await catsFrame(page).evaluate(() => [...document.querySelectorAll('input[type=text]')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
+                .map((el) => { const r = el.getBoundingClientRect(); return `${Math.round(r.top)},${Math.round(r.left)}:${String(el.value || '').replace(/[A-Za-z]/g, 'A').replace(/\d/g, '9')}`; }).slice(0, 40));
+              sample = { lines: masked.slice(0, 30), boxes, rows: rows ? rows.length : null };
+            } catch { /* the read matters more */ }
+          }
           if (/END\s+OF\s+RECORDS/.test(c.text)) { ended = true; break; }
           const next = await press(page, 'F8').catch(() => null);
           if (!next || !S.isCircularInquiry(next.text) || next.text === c.text) break;
           c = next;
         }
         const said = (c.text.match(/(NO\s+RECORDS[^=]{0,60}|INVALID[^=]{0,60}|ERROR[^=]{0,60})/) || [])[0];
-        kept[craft] = { read: now.toISOString(), from: today, complete: ended, list: [...list.values()].sort((a, b) => (a.closes < b.closes ? -1 : a.closes > b.closes ? 1 : a.number < b.number ? -1 : 1)) };
+        kept[craft] = { read: now.toISOString(), from: today, complete: ended, ...(sample ? { sample } : {}), list: [...list.values()].sort((a, b) => (a.closes < b.closes ? -1 : a.closes > b.closes ? 1 : a.number < b.number ? -1 : 1)) };
         console.log(`  Job postings, ${name} (${menu} → 8): ${list.size} up for bid${ended ? '' : ' (the end of the list was not reached)'}${said ? ` (CATS: ${said.trim()})` : ''}.`);
         read++;
       } catch (err) {
