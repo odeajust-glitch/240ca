@@ -4,6 +4,31 @@
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
+**24 more page styles on one shared set of rules; Settings groups fold, 2026-11-11 (owner
+ticked them on the list of ideas):** Amber Terminal, Commodore 64, Blue Screen, DOS,
+Classic Mac, Nokia Phone, Calculator, Subway Map, Tetris, Sonic, Donkey Kong, Space
+Invaders, Halo, Doom, GoldenEye, Mortal Kombat, Animal Crossing, South Park, Blade Runner,
+Batman, Back to the Future, Jurassic Park, Ghostbusters, Dragon Ball. 46 styles in all.
+- **How they are built ("kit" styles, `public/board.html`, the "Kit styles" block):** a
+  style whose `data-theme` starts `k-` only sets the colour tokens, three typefaces and a
+  few `--k-…` variables (frame, heading bar, tabs, the picked thing, day bars, glow); the
+  rules under `:root[data-theme^="k-"]` do the rest. `k-px-…` styles also get the small
+  sizes the pixel font needs. A handful have a few rules of their own (Subway's route
+  lines, Tetris's block tabs, Donkey Kong's girders, Classic Mac's striped title bars).
+  **To add one:** a block of variables there and a button in the Settings list; nothing in
+  the script (the name check is `k-[a-z0-9-]+`, the browser-bar colour comes from
+  `--k-meta`). The 22 older styles are still hand-written blocks.
+- **Settings list:** six folded groups (`details.stygrp`: Everyday, CATS, Railway, Old
+  screens, Games, Films and shows) with a count each; Everyday starts open and the group
+  holding the style in use opens itself.
+- Each copies a look only: no characters, logos or art. Classic Mac keeps a dark red and
+  green for late / ordered (true black-and-white would hide them): told him.
+- Checked at phone width on sample data: each of the 24 loads with no script errors,
+  Current / Turn History / Order summary / Analytics have no sideways scroll, Current and
+  Turn History share the first tab row, and all were looked at on contact sheets (top of
+  the page and the line-up). Not checked: the other tabs, a computer-width screen, a real
+  phone. Laptop pull/restart/publish pending.
+
 **Pac-Man and Star Trek page styles, 2026-11-11 (owner: "make a pac-man theme and a star
 trek theme, make more suggestions"):** two more choices (`data-theme` `pacman`,
 `startrek` in `public/board.html`), the look only. Pac-Man (Games group): black, panels

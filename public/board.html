@@ -20,7 +20,7 @@
   // Not picked: follows the phone.
   // iPhone Light (owner, 2026-11-10): the iPhone look kept light whatever the
   // phone is set to: the same style with data-shade="light" on the page.
-  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto|gameboy|simpsons|win95|teletext|tron|pacman|startrek)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
+  try { const t = localStorage.getItem('boardTheme'); if (/^(light|dark|retro|tablet|iphone|iphonelight|board|matrix|fallout|starwars|mario|pokemon|zelda|minecraft|naruto|gameboy|simpsons|win95|teletext|tron|pacman|startrek|k-[a-z0-9-]+)$/.test(t || '')) { document.documentElement.dataset.theme = t === 'iphonelight' ? 'iphone' : t; if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; } } catch (e) { /* storage off */ }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,9 +128,11 @@
   .settings[hidden] { display: none; }
   .settings h2 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
   .settings .styles { display: grid; gap: 6px; }
-  /* The styles in groups (2026-11-10: twenty of them). */
-  .settings .stygroup { margin: 8px 0 0; font-size: 12px; color: var(--soft); }
-  .settings .stygroup:first-child { margin-top: 0; }
+  /* Page styles in folded groups (2026-11-11: 46 of them); the group holding the style in use opens itself. */
+  .settings details.stygrp { border: 1px solid var(--rule); border-radius: 6px; }
+  .settings details.stygrp > summary { padding: 10px 12px; min-height: 44px; box-sizing: border-box; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .settings details.stygrp > summary span { font-weight: 400; color: var(--soft); margin-left: 4px; }
+  .settings details.stygrp > button.sty { width: calc(100% - 12px); margin: 0 6px 6px; }
   .settings { max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); overflow-y: auto; }
   .settings button.sty { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; min-height: 44px;
     background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; font-size: 14px; }
@@ -1649,6 +1651,197 @@
   :root[data-theme="startrek"] .daybar { background: #1c1830; color: #b89adf; border-radius: 0 999px 999px 0; margin-right: 14px; }
   :root[data-theme="startrek"] .settings { border: 2px solid #9da4ff; border-radius: 18px; }
   :root[data-theme="startrek"] .htable td.warn, :root[data-theme="startrek"] .health .warn { color: #ff8a80; }
+  /* Kit styles (owner, 2026-11-11: he picked 24 more from a list). One
+     set of rules for all of them: a style whose name starts "k-" only
+     sets colours, typefaces and a few "--k-…" switches (frame, heading
+     bar, tabs, the picked thing, day bars), and these rules do the rest.
+     "k-px-…" styles also get the small sizes the blocky game letters need.
+     Each copies a look only: no characters, logos or art. To add one:
+     a block of variables here and a button in the Settings list. */
+  :root[data-theme^="k-"] body { background-color: var(--bg); background-image: var(--k-page-img, none); background-size: var(--k-page-size, auto); }
+  :root[data-theme^="k-"] .top { background: var(--k-top-bg, transparent); border-bottom: var(--k-top-edge, 2px solid var(--rule)); }
+  :root[data-theme^="k-"] .top h1 { color: var(--k-title, var(--ink)); text-shadow: var(--k-glow, none); text-transform: var(--k-hcase, uppercase); font-style: var(--k-hstyle, normal); font-size: var(--k-h1, 30px); letter-spacing: var(--k-track, 0.02em); }
+  :root[data-theme^="k-"] .top .where, :root[data-theme^="k-"] .top .updated { color: var(--k-top-ink, var(--k-page-ink, var(--soft))); }
+  :root[data-theme^="k-"] .turnpick, :root[data-theme^="k-"] .daypick, :root[data-theme^="k-"] .rail h2, :root[data-theme^="k-"] .status-line, :root[data-theme^="k-"] .agebar .sub, :root[data-theme^="k-"] .cur2-quiet, :root[data-theme^="k-"] main > .note { color: var(--k-page-ink, var(--soft)); }
+  :root[data-theme^="k-"] .head .when, :root[data-theme^="k-"] .ohead .when, :root[data-theme^="k-"] .thead .when { color: var(--k-page-head, var(--k-page-ink, var(--ink))); font-style: var(--k-hstyle, normal); }
+  :root[data-theme^="k-"] .head .when .num { color: var(--k-page-big, inherit); }
+  :root[data-theme^="k-"] .cur2 > summary .t, :root[data-theme^="k-"] .train .time, :root[data-theme^="k-"] .train-clear .card-duty, :root[data-theme^="k-"] .stat .v { color: var(--k-big, var(--ink)); text-shadow: var(--k-big-glow, none); }
+  :root[data-theme^="k-"] .sheet, :root[data-theme^="k-"] .strip, :root[data-theme^="k-"] .cur2-strip { border: var(--k-edge, 2px solid var(--rule)); border-radius: var(--k-r, 0); box-shadow: var(--k-shadow, none); }
+  :root[data-theme^="k-"] .sheet > :first-child { border-top-left-radius: var(--k-r, 0); border-top-right-radius: var(--k-r, 0); }
+  :root[data-theme^="k-"] .sheet > :last-child { border-bottom-left-radius: var(--k-r, 0); border-bottom-right-radius: var(--k-r, 0); }
+  :root[data-theme^="k-"] .sheet > header, :root[data-theme^="k-"] .test-current-box > summary { background: var(--k-head-bg, transparent); background-image: var(--k-head-img, none); background-size: var(--k-head-size, auto); border-bottom: var(--k-head-edge, 1px solid var(--rule)); }
+  :root[data-theme^="k-"] .sheet > header h2, :root[data-theme^="k-"] .test-current-box > summary h2 { color: var(--k-head-ink, var(--ink)); text-transform: var(--k-hcase, uppercase); font-style: var(--k-hstyle, normal); text-shadow: var(--k-head-glow, none); letter-spacing: var(--k-track, 0.03em); }
+  :root[data-theme^="k-"] .sheet > header .meta, :root[data-theme^="k-"] .test-current-box > summary .meta, :root[data-theme^="k-"] .test-current-box > summary::before { color: var(--k-head-ink2, var(--k-head-ink, var(--soft))); }
+  :root[data-theme^="k-"] .modes button, :root[data-theme^="k-"] .modes a.modelink { background: var(--k-tab-bg, var(--sheet)); border: var(--k-tab-edge, 2px solid var(--rule)); border-radius: var(--k-rb, 0); color: var(--k-tab-ink, var(--ink)); text-transform: var(--k-tcase, none); }
+  :root[data-theme^="k-"] .gear, :root[data-theme^="k-"] .steps button, :root[data-theme^="k-"] .rail .hours button, :root[data-theme^="k-"] .rail .turnpick button, :root[data-theme^="k-"] .poolfilter button, :root[data-theme^="k-"] .screen-group { background: var(--k-btn-bg, var(--k-tab-bg, var(--sheet))); border: var(--k-btn-edge, var(--k-tab-edge, 2px solid var(--rule))); border-radius: var(--k-rb, 0); color: var(--k-btn-ink, var(--k-tab-ink, var(--ink))); }
+  :root[data-theme^="k-"] .screen-group { border-radius: var(--k-r, 0); }
+  :root[data-theme^="k-"] .screen-group summary { color: var(--k-btn-ink, var(--k-tab-ink, var(--ink))); }
+  :root[data-theme^="k-"] .modes button[aria-pressed="true"], :root[data-theme^="k-"] .poolfilter button[aria-pressed="true"], :root[data-theme^="k-"] .rail .hours button[aria-pressed="true"],
+  :root[data-theme^="k-"] .notes .nkinds button[aria-pressed="true"] { background: var(--k-pick-bg, var(--accent)); border-color: var(--k-pick-edge, var(--k-pick-bg, var(--accent))); color: var(--k-pick-ink, var(--accent-ink)); }
+  :root[data-theme^="k-"] input, :root[data-theme^="k-"] select, :root[data-theme^="k-"] textarea { background: var(--k-field-bg, var(--sheet)) !important; border: var(--k-btn-edge, var(--k-tab-edge, 2px solid var(--rule))) !important; border-radius: var(--k-rb, 0); color: var(--k-field-ink, var(--ink)); }
+  :root[data-theme^="k-"] .daybar { background: var(--k-bar-bg, var(--plan-tint)); color: var(--k-bar-ink, var(--soft)); }
+  :root[data-theme^="k-"] .settings { background: var(--k-menu-bg, var(--sheet)); }
+  :root[data-theme^="k-"] .settings button.sty { background: var(--plan-tint); }
+  :root[data-theme="zelda"] .settings button.sty, :root[data-theme="minecraft"] .settings button.sty { background: var(--plan-tint); }
+  :root[data-theme^="k-"] .htable td.warn, :root[data-theme^="k-"] .health .warn { color: var(--stop); }
+  /* The blocky game letters are wide: headings and times are set small so they fit a phone. */
+  :root[data-theme^="k-px-"] .top h1 { font-size: 15px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme^="k-px-"] .sheet > header h2, :root[data-theme^="k-px-"] .test-current-box > summary h2 { font-size: 11px; line-height: 1.5; letter-spacing: 0; }
+  :root[data-theme^="k-px-"] .head .when, :root[data-theme^="k-px-"] .ohead .when, :root[data-theme^="k-px-"] .thead .when { font-size: 14px; line-height: 1.6; letter-spacing: 0; }
+  :root[data-theme^="k-px-"] .head .when .num { font: 400 14px/1.6 var(--display); margin-left: 12px; }
+  :root[data-theme^="k-px-"] h3, :root[data-theme^="k-px-"] .sec-title, :root[data-theme^="k-px-"] .rail h2, :root[data-theme^="k-px-"] th, :root[data-theme^="k-px-"] .daybar, :root[data-theme^="k-px-"] .settings h2, :root[data-theme^="k-px-"] .tp h3 { font-size: 8px; line-height: 1.6; letter-spacing: 0; font-weight: 400; }
+  :root[data-theme^="k-px-"] .modes button, :root[data-theme^="k-px-"] .modes a.modelink { font: 400 9px/1.5 var(--display); text-transform: uppercase; }
+  :root[data-theme^="k-px-"] .cur2 > summary .t, :root[data-theme^="k-px-"] .train .time, :root[data-theme^="k-px-"] .train-clear .card-duty, :root[data-theme^="k-px-"] .stat .v { font-family: var(--display); font-weight: 400; font-size: 13px; }
+  /* Amber Terminal */
+  :root[data-theme="k-amber"] { --bg: #0a0600; --sheet: #120a00; --ink: #ffb000; --soft: #b87f00; --rule: #5a3d00; --rule-soft: #2e1f00; --accent: #ffd98a; --accent-ink: #000000; --accent-tint: #3a2800;
+    --amber: #ff7a1a; --amber-tint: #3a2608; --go: #ffe9a8; --go-tint: #4a3500; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #1c1200; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5fe0d0;
+    --display: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0a0600;
+    --k-title: #ffb000; --k-glow: 0 0 8px rgba(255, 176, 0, 0.55); --k-big: #ffc94d; --k-pick-bg: #ffb000; --k-pick-ink: #0a0600; --k-tcase: uppercase; --k-h1: 22px; --k-page-img: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0, rgba(0, 0, 0, 0.28) 1px, transparent 1px, transparent 3px); }
+  /* Commodore 64 */
+  :root[data-theme="k-px-c64"] { --bg: #3e31a2; --sheet: #3e31a2; --ink: #d2ccff; --soft: #a79ef0; --rule: #7c70da; --rule-soft: #5548b8; --accent: #ffffff; --accent-ink: #3e31a2; --accent-tint: #5548b8;
+    --amber: #eeee77; --amber-tint: #4d4590; --go: #aaff66; --go-tint: #2e4a8a; --stop: #ff8a80; --stop-tint: #5a2a8a; --plan-tint: #4a3db0; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5fe0d0;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #3e31a2;
+    --k-edge: 6px solid #7c70da; --k-head-edge: 3px solid #7c70da; --k-pick-bg: #d2ccff; --k-pick-ink: #3e31a2; --k-bar-bg: #7c70da; --k-bar-ink: #3e31a2; --k-top-edge: 6px solid #7c70da; --k-tab-edge: 3px solid #7c70da; }
+  /* Blue Screen */
+  :root[data-theme="k-bsod"] { --bg: #0000aa; --sheet: #0000aa; --ink: #ffffff; --soft: #b8c4ff; --rule: #5a66d6; --rule-soft: #2a34b8; --accent: #ffff55; --accent-ink: #0000aa; --accent-tint: #1a25c0;
+    --amber: #ffc266; --amber-tint: #3a2a8a; --go: #55ff55; --go-tint: #0a2a8a; --stop: #ff8a8a; --stop-tint: #4a1a8a; --plan-tint: #1414b8; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5fe0d0;
+    --display: 'Lucida Console', 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --body: 'Lucida Console', 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0000aa;
+    --k-edge: 1px solid #5a66d6; --k-head-bg: #aaaaaa; --k-head-ink: #0000aa; --k-pick-bg: #aaaaaa; --k-pick-ink: #0000aa; --k-tab-edge: 1px solid #b8c4ff; --k-h1: 22px; --k-bar-bg: #aaaaaa; --k-bar-ink: #0000aa; --k-tcase: uppercase; }
+  /* DOS */
+  :root[data-theme="k-dos"] { --bg: #000000; --sheet: #000000; --ink: #c0c0c0; --soft: #8f8f8f; --rule: #555555; --rule-soft: #2a2a2a; --accent: #55ffff; --accent-ink: #000000; --accent-tint: #003a3a;
+    --amber: #ffff55; --amber-tint: #33330a; --go: #55ff55; --go-tint: #0c3a1a; --stop: #ff5555; --stop-tint: #3d100c; --plan-tint: #161616; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #5fe0d0;
+    --display: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --body: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #00aaaa;
+    --k-top-bg: #00aaaa; --k-title: #000000; --k-top-ink: #000000; --k-top-edge: 0; --k-head-bg: #0000aa; --k-head-ink: #ffffff; --k-head-ink2: #55ffff; --k-pick-bg: #000000; --k-pick-ink: #55ffff; --k-pick-edge: #000000; --k-tab-bg: #00aaaa; --k-tab-ink: #000000; --k-tab-edge: 1px solid #00aaaa; --k-btn-bg: #000000; --k-btn-ink: #c0c0c0; --k-btn-edge: 1px solid #555555; --k-bar-bg: #555555; --k-bar-ink: #ffffff; --k-big: #ffffff; --k-h1: 22px; --k-edge: 1px solid #c0c0c0; --k-tcase: uppercase; }
+  /* Classic Mac */
+  :root[data-theme="k-mac"] { --bg: #ffffff; --sheet: #ffffff; --ink: #000000; --soft: #444444; --rule: #000000; --rule-soft: #c4c4c4; --accent: #000000; --accent-ink: #ffffff; --accent-tint: #e2e2e2;
+    --amber: #5a3a00; --amber-tint: #f6e2b8; --go: #005a00; --go-tint: #d5f0da; --stop: #a00000; --stop-tint: #fbd9d9; --plan-tint: #ebebeb; --poolA: #000000; --poolB: #666666; --poolSR: #333333;
+    --display: Charcoal, Chicago, 'Geneva', 'Lucida Grande', Verdana, sans-serif; --body: 'Geneva', 'Lucida Grande', Verdana, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #ffffff;
+    --k-edge: 2px solid #000000; --k-r: 8px; --k-rb: 8px; --k-shadow: 3px 3px 0 #000000; --k-head-edge: 2px solid #000000; --k-hcase: none; --k-h1: 24px; --k-head-img: repeating-linear-gradient(0deg, #000000 0, #000000 1px, transparent 1px, transparent 3px); --k-pick-bg: #000000; --k-pick-ink: #ffffff; --k-tab-edge: 2px solid #000000; --k-bar-bg: #000000; --k-bar-ink: #ffffff; --k-top-edge: 2px solid #000000; }
+  :root[data-theme="k-mac"] .sheet > header h2, :root[data-theme="k-mac"] .test-current-box > summary h2, :root[data-theme="k-mac"] .sheet > header .meta, :root[data-theme="k-mac"] .test-current-box > summary .meta { background: #ffffff; padding: 2px 8px; }
+  :root[data-theme="k-mac"] .sheet > header, :root[data-theme="k-mac"] .test-current-box > summary { background-origin: content-box; background-clip: content-box; }
+  /* Nokia Phone */
+  :root[data-theme="k-px-nokia"] { --bg: #b9c7a0; --sheet: #c7d3ae; --ink: #27321f; --soft: #48573f; --rule: #27321f; --rule-soft: #a3b18c; --accent: #27321f; --accent-ink: #c7d3ae; --accent-tint: #a3b18c;
+    --amber: #5a3d00; --amber-tint: #c2bf8a; --go: #27321f; --go-tint: #96aa7c; --stop: #6b1a10; --stop-tint: #bcab8c; --plan-tint: #b3c09a; --poolA: #27321f; --poolB: #48573f; --poolSR: #27321f;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #b9c7a0;
+    --k-edge: 3px solid #27321f; --k-head-edge: 3px solid #27321f; --k-pick-bg: #27321f; --k-pick-ink: #c7d3ae; --k-bar-bg: #48573f; --k-bar-ink: #c7d3ae; --k-top-edge: 3px solid #27321f; --k-r: 6px; --k-rb: 6px; }
+  /* Calculator */
+  :root[data-theme="k-calc"] { --bg: #383b40; --sheet: #c5cdbb; --ink: #1c211a; --soft: #454d40; --rule: #7d8674; --rule-soft: #a9b29e; --accent: #1c211a; --accent-ink: #c5cdbb; --accent-tint: #a9b29e;
+    --amber: #5a3a00; --amber-tint: #cfc494; --go: #14401c; --go-tint: #a0b894; --stop: #7a1410; --stop-tint: #c9a898; --plan-tint: #b4bca9; --poolA: #1c211a; --poolB: #454d40; --poolSR: #1c211a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #383b40;
+    --k-page-ink: #d8dbe0; --k-title: #ffffff; --k-page-head: #ffffff; --k-edge: 4px solid #1e2023; --k-r: 6px; --k-rb: 6px; --k-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25); --k-tab-bg: #565a61; --k-tab-ink: #ffffff; --k-tab-edge: 2px solid #1e2023; --k-pick-bg: #e8842c; --k-pick-ink: #ffffff; --k-pick-edge: #1e2023; --k-bar-bg: #a9b29e; --k-bar-ink: #1c211a; --k-top-edge: 2px solid #1e2023; --k-field-bg: #c5cdbb; --k-field-ink: #1c211a; --k-menu-bg: #c5cdbb; }
+  :root[data-theme="k-calc"] .cur2 > summary .t, :root[data-theme="k-calc"] .train .time, :root[data-theme="k-calc"] .train-clear .card-duty, :root[data-theme="k-calc"] .stat .v, :root[data-theme="k-calc"] .head .when .num { font-style: italic; letter-spacing: 0.08em; }
+  /* Subway Map */
+  :root[data-theme="k-subway"] { --bg: #ffffff; --sheet: #ffffff; --ink: #111111; --soft: #555555; --rule: #111111; --rule-soft: #dddddd; --accent: #0039a6; --accent-ink: #ffffff; --accent-tint: #dbe6ff;
+    --amber: #8a4a00; --amber-tint: #f6e2b8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c21f1f; --stop-tint: #fbd9d9; --plan-tint: #eeeeee; --poolA: #0039a6; --poolB: #b933ad; --poolSR: #ee352e;
+    --display: 'Helvetica Neue', Helvetica, Arial, sans-serif; --body: 'Helvetica Neue', Helvetica, Arial, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #111111;
+    --k-top-bg: #111111; --k-title: #ffffff; --k-top-ink: #dddddd; --k-top-edge: 0; --k-edge: 0 solid transparent; --k-head-edge: 0; --k-hcase: none; --k-h1: 26px; --k-tab-bg: #ffffff; --k-tab-ink: #111111; --k-tab-edge: 2px solid #ffffff; --k-rb: 999px; --k-pick-bg: #fccc0a; --k-pick-ink: #111111; --k-btn-edge: 2px solid #111111; --k-bar-bg: #111111; --k-bar-ink: #ffffff; }
+  :root[data-theme="k-subway"] .sheet, :root[data-theme="k-subway"] .strip, :root[data-theme="k-subway"] .cur2-strip { border-left: 12px solid #ee352e; }
+  :root[data-theme="k-subway"] .col > .secwrap:nth-child(6n+2) .sheet, :root[data-theme="k-subway"] .col > .sheet:nth-child(6n+2) { border-left-color: #0039a6; }
+  :root[data-theme="k-subway"] .col > .secwrap:nth-child(6n+3) .sheet, :root[data-theme="k-subway"] .col > .sheet:nth-child(6n+3) { border-left-color: #00933c; }
+  :root[data-theme="k-subway"] .col > .secwrap:nth-child(6n+4) .sheet, :root[data-theme="k-subway"] .col > .sheet:nth-child(6n+4) { border-left-color: #ff6319; }
+  :root[data-theme="k-subway"] .col > .secwrap:nth-child(6n+5) .sheet, :root[data-theme="k-subway"] .col > .sheet:nth-child(6n+5) { border-left-color: #b933ad; }
+  :root[data-theme="k-subway"] .col > .secwrap:nth-child(6n) .sheet, :root[data-theme="k-subway"] .col > .sheet:nth-child(6n) { border-left-color: #fccc0a; }
+  :root[data-theme="k-subway"] .sheet > header, :root[data-theme="k-subway"] .test-current-box > summary { position: relative; }
+  :root[data-theme="k-subway"] .sheet > header::after, :root[data-theme="k-subway"] .test-current-box > summary::after { content: ''; position: absolute; left: -14px; top: 50%; width: 10px; height: 10px; margin-top: -8px; background: #ffffff; border: 3px solid #111111; border-radius: 50%; }
+  :root[data-theme="k-subway"] .sheet > header h2, :root[data-theme="k-subway"] .test-current-box > summary h2 { font-weight: 700; letter-spacing: 0; }
+  /* Tetris */
+  :root[data-theme="k-px-tetris"] { --bg: #000000; --sheet: #080810; --ink: #ffffff; --soft: #a2a8c4; --rule: #5a5f80; --rule-soft: #24263a; --accent: #00f0f0; --accent-ink: #000000; --accent-tint: #06303a;
+    --amber: #f0a000; --amber-tint: #3a2608; --go: #00f000; --go-tint: #0c3a1a; --stop: #ff4040; --stop-tint: #3d100c; --plan-tint: #14162a; --poolA: #00f0f0; --poolB: #c878ff; --poolSR: #f0a000;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #000000;
+    --k-edge: 4px solid #5a5f80; --k-head-edge: 4px solid #5a5f80; --k-head-ink: #f0f000; --k-title: #f0f000; --k-big: #00f0f0; --k-pick-bg: #ffffff; --k-pick-ink: #000000; --k-tab-ink: #000000; --k-tab-edge: 3px solid; --k-btn-ink: #ffffff; --k-btn-edge: 2px solid #5a5f80; --k-bar-bg: #a000f0; --k-bar-ink: #ffffff; --k-top-edge: 4px solid #5a5f80; }
+  :root[data-theme="k-px-tetris"] .modes button { background: #00f0f0; border-color: #a8ffff #009a9a #009a9a #a8ffff; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n+2) { background: #f0f000; border-color: #ffffa8 #9a9a00 #9a9a00 #ffffa8; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n+3) { background: #c878ff; border-color: #e8c8ff #7a2ab8 #7a2ab8 #e8c8ff; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n+4) { background: #00f000; border-color: #a8ffa8 #009a00 #009a00 #a8ffa8; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n+5) { background: #ff5a5a; border-color: #ffb8b8 #a81a1a #a81a1a #ffb8b8; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n+6) { background: #5a8aff; border-color: #b8ccff #1a3aa8 #1a3aa8 #b8ccff; }
+  :root[data-theme="k-px-tetris"] .modes button:nth-child(7n) { background: #f0a000; border-color: #ffd898 #9a6600 #9a6600 #ffd898; }
+  :root[data-theme="k-px-tetris"] .modes button[aria-pressed="true"] { background: #ffffff; border-color: #ffffff #8a8a8a #8a8a8a #ffffff; }
+  /* Sonic */
+  :root[data-theme="k-sonic"] { --bg: #1f5fe0; --sheet: #0a1f66; --ink: #ffffff; --soft: #b9c8ff; --rule: #3f63c9; --rule-soft: #1c3690; --accent: #ffd200; --accent-ink: #000000; --accent-tint: #1c3690;
+    --amber: #ffb852; --amber-tint: #4a3010; --go: #7dff7a; --go-tint: #0f4a2a; --stop: #ff6b5e; --stop-tint: #5a1420; --plan-tint: #152c80; --poolA: #6fd0ff; --poolB: #e0a8ff; --poolSR: #ffd200;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #1f5fe0;
+    --k-title: #ffd200; --k-glow: 2px 2px 0 #0a1f66; --k-hstyle: italic; --k-edge: 3px solid #ffd200; --k-r: 14px; --k-rb: 999px; --k-head-edge: 0; --k-head-ink: #ffffff; --k-head-glow: 2px 2px 0 #0d3d0d; --k-head-img: repeating-conic-gradient(#2fa52f 0 25%, #1f7a1f 0 50%); --k-head-size: 18px 18px; --k-big: #ffd200; --k-tab-bg: #0a1f66; --k-tab-ink: #ffffff; --k-tab-edge: 2px solid #ffd200; --k-pick-bg: #ffd200; --k-pick-ink: #0a1f66; --k-bar-bg: #a35a1a; --k-bar-ink: #ffffff; --k-top-edge: 4px solid #ffd200; --k-field-bg: #0a1f66; --k-page-ink: #ffffff; }
+  /* Donkey Kong */
+  :root[data-theme="k-px-dk"] { --bg: #000000; --sheet: #000000; --ink: #c4e8ff; --soft: #7fb2dc; --rule: #e0003c; --rule-soft: #3a0f1c; --accent: #ffd23c; --accent-ink: #000000; --accent-tint: #3a2e08;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #10101c; --poolA: #6fb7ff; --poolB: #ffa0d0; --poolSR: #ffd23c;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #000000;
+    --k-title: #e0003c; --k-edge: 0 solid transparent; --k-head-ink: #ffd23c; --k-head-edge: 0; --k-big: #ffd23c; --k-pick-bg: #e0003c; --k-pick-ink: #ffffff; --k-tab-edge: 2px solid #2a4cff; --k-tab-ink: #c4e8ff; --k-bar-bg: #2a4cff; --k-bar-ink: #ffffff; --k-top-edge: 0; }
+  :root[data-theme="k-px-dk"] .top, :root[data-theme="k-px-dk"] .sheet > header, :root[data-theme="k-px-dk"] .test-current-box > summary { padding-bottom: 22px; background-repeat: no-repeat; background-position: left bottom; background-size: 100% 14px;
+    background-image: linear-gradient(#e0003c, #e0003c), linear-gradient(#e0003c, #e0003c), repeating-linear-gradient(60deg, transparent 0, transparent 7px, #e0003c 7px, #e0003c 9px), repeating-linear-gradient(-60deg, transparent 0, transparent 7px, #e0003c 7px, #e0003c 9px);
+    background-size: 100% 3px, 100% 3px, 100% 14px, 100% 14px; background-position: left calc(100% - 11px), left bottom, left bottom, left bottom; }
+  /* Space Invaders */
+  :root[data-theme="k-px-invaders"] { --bg: #000000; --sheet: #000000; --ink: #ffffff; --soft: #9a9a9a; --rule: #33ff33; --rule-soft: #0f3a0f; --accent: #33ff33; --accent-ink: #000000; --accent-tint: #0a2e0a;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #33ff33; --go-tint: #0c3a1a; --stop: #ff3b3b; --stop-tint: #3d100c; --plan-tint: #0c1a0c; --poolA: #6fd0ff; --poolB: #ff8ad8; --poolSR: #33ff33;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #000000;
+    --k-title: #33ff33; --k-edge: 2px solid #33ff33; --k-head-ink: #33ff33; --k-head-edge: 2px solid #33ff33; --k-big: #ffffff; --k-pick-bg: #33ff33; --k-pick-ink: #000000; --k-tab-edge: 2px solid #ffffff; --k-bar-bg: #33ff33; --k-bar-ink: #000000; --k-top-edge: 4px solid #33ff33; }
+  /* Halo */
+  :root[data-theme="k-halo"] { --bg: #1a2214; --sheet: #212b1a; --ink: #dcf3ff; --soft: #86bcd8; --rule: #4f93b8; --rule-soft: #2c4a48; --accent: #7fd4ff; --accent-ink: #000000; --accent-tint: #17384a;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #a6ff8a; --go-tint: #0c3a1a; --stop: #ff6a5a; --stop-tint: #3d100c; --plan-tint: #28341f; --poolA: #7fd4ff; --poolB: #d3a8ff; --poolSR: #b4d86a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #1a2214;
+    --k-title: #7fd4ff; --k-glow: 0 0 10px rgba(127, 212, 255, 0.6); --k-track: 0.16em; --k-edge: 1px solid #4f93b8; --k-r: 10px; --k-rb: 6px; --k-shadow: 0 0 10px rgba(127, 212, 255, 0.25), inset 0 0 18px rgba(127, 212, 255, 0.05); --k-head-ink: #7fd4ff; --k-head-edge: 1px solid #4f93b8; --k-big: #7fd4ff; --k-pick-bg: #7fd4ff; --k-pick-ink: #0c1a22; --k-tab-edge: 1px solid #4f93b8; --k-tcase: uppercase; --k-bar-bg: #2f3a22; --k-bar-ink: #b4d86a; --k-top-edge: 1px solid #4f93b8; }
+  /* Doom */
+  :root[data-theme="k-doom"] { --bg: #170604; --sheet: #260c07; --ink: #f2dcc4; --soft: #b89074; --rule: #6b2a14; --rule-soft: #3d150c; --accent: #ff8a3a; --accent-ink: #000000; --accent-tint: #3d1c0c;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #30120a; --poolA: #8ab8ff; --poolB: #e0a0e0; --poolSR: #ff8a3a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #170604;
+    --k-title: #ff3b1a; --k-glow: 2px 2px 0 #000000; --k-edge: 2px solid #6b2a14; --k-head-bg: #5a1a0c; --k-head-ink: #ffd9a8; --k-head-edge: 2px solid #000000; --k-big: #ffb03a; --k-tab-bg: #5f5f5f; --k-tab-ink: #f4f4f4; --k-tab-edge: 2px solid #222222; --k-pick-bg: #c21a0a; --k-pick-ink: #ffffff; --k-pick-edge: #222222; --k-tcase: uppercase; --k-bar-bg: #5f5f5f; --k-bar-ink: #ffffff; --k-top-edge: 3px solid #6b2a14; }
+  /* GoldenEye */
+  :root[data-theme="k-goldeneye"] { --bg: #1d1e21; --sheet: #292b2f; --ink: #ebe6d8; --soft: #a8a18c; --rule: #5a5648; --rule-soft: #3a3a38; --accent: #d9ae3c; --accent-ink: #000000; --accent-tint: #3a3018;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #33352f; --poolA: #8ab8ff; --poolB: #d8a8e8; --poolSR: #d9ae3c;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #1d1e21;
+    --k-title: #d9ae3c; --k-track: 0.14em; --k-edge: 1px solid #5a5648; --k-head-ink: #d9ae3c; --k-head-edge: 2px solid #b3201b; --k-big: #d9ae3c; --k-tab-edge: 1px solid #d9ae3c; --k-tab-ink: #ebe6d8; --k-pick-bg: #b3201b; --k-pick-ink: #ffffff; --k-tcase: uppercase; --k-bar-bg: #b3201b; --k-bar-ink: #ffffff; --k-top-edge: 2px solid #b3201b; }
+  /* Mortal Kombat */
+  :root[data-theme="k-mk"] { --bg: #000000; --sheet: #0d0605; --ink: #f5e6c8; --soft: #b89a6a; --rule: #7a5a1a; --rule-soft: #33230c; --accent: #f2b632; --accent-ink: #000000; --accent-tint: #33260a;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #1a0e08; --poolA: #8ab8ff; --poolB: #d8a8e8; --poolSR: #f2b632;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #000000;
+    --k-title: #f2b632; --k-glow: 2px 2px 0 #8b0000; --k-edge: 2px solid #f2b632; --k-head-bg: linear-gradient(#8b0000, #4a0000); --k-head-ink: #f2b632; --k-head-edge: 2px solid #f2b632; --k-big: #f2b632; --k-tab-bg: #1a0a08; --k-tab-ink: #f2b632; --k-tab-edge: 2px solid #8b0000; --k-pick-bg: #f2b632; --k-pick-ink: #000000; --k-tcase: uppercase; --k-bar-bg: #4a0000; --k-bar-ink: #f2b632; --k-top-edge: 3px solid #8b0000; }
+  /* Animal Crossing */
+  :root[data-theme="k-acnh"] { --bg: #f8f4e0; --sheet: #fffdf2; --ink: #5a4a30; --soft: #85755a; --rule: #d9cfa8; --rule-soft: #ebe4c8; --accent: #0d8f84; --accent-ink: #ffffff; --accent-tint: #d6f3ef;
+    --amber: #8a4a00; --amber-tint: #f6e2b8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c21f1f; --stop-tint: #fbd9d9; --plan-tint: #f1ebd2; --poolA: #2a7fc4; --poolB: #a05ac0; --poolSR: #3d9b4a;
+    --display: ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --body: ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #f8f4e0;
+    --k-title: #3d9b4a; --k-hcase: none; --k-h1: 27px; --k-edge: 0 solid transparent; --k-r: 22px; --k-rb: 999px; --k-shadow: 0 4px 0 #e3dcc0; --k-head-bg: #7ecb6a; --k-head-ink: #ffffff; --k-head-edge: 0; --k-tab-bg: #fffdf2; --k-tab-ink: #5a4a30; --k-tab-edge: 2px solid #e3dcc0; --k-pick-bg: #19c8b9; --k-pick-ink: #ffffff; --k-bar-bg: #f5c84c; --k-bar-ink: #5a4a30; --k-top-edge: 0; }
+  /* South Park */
+  :root[data-theme="k-southpark"] { --bg: #b8dcee; --sheet: #fdf9ee; --ink: #262626; --soft: #555555; --rule: #c9c2ae; --rule-soft: #e6e0cf; --accent: #1f5fa8; --accent-ink: #ffffff; --accent-tint: #d9e8f8;
+    --amber: #8a4a00; --amber-tint: #f6e2b8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c21f1f; --stop-tint: #fbd9d9; --plan-tint: #f0ead8; --poolA: #1f5fa8; --poolB: #8a3fa8; --poolSR: #d9432f;
+    --display: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --body: 'Comic Sans MS', 'Chalkboard SE', ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #ffffff;
+    --k-hcase: none; --k-h1: 26px; --k-edge: 0 solid transparent; --k-shadow: 3px 4px 0 rgba(0, 0, 0, 0.22); --k-head-bg: #3d9b4a; --k-head-ink: #ffffff; --k-head-edge: 0; --k-tab-bg: #f6d24a; --k-tab-ink: #262626; --k-tab-edge: 0 solid transparent; --k-pick-bg: #d9432f; --k-pick-ink: #ffffff; --k-btn-bg: #fdf9ee; --k-btn-edge: 2px solid #c9c2ae; --k-bar-bg: #7a4a2a; --k-bar-ink: #ffffff; --k-top-edge: 0; --k-top-bg: #ffffff; }
+  :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n+2) .sheet > header, :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n+2) .test-current-box > summary { background: #e8703a; }
+  :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n+3) .sheet > header, :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n+3) .test-current-box > summary { background: #1f5fa8; }
+  :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n) .sheet > header, :root[data-theme="k-southpark"] .col > .secwrap:nth-child(4n) .test-current-box > summary { background: #7a4a2a; }
+  :root[data-theme="k-southpark"] .modes button { box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.22); }
+  /* Blade Runner */
+  :root[data-theme="k-bladerunner"] { --bg: #05030a; --sheet: #0c0816; --ink: #ebe4ff; --soft: #958cc0; --rule: #3a2a5c; --rule-soft: #1e1636; --accent: #19f0e0; --accent-ink: #000000; --accent-tint: #0a2e36;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #150f26; --poolA: #19f0e0; --poolB: #ff8ae6; --poolSR: #ffb852;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #05030a;
+    --k-title: #ff2bd6; --k-glow: 0 0 10px rgba(255, 43, 214, 0.75); --k-track: 0.16em; --k-edge: 1px solid #ff2bd6; --k-shadow: 0 0 12px rgba(255, 43, 214, 0.35); --k-head-ink: #19f0e0; --k-head-glow: 0 0 8px rgba(25, 240, 224, 0.7); --k-head-edge: 1px solid #3a2a5c; --k-big: #19f0e0; --k-tab-edge: 1px solid #19f0e0; --k-tab-ink: #19f0e0; --k-pick-bg: #ff2bd6; --k-pick-ink: #ffffff; --k-tcase: uppercase; --k-bar-bg: #1a0f2e; --k-bar-ink: #ff2bd6; --k-top-edge: 1px solid #19f0e0; }
+  /* Batman */
+  :root[data-theme="k-batman"] { --bg: #0a0a0b; --sheet: #1b1c1f; --ink: #e8e8e8; --soft: #9d9d9d; --rule: #3a3b40; --rule-soft: #2a2b2f; --accent: #ffd400; --accent-ink: #000000; --accent-tint: #332b05;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #25262a; --poolA: #8ab8ff; --poolB: #c8a8e8; --poolSR: #ffd400;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0a0a0b;
+    --k-title: #ffd400; --k-edge: 0 solid transparent; --k-head-bg: #ffd400; --k-head-ink: #0a0a0b; --k-head-edge: 0; --k-big: #ffd400; --k-tab-bg: #1b1c1f; --k-tab-edge: 2px solid #3a3b40; --k-pick-bg: #ffd400; --k-pick-ink: #0a0a0b; --k-tcase: uppercase; --k-bar-bg: #2a2b30; --k-bar-ink: #ffd400; --k-top-edge: 3px solid #ffd400; }
+  /* Back to the Future */
+  :root[data-theme="k-bttf"] { --bg: #000000; --sheet: #111111; --ink: #f0f0f0; --soft: #a0a0a0; --rule: #5a5a5a; --rule-soft: #2a2a2a; --accent: #ffb000; --accent-ink: #000000; --accent-tint: #332405;
+    --amber: #ffb000; --amber-tint: #3a2608; --go: #39ff5a; --go-tint: #0c3a1a; --stop: #ff3a2a; --stop-tint: #3d100c; --plan-tint: #1c1c1c; --poolA: #6fb7ff; --poolB: #d39bff; --poolSR: #39ff5a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #000000;
+    --k-title: #ffb000; --k-hstyle: italic; --k-edge: 3px solid #5a5a5a; --k-r: 4px; --k-head-bg: #2a2a2a; --k-head-ink: #ffb000; --k-head-edge: 3px solid #5a5a5a; --k-big: #ff3a2a; --k-big-glow: 0 0 8px rgba(255, 58, 42, 0.75); --k-page-big: #39ff5a; --k-tab-edge: 2px solid #5a5a5a; --k-pick-bg: #39ff5a; --k-pick-ink: #000000; --k-tcase: uppercase; --k-bar-bg: #b3201b; --k-bar-ink: #ffffff; --k-top-edge: 3px solid #5a5a5a; }
+  :root[data-theme="k-bttf"] .head .when .num { text-shadow: 0 0 8px rgba(57, 255, 90, 0.75); }
+  :root[data-theme="k-bttf"] td b, :root[data-theme="k-bttf"] .cur2 .sym { color: #ffb000; }
+  /* Jurassic Park */
+  :root[data-theme="k-jurassic"] { --bg: #0a0a0a; --sheet: #151515; --ink: #f3ebd2; --soft: #a8a084; --rule: #5a1a1a; --rule-soft: #2e1414; --accent: #f5c400; --accent-ink: #000000; --accent-tint: #332a05;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #201a16; --poolA: #8ab8ff; --poolB: #d8a8e8; --poolSR: #f5c400;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0a0a0a;
+    --k-title: #f5c400; --k-edge: 2px solid #d4141c; --k-head-bg: #d4141c; --k-head-ink: #f5c400; --k-head-edge: 0; --k-big: #f5c400; --k-tab-edge: 2px solid #d4141c; --k-tab-ink: #f5c400; --k-pick-bg: #f5c400; --k-pick-ink: #0a0a0a; --k-tcase: uppercase; --k-bar-bg: #f5c400; --k-bar-ink: #0a0a0a; --k-top-edge: 4px solid #d4141c; }
+  /* Ghostbusters */
+  :root[data-theme="k-ghostbusters"] { --bg: #0a0a0a; --sheet: #161616; --ink: #ffffff; --soft: #aaaaaa; --rule: #4a4a4a; --rule-soft: #2a2a2a; --accent: #8aff2a; --accent-ink: #000000; --accent-tint: #1c3308;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #8aff2a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #202020; --poolA: #8ab8ff; --poolB: #e0a8e8; --poolSR: #8aff2a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0a0a0a;
+    --k-title: #ffffff; --k-glow: 3px 3px 0 #e0201b; --k-edge: 2px solid #ffffff; --k-head-bg: #e0201b; --k-head-ink: #ffffff; --k-head-edge: 2px solid #ffffff; --k-big: #8aff2a; --k-tab-edge: 2px solid #e0201b; --k-pick-bg: #8aff2a; --k-pick-ink: #0a0a0a; --k-tcase: uppercase; --k-bar-bg: #ffffff; --k-bar-ink: #e0201b; --k-top-edge: 4px solid #e0201b; }
+  /* Dragon Ball */
+  :root[data-theme="k-dragonball"] { --bg: #fff3e0; --sheet: #ffffff; --ink: #14182a; --soft: #515670; --rule: #1c3f94; --rule-soft: #d8def0; --accent: #1c3f94; --accent-ink: #ffffff; --accent-tint: #dbe4fb;
+    --amber: #8a4a00; --amber-tint: #f6e2b8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c21f1f; --stop-tint: #fbd9d9; --plan-tint: #eef1f8; --poolA: #1c3f94; --poolB: #7a3fa8; --poolSR: #f85b1a;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #f85b1a;
+    --k-top-bg: #f85b1a; --k-title: #ffffff; --k-glow: 3px 3px 0 #1c3f94; --k-top-ink: #14182a; --k-hstyle: italic; --k-h1: 33px; --k-edge: 3px solid #1c3f94; --k-head-bg: #1c3f94; --k-head-ink: #ffd23c; --k-head-ink2: #ffffff; --k-head-edge: 0; --k-tab-bg: #ffffff; --k-tab-ink: #1c3f94; --k-tab-edge: 3px solid #1c3f94; --k-pick-bg: #ffd23c; --k-pick-ink: #1c3f94; --k-pick-edge: #1c3f94; --k-tcase: uppercase; --k-bar-bg: #f85b1a; --k-bar-ink: #ffffff; --k-top-edge: 4px solid #1c3f94; }
+  :root[data-theme="k-dragonball"] .modes button { font: 700 15px/1.1 var(--display); font-style: italic; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -1715,33 +1908,64 @@
     </div>
     <h2 id="styhead">Page style</h2>
     <div class="styles">
-      <p class="stygroup">Everyday</p>
+      <details class="stygrp" open><summary>Everyday <span>4</span></summary>
       <button type="button" class="sty" data-theme="light"><span class="sw" style="background:#fbfbf9;color:#1d2a2e;border-color:#d3d8d4">Aa</span>Light</button>
       <button type="button" class="sty" data-theme="dark"><span class="sw" style="background:#1a2326;color:#e2e9e8;border-color:#2e3b3e">Aa</span>Dark</button>
       <button type="button" class="sty" data-theme="iphone"><span class="sw" style="background:linear-gradient(90deg,#f2f2f7 50%,#000000 50%);color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone</button>
       <button type="button" class="sty" data-theme="iphonelight"><span class="sw" style="background:#f2f2f7;color:#007aff;border-color:#c6c6c8;border-radius:7px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:12px">Aa</span>iPhone Light</button>
-      <p class="stygroup">CATS</p>
+      </details>
+      <details class="stygrp"><summary>CATS <span>2</span></summary>
       <button type="button" class="sty" data-theme="retro"><span class="sw" style="background:#f1f1f1;color:#800000;border-color:#000080;font-family:'Courier New','Courier Prime',monospace">Aa</span>Retro</button>
       <button type="button" class="sty" data-theme="tablet"><span class="sw" style="background:#000;color:#3fe0d8;border-color:#5c8aff;font-family:'Barlow Condensed',sans-serif;font-size:13px">Aa</span>Retro Tablet</button>
-      <p class="stygroup">Old screens</p>
+      </details>
+      <details class="stygrp"><summary>Railway <span>2</span></summary>
       <button type="button" class="sty" data-theme="board"><span class="sw" style="background:#000;color:#ffbf3c;border-color:#3a2d0e;font-family:'IBM Plex Mono',monospace">12</span>Departure Board</button>
+      <button type="button" class="sty" data-theme="k-subway"><span class="sw" style="background:#111111;color:#ffffff;border-color:#111111;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:12px">Aa</span>Subway Map</button>
+      </details>
+      <details class="stygrp"><summary>Old screens <span>11</span></summary>
       <button type="button" class="sty" data-theme="matrix"><span class="sw" style="background:#000;color:#00ff41;border-color:#0c4a22;font-family:'IBM Plex Mono',monospace">01</span>Matrix</button>
       <button type="button" class="sty" data-theme="fallout"><span class="sw" style="background:#06130b;color:#1aff80;border-color:#17633a;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Fallout</button>
       <button type="button" class="sty" data-theme="win95"><span class="sw" style="background:#000080;color:#ffffff;border-color:#c0c0c0;font-family:Tahoma,Arial,sans-serif">Aa</span>Windows 95</button>
       <button type="button" class="sty" data-theme="teletext"><span class="sw" style="background:#0000ff;color:#ffff00;border-color:#00ffff">100</span>Teletext</button>
-      <p class="stygroup">Games</p>
+      <button type="button" class="sty" data-theme="k-amber"><span class="sw" style="background:#0a0600;color:#ffb000;border-color:#5a3d00;font-family:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;font-size:12px">Aa</span>Amber Terminal</button>
+      <button type="button" class="sty" data-theme="k-px-c64"><span class="sw" style="background:#3e31a2;color:#d2ccff;border-color:#7c70da;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Commodore 64</button>
+      <button type="button" class="sty" data-theme="k-bsod"><span class="sw" style="background:#aaaaaa;color:#0000aa;border-color:#5a66d6;font-family:'Lucida Console', 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;font-size:12px">Aa</span>Blue Screen</button>
+      <button type="button" class="sty" data-theme="k-dos"><span class="sw" style="background:#0000aa;color:#ffffff;border-color:#555555;font-family:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;font-size:12px">Aa</span>DOS</button>
+      <button type="button" class="sty" data-theme="k-mac"><span class="sw" style="background:#ffffff;color:#000000;border-color:#000000;font-family:Charcoal, Chicago, 'Geneva', 'Lucida Grande', Verdana, sans-serif;font-size:12px">Aa</span>Classic Mac</button>
+      <button type="button" class="sty" data-theme="k-px-nokia"><span class="sw" style="background:#b9c7a0;color:#27321f;border-color:#27321f;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Nokia Phone</button>
+      <button type="button" class="sty" data-theme="k-calc"><span class="sw" style="background:#c5cdbb;color:#1c211a;border-color:#7d8674;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Calculator</button>
+      </details>
+      <details class="stygrp"><summary>Games <span>15</span></summary>
       <button type="button" class="sty" data-theme="gameboy"><span class="sw" style="background:#9bbc0f;color:#0f380f;border-color:#0f380f;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Game Boy</button>
       <button type="button" class="sty" data-theme="mario"><span class="sw" style="background:#5c94fc;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">1UP</span>Super Mario</button>
       <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
       <button type="button" class="sty" data-theme="zelda"><span class="sw" style="background:#0e3a26;color:#f8c838;border-color:#b8962e;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Zelda</button>
       <button type="button" class="sty" data-theme="minecraft"><span class="sw" style="background:#7a7a7a;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Minecraft</button>
       <button type="button" class="sty" data-theme="pacman"><span class="sw" style="background:#000;color:#ffff00;border-color:#2121de;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Pac-Man</button>
-      <p class="stygroup">Films and shows</p>
+      <button type="button" class="sty" data-theme="k-px-tetris"><span class="sw" style="background:#000000;color:#f0f000;border-color:#5a5f80;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Tetris</button>
+      <button type="button" class="sty" data-theme="k-sonic"><span class="sw" style="background:#1f5fe0;color:#ffd200;border-color:#3f63c9;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Sonic</button>
+      <button type="button" class="sty" data-theme="k-px-dk"><span class="sw" style="background:#000000;color:#e0003c;border-color:#e0003c;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Donkey Kong</button>
+      <button type="button" class="sty" data-theme="k-px-invaders"><span class="sw" style="background:#000000;color:#33ff33;border-color:#33ff33;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Space Invaders</button>
+      <button type="button" class="sty" data-theme="k-halo"><span class="sw" style="background:#1a2214;color:#7fd4ff;border-color:#4f93b8;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Halo</button>
+      <button type="button" class="sty" data-theme="k-doom"><span class="sw" style="background:#5a1a0c;color:#ffd9a8;border-color:#6b2a14;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Doom</button>
+      <button type="button" class="sty" data-theme="k-goldeneye"><span class="sw" style="background:#1d1e21;color:#d9ae3c;border-color:#5a5648;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>GoldenEye</button>
+      <button type="button" class="sty" data-theme="k-mk"><span class="sw" style="background:#000000;color:#f2b632;border-color:#7a5a1a;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Mortal Kombat</button>
+      <button type="button" class="sty" data-theme="k-acnh"><span class="sw" style="background:#7ecb6a;color:#ffffff;border-color:#d9cfa8;font-family:ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;font-size:12px">Aa</span>Animal Crossing</button>
+      </details>
+      <details class="stygrp"><summary>Films and shows <span>12</span></summary>
       <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>
       <button type="button" class="sty" data-theme="startrek"><span class="sw" style="background:#ff9c2a;color:#000;border-color:#ff9c2a;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Star Trek</button>
       <button type="button" class="sty" data-theme="tron"><span class="sw" style="background:#01060d;color:#6fe9ff;border-color:#6fe9ff;font-family:'Barlow Condensed',sans-serif;font-size:13px">AA</span>Tron</button>
       <button type="button" class="sty" data-theme="naruto"><span class="sw" style="background:#ff7a1a;color:#141414;border-color:#141414;font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:700;font-size:14px">Aa</span>Naruto</button>
       <button type="button" class="sty" data-theme="simpsons"><span class="sw" style="background:#fed90f;color:#151515;border-color:#151515;border-radius:8px">Aa</span>The Simpsons</button>
+      <button type="button" class="sty" data-theme="k-southpark"><span class="sw" style="background:#3d9b4a;color:#ffffff;border-color:#c9c2ae;font-family:'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;font-size:12px">Aa</span>South Park</button>
+      <button type="button" class="sty" data-theme="k-bladerunner"><span class="sw" style="background:#05030a;color:#ff2bd6;border-color:#3a2a5c;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Blade Runner</button>
+      <button type="button" class="sty" data-theme="k-batman"><span class="sw" style="background:#ffd400;color:#0a0a0b;border-color:#3a3b40;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Batman</button>
+      <button type="button" class="sty" data-theme="k-bttf"><span class="sw" style="background:#2a2a2a;color:#ffb000;border-color:#5a5a5a;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Back to the Future</button>
+      <button type="button" class="sty" data-theme="k-jurassic"><span class="sw" style="background:#d4141c;color:#f5c400;border-color:#5a1a1a;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Jurassic Park</button>
+      <button type="button" class="sty" data-theme="k-ghostbusters"><span class="sw" style="background:#e0201b;color:#ffffff;border-color:#4a4a4a;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Ghostbusters</button>
+      <button type="button" class="sty" data-theme="k-dragonball"><span class="sw" style="background:#1c3f94;color:#ffd23c;border-color:#1c3f94;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Dragon Ball</button>
+      </details>
     </div>
     <p class="note" id="stynote"></p>
     <h2>Current page</h2>
@@ -1807,8 +2031,10 @@ const OwnerKey = (() => {
     if (t === 'iphonelight') document.documentElement.dataset.shade = 'light'; else delete document.documentElement.dataset.shade;
     const now = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     // iPhone goes light or dark with the phone; the bar above the page matches it.
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', now === 'iphonelight' ? '#f2f2f7' : now === 'iphone' ? (matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#f2f2f7') : COLORS[now]);
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', now === 'iphonelight' ? '#f2f2f7' : now === 'iphone' ? (matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#f2f2f7') : COLORS[now] || getComputedStyle(document.documentElement).getPropertyValue('--k-meta').trim() || '#000000');
     box.querySelectorAll('button.sty[data-theme]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === now));
+    // The Settings list is in folded groups: the one holding the style in use is opened.
+    box.querySelectorAll('details.stygrp').forEach((d) => { if (d.querySelector('button.sty[aria-pressed="true"]')) d.open = true; });
     note.innerHTML = t ? 'Kept on this phone. <button type="button" id="styauto">Follow the phone\'s setting instead</button>' : 'Following the phone\'s light or dark setting. Pick one to keep it.';
     const auto = document.getElementById('styauto');
     if (auto) auto.onclick = () => { try { localStorage.removeItem('boardTheme'); } catch (e) { /* storage off */ } apply(''); };
