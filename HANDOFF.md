@@ -175,8 +175,14 @@ trains on the Call Board).
     him 2026-11-11; ask if he wants it reworded.
   - **X is the tell: confirmed by Justin 2026-11-11 ("Yes X is the tell for extra jobs").**
   - **Not settled, ask him:** (1) are YFX / YMX the only extra
-    jobs; (2) YBHS61 and YEBS04: in the crews in town with every craft an open turn, four
-    days each: extra or regular-but-unfilled (left alone for now); (3) the order between
+    jobs; (2) YBHS61 and YEBS04 **answered 2026-11-11: "regular jobs just unfilled, going
+    spare like a road turn that would go spare"**. The X rule leaves them alone, as it
+    should. In the 27 live days they ran 7 times and option 5 listed one only once
+    (YBHS61 24 Oct, FO only for 71 checks, and S1 B111 worked it, so the open S1 was not
+    listed either); the other six runs were never on option 5 and their crews mostly
+    were not matched to a turn, so how they are filled is not in the data. Offered, not
+    built: when option 5 lists one of these jobs, also predict its other crafts that the
+    crews in town show as an open turn (FO / S1 only, not the trainee slots); (3) the order between
     jobs at the same time: today B134 (first out) got YEBS30 S1, B133 YFXS01's S1, B130
     its FO; the site would have said B134 FO, B133 S1, B130 YEBS30 (same three spares,
     different jobs); (4) a YMX job's S1: YMXS02 8 Nov showed only EN EN09 · FO B113 on duty.
