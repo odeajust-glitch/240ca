@@ -222,6 +222,13 @@ trains on the Call Board).
   - Not looked at: the extra-job prediction (no extra job listed since the pull) and
     `vacanciesWatch` (none yet).
 
+- **BRW2 works since the 1537 check, 2026-11-11 (after his second pull):** BRW2 is on
+  YPRS60 with that job's history back to 26 Oct; BRW1 on YBHS31; BRWA on SR08 only "now".
+  One leftover: BRWA still lists YPRS60 for 11 Nov 0052 to 1528, the checks saved by the
+  first split code (marked `peopleV` 2, so not re-tied). `PEOPLE_V` is now 3, so those
+  are told apart by turn too. Takes effect at the next pull and restart (every day file
+  rebuilt once more); nothing else waits on it.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
