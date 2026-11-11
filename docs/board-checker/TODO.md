@@ -22,12 +22,7 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 Small decisions parked for a housekeeping pass; ask, don't build.
 
-1. **Call timeline headline for early calls: DECIDED 2026-11-10, keep notice given**
-   ("Called with 48 m notice" when under 8 h). Alternative was always how early.
-2. **Call timeline, where notice starts: DECIDED 2026-11-10, keep it as it is** (from the
-   turn first lined up; out of Toronto from off duty at the bunkhouse). Alternative was
-   from when the train was ordered.
-3. **Crew names: three things pushed 2026-11-10 that Justin hasn't yet said he's seen
+1. **Crew names: three things pushed 2026-11-10 that Justin hasn't yet said he's seen
    working on the real site** (owner, that evening: "add it to the housekeeping list
    for a check later"). Ask him, or look with him; fix only if one is wrong:
    - an open turn reads "open turn" with the covering spare after it
@@ -38,7 +33,7 @@ Small decisions parked for a housekeeping pass; ask, don't build.
      ("S501 CO Name · EN Name"), and they are the two actually working the trip.
    While there: does a turn out working show the person on the Call Board and go back
    to its owner once home (his rule); any spot still showing a turn with no name.
-4. **Visits table a day short late in the evening; one test fails then** (owner,
+2. **Visits table a day short late in the evening; one test fails then** (owner,
    2026-11-10: "Put the test failure fix in housekeeping"). `/stats/days` in
    `cloudflare/board-worker.js` steps back 24 h at a time; run between 23:00 and
    midnight Toronto, the step over the 25-hour day of 1 Nov lands on 1 Nov twice, so
@@ -47,19 +42,21 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    hour until about 2026-12-01, and again after each autumn clock change. Fix: count
    back by calendar day, not by 24 h. Worker change: needs a paste into both Workers
    (accounts session's file).
-5. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
+3. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
    name codes split"). The turn-history walk-through with Justin is booked for
    2026-11-11 21:30. Still to ask him: MAR2 for YSBY02's YA (his rule gave MAR1, taken by
    the second of MARI); whether to send a notice to the people whose code changed (phones
    following the old code do not move); the three codes seen on two yard jobs each
    (YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03), likely trainees moving.
-6. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
+4. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
    show relief jobs (`REL#`) or trainees differently. Not yet looked at on the real site:
    a yard job's heading in Turn History, a followed yard job on Page Health.
 
 
-- **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Two
-  headline choices still open in Housekeeping.
+- **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both
+  headline choices decided 2026-11-10 and taken off Housekeeping on 11-11: the headline is
+  notice given when under 8 h; notice starts when the turn is first lined up (out of
+  Toronto, from off duty at the bunkhouse).
 
 - **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
   the other crew shown for one or two checks, then the Call Board has the first). Call
