@@ -433,8 +433,9 @@ trains on the Call Board).
   confirmed: an alert arriving on a real phone; the `sample` code in board-auto.js (kept
   when a read gives no jobs) can come out now that the read works.
 
-- **Agreements tab, a simpler document picker: on the test site only, awaiting Justin,
-  2026-11-11 18:10 (owner: "Would there be a better way to lay this page out with the
+- **Agreements tab, a simpler document picker: ON BOTH SITES since 2026-11-11 18:20 (owner:
+  "push it to the main page"; `renderAsk` passes `simple: true`). First built for the test
+  site, 18:10 (owner: "Would there be a better way to lay this page out with the
   agreements selected. Could have it auto select a few of the more commonly used ones,
   then you can add in more if needed. And also have a conductor/engineer button").**
   public/board-ask.js (`COMMON`, `SHORT`, `setCraft`, `paintChips`, `setSimple`; styles

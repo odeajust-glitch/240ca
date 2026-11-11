@@ -6639,7 +6639,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#agreements'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardAsk) { view.innerHTML = '<p class="empty">The agreement search isn\'t available right now.</p>'; return; }
-    window.BoardAsk.render(view, { simple: PREVIEW }); // the craft buttons and document chips: test site first (owner, 2026-11-11)
+    window.BoardAsk.render(view, { simple: true }); // the craft buttons and document chips (owner, 2026-11-11; on both sites that evening: "push it to the main page")
   }
   const refState = {};
   // Job Aids tab, first called Reference (owner, 2026-11-03; renamed 2026-11-11: "can we

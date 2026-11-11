@@ -84,7 +84,7 @@
 
   // --- The simpler picker (owner, 2026-11-11: "Could have it auto select a few
   // of the more commonly used ones, then you can add in more if needed. And
-  // also have a conductor/engineer button"). Test site first. A craft button
+  // also have a conductor/engineer button"). On both sites. A craft button
   // picks that craft's everyday documents: its agreement, the addenda or the
   // mileage guidelines, its Sarnia crew calling document and the duty and
   // rest rules. Everything else (the operating rules, dangerous goods, the
@@ -263,7 +263,7 @@
   }
 
   root.BoardAsk = {
-    // opts.simple: the craft buttons and document chips (the test site for now).
+    // opts.simple: the craft buttons and document chips.
     render(view, opts) {
       if (!box) build();
       setSimple(!!(opts && opts.simple));
