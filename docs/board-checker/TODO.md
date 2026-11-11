@@ -22,17 +22,15 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 
 Small decisions parked for a housekeeping pass; ask, don't build.
 
-1. **Crew names: three things pushed 2026-11-10 that Justin hasn't yet said he's seen
-   working on the real site** (owner, that evening: "add it to the housekeeping list
-   for a check later"). Ask him, or look with him; fix only if one is wrong:
-   - an open turn reads "open turn" with the covering spare after it
-     ("EN S502 open turn · SE12 Name"), not "<< Open Turn, >";
-   - a job going spare reads "EN (SD06 Hamel, C goes spare) · EN03 Sywak, M"
-     (no leading "spare", no "likely"), and stays "EN spare (…)" when no cover is known;
-   - the Garnet line-up's L501 row shows both people on the turn
-     ("S501 CO Name · EN Name"), and they are the two actually working the trip.
-   While there: does a turn out working show the person on the Call Board and go back
-   to its owner once home (his rule); any spot still showing a turn with no name.
+1. **Crew names: one thing left to see on the real site, the open turn wording.** An open
+   turn should read "open turn" with the covering spare after it ("EN S502 open turn ·
+   SE12 Name"), not "<< Open Turn, >". None was on the board on 2026-11-11; Justin: "That
+   open turn will clear up tomorrow". Look when one shows; fix only if wrong.
+   Done 2026-11-11: the "goes spare" line (seen on the live site: "CO (SA07 … goes spare)
+   · B132 …", and he quoted the same lines back) and both names on 501 (his word: "Yes
+   there are names on 501"). ❓ He quoted the spare line without "goes" ("M spare"):
+   asked whether he wants that word dropped; not changed. One name there had no first
+   initial (B132's): not looked into.
 2. **Visits table a day short late in the evening: FIXED in the Worker 2026-11-11
    (`bc9e72d`), live once Justin pastes it into both Workers; then take this off.** (owner,
    2026-11-10: "Put the test failure fix in housekeeping"). `/stats/days` in
