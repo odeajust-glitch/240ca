@@ -423,6 +423,16 @@ trains on the Call Board).
     choice there.
   - The laptop was on `1402ef9` at 16:00 (`fc88224` and this not pulled yet).
 
+- **Live check, 2026-11-11 17:41 Toronto: the laptop is on `749a14e` and the main site is
+  serving that page** (Job Aids, the Job postings tab with the Alerts box, the round "i",
+  the Track box option, the name code in Settings, cancelled postings struck through).
+  The 17:38 read has 8 conductor postings (SR11 and SR03 cancelled) and 2 engineer ones.
+  The Worker with `/auth/profile` answers on both sites. Nothing waits on a pull or a
+  paste. **Clock times in the job postings notes below written as 18:00 to 19:10 are
+  about an hour and a half fast: that work was done between 16:20 and 17:35.** Still not
+  confirmed: an alert arriving on a real phone; the `sample` code in board-auto.js (kept
+  when a read gives no jobs) can come out now that the read works.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
