@@ -338,16 +338,47 @@ trains on the Call Board).
     him; name code is the plan). **The rules are code now: lib/board/postings.js
     (`standing`, `mayPost`, `postingText`) with test/board/postings.test.js; nothing calls
     it yet.** Also at his word: the "Read from CATS …" line is off the tab.
-    **Still to build (the alerts themselves):** (a) the Worker keeps a phone's choice,
-    `postings: { on, remind: { <circular>: hours } }`, beside its follows (a paste into
-    both Workers); (b) the page: a switch on the Job postings tab for the name codes this
-    phone follows, and "Remind me" per job (a tapped alert opens `#postings=<number>`);
-    (c) the laptop: after each hourly read, a posting a phone has not been told about →
-    one alert to each phone whose followed person may post for it (their turn and craft
-    from that check's sightings, else the last known, kept on the laptop); a phone that
-    just switched on is not sent the ones already up; reminders by the chosen hours.
-    **Needed from him first: what time of day a posting closes (the list has only the
-    date).**
+    **ALERTS BUILT 2026-11-11 18:00, THE ACCOUNT WAY (owner, mid-build: "build the account
+    way, that sounds amazing"; closing time: "the time is always 1200"). WORKER CHANGE
+    `08e6109`: needs a paste into both Workers (copy page republished, 1918 lines) AND a
+    laptop pull and restart. Controls on the TEST SITE ONLY (`PREVIEW`). Nothing has been
+    sent to a real phone yet.**
+    - **Worker** (cloudflare/board-worker.js; the accounts session's file): `POST
+      /auth/profile` (a signed-in approved member, or the owner's own session) saves
+      `code` (name code) and `postings: { on, remind: { <circular>: hours 1 to 168 } }` on
+      the account (the owner's in `accounts/owner.json`); `/auth/me` returns them;
+      `accounts/postings.json` lists the account ids that have a code and want something,
+      for the checker. `subscribe`: a device that follows nothing is kept when it sends
+      `device: true` and is signed in (it takes its account's alerts); the owner's device
+      is stamped account `owner` only then. Tests in accounts.test.js.
+    - **Laptop:** `listPostingAccounts` (lib/board/r2.js) reads that list and each
+      account file (approved ones only; keeps id, code, choices, nothing else).
+      `Postings.accountEvents` (lib/board/postings.js): the person's standing from
+      `rememberPeople` (last own turn and craft per code hash, kept 120 days in
+      BoardChecker\posting-alerts.json with what each account was told); a new posting
+      once if they `mayPost`; an account on for the first time (or switched back on) is
+      not sent what is already up; a reminder once, the chosen hours before 1200 Toronto
+      on the closing date (`closeAt`), with or without the new-posting alerts on. Sent in
+      `sendTurnAlerts` after the turn alerts, to every device whose `account` matches
+      (title "Job posting", link `./#postings=<number>`), logged as turn `JOBS`, kinds
+      `posting` / `postingRemind`. An event no device took is tried again next check.
+      Tests in postings.test.js.
+    - **Page** (Job postings tab, `postingAlertsBox`, `renderPostings`, `POST_ME`): name
+      code + Save; "Alert me when a job I can post for goes up" (asks to allow
+      notifications on this device, `Alerts.device`, flag `alertDevice`); "Remind me"
+      per job (none / 2 / 6 / 12 / 24 / 48 h); `#postings=<number>` opens the tab on that
+      job. The owner's device signs itself in with its key first (`auth/owner`). The tab
+      also says "closes … 1200" and drops a posting after 1200 on its day.
+    - **Checked:** suite 382 of 382. In a browser on the test site with the account
+      calls answered locally (nothing written to the real site): the box draws, a code
+      saves, the link opens on the job; switching on in a headless browser fails at the
+      push registration and the page says so and leaves everything off. Main site: no
+      alerts box, no reminder pickers. **Not checked: a real phone end to end** (allow,
+      switch on, a new posting arriving, a reminder).
+    - **Not built:** setting a member's code from the Members tab; showing on the tab
+      what the site thinks you are (engineer / yard FO / chain gang …); the Members tab
+      listing who has these alerts on. **To promote:** drop the `PREVIEW` tests in
+      `postingAlertsBox`, `remindPick` and `renderPostings`.
     Buttons on the alert itself work on Android, not on an iPhone: the reliable way is
     that tapping the alert opens the Job postings tab on that job with a "Remind me"
     choice there.
