@@ -229,6 +229,18 @@ trains on the Call Board).
   are told apart by turn too. Takes effect at the next pull and restart (every day file
   rebuilt once more); nothing else waits on it.
 
+- **Job postings (jobs up for bid): asked for 2026-11-11, NOT STARTED, waiting on the
+  screens.** Owner: "i wanna add a check that just shows job postings that are up, incase
+  guys want to post for something"; "basic info essentially the job thats up for bid and
+  the close date, and then we can add options for notifications". Route from the main
+  menu, his words: conductors **3 then 8**, engineers **1 then 8**; "Both screens will
+  need a few boxes filled, but then the rest of the information needed will be on just
+  one screen". Plan agreed: the checker reads both on each check, keeps only the job and
+  the close date (no names), a "Job postings" box on the test site first, alert options
+  after. **Still needed from him before any code:** what goes in each box of the prompt,
+  and a photo of the prompt and of the list with a posting on it (and how it shows a
+  second page). The laptop was on `1402ef9` at 16:00 (`fc88224` not pulled yet).
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
