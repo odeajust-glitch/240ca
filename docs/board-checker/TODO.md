@@ -33,8 +33,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    initial (B132's): not looked into.
 2. **Split name codes: review and loose ends** (2026-11-11; details in HANDOFF, "Shared
    name codes split"). The turn-history walk-through with Justin is booked for
-   2026-11-11 21:30. MAR2 for YSBY02's YA stays (his "Yes", 2026-11-11). Still to ask him: whether to send a notice to the people whose code changed (phones
-   following the old code do not move); the three codes seen on two yard jobs each
+   2026-11-11 21:30. MAR2 for YSBY02's YA stays (his "Yes", 2026-11-11). No notice to members about the changed codes or the job posting
+   alerts (his "No", 2026-11-11). Still open: the three codes seen on two yard jobs each
    (YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03), likely trainees moving.
 3. **Yard job names (both sites since 2026-11-11).** Still to ask: should relief jobs
    (`REL#`) or trainees be shown differently. Not yet seen: a followed yard job on Page

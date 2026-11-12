@@ -39,9 +39,9 @@ the email limit (13th), the alerts grace period (17th), Render (23rd), the likel
 test (25th). **The S5 swap watch has no one booked and found a swap on the new code on
 the 11th: see "S5 swap watch" below; the engine fix is the next real piece of work.**
 
-**Waiting on Justin:** (MAR2 for YSBY02's YA stays: "Yes", 2026-11-11.) A notice
-telling members about job posting alerts and the changed name codes (offered, not sent);
-which Agreements documents count as "commonly used" (my pick stands until he says); the
+**Waiting on Justin:** (MAR2 for YSBY02's YA stays: "Yes", 2026-11-11. **No notice to
+members about job posting alerts or the changed name codes: "No", 2026-11-11; do not send
+one or offer it again.**) Which Agreements documents count as "commonly used" (my pick stands until he says); the
 permanent-posting rule ("for now", to review); the order between jobs called at the same
 time (a YMX job always takes an S1: answered "Yes" 2026-11-11, as the rule already has it);
 "members seen today" on the Members tab (offered).
