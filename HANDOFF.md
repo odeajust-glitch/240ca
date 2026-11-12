@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks BUILT FOR THE TEST SITE ONLY (12 Nov, 09:25 Toronto). WAITING ON ONE LAPTOP PULL + RESTART, then his look. Nothing is on the main site
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks are LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto (pulled, restarted, seen there). WAITING ON HIS LOOK and his say on each. Nothing is on the main site
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -199,8 +199,8 @@ site sees the page exactly as before.** New test file `test/board/current-review
   the test site and as a member on both: each shows its own heading.
 - **Not checked.** A real phone. Page styles other than light and dark (the new rows are the line-up's own
   row, which every style already dresses). A job CATS lists under the wrong turn, or with its earlier
-  crew not tied up, in the new rows: in the test only, none was on the board. The published page after
-  his pull.
+  crew not tied up, in the new rows: in the test only, none was on the board. (The published page after
+  his pull was looked at later that morning: below.)
 - **Left alone on purpose.** Turn History's "Now" for a spare (the same facts, its own round). What the
   engine and the alerts do with a day off not taken. The likely-call line's pale purple (his test).
 
@@ -229,10 +229,22 @@ hours stay unbuilt until that photo.** The same message of mine had also asked w
 always show whose turn it is, and said Page Health starts on his word: neither is taken as answered by
 "Yes, yes"; he was told how I read it and asked to say if a yes was meant for either.
 
-**At 09:38 the laptop had not pulled the build:** running code `4419335` (the notes commit before it; he
-had pulled and restarted for that one), one update waiting, both sites still serving the page of
-`61d6b10`. The test site shows nothing new until one more pull and restart. Then, still to do: look at
-the published page on board-test as he sees it, and as a member on the main site.
+**THE BUILD IS LIVE ON THE TEST SITE since 12 Nov 09:56 Toronto, and seen there.** He pulled `67dac13` at
+09:38 (his screenshot; the start line went in as "de …", so the checker was down for about ten minutes
+until he retyped it), "It's running" at 09:48; the first check after it (0953) published the page at
+09:56, running code `67dac13`. Looked at on the real sites straight after, nothing put in place by hand:
+- **His view on board-test** (`PREVIEW` on), 390 px: every piece showing on the 0953 check. "Spare
+  conductors free 21 / 28"; the new note; a train's Why opening on the reason; "call ~12th 1000"; Jobs
+  going spare 8 rows, no table; Days off "1 active · 4 upcoming · 1 not taken" with SA08 under "Listed,
+  but working"; the fill-in lines naming one person; "Nobody is shown at Garnet yet"; the card for B139
+  (its predicted E27861 12), SR03 (", call ~12th 2045"), S501-CO ("Home from Garnet on L50131 12 …") and
+  SA08 (the day-off note gone). No page errors, no sideways scroll, no table wider than its box.
+- **A member on the main site and on the test site:** none of it. "Conductors free", the old note, the
+  "No matching spare-job cover" line, the two tables, Days off's two groups, SA08's status with its PL
+  note, "wasn't read". No page errors.
+**Waiting on him now:** his look at it on his phone and his say on each piece (keep, change, drop, or
+promote); whether Days off should name whose turn it is; the word to start Page Health (round 2). The
+laptop shows updates waiting on GitHub after `67dac13`: notes only, nothing to pull for.
 
 **For round 2 (Page Health), seen on the way:** any push to the laptop's branch, notes only included,
 turns Page Health's GitHub row red ("N newer updates waiting: git pull, then restart") and its verdict
