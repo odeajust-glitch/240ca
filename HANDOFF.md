@@ -504,6 +504,18 @@ trains on the Call Board).
   384. Needs the laptop to pull and restart. Not replayed on the saved days (the engine
   needs the raw checks, which are only on the laptop).
 
+- **⚠ A session's test browser is counted as a visitor: set `boardNoCount` first.** Found
+  2026-11-11 19:10 when Justin asked how Page Health showed "opened 218 times on 81
+  phones" with about 30 members approved (33 approved, 30 seen that day, the lock on).
+  The page counts itself (`stats/hit`) once per visit and once a day per browser, and a
+  browser a session launches against the real sites is a fresh one every time, so each
+  run added an "open" and a "phone": this session opened roughly 45 to 50 that day, and
+  the 148 on the 10th has the other sessions' in it too. Those days' figures cannot be
+  corrected from here. **From now on every script that loads the real sites must run
+  `localStorage.setItem('boardNoCount', '1')` in its init script** (the page's own "Don't
+  count this phone" flag), beside the owner-key placeholder. The real figure for a day is
+  nearer the members "Last seen" on the Members tab.
+
 **Board/checker session — state at 2026-11-10 20:15 Toronto. Read this before touching
 `public/board.html`, the alerts or `lib/board/patterns.js`; each item has its own dated
 note further down (search for the words in bold).**
