@@ -173,8 +173,10 @@ has what was checked.
   days are known.
 - **The newer sections** (the days hour by hour, the drawings, "Duty and rest
   beside the rules", "You and your pool", the trip log and its spreadsheet):
-  `MINE_MORE` in `board.html`. `false` = the test site with the owner key
-  only. The corrected numbers are for every member either way.
+  `MINE_MORE` in `board.html`. `true` since 2026-11-12 (owner, asked whether
+  to show them to every member: "Push it"): every signed-in member on both
+  sites. `false` = the test site with the owner key only. The corrected
+  numbers are for every member either way.
 - **You and your pool.** The site build writes `data/pools.json`: for each
   pool an average and a middle band over the last four weeks, and nothing
   else (no hashes, no turns, no lists of figures). A figure is given only

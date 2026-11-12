@@ -5410,10 +5410,12 @@ source().then(async (src) => {
   const MINE_ALL = true;
   // The newer sections and drawings (2026-11-11: the days hour by hour, the
   // round trips, calls and plans drawn, the place on the board, duty and rest
-  // beside the rules, the pool comparison, the trip log and its spreadsheet):
-  // false = the test site only, until the owner says to show them to every
-  // member. The corrected numbers are for everyone either way.
-  const MINE_MORE = false;
+  // beside the rules, the pool comparison, the trip log and its spreadsheet).
+  // true = every signed-in member on both sites (owner, 2026-11-12, shown the
+  // preview and asked "Show the new sections to every member?": "Push it");
+  // false = the test site with the owner key only. The corrected numbers are
+  // for everyone either way.
+  const MINE_MORE = true;
   let mineReady = false;
   let mineRange = 'all';
   // has-mine: on a phone the first row of tabs is then Current, Turn History and My stats.

@@ -633,6 +633,20 @@ test('review: the tab\'s colours hold in every page style the site has', () => {
   assert.ok(checked >= 60, `only ${checked} page styles could be read`);
 });
 
+// Owner, 2026-11-12, asked "Show the new sections to every member?": "Push it".
+// Before that they were on the test site only ("Do not switch anything on or
+// off for members without asking me"): changing either switch is his to say.
+test('review: the new sections are on for every signed-in member, and the page hands the tab what they need', () => {
+  const html = require('fs').readFileSync(require.resolve('../../public/board.html'), 'utf8');
+  assert.match(html, /\n  const MINE_ALL = true;\n/);
+  assert.match(html, /\n  const MINE_MORE = true;\n/);
+  assert.match(html, /const more = MINE_MORE \|\| PREVIEW;/);
+  assert.match(html, /const poolsAsked = more \? getJSON\('data\/pools\.json'\)/); // the pool averages are only fetched for the comparison
+  assert.match(html, /BoardMyStats\.html\(d\.stats, \{ range: mineRange, code: d\.code, more, pools, now \}\)/);
+  assert.match(html, /fetch\('auth\/stats'/); // still the member's own record and nothing else: no code or hash goes in the request
+  assert.doesNotMatch(html.slice(html.indexOf('async function renderMine()'), html.indexOf('async function renderMembers(')), /accounts\/stats|people\.json/);
+});
+
 // --- Kept from one build to the next ---------------------------------------------
 
 // Found (before it could show): a trip on duty the evening before the first day

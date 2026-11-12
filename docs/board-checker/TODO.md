@@ -23,10 +23,10 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
   the main page"). Waiting on one laptop pull + restart to publish the page with the tab on.
   After that: watch the Members tab for name codes waiting for his OK. See the top of HANDOFF.
   **Reviewed 2026-11-12** (every figure recounted for 168 people; 15 kinds of wrong number
-  fixed, a test each; new sections and drawings built). Waiting on: (1) a laptop pull + restart,
-  before 23 November; (2) **his word to show the new sections to every member** (`MINE_MORE`,
-  now the test site only); (3) his answer on whether the reset tracker and Turn History should
-  take the same corrections (below).
+  fixed, a test each; new sections and drawings built, and **switched on for every member at
+  his word the same night ("Push it", `MINE_MORE = true`)**). Waiting on: (1) a laptop pull +
+  restart, before 23 November; (2) his answer on whether the reset tracker and Turn History
+  should take the same corrections (below).
   **Not built, each needs more history than is saved** (told to him 2026-11-12):
   month-on-month trend lines (two full months: from 1 January 2027); the 28-day total against
   the 192 h limit as a drawing (the figure itself appears by itself once a person has 28 days:

@@ -1,6 +1,14 @@
 # HANDOFF — read this before doing anything
 
-## My stats reviewed — November 12, 2026, 00:05 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are on the TEST page only until Justin says
+## My stats reviewed — November 12, 2026, 00:05 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are ON FOR EVERY MEMBER in the code since 00:10 at his word
+
+**00:10, owner, after the report and the preview, asked "Show the new sections to every member?":
+"Push it".** `MINE_MORE = true` in `public/board.html` (every signed-in member, both sites; `false` =
+the test site with the owner key only). A test in `mystats-review.test.js` holds both switches and
+quotes him: changing either is his to say. Checked again with the switch in its real state on the
+local copy, as an ordinary member: 18 sections, 11 drawings, the spreadsheet button, eight page
+styles clean. Suite 432 of 432. **Not answered by "Push it", still open:** whether the reset
+tracker and Turn History should take the same corrections.
 
 **Owner (max effort, five steps):** "Check the numbers ... work every figure on the page out
 again from the saved checks ... Fix what you find. Each fix gets a test ... Look at it the way a
@@ -61,8 +69,8 @@ the raw snapshots. Trip list or hours changed for **143 of 168 people**; trips 1
 "3 times measured" (was 4: one mixed two boards), 7 h 09 a place (was 8 h 19), 42 h 52 home to the
 next call (was 45 h 08); his 501/502 places are now read.
 
-**New on the tab, `MINE_MORE` (false = test site + owner key only; the corrected numbers are for
-everyone either way):** the days hour by hour (duty, held away, booked rest, the call, resets);
+**New on the tab, `MINE_MORE` (true since 00:10 on the 12th; false = test site + owner key only;
+the corrected numbers are for everyone either way):** the days hour by hour (duty, held away, booked rest, the call, resets);
 hours in the 7 days ending each day beside the 60 h line; each round trip as a bar; each call
 against the one slept on, and each train against its first plan; place on the board over time;
 when each turn goes on duty; **"Duty and rest beside the rules"** (longest duty, shortest time off
@@ -130,9 +138,10 @@ file): https://claude.ai/artifact/7pnMxDbxvYb2M9A4hr5dv5 (the same link as befor
 His own pool comparison there still says "not enough yet" (9 days on 501/502 on the 11th); from the
 10th day it is set beside every road pool together.
 
-**❓ For Justin:** (1) the pull; (2) **show the new sections to every member?** (`MINE_MORE = true`,
-then a pull); (3) should the reset tracker and Turn History take the same corrections; (4) still
-open from before: a notice to members, Admins confirming codes, the person search.
+**❓ For Justin:** (1) the pull (it now carries the new sections to every member); (2) ~~show the
+new sections to every member?~~ answered 00:10: "Push it"; (3) should the reset tracker and Turn
+History take the same corrections; (4) still open from before: a notice to members, Admins
+confirming codes, the person search; the Worker paste of `881e02d` into both Workers.
 
 ## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WAITING ON A WORKER PASTE (both) AND A LAPTOP PULL
 
