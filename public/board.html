@@ -2070,7 +2070,7 @@
       <p class="profwho" id="profwho"></p>
       <p><button type="button" class="sty" id="profbtn" style="width:auto;padding:8px 12px"></button></p>
       <div id="profcode" hidden>
-        <p class="profwho"><label for="profcodebox"><b>Name code</b></label><span>For your job posting alerts: the first two letters of your first name and the first two of your last name.</span></p>
+        <p class="profwho"><label for="profcodebox"><b>Name code</b></label><span>For My stats and your job posting alerts: the first two letters of your first name and the first two of your last name.</span></p>
         <p><input id="profcodebox" maxlength="4" size="6" autocomplete="off" spellcheck="false" placeholder="e.g. JUOD" style="padding:7px 8px;width:6.5em;text-transform:uppercase"> <button type="button" class="sty" id="profcodesave" style="width:auto;padding:8px 12px">Save</button></p>
         <p class="profwho"><span id="profcodemsg" role="status"></span></p>
       </div>
@@ -5331,9 +5331,9 @@ source().then(async (src) => {
   // one else's"). The Worker's /auth/stats answers with the record for the
   // name code on this member's own account and takes nothing from the page,
   // so there is no box to type another code into. Numbers and drawing:
-  // board-mystats.js. MINE_ALL false = the test site only, until the owner
-  // says to show it to every member.
-  const MINE_ALL = false;
+  // board-mystats.js. MINE_ALL: every signed-in member on both sites (owner,
+  // 2026-11-11: "push it to the main page"); false = the test site only.
+  const MINE_ALL = true;
   let mineReady = false;
   let mineRange = 'all';
   function paintMine() { const b = document.getElementById('modeMine'); if (b) b.hidden = !(mineReady && (MINE_ALL || PREVIEW)); }

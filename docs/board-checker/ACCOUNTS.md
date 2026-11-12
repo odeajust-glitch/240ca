@@ -135,9 +135,9 @@ in CATS.
 ## My stats: each member's own, nobody else's
 
 Owner, 2026-11-11: "Very detailed statistics, trends"; "only available to the
-person who owns the account. They can see theirs and no one else's". Merged
-2026-11-11; it needs the Worker paste (`13a1b85` or later) and a laptop pull.
-See the note at the top of HANDOFF for whether those are done.
+person who owns the account. They can see theirs and no one else's". Live
+since 2026-11-11 (Worker `13a1b85` or later). The note at the top of HANDOFF
+has what was checked.
 
 - **Laptop** (`lib/board/mystats.js`): each site build writes one record per
   person to `accounts/stats/<name-code hash>.json` (hashes, no names) and keeps
@@ -155,8 +155,9 @@ See the note at the top of HANDOFF for whether those are done.
   you. **"Not theirs"** shuts it for that code. Your OK is for that code only:
   if they change it, it waits again. Only the owner key can do this.
 - **Page**: the **My stats** tab (`public/board-mystats.js`, `renderMine` in
-  `board.html`). No box to type a code into. Test site only while `MINE_ALL`
-  in `board.html` is `false`.
+  `board.html`). No box to type a code into. Every signed-in member on both
+  sites since 2026-11-11 (`MINE_ALL = true` in `board.html`; `false` = the
+  test site only).
 - **Not covered:** Turn History's person search is unchanged, so a member who
   types someone's name code there still sees that person's trips.
 
