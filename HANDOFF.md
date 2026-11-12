@@ -1,5 +1,132 @@
 # HANDOFF — read this before doing anything
 
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current) is reviewed and shown to him; NOTHING BUILT; waiting for his picks
+
+**Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
+worth trying on the test site", then "Start with the current, page health then members tab". **His rules
+for this review:** look at each tab for real (a browser, the test site, live data, phone width first, then
+desktop) and read the code behind it; bring a short ranked list (wrong or misleading first, then hard to
+read or find on a phone, then what a member would want that is missing, then what could come off); a
+question that depends on how the railway works is asked, not guessed, and a settled rule is not changed;
+**then stop and wait**; build only what he picks, and only so it shows on the test site (`PREVIEW`);
+nothing to the main site or to every member "until I say so in so many words"; tests and the page loaded in
+a browser before every push; one tab per round. Not to do: any notification, alert, email or test message
+to members; a full name anywhere; a pull request; the git branch `main`; raising again what he has said no
+to. **Keep this list up to date after each tab.**
+
+**Order.** His three first; the rest is my order by how much members would use each (not confirmed by
+him), from the tabs the page itself had on 12 Nov:
+1 **Current** (reviewed, below) · 2 **Page Health** (owner) · 3 **Members** (owner, Admins) · 4 Turn History
+· 5 My stats · 6 Job postings · 7 Order summary · 8 Analytics (Overview, My week, Trains, Turns side by side,
+Call stability, Assignment errors, Stale trains; Likely-call test on the test site only) · 9 Article
+18.6(b) · 10 Agreements · 11 Job Aids · 12 Snapshots · 13 Notifications (owner) · 14 Search Review (owner)
+· 15 ⚙ Settings (Profile and name code, Page style, Arrange the boxes, Add to Home Screen) and the sign-in
+page. Seen while listing them, for their own rounds: Notifications is 67,000 px tall on a phone and
+Members 8,300 px; Page Health and Search Review leave the last snapshot's address in the address bar.
+
+**How a session sees the page as a member (worked out 12 Nov).** The proxy adds the owner key to every
+request, so the owner-only answers always come back as if you were him: a browser with no
+`boardOwnerKey` still gets Page Health, Search Review and Notifications, because `/health` answers. To see
+what a member sees: (1) sign the browser in with `POST auth/owner` (a session named "Owner" with an
+ordinary member's rights: crew names, the My stats tab with his own record); (2) leave
+`localStorage.boardOwnerKey` unset (no owner tabs, `PREVIEW` off even on board-test); (3) answer `GET
+/health`, `/health/…` and `/stats/days` inside the browser with the 404 the Worker gives everyone else
+(Playwright `route.fulfill`); (4) `boardNoCount = '1'` in the init script; (5) stop every request that is
+not a GET (`route.abort`) except `auth/owner`, so a stray tap can save nothing. It is a stand-in, not a
+real member's account or a real phone: say so. His own view is the same with `boardOwnerKey` set to any
+placeholder (`PREVIEW` on at board-test). A session's first load as the owner has no My stats tab until a
+reload (the sign-in cookie arrives after the tabs are drawn); his phone keeps the cookie. Tracked turns
+were tried by putting `trackTurns` in the browser's storage, never by pressing OK in the Track box.
+
+### Round 1: Current — reviewed 12 Nov 2026, 07:35 to 08:10 Toronto, on the checks of 0735 to 0801
+
+Test site, member view and his own view; 390, 360, 340, 820 and 1280 px; light and dark. Every box
+photographed; every train's Why opened on all three line-ups; all 21 jump buttons; Find a turn and the
+Track box opened (never OK); 13 kinds of tracked turn; Settings, Arrange, folding; every table measured
+against its box; the figures checked against `data/2026-11-12.json`, `whengo.json`, `people.json` and
+`trains.json`. No page errors, no sideways scroll of the page at any width.
+
+**Shown to him as ten items (his priority order). Each is a page change unless it says otherwise.**
+1. **The card under Find a turn leaves things out.** (a) A spare lined up for a *predicted* job is told
+   nothing: tracking B139 at 0801 the card read "Conductor fast 006: available · Conductor slow 001:
+   available" while the fast board row and "Predicted jobs going spare" had B139 for E27861 12, call
+   ~12th 1655 (EN05 the same for M39671 11's engineer job). Cause: `factsOf` in public/board-turns.js
+   reads `s.vacancies` only, never `s.vacanciesPredicted`; `whengo.json` has pool turns on the Sarnia
+   line-up only (23 turns, no spare, nobody away). That function also builds `data/turns.json` on the
+   laptop, so for the test site the line is added in the page (`trackSummary`), not there. (b) A crew away
+   gets "Predicted home on M39931 13 (PLN 12th 2300)" with no call time; the Toronto row beside it has
+   "call ~12th 2045".
+2. **A day off shown "Active now" for someone the Call Board has working.** SA08: option 4 line OFF 11th
+   2140 to 12th 2140 (kept 24 h, `daysOff[].on`); the A pool board showed `**` until the 0334 check and not
+   from 0358; option 5 stopped listing the job then; Z14891 11 was ordered by 0601 and on the Call Board at
+   0609 as `EN S109 · CO SA08` with no fill-in; `people.json` has the same name-code hash as SA08's own
+   from 4 Nov right through the trip. The page then said all three at once: Days off "Active now" SA08;
+   Pools "out working on Z14891; PL @ 11th 2140 · goes spare until 12th 2140"; Call board, SA08's own
+   conductor. ❓ **Asked him:** was the day off cancelled, and should the site drop an active day off once
+   it sees the person on duty on their own turn (or the `**` gone)? Showing it is a page change; what the
+   engine and the alerts do with that day off is the checker's (a laptop pull, every member): not offered
+   as a test-site item.
+3. **"The big time is on duty (planned or ordered)" is not so.** The big time is `t.order`, the time on
+   CATS's line-up; a train's crew goes on duty 15 minutes before it and the call shown is 2 h 15 before it
+   (Z14891 11: 0815 on the line-up, on duty 0800 on the Call Board; the Calling sequence box says "Order
+   time is on duty plus prep"). The 8 Nov S5 audit left the same question open (finding 4).
+4. **"Yard jobs · on duty" lists shifts that ended long ago.** At 0801: YMPS31 on duty 9th 1500 (57 h past
+   an 8 h shift, a trainee alone on it), YSBY06 5 h past, counted in "11 jobs". On the 11th, 165 of 189
+   checks listed at least one job more than an hour past its shift; on the 12th every check. It is
+   Housekeeping item 7's open ticket. ❓ **Asked him:** how long past the 8 h (12 h in the tower) before a
+   job is taken as a ticket left open and set aside.
+5. **"Tap a train for why that crew" does not say why.** The fold shows the day's calling sequence, then
+   "No matching spare-job cover is saved for this train in this check." (on every train with nobody going
+   spare) and "CATS details: TOPC 400MAC A EnCo · 45SAS10 / 45SASA0". The checker's own sentence is in
+   every check and unused since `bcb88fa` (7 Nov): `t.reason`, e.g. "A and B used up for this road day →
+   Chain Gang. Skipped (keep their place): SR04 on hold turn until 13th 0559; … No Chain Gang turn
+   available → spareboard." Not found in the notes: whether he asked for it to go.
+6. **"Conductors free 21 / 28 · Engineers free 0 / 3" counts the spareboards only** (`strip2`: turns on a
+   fast or slow board whose status is exactly "available"), and reads as every conductor. A spare whose
+   status is "PL @ 13th 1400" (a day off that has not started) is not counted free.
+7. **Tables that run off the phone's edge.** Jobs going spare: the table needs 401 px (431 px for the
+   predicted one) in a 356 px box at 390 px wide, so the Turn column ("returns …", the turn going spare) is
+   cut and only shows on a sideways swipe inside the box, with no sign it scrolls; the middle column wraps
+   to two or three words a line and the box is 1,592 px tall for six jobs (2,013 px at 340 px). Days off:
+   names 19 px off the edge at 390 px, 49 px at 360 px. Yard jobs: the Off column 31 px off at 360 px.
+   Every pool board, the Call board and the Calling sequence fit.
+8. **The board starts below the first screen.** First train row at 811 px on a 390 × 844 phone (944 px
+   with a tracked turn); 841 and 974 px on 360 × 780. Above it: tabs 178 px, Find a turn 113 px (247 px
+   with a card), the date 30 to 60, the four jump buttons 98, the counts 61. With the compact header
+   (already a test-site preview) and the jump buttons folded away: 645 px (778 with a card). The jump
+   buttons all work; they still carry CATS option numbers ("SD 27") where the boxes say "Drags (SD)",
+   "Road jobs" lands on the Call board, and "Garnet 31" has no board to go to when nobody is at Garnet.
+   "Updated Nov 12, 08:03" sits two lines above the check's own time, 08:01.
+9. **A crew is written three ways.** Train line-up "CO SA01 … / EN S101 …"; Toronto "S108 … + SA07 …"
+   (engineer first, no CO or EN); Call board "EN … · CO …"; Garnet "S501 CO … · EN …". In the line-up rows
+   CO, EN and the call share or split lines as the names happen to fit, so the call is in a different
+   place on each row; on the Call board a line can break between "CO" and its turn. Sarnia calls read
+   "call 12th 0745", Toronto and Garnet "call ~12th 0855", worked out the same way. ❓ **Asked him:** which
+   order.
+10. **Small wording.** "EN06 ⟨name⟩ filling in on SD04 ⟨the same name⟩" (a turn out working shows who is
+    working it, so the fill-in line names one person twice); Garnet's Details says "The Garnet board
+    wasn't read in this check" when it was read in all 60 checks that day and showed nobody; "Conductor:
+    spare (S502 … spare)" in L502's Why; a tracked yard job reads "is on the vacancy list" where the box
+    is called Jobs going spare.
+
+**Noted, not put to him as picks.** L502 is planned for 0400 on every one of 27 runs kept and went on duty
+at 0245 on 15 of them (30 minutes or more before the plan on 17), so its "call 13th 0145" on the main site
+is usually an hour late: the likely-call test covers it and is his to decide on the 25th. The preview's
+"likely call" line is 1.7 to 1 against the page in the light style (only he sees it): told him. A name
+with no first initial (SA07's): the crew names' own loose end.
+
+**Not checked.** A real phone or a real member's account; an iPhone; any page style but light and dark;
+the down banner and a check where a CATS screen was not read (not seen live); a board with no trains.
+Nothing was pressed that saves: no alert, no Track OK, no Settings Save.
+
+**His picks:** none yet. **Built:** nothing. **Turned down:** nothing yet.
+
+**Also seen at 08:09 that morning:** both sites served the page of `61d6b10` and Page Health's running
+code was `61d6b10`, level with GitHub: the pull and restart the block below waits on are done. The other
+session ("Turn history work schedule insights", branch `ccr-83c63a33-26zny2`) had been idle since its
+06:40 push. This session's branch is `ccr-bc91e48e-oqfmn2`; until he says so, this note is only there, not
+on `claude/vigilant-planck-zawrj4`.
+
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
 
 **His pick is made (06:40 Toronto): "Proposed".** Asked "As now or Proposed" a second time, with his own
