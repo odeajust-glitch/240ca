@@ -10,7 +10,8 @@ file (search for the words in bold); the Housekeeping list in
 [TODO](docs/board-checker/TODO.md) has the small open decisions.
 
 **Done this session (10th evening → 11th evening), all at Justin's word:**
-- **Yard job names** (whose yard job it is, from the crews in town): **test site only.**
+- **Yard job names** (whose yard job it is, from the crews in town): live on both sites
+  since 19:55 ("Whether to put yard job names on the main site yes").
 - **Shared name codes split** (COBR/COBD, BRWA/BRW1/BRW2, JAMC/JAM1, MADE/MAD1, MARI/MAR1,
   MARO/MAR2), the prompt when one is searched, old history re-tied by turn: live.
 - **18.6(b) on Page Health:** how many were sent, and who submitted and when: live
@@ -42,7 +43,7 @@ the 11th: see "S5 swap watch" below; the engine fix is the next real piece of wo
 telling members about job posting alerts and the changed name codes (offered, not sent);
 which Agreements documents count as "commonly used" (my pick stands until he says); the
 permanent-posting rule ("for now", to review); the order between jobs called at the same
-time (a YMX job always takes an S1: answered "Yes" 2026-11-11, as the rule already has it); whether to promote yard job names;
+time (a YMX job always takes an S1: answered "Yes" 2026-11-11, as the rule already has it);
 "members seen today" on the Members tab (offered).
 
 **Small cleanups left:** the `sample` code in scripts/board-auto.js (keeps a masked copy
@@ -78,7 +79,11 @@ Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-S
 - **Still open:** (1) `isOwner()` trusts the `cf-access-authenticated-user-email` header and any `*.cloudflareaccess.com` token; harmless while `OWNER_EMAIL` is unset (it is unset on `board`), but fix `accessEmail()` or never set that variable with Access off. (2) Hash links (`#…`) are dropped on the way through sign-in. (3) An iPhone home-screen app is a separate "device" from Safari under the one-device rule. (4) RailroadTracker set aside by Justin; if it reads the site's files it stopped at the lock. (5) A removed member who kept the crew names passcode could open a saved copy of the file; changing `BOARD_NAMES_KEY` and the saved passcode ends that. (6) `OWNER_KEY` on `board` is a plain Variable, not a Secret; changing its value signs everyone out. (7) Followed name codes show only as a count on the Members tab.
 - **Tests:** `test/board/accounts.test.js` (Worker, 13 tests) and `test/board/names.test.js`. Whole suite 370 of 371 on 2026-11-10 evening; the one failing, `Mac yard: a crew on rest at the call is skipped and keeps its place`, came in with `0c75432` (alerts work), not from the accounts session. **Fixed 2026-11-10 20:15 by the board/checker session (the test still used order − 2 h; it now uses the new rule): 371 of 371.**
 
-**Yard job names: whose job it is — on the test site only, awaiting Justin, 2026-11-10 late
+**Yard job names: whose job it is — ON BOTH SITES since 2026-11-11 19:55 (owner: "Whether to
+put yard job names on the main site yes"; the `PREVIEW` test is out of `yardOwners`; seen on the
+main site with the real names file: 10 yard jobs with an "Assigned" line, and a yard job opened
+in Turn History has its people in the heading. Page Health's row is still unseen: nobody
+follows a yard job). First built for the test site, 2026-11-10 late
 evening (owner: "do it ... The on-duty crews isnt necessarily the actual person who owns
 that yard turn. those names will be a bit further in the option 6 screen").** Before this a
 yard job never had a name anywhere (names came only from pool / spareboard screens and

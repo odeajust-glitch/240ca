@@ -2388,9 +2388,9 @@ const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[
 // Whose yard job it is (owner, 2026-11-11: the crew on duty on a yard job
 // "isn't necessarily the actual person who owns that yard turn"). The names
 // file keys them "<job>-<craft>" (YEBS30-S1), from the crews in town.
-// Test site only until he promotes it.
+// On both sites since 2026-11-11 ("Whether to put yard job names on the main site yes").
 function yardOwners(job, craft) {
-  if (!PREVIEW || !CREW || !job || /^[A-Z][A-Z0-9]\d{2}$/.test(job)) return [];
+  if (!CREW || !job || /^[A-Z][A-Z0-9]\d{2}$/.test(job)) return [];
   return Object.keys(CREW).filter((k) => k.startsWith(`${job}-`) && (!craft || k === `${job}-${craft}`)).sort()
     .map((k) => [k.slice(job.length + 1), CREW[k]]);
 }

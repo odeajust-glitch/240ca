@@ -37,9 +37,9 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    the second of MARI); whether to send a notice to the people whose code changed (phones
    following the old code do not move); the three codes seen on two yard jobs each
    (YFLS01 + YPRS30, YEBS03 + YFLS01, YBHS01 + YEBS03), likely trainees moving.
-3. **Yard job names (test site only since 2026-11-10).** Ask: promote to the main site;
-   show relief jobs (`REL#`) or trainees differently. Not yet looked at on the real site:
-   a yard job's heading in Turn History, a followed yard job on Page Health.
+3. **Yard job names (both sites since 2026-11-11).** Still to ask: should relief jobs
+   (`REL#`) or trainees be shown differently. Not yet seen: a followed yard job on Page
+   Health (nobody follows one).
 4. **Unfilled yard jobs (YBHS61, YEBS04): the watch, then decide** (owner, 2026-11-11:
    "check our predictions against what actually happened and then decide if the rule
    would be a net positive"). The site records `vacanciesWatch` in a check whenever
