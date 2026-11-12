@@ -991,6 +991,49 @@
   .newversion { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 18px rgba(0, 0, 0, .35); font-size: 14px; font-weight: 600; }
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
   @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
+  /* Whole site, reviewed with the owner 2026-11-12 (his picks: 1, 3, 5, 6, 7). TEST SITE ONLY: every rule
+     here is under body.preview-site, or dresses something only the test site draws (.pin, .msjump, .ov2). */
+  /* 5. The tabs stay in reach: a thin strip pinned to the top once the tab bar has scrolled away. */
+  .pin { position: fixed; top: 0; left: 0; right: 0; z-index: 45; display: flex; align-items: center; gap: 8px; background: var(--bg); border-bottom: 2px solid var(--ink); box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px)); }
+  .pin[hidden], .pin .pinmenu[hidden] { display: none; }
+  .pin > button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); font: 600 14px/1.2 var(--body); cursor: pointer; white-space: nowrap; }
+  .pin > .pintab { flex: 1 1 auto; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+  .pin > .pintab::after { content: ' ▾'; color: var(--soft); }
+  .pin > .pintab[aria-expanded="true"]::after { content: ' ▴'; }
+  .pin .pinmenu { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg); border-bottom: 2px solid var(--ink); box-shadow: 0 8px 16px rgba(0, 0, 0, .22); max-height: 70vh; overflow-y: auto;
+    padding: 10px max(12px, env(safe-area-inset-right, 0px)) 12px max(12px, env(safe-area-inset-left, 0px)); }
+  .pin .pinmenu .modes, body.nav-one-row .pin .pinmenu .modes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; width: 100%; }
+  .pin .pinmenu .modes button { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
+  /* What already sticks to the top keeps clear of the strip. */
+  body.preview-site .rail { top: 64px; }
+  body.preview-site .arrangebar.on { top: 50px; }
+  /* 3. Snapshots is a past check: the box that sets up alerts and its instructions are left off it, and the
+     followed turns' card (where each stood in that check) comes after the day and the hours. */
+  body.preview-site:not(.current):not(.orders):not(.turns) .rail { display: flex; flex-direction: column; }
+  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick { order: 9; margin: 10px 0 0; }
+  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > label,
+  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > .row,
+  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > .turnhelp { display: none; }
+  body.preview-site .rail .tracked .tsum button.hist { display: inline; border: 0; background: none; padding: 2px 0; margin: 2px 0 0; color: var(--accent); font: 600 13px/1.3 var(--body); text-decoration: underline; cursor: pointer; }
+  /* 6. My stats: a folded list of its sections, each a button that jumps to it. */
+  .msjump { background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: 10px; }
+  .msjump > summary { padding: 12px 14px; font: 600 14.5px/1.3 var(--body); cursor: pointer; }
+  .msjump > div { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 12px 14px; }
+  /* 7. Analytics on a phone: the section row wraps into full rows (nothing off the edge), and Overview is a
+     line for each section with its descriptions folded underneath. */
+  @media (max-width: 700px) {
+    body.preview-site .ana2 .anatabs { flex-wrap: wrap; overflow-x: visible; padding-bottom: 6px; border-bottom: 0; }
+    body.preview-site .ana2 .anatabs button { flex: 1 1 auto; min-height: 38px; }
+  }
+  .ov2 { display: grid; }
+  .ov2 button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; min-height: 52px; padding: 10px 14px; border: 0; border-top: 1px solid var(--rule); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .ov2 button:first-child { border-top: 0; }
+  .ov2 button b { font-size: 15px; }
+  .ov2 button span { grid-column: 1; color: var(--soft); font-size: 13px; }
+  .ov2 button i { grid-column: 2; grid-row: 1 / span 2; font-style: normal; color: var(--accent); font-size: 18px; }
+  .ov2-more { margin: 12px 0 0; }
+  .ov2-more > summary { cursor: pointer; color: var(--accent); font-size: 13.5px; padding: 6px 2px; }
   .odds { display: block; font-size: 12px; color: var(--accent); margin-top: 2px; }
   .tn2 .tn2-now { padding: 10px 14px 12px; border-bottom: 1px solid var(--rule-soft); }
   .tn2 .tn2-now h3 { margin: 0 0 6px; font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); }
@@ -4160,7 +4203,7 @@ let ANA2_MORE = []; // "show more" lists
 const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'analytics' };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
 const ANA_POOLS = [['SR', 'Chain Gang (SR)'], ['SA', 'A pool (SA)'], ['SB', 'B pool (SB)'], ['SD', 'Drags (SD)'], ['S1', '1st Manifest (S1)'], ['S3', '3rd Manifest (S3)'], ['S5', '501/502'], ['B', 'Spareboards (B)']];
-function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null } = {}) {
+function analyticsOverviewGuide({ preview = false, callCount = '', numbers = null, compact = false } = {}) {
   const descriptions = {
     overview: ['Start here', 'A guide to every Analytics page.', 'Choose a topic below, then use the date controls in Analytics.'],
     week: ['Your work', 'Your week at a glance.', 'Trips, duty time, Toronto holds, rests and call changes for turns or people followed on this phone. Requires a followed turn or name code.'],
@@ -4171,6 +4214,11 @@ function analyticsOverviewGuide({ preview = false, callCount = '', numbers = nul
     assignments: ['Check assignments', 'Did the assignment match the rules?', 'Wrong pool, wrong spare-job turn and missing spare job findings, grouped by train. An observed mismatch clearing does not prove that the final crew call was correct.']
   };
   const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
+  // Whole site, reviewed with the owner 2026-11-12, item 7: TEST SITE ONLY (anaHome asks for it under PREVIEW).
+  // A line for each page with its figure (or its question); the full guide he approved on 2026-11-08 is folded under it.
+  if (compact) return '<section class="sheet overview-guide"><header><h2>Analytics pages</h2><span class="meta">tap one to open it</span></header><div class="ov2">' +
+    ANA_SECS.filter(([key]) => descriptions[key] && key !== 'overview').map(([key, label]) => '<button type="button" data-overview-open="' + esc(key) + '"><b>' + esc(label) + '</b><span>' + esc((numbers && numbers[key]) || descriptions[key][1]) + '</span><i aria-hidden="true">›</i></button>').join('') +
+    '</div></section><details class="ov2-more"><summary>What each page answers, and using the records</summary>' + analyticsOverviewGuide({ preview, callCount, numbers }) + '</details>';
   return '<p class="anote">' + (preview ? 'Preview only. ' : '') + 'Find the right Analytics page by the question you want to answer. Buttons open the existing Analytics pages.</p>' +
     groups.map(group => {
       const cards = ANA_SECS.filter(([key]) => descriptions[key]?.[0] === group && !(numbers && key === 'overview')).map(([key,label]) => {
@@ -4201,7 +4249,7 @@ function anaHome(o) {
   const ran = (o.runs || []).filter((r) => r.ran).length;
   const waiting = (o.stale || []).length;
   const open = (o.runarounds || []).filter((r) => !r.fixed).length + (o.catsErrors || []).filter((r) => !r.fixed).length + (o.catsMissing || []).filter((r) => !r.listedAt).length;
-  return analyticsOverviewGuide({ numbers: {
+  return analyticsOverviewGuide({ compact: PREVIEW, numbers: {
     trains: `${ran} train${ran === 1 ? '' : 's'} on duty in these dates`,
     sleep: callCardOn() ? (() => { const s = BoardAnalytics.callSummary(sleep, callRule()); return s.n ? `${Math.round((100 * s.ok) / s.n)}% called when expected (${s.ok} of ${plural(s.n, 'call')})` : 'No calls in this date range.'; })() : callReviewData(sleep).headline,
     stale: `${waiting} train${waiting === 1 ? '' : 's'} left waiting past the call`,
@@ -5543,6 +5591,7 @@ source().then(async (src) => {
   // that says who is looking has arrived, so it is kept until then.
   let ownerTabWanted = { '#pagehealth': 'health', '#searchreview': 'review' }[location.hash] || '';
   let firstTabOpen = false; // the page's first tab is drawn: opening the wanted one before that would be drawn over
+  let tabQuiet = false; // true while Back or Forward is opening a tab: that is not a new step (whole-site review 2026-11-12, item 1)
   const ownAddress = (hash) => { try { history.replaceState(null, '', location.pathname + location.search + hash); } catch (e) { /* not allowed in some frames */ } };
   // Item 2: what waits for him on the Members tab (sign-ups to approve, name codes to OK) is said here too.
   // Counts and the oldest time only. Asked again at most once a minute; the page is drawn again when it changes.
@@ -5643,6 +5692,7 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
+      siteReviewPaint(); // whole-site review 2026-11-12: the follow box's name, room for the pinned strip (test site)
       paintMine();
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
@@ -5783,6 +5833,7 @@ source().then(async (src) => {
     const draw = () => {
       view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now });
       BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); }, csv);
+      if (PREVIEW) mineJump(view); // whole-site review 2026-11-12, item 6 (test site)
     };
     draw();
   }
@@ -6475,7 +6526,9 @@ source().then(async (src) => {
       const lines = cardLines(s, turn, built);
       const cands = isPerson(entry) ? personCands[entry] || [] : [];
       const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
-      return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
+      // Whole-site review 2026-11-12, item 3 (TEST SITE ONLY): the chip opens the alert choices; this opens the turn's history.
+      const hist = PREVIEW ? `<div><button type="button" class="hist" data-hist="${esc(entry)}">Turn History →</button></div>` : '';
+      return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}${hist}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
   }
@@ -6510,6 +6563,7 @@ source().then(async (src) => {
     const box = document.getElementById('tracked');
     box.innerHTML = trackChips('Tracking (tap to change):') + trackSummary(s);
     box.querySelectorAll('[data-track]').forEach((b) => { b.onclick = () => openTrack(b.dataset.track); });
+    box.querySelectorAll('[data-hist]').forEach((b) => { b.onclick = () => { const x = b.dataset.hist; setFocus(isPerson(x) ? (codes()[x] || nowTurn(x)) : x); setMode('turns'); window.scrollTo(0, 0); }; });
     box.querySelectorAll('[data-pick]').forEach((b) => {
       b.onclick = () => { const [who, turn] = b.dataset.pick.split('|'); Person.setPick(who, turn); refreshPersons().then(redrawTracked); };
     });
@@ -7547,6 +7601,9 @@ source().then(async (src) => {
 
   function setMode(m) {
     if (mode === 'current') flushCurrentBoxes();
+    // Whole site, reviewed with the owner 2026-11-12, item 1: TEST SITE ONLY. A change of tab is a step the
+    // phone's Back button remembers (every tab only rewrote the address in place, so Back left the board).
+    if (PREVIEW && tabStepWanted(mode, m, firstTabOpen, tabQuiet || !tabTapped())) { try { history.pushState(null, '', location.href); } catch (e) { /* not allowed in some frames */ } }
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'mine' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask' || mode === 'postings');
     document.body.classList.toggle('current', mode === 'current');
@@ -7567,6 +7624,7 @@ source().then(async (src) => {
     modePost.setAttribute('aria-pressed', mode === 'postings');
     paintNewPostings();
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
+    pinPaint(); // the pinned strip names the open tab (test site)
     // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
     if (!ANA2) document.getElementById('view').classList.remove('ana2');
@@ -8307,6 +8365,105 @@ source().then(async (src) => {
       tr.onclick = () => { Object.assign(order, { day: tr.dataset.day, open: tr.dataset.key, find: '', from: 'all', jump: true }); setMode(true); };
     });
   }
+  // ---------------------------------------------------------------------------------------------
+  // Whole site, reviewed with the owner 2026-11-12 ("Review the entire site, suggestion improvements to the
+  // layout or structure"; of twelve items he picked 1, 3, 5, 6 and 7, and said "2 leave it and leave 11").
+  // TEST SITE ONLY: every piece is behind PREVIEW (board-test with the owner key). A member on either site
+  // sees the page as before. To promote a piece, drop its PREVIEW test (and the body.preview-site prefix of
+  // its styles) and change the test in test/board/site-review.test.js that pins it, quoting him.
+  // 1. Which tab an address is for, so Back and Forward can open it again.
+  function tabOfAddress(hash, days) {
+    const h = String(hash || '');
+    const snap = /^#(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(h);
+    if (snap) return (days || []).includes(snap[1]) ? { mode: 'snap', day: snap[1], taken: `${snap[1]} ${snap[2]}` } : { mode: 'current' };
+    const turn = /^#turn=(.+)$/.exec(h);
+    if (turn) { let t = turn[1]; try { t = decodeURIComponent(t); } catch (e) { /* as written */ } return { mode: 'turns', turn: t }; }
+    const post = /^#postings(?:=(\d{5,7}))?$/.exec(h);
+    if (post) return { mode: 'postings', focus: post[1] || '' };
+    if (/^#train=/.test(h)) return { mode: 'orders' };
+    if (/^#14h(=|$)/.test(h)) return { mode: 'held' };
+    const plain = { '#current': 'current', '#turns': 'turns', '#mystats': 'mine', '#orders': 'orders', '#analytics': 'analytics', '#week': 'analytics', '#agreements': 'ask', '#ref': 'ref', '#notifications': 'notes', '#members': 'members', '#pagehealth': 'health', '#searchreview': 'review' }[h];
+    return { mode: plain || 'current' };
+  }
+  // A step is added only for a real change of tab, once the page's first tab is up, never while Back itself
+  // is opening one, and not before the page has been touched (a tab the page opens by itself from the address
+  // it was loaded with, Page Health's for one, is not a step; a browser that cannot say is taken as touched).
+  function tabTapped() { const a = navigator.userActivation; return !a || a.hasBeenActive; }
+  function tabStepWanted(from, to, started, quiet) {
+    const t = to === true ? 'orders' : to === false ? 'snap' : to;
+    return !!started && !quiet && t !== from;
+  }
+  const TAB_BUTTON = { current: 'modeCurrent', turns: 'modeTurns', mine: 'modeMine', orders: 'modeOrders', held: 'modeHeld', analytics: 'modeAna', ask: 'modeAsk', ref: 'modeRef', postings: 'modePost', snap: 'modeSnap', health: 'modeHealth', review: 'modeReview', notes: 'modeNotes', members: 'modeMembers' };
+  window.addEventListener('popstate', () => {
+    if (!PREVIEW || !firstTabOpen) return;
+    let to = tabOfAddress(location.hash, src.days);
+    const btn = document.getElementById(TAB_BUTTON[to.mode]);
+    if (!btn || btn.hidden) to = { mode: 'current' }; // a tab this viewer does not have
+    tabQuiet = true;
+    try {
+      if (to.mode === 'turns' && to.turn) setFocus(to.turn);
+      if (to.mode === 'postings') POST_FOCUS = to.focus;
+      if (to.mode === 'snap') { if (mode !== 'snap') setMode('snap'); openDay(to.day, to.taken); }
+      else setMode(to.mode);
+    } finally { tabQuiet = false; }
+  });
+  // 3. The box on Current sets up alerts for a turn; finding one is Turn History's. And 5: room above a
+  // box that is jumped to, so the pinned strip does not sit on its heading.
+  function siteReviewPaint() {
+    const lbl = document.querySelector('label[for="turn"]');
+    if (lbl) lbl.textContent = PREVIEW ? 'Follow a turn (alerts)' : 'Find a turn';
+    document.documentElement.style.scrollPaddingTop = PREVIEW ? '56px' : '';
+    pinPaint();
+  }
+  // 5. The tabs stay in reach: once the tab bar has scrolled off the top, a thin strip names the open tab
+  // (tap it for all the tabs, drawn as full rows) and has a button back to the top.
+  function pinClose() {
+    const el = document.getElementById('pin');
+    if (!el) return;
+    el.querySelector('.pinmenu').hidden = true;
+    el.querySelector('.pintab').setAttribute('aria-expanded', 'false');
+  }
+  function pinTabs() { return [...document.querySelectorAll('.top .modes button')].filter((b) => !b.hidden); }
+  function pinPaint() {
+    const top = document.querySelector('.top');
+    let el = document.getElementById('pin');
+    const show = PREVIEW && !!top && top.getBoundingClientRect().bottom < 0;
+    if (!el) {
+      if (!show) return;
+      el = document.createElement('div');
+      el.id = 'pin'; el.className = 'pin'; el.hidden = true;
+      el.innerHTML = '<button type="button" class="pintab" aria-expanded="false" aria-controls="pinmenu"></button><button type="button" class="pintop">▲ Top</button><div class="pinmenu" id="pinmenu" hidden></div>';
+      document.body.appendChild(el);
+      el.querySelector('.pintop').onclick = () => { pinClose(); window.scrollTo(0, 0); };
+      el.querySelector('.pintab').onclick = () => {
+        const menu = el.querySelector('.pinmenu');
+        if (!menu.hidden) return pinClose();
+        menu.innerHTML = `<div class="modes" role="group" aria-label="View">${pinTabs().map((b) => `<button type="button" data-tab="${esc(b.id)}" aria-pressed="${b.getAttribute('aria-pressed') === 'true'}">${esc(b.textContent)}</button>`).join('')}</div>`;
+        menu.querySelectorAll('button[data-tab]').forEach((b) => { b.onclick = () => { pinClose(); const t = document.getElementById(b.dataset.tab); if (t) t.click(); window.scrollTo(0, 0); }; });
+        menu.hidden = false;
+        el.querySelector('.pintab').setAttribute('aria-expanded', 'true');
+      };
+    }
+    if (show) { const on = pinTabs().find((b) => b.getAttribute('aria-pressed') === 'true'); el.querySelector('.pintab').textContent = on ? on.textContent.trim() : 'Tabs'; }
+    if (el.hidden === show) { el.hidden = !show; if (!show) pinClose(); }
+  }
+  { let queued = false;
+    window.addEventListener('scroll', () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; pinPaint(); }); }, { passive: true });
+    document.addEventListener('click', (e) => { const el = document.getElementById('pin'); if (el && !el.contains(e.target)) pinClose(); }); }
+  // 6. My stats: its sections as a folded list of buttons under the heading (open or shut is kept on the phone).
+  function mineJumpHtml(secs, open) {
+    return `<details class="msjump"${open ? ' open' : ''}><summary>Jump to a section (${secs.length})</summary><div>${secs.map((x) => `<button type="button" class="ms-btn" data-msjump="${esc(x.id)}">${esc(x.name)}</button>`).join('')}</div></details>`;
+  }
+  function mineJump(view) {
+    const head = view.querySelector('.ms-head');
+    const secs = [...view.querySelectorAll('section.ms-sec[id]')].map((x) => ({ id: x.id, name: ((x.querySelector('h3') || {}).textContent || '').trim() })).filter((x) => x.name);
+    if (!head || secs.length < 4 || view.querySelector('.msjump')) return;
+    head.insertAdjacentHTML('afterend', mineJumpHtml(secs, local.get('mineJumpOpen') === true));
+    const box = view.querySelector('.msjump');
+    box.ontoggle = () => local.set('mineJumpOpen', box.open);
+    box.querySelectorAll('button[data-msjump]').forEach((b) => { b.onclick = () => { const el = document.getElementById(b.dataset.msjump); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
+  }
+  // ---------------------------------------------------------------------------------------------
   modeCurrent.onclick = () => setMode('current');
   modeSnap.onclick = () => setMode(false);
   modeTurns.onclick = () => setMode('turns');
