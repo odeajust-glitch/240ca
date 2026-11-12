@@ -1,5 +1,23 @@
 # HANDOFF — read this before doing anything
 
+## Screenshot mark (a hidden account number in every screen) — asked 12 Nov 2026, evening. TESTED, NOTHING BUILT; waiting on his word
+
+**Owner:** "can we make it so scren shots are blockable, or we would have a a way to track screen shots
+maybe. Would it be possible to bake a hidden id number in the backround that is not visible to people but
+if I gave you a picture of a screen shot or a screen shot, you would be able to know what account it came
+from". **Answered:** blocking or noticing a screenshot is not possible from a website; tracing one to the
+account is, and was tested on real pages of the main site (the mark drawn in a session's browser only,
+nothing changed on either site): read back as the right member through everything sharing normally does
+(as taken, email, Messenger/WhatsApp and text-message stand-ins, crops down to about 150 CSS px), not from
+a photo of the screen or a picture squashed very small; 752 reads, no false mark, no wrong member. At the
+strength chosen (1 level out of 255, grey) it was not seen on dark pages and barely on light ones in
+close-ups; his eye on a real phone is the test still owed. Everything, the prototype (`wm.py`, a decoder a
+session can run on a picture he sends as a file) and what a build would take, is in
+[screenshot-mark/README.md](docs/board-checker/screenshot-mark/README.md). **His to decide:** build it on
+the test site (his own view plus a "Trace a screenshot" box on Page Health); hidden only or also a faint
+visible number; whether members are told. The number is never the name code. For members it needs a
+Worker change (each account's number from a secret), pasted into both Workers.
+
 ## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). His picks 1, 3, 5, 6 and 7 are BUILT FOR THE TEST SITE ONLY (`79fc425`, page only), WAITING ON ONE LAPTOP PULL; then his look on board-test. 2 and 11 TURNED DOWN ("2 leave it and leave 11"): do not raise them again. Nothing is on the main site. The tab-by-tab review below carries on as it was
 
 **Owner, 12 Nov: "Review the entire site, suggestion improvements to the layout or structure."** Taken as
