@@ -683,9 +683,382 @@
       <details><summary>About this timeline</summary><p class="anote">Green is the original eight-hour plan. An early call leaves yellow (30 minutes or less early) or red (more than 30 minutes early) through the original expected call (the call-time gap, not measured sleep); purple marks waiting past the original expected call until the actual call, inferred from confirmed on-duty time minus two hours. It ends at the call, not when ordering was first observed or when duty began. Dots mark successive changes over 30 minutes. Actual call time is calculated from on-duty minus two hours; ordering times are first observed, not exact. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'} ${m.first > m.block.from ? 'Tracking began after the green window started.' : ''}</p></details></details>`;
   }
 
+  // ─── The call card (owner, 2026-11-12; a test-site preview) ────────────────
+  // "A person should be able to tell at a glance: when they expected to be
+  // called, when they were called, how much it moved, how much warning they
+  // got, and why it moved if the board shows why. Plain words, no jargon."
+  // renderCallTimelineV2 above stays exactly as the main site draws it.
+  //
+  // "Expected" is the eight-hour figure the site has always kept: z.expected,
+  // what the board showed at z.sleepAt, the first check with the call 8 h or
+  // less away. A call that came before the board ever showed it that close
+  // has no such figure and falls back to the first time shown. Neither
+  // figure, the call (on duty − 2 h) nor the 30 / 60 minute bands is worked
+  // out differently here: only which one leads.
+  const CALL_PURPLE = '#a78bfa';
+  const ordDay = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  const whenWords = (t) => { const s = typeof t === 'number' ? T.fromMin(t) : String(t || ''); return /^\d{4}-\d{2}-\d{2} \d{4}$/.test(s) ? `${ordDay(+s.slice(8, 10))} ${s.slice(11)}` : s; };
+  const spanWords = (n) => { n = Math.round(Math.abs(n)); const h = Math.floor(n / 60), mm = n % 60; return h ? (mm ? `${h} h ${String(mm).padStart(2, '0')} m` : `${h} h`) : `${mm} min`; };
+  const timesWords = (n) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
+  const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+  // The same job: a line-up sometimes shows a job without its day (DHT130B, then DHT130B 09).
+  const jobBase = (t) => String(t || '').replace(/ \d\d$/, '');
+  const jobDay = (t) => (/ (\d\d)$/.exec(String(t || '')) || [])[1] || '';
+  const sameJob = (a, b) => !!a && !!b && (a === b || (jobBase(a) === jobBase(b) && (!jobDay(a) || !jobDay(b))));
+
+  // One call, worked out once: every word and mark on the card comes from this.
+  //
+  // opts.rule says how "expected" is worked out:
+  //   'eight' (the default, as the site works it out today): z.expected, what the board showed at
+  //     z.sleepAt, the first check with the call 8 h or less away.
+  //   'before' (proposed 2026-11-12, NOT agreed: the owner decides): what the board was showing 8 hours
+  //     before the call came; for a turn lined up later than that, what it showed when lined up. Three
+  //     real calls show why it is offered. EN09 on YMXS02 (8 November, the owner's own example): lined
+  //     up 1412 for 0205 the next morning, the board flipped to 1500 at 1421 and the call came at 1500;
+  //     today's figure is that 1500, so the call reads as on time. SR02 on X39291 05 (7 November): a
+  //     0241 that was on the board for 23 minutes became the figure, and a call 1 h 47 m after what the
+  //     board had been saying reads as 14 h 29 m late. SB05 on X30241 17 (19 October): 20th 1055 on the
+  //     board until the call at 19th 2300; the check ten minutes AFTER the call showed 2300 and became
+  //     the figure, so it reads as on time.
+  function callCard(z0, opts = {}) {
+    const raw = z0 || {};
+    const z = cleanCallRecord(raw);
+    if (z.comparisonUnavailable) return { unavailable: true, z };
+    const m = callTimeline(z);
+    if (!m) return null;
+    const rule = opts.rule === 'before' ? 'before' : 'eight';
+    const off = !!z.takenOff, end = m.end, called = !off && end != null;
+    // First seen lined up only after it had gone on duty: nothing was on the board to compare the call
+    // with. Most are a later trip's line-up matched to a trip already under way (SD09 on M39671 23: on
+    // duty 25th 0400, first seen lined up 25th 1134 for X27331 26), which read as 10 to 23 hours "early".
+    if (!off && T.toMin(z.onDuty) != null && m.first > T.toMin(z.onDuty)) return { unscored: true, z, m };
+    // The eight-hour figure, on the page's own terms for a recorded baseline (callReviewData in board.html).
+    const eightAt = T.toMin(z.sleepAt), eightCall = T.toMin(z.expected);
+    const recorded = raw.expectedTrain === z.expectedTrain && !z.noWindow && eightAt != null && eightCall != null;
+    const shown = m.expected; // the first time the board gave
+    // First seen lined up only after the call time (and before going on duty): the board gave no time
+    // before the call, so there is no "expected" to measure against, only no warning.
+    const unseen = called && m.first > end;
+    let eight = recorded, lead = recorded ? eightCall : shown, asOf = recorded ? Math.max(eightAt, m.first) : m.first;
+    if (rule === 'before' && called && !unseen) {
+      // Every time the board is known to have shown, in order: the first, each change, and the
+      // eight-hour figure itself (older records kept no changes before it).
+      const points = [{ at: m.first, call: shown }, ...m.changes.map((ch) => ({ at: ch.at, call: T.toMin(ch.call) }))];
+      if (recorded) points.push({ at: Math.max(eightAt, m.first), call: eightCall });
+      points.sort((x, y) => x.at - y.at);
+      asOf = Math.max(m.first, end - 480);
+      for (const pt of points) { if (pt.at > asOf) break; lead = pt.call; }
+      eight = m.first <= end - 480; // on the board a full 8 hours before the call
+    }
+    const gap = called && !unseen ? end - lead : null;
+    const notice = end == null ? null : Math.max(0, end - m.first);
+    const within = gap != null && Math.abs(gap) <= SLEEP_GREEN;
+    const short = called && notice < 480;
+    const upto = m.changes.filter((ch) => end == null || ch.at <= end);
+    // Moves of the time shown by more than 30 minutes (today's dots), from the first lining on.
+    let prev = shown;
+    const moves = [];
+    for (const ch of upto) { const call = T.toMin(ch.call); if (Math.abs(call - prev) > 30) moves.push({ at: ch.at, from: prev, to: call }); prev = call; }
+    const last = prev; // what the board was showing when the call came
+    // The ones after "expected" was set: the time moved while it was being counted on.
+    let p = lead, after = 0;
+    for (const ch of upto) { if (ch.at <= asOf) continue; const call = T.toMin(ch.call); if (Math.abs(call - p) > 30) after++; p = call; }
+    const from = m.first, to = Math.max(from + 1, lead, end == null ? lead : end);
+    return { z, m, rule, off, called, eight, lead, asOf, shown, end, gap, notice, within, short, unseen, after, moves, last,
+      lastMove: moves.length ? moves[moves.length - 1] : null, drops: upto.filter((ch) => ch.dropped), from, to };
+  }
+
+  // The headline, and the few words a list row needs. One rule everywhere:
+  // under 8 hours' warning leads; within 30 minutes is "when expected".
+  function callWords(c) {
+    if (!c || c.unavailable) return null;
+    if (c.unscored) return { head: 'Not scored', tone: 'var(--soft)', moved: '', warning: '', result: 'not scored', resultTone: '' };
+    const { off, called, gap, notice, within, short, after } = c;
+    const moved = gap == null ? '' : gap === 0 ? 'right on time' : `${spanWords(gap)} ${gap < 0 ? 'earlier' : 'later'}`;
+    const warning = short ? (notice < 1 ? 'no warning' : `${spanWords(notice)} warning`) : '';
+    if (off) return { head: 'Taken off before the call', tone: 'var(--amber)', moved, warning, result: 'taken off before the call', resultTone: 'warn' };
+    if (!called) return { head: 'Call time not known', tone: 'var(--soft)', moved, warning, result: '', resultTone: '' };
+    if (c.unseen) return { head: 'Called with no warning', tone: 'var(--stop)', moved: '', warning, result: '', resultTone: '' };
+    const result = within ? 'when expected' : moved;
+    const resultTone = within ? 'ok' : gap < 0 ? (gap >= -SLEEP_YELLOW ? 'warn' : 'bad') : 'late';
+    const head = short ? `Called with ${warning}`
+      : within ? `Called when expected${after ? `, after ${after === 1 ? '1 change' : `${after} changes`}` : ''}`
+        : `Called ${spanWords(gap)} ${gap < 0 ? 'earlier' : 'later'} than expected`;
+    const tone = short ? 'var(--stop)' : within ? 'var(--go)' : gap < 0 ? 'var(--stop)' : CALL_PURPLE;
+    return { head, tone, moved, warning, result, resultTone };
+  }
+
+  // What the board was saying at the end.
+  function callLastWord(c) {
+    if (!c || c.unavailable || c.unscored || !c.called || c.unseen) return '';
+    if (Math.abs(c.end - c.last) > 30) return `the board still showed ${whenWords(c.last)} when the call came`;
+    if (c.lastMove && c.end - c.lastMove.at < 480) return c.end - c.lastMove.at < 1 ? 'the time changed as the call came' : `the time last changed ${spanWords(c.end - c.lastMove.at)} before the call`;
+    return '';
+  }
+
+  // "Called for X, not the Y they were lined up for; T was lined up for it, now on Z" (lib/board/insights.js).
+  function calledFor(z) {
+    const w = /^Called for (.+?)(?:, working (\S+))?, not the (.+?) they were lined up for(?:; (\S+) was lined up for it(.*))?$/.exec(String(z.calledWhy || ''));
+    return w ? { train: w[1], working: w[2] || '', lined: w[3], had: w[4] || '', hadThen: w[5] || '', same: sameJob(w[1], w[3]) } : null;
+  }
+
+  // Why, in a sentence or two, from what the tracker saved at each change.
+  // Nothing is guessed: a part with nothing saved for it is left out.
+  function callWhy(c) {
+    if (!c || c.unavailable || c.unscored) return '';
+    const { z, m, off, end, notice, short } = c;
+    const out = [];
+    if (off) {
+      if (z.ownStatus) out.push(`${z.turn} then showed: ${z.ownStatus}.`);
+      // The other craft on a 501/502 was on the job all along: not a replacement.
+      const mate = !!z.replacedBy && String(z.replacedBy).replace(/-(CO|EN)$/, '') === String(z.turn).replace(/-(CO|EN)$/, '');
+      if (z.replacedBy && !mate) out.push(`${z.replacedBy} was lined up for ${z.train || 'the job'} instead${z.replacedWhy ? ` (${z.replacedWhy})` : ''}.`);
+      else if (z.jobDropped) out.push(`${z.jobDropped} came off the line-up without being called, and nothing replaced it.`);
+      return out.join(' ');
+    }
+    if (end == null) return '';
+    const firstTrain = z.firstTrain || z.expectedTrain || z.train || '';
+    const other = calledFor(z);
+    if (c.unseen) {
+      if (z.train && firstTrain && !sameJob(z.train, firstTrain)) out.push(`Called for ${z.train}, which the board had not shown for this turn.`);
+      if (other && other.working) out.push(`Filled in for ${other.working}.`);
+      return out.join(' ');
+    }
+    // Short warning: how the job first showed, when the tracker saved it.
+    if (short) {
+      const w = String(z.firstWhy || '');
+      const had = /^(\S+) had it before(?:, now on ([^;:]+))?(?:: ([^;]+))?/.exec(w);
+      const ago = `${spanWords(notice)} before the call`;
+      const first = z.firstFrom === 'offDuty' ? `Went off duty at Toronto ${ago}, with the train already on the line-up.`
+        : /first showed going spare/.test(w) ? `The job first showed as going spare ${ago}.`
+          : /first showed on the (\w+ )?line-up/.test(w) ? `The train first showed on the line-up ${ago}.`
+            : had ? `Lined up in place of ${had[1]}${had[2] ? `, who was moved to ${had[2].trim()}` : had[3] ? ` (${had[3].trim()})` : ''}, ${ago}.` : '';
+      if (first) out.push(first);
+    }
+    if (other && other.working) out.push(`Filled in for ${other.working}.`);
+    // The trains it was moved between and the time moving on its own, up to
+    // the call: since "expected" was set, or since it was lined up when the
+    // whole wait was under 8 hours. What the board did after the call (an
+    // ordered train leaving the line-up) is not part of why.
+    const since = short ? m.first : c.asOf;
+    let cur = firstTrain;
+    if (!short && c.rule === 'before') { for (const ch of m.changes) { if (ch.at > since) break; if (ch.train) cur = ch.train; } }
+    else if (!short && c.eight) cur = z.expectedTrain || firstTrain;
+    const path = [cur];
+    let own = 0, ownOrdered = 0, small = 0, lastOwn = null, lastHop = null, p = short ? c.shown : c.lead, pulledMoves = 0;
+    const pulledOnly = [];
+    for (const ch of m.changes) {
+      if (ch.at <= since || ch.at > end) continue;
+      const hop = !!ch.train && !sameJob(ch.train, cur);
+      if (hop) { path.push(ch.train); lastHop = ch.at; if (ch.dropped) pulledMoves++; } else if (ch.dropped) pulledOnly.push(ch);
+      if (ch.train) cur = ch.train;
+      const call = T.toMin(ch.call);
+      if (!hop) { if (Math.abs(call - p) > 30) { own++; lastOwn = ch.at; if (ch.orderFrom) ownOrdered++; } else if (call !== p) small++; }
+      p = call;
+    }
+    for (const ch of pulledOnly) out.push(`${ch.dropped} ${ch.droppedFrom === 'spare list' ? 'closed' : 'was pulled'} without a call.`);
+    const hops = path.length - 1;
+    const pulled = pulledMoves ? ` (${pulledMoves === 1 ? 'one job was' : `${pulledMoves} jobs were`} pulled without a call)` : '';
+    const ago = (at, max) => (at == null || end - at > max ? '' : end - at < 1 ? ' as the call came' : ` ${spanWords(end - at)} before the call`);
+    if (hops === 1) out.push(pulledMoves ? `${path[0]} was pulled without a call; moved to ${path[1]}${ago(lastHop, 480)}.` : `Moved from ${path[0]} to ${path[1]}${ago(lastHop, 480)}.`);
+    else if (hops > 1) out.push(`Moved between trains ${timesWords(hops)}${sameJob(path[0], path[hops]) ? `, ending back on ${path[hops]}` : `: first ${path[0]}, last ${path[hops]}`}${pulled}${ago(lastHop, 120) ? `, the last move${ago(lastHop, 120)}` : ''}.`);
+    // Called for a job the board was not showing for this turn when the call came.
+    if (z.train && cur && !sameJob(z.train, cur)) out.push(`Called for ${z.train}; the board was still showing ${cur}${other && !other.same && other.had ? ` (${other.had} had been lined up for it)` : ''}.`);
+    if (own) out.push(`${hops ? 'Its time also moved' : 'The time moved'} ${timesWords(own)}${ownOrdered ? ` (${ownOrdered === own ? '' : `${timesWords(ownOrdered)} `}after it was ordered)` : ''}${ago(lastOwn, 120) ? `, the last${ago(lastOwn, 120)}` : ''}.`);
+    else if (small && !hops && Math.abs(c.gap) > 30) out.push(`The time moved ${timesWords(small)}, by 30 minutes or less each time.`);
+    if (end - p > 30) out.push(`${out.length ? 'Then it' : 'It'} stayed on the line-up ${spanWords(end - p)} past its time before the call came.`);
+    if (!out.length && Math.abs(c.gap) > 30) out.push('The board showed no change before the call.');
+    return out.join(' ');
+  }
+
+  // Everything the board showed for this call, in order, each with the reason the tracker saved.
+  function callStory(c) {
+    if (!c || c.unavailable || c.unscored) return [];
+    const { z, m, end, off } = c;
+    const lines = [];
+    const firstTrain = z.firstTrain || '';
+    lines.push({ at: m.first, text: `${z.firstFrom === 'offDuty' ? 'Off duty at Toronto, lined up' : 'First lined up'}${firstTrain ? ` for ${firstTrain}` : ''}${T.toMin(z.firstCall) != null ? `, call ${whenWords(z.firstCall)}` : ''}`, why: z.firstWhy || '' });
+    let prevCall = T.toMin(z.firstCall || z.expected), prevTrain = firstTrain || z.expectedTrain || '', prevOrdered = false;
+    for (const ch of m.changes) {
+      const call = T.toMin(ch.call);
+      const hop = !!ch.train && !!prevTrain && !sameJob(ch.train, prevTrain);
+      const parts = [];
+      if (ch.dropped) parts.push(`${ch.dropped} ${ch.droppedFrom === 'spare list' ? 'closed' : 'was pulled'} without a call`);
+      if (hop) parts.push(`moved to ${ch.train}, call ${whenWords(ch.call)}`);
+      else if (call !== prevCall) parts.push(`${ch.orderFrom ? 'ordered time' : 'call'} moved ${whenWords(prevCall)} → ${whenWords(ch.call)}`);
+      else if (ch.ordered && !prevOrdered) parts.push(`ordered, call ${whenWords(ch.call)}`);
+      if (ch.ordered && !prevOrdered && parts.length && !/^ordered/.test(parts[parts.length - 1])) parts.push('ordered');
+      if (!parts.length) parts.push(`call ${whenWords(ch.call)}`);
+      const text = parts.join('; ');
+      if (ch.at > m.first || ch.dropped || hop || call !== prevCall) lines.push({ at: ch.at, text: text.charAt(0).toUpperCase() + text.slice(1), why: ch.why || '' });
+      prevCall = call; if (ch.train) prevTrain = ch.train; prevOrdered = prevOrdered || !!ch.ordered;
+    }
+    if (end != null) {
+      const other = calledFor(z);
+      const why = off ? callWhy(c) : !other ? (z.calledWhy || '') : !other.same ? z.calledWhy
+        : [other.working ? `working ${other.working}` : '', other.had ? `${other.had} was lined up for it${other.hadThen}` : ''].filter(Boolean).join('; ');
+      lines.push({ at: end, text: off ? 'Taken off the line-up' : `Called${z.train ? ` for ${z.train}` : ''}${T.toMin(z.onDuty) != null ? ` (on duty ${whenWords(z.onDuty)}, less 2 hours)` : ''}`, why, end: true });
+    }
+    return lines.map((l, i) => ({ ...l, i })).sort((a, b) => a.at - b.at || a.i - b.i).map(({ i, ...l }) => ({ ...l, when: whenWords(l.at) }));
+  }
+
+  // The picture: lined up → expected → called, with the words on it.
+  function callPicture(c) {
+    const { z, m, lead, end, off, called, gap } = c;
+    const W = 360, L = 8, R = 8, Y = 46; // room at each end for the ring round "expected"
+    const from = c.from, to = c.to, first = m.first;
+    const x = (t) => L + (W - L - R) * Math.max(0, Math.min(1, (t - from) / (to - from)));
+    const f1 = (n) => n.toFixed(1);
+    const past = lead < first; // the expected time had gone by before the turn showed on the board
+    const w0 = Math.max(first, lead - 480);
+    const early = called && gap < 0, late = called && gap > 0;
+    const rect = (a, b, fill, y, h) => (x(b) - x(a) > 0.5 ? `<rect x="${f1(x(a))}" y="${y}" width="${f1(x(b) - x(a))}" height="${h}" fill="${fill}"></rect>` : '');
+    let g = `<line x1="${L}" x2="${W - R}" y1="${Y}" y2="${Y}" stroke="var(--rule)" stroke-width="1"></line>`;
+    const stop = called || off ? end : lead; // where what happened ends
+    let green = false, dashed = false;
+    g += rect(first, past ? stop : Math.min(w0, stop), 'var(--soft)', Y - 3, 6);
+    // No eight hours and no waiting are drawn before the turn was on the board.
+    if (!past) {
+      if (early || off) {
+        const kept = rect(w0, Math.min(end, lead), 'var(--go)', Y - 10, 20);
+        g += kept; green = !!kept;
+        if (early) g += rect(end, lead, gap >= -30 ? 'var(--amber)' : 'var(--stop)', Y - 10, 20);
+        if (end < lead && (off || end < w0)) {
+          const a = Math.max(w0, off ? end : w0);
+          if (x(lead) - x(a) > 2) { g += `<rect x="${f1(x(a))}" y="${Y - 10}" width="${f1(x(lead) - x(a))}" height="20" fill="none" stroke="var(--go)" stroke-width="1.5" stroke-dasharray="4 3"></rect>`; dashed = true; }
+        }
+      } else {
+        const kept = rect(w0, lead, 'var(--go)', Y - 10, 20);
+        g += kept; green = !!kept;
+        if (late) g += rect(lead, end, CALL_PURPLE, Y - 10, 20);
+      }
+    }
+    // Changes of more than 30 minutes: small dots, counted in words underneath.
+    const dots = c.moves.filter((mv) => mv.at >= from && mv.at <= to);
+    // How far it moved, written in its band when there is room and no dot under the words.
+    if (called && gap && !past) {
+      const a = Math.min(end, lead), b = Math.max(end, lead);
+      const text = `${spanWords(gap)} ${early ? 'earlier' : 'later'}`;
+      const half = text.length * 3.3 + 4, mid = (x(a) + x(b)) / 2;
+      if (x(b) - x(a) > half * 2 + 4 && !dots.some((mv) => Math.abs(x(mv.at) - mid) < half + 3)) g += `<text x="${f1(mid)}" y="${Y + 4}" text-anchor="middle" class="cc-in">${escHtml(text)}</text>`;
+    }
+    g += dots.map((mv) => `<circle cx="${f1(x(mv.at))}" cy="${Y}" r="2.6" fill="var(--ink)" stroke="var(--sheet, #fff)" stroke-width="1"></circle>`).join('');
+    const drops = c.drops.filter((ch) => ch.at >= from && ch.at <= to);
+    g += drops.map((ch) => `<g transform="translate(${f1(x(ch.at))} ${Y})"><circle r="8" fill="var(--sheet, #fff)" stroke="var(--stop)" stroke-width="2"></circle><path d="M-4 -4 L4 4 M4 -4 L-4 4" stroke="var(--stop)" stroke-width="2.4" stroke-linecap="round"></path></g>`).join('');
+    // The moments, named on the picture. Two labels under the line never sit
+    // on each other: the second drops to a row of its own when they would.
+    const est = (t) => t.length * 6.1;
+    const side = (px) => (px < 70 ? 'start' : px > W - 70 ? 'end' : 'middle');
+    const below = [{ t: first, l1: z.firstFrom === 'offDuty' ? 'Off duty' : 'Lined up', l2: whenWords(first) }];
+    if (lead >= from && lead <= to && Math.abs(x(lead) - x(first)) > 4) below.push({ t: lead, l1: 'Expected', l2: whenWords(lead), ring: true });
+    for (const b of below) b.a = side(x(b.t));
+    const box = (b) => { const w = Math.max(est(b.l1), est(b.l2) + 4), px = x(b.t); return b.a === 'start' ? [px, px + w] : b.a === 'end' ? [px - w, px] : [px - w / 2, px + w / 2]; };
+    let row2 = false;
+    if (below.length === 2) { const a = box(below[0]), b = box(below[1]); row2 = Math.min(a[1], b[1]) - Math.max(a[0], b[0]) > -8; }
+    g += below.map((b, i) => {
+      const yy = Y + 26 + (row2 && i === 1 ? 27 : 0), px = f1(x(b.t));
+      return `<line x1="${px}" x2="${px}" y1="${Y + 11}" y2="${yy - 9}" stroke="var(--soft)" stroke-width="1"></line>`
+        + (b.ring ? `<circle cx="${px}" cy="${Y}" r="5" fill="var(--sheet, #fff)" stroke="var(--ink)" stroke-width="2"></circle>` : '')
+        + `<text x="${px}" y="${yy}" text-anchor="${b.a}" class="cc-l1">${escHtml(b.l1)}</text><text x="${px}" y="${yy + 13}" text-anchor="${b.a}" class="cc-l2">${escHtml(b.l2)}</text>`;
+    }).join('');
+    if (end != null) {
+      const px = x(end), a = px < 80 ? 'start' : px > W - 80 ? 'end' : 'middle';
+      g += `<line x1="${f1(px)}" x2="${f1(px)}" y1="${Y - 16}" y2="${Y + 14}" stroke="var(--ink)" stroke-width="3"></line>`
+        + `<text x="${f1(px)}" y="${Y - 21}" text-anchor="${a}" class="cc-l2">${escHtml(`${off ? 'Taken off' : 'Called'} ${whenWords(end)}`)}</text>`;
+    }
+    const cap = [];
+    if (green) cap.push('<span><i style="background:var(--go)"></i>the 8 hours before the expected time</span>');
+    if (dashed) cap.push(`<span><i class="cc-dash"></i>${off ? 'the rest of those 8 hours, not used' : 'those 8 hours, gone to the early call'}</span>`);
+    if (dots.length) {
+      const late8 = c.asOf > c.from ? dots.filter((mv) => mv.at > c.asOf).length : dots.length;
+      cap.push(`<span><i class="cc-dot"></i>the time changed (${timesWords(dots.length)}${late8 && late8 < dots.length ? `, ${late8} of them in the last 8 hours` : late8 === 0 ? ', all before the last 8 hours' : ''})</span>`);
+    }
+    if (drops.length) cap.push('<span><i class="cc-x"></i>job pulled without a call</span>');
+    if (past) cap.push(`<span>The expected time (${escHtml(whenWords(lead))}) had already passed when the turn was lined up.</span>`);
+    const label = `${z.firstFrom === 'offDuty' ? 'Off duty' : 'Lined up'} ${whenWords(first)}, expected ${whenWords(lead)}${end != null ? `, ${off ? 'taken off' : 'called'} ${whenWords(end)}` : ''}`;
+    return `<svg class="cc-svg" viewBox="0 0 ${W} ${104 + (row2 ? 27 : 0)}" role="img" aria-label="${escHtml(label)}">${g}</svg>${cap.length ? `<p class="cc-cap">${cap.join('')}</p>` : ''}`;
+  }
+
+  // The card. opts.bare: the block and the picture only (the "how to read" example).
+  // opts.who === false: no turn and train line (the row above already says them).
+  function renderCallCard(z0, opts = {}) {
+    const c = callCard(z0, opts);
+    if (c && c.unavailable) return '<p class="anote">This call can’t be compared: the line-up that was saved was for a different trip of the same train.</p>';
+    if (!c) return '<p class="anote">No saved history for this call.</p>';
+    const { z, m, off, end, notice } = c;
+    const e = escHtml;
+    if (c.unscored) {
+      return `<div class="callcard">${opts.who === false ? '' : `<p class="cc-who">${e(z.turn)} · ${e(z.train || z.expectedTrain)}</p>`}<p class="cc-head" style="color:var(--soft)">Not scored</p>`
+        + `<p class="cc-note">The board first showed ${e(z.turn)} lined up at ${e(whenWords(m.first))}${z.firstTrain && !sameJob(z.firstTrain, z.train) ? ` (for ${e(z.firstTrain)})` : ''}, after it had already gone on duty at ${e(whenWords(z.onDuty))}. There was nothing on the board to compare this call with.</p></div>`;
+    }
+    const w = callWords(c);
+    const offDuty = z.firstFrom === 'offDuty';
+    const row = (k, v, notes, cls) => `<div${cls ? ` class="${cls}"` : ''}><dt>${k}</dt><dd>${v ? `<b>${e(v)}</b>` : ''}${notes.filter(Boolean).map((s) => `<small>${e(s)}</small>`).join('')}</dd></div>`;
+    const ahead = c.lead - c.asOf;
+    const far = ahead >= 450 ? '' : ahead > 0 ? `, ${spanWords(ahead)} ahead` : ', already past';
+    const lined = `the time on the board when ${offDuty ? 'going off duty' : 'lined up'}`;
+    const how = c.rule === 'before' && !off ? (c.eight ? 'what the board showed 8 hours before the call' : `${lined}, ${spanWords(notice)} before the call`)
+      : !c.eight ? 'the first time the board gave' : end != null && !off && c.asOf > end ? `on the board only from ${whenWords(c.asOf)}, after the call`
+        : ahead >= 450 ? 'the time on the board 8 hours ahead' : c.asOf <= m.first ? `${lined}${far}` : `on the board at ${whenWords(c.asOf)}${far}`;
+    const lw = callLastWord(c);
+    const why = callWhy(c);
+    const within = c.within && c.gap ? `${w.moved} (30 min either way counts as expected)` : w.moved;
+    const firstJob = z.firstTrain || z.expectedTrain || '';
+    const facts = (c.unseen ? '' : row('Expected', whenWords(c.lead), [how, c.asOf > m.first && Math.abs(c.shown - c.lead) > 30 ? `first shown as ${whenWords(c.shown)}` : '']))
+      + (off ? row('Taken off', whenWords(end), [`after ${spanWords(notice)} on the line-up`]) : row('Called', end == null ? '—' : whenWords(end), [within]))
+      + (off || end == null ? '' : c.unseen ? row('Warning', 'none', [`first seen on a line-up ${whenWords(m.first)}${firstJob && !sameJob(firstJob, z.train) ? ` (for ${firstJob})` : ''}, after the call`])
+        : row('Warning', spanWords(notice), [`from ${offDuty ? 'going off duty at Toronto' : 'being lined up'}, ${whenWords(m.first)}`, lw]))
+      + (why ? `<div class="cc-why"><dt>Why</dt><dd>${e(why)}</dd></div>` : off ? '<div class="cc-why"><dt>Why</dt><dd>The board did not show a reason.</dd></div>' : '');
+    const head = `${opts.who === false || opts.bare ? '' : `<p class="cc-who">${e(z.turn)} · ${e(z.train || z.expectedTrain)}</p>`}${w.tone === CALL_PURPLE ? '<p class="cc-head cc-late">' : `<p class="cc-head" style="color:${w.tone}">`}${e(w.head)}</p><dl class="cc-facts">${facts}</dl>${c.unseen ? '' : callPicture(c)}`;
+    if (opts.bare) return `<div class="callcard cc-bare">${head}</div>`;
+    const story = callStory(c);
+    const li = (l) => `<li><b>${e(l.when)}</b> ${e(l.text)}${l.why ? `<span class="cc-because">${e(l.why)}</span>` : ''}</li>`;
+    const n = m.changes.length;
+    const method = c.unseen ? `Called is on duty less 2 hours: the phone call itself is not recorded. The first check that showed ${z.turn} on a line-up was after that time, so there was no time on the board to expect and no warning to count. The board is read every few minutes, so the line-up can have gone up a few minutes before it was seen.`
+      : `Called is on duty less 2 hours: the phone call itself is not recorded. Expected is ${c.rule === 'before' && !off ? (c.eight ? `what the board was showing at ${whenWords(c.asOf)}, 8 hours before the call came` : 'the time the board was showing when the turn was lined up, less than 8 hours before the call')
+        : c.eight ? (c.asOf <= m.first ? 'the time the board was showing when the turn was lined up, already 8 hours or less away' : `the time the board was showing at ${whenWords(c.asOf)}, the first check with the call 8 hours or less away`) : 'the first time the board gave, because the call came before the board had shown it 8 hours or less away'}. `
+      + `Warning runs from ${offDuty ? 'going off duty at the Toronto bunkhouse, with the train already on the line-up,' : 'the first check that showed the turn lined up'} to the call. A call within 30 minutes of expected counts as called when expected. Green on the picture is the 8 hours before the expected time; a dot is a change of more than 30 minutes. `
+      + `The board is read every few minutes, so a time here can be a few minutes later than it really changed.${m.complete ? '' : ' Older history may be incomplete.'}`;
+    return `<div class="callcard">${head}<div class="cc-more"><details><summary>${n ? `Every change the board showed (${n})` : 'What the board showed'}</summary><ul class="cc-story">${story.map(li).join('')}</ul></details>`
+      + `<details class="cc-how"><summary><i>i</i>How this is worked out</summary><p>${e(method)}</p></details></div></div>`;
+  }
+
+  // The counts for a list of calls, each against the same "expected" its card shows.
+  function callSummary(list, opts = {}) {
+    const c5 = [0, 0, 0, 0, 0];
+    let n = 0, short = 0, takenOff = 0, excluded = 0, unscored = 0, noBoard = 0, movedOk = 0, noEight = 0, earlier = 0, later = 0;
+    const early = [];
+    for (const z0 of list) {
+      const c = callCard(z0, opts);
+      if (c && c.off) { takenOff++; continue; }
+      if (c && c.unscored) { unscored++; continue; }
+      if (c && c.unseen) { noBoard++; short++; continue; }
+      if (!c || c.unavailable || c.gap == null) { excluded++; continue; }
+      n++;
+      const g = c.gap;
+      c5[g < -60 ? 0 : g < -30 ? 1 : g <= 30 ? 2 : g <= 60 ? 3 : 4]++;
+      if (c.short) short++;
+      if (!c.eight) noEight++;
+      if (c.within && c.after) movedOk++;
+      if (g < -30) { earlier++; early.push(-g); } else if (g > 30) later++;
+    }
+    early.sort((a, b) => a - b);
+    // n: calls with a time on the board to measure against. calls: those and the ones with nothing on the board first.
+    return { n, calls: n + noBoard, c: c5, ok: c5[2], warn: c5[1] + c5[3], bad: c5[0] + c5[4], earlier, later, short, takenOff, excluded, unscored, noBoard, movedOk, noEight,
+      typicalEarly: early.length ? early[Math.floor((early.length - 1) / 2)] : null };
+  }
+  // One line per turn, the most "more than an hour off" first (as sleepByTurn sorts).
+  function callSummaryByTurn(list, opts = {}) {
+    const by = new Map();
+    for (const z of list) { if (!by.has(z.turn)) by.set(z.turn, []); by.get(z.turn).push(z); }
+    return [...by.entries()].map(([turn, l]) => ({ turn, ...callSummary(l, opts) }))
+      .sort((a, b) => (b.n ? b.bad / b.n : 0) - (a.n ? a.bad / a.n : 0) || b.n - a.n || (a.turn < b.turn ? -1 : 1));
+  }
+
   const api = { cleanCallRecord, planReliability, callTimeline, renderCallTimeline, trainMatches, kindOf, numberOf, poolOf, runOf, trainRuns, indexTrains, newestFirst, workRuns, timeOfDay, stats, WEEKDAYS,
     inRange, byHour, byWeek, whenSummary, everyDay, between, turnRow, byNumber, accuracyByDay, predLead, runaroundStats, spareJobStats, csv, SEQ_POOLS,
-    renderCallTimelineV2, callReasons, renderCallReasons, sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld };
+    renderCallTimelineV2, callReasons, renderCallReasons, sleepBand, sleepStats, sleepByTurn, SLEEP_GREEN, SLEEP_YELLOW, joinOld,
+    callCard, callWords, callLastWord, callWhy, callStory, renderCallCard, callSummary, callSummaryByTurn, callSpan: spanWords };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BoardAnalytics = api;
 })(this);

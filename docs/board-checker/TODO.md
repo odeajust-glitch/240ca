@@ -99,6 +99,24 @@ Small decisions parked for a housekeeping pass; ask, don't build.
   headline choices decided 2026-11-10 and taken off Housekeeping on 11-11: the headline is
   notice given when under 8 h; notice starts when the turn is first lined up (out of
   Toronto, from off duty at the bunkhouse).
+  **2026-11-12: the plain call card is a test-site preview** (HANDOFF's top block has all of
+  it): Expected / Called / Warning / Why, a picture with its words on it, two fold-outs, in
+  every place a call is drawn. Nothing of it is on the main site; today's graph and numbers
+  are untouched there. Open, all the owner's:
+  - **How "expected" is worked out.** Today's eight-hour figure is the first time the board
+    showed the call 8 hours or less away, whenever that check came; it reads his own EN09 /
+    YMXS02 call (8 Nov) as on time, SR02 / X39291 05 as 14 h 29 m late and SB05 / X30241 17 as
+    on time from a check after the call. A proposed rule (what the board showed 8 hours before
+    the call came) is built beside it behind a switch on the preview; today's is the default.
+    When he picks, the other goes.
+  - **15 calls first seen lined up after the turn had gone on duty** (13 a later trip's
+    line-up matched to a trip under way, read as 10 to 23 h early). "Not scored" on the
+    preview. The cause is in `lib/board/insights.js` and still there: fixing it changes
+    today's counts and needs his yes and a laptop pull.
+  - 24 calls with nothing on the board before the call are their own line on the preview's
+    cards, not in the five groups.
+  - A call 31 to 60 minutes early is amber on its row and red on the picture: left alone.
+  - His three "what bothers me" lines never arrived (the prompt had "..."): ask.
 
 - **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
   the other crew shown for one or two checks, then the Call Board has the first). Call
