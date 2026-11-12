@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks are LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto (pulled, restarted, seen there). WAITING ON HIS LOOK and his say on each. Nothing is on the main site
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks are LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto, WAITING ON HIS LOOK and his say on each. Round 2 (Page Health): reviewed 12 Nov, seven findings shown to him, NOTHING BUILT, waiting for his picks. Nothing is on the main site
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -256,6 +256,61 @@ code was `61d6b10`, level with GitHub: the pull and restart the block below wait
 session ("Turn history work schedule insights", branch `ccr-83c63a33-26zny2`) pushed a notes commit at
 08:31 and was idle after it. This session's own branch is `ccr-bc91e48e-oqfmn2`, kept level with the
 laptop's.
+
+### Round 2: Page Health — reviewed 12 Nov 2026, 10:35 to 11:05 Toronto. NOTHING BUILT; waiting for his picks
+
+**Owner, 12 Nov about 10:35: "Start page health"** (before giving his say on round 1's pieces, which stay
+on the test site as they are). Looked at as the owner on the test site and the main site (the page is the
+same on both: only he sees it), 390, 360 and 1280 px, light and dark; every section read back; each
+figure set beside the raw answers of `/health`, `/health/alerts`, `/stats/days`, `/health/held186` and
+`/health/accounts` (counts only; nothing pressed: no Save, no tick box, no Forget). Three other states
+were looked at by standing in for the health report in the browser only: all good, the checker down
+3 h 20 m, a restart needed with the sign-in run out. No page errors, no sideways scroll, no table wider
+than its box at any width.
+
+**Shown to him as seven items.**
+1. **"N things need you" is red when nothing does.** That morning: "3 things need you", one of them real
+   (Microsoft sign-in with 1 h 50 m left). (a) The GitHub line counts every update: the laptop asks
+   `git rev-list --count HEAD..FETCH_HEAD` (`refreshCodeBehind`, scripts/board-auto.js) and `codeRows`
+   marks any count above zero bad, "git pull, then restart"; the two waiting were this session's notes.
+   53 of the last 150 commits on the laptop's branch touched notes only. (b) "Alerts today: 91 sent, 1
+   failed (last failed 02:55: SR01 is back on the board …)": bad all day after one failed send, and a send
+   failed on 15 of the last 19 days in the alerts log. The line quotes the alert, not why it failed: the
+   log keeps counts only, though `sendPush` returns the reason and whether the phone was gone. A phone
+   that had unsubscribed (404 / 410) is deleted there and then and still counts as failed; others are
+   tried again next check (S109's 22:48 on the 11th went at 22:52) and still count.
+2. **A sign-up waiting for approval is not on the list.** One had been waiting since 08:40 that morning
+   (`/health/accounts`: 1 pending, 34 approved); Page Health said nothing. Name codes waiting for his OK
+   (My stats) would be the same: none that day (14 confirmed, 20 with no code). Told him about the one
+   waiting in the same message.
+3. **The lines put the point last and do not say what to do.** "Microsoft sign-in: 22 h 09 m ago; runs out
+   ~Nov 12, 12:31 (1 h 50 m left)". With the checker down (stood in for), one problem reads as five
+   lines: Laptop last checked, Your phones told it was down, Down alert, Last failed check, Watchdog
+   restarts; none says the checker is down or to restart it.
+4. **A long page with set-and-forget things in the way** (3,944 px at 390 px): the rep-email and passcode
+   form always open (the 18.6(b) box is 712 px); Visitors lists 19 days of zeros from before counting
+   began on 2 Nov; "CATS pages it asked you about" was two entries from 8 Nov as raw screen text (610 px);
+   "Alerts sent" is a box holding one link.
+5. **No address of its own.** The address bar keeps the last tab's (`#current`, or a snapshot's), so a
+   reload or a saved link lands elsewhere. Search Review the same.
+6. **Members seen today beside Visitors.** That morning: "27 phones" against 29 of 34 members seen
+   (`seenAt`); the 10th and 11th read 148 and 88 phones (sessions' browsers, the known note). Offered
+   once before for the Members tab, never answered.
+7. **Rows that only matter when wrong** (Worker timer, Laptop backup, Health sent, Watchdog restarts 0,
+   Last failed check "None recorded"): eleven rows, 633 px, when all is well. Could fold under the
+   verdict. His 10 Nov approval was of this top as it is: put to him as taste.
+
+**Asked him:** when a failed alert should count as needing him (suggested: only when it failed for a
+reason other than the phone having unsubscribed and did not go through on the next try).
+
+**For whoever builds from this.** 1(a) and 1(b) need the laptop (the report is made there:
+`refreshCodeBehind`, `writeAlertsLog`, `Health.alertsToday`), so a pull and restart, and they change his
+own page on both sites; 2 to 7 are `renderHealth` / `healthRows` in the page. Page Health is his alone,
+so "test site only" here means behind `PREVIEW` so he can set board-test beside the main site.
+**Answered by the look:** the GitHub row does work on the Windows laptop (it reported 1, then 2, waiting
+that morning), the old ❓.
+
+**His picks:** none yet. **Built:** nothing.
 
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
 
