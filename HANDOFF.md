@@ -1156,6 +1156,31 @@ new sections to every member?~~ answered 00:10: "Push it"; (3) should the reset 
 History take the same corrections; (4) still open from before: a notice to members, Admins
 confirming codes, the person search; the Worker paste of `881e02d` into both Workers.
 
+## Test alert route on the Worker — November 11, 2026, 22:50 Toronto. ON BRANCH `ccr-1807ddfe-7kgr2g` ONLY; WAITING ON A MERGE AND A WORKER PASTE (both)
+
+Owner asked to send a test notification to SD02 from a cloud session; that could only be
+done on the laptop (`node scripts/alert-check.js SD02`; the push key and the phone list are
+there). He then said: "add the send test alert route to the Worker". **Worker:**
+`POST /health/test-alert { to, all?, dry? }` (`testAlert`), owner only (404 otherwise, like
+`/health`): the same message and the same rule as `scripts/alert-check.js` ("Test: SD02" to
+the phones following a turn or a name code; phones that also follow `OWNER_CODE` / JUOD are
+skipped unless `all`; `dry` only counts), sent with the Worker's own `pushAll` (which gained
+a `dry` option), so it needs the `VAPID_KEYS` secret on that Worker (503 with the reason
+when it is missing). Answers `{ following, skipped, sent, failed, dropped }`. Steps in
+[CLOUDFLARE.md](docs/board-checker/CLOUDFLARE.md) "Test alert from the Worker". Suite
+**398 of 398** (a new test in r2.test.js: owner only, dry run, the owner's phone skipped,
+`all`, a craft follow, a name code, no key).
+- **This session was given the branch `ccr-1807ddfe-7kgr2g`**, restarted from
+  `claude/vigilant-planck-zawrj4` at `46918bd`; the change is one commit on top and is
+  **not on `claude/vigilant-planck-zawrj4`** (another session was pushing there at the same
+  time). **Merge it there before the next Worker change, or the next copy page loses the
+  route.**
+- **No page change:** there is no button; the route is for a session holding the owner key
+  (this environment's proxy adds it for `board` and `board-test`) or `curl`.
+- **Not sent, not seen on the real sites:** no test alert has gone to SD02 (one phone was
+  following it at 22:30). After the paste: `{ "to": "SD02", "dry": true }` first, then
+  without `dry`, at Justin's word.
+
 ## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WAITING ON A WORKER PASTE (both) AND A LAPTOP PULL
 
 Owner (someone was sent the email code but never showed for approval): "add the section for

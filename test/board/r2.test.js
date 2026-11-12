@@ -390,6 +390,113 @@ test('the Worker pushes "down 1 h" only to the owner\'s phones', async () => {
   }
 });
 
+// Owner, 2026-11-12: "add the send test alert route to the Worker": the
+// laptop's scripts/alert-check.js, without the laptop.
+test('the Worker sends a test alert to the phones following a turn or a name code, owner only', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const worker = (await import(`data:text/javascript;base64,${Buffer.from(src).toString('base64')}`)).default;
+  const { loadOrCreateKeys } = require('../../lib/board/webpush');
+  const { personHash } = require('../../lib/board/people');
+  const keys = loadOrCreateKeys(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vk-')), 'push-keys.json'));
+  const phones = {};
+  const phone = (name, turns) => {
+    const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+    const auth = crypto.randomBytes(16);
+    phones[name] = { ua, auth };
+    return JSON.stringify({ endpoint: `https://fcm.googleapis.com/fcm/send/${name}`, keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: auth.toString('base64url') }, turns });
+  };
+  const store = new Map([
+    ['subs/a.json', phone('mine', ['SD02', `@${personHash('JUOD')}`])],
+    ['subs/b.json', phone('theirs', ['SD02', 'SR03'])],
+    ['subs/c.json', phone('craft', ['S501-EN', `@${personHash('WADE')}`])],
+    ['subs/d.json', phone('other', ['SR03'])],
+  ]);
+  const obj = (k) => store.has(k) && { text: async () => store.get(k), json: async () => JSON.parse(store.get(k)), httpEtag: '"e"', writeHttpMetadata: () => {} };
+  const env = { OWNER_KEY: 'o'.repeat(24), VAPID_KEYS: JSON.stringify(keys), SITE: {
+    get: async (k) => obj(k) || null, head: async (k) => obj(k) || null, put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); },
+    list: async ({ prefix }) => ({ objects: [...store.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })), truncated: false }),
+  } };
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => { sent.push({ to: String(url).split('/').pop(), init }); return { ok: true, status: 201 }; };
+  const ask = async (body, { key = env.OWNER_KEY, method = 'POST', on = env } = {}) => {
+    const res = await worker.fetch(new Request('https://board.x.workers.dev/health/test-alert', { method, headers: key ? { 'x-owner-key': key, 'content-type': 'application/json' } : {}, body: method === 'POST' ? JSON.stringify(body) : undefined }), on);
+    return { status: res.status, ...(await res.json()) };
+  };
+  const names = () => sent.map((x) => x.to).sort();
+  // What the phone would read (as in the "down 3 h" test above).
+  const open = (name, body) => {
+    const { ua, auth } = phones[name];
+    const b = Buffer.from(body);
+    const salt = b.subarray(0, 16);
+    const as = b.subarray(21, 21 + b[20]);
+    const h = (k, d) => crypto.createHmac('sha256', k).update(d).digest();
+    const prk = h(salt, h(h(auth, ua.computeSecret(as)), Buffer.concat([Buffer.from('WebPush: info\0'), ua.getPublicKey(), as, Buffer.from([1])])));
+    const cek = h(prk, Buffer.from('Content-Encoding: aes128gcm\0\x01')).subarray(0, 16);
+    const nonce = h(prk, Buffer.from('Content-Encoding: nonce\0\x01')).subarray(0, 12);
+    const rest = b.subarray(21 + b[20]);
+    const d = crypto.createDecipheriv('aes-128-gcm', cek, nonce);
+    d.setAuthTag(rest.subarray(rest.length - 16));
+    const plain = Buffer.concat([d.update(rest.subarray(0, rest.length - 16)), d.final()]);
+    return JSON.parse(plain.subarray(0, plain.length - 1).toString());
+  };
+  try {
+    // Not the owner: the route doesn't exist, and nothing is sent.
+    assert.equal((await ask({ to: 'SD02' }, { key: null })).status, 404);
+    assert.equal((await ask({ to: 'SD02' }, { key: 'x'.repeat(24) })).status, 404);
+    assert.equal((await ask(null, { method: 'GET' })).status, 405);
+    assert.equal((await ask({ to: 'not a turn!' })).status, 400);
+    assert.equal((await ask({})).status, 400);
+    assert.deepEqual(names(), []);
+
+    // A dry run counts and sends nothing.
+    let r = await ask({ to: 'sd02', dry: true });
+    assert.deepEqual([r.status, r.to, r.dry, r.following, r.skipped, r.sent], [200, 'SD02', true, 2, 1, 0]);
+    assert.deepEqual(names(), []);
+
+    // A turn: the phones following it, but not the owner's own phone.
+    r = await ask({ to: 'SD02' });
+    assert.deepEqual([r.ok, r.following, r.skipped, r.sent, r.failed, r.dropped], [true, 2, 1, 1, 0, 0]);
+    assert.deepEqual(names(), ['theirs']);
+    const msg = open('theirs', sent[0].init.body);
+    assert.equal(msg.title, 'Test: SD02');
+    assert.match(msg.body, /^Test alert from the board checker \(\d\d:\d\d\)\. This phone is set up for SD02\.$/);
+    assert.equal(msg.tag, 'test-SD02');
+    assert.match(sent[0].init.headers.authorization, new RegExp(`, k=${keys.publicKey}$`));
+
+    // all: the owner's phone too.
+    sent.length = 0;
+    r = await ask({ to: 'SD02', all: true });
+    assert.deepEqual([r.following, r.skipped, r.sent], [2, 0, 2]);
+    assert.deepEqual(names(), ['mine', 'theirs']);
+
+    // A turn followed by craft (S501-EN) is found by its number; a name code by its hash.
+    sent.length = 0;
+    assert.equal((await ask({ to: 'S501' })).sent, 1);
+    assert.equal((await ask({ to: 'WADE' })).sent, 1);
+    assert.deepEqual(names(), ['craft', 'craft']);
+
+    // The owner's own code goes to the owner's phone without asking for all.
+    sent.length = 0;
+    r = await ask({ to: 'JUOD' });
+    assert.deepEqual([r.following, r.skipped, r.sent], [1, 0, 1]);
+    assert.deepEqual(names(), ['mine']);
+
+    // Nobody following it: says so, sends nothing.
+    sent.length = 0;
+    r = await ask({ to: 'SD09' });
+    assert.deepEqual([r.ok, r.following, r.sent], [true, 0, 0]);
+    assert.deepEqual(names(), []);
+
+    // No push key on the Worker: a clear answer rather than a silent nothing.
+    r = await ask({ to: 'SD02' }, { on: { ...env, VAPID_KEYS: undefined } });
+    assert.equal(r.status, 503);
+    assert.match(r.error, /VAPID_KEYS/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 // Owner, 2026-11-03: the RailroadTracker relay moved from Render to the Worker.
 test('the Worker relays the latest board check to the app, with the key', async () => {
   const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
