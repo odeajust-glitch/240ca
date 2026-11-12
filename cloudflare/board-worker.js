@@ -1426,6 +1426,8 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
       subCursor = page.truncated ? page.cursor : undefined;
     } while (subCursor);
     for (const u of users) { const f = follows.get(u.id); if (f) u.follows = { phones: f.phones, turns: [...f.turns].sort(), people: f.people.size }; }
+    // My stats: whether each member's name code counts as theirs yet.
+    for (const u of users) if (u.status === 'approved') u.codeState = codeState(u);
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
     return json({ you, users, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env) });
   }
@@ -1451,6 +1453,12 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   } else if (action === 'role' && user.status === 'approved') {
     if (you !== 'owner') return json({ error: 'Only the owner changes who is an Admin.' }, 403);
     await saveUser(env, id, { ...user, role: b.role === 'admin' ? 'admin' : 'member' }, now);
+  } else if (action === 'code' && user.status === 'approved') {
+    // My stats: this name code is (or is no longer) this member's own.
+    if (you !== 'owner') return json({ error: 'Only the owner confirms a name code.' }, 403);
+    if (!user.code) return json({ error: 'They have no name code saved.' }, 409);
+    const { codeOk, codeNo, ...rest } = user;
+    await saveUser(env, id, b.ok === false ? { ...rest, codeNo: user.code } : { ...rest, codeOk: user.code }, now);
   } else if (action === 'remove' && user.status === 'approved') {
     if (you !== 'owner' && user.role === 'admin') return json({ error: 'Only the owner removes an Admin.' }, 403);
     await saveUser(env, id, { ...user, role: 'member', status: 'removed', removedAt: now, key: b64(crypto.getRandomValues(new Uint8Array(12))) }, now);
@@ -1507,7 +1515,7 @@ function cleanPostings(p, was) {
 }
 async function profileOf(env, who) {
   const rec = who.id === 'owner' ? await readJson(env, OWNER_PROFILE_KEY) : await userById(env, who.id, Date.now(), true);
-  return { code: (rec && rec.code) || '', postings: cleanPostings(null, rec && rec.postings) };
+  return { code: (rec && rec.code) || '', postings: cleanPostings(null, rec && rec.postings), statsCode: codeState(rec, who.id === 'owner') };
 }
 async function authProfile(request, env) {
   const who = await sessionOf(request, env, Date.now(), true);
@@ -1535,6 +1543,55 @@ async function authProfile(request, env) {
   return json({ ok: true, code: next.code || '', postings: cleanPostings(null, next.postings) });
 }
 
+// My stats (owner, 2026-11-11: each member's own statistics, "only available
+// to the person who owns the account. They can see theirs and no one
+// else's"). The laptop writes one record per person to
+// accounts/stats/<name-code hash>.json (lib/board/mystats.js); like the
+// rest of accounts/ it is never served as a file. GET /auth/stats hands a
+// signed-in, approved member the one for the name code saved on their own
+// account, and nothing takes a code or a hash from the request.
+// The code is the member's own to type (⚙ Settings), so it only counts
+// once it is known to be theirs: it matches the name they were approved
+// under (first two letters of the first name + first two of a later name),
+// or the owner confirmed it on the Members tab (codeOk holds the code that
+// was confirmed, so changing the code afterwards asks again). A code more
+// than one person has had (the same groups as lib/board/people.js
+// CODE_GROUPS) always needs the owner's OK. The owner's own devices use the
+// code in accounts/owner.json.
+const STATS_PREFIX = `${ACC}stats/`;
+const CODE_GROUPS = [['COBR', 'COBD'], ['BRWA', 'BRW1', 'BRW2'], ['JAMC', 'JAM1'], ['MADE', 'MAD1'], ['MARI', 'MAR1'], ['MARO', 'MAR2']];
+const lettersOf = (x) => String(x || '').toUpperCase().replace(/[^A-Z]/g, '');
+// The codes a name could make: "Pat Van Example" → PAVA, PAEX. "Last, First" is read too.
+function codesOfName(name) {
+  const m = /^([^,]+),\s*(.+)$/.exec(String(name || '').trim());
+  const words = (m ? `${m[2]} ${m[1]}` : String(name || '')).split(/\s+/).map(lettersOf).filter((w) => w.length >= 2);
+  return words.length < 2 ? [] : [...new Set(words.slice(1).map((w) => words[0].slice(0, 2) + w.slice(0, 2)))];
+}
+// 'none' (no code saved), 'ok', 'wait' (the owner has to confirm it) or 'no'
+// (the owner said this code is not theirs: codeNo, for two people whose
+// names make the same code).
+function codeState(rec, owner = false) {
+  const code = String((rec && rec.code) || '');
+  if (!code) return 'none';
+  if (owner) return 'ok';
+  if (rec.codeNo === code) return 'no';
+  if (rec.codeOk === code) return 'ok';
+  if (CODE_GROUPS.some((g) => g.includes(code))) return 'wait';
+  return codesOfName(rec.name).includes(code) ? 'ok' : 'wait';
+}
+async function myStats(request, env) {
+  if (request.method !== 'GET') return json({ error: 'GET only' }, 405);
+  let who = await sessionOf(request, env, Date.now(), true);
+  if (!who && keyMatches(request, env)) who = { id: 'owner', status: 'approved' };
+  if (!who || who.status !== 'approved') return json({ error: 'Sign in first.' }, 401);
+  const owner = who.id === 'owner';
+  const rec = owner ? await readJson(env, OWNER_PROFILE_KEY) : await readJson(env, userKey(who.id));
+  const state = codeState(rec, owner);
+  const code = (rec && rec.code) || '';
+  if (state !== 'ok') return json({ state, code });
+  return json({ state, code, stats: await readJson(env, `${STATS_PREFIX}${await personHashOf(code)}.json`) });
+}
+
 async function claimPhone(request, env) {
   const who = await sessionOf(request, env);
   if (!who || who.status !== 'approved' || who.id === 'owner') return json({ ok: true, matched: false });
@@ -1556,6 +1613,7 @@ async function accounts(request, env, url) {
   if (p === '/health/accounts') return accountsAdmin(request, env, url);
   if (p === '/api/crewkey') return crewKey(request, env);
   if (p === '/push/claim') return request.method === 'POST' ? claimPhone(request, env) : json({ error: 'POST only' }, 405);
+  if (p === '/auth/stats') return myStats(request, env);
   if (p === '/auth/me') {
     const s = await sessionOf(request, env, Date.now(), true);
     // Last seen, for the Members tab (owner, 2026-11-10: "add last seen to

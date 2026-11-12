@@ -2060,7 +2060,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeMine" type="button" aria-pressed="false" hidden>My stats</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -2215,6 +2215,7 @@
 <script src="board-trains.js"></script>
 <script src="board-analytics.js"></script>
 <script src="board-week.js"></script>
+<script src="board-mystats.js"></script>
 <script src="board-ref.js"></script>
 <script src="board-ask.js"></script>
 <script src="board-names.js"></script>
@@ -5248,6 +5249,7 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
+      paintMine();
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
@@ -5324,6 +5326,39 @@ source().then(async (src) => {
   // approved members. An access button (Member, Admin) then a button to
   // remove access"). The Worker's /health/accounts (docs ACCOUNTS.md); an
   // Admin (a member the owner picked) sees it too, without the access choice.
+  // My stats (owner, 2026-11-11: "very detailed statistics, trends … only
+  // available to the person who owns the account. They can see theirs and no
+  // one else's"). The Worker's /auth/stats answers with the record for the
+  // name code on this member's own account and takes nothing from the page,
+  // so there is no box to type another code into. Numbers and drawing:
+  // board-mystats.js. MINE_ALL false = the test site only, until the owner
+  // says to show it to every member.
+  const MINE_ALL = false;
+  let mineReady = false;
+  let mineRange = 'all';
+  function paintMine() { const b = document.getElementById('modeMine'); if (b) b.hidden = !(mineReady && (MINE_ALL || PREVIEW)); }
+  async function renderMine() {
+    const view = document.getElementById('view');
+    try { history.replaceState(null, '', '#mystats'); } catch (e) { /* not allowed in some frames */ }
+    if (!document.getElementById('mscss')) { const st = document.createElement('style'); st.id = 'mscss'; st.textContent = BoardMyStats.CSS; document.head.appendChild(st); }
+    if (!view.querySelector('.ms')) view.innerHTML = '<p class="empty">Loading your stats…</p>';
+    let d = null;
+    let status = 0;
+    try { const r = await fetch('auth/stats', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
+    if (mode !== 'mine') return;
+    const say = (text) => { view.innerHTML = `<div class="ms"><header class="ms-head"><div><h2>My stats</h2><p class="ms-note">Only you can open this page.</p></div></header><p class="ms-empty">${text}</p></div>`; };
+    if (status === 401) return say('Sign in to see your own stats. <a href="account">Sign in</a>');
+    if (!d || !d.state) return say(status === 405 || status === 404 ? 'My stats isn’t switched on for this site yet.' : 'Couldn’t load your stats. Check the connection and open the tab again.');
+    if (d.state === 'none') return say('Your stats are found by your name code. Save it in ⚙ Settings → Profile: the first two letters of your first name and the first two of your last name.');
+    if (d.state === 'wait') return say(`Your name code <b>${esc(d.code)}</b> is waiting to be confirmed as yours, because it doesn’t match the name on your account or more than one person has had it. Nothing more to do: your stats show here once it’s confirmed.`);
+    if (d.state === 'no') return say(`The name code <b>${esc(d.code)}</b> isn’t confirmed as yours. If yours is different, change it in ⚙ Settings → Profile.`);
+    if (!d.stats) return say(`Nothing is kept for <b>${esc(d.code)}</b> yet. Your stats build up from the board checks once your name is seen on a board.`);
+    const draw = () => {
+      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code });
+      BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); });
+    };
+    draw();
+  }
   async function renderMembers(said) {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#members'); } catch (e) { /* not allowed in some frames */ }
@@ -5361,8 +5396,12 @@ source().then(async (src) => {
       const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
       return days <= 0 ? `Today ${time}` : days === 1 ? `Yesterday ${time}` : `${day(ms)} (${days} days ago)`;
     };
-    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)]],
-      (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
+    // My stats (owner, 2026-11-11): a member only sees their own once their name code is known to be theirs.
+    // It counts by itself when it matches their name; otherwise the owner says so here.
+    const codeFact = (u) => (u.codeState === undefined ? [] : [['Name code', !u.code ? 'None saved' : u.codeState === 'wait' ? `${u.code} · does not match their name, or is a shared code: My stats waits for your OK` : u.codeState === 'no' ? `${u.code} · marked not theirs (no My stats)` : `${u.code} · theirs (My stats on)`]]);
+    const codeBtns = (u) => (!owner || !u.code || (u.codeState !== 'wait' && u.codeState !== 'no') ? '' : `<button type="button" data-act="codeok">${esc(u.code)} is theirs</button>${u.codeState === 'wait' ? '<button type="button" data-act="codeno">Not theirs</button>' : ''}`);
+    const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)], ...codeFact(u)],
+      codeBtns(u) + (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
       + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''));
     view.innerHTML = `<div class="healthpage members">${head}
       <p class="muted">The site is ${d.lock ? '<b>locked</b>: only approved members get in' : 'open to everyone (not locked yet)'}. Emails sent today: ${esc(d.mailToday)} of ${esc(d.mailMax)}${d.mailReady ? '' : ' · <b>the email sender is not set up</b>'}.</p>
@@ -5391,7 +5430,7 @@ source().then(async (src) => {
           : out.mail ? { bad: true, text: `Done, but the email to ${name} did not go (${out.mail === 'cap' ? 'today’s email allowance is used up' : out.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed'}). Let them know yourself.` }
             : { text: action === 'role' ? `${name} is now ${extra.role === 'admin' ? 'an Admin' : 'a Member'}.` : 'Done.' });
     };
-    view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => send(b.parentElement, b.dataset.act); });
+    view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => (/^code(ok|no)$/.test(b.dataset.act) ? send(b.parentElement, 'code', { ok: b.dataset.act === 'codeok' }) : send(b.parentElement, b.dataset.act)); });
     view.querySelectorAll('.members [data-role]').forEach((sel) => { sel.onchange = () => send(sel.closest('.mact'), 'role', { role: sel.value }); });
   }
   async function renderNotes() {
@@ -6645,6 +6684,7 @@ source().then(async (src) => {
   const modeReview = document.getElementById('modeReview');
   const modeNotes = document.getElementById('modeNotes');
   const modeMembers = document.getElementById('modeMembers');
+  const modeMine = document.getElementById('modeMine');
   const modeRef = document.getElementById('modeRef');
   const modeAsk = document.getElementById('modeAsk');
   // Agreements tab (owner, 2026-11-03): the agreement search, in this page (board-ask.js).
@@ -6743,6 +6783,7 @@ source().then(async (src) => {
         msg.textContent = POST_ME.code ? `Saved: ${POST_ME.code}.` : 'Removed. Job posting alerts need a name code.';
         input.value = POST_ME.code || '';
         if (mode === 'postings') renderPostings();
+        if (mode === 'mine') renderMine();
       } catch (e) { msg.textContent = `Not saved: ${e.message}`; }
     };
   }
@@ -7004,7 +7045,7 @@ source().then(async (src) => {
   function setMode(m) {
     if (mode === 'current') flushCurrentBoxes();
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
-    document.body.classList.toggle('orders', mode === 'test' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask' || mode === 'postings');
+    document.body.classList.toggle('orders', mode === 'test' || mode === 'mine' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask' || mode === 'postings');
     document.body.classList.toggle('current', mode === 'current');
     document.body.classList.add('nav-one-row'); // on a phone the tabs wrap into full rows (owner, 2026-11-10; the class keeps its first name)
     document.body.classList.toggle('turns', mode === 'turns');
@@ -7018,6 +7059,7 @@ source().then(async (src) => {
     modeReview.setAttribute('aria-pressed', mode === 'review');
     modeNotes.setAttribute('aria-pressed', mode === 'notes');
     modeMembers.setAttribute('aria-pressed', mode === 'members');
+    modeMine.setAttribute('aria-pressed', mode === 'mine');
     modeRef.setAttribute('aria-pressed', mode === 'ref');
     modePost.setAttribute('aria-pressed', mode === 'postings');
     paintNewPostings();
@@ -7026,6 +7068,7 @@ source().then(async (src) => {
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
     if (!ANA2) document.getElementById('view').classList.remove('ana2');
     if (mode === 'members') renderMembers();
+    else if (mode === 'mine') renderMine();
     else if (mode === 'orders') renderOrders();
     else if (mode === 'health') renderHealth();
     else if (mode === 'review') renderReview();
@@ -7703,6 +7746,7 @@ source().then(async (src) => {
   modeReview.onclick = () => setMode('review');
   modeNotes.onclick = () => setMode('notes');
   modeMembers.onclick = () => setMode('members');
+  modeMine.onclick = () => setMode('mine');
   // A member the owner made an Admin sees the Members tab too.
   // and Profile in ⚙ Settings (owner, 2026-11-09: "a profile button … in the
   // settings button"): who is signed in on this device, and Sign out. Stays
@@ -7710,6 +7754,8 @@ source().then(async (src) => {
   fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me || !me.ready) return;
     if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
+    // My stats: a signed-in member, on a site whose Worker has it.
+    mineReady = !!me.signedIn && me.statsCode !== undefined; paintMine();
     // This phone's alerts, matched to the signed-in member (owner,
     // 2026-11-10; a week's grace before unmatched phones stop getting
     // alerts). Only reads the alerts the phone already has and tells the
@@ -7782,12 +7828,13 @@ source().then(async (src) => {
   if (wantPost) POST_FOCUS = wantPost[2] || '';
   const wantAsk = location.hash === '#agreements';
   const wantNotes = location.hash === '#notifications';
+  const wantMine = location.hash === '#mystats';
   const wantTest = location.hash === '#test';
   pendingGo = goFromHash();
   const wantTurns = location.hash === '#turns' || (shared && shared[1] === 'turn');
   const m = /^(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(location.hash.slice(1));
   if (m && src.days.includes(m[1])) { setMode('snap'); openDay(m[1], `${m[1]} ${m[2]}`); }
-  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk && !wantNotes && !wantPost) setMode('current'); }
+  else { await openDay(src.days[0]); if (!wantOrders && !wantHeld && !wantTurns && !wantAna && !wantRef && !wantAsk && !wantNotes && !wantPost && !wantMine) setMode('current'); }
   if (wantOrders) setMode(true);
   else if (wantHeld) setMode('held');
   else if (wantTurns) setMode('turns');
@@ -7796,6 +7843,7 @@ source().then(async (src) => {
   else if (wantPost) setMode('postings');
   else if (wantAsk) setMode('ask');
   else if (wantNotes) setMode('notes');
+  else if (wantMine) setMode('mine');
   else if (wantTest) setMode('analytics'); // the Test tab is gone (owner, 2026-11-10); an old link to it lands on Analytics
 
   // A newer board published while this page is open (live site only). On
