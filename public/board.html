@@ -2026,6 +2026,23 @@
     --amber: #ffb852; --amber-tint: #3a2608; --go: #a6f24a; --go-tint: #1f4a2a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #16305f; --poolA: #7fd4ff; --poolB: #e0a8ff; --poolSR: #a6f24a;
     --display: ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --body: ui-rounded, 'Arial Rounded MT Bold', 'Varela Round', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #0a1a3c;
     --k-title: #a6f24a; --k-glow: 0 0 12px rgba(166, 242, 74, 0.7); --k-hcase: none; --k-h1: 27px; --k-edge: 2px solid #a6f24a; --k-r: 16px; --k-rb: 999px; --k-shadow: 0 0 14px rgba(166, 242, 74, 0.3); --k-head-ink: #a6f24a; --k-head-edge: 2px dashed #2f4f8a; --k-big: #a6f24a; --k-tab-edge: 2px solid #2f4f8a; --k-pick-bg: #a6f24a; --k-pick-ink: #0a1a3c; --k-bar-bg: #1f4a3a; --k-bar-ink: #a6f24a; --k-top-edge: 2px dashed #a6f24a; }
+  /* EA Sports (owner, 2026-11-11): a broadcast scoreboard: black and silver,
+     red accent, slanted condensed capitals. */
+  :root[data-theme="k-easports"] { --bg: #08090b; --sheet: #15171b; --ink: #f5f6f8; --soft: #a7adb6; --rule: #3a3f47; --rule-soft: #23262b; --accent: #ff3b30; --accent-ink: #ffffff; --accent-tint: #3a1210;
+    --amber: #ffb852; --amber-tint: #3a2608; --go: #5dff8a; --go-tint: #0c3a1a; --stop: #ff5a4f; --stop-tint: #3d100c; --plan-tint: #1d2026; --poolA: #8ab8ff; --poolB: #d8b0f0; --poolSR: #ff6a60;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: dark; --k-meta: #08090b;
+    --k-title: #ffffff; --k-hstyle: italic; --k-track: 0.06em; --k-edge: 1px solid #3a3f47; --k-r: 2px; --k-rb: 2px; --k-head-bg: #c9cdd3; --k-head-img: linear-gradient(180deg, #eceef1, #aeb3bb); --k-head-ink: #08090b; --k-head-ink2: #3a3f47; --k-head-edge: 3px solid #ff3b30; --k-big: #ffffff; --k-tab-edge: 1px solid #3a3f47; --k-pick-bg: #ff3b30; --k-pick-ink: #ffffff; --k-tcase: uppercase; --k-bar-bg: #ff3b30; --k-bar-ink: #ffffff; --k-top-edge: 3px solid #ff3b30; }
+  /* Blades of Steel (owner, 2026-11-11): the rink of an 8-bit hockey game:
+     ice white, navy, a red line and a blue line, blocky lettering. */
+  :root[data-theme="k-blades"] { --bg: #dcecf8; --sheet: #f7fbff; --ink: #0b1c4a; --soft: #3d5488; --rule: #7fa6d6; --rule-soft: #c9ddf0; --accent: #c8102e; --accent-ink: #ffffff; --accent-tint: #f8d5da;
+    --amber: #8a4a00; --amber-tint: #f6e2b8; --go: #1f7a34; --go-tint: #d5f0da; --stop: #c21f1f; --stop-tint: #fbd9d9; --plan-tint: #e3eef9; --poolA: #1746c8; --poolB: #6a3f8a; --poolSR: #c8102e;
+    --display: 'Press Start 2P', 'Courier New', monospace; --body: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; color-scheme: light; --k-meta: #0b1c4a;
+    --k-title: #0b1c4a; --k-h1: 17px; --k-track: 0; --k-edge: 2px solid #0b1c4a; --k-r: 0; --k-rb: 0; --k-head-bg: #0b1c4a; --k-head-ink: #ffffff; --k-head-edge: 4px solid #c8102e; --k-tab-bg: #f7fbff; --k-tab-edge: 2px solid #1746c8; --k-pick-bg: #1746c8; --k-pick-ink: #ffffff; --k-bar-bg: #0b1c4a; --k-bar-ink: #ffffff; --k-top-edge: 0; }
+  :root[data-theme="k-blades"] .top { padding-bottom: 26px; background: linear-gradient(#1746c8 0, #1746c8 4px, transparent 4px, transparent 8px, #c8102e 8px, #c8102e 12px) left bottom / 100% 12px no-repeat; }
+  :root[data-theme="k-blades"] .head .when { font-size: 16px; line-height: 1.6; }
+  :root[data-theme="k-blades"] details.cur2 .l2 .likely { color: #5a2fb0; }
+  :root[data-theme="k-blades"] details.cur2 .l2 .likely.tight { color: var(--go); }
+  :root[data-theme="k-blades"] .sheet > header h2, :root[data-theme="k-blades"] .test-current-box > summary h2 { font-size: 12px; line-height: 1.5; }
   /* iPhone (owner, 2026-11-10): the look of an iPhone's own apps (Settings,
      Stocks): Apple's system font and colours, white rounded cards on a grey
      page (black in the dark), the views as a segmented control, blue for
@@ -2131,7 +2148,7 @@
       <button type="button" class="sty" data-theme="k-px-apple2"><span class="sw" style="background:#000000;color:#33ff33;border-color:#21c421;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Apple II</button>
       <button type="button" class="sty" data-theme="k-typewriter"><span class="sw" style="background:#f1ecdc;color:#1c1c1c;border-color:#8a8272;font-family:'Courier New', 'Courier Prime', Courier, monospace;font-size:12px">Aa</span>Typewriter</button>
       </details>
-      <details class="stygrp"><summary>Games <span>19</span></summary>
+      <details class="stygrp"><summary>Games <span>21</span></summary>
       <button type="button" class="sty" data-theme="gameboy"><span class="sw" style="background:#9bbc0f;color:#0f380f;border-color:#0f380f;font-family:'Press Start 2P',monospace;font-size:8px">Aa</span>Game Boy</button>
       <button type="button" class="sty" data-theme="mario"><span class="sw" style="background:#5c94fc;color:#ffffff;border-color:#000;font-family:'Press Start 2P',monospace;font-size:8px">1UP</span>Super Mario</button>
       <button type="button" class="sty" data-theme="pokemon"><span class="sw" style="background:#dc0a2d;color:#ffde00;border-color:#1b1b1b;font-family:'Press Start 2P',monospace;font-size:8px">Lv5</span>Pokémon</button>
@@ -2151,6 +2168,8 @@
       <button type="button" class="sty" data-theme="k-fortnite"><span class="sw" style="background:#2a1a8a;color:#fff03c;border-color:#5a48c8;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Fortnite</button>
       <button type="button" class="sty" data-theme="k-gta"><span class="sw" style="background:#000000;color:#ff4fd8;border-color:#3a3a3a;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>GTA</button>
       <button type="button" class="sty" data-theme="k-cyberpunk"><span class="sw" style="background:#fcee0a;color:#000000;border-color:#000000;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px">Aa</span>Cyberpunk</button>
+      <button type="button" class="sty" data-theme="k-easports"><span class="sw" style="background:#08090b;color:#ffffff;border-color:#ff3b30;font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:12px;font-style:italic">Aa</span>EA Sports</button>
+      <button type="button" class="sty" data-theme="k-blades"><span class="sw" style="background:#f7fbff;color:#0b1c4a;border-color:#c8102e;font-family:'Press Start 2P', 'Courier New', monospace;font-size:8px">Aa</span>Blades of Steel</button>
       </details>
       <details class="stygrp"><summary>Films and shows <span>20</span></summary>
       <button type="button" class="sty" data-theme="starwars"><span class="sw" style="background:#000;color:#ffe81f;border-color:#4bd5ee">Aa</span>Star Wars</button>

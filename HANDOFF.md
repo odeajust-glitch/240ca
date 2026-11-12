@@ -115,6 +115,13 @@ drops out of the record (the publish never deletes under `accounts/`).
 **❓ For Justin:** the pull above; a notice to members about the new tab (not sent); whether Admins should be able to confirm a code; whether the person search in Turn
 History should be narrowed now that this page exists.
 
+## Two page styles added — November 11, 2026, 23:55 Toronto
+
+Owner: "Can you add an EA Sports and Blades of Steel". Both are in ⚙ Settings → Page style → Games
+(now 21): `k-easports` (black and silver scoreboard, red accent) and `k-blades` (ice white, navy,
+red and blue lines, blocky lettering). CSS only, beside the other `k-` styles in public/board.html;
+colours and lettering only, no logos. Checked at phone width on the test site.
+
 ## Add to Home Screen — built November 11, 2026, 23:40 Toronto (not gated; live on both sites once the laptop pulls)
 
 Owner asked for an install feature. The manifest, icons, head tags and a push-only service
