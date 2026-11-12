@@ -1,5 +1,18 @@
 # HANDOFF — read this before doing anything
 
+## Sign-up page wording — November 11, 2026, 21:00 Toronto. WAITING ON A WORKER PASTE (both Workers)
+
+Owner: "Can you make the instructions at the sign up site clearer. A lot of people are not
+understanding they need to verify with a code from their email." In the Worker's
+`ACCOUNT_PAGE` only (no logic changed): the sign-up form opens with the three steps (form,
+**the 6-digit code from the email**, approval); its button reads "Next: email me my code";
+the code screen is headed "Step 2 of 3: enter the code from your email", says "You are not
+signed up yet", names the address the code went to, and its button reads "Confirm my
+email", with what to do if no email comes; the waiting screen is "Step 3 of 3". Sign-in's
+code screen is unchanged apart from the box label. Suite 396 of 396; both screens looked at
+in a browser at phone width against a stand-in. **The copy page is rebuilt for this commit
+(version on the page); Justin pastes it into both Workers.** Not seen on the real site.
+
 ## My stats — ON FOR EVERY MEMBER in the code, November 11, 2026, 20:20 Toronto. WAITING ON ONE LAPTOP PULL
 
 **Owner (after asking what a name code's history could show him): "Very detailed statistics,
