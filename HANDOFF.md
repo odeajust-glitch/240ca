@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven picks LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto; his say on each still to come. Round 2 (Page Health): five picks BUILT 12 Nov 11:40, WAITING ON ONE LAPTOP PULL + RESTART (it changes the checker's report). Nothing is on the main site
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Rounds 1 (Current) and 2 (Page Health): his picks are ON FOR EVERY MEMBER, BOTH SITES, in the code since 12 Nov 13:45 Toronto at his word (`6403bde`), WAITING ON ONE LAPTOP PULL (page only). The counts line is off Current at his word. The purple pieces stay on the test site. Next: Members (round 3), on his word
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -146,6 +146,9 @@ Nothing was pressed that saves: no alert, no Track OK, no Settings Save.
 go and I'll do those." Not picked: 4 (waits on the yard screen, below), 8 (the first screen: his taste, not
 asked again), 9 (crew order: "doesn't really matter"). **Turned down:** nothing in so many words.
 
+*(Since 12 Nov 13:45 these are on for every member and item 6's counts line is taken out: see "His say on
+rounds 1 and 2" further down. What follows is how it stood while it was on the test site only.)*
+
 **BUILT, 12 Nov 08:55 to 09:25 Toronto. All of it is in `public/board.html` behind `PREVIEW` (board-test
 with the owner key): no laptop code (`lib/`, `scripts/`), no Worker change, no paste. A member on either
 site sees the page exactly as before.** New test file `test/board/current-review.test.js` (10). Suite
@@ -262,7 +265,7 @@ session ("Turn history work schedule insights", branch `ccr-83c63a33-26zny2`) pu
 08:31 and was idle after it. This session's own branch is `ccr-bc91e48e-oqfmn2`, kept level with the
 laptop's.
 
-### Round 2: Page Health — reviewed 12 Nov 2026, 10:35 to 11:05 Toronto. NOTHING BUILT; waiting for his picks
+### Round 2: Page Health — reviewed 12 Nov 2026, 10:35 to 11:05 Toronto. Items 1 to 5 built 11:40; on both sites since 13:45 ("His say on rounds 1 and 2", below)
 
 **Owner, 12 Nov about 10:35: "Start page health"** (before giving his say on round 1's pieces, which stay
 on the test site as they are). Looked at as the owner on the test site and the main site (the page is the
@@ -320,6 +323,8 @@ and 5", in the message that also carried the one question (when a failed alert n
 failed for a reason other than the phone having unsubscribed, and it didn't go through on the next try"),
 so that rule is taken as agreed. Not picked: 6 (members seen today) and 7 (folding the quiet rows).
 
+*(Since 12 Nov 13:45 the page half is on both sites: "His say on rounds 1 and 2", below.)*
+
 **BUILT, 12 Nov 11:15 to 11:40 Toronto. Two halves; suite 481 of 481 (9 new in
 `test/board/health-review.test.js`). No Worker change, no paste.**
 - **The laptop (it needs the pull + restart; nothing a member sees):** `lib/board/health.js`: `behindOf`
@@ -370,6 +375,115 @@ likely to be called" note in the row's Why are gone. **The two-week test still s
 (Analytics → Likely-call test, to 24 Nov: the laptop builds it from the saved checks). Left on, and
 asked him about: the purple "usually +1.3 h" chip and "How this train has gone" (the habit, not the
 prediction). His screenshot showed round 1's Why and the "~" call working on his phone.
+
+**WHERE EACH TAB STANDS (the running list; keep it current).**
+
+| Tab | Found | He picked | Now | Not picked / turned down |
+|---|---|---|---|---|
+| 1 Current | 10 | 1, 2, 3, 5, 6, 7, 10 ("Go") | 1, 2, 3, 5, 7, 10 on for every member (`6403bde`, after his pull) | **6 turned down after seeing it: the counts line is taken out** ("it does but take it out"). 4 waits on his "crew info" photo (Housekeeping 11). 8 (first screen) his taste, not asked again. 9 (crew order) "doesn't really matter" |
+| 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
+| 3 Members | — | — | next, on his word | — |
+| 4 to 15 | — | — | not started (order at the top of this section) | — |
+
+Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
+"not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
+
+### His say on rounds 1 and 2 — 12 Nov about 11:55 Toronto: on to the main site
+
+**His words, in full**, in reply to the list of what to check on the test page (Current: 1 the counts line says
+"Spare conductors free"; 2 his card shows "Home from Garnet on L50131 12 …, call ~1915"; 3 B139's or B106's card
+names its job; 4 the note under the line-up; 5 tap a train, the reason comes first; 6 Jobs going spare is short
+rows; 7 SA08 under "Listed, but working"; 8 a fill-in line names the person once. Page Health: five more):
+"The counts line near the top says "Spare conductors free". it does but take it out Your card under Find a
+turn shows "Home from Garnet on L50131 12 …, call ~1915". yes 5 yes 6 yes . You can push all this to the main
+except the purple predictive stuff which i believe you removed".
+
+**How it was read (told to him in the same reply, before his pull, so he can say otherwise):**
+- **"take it out" = the whole counts line comes off Current** ("N trains · N ordered · Conductors free 21 / 28 ·
+  Engineers free 0 / 3"), not only the word "Spare". The train count is still in the line-up's heading. If he
+  meant only the word: put the line back with `strip2` from `290d077` and "Conductors free".
+- **"all this" = everything in that message: round 1's pieces and round 2's Page Health pieces.**
+- **"the purple predictive stuff"** stays where it was: the likely-call line off everywhere
+  (`TRAIN_LIKELY = false`), the "usually +1.3 h" tag, "How this train has gone" and the spareboard odds on
+  the test site only. None of it went to the main site.
+
+**What changed, `6403bde` (page and tests only: no laptop code, no Worker, no paste).**
+- **Current, every member, both sites.** The `PREVIEW` tests are gone from the review's pieces. A box that
+  Snapshots' older layout also draws takes a **`reviewed` argument** (`pools` → `poolBody`, `vacancies`,
+  `daysOff`, `onDuty`); only the short-row layout passes it (`sectionsGrid`'s `NEW` map), so **a member's
+  Snapshots is the same to the letter as before** (its own round, 12 in the order; on the test site Snapshots
+  draws like Current, an earlier preview that is still his to decide, so it has the pieces there).
+  `lineupWhy`'s fourth argument is now `fresh` (the short-row line-up: "call ~", no "No matching spare-job
+  cover…" line; the row itself puts `whySaid` first). `lineup2`, `garnet2`, `s5CrewWhy`, `whySaid`,
+  `statusShown` no longer ask which site. The card under Find a turn (`cardLines`) is for every member on
+  every tab. The Days off and Yard phone-width rules are under `body.current` (and `body.preview-site`).
+- **The counts line:** `strip2` is deleted and Current draws nothing in its place; Snapshots' older layout
+  keeps its own (`strip`, "Conductors available (spareboard)"). The `.cur2-strip` styles are left in the page.
+- **Page Health and Search Review, both sites:** the `PREVIEW` tests are gone from `healthRows`, `codeRows`,
+  `healthVerdict`, `renderHealth`, `paintHeldSettings`, `ownAddress`; the old verdict and the "Alerts sent"
+  box are deleted. Opening by address needs the health report (only his key gets one); a member with
+  `#pagehealth` in the address stays on Current.
+- **Tests:** `current-review.test.js` (now 11) and `health-review.test.js` (9) pin the pieces as on for
+  everyone, the older layout as it was, and the purple pieces as still gated. Suite **482 of 482**. Each
+  piece broken on purpose 27 ways (gated again, the older layout changed, the counts line back, the purple
+  ungated): a test fails every time.
+
+**Checked in a browser before the push (this branch's page over the live sites' data, in the browser only;
+`boardNoCount` set; nothing saved; every non-GET stopped), on the 1200 and 1313 checks of 12 Nov:**
+- **A member on the main site, Current = what he looked at on the test site, to the letter**, once the counts
+  line and the purple tag are taken off what he saw. The card under Find a turn the same. A member on the
+  test site the same as on the main site.
+- **A member's Snapshots: the same to the letter, old page and new, on both sites.**
+- **His own view on the test site:** Current and Snapshots the same as published less the counts line; the
+  purple tag still there (only he sees it).
+- **Page Health on the main site with the new page = the test site's as published, to the letter** (the
+  owner-only answers held steady for both looks); Search Review the same. `#pagehealth` and `#searchreview`
+  open cold on the main site as him; as a member they land on Current with no owner tab.
+- Read back as a member on the main site at 390 px: no counts line, no purple, 9 reason sentences for 9
+  trains, "call ~", the new note, Jobs going spare 9 rows and no table, Days off "1 active · 4 upcoming · 1
+  not taken" with SA08 under "Listed, but working", fill-in lines naming one person, the cards of SA08, SR03,
+  B139, B106, S501-CO and YEBS30. First train row at 735 px on a 390 × 844 phone, from 811. 360, 820 and
+  1280 px, light and dark: no sideways scroll, no table wider than its box, no page errors. Every tab opened
+  as a member: its own heading, no errors.
+- **Not checked:** a real phone or a real member's account; an iPhone; page styles other than light and dark.
+  At 340 px the pool boards and the Calling sequence sit 17 to 18 px off the edge, old page and new alike
+  (the old page's Jobs going spare, Days off and Yard did too, 51 to 95 px: those now fit).
+
+**What he must do: one laptop pull.** `public/board.html` is copied to the site on every check
+(`buildSite`), so the page changes at the first check after `git pull`, restart or not. Told him to do the
+usual pull **and** restart all the same: without the restart Page Health says "Restart needed … Ctrl+C and
+start it again" (the folder's code is newer than the running code), which is not so for a page-only pull.
+**Found, not changed:** that line is the same kind of false alarm as the notes-only GitHub line was; telling
+them apart is a laptop change (which of the pulled updates touch `lib/` or `scripts/`).
+
+**Page Health seen live on the test site after his pull and restart (12 Nov 11:50, laptop on `290d077`,
+running since the 11:46 check).** Opened cold at `#pagehealth`. "1 thing needs you: 1 sign-up is waiting for
+your approval, since Nov 12, 08:40: Members tab." with the button (by 13:15 it read "All good": approved).
+Alerts today "108 sent, 1 failed: 1 with no reason kept", not marked (the 02:55 one, from before the reason
+was kept). GitHub "Not checked yet", then `behind 0, behindCode 0` from 11:55: **the second git question
+answers on the Windows laptop** (the old ❓). The rep-email form, the old CATS pages and Visitors' zero days
+folded; 2,973 px from 3,944. The main site at the same minute still read the old way ("1 thing needs you:
+Alerts today: 108 sent, 1 failed (last failed 02:55 …)"), and members on both sites had none of the Current
+pieces. **Still not seen:** a notes-only update waiting (this push is the first chance: after it the row
+should read "N newer updates waiting, notes only" only if nothing but notes waits), and a failed send
+written by the new code.
+
+**The purple "usually +1.3 h" tag: his question, 12 Nov 11:45, "What does the tag tell exactly, is it +1,3 h
+from the time shwoing or just in general". NOTHING BUILT.** In general: it is that train number's habit,
+`drift` in `lib/board/patterns.js`: over its runs in the last four weeks (8 or more), the middle figure of
+**on duty minus the first time the line-up showed for it** (`onDuty − firstPlan`). It is not worked from the
+time showing now. Three things found while answering, put to him:
+1. **It does not know the train has already moved.** At 11:46 that day: M38261 12 first showed 1500 and was
+   showing 1427, tag "usually +1.3 h" (the habit points to on duty about 1615, not 1427 + 1.3 h; by 13:13
+   the line-up had it at 1622). E27861 12 first showed 1310 and was showing 1910, already six hours later,
+   and still carried "usually +5.3 h". Only a train that has not moved (L50231 13 at 0400, Z14891 12 at 0545)
+   reads right against the time showing.
+2. **It is 15 minutes short against the big time.** The figure runs to on duty, which is 15 minutes before
+   the line-up time, so a train that goes dead on its first plan scores −15 (A424's middle figure) and M382's
+   75 minutes is 1 h 30 on the line-up's own clock.
+3. **"1.3 h" is 1 h 15 m written as a decimal**, and reads like 1 h 30.
+Offered him: take the tag off with the rest of the purple; or have it give a time on the line-up's clock
+("usually goes ~1630": first plan plus the habit) and drop it once the train has moved that far; or leave it.
 
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
 
