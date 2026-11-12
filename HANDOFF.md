@@ -87,6 +87,17 @@ drops out of the record (the publish never deletes under `accounts/`).
 **❓ For Justin:** the pull above; a notice to members about the new tab (not sent); whether Admins should be able to confirm a code; whether the person search in Turn
 History should be narrowed now that this page exists.
 
+## Split name codes review — done November 11, 2026, 21:35 Toronto (waiting on Justin)
+
+Booked review ran against live `data/people.json` (laptop on `def1438`). Clean: COBD, BRWA,
+BRW1, BRW2, JAM1, MAD1, MAR1, MAR2. Asked Justin about five things, build nothing until he
+answers (needs rules by turn **with a date range**; `retie` is turn-only):
+1. COBR owns SR01 and SB03 at once 24–25 Oct (one is COBD's).
+2. MADE owns YPRS30 / YINS30 on 3–4 Nov while also owning B111; plus YPRS60, YINS60, YMPS60 shifts 24–28 Oct (MAD1's?).
+3. MARO on S502 and YSTY01 at the same time 1 Nov; YSBY04 shifts 24–25 Oct (MAR2's?).
+4. MARI on YBHS01 24 and 25 Oct while owning S306 (MAR1's?).
+5. JAMC on YBHS01 and YFXS03 at the same time 25 Oct; many YPRS60 / YFLS60 nights (JAM1's or his own spare work?).
+
 ## Current handoff — November 11, 2026, 19:40 Toronto (end of a long session)
 
 **Where things stand.** Branch `claude/vigilant-planck-zawrj4` at `c2d4134` plus this note; the
