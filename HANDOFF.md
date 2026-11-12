@@ -1,128 +1,142 @@
 # HANDOFF — read this before doing anything
 
-## Call stability: the plain call card — built November 12, 2026, 05:40 Toronto, as a TEST-SITE PREVIEW ONLY. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste), then Justin's look and one pick
+## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, 07:00 Toronto, at his word. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). One pick of his still open
 
-**Owner, after the findings and "What do you recommend for D": "Go with your recommendations build
-and push everything to the test site".** Standing rules for this job, his words: "It goes to the
-test site first as a preview. Nothing on the main site until I say so." "Don't change how the
-numbers are worked out ... unless you show me a real call where it gives a wrong or misleading
-answer and I say yes." "A person should be able to tell at a glance: when they expected to be
-called, when they were called, how much it moved, how much warning they got, and why it moved if
-the board shows why. Plain words, no jargon." His three "what bothers me" lines came through as
-"..." in the prompt: **still not known, ask.**
+**Owner, 12 Nov, after the card had been on the test site as a preview for an hour (the laptop had
+already pulled it): "Push these changes to the main. Update the handoff and any house keeping
+items".** "The main" is the main site, as with My stats ("push it to the main page"); the git
+branch named `main` is from 17 October and was not touched.
 
-**Where it is.** Commit `bbff903`, pushed 05:50 to `claude/vigilant-planck-zawrj4` (the branch the
-laptop pulls; a plain fast-forward from `3655ea7`) and to this session's `ccr-83c63a33-26zny2`.
-Neither site has it until the laptop pulls and restarts.
+**What changed for that.** One switch in `public/board.html`, in the manner of `MINE_ALL` /
+`MINE_MORE`: **`const CALL_CARD = true;`** with `callCardOn() = CALL_CARD || PREVIEW`, which now
+stands where the preview test stood in every call-card branch. `true` = every member on both
+sites; `false` = exactly the state before (the card for the owner on the test site only, the old
+graph everywhere else): one word's way back. A test (`call-card-page.test.js`, the first one) holds
+the switch and quotes him: turning it off is his to say. Nothing else moved: the card, its words
+and its counts are as he saw them on the test site.
 
-**What a person sees on the test site (owner key on that device), and nowhere else.** Every place a
-call was drawn now shows one card (`BoardAnalytics.renderCallCard`): a headline, a four-line block
-(**Expected / Called / Warning / Why**), a small picture with its words on it (Lined up, Expected,
-Called; no key), and two fold-outs ("Every change the board showed (n)", "i · How this is worked
-out"). Places: Analytics → Call stability (the rows, the Sarnia / Mac yard cards, "Calls by how far
-off", By turn, How to read), a turn or name-code search, My week, Turn History (each trip's line,
-the sum, the opened trip), Order summary's "The crew's call". What he picked, as built:
-- **A** the card everywhere. **B** under 8 hours' warning is always the headline ("Called with 48 min
-  warning"), on-time and late calls too. **C** the Warning line ends with what the board was saying
-  ("the board still showed 11th 1655 when the call came" / "the time last changed 10 min before the
-  call"). **E** within 30 minutes reads "Called when expected". **F** "Taken off before the call",
-  the reason first; on a line-up under 30 minutes and taken off again folds away under the list
-  ("29 short waits not listed"). **G** no label sits on another (a second row takes it), the amount
-  is written in its band only when it fits, the 43 "Called for DHT130B 09 ... not the DHT130B" lines
-  are read as the same job, nothing is drawn as waiting before the turn was on the board, By turn is
-  one plain line a turn with a bar, How to read is one made-up call behind an "i".
-- **D = (b)**: "Expected" is the eight-hour figure the site already keeps (`z.expected` at
+**What a member sees after the laptop's next pull + restart.** Every place a call was drawn shows
+one card (`BoardAnalytics.renderCallCard`): a headline, **Expected / Called / Warning / Why**, a
+small picture with its words on it (Lined up, Expected, Called; no key), and two fold-outs ("Every
+change the board showed (n)", "i · How this is worked out"). Places: Analytics → Call stability
+(the rows, the Sarnia / Mac yard cards, "Calls by how far off", By turn, "How to read a call"
+behind an "i"), a turn or name-code search, My week, Turn History (each trip's line and the opened
+trip), Order summary's "The crew's call".
+- Under 8 hours' warning is always the headline ("Called with 48 min warning"), on-time and late
+  calls too. Within 30 minutes reads "Called when expected", with "after 3 changes" when the time
+  moved by more than 30 minutes in between. The Warning line ends with what the board was saying
+  ("the board still showed 11th 1655 when the call came" / "the time last changed 10 min before
+  the call").
+- "Taken off before the call", the reason first; on a line-up under 30 minutes and taken off again
+  folds away under the list ("29 short waits not listed").
+- Why is one or two plain sentences on 784 of the 914 calls that have one, built only from what the
+  tracker saved; every saved reason is in the first fold-out.
+- **"Expected" for members is the eight-hour figure the site already keeps** (`z.expected` at
   `z.sleepAt`), the first time shown beside it when they differ; a call with no such figure falls
-  back to the first time shown. The headline says "Called when expected, after 3 changes" when the
-  time moved by more than 30 minutes after that point.
-- Why is one or two plain sentences on 784 of the 914 calls that have one (median 105 characters),
-  built only from what the tracker saved; the full list with every saved reason is the first
-  fold-out.
+  back to the first time shown. `callRule()` returns `'eight'` for everyone off the test site,
+  whatever a device has stored.
+- "More numbers" on the Call stability page still holds the older figures in the older words (the
+  recorded eight-hour baselines, the first time shown, changes during the plan), folded.
 
-**❓ THE ONE PICK WAITING ON HIM: how "expected" is worked out.** Building D showed the eight-hour
-figure, as it has always been worked out, gives a misleading answer on real calls, **his own example
-among them**. It is the first time the board showed the call 8 hours or less away, *whenever that
-check came*: only 660 of the 1,065 recorded figures were really 7.5 hours or more ahead; 252
-appeared later on a turn already lined up; 31 were set by a check **after** the call. Three real
-calls:
-- **EN09 on YMXS02, 8 Nov** (his 10 Nov example): lined up 1412 for 0205 next morning; the board
-  flipped to 1500 at 1421; called 1500. As now: expected 1500, "right on time". (The headline is
-  still "Called with 48 min warning".)
-- **SR02 on X39291 05, 7 Nov**: a 0241 that was on the board for 23 minutes the evening before became
-  the figure; the board had said 1523 for eight hours when the call came at 1710. As now: "14 h 29 m
-  later than expected".
-- **SB05 on X30241 17, 19 Oct**: 20th 1055 / 0845 on the board until the call at 19th 2300; the check
-  ten minutes after the call showed 2300, and that became the figure. As now: "Called when expected".
-
-**Today's rule is still the default, untouched** (his rule above). A proposed one is built beside
-it and he chooses on the page: a dashed box "For you to pick" at the top of the preview's Call
-stability page and above any turn's calls, two buttons, **As now** / **Proposed** ("what the board
-showed 8 hours before the call came"; lined up later than that, the time it showed when lined up),
-with those three turns to tap. Kept on the device as `boardCallRule`; `callRule()` in board.html
-passes it to every card and count. Under Proposed the three read "11 h 05 m earlier", "1 h 47 m
-later" and "9 h 45 m earlier". 265 of 1,060 calls land in a different group; Sarnia goes from 25%
-when expected / 11% over an hour earlier / 40% over an hour later to 22% / 28% / 29%, Mac yard from
-55% / 5% / 29% to 63% / 10% / 16%. **When he picks: delete the other branch of `callCard`
-(`opts.rule`), `callRule`, `ana2RuleSwitch` and its CSS, and the rule tests that no longer apply.**
-
-**Three more things the preview does that need his yes before the main site (each said on the page,
-none touches a number the main site shows today):**
+**I took "Push these changes" as yes to three things the card does that I had said needed his
+yes**, because they are part of the card as he saw it; said so to him, and each is undone
+separately if he says no:
 1. **15 calls are "Not scored"**: the board first showed the turn lined up only after it had already
    gone on duty. 13 are a later trip's line-up matched to a trip already under way (SD09 on M39671
-   23: on duty 25 Oct 0400, first seen lined up 1134 for X27331 26) and read today as 10 to 23 hours
-   early: about one in eight of the "over 1 hour early" calls. **The cause is in
-   `lib/board/insights.js` (a wait opened after the on-duty time is scored against it); not
-   changed, it is his to say and needs a laptop pull.**
+   23: on duty 25 Oct 0400, first seen lined up 1134 for X27331 26) and used to read as 10 to 23
+   hours early: about one in eight of the "over 1 hour early" calls.
 2. **24 calls are "Called with no warning"** with no expected time and no picture: the first
    line-up seen was after the call time (SR09 on X39661 23). They are a sixth line on the cards
    ("No warning: nothing on the board first"), not in the five groups.
-3. Words in the graph's purple ("later") were 2.6 to 1 against a pale page; on the card they lean
-   toward the page's ink (5 to 1). The band on the picture is unchanged.
-Seen and left alone, for him: a call 31 to 60 minutes early is amber on its row and in the counts
-but red on the picture (the graph's own rule since before this work).
+3. Words in the graph's purple ("later") lean toward the page's ink so they can be read (2.6 to 1
+   before; 3 to 1 or better in every page style now). The band on the picture is unchanged.
 
-**Preview only: how it is held.** `PREVIEW` in board.html (the test site's address + the health
-report + the owner key, unchanged). Each caller got a preview branch beside the old expression;
-`callOpen(z)` is the one place a call is drawn opened. `renderCallTimelineV2`, `callTimeline`,
-`callReasons`, `planReliability`, `sleepStats` and `lib/` are **not touched**. Proved with the
-preview off, old page files against new, same live data and clock: ten views (Call stability page,
-calls opened, a by-how-far group, a turn search, My week, Turn History, Order summary) are
-character for character the same and five full-page pictures pixel for pixel, on the test site and
-the main site, phone and desktop, with and without an owner key. **To put it on the main site, at
-his word only:** replace the `PREVIEW` tests in the call code with `true` (search `callOpen`,
-`callRowWords`, `PREVIEW ?` in the Call stability functions), then delete what it replaces.
+**❓ STILL HIS TO PICK: how "expected" is worked out.** The eight-hour figure, as it has always been
+worked out, is the first time the board showed the call 8 hours or less away, *whenever that check
+came*: only 660 of the 1,065 recorded figures were really 7.5 hours or more ahead; 252 appeared
+later on a turn already lined up; 31 were set by a check **after** the call. Members now see these
+as today's rule reads them:
+- **EN09 on YMXS02, 8 Nov** (his 10 Nov example): lined up 1412 for 0205 next morning; the board
+  flipped to 1500 at 1421; called 1500. Reads: expected 1500, "right on time" (the headline is
+  still "Called with 48 min warning").
+- **SR02 on X39291 05, 7 Nov**: a 0241 that was on the board for 23 minutes the evening before became
+  the figure; the board had said 1523 for eight hours when the call came at 1710. Reads: "14 h 29 m
+  later than expected".
+- **SB05 on X30241 17, 19 Oct**: 20th 1055 / 0845 on the board until the call at 19th 2300; the check
+  ten minutes after the call showed 2300, and that became the figure. Reads: "Called when
+  expected", with "on the board only from 19th 2310, after the call" under it.
 
-**Checked on real data** (the live test site, this branch's page files put in place in the browser
-here only, `boardNoCount` set, nothing pressed in Members): the card run over all 1,323 live call
-records in code (no errors, no broken text, 0 overlapping or cut-off labels by the layout); in a
-browser at 390 px 16 real calls opened and measured (labels on one another, labels cut off,
-anything wider than the card: none), the same at 1280 px and in dark; Turn History with SR11, SD07
-and S501-CO, Order summary's crew call, My week with a followed turn, a by-how-far group, the two
-new groups, How to read, the short waits, More numbers, By turn's "Show all", the switch both ways,
-a name-code search (the owner's own code, counts only); all 22 page styles at 390 px with every
-kind of text measured against what is behind it (lowest 3.7 to 1). No page errors and no sideways
-scroll anywhere. **Not checked:** a real phone (a browser at phone width only); the `k-` page
-styles; a person followed by name code in My week; the test site after the laptop's pull (nothing
-is there yet); records older than this morning's file beyond what the archive joined for the last
-90 days.
+A proposed rule is built beside it (`opts.rule: 'before'` in `callCard`: what the board showed 8
+hours before the call came; lined up later than that, the time it showed when lined up). **Only the
+owner sees it, only on the test site**: a dashed box "For you to pick" at the top of its Call
+stability page and above any turn's calls, two buttons **As now** / **Proposed**, with those three
+turns to tap; kept on that device as `boardCallRule`. Under Proposed the three read "11 h 05 m
+earlier", "1 h 47 m later" and "9 h 45 m earlier"; 265 of 1,060 calls land in a different group;
+Sarnia goes from 25% when expected / 11% over an hour earlier / 40% over an hour later to 22% / 28%
+/ 29%, Mac yard from 55% / 5% / 29% to 63% / 10% / 16%. **When he picks:** Proposed → make
+`callRule()` return `{ rule: 'before' }` for everyone; either way then delete the other branch of
+`callCard`, `callRule`'s device read, `ana2RuleSwitch` and its CSS, and the rule tests that no
+longer apply. My recommendation to him was Proposed.
 
-**Files.** `public/board-analytics.js` (new, after `renderCallTimeline`: `callCard`, `callWords`,
+**Not changed, his to say (all on the Housekeeping list in `docs/board-checker/TODO.md`, items 8
+to 10):** the tracker bug behind the 15 (`lib/board/insights.js` scores a wait opened after the
+on-duty time against it; the fix changes today's counts and needs a laptop pull); a call 31 to 60
+minutes early being amber on its row and red on the picture; the old graph code
+(`renderCallTimelineV2`, `callReasons`, `renderCallReasons`, `ana2Examples`, the `!callCardOn()`
+branches), kept as the way back and to be deleted once he has lived with the card; his three "what
+bothers me" lines from the first message, which arrived as "...".
+
+**Checked on real data, 06:20 to 06:55 Toronto, with the card switched on** (this branch's page
+files put in place in the browser here only, `boardNoCount` set, nothing pressed in Members):
+- **The real main site as a member (no owner key):** the Call stability page whole; ten real calls
+  opened in dark at 390 px and measured (no label on another, none cut off, nothing wider than its
+  card); Turn History in its regular table layout with SR11 and S501-CO, Order summary's crew call,
+  My week with a followed turn, a by-how-far group, the two new groups, How to read, the short
+  waits, More numbers, By turn's "Show all", a turn search; 390 px and 1280 px; 21 page styles
+  between two passes with every kind of text measured (lowest 3 to 1, the purple headline in the
+  Game Boy style). No page errors, no sideways scroll, no old graph left, **no pick box**.
+- **The test site with the owner key:** the same places, the pick box there and working both ways.
+  **The test site without the key:** the card, no pick box.
+- Earlier the same morning, as a preview: the card run over all 1,323 live call records in code
+  (no errors, no broken text); 16 real calls at 390 px, light and dark; a name-code search (his own
+  code, counts only); all 22 page styles.
+- Suite 459 of 459 (with the other session's new test from the same morning).
+**Not checked:** a real phone (a browser at phone width only); the `k-` page styles; a person
+followed by name code in My week; either site after the laptop's next pull (the card is not on the
+main site until then).
+
+**Where it is.** `claude/vigilant-planck-zawrj4` (the branch the laptop pulls) and this session's
+`ccr-83c63a33-26zny2`, same commit. The preview commits were `bbff903` and `b5a6116` (05:50); the
+laptop had pulled those by 06:15 (both sites served the gated code, the preview live on the test
+site). The switch-on commit sits on top of another session's two Members commits from the same
+morning (`e2d5475`, `7596f40`: phones with no account), replayed onto them with no conflict.
+
+**Files.** `public/board-analytics.js` (after `renderCallTimeline`: `callCard`, `callWords`,
 `callLastWord`, `callWhy`, `callStory`, `callPicture`, `renderCallCard`, `callSummary`,
-`callSummaryByTurn`); `public/board.html` (the `.callcard` / `.cc-*` / `.cs2-turn*` / `.cs2-rule*`
-styles, `callRule`, `callOpen`, `callRowWords`, `SLEEP_NOTE_PLAIN`, and a preview branch in
-`anaHome`, `anaMyWeek2`, `callReviewRecord`, `showCallReview`, `sleepTable`, `anaSleepAll`, the
-Order summary fold, the two `work-call-*` handlers, `ana2OriginStats`, `ana2OriginCard`,
-`ana2CallPage`, `ana2CallRows`, `ana2CallList`, `ana2SearchCalls`; new `ana2RuleSwitch`,
-`ana2ReadCall`); `test/board/call-card.test.js` (16) and `test/board/call-card-page.test.js` (8,
-the page's own functions run with the switch off and on). Suite 456 of 456. The findings page from
-step 2: https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c.
+`callSummaryByTurn`); `public/board.html` (`CALL_CARD`, `callCardOn`, `callRule`, `callOpen`,
+`callRowWords`, `SLEEP_NOTE_PLAIN`, the `.callcard` / `.cc-*` / `.cs2-turn*` / `.cs2-rule*` styles,
+and a card branch in `anaHome`, `anaMyWeek2`, `callReviewRecord`, `showCallReview`, `sleepTable`,
+`anaSleepAll`, the Order summary fold, the two `work-call-*` handlers, `ana2OriginStats`,
+`ana2OriginCard`, `ana2CallPage`, `ana2CallRows`, `ana2CallList`, `ana2SearchCalls`; new
+`ana2RuleSwitch`, `ana2ReadCall`); `test/board/call-card.test.js` (16) and
+`test/board/call-card-page.test.js` (10: the page's own functions as a member, as the owner on the
+test site, and with the switch off). `lib/` is untouched. The findings page from step 2:
+https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c.
 
-**Waiting on Justin:** (1) one laptop `git pull` + restart, so the test site has it (no Worker
-paste); (2) a look on the test site and his pick, As now or Proposed; (3) yes or no to the three
-things above, and whether to fix the tracker for the 15; (4) his three "what bothers me" lines;
-(5) his word before any of it goes to the main site.
+**Waiting on Justin:** (1) one laptop `git pull` + restart, so the main site has the card (no Worker
+paste); (2) As now or Proposed; (3) a no to any of the three things above, if he has one; (4)
+whether to fix the tracker for the 15; (5) his three "what bothers me" lines.
 
-## My stats reviewed — November 12, 2026, 00:05 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are ON FOR EVERY MEMBER in the code since 00:10 at his word
+**Also seen at 06:55 while here (counts only):** both sites serve the My stats review
+(`MINE_MORE = true` in the page, `data/pools.json` published): that pull is done. **Neither Worker
+has the unconfirmed sign-ups paste yet** (`/health/accounts` has no `unverified` list on either):
+still waiting on him, copy page https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu. 34 members.
+
+## My stats reviewed — November 12, 2026, 00:05 Toronto. The laptop has pulled it (seen 06:55 on 12 Nov, both sites). The new sections are ON FOR EVERY MEMBER since 00:10 at his word
+
+**12 Nov, 06:55 Toronto:** both sites serve this work (`const MINE_MORE = true;` in the page, `data/pools.json`
+published, 3.9 kB). Not opened as a signed-in member since the pull: the page was checked before it, on a
+copy with real records. Nothing below is waiting on a pull any more; the Worker needed no paste for it.
 
 **00:10, owner, after the report and the preview, asked "Show the new sections to every member?":
 "Push it".** `MINE_MORE = true` in `public/board.html` (every signed-in member, both sites; `false` =

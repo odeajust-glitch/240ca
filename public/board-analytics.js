@@ -683,11 +683,14 @@
       <details><summary>About this timeline</summary><p class="anote">Green is the original eight-hour plan. An early call leaves yellow (30 minutes or less early) or red (more than 30 minutes early) through the original expected call (the call-time gap, not measured sleep); purple marks waiting past the original expected call until the actual call, inferred from confirmed on-duty time minus two hours. It ends at the call, not when ordering was first observed or when duty began. Dots mark successive changes over 30 minutes. Actual call time is calculated from on-duty minus two hours; ordering times are first observed, not exact. This measures planning opportunity, not sleep. ${m.complete ? '' : 'Older history may be incomplete.'} ${m.first > m.block.from ? 'Tracking began after the green window started.' : ''}</p></details></details>`;
   }
 
-  // ─── The call card (owner, 2026-11-12; a test-site preview) ────────────────
+  // ─── The call card (owner, 2026-11-12) ─────────────────────────────────────
   // "A person should be able to tell at a glance: when they expected to be
   // called, when they were called, how much it moved, how much warning they
   // got, and why it moved if the board shows why. Plain words, no jargon."
-  // renderCallTimelineV2 above stays exactly as the main site draws it.
+  // A test-site preview first; on for every member since he said "Push these
+  // changes to the main" the same day (CALL_CARD in board.html).
+  // renderCallTimelineV2 above is untouched: it is what the page draws again
+  // if that switch is turned off.
   //
   // "Expected" is the eight-hour figure the site has always kept: z.expected,
   // what the board showed at z.sleepAt, the first check with the call 8 h or

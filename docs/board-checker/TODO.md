@@ -93,30 +93,39 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    how to tell real overtime from a ticket left open (trainee only on the job; the rest
    of the crew gone), where the hours show (Turn History / My stats work hours), and
    whether the Yard jobs box should mark or drop a job left open like that.
+8. **Call card: how "expected" is worked out. His pick, open since 2026-11-12.** The card is
+   on for every member (his word that day: "Push these changes to the main") with today's
+   eight-hour figure: the first time the board showed the call 8 hours or less away,
+   whenever that check came. It reads his own EN09 / YMXS02 call (8 Nov) as "right on
+   time", SR02 / X39291 05 (7 Nov) as "14 h 29 m later" and SB05 / X30241 17 (19 Oct) as
+   "called when expected" from a check after the call. The proposed rule (what the board
+   showed 8 hours before the call came) is built beside it; only he sees it, in the "For you
+   to pick" box on the test site's Call stability page. As now or Proposed: when he says,
+   the other and the box go. Recommended to him: Proposed. Details in HANDOFF's top block.
+9. **Call card: 15 calls the tracker scores against the wrong trip.** A wait first seen
+   after the turn had already gone on duty is matched to that trip (13 of the 15 are the
+   next trip's line-up) and reads as 10 to 23 hours early. The card says "Not scored" for
+   them; the cause in `lib/board/insights.js` is still there, so the older figures under
+   "More numbers" still count them, and My stats is built from the same call records. Fixing it changes those counts and needs
+   his yes and a laptop pull. Show him SD09 on M39671 23 (25 Oct).
+10. **Call card: small things to ask, none built.** A call 31 to 60 minutes early is amber
+    on its row and in the counts but red on the picture (the graph's own rule from before):
+    which does he want. "More numbers" on the Call stability page still holds the older
+    figures in the older words: keep, reword or drop. His three "what bothers me" lines from
+    the first message never arrived (the prompt had "..."). Once he has lived with the card,
+    the old graph code kept as the way back (`CALL_CARD = false`) can go: his word first.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both
   headline choices decided 2026-11-10 and taken off Housekeeping on 11-11: the headline is
   notice given when under 8 h; notice starts when the turn is first lined up (out of
   Toronto, from off duty at the bunkhouse).
-  **2026-11-12: the plain call card is a test-site preview** (HANDOFF's top block has all of
-  it): Expected / Called / Warning / Why, a picture with its words on it, two fold-outs, in
-  every place a call is drawn. Nothing of it is on the main site; today's graph and numbers
-  are untouched there. Open, all the owner's:
-  - **How "expected" is worked out.** Today's eight-hour figure is the first time the board
-    showed the call 8 hours or less away, whenever that check came; it reads his own EN09 /
-    YMXS02 call (8 Nov) as on time, SR02 / X39291 05 as 14 h 29 m late and SB05 / X30241 17 as
-    on time from a check after the call. A proposed rule (what the board showed 8 hours before
-    the call came) is built beside it behind a switch on the preview; today's is the default.
-    When he picks, the other goes.
-  - **15 calls first seen lined up after the turn had gone on duty** (13 a later trip's
-    line-up matched to a trip under way, read as 10 to 23 h early). "Not scored" on the
-    preview. The cause is in `lib/board/insights.js` and still there: fixing it changes
-    today's counts and needs his yes and a laptop pull.
-  - 24 calls with nothing on the board before the call are their own line on the preview's
-    cards, not in the five groups.
-  - A call 31 to 60 minutes early is amber on its row and red on the picture: left alone.
-  - His three "what bothers me" lines never arrived (the prompt had "..."): ask.
+  **2026-11-12: replaced by the plain call card, on for every member** at his word the same
+  day ("Push these changes to the main"; `CALL_CARD` in board.html, HANDOFF's top block has
+  all of it): Expected / Called / Warning / Why, a picture with its words on it, two
+  fold-outs, in every place a call is drawn. The headline is still the warning when under
+  8 hours, now for on-time and late calls too. The graph described above is kept in the code
+  as the way back. What is open is on the Housekeeping list, items 8 to 10.
 
 - **S5 line-up swaps crews right at the call** (found 2026-11-10; 5th, 8th, 9th Nov:
   the other crew shown for one or two checks, then the Call Board has the first). Call

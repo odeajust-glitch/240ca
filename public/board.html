@@ -796,7 +796,7 @@
   /* "Later" is the graph's purple. As words on a pale page it was too faint to read (2.6 to 1), so the words
      lean toward the page's own ink; the band on the picture keeps the plain colour. */
   .callcard p.cc-late, details.cur2 .fold .callcard p.cc-late, .offv.late { color: #a78bfa; }
-  @supports (color: color-mix(in srgb, red, blue)) { .callcard p.cc-late, details.cur2 .fold .callcard p.cc-late, .offv.late { color: color-mix(in srgb, #a78bfa 58%, var(--ink)); } }
+  @supports (color: color-mix(in srgb, red, blue)) { .callcard p.cc-late, details.cur2 .fold .callcard p.cc-late, .offv.late { color: color-mix(in srgb, #a78bfa 45%, var(--ink)); } }
   .callcard p.cc-note, details.cur2 .fold .callcard p.cc-note { margin: 0 0 6px; color: var(--soft); font-size: 13.5px; line-height: 1.45; }
   .cc-facts { margin: 0 0 10px; }
   .cc-facts > div { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-top: 1px solid var(--rule-soft); align-items: baseline; }
@@ -3982,13 +3982,18 @@ const ANA2_PAGE = 20;
 let ANA2_CALLS = []; // call records whose graph is drawn when opened
 // One call drawn (owner, 2026-11-12: "a person should be able to tell at a glance: when they expected to be
 // called, when they were called, how much it moved, how much warning they got, and why it moved if the board
-// shows why"). The test site's preview draws the plain card (BoardAnalytics.renderCallCard); everywhere else
-// it is today's graph, opened, exactly as before.
-// How "expected" is worked out on the card. As the site works it out today unless the owner has tapped
-// "Proposed" on the preview's Call stability page (kept on this device; BoardAnalytics.callCard says what
-// each is and the real calls behind the proposal). His to pick: the switch goes when he has.
+// shows why"): the plain card (BoardAnalytics.renderCallCard) in every place a call is shown.
+// CALL_CARD: true = every member on both sites (owner, 2026-11-12, after the card had been on the test site
+// as a preview: "Push these changes to the main"); false = the test site with the owner key only, and the
+// graph as it was drawn before (renderCallTimelineV2) everywhere else. His to say.
+const CALL_CARD = true;
+const callCardOn = () => CALL_CARD || PREVIEW;
+// How "expected" is worked out on the card. As the site works it out today, for every member. Only on the
+// test site with the owner key, and only if he has tapped "Proposed" in the pick box on its Call stability
+// page, is it the proposed way (kept on that device; BoardAnalytics.callCard says what each is and the real
+// calls behind the proposal). Still his to pick, 2026-11-12: the box and the other rule go when he has.
 const callRule = () => ({ rule: PREVIEW && local.get('boardCallRule') === 'before' ? 'before' : 'eight' });
-const callOpen = (z, opts) => (PREVIEW ? BoardAnalytics.renderCallCard(z, { ...callRule(), ...opts })
+const callOpen = (z, opts) => (callCardOn() ? BoardAnalytics.renderCallCard(z, { ...callRule(), ...opts })
   : BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>'));
 // The few words a list row says about one call (the preview): how it went against the expected time, and the
 // warning when that was under 8 hours.
@@ -4047,7 +4052,7 @@ function anaHome(o) {
   const open = (o.runarounds || []).filter((r) => !r.fixed).length + (o.catsErrors || []).filter((r) => !r.fixed).length + (o.catsMissing || []).filter((r) => !r.listedAt).length;
   return analyticsOverviewGuide({ numbers: {
     trains: `${ran} train${ran === 1 ? '' : 's'} on duty in these dates`,
-    sleep: PREVIEW ? (() => { const s = BoardAnalytics.callSummary(sleep, callRule()); return s.n ? `${Math.round((100 * s.ok) / s.n)}% called when expected (${s.ok} of ${plural(s.n, 'call')})` : 'No calls in this date range.'; })() : callReviewData(sleep).headline,
+    sleep: callCardOn() ? (() => { const s = BoardAnalytics.callSummary(sleep, callRule()); return s.n ? `${Math.round((100 * s.ok) / s.n)}% called when expected (${s.ok} of ${plural(s.n, 'call')})` : 'No calls in this date range.'; })() : callReviewData(sleep).headline,
     stale: `${waiting} train${waiting === 1 ? '' : 's'} left waiting past the call`,
     assignments: `${open} finding${open === 1 ? '' : 's'} not cleared`,
   } });
@@ -4351,16 +4356,16 @@ function anaMyWeek2({ weeks = [] }) {
     // Time off between trips: off duty to the next on duty.
     const gaps = trips.map((t, i) => (i && trips[i - 1].off ? stampMin(t.r.at) - stampMin(trips[i - 1].off) : null)).filter((g) => g != null && g >= 0);
     const call = (r) => x.calls.list.find((z) => z.train === r.id && z.onDuty === r.at);
-    // The test site's preview measures each call against the expected time its card shows.
+    // Each call is measured against the expected time its card shows.
     const cardOf = (z) => { const c = z ? BoardAnalytics.callCard(z, callRule()) : null; return c && !c.unavailable && !c.unscored ? c : null; };
-    const gapOf = (z) => { if (PREVIEW) { const c = cardOf(z); return c && c.gap != null ? c.gap : null; } const m = z && BoardAnalytics.callTimeline(z); return m && m.end != null ? m.end - m.expected : null; };
+    const gapOf = (z) => { if (callCardOn()) { const c = cardOf(z); return c && c.gap != null ? c.gap : null; } const m = z && BoardAnalytics.callTimeline(z); return m && m.end != null ? m.end - m.expected : null; };
     const band = { ok: 0, warn: 0, bad: 0 };
     const rows = trips.map(({ r, off, rough, mins }) => {
       const z = call(r);
       const g = gapOf(z);
       if (g != null) band[Math.abs(g) <= 30 ? 'ok' : Math.abs(g) <= 60 ? 'warn' : 'bad']++;
       const [sym, od] = split(r.id);
-      const rw = PREVIEW && z ? callRowWords(z) : null;
+      const rw = callCardOn() && z ? callRowWords(z) : null;
       const result = rw ? [rw.result ? `called ${rw.result}` : '', rw.warning].filter(Boolean).join(' · ')
         : g == null ? '' : g === 0 ? '<span class="offv ok">called when planned</span>' : `<span class="offv ${Math.abs(g) <= 30 ? 'ok' : Math.abs(g) <= 60 ? 'warn' : 'bad'}">called ${esc(dur(g))} ${g < 0 ? 'early' : 'late'}</span>`;
       const line2 = `<span>${esc(dt(r.at))}${off ? ` → off ${rough ? '~' : ''}${esc(off.slice(0, 10) === r.at.slice(0, 10) ? off.slice(11) : dt(off))}` : ''}${mins != null ? ` · <b>${rough ? '~' : ''}${hm(mins)}</b>` : ''}</span>${r.heldMin != null ? `<span class="${r.heldMin >= 840 ? 'bad' : 'muted'}">held ${hm(r.heldMin)}</span>` : ''}${result ? `<span>${result}</span>` : ''}`;
@@ -4408,7 +4413,7 @@ function anaMyWeek2({ weeks = [] }) {
       ${reset && (reset.dueText || reset.onBreak) ? `<p class="week2-reset${reset.level === 'red' ? ' bad' : reset.level ? ' warn' : ''}"><b>Reset:</b> ${esc(resetText(reset))}</p>` : ''}
       <div class="strip">${anaTile(x.trips, 'Trips')}${anaTile(x.yard, 'Yard jobs')}${anaTile(known ? hm(total) : '—', `On duty${known && known < trips.length ? ` (${known} of ${trips.length} trips with an off-duty time)` : ''}`)}${anaTile(x.held14, 'Held 14 h+', x.held14 > 0)}${anaTile(gaps.length ? hm(Math.min(...gaps)) : '—', 'Shortest time off between trips')}</div>
       ${sleepBox}
-      ${calls ? (PREVIEW ? `<p class="anote" style="margin:10px 14px">Calls: <span class="offv ok">${band.ok} when expected</span> · <span class="offv warn">${band.warn} within the hour</span> · <span class="offv bad">${band.bad} more than an hour off</span></p>`
+      ${calls ? (callCardOn() ? `<p class="anote" style="margin:10px 14px">Calls: <span class="offv ok">${band.ok} when expected</span> · <span class="offv warn">${band.warn} within the hour</span> · <span class="offv bad">${band.bad} more than an hour off</span></p>`
     : `<p class="anote" style="margin:10px 14px">Calls against the first plan: <span class="offv ok">${band.ok} within 30 min</span> · <span class="offv warn">${band.warn} within 1 h</span> · <span class="offv bad">${band.bad} over 1 h</span></p>`) : ''}
       ${rows || '<p class="empty" style="margin:10px 14px">No trains or yard jobs worked that week.</p>'}${extra}</section>`;
   };
@@ -4535,8 +4540,8 @@ function callReviewData(records) {
   return { bands, baseline, fallback, missingBaseline, missingOriginal, removed, mismatched, missingActual, headline };
 }
 function callReviewRecord(row) {
-  // The test site's preview: the plain card, in place of the three labelled comparisons and the folded graph.
-  if (PREVIEW) return '<article class="overview-guide-note">' + BoardAnalytics.renderCallCard(row.z, callRule()) + '</article>';
+  // The plain card, in place of the three labelled comparisons and the folded graph.
+  if (callCardOn()) return '<article class="overview-guide-note">' + BoardAnalytics.renderCallCard(row.z, callRule()) + '</article>';
   const { z, originalGap, baselineGap, lastGap } = row;
   const comparison = (name, gap, expected) => '<p><b>' + name + '</b> · ' + (gap == null ? 'Unavailable' :
     esc(dt(expected)) + ' · ' + (gap === 0 ? 'on time' : dur(gap) + (gap < 0 ? ' early' : ' late'))) + '</p>';
@@ -4551,11 +4556,11 @@ function showCallReview(panel, records, range) {
   const labels = ['Over 1 hour early', '31–60 minutes early', 'Within 30 minutes', '31–60 minutes late', 'Over 1 hour late'];
   const originalCount = data.bands.reduce((n, rows) => n + rows.length, 0);
   const lists = [...data.bands, data.baseline, data.fallback, data.missingBaseline];
-  // The test site's preview: the same five groups, each call against the expected time its card shows; one
-  // more for calls with nothing on the board first, and one for those not scored. The older figures stay,
-  // and ana2CallPage folds them into "More numbers".
+  // The same five groups, each call against the expected time its card shows; one more for calls with
+  // nothing on the board first, and one for those not scored. The older figures stay, and ana2CallPage
+  // folds them into "More numbers".
   const lead = [[], [], [], [], [], [], []];
-  if (PREVIEW) {
+  if (callCardOn()) {
     for (const z of records) {
       const c = BoardAnalytics.callCard(z, callRule());
       if (!c || c.unavailable || c.off) continue;
@@ -4571,7 +4576,7 @@ function showCallReview(panel, records, range) {
   };
   const dates = [range.from && 'from ' + range.from, range.to && 'through ' + range.to].filter(Boolean).join(' ') || 'all saved dates';
   const leadCount = lead.slice(0, 6).reduce((n, rows) => n + rows.length, 0);
-  if (PREVIEW) {
+  if (callCardOn()) {
     panel.innerHTML = '<p class="anote">Analytics dates: ' + esc(dates) + '</p><h2>Call stability · Eight-hour baseline</h2><p>' + data.headline +
       '</p><p class="anote">The older figures. The baseline is the first recorded check showing eight hours or less until the expected call, whenever that check came.</p>' +
       group(5, 'Calls with a recorded baseline') + group(6, 'No eight-hour baseline · compared with last known plan') +
@@ -4639,18 +4644,18 @@ function sleepTable(list, showTurn) {
       <td>${moves ? `<details><summary>${plural(z.shifts.length, 'move')}</summary><ul class="moves">${moves}</ul></details>` : '<span class="muted">none</span>'}</td>
       <td class="num"><b>${z.comparisonUnavailable ? 'Unavailable (historical train/trip mismatch)' : z.noWindow || !z.sleepAt ? 'No recorded baseline' : esc(dt(z.expected))}</b><div class="crew">${esc(z.expectedTrain || '')}</div></td>
       <td class="num">${start}</td>
-      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${(ANA2 ? `<details class="call-timeline ana2-lazy" data-lazy-call="${ANA2_CALLS.push(z) - 1}"><summary>${PREVIEW ? 'Show this call' : 'Show call timeline'}</summary></details>` : BoardAnalytics.renderCallTimelineV2(z))}</td></tr>`;
+      <td>${z.comparisonUnavailable ? '<span class="muted">Excluded: train mismatch</span>' : z.takenOff ? '<span class="muted">no call</span>' : z.noWindow || !z.sleepAt ? '—' : sleepCell(z.off)}</td></tr><tr class="nolink"><td colspan="${showTurn ? 7 : 6}">${z.planChanges == null ? '' : `<p class="anote">${z.planChanges} saved changes greater than 30 minutes during the original eight-hour window.</p>`}${(ANA2 ? `<details class="call-timeline ana2-lazy" data-lazy-call="${ANA2_CALLS.push(z) - 1}"><summary>${callCardOn() ? 'Show this call' : 'Show call timeline'}</summary></details>` : BoardAnalytics.renderCallTimelineV2(z))}</td></tr>`;
   }).join('');
   return `<div class="scroll"><table class="orders"><thead><tr>${showTurn ? '<th>Turn</th>' : ''}<th>Calculated actual call<div class="crew">On duty minus 2 hours</div></th><th>Changes</th><th>Expected call at baseline</th><th>Planning baseline (check)</th><th>Gap vs baseline</th></tr></thead><tbody>${rows}</tbody></table></div>${ANA2 && newest.length > ANA2_PAGE ? `<p class="ana2-more"><button type="button" class="qbtn" data-ana2-more="${ANA2_MORE.push({ list: newest, showTurn, at: ANA2_PAGE }) - 1}">Show 20 more of ${newest.length}</button></p>` : ''}`;
 }
 const sleepSection = (list) => `<section class="sheet"><header><h2>Call stability</h2><span class="meta">${plural(list.filter((z) => !z.takenOff).length, 'call')}</span></header>
-    <p class="anote" style="margin:10px 14px">${PREVIEW ? SLEEP_NOTE_PLAIN : SLEEP_NOTE}</p><div style="padding:0 14px"><div data-call-detail></div>${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(baselineStatsRows(list)))}</div>${sleepTable(list, false)}</section>`;
+    <p class="anote" style="margin:10px 14px">${callCardOn() ? SLEEP_NOTE_PLAIN : SLEEP_NOTE}</p><div style="padding:0 14px"><div data-call-detail></div>${planSummary(list)}${sleepTiles(BoardAnalytics.sleepStats(baselineStatsRows(list)))}</div>${sleepTable(list, false)}</section>`;
 function anaSleepAll({ sleep }) {
   const scored = baselineStatsRows(sleep);
   const st = BoardAnalytics.sleepStats(scored);
-  // The test site's preview (owner, 2026-11-12): one plain line per turn, counted the way each call's card
-  // reads, in place of the nine-column table.
-  if (PREVIEW) {
+  // One plain line per turn (owner, 2026-11-12), counted the way each call's card reads, in place of the
+  // nine-column table.
+  if (callCardOn()) {
     const turns = BoardAnalytics.callSummaryByTurn(sleep, callRule()).filter((t) => !BoardTurns.PLACEHOLDER.test(t.turn) && (t.calls || t.takenOff));
     const SHOW = 20;
     const line = (t, i) => {
@@ -7215,8 +7220,8 @@ source().then(async (src) => {
         fact('Time on duty', r.timeOnDuty == null ? 'Not recorded' : esc(dur(r.timeOnDuty))) + fact('Crew', esc(r.crew || 'Not recorded'));
       // The crew's own call for this train (Call stability).
       const mine = calls.filter((z) => !z.takenOff && z.train === r.id && z.onDuty === r.onDuty);
-      // The test site's preview: each turn's line says how its call went; the card is inside.
-      const crewCalls = mine.length ? '<h3>The crew’s call</h3>' + mine.map((z) => (PREVIEW
+      // Each turn's line says how its call went; the card is inside.
+      const crewCalls = mine.length ? '<h3>The crew’s call</h3>' + mine.map((z) => (callCardOn()
         ? `<details class="call-timeline cc-crew"><summary>${esc(z.turn)}: ${esc((BoardAnalytics.callWords(BoardAnalytics.callCard(z, callRule())) || { head: 'the call' }).head)}</summary>${BoardAnalytics.renderCallCard(z, { who: false, ...callRule() })}</details>`
         : BoardAnalytics.renderCallTimelineV2(z).replace('<summary>Show call timeline</summary>', `<summary>${esc(z.turn)}: call timeline</summary>`))).join('')
         : r.onDuty ? '<p class="anote">No Call stability record is saved for this train’s crew.</p>' : '';
@@ -7474,8 +7479,8 @@ source().then(async (src) => {
         const el = box.querySelector('[data-call-result="' + i + '"]');
         if (!el) return;
         const records = matchingCallRecords(all, turn, trip);
-        if (PREVIEW) {
-          // The test site's preview: each trip's call in its card's own words.
+        if (callCardOn()) {
+          // Each trip's call in its card's own words.
           const cards = records.map((z) => BoardAnalytics.callCard(z, callRule())).filter((c) => c && !c.unavailable);
           const heads = [...new Set(cards.map((c) => BoardAnalytics.callWords(c).head))];
           el.classList.remove('spare', 'ok');
@@ -7503,7 +7508,7 @@ source().then(async (src) => {
       const sum = box.querySelector('[data-work-sum]');
       if (sum) {
         const gaps = [...box.querySelectorAll('[data-call-result][data-gap]')].map((el) => +el.dataset.gap);
-        if (PREVIEW) {
+        if (callCardOn()) {
           const short = box.querySelectorAll('[data-call-result][data-short]').length;
           const moved = gaps.filter((g) => Math.abs(g) > 30).map(Math.abs).sort((a, b) => a - b);
           if (gaps.length || short) sum.innerHTML = `<b>${plural(+sum.dataset.trips, 'trip')}</b> in the saved checks.${gaps.length ? ` Of ${plural(gaps.length, 'call')} that can be compared: <b class="ok">${gaps.filter((g) => Math.abs(g) <= 30).length}</b> when expected, <b class="bad">${gaps.filter((g) => g < -30).length}</b> earlier, <b class="warn">${gaps.filter((g) => g > 30).length}</b> later${moved.length ? `; when it moved, typically by ${esc(BoardAnalytics.callSpan(moved[Math.floor((moved.length - 1) / 2)]))}` : ''}.` : ''}${short ? ` ${plural(short, 'call')} came with under 8 hours’ warning.` : ''} Tap a trip for its call.`;
@@ -7626,8 +7631,8 @@ source().then(async (src) => {
   const CS2_BANDS = [['Over 1 h early', 'var(--stop)'], ['31–60 min early', 'var(--amber)'], ['Within 30 min', 'var(--go)'], ['31–60 min late', '#c9b8fb'], ['Over 1 h late', '#a78bfa']];
   const CS2_BANDS_NEW = [['Over 1 h earlier', 'var(--stop)'], ['31–60 min earlier', 'var(--amber)'], ['When expected', 'var(--go)'], ['31–60 min later', '#c9b8fb'], ['Over 1 h later', '#a78bfa']];
   function ana2OriginStats(list) {
-    // The test site's preview: every call against the expected time its card shows (BoardAnalytics.callSummary).
-    if (PREVIEW) return BoardAnalytics.callSummary(list, callRule());
+    // Every call against the expected time its card shows (BoardAnalytics.callSummary).
+    if (callCardOn()) return BoardAnalytics.callSummary(list, callRule());
     const rows = BoardAnalytics.planReliability(list).rows;
     const c = [0, 0, 0, 0, 0];
     let short = 0;
@@ -7646,7 +7651,7 @@ source().then(async (src) => {
     if (!(st.calls == null ? st.n : st.calls)) return `<div class="cs2-card"><h3>${esc(title)}</h3><p class="anote">No calls in these dates.</p></div>`;
     const pc = (n) => Math.round((100 * n) / st.n);
     if (st.calls != null) {
-      // The preview's words. One denominator throughout: every call, the ones with nothing on the board first as a line of their own.
+      // The card's words. One denominator throughout: every call, the ones with nothing on the board first as a line of their own.
       const of = (n) => Math.round((100 * n) / st.calls);
       const bands = CS2_BANDS_NEW.map(([l, col], i) => [l, col, st.c[i]]).concat(st.noBoard ? [['No warning: nothing on the board first', 'var(--ink)', st.noBoard]] : []);
       const facts = [`Under 8 h warning: <b>${of(st.short)}%</b> <small>${st.short}</small>`,
@@ -7682,7 +7687,7 @@ source().then(async (src) => {
       <p class="anote">The graph reads left to right in time. The headline says how much notice the crew had, or how early or late the call came.</p>
       ${list.map(([title, text, z]) => `<div class="cs2-example"><h3>${esc(title)}</h3><p>${esc(text)}</p>${BoardAnalytics.renderCallTimelineV2(z, { bare: true })}</div>`).join('')}`;
   }
-  // How to read a call (the test site's preview): one made-up call drawn by the same code as the real
+  // How to read a call: one made-up call drawn by the same code as the real
   // ones, and the few words that are not on it, behind an "i". In place of the four examples and the
   // eight-part key.
   function ana2ReadCall() {
@@ -7695,38 +7700,39 @@ source().then(async (src) => {
       <li>Within 30 minutes either way counts as <b>called when expected</b>.</li>
       <li>On the picture: grey is lined up; green is the 8 hours before the expected time; red or yellow is a call that came earlier (yellow: 30 minutes or less); purple is one that came later; a dot is the time changing by more than 30 minutes; a red ✕ is a job pulled without a call.</li></ul>`;
   }
-  // The owner's pick (preview only): two ways to work out "expected". Today's stays unless he taps the other.
+  // The owner's pick (the test site with the owner key only): two ways to work out "expected". Today's
+  // stays, for him there and for every member everywhere, unless he taps the other on that device.
   function ana2RuleSwitch(full) {
     const now = callRule().rule;
     const btn = (k, name, text) => `<button type="button" data-callrule="${k}" aria-pressed="${now === k}"><b>${name}</b><span>${text}</span></button>`;
     const go = (turn, what) => `<button type="button" class="qbtn" data-q="${turn}" data-kind="turn">${turn}</button> <span class="muted">(${what})</span>`;
-    return `<div class="cs2-rule"><p><b>For you to pick:</b> how “expected” is worked out. <span class="muted">Preview only; this box goes once you choose.</span></p>
+    return `<div class="cs2-rule"><p><b>For you to pick:</b> how “expected” is worked out. <span class="muted">Only you see this box, here on the test site; members get “As now” until you choose.</span></p>
       <div class="cs2-rulebtns">${btn('eight', 'As now', 'the time on the board when the call first showed 8 hours or less away')}${btn('before', 'Proposed', 'what the board showed 8 hours before the call came')}</div>
       ${full ? `<p class="anote">They agree on most calls. Three real ones where they do not: ${go('EN09', 'YMXS02, 8 Nov')} · ${go('SR02', 'X39291, 7 Nov')} · ${go('SB05', 'X30241, 19 Oct')}. Open one and tap between the two.</p>` : ''}</div>`;
   }
   function ana2CallPage(view, panel) {
     const by = ana2.byOrigin || { sarnia: [], toronto: [], garnet: [], yard: [] };
     const st = { sarnia: ana2OriginStats(by.sarnia), toronto: ana2OriginStats(by.toronto), garnet: ana2OriginStats(by.garnet), yard: ana2OriginStats(by.yard) };
-    const small = (name, x) => (PREVIEW ? (x.calls ? `${name}: ${Math.round((100 * x.ok) / x.calls)}% when expected of ${plural(x.calls, 'call')}` : '') : x.n ? `${name}: ${Math.round((100 * x.c[2]) / x.n)}% within 30 min of ${x.n} calls` : '');
+    const small = (name, x) => (callCardOn() ? (x.calls ? `${name}: ${Math.round((100 * x.ok) / x.calls)}% when expected of ${plural(x.calls, 'call')}` : '') : x.n ? `${name}: ${Math.round((100 * x.c[2]) / x.n)}% within 30 min of ${x.n} calls` : '');
     const others = [small('Garnet (L501 home)', st.garnet), small('Yard jobs', st.yard)].filter(Boolean).join(' · ');
-    const compare = `<section class="sheet"><header><h2>Sarnia and Mac yard, apart</h2><span class="meta">${PREVIEW ? 'each call against the time the board gave for it' : 'actual call against the first planned call'}</span></header>
+    const compare = `<section class="sheet"><header><h2>Sarnia and Mac yard, apart</h2><span class="meta">${callCardOn() ? 'each call against the time the board gave for it' : 'actual call against the first planned call'}</span></header>
       <div class="cs2-grid">${ana2OriginCard('Ordered out of Sarnia', 'trains on the Sarnia line-up', st.sarnia)}${ana2OriginCard('Ordered out of Mac yard', 'trains home from Toronto', st.toronto)}</div>
       ${others ? `<p class="anote" style="margin:0 14px 12px">Counted on their own: ${esc(others)}.</p>` : ''}</section>`;
     const openHow = local.get('analytics2How') !== false;
-    const how = PREVIEW ? `<details class="cs2-read"><summary><i>i</i>How to read a call</summary>${ana2ReadCall()}</details>`
+    const how = callCardOn() ? `<details class="cs2-read"><summary><i>i</i>How to read a call</summary>${ana2ReadCall()}</details>`
       : `<details class="sheet test-current-box cs2-how"${openHow ? ' open' : ''}><summary><h2>How to read the call graph</h2><span class="meta">four examples</span></summary><div style="padding:0 14px 14px">${ana2Examples()}</div></details>`;
     panel.insertAdjacentHTML('beforebegin', (PREVIEW ? ana2RuleSwitch(true) : '') + compare + how);
-    if (!PREVIEW) view.querySelector('.cs2-how').addEventListener('toggle', (e) => local.set('analytics2How', e.target.open));
+    if (!callCardOn()) view.querySelector('.cs2-how').addEventListener('toggle', (e) => local.set('analytics2How', e.target.open));
     // The rest, simpler: the calls by how far off (tap a line for them), by
     // turn and the latest calls stay; everything else folds into one box.
     const more = document.createElement('details');
     more.className = 'sheet test-current-box';
-    more.innerHTML = `<summary><h2>More numbers</h2><span class="meta">${PREVIEW ? 'the older figures: recorded eight-hour baselines, the first time shown, changes during the plan' : 'the eight-hour baseline, changes during the plan, the tiles'}</span></summary><div class="cs2-more" style="padding:0 14px 14px"></div>`;
+    more.innerHTML = `<summary><h2>More numbers</h2><span class="meta">${callCardOn() ? 'the older figures: recorded eight-hour baselines, the first time shown, changes during the plan' : 'the eight-hour baseline, changes during the plan, the tiles'}</span></summary><div class="cs2-more" style="padding:0 14px 14px"></div>`;
     const box = more.lastChild;
     const second = [...panel.querySelectorAll('h2')][1];
     if (second) {
       while (panel.firstChild && panel.firstChild !== second) box.appendChild(panel.firstChild);
-      second.textContent = PREVIEW ? 'Calls by how far off' : 'Calls by how far off the plan';
+      second.textContent = callCardOn() ? 'Calls by how far off' : 'Calls by how far off the plan';
       const tail = panel.querySelector('p.anote:last-child');
       if (tail) box.appendChild(tail);
     }
@@ -7749,8 +7755,8 @@ source().then(async (src) => {
         : `<span class="offv ${tone === 'late' ? '' : tone}"${tone === 'late' ? ' style="color:#a78bfa"' : ''}>${esc(dur(gap))} ${gap < 0 ? 'early' : 'late'}</span>`;
       const line2 = `<span>planned ${esc(dt(z.firstCall || z.expected))}${z.takenOff ? '' : ` → called <b>${esc(dt(z.call))}</b>`}</span>${result ? `<span>${result}</span>` : ''}${z.takenOff && z.replacedBy ? `<span class="muted">now ${esc(z.replacedBy)}</span>` : ''}`;
       const chips = `${showTurn ? `<span class="chip">${esc(z.turn)}</span>` : ''}${pulled ? ' <span class="chip" style="color:var(--stop)">✕ job pulled</span>' : ''}${z.yard ? ' <span class="chip">yard</span>' : ''}`;
-      // The test site's preview: expected → called, how far it moved, and the warning when it was short.
-      const r = PREVIEW ? callRowWords(z) : null;
+      // Expected → called, how far it moved, and the warning when it was short.
+      const r = callCardOn() ? callRowWords(z) : null;
       const mate = !!z.replacedBy && String(z.replacedBy).replace(/-(CO|EN)$/, '') === String(z.turn).replace(/-(CO|EN)$/, '');
       const exp = r && !r.c.unscored && !r.c.unseen ? `expected ${esc(dt(BoardTrains.fromMin(r.c.lead)))}` : '';
       const words = !r ? line2 : r.c.unscored ? `<span>on duty ${esc(dt(z.onDuty))}</span><span>${r.result}</span>`
@@ -7761,9 +7767,9 @@ source().then(async (src) => {
   }
   function ana2CallList(records, showTurn) {
     let list = [...records].map(BoardAnalytics.cleanCallRecord).filter((z) => !z.comparisonUnavailable).reverse();
-    // The test site's preview: on a line-up under 30 minutes and taken off again is not a call. Those fold away under the list.
+    // On a line-up under 30 minutes and taken off again is not a call. Those fold away under the list.
     let waits = [];
-    if (PREVIEW) {
+    if (callCardOn()) {
       const brief = (z) => { const a = BoardTrains.toMin(z.onDuty); const b = BoardTrains.toMin(z.firstSeen); return !!z.takenOff && a != null && b != null && a - b < 30; };
       waits = list.filter(brief);
       list = list.filter((z) => !brief(z));
@@ -7782,7 +7788,7 @@ source().then(async (src) => {
     // Apart, as on the Call stability page (owner, 2026-11-10): the calls are much worse out of Sarnia.
     const groups = [['sarnia', 'Trains ordered out of Sarnia'], ['toronto', 'Trains ordered out of Mac yard'], ['yard', 'Yard jobs'], ['garnet', 'Garnet (L501 home)']]
       .map(([k, name]) => [name, calls.filter((z) => ana2.originOf && ana2.originOf(z) === k)]).filter(([, l]) => l.filter((z) => !z.takenOff).length);
-    const cards = groups.length > 1 ? groups.map(([name, l]) => ana2OriginCard(name, who, ana2OriginStats(l))).join('') : ana2OriginCard(groups.length ? `${who}: ${groups[0][0].toLowerCase()}` : who, PREVIEW ? 'each call against the time the board gave for it' : 'actual call against the first planned call', st);
+    const cards = groups.length > 1 ? groups.map(([name, l]) => ana2OriginCard(name, who, ana2OriginStats(l))).join('') : ana2OriginCard(groups.length ? `${who}: ${groups[0][0].toLowerCase()}` : who, callCardOn() ? 'each call against the time the board gave for it' : 'actual call against the first planned call', st);
     const removed = calls.filter((z) => z.takenOff).length;
     const pulled = calls.filter((z) => !z.takenOff && (z.timelineChanges || []).some((c) => c.dropped)).length;
     const more = document.createElement('details');
@@ -7790,7 +7796,7 @@ source().then(async (src) => {
     more.innerHTML = '<summary>More numbers and how they are worked out</summary><div></div>';
     [...sec.children].forEach((el) => { if (!el.matches('header')) more.lastChild.appendChild(el); });
     sec.insertAdjacentHTML('beforeend', `${PREVIEW ? ana2RuleSwitch(false) : ''}<div class="cs2-grid">${cards}</div>
-      ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `${PREVIEW ? 'Taken off before the call' : 'Removed from the line-up after lining up'}: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
+      ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `${callCardOn() ? 'Taken off before the call' : 'Removed from the line-up after lining up'}: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
       <h3 class="cs2-h3">Calls, newest first</h3>${ana2CallList(calls, false)}`);
     sec.appendChild(more);
   }
