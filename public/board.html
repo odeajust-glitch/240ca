@@ -10,7 +10,8 @@
 <meta name="theme-color" content="#0f5c63">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Line-up">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Board">
 <link rel="apple-touch-icon" href="board-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <script>
@@ -154,6 +155,22 @@
   .postnote[hidden] { display: none; }
   .signnote { background: var(--accent); color: var(--accent-ink, #fff); padding: 10px max(16px, env(safe-area-inset-left, 0px)); font-size: 14px; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
   .signnote[hidden] { display: none; }
+  /* Home Screen app (owner, 2026-11-11). Opened from the icon the page runs
+     under the phone's status bar: a dark strip sits behind the clock and the
+     page starts below it, whatever look is picked. */
+  body { padding-top: env(safe-area-inset-top, 0px); }
+  @media (display-mode: standalone) { body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: #12191b; z-index: 200; } }
+  .a2hsnote button { font: inherit; font-weight: 700; color: inherit; background: none; border: 1px solid currentColor; border-radius: 8px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+  .a2hsnote .x { margin-left: auto; border: 0; font-size: 18px; line-height: 1; padding: 4px 8px; }
+  .a2hsback { position: fixed; inset: 0; z-index: 300; background: rgba(0, 0, 0, 0.55); display: grid; place-items: end center; padding: 16px 16px max(16px, env(safe-area-inset-bottom, 0px)); }
+  .a2hsback[hidden] { display: none; }
+  .a2hsbox { width: min(420px, 100%); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px 14px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4); }
+  .a2hsbox h2 { margin: 0 0 8px; font-size: 18px; }
+  .a2hsbox ol { margin: 0 0 12px; padding-left: 22px; }
+  .a2hsbox li { margin: 8px 0; line-height: 1.45; }
+  .a2hsbox svg { width: 20px; height: 20px; vertical-align: -4px; margin: 0 2px; }
+  .a2hsbox .note { color: var(--soft); font-size: 13px; margin: 0 0 12px; }
+  .a2hsbox button { font: inherit; font-weight: 600; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--rule); background: var(--accent); color: var(--accent-ink, #fff); cursor: pointer; }
   .signnote a { color: inherit; font-weight: 700; border: 1px solid currentColor; border-radius: 8px; padding: 5px 12px; text-decoration: none; white-space: nowrap; }
   .healthpage { max-width: 900px; }
   .healthpage .hpt { font: 600 22px/1.2 var(--display); margin: 0 0 12px; }
@@ -2162,11 +2179,26 @@
     <h2>Current page</h2>
     <p><button type="button" class="sty" id="arrangeopen" style="width:auto;padding:8px 12px">↕ Arrange the boxes</button></p>
     <p class="note">Move the boxes on the Current page into the order you want. Kept on this phone only.</p>
+    <div id="a2hsset" hidden>
+      <h2>Home Screen</h2>
+      <p><button type="button" class="sty" id="a2hsbtn" style="width:auto;padding:8px 12px">＋ Add to Home Screen</button></p>
+      <p class="note">Puts the board on your phone like an app: one tap to open, full screen.</p>
+    </div>
     <p class="note" id="keynote" hidden></p>
   </div>
 </div>
 <div class="downbanner" id="downbanner" role="alert" hidden></div>
 <div class="signnote" id="signnote" hidden></div>
+<div class="signnote a2hsnote" id="a2hsnote" hidden><span>Put the board on your Home Screen so it opens like an app.</span><button type="button" id="a2hsgo">Add to Home Screen</button><button type="button" class="x" id="a2hsx" aria-label="Dismiss">✕</button></div>
+<div class="a2hsback" id="a2hsios" hidden><div class="a2hsbox" role="dialog" aria-modal="true" aria-labelledby="a2hsh">
+  <h2 id="a2hsh">Add to Home Screen</h2>
+  <ol>
+    <li>Tap the <b>Share</b> button <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> in the toolbar at the bottom of Safari.</li>
+    <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+  </ol>
+  <p class="note">In Chrome on an iPhone the Share button is at the top right. Then open the board from the new icon.</p>
+  <button type="button" id="a2hsok">OK</button>
+</div></div>
 <div class="signnote postnote" id="postnote" hidden></div>
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
@@ -7912,6 +7944,44 @@ source().then(async (src) => {
 }).catch((err) => {
   document.getElementById('view').innerHTML = `<p class="empty">Couldn't load the snapshots (${esc(err.message)}).</p>`;
 });
+
+// Home Screen app (owner, 2026-11-11): a button in ⚙ Settings and a one-time
+// banner. Android / Chrome hands over its own install prompt
+// (beforeinstallprompt); an iPhone has no such thing, so it gets the two
+// steps. Neither shows once the page is open from the icon. The service
+// worker is registered on load: Chrome only offers the install with one.
+(() => {
+  const DISMISS = 'a2hsDismissed';
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const dismissed = () => { try { return localStorage.getItem(DISMISS) === '1'; } catch { return false; } };
+  const dismiss = () => { try { localStorage.setItem(DISMISS, '1'); } catch { /* not kept */ } };
+  const el = (id) => document.getElementById(id);
+  let offer = null; // Chrome's saved install prompt
+  let done = false;
+  function paint() {
+    const can = !done && !standalone() && (!!offer || ios);
+    el('a2hsset').hidden = !can;
+    el('a2hsnote').hidden = !can || dismissed();
+  }
+  async function add() {
+    dismiss();
+    if (offer) {
+      const o = offer; offer = null;
+      try { o.prompt(); const pick = await o.userChoice; if (pick && pick.outcome === 'accepted') done = true; } catch { /* the browser said no */ }
+    } else if (ios) el('a2hsios').hidden = false;
+    paint();
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); offer = e; paint(); });
+  window.addEventListener('appinstalled', () => { done = true; offer = null; paint(); });
+  el('a2hsbtn').addEventListener('click', add);
+  el('a2hsgo').addEventListener('click', add);
+  el('a2hsx').addEventListener('click', () => { dismiss(); paint(); });
+  el('a2hsok').addEventListener('click', () => { el('a2hsios').hidden = true; });
+  el('a2hsios').addEventListener('click', (e) => { if (e.target === el('a2hsios')) el('a2hsios').hidden = true; });
+  paint();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+})();
 </script>
 </body>
 </html>

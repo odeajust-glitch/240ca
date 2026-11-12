@@ -100,6 +100,18 @@ drops out of the record (the publish never deletes under `accounts/`).
 **❓ For Justin:** the pull above; a notice to members about the new tab (not sent); whether Admins should be able to confirm a code; whether the person search in Turn
 History should be narrowed now that this page exists.
 
+## Add to Home Screen — built November 11, 2026, 23:40 Toronto (not gated; live on both sites once the laptop pulls)
+
+Owner asked for an install feature. The manifest, icons, head tags and a push-only service
+worker were already there; this filled the gaps. **No Worker paste needed** (it already serves
+`/manifest.webmanifest`, `/sw.js` and the icons openly, with the right type).
+- `public/board.webmanifest`: "Sarnia Board" / "Board", start and scope `/`, dark `#12191b`, 192 + 512 icons and a separate maskable 512.
+- Icons redrawn by `scripts/make-icons.js`: dark tile, white "SB", teal rail (was "240" on teal). The iPhone icon stays `board-icon-180.png` (an `/apple-touch-icon.png` path would need a Worker change).
+- `public/board-sw.js` (published as `/sw.js`): now also registered on page load, and has a fetch handler for page loads of `/`, `/index.html`, `/board.html` only: network first, last good copy kept in cache `board-shell-1` for when the network fails. `data/`, `api/`, `auth/` and everything else are never touched or saved.
+- `public/board.html`: `#a2hsset` in ⚙ Settings, one-time banner `#a2hsnote` (dismissal in `localStorage.a2hsDismissed`), iPhone steps `#a2hsios`; Android uses `beforeinstallprompt`. All hidden when opened from the icon. `black-translucent` status bar, with `body` padded by the top safe area and a dark strip behind the clock in standalone mode.
+- Checked in a browser: iPhone banner → steps, second visit no banner, standalone hides both, Android prompt called, offline reload shows the saved page (tested against a local copy; Playwright routing gets in the way of a service worker offline test on the real site). **Not yet tried on a real phone** — the owner has a test list.
+- A phone that already had the old icon keeps the old icon and name until it is removed and added again.
+
 ## Split name codes review — done November 11, 2026, 21:35 Toronto (waiting on Justin)
 
 Booked review ran against live `data/people.json` (laptop on `def1438`). Clean: COBD, BRWA,
