@@ -18,6 +18,11 @@ job posting alerts"). Suite **394 of 394**.
   record (JUOD, 12 trips, 24 Oct to 11 Nov) on both; the record's file asked for directly is
   a 404; the real board-test page opened at `#mystats` in a browser at phone width draws the
   tab with the same numbers as the preview, no page errors, no sideways scroll.
+- **The tab sits beside Turn History, 20:35 (owner: "can you put current, turn history and
+  my stats in the same row"):** the button moved to third in the bar; on a phone the first
+  row is Current, Turn History and My stats, a third each (`body.has-mine`, set by
+  `paintMine`); with no My stats (signed out) Current and Turn History keep half each.
+  Checked on the real page file against a stand-in Worker at 390, 340 and 1280 px.
 - **Waiting on Justin: one more laptop `git pull` + restart** (a page change only, no paste).
   Until then the published page still has `MINE_ALL = false`: test site, owner key only.
 - **Not checked:** the tab as a regular signed-in member sees it on a phone (only the owner

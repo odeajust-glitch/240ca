@@ -805,7 +805,9 @@
     .poolfilter button { flex: 1 1 calc(50% - 3px); min-width: 0; min-height: 40px; }
     .poolfilter .poolgap { display: block; flex: 1 1 calc(50% - 3px); }
     /* Current and Turn History share the first row, half each (owner, 2026-11-10). */
-    body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); } }
+    body.nav-one-row .modes #modeCurrent, body.nav-one-row .modes #modeTurns { flex: 1 1 calc(50% - 3px); }
+    /* With My stats showing, the three share that row, a third each (owner, 2026-11-11: "put current, turn history and my stats in the same row"). */
+    body.nav-one-row.has-mine .modes #modeCurrent, body.nav-one-row.has-mine .modes #modeTurns, body.nav-one-row.has-mine .modes #modeMine { flex: 1 1 calc(33.333% - 4px); min-width: 0; padding-left: 6px; padding-right: 6px; } }
   /* Order summary, the two-line rows (2026-11-10). */
   .os2-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
   .os2-filters label { display: grid; gap: 3px; font-size: 12px; color: var(--soft); min-width: 0; }
@@ -1057,6 +1059,7 @@
     .modes { margin-left: 0; width: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
     .modes button { grid-column: span 2; min-width: 0; min-height: 44px; padding: 8px 4px; line-height: 1.25; overflow-wrap: anywhere; }
     .modes #modeCurrent, .modes #modeTurns { grid-column: span 3; }
+    body.has-mine .modes #modeCurrent, body.has-mine .modes #modeTurns { grid-column: span 2; }
     .modes button[hidden] { display: none; }
     .story li { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .tp { grid-template-columns: minmax(0, 1fr); }
@@ -2060,7 +2063,7 @@
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
-  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeMine" type="button" aria-pressed="false" hidden>My stats</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
+  <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeMine" type="button" aria-pressed="false" hidden>My stats</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
   <button type="button" class="gear" id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -5336,7 +5339,8 @@ source().then(async (src) => {
   const MINE_ALL = true;
   let mineReady = false;
   let mineRange = 'all';
-  function paintMine() { const b = document.getElementById('modeMine'); if (b) b.hidden = !(mineReady && (MINE_ALL || PREVIEW)); }
+  // has-mine: on a phone the first row of tabs is then Current, Turn History and My stats.
+  function paintMine() { const b = document.getElementById('modeMine'); if (!b) return; b.hidden = !(mineReady && (MINE_ALL || PREVIEW)); document.body.classList.toggle('has-mine', !b.hidden); }
   async function renderMine() {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#mystats'); } catch (e) { /* not allowed in some frames */ }
