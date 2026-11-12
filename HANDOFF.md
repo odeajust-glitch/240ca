@@ -1,5 +1,91 @@
 # HANDOFF — read this before doing anything
 
+## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). NOTHING BUILT; twelve items put to him, waiting for his picks. The tab-by-tab review below carries on as it was
+
+**Owner, 12 Nov: "Review the entire site, suggestion improvements to the layout or structure."** Taken as
+one round across all the tabs, under the same rules as the tab-by-tab review below (look for real, a short
+ranked list, then stop and wait; build only what he picks, test site only; nothing he has said no to). It
+is about how the tabs fit together, not what is inside each one: rounds 1 and 2's items were not gone over
+again, and each tab still gets its own round.
+
+**How it was looked at.** Both real sites through the saved owner key, read only (every request that is not
+a GET stopped, `boardNoCount` set, nothing pressed that saves): the main site as a member (the stand-in
+described below) and the test site as him, at 390 × 844 and 1280 × 800, light style, on the checks of 1200
+to 1355 Toronto. Every tab opened and measured (where the page starts, its height, tables against their
+boxes), the Track box opened and cancelled, Settings opened, SR03 looked up in Turn History and carried to
+the other tabs, a followed turn tried by putting `trackTurns` in the browser's storage, Back pressed after
+three tab changes. No page errors, no failed requests, no sideways scroll of the page on any tab at either
+width. The live sites were still the page before `6403bde` (the counts line was still on Current).
+
+**The twelve items, in his order (wrong or misleading, hard to find on a phone, missing, could come off).**
+1. **Back leaves the site.** A tab change is not a step the phone remembers: every tab writes its address
+   with `history.replaceState` (the history's length was 3 before and after three tab changes; Back from
+   Order summary landed on the sign-in address). On Android the back swipe closes the board. Idea: each tab
+   change is a step (`pushState` and a `popstate` handler that calls `setMode`).
+2. **Three names.** Every tab is headed "LINE-UP SNAPSHOTS · Sarnia road · what CATS showed when each check
+   ran" (that describes the Snapshots tab, the last of ten; `<title>` the same); the Home Screen icon is
+   "Board" / "Sarnia Board" (board.webmanifest). ❓ His to name. The compact header (test site) already
+   drops the second line.
+3. **"Find a turn" follows, it does not find.** Typing a turn there opens "Track SR03 · Alert me when …"
+   (twelve boxes); finding is Turn History's "Look up a turn". The same box and "How to get alerts on this
+   phone" also head Snapshots, a past check: with one followed turn the snapshot starts at 871 px on an 844
+   px screen (rail 503 px). A followed turn's chip opens the alert choices; nothing leads to its history.
+4. **The top takes 40 to 49% of a phone's first screen on every tab.** A member: title, 10 buttons in 4
+   rows (178 px) and "Updated": 342 px, the page starts at 354 px (481 on Current, 653 with a followed
+   turn, the first train at 982: off the first screen). Him and Admins: 14 buttons in 5 rows (224 px), 384
+   to 416 px. Idea shown to him as a picture (the live page re-arranged in a session's browser only): four
+   groups, Board (Current, Order summary, Snapshots) · My turn (Turn History, My stats) · Records
+   (Analytics, Article 18.6(b)) · Reference (Agreements, Job Aids, Job postings), with the open group's
+   pages on a line under it, a group opening on the page last used in it, and the four owner tabs behind
+   one "Owner" button. In the picture the page starts 151 px higher (first train at 659 instead of 811).
+   Nothing runs off the screen (he turned the swipe row down on 10 Nov: not offered). Cost, told to him:
+   four places stay one tap, the others become two. It is Current's item 8 again in another form (left
+   unpicked, "his taste"): said so to him.
+5. **The tabs scroll away and nothing brings them back.** `.top` is not pinned and there is no "top"
+   button; My stats is 13,290 px on a phone, Current 8,806, a turn's history 3,486, Analytics' Overview
+   2,826 (Notifications 67,265, his own round). Idea: a thin strip pinned while scrolling (the open tab's
+   name, tap for the tabs), or a "Top" button.
+6. **My stats: 19 sections, no way to jump** ("Every trip" is at 12,142 px). Current has jump buttons and
+   folding boxes; My stats has neither. Idea: the same jump row, or folds remembered per phone.
+7. **Analytics stacks three rows of tabs and the second runs off the screen:** its seven sections are a
+   swipe row showing 356 of 663 px (Call stability, Assignment errors and Stale trains off the edge), the
+   thing he had fixed on the main tabs on 10 Nov; My week adds a third row (its content starts about 750
+   px down). Overview is 2,826 px describing those seven sections (his approval of 8 Nov: put as taste).
+   Idea: wrap the section row into full rows; Overview as one line a section with its number.
+8. **A turn looked up in one tab is forgotten in the next.** SR03 in Turn History, then Analytics: empty
+   search; Current: not marked. Six boxes (Find a turn, Look up a turn, Find a train, Analytics' Search, Job
+   Aids, Agreements). Turn History already offers followed turns as a chip ("Your tracked turns"). Idea: the
+   last turn or name code looked up offered the same way in the other boxes (never in the address bar for a
+   code), and "in Analytics" / "on the board" links on a turn's page.
+9. **My week and My stats are apart.** My week is the second section of Analytics (the turns followed on
+   the phone); My stats is its own tab (the member's own name code) with its own "Week by week". ❓ Asked
+   him whether My week should move to the top of My stats, with a link from Analytics.
+10. **Headings come five ways,** and two tabs open on a page with another name (Article 18.6(b) → "Held in
+    Toronto 14 h+"; Order summary → the date). Idea: one pattern (small line the tab's name, big line what
+    is on screen, the controls under it).
+11. **Settings:** Page style's 67 choices sit between Profile and the two short things after it (Current
+    page, Home Screen), which are below the fold of the box (1,041 px in a 774 px box). Idea: Page style last.
+12. **On a computer** every tab but Current and Snapshots runs the full 1,248 px (Agreements' question box;
+    Order summary's rows with the arrow 1,200 px from the time), and Current's left column is empty below
+    Find a turn for about 5,000 px. Idea: a reading width of about 900 px. Low if nearly everyone is on a phone.
+
+**Already built on the test site and waiting on his word (not new, told to him as such):** the compact
+header (about 60 px back), Turn History with Now first (on the main site Now is about 2,500 px down a
+turn's page), 18.6(b) and Snapshots as rows.
+
+**Suggested to him if he would rather I chose:** 1, 3, 5, 6, 7 and 11 (page only, nothing moves); 4 is the
+big one and his to look at first; 2 and 9 need his answer; 8, 10 and 12 after.
+
+**Not checked.** A real phone or a real member's account; an iPhone; any page style but light; the sign-in
+page and grievance.html; Members at phone width (still loading when looked at; it drew at 1280 px). There
+is no count of which tabs members open, so the grouping and its order are a judgment, not a measurement.
+The session's scripts and pictures were in its scratchpad only (not kept); the picture sent to him was
+`tab-bar-idea.png`.
+
+**Also for the next session:** this cloud session too began on a stale checkout (`f5b27e2`, 10 Nov) and was
+fast-forwarded to GitHub before anything was read (`git fetch --deepen=120`, then `merge --ff-only`; the
+shallow clone first said "unrelated histories").
+
 ## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Rounds 1 (Current) and 2 (Page Health): his picks are ON FOR EVERY MEMBER, BOTH SITES, in the code since 12 Nov 13:45 Toronto at his word (`6403bde`), WAITING ON ONE LAPTOP PULL (page only). The counts line is off Current at his word. The purple pieces stay on the test site. Next: Members (round 3), on his word
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
@@ -384,6 +470,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
 | 3 Members | — | — | next, on his word | — |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
+| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | — | nothing built, waiting for his picks (the section at the top of this file) | — |
 
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
