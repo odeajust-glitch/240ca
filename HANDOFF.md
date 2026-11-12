@@ -380,6 +380,19 @@ drops out of the record (the publish never deletes under `accounts/`).
 **❓ For Justin:** the pull above; a notice to members about the new tab (not sent); whether Admins should be able to confirm a code; whether the person search in Turn
 History should be narrowed now that this page exists.
 
+## Phones with no account, listed on Members — November 12, 2026
+
+Owner wants to message people privately to make an account "before their notifications don't
+work anymore". Built **without a Worker change** (he could not paste until later): the laptop's
+subscriber report (`Health.subscribersOf`, served to the owner in `/health` as
+`laptop.subscribers.noAccount`) now lists each phone with no `account`: its turns, the name
+codes it follows (with their current turn) and when it last changed. The Members tab (owner
+only) shows it as "Phones with no account". Needs a laptop pull + restart. Checked with
+stand-in data in a browser; **not yet seen with real data**. A phone's owner is not known, only
+what it follows. Nothing cuts alerts off for phones without an account today; if he wants that,
+it is not built. Rough reading on 12 Nov before this: 8 such phones; turns SB02, SD05, SD08, SR03;
+codes CHNI, COSM, WADE and one not yet seen (plus his own).
+
 ## Two page styles added — November 11, 2026, 23:55 Toronto
 
 Owner: "Can you add an EA Sports and Blades of Steel". Both are in ⚙ Settings → Page style → Games

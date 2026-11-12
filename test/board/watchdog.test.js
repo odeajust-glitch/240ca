@@ -88,13 +88,18 @@ test('health: who gets alerts, by turn and by followed person', () => {
   const { subscribersOf } = require('../../lib/board/health');
   const a = 'aaaaaaaaaaaaaaaa';
   const b = 'bbbbbbbbbbbbbbbb';
-  const subs = [{ turns: ['SR03', `@${a}`] }, { turns: ['SR03', 'SD08'] }, { turns: [`@${a}`, `@${b}`, 'SR03'] }, { turns: ['B126'] }];
+  // Two of the four phones are a member's; the other two are listed with what they follow.
+  const subs = [{ turns: ['SR03', `@${a}`], account: 'm1' }, { turns: ['SR03', 'SD08'], updated: '2026-11-01T00:00:00.000Z' }, { turns: [`@${a}`, `@${b}`, 'SR03'], updated: '2026-11-05T00:00:00.000Z' }, { turns: ['B126'], account: 'm2' }];
   assert.deepEqual(subscribersOf(subs, { [a]: { turn: 'SR03' } }, new Map([[a, 'JUOD']])), {
+    noAccount: [
+      { turns: ['SR03'], people: [{ code: 'JUOD', turn: 'SR03' }, { code: null, turn: null }], updated: '2026-11-05T00:00:00.000Z' },
+      { turns: ['SD08', 'SR03'], people: [], updated: '2026-11-01T00:00:00.000Z' },
+    ],
     phones: 4,
     turns: [['SR03', 3], ['B126', 1], ['SD08', 1]],
     people: [{ code: 'JUOD', turn: 'SR03', phones: 2 }, { code: null, turn: null, phones: 1 }],
   });
-  assert.deepEqual(subscribersOf([]), { phones: 0, turns: [], people: [] });
+  assert.deepEqual(subscribersOf([]), { noAccount: [], phones: 0, turns: [], people: [] });
 });
 
 // Owner, 2026-11-02: "what notifications are being sent out for whom".

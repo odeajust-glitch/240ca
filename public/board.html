@@ -5613,6 +5613,11 @@ source().then(async (src) => {
     let d = null;
     let status = 0;
     try { const r = await fetch('health/accounts', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
+    // What each phone with no account follows: from the laptop's subscriber
+    // report (owner, 2026-11-12), which can name the people; owner only.
+    let loose = null;
+    let looseAt = null;
+    if (membersOwner) { try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); const h = r.ok ? await r.json() : null; const sub = h && h.laptop && h.laptop.subscribers; if (sub && Array.isArray(sub.noAccount)) { loose = sub.noAccount; looseAt = sub.checkedAt || null; } } catch (e) { /* the count below still shows */ } }
     if (mode !== 'members') return;
     if (!d || !Array.isArray(d.users)) {
       view.innerHTML = `<div class="healthpage members">${head}<p class="mmsg bad">${status === 404 ? 'Members isn’t switched on for this site yet (the Worker needs the accounts code), or this device isn’t allowed to see it.' : 'Couldn’t load the list. Check the connection and open the tab again.'}</p></div>`;
@@ -5662,6 +5667,9 @@ source().then(async (src) => {
       ${plain.map(approvedRow).join('') || '<p class="muted">Nobody yet.</p>'}
       ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}
       ${d.unknownPhones ? `<p class="muted" style="margin-top:18px">${esc(d.unknownPhones)} phone${d.unknownPhones === 1 ? ' gets' : 's get'} alerts without a known member: set up before accounts, or not signed in. Each is matched to its member the next time it changes its alerts while signed in.</p>` : ''}
+      ${loose && loose.length ? `<h2>Phones with no account (${loose.length})</h2>
+      <p class="muted">What each one follows, newest change first${looseAt ? `; as of ${esc(new Date(looseAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}` : ''}. The phone's owner isn't known, only what it follows: usually their own turn or name code.</p>
+      ${loose.map((p) => `<div class="mrow"><dl><dt>Turns</dt><dd class="mono">${esc(p.turns.join(', ') || 'none')}</dd><dt>People</dt><dd class="mono">${p.people.length ? p.people.map((x) => esc(x.code || 'not seen yet') + (x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : '')).join(', ') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`).join('')}` : ''}
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
       const name = box.dataset.name;
