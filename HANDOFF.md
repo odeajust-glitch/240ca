@@ -19,6 +19,11 @@ when it is missing). Answers `{ following, skipped, sent, failed, dropped }`. St
   **not on `claude/vigilant-planck-zawrj4`** (another session was pushing there at the same
   time). **Merge it there before the next Worker change, or the next copy page loses the
   route.**
+- **The copy page is rebuilt for `e3e7936`** (https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu,
+  version and 2046 lines on the page; checked in a browser that it gives back exactly the
+  file). It is `881e02d`'s Worker plus this route, so one paste covers the unconfirmed
+  sign-ups and the sign-up wording too. **A session that rebuilds the copy page from a branch
+  without `e3e7936` takes the route out again.**
 - **No page change:** there is no button; the route is for a session holding the owner key
   (this environment's proxy adds it for `board` and `board-test`) or `curl`.
 - **Not sent, not seen on the real sites:** no test alert has gone to SD02 (one phone was
