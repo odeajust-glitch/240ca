@@ -118,6 +118,12 @@ fallback colours were not seen); yard holders' shifts from 3 Nov until the pull 
 checks at all); who worked what before 24 Oct (no names); off duty times marked ~. In the 12
 pixel-lettering styles the section headings are 8 px, as on every other tab (each style's own rule).
 
+**Private preview for him** (his own record with the new sections on, built by this code from the
+checks up to 11 Nov 2222; the spreadsheet button is hidden there, a preview cannot hand over a
+file): https://claude.ai/artifact/7pnMxDbxvYb2M9A4hr5dv5 (the same link as before, updated 12 Nov).
+His own pool comparison there still says "not enough yet" (9 days on 501/502 on the 11th); from the
+10th day it is set beside every road pool together.
+
 **❓ For Justin:** (1) the pull; (2) **show the new sections to every member?** (`MINE_MORE = true`,
 then a pull); (3) should the reset tracker and Turn History take the same corrections; (4) still
 open from before: a notice to members, Admins confirming codes, the person search.
