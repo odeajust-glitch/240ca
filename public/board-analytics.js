@@ -714,7 +714,8 @@
   // opts.rule says how "expected" is worked out:
   //   'eight' (the default, as the site works it out today): z.expected, what the board showed at
   //     z.sleepAt, the first check with the call 8 h or less away.
-  //   'before' (proposed 2026-11-12, NOT agreed: the owner decides): what the board was showing 8 hours
+  //   'before' (the owner's pick, 2026-11-12: "Proposed"; what the page asks for everywhere, callRule in
+  //     board.html; 'eight' is kept for the older figures and their tests): what the board was showing 8 hours
   //     before the call came; for a turn lined up later than that, what it showed when lined up. Three
   //     real calls show why it is offered. EN09 on YMXS02 (8 November, the owner's own example): lined
   //     up 1412 for 0205 the next morning, the board flipped to 1500 at 1421 and the call came at 1500;

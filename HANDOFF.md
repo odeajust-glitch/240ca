@@ -1,6 +1,24 @@
 # HANDOFF — read this before doing anything
 
-## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, 06:28 Toronto, at his word. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). One pick of his still open
+## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
+
+**His pick is made (06:40 Toronto): "Proposed".** Asked "As now or Proposed" a second time, with his own
+EN09 call laid out both ways, he answered **"Proposed"**. `callRule()` in board.html now returns
+`{ rule: 'before' }` for everyone: "expected" is what the board was showing 8 hours before the call
+came; for a turn lined up later than that, what it showed when lined up. The pick box
+(`ana2RuleSwitch`), its styles, its click handler and the `boardCallRule` device setting are gone;
+the plain note and "How to read a call" say the new rule. `callCard` in board-analytics.js still
+has both rules (`opts.rule`; `'eight'` is its default and what its own tests mostly use): the page
+never asks for `'eight'` any more, so that branch can be deleted in a tidy-up. A turn taken off
+has no call to count back from and keeps the eight-hour figure. "More numbers" still holds the
+older figures. Live figures under it: Sarnia 22% when expected / 28% over an hour earlier, Mac
+yard 63% / 9%. Checked with this branch's files on the real sites: six real calls on the main
+site as a member (EN09 "11 h 05 m earlier", SR02 "1 h 47 m later", SB05 "9 h 45 m earlier"),
+every place on the test site with the owner key in dark, the main site at 1280 px: no page
+errors, no sideways scroll, no pick box. Suite 462 of 462. **Everything in the "STILL HIS TO PICK"
+section further down is history now.** At that moment neither site had the earlier commits
+either (he said "it's pulled"; both still served the page from before `7edd4aa` and the 16
+records): the checker may not have been restarted. Ask him to restart, then check again.
 
 **Later the same morning (06:32 Toronto): the tracker fix for the wrongly matched calls is in, at his word.**
 Asked what items 2 and 3 on the waiting list meant, he was told (2 = As now or Proposed, 3 =
@@ -67,7 +85,7 @@ separately if he says no:
 3. Words in the graph's purple ("later") lean toward the page's ink so they can be read (2.6 to 1
    before; 3 to 1 or better in every page style now). The band on the picture is unchanged.
 
-**❓ STILL HIS TO PICK: how "expected" is worked out.** The eight-hour figure, as it has always been
+**(History: picked later that morning, see the top.) How "expected" was worked out while it was his to pick.** The eight-hour figure, as it has always been
 worked out, is the first time the board showed the call 8 hours or less away, *whenever that check
 came*: only 660 of the 1,065 recorded figures were really 7.5 hours or more ahead; 252 appeared
 later on a turn already lined up; 31 were set by a check **after** the call. Members now see these
@@ -140,9 +158,9 @@ and a card branch in `anaHome`, `anaMyWeek2`, `callReviewRecord`, `showCallRevie
 test site, and with the switch off). `lib/` is untouched. The findings page from step 2:
 https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c.
 
-**Waiting on Justin:** (1) one laptop `git pull` + restart, so the main site has the card (no Worker
-paste); (2) As now or Proposed; (3) a no to any of the three things above, if he has one; (4)
-whether to fix the tracker for the 15; (5) his three "what bothers me" lines.
+**Waiting on Justin:** (1) one laptop `git pull` + **restart**, so both sites have the card, the
+picked rule and the tracker fix (no Worker paste); (2) a no to any of the three things above, if he
+has one; (3) his three "what bothers me" lines.
 
 **Also seen at about 06:25 while here (counts only):** both sites serve the My stats review
 (`MINE_MORE = true` in the page, `data/pools.json` published): that pull is done. **Neither Worker

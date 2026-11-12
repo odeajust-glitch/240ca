@@ -845,15 +845,6 @@
   .ana2 .cs2-read li { margin: 5px 0; }
   .ana2 .cs2-read .callcard { border: 1px solid var(--rule); border-radius: 8px; padding: 6px 12px 8px; margin: 6px 0; }
   .ana2 .cs2-big small { color: var(--soft); font-size: 12.5px; }
-  .ana2 .cs2-rule { margin: 0 0 14px; padding: 10px 14px 12px; border: 1.5px dashed var(--accent); border-radius: 8px; background: var(--sheet); }
-  .ana2 section.sheet > .cs2-rule { margin: 12px 14px 0; }
-  .ana2 .cs2-rule p { margin: 0 0 8px; font-size: 13.5px; }
-  .ana2 .cs2-rule p.anote { margin: 8px 0 0; }
-  .ana2 .cs2-rulebtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-  .ana2 .cs2-rulebtns button { display: grid; align-content: start; text-align: left; padding: 8px 10px; border: 1.5px solid var(--rule); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; min-height: 44px; }
-  .ana2 .cs2-rulebtns button b { display: block; font-size: 14px; }
-  .ana2 .cs2-rulebtns button span { display: block; color: var(--soft); font-size: 12.5px; line-height: 1.3; margin-top: 2px; }
-  .ana2 .cs2-rulebtns button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-tint); }
   .ana2 .cs2-facts { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid var(--rule-soft); display: grid; gap: 4px; font-size: 13px; color: var(--soft); }
   .ana2 .cs2-facts b { color: var(--ink); }
   .ana2 .cs2-facts small { font-size: 12px; }
@@ -3988,11 +3979,12 @@ let ANA2_CALLS = []; // call records whose graph is drawn when opened
 // graph as it was drawn before (renderCallTimelineV2) everywhere else. His to say.
 const CALL_CARD = true;
 const callCardOn = () => CALL_CARD || PREVIEW;
-// How "expected" is worked out on the card. As the site works it out today, for every member. Only on the
-// test site with the owner key, and only if he has tapped "Proposed" in the pick box on its Call stability
-// page, is it the proposed way (kept on that device; BoardAnalytics.callCard says what each is and the real
-// calls behind the proposal). Still his to pick, 2026-11-12: the box and the other rule go when he has.
-const callRule = () => ({ rule: PREVIEW && local.get('boardCallRule') === 'before' ? 'before' : 'eight' });
+// How "expected" is worked out on the card: what the board was showing 8 hours before the call came; for
+// a turn lined up later than that, what it showed when lined up. Owner, 2026-11-12, shown both ways on real
+// calls (his own EN09 on YMXS02, 8 Nov, among them) and asked "As now or Proposed": "Proposed". The older
+// eight-hour figure (BoardAnalytics.callCard without this rule) is no longer what the card measures from;
+// the figures under "More numbers" are still the older ones. His to change.
+const callRule = () => ({ rule: 'before' });
 const callOpen = (z, opts) => (callCardOn() ? BoardAnalytics.renderCallCard(z, { ...callRule(), ...opts })
   : BoardAnalytics.renderCallTimelineV2(z).replace('<details class="call-timeline ct2">', '<details class="call-timeline ct2" open>'));
 // The few words a list row says about one call (the preview): how it went against the expected time, and the
@@ -4004,7 +3996,7 @@ function callRowWords(z) {
   const chip = (cls, text) => `<span class="offv ${cls}">${esc(text)}</span>`;
   return { c, w, result: c.unscored ? chip('none', 'not scored') : w.result ? chip(c.off ? 'warn' : w.resultTone, w.result) : '', warning: w.warning && !c.off ? chip('bad', w.warning) : '' };
 }
-const SLEEP_NOTE_PLAIN = 'Called is on duty less 2 hours: the phone call itself is not recorded. Expected is the time the board was showing once the call was 8 hours or less away; for a call that came before that, the first time the board gave. Within 30 minutes either way counts as called when expected. Warning runs from being lined up (out of Toronto: from going off duty) to the call. A turn taken off the line-up before its call is counted on its own; a call with nothing on the board before it has no expected time to measure against; and one first seen lined up after it had already gone on duty is not scored. The board is read every few minutes, so a time can be a few minutes out.';
+const SLEEP_NOTE_PLAIN = 'Called is on duty less 2 hours: the phone call itself is not recorded. Expected is what the board was showing 8 hours before the call came; for a turn lined up later than that, the time it showed when lined up. Within 30 minutes either way counts as called when expected. Warning runs from being lined up (out of Toronto: from going off duty) to the call. A turn taken off the line-up before its call is counted on its own; a call with nothing on the board before it has no expected time to measure against; and one first seen lined up after it had already gone on duty is not scored. The board is read every few minutes, so a time can be a few minutes out.';
 let ANA2_MORE = []; // "show more" lists
 const ana2 = { origin: 'all', pool: 'all', craft: 'all', finding: null, loaded: false, mode: 'analytics' };
 const ANA_SECS = [['overview', 'Overview'], ['week', 'My week'], ['trains', 'Trains'], ['turns', 'Turns side by side'], ['sleep', 'Call stability'], ['assignments', 'Assignment errors'], ['stale', 'Stale trains']];
@@ -7694,21 +7686,11 @@ source().then(async (src) => {
     const z = { turn: 'Example', train: 'Example', expectedTrain: 'Example', firstTrain: 'Example', firstSeen: '2026-01-05 1000', firstCall: '2026-01-06 0200', sleepAt: '2026-01-05 1800', expected: '2026-01-06 0200', noWindow: false, short: false,
       call: '2026-01-06 0030', onDuty: '2026-01-06 0230', timelineChanges: [{ taken: '2026-01-05 2300', call: '2026-01-06 0030', train: 'Example' }], shifts: [], timelineComplete: true };
     return `<p class="anote">A made-up call: lined up at 1000 for 0200 the next morning. At 2300 the board moved it to 0030, and the call came at 0030.</p>${BoardAnalytics.renderCallCard(z, { bare: true, ...callRule() })}
-      <ul><li><b>Expected</b> is ${callRule().rule === 'before' ? 'what the board was showing 8 hours before the call came (lined up later than that: the time it showed then)' : 'the time the board was showing once the call was 8 hours or less away'}.</li>
+      <ul><li><b>Expected</b> is what the board was showing 8 hours before the call came (lined up later than that: the time it showed then).</li>
       <li><b>Called</b> is on duty less 2 hours. The phone call itself is not recorded.</li>
       <li><b>Warning</b> runs from being lined up (out of Toronto: from going off duty) to the call. Under 8 hours, and the headline says so.</li>
       <li>Within 30 minutes either way counts as <b>called when expected</b>.</li>
       <li>On the picture: grey is lined up; green is the 8 hours before the expected time; red or yellow is a call that came earlier (yellow: 30 minutes or less); purple is one that came later; a dot is the time changing by more than 30 minutes; a red ✕ is a job pulled without a call.</li></ul>`;
-  }
-  // The owner's pick (the test site with the owner key only): two ways to work out "expected". Today's
-  // stays, for him there and for every member everywhere, unless he taps the other on that device.
-  function ana2RuleSwitch(full) {
-    const now = callRule().rule;
-    const btn = (k, name, text) => `<button type="button" data-callrule="${k}" aria-pressed="${now === k}"><b>${name}</b><span>${text}</span></button>`;
-    const go = (turn, what) => `<button type="button" class="qbtn" data-q="${turn}" data-kind="turn">${turn}</button> <span class="muted">(${what})</span>`;
-    return `<div class="cs2-rule"><p><b>For you to pick:</b> how “expected” is worked out. <span class="muted">Only you see this box, here on the test site; members get “As now” until you choose.</span></p>
-      <div class="cs2-rulebtns">${btn('eight', 'As now', 'the time on the board when the call first showed 8 hours or less away')}${btn('before', 'Proposed', 'what the board showed 8 hours before the call came')}</div>
-      ${full ? `<p class="anote">They agree on most calls. Three real ones where they do not: ${go('EN09', 'YMXS02, 8 Nov')} · ${go('SR02', 'X39291, 7 Nov')} · ${go('SB05', 'X30241, 19 Oct')}. Open one and tap between the two.</p>` : ''}</div>`;
   }
   function ana2CallPage(view, panel) {
     const by = ana2.byOrigin || { sarnia: [], toronto: [], garnet: [], yard: [] };
@@ -7721,7 +7703,7 @@ source().then(async (src) => {
     const openHow = local.get('analytics2How') !== false;
     const how = callCardOn() ? `<details class="cs2-read"><summary><i>i</i>How to read a call</summary>${ana2ReadCall()}</details>`
       : `<details class="sheet test-current-box cs2-how"${openHow ? ' open' : ''}><summary><h2>How to read the call graph</h2><span class="meta">four examples</span></summary><div style="padding:0 14px 14px">${ana2Examples()}</div></details>`;
-    panel.insertAdjacentHTML('beforebegin', (PREVIEW ? ana2RuleSwitch(true) : '') + compare + how);
+    panel.insertAdjacentHTML('beforebegin', compare + how);
     if (!callCardOn()) view.querySelector('.cs2-how').addEventListener('toggle', (e) => local.set('analytics2How', e.target.open));
     // The rest, simpler: the calls by how far off (tap a line for them), by
     // turn and the latest calls stay; everything else folds into one box.
@@ -7795,7 +7777,7 @@ source().then(async (src) => {
     more.className = 'cs2-morebox';
     more.innerHTML = '<summary>More numbers and how they are worked out</summary><div></div>';
     [...sec.children].forEach((el) => { if (!el.matches('header')) more.lastChild.appendChild(el); });
-    sec.insertAdjacentHTML('beforeend', `${PREVIEW ? ana2RuleSwitch(false) : ''}<div class="cs2-grid">${cards}</div>
+    sec.insertAdjacentHTML('beforeend', `<div class="cs2-grid">${cards}</div>
       ${removed || pulled ? `<p class="anote" style="margin:0 14px 10px">${removed ? `${callCardOn() ? 'Taken off before the call' : 'Removed from the line-up after lining up'}: <b>${removed}</b>. ` : ''}${pulled ? `Calls where a job was pulled without a call first: <b>${pulled}</b>.` : ''}</p>` : ''}
       <h3 class="cs2-h3">Calls, newest first</h3>${ana2CallList(calls, false)}`);
     sec.appendChild(more);
@@ -7865,8 +7847,6 @@ source().then(async (src) => {
       if (z) d.outerHTML = callOpen(z);
     }, true);
     view.addEventListener('click', (e) => {
-      const ruleBtn = e.target.closest && e.target.closest('[data-callrule]');
-      if (ruleBtn) { local.set('boardCallRule', ruleBtn.dataset.callrule); renderAnalytics(); return; }
       const turnsBtn = e.target.closest && e.target.closest('[data-cs2-turns]');
       if (turnsBtn) { view.querySelectorAll('.cs2-turn[hidden]').forEach((el) => { el.hidden = false; }); turnsBtn.parentElement.remove(); return; }
       const callsBtn = ANA2 && e.target.closest && e.target.closest('[data-ana2-callsmore]');

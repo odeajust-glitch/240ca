@@ -93,15 +93,10 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    how to tell real overtime from a ticket left open (trainee only on the job; the rest
    of the crew gone), where the hours show (Turn History / My stats work hours), and
    whether the Yard jobs box should mark or drop a job left open like that.
-8. **Call card: how "expected" is worked out. His pick, open since 2026-11-12.** The card is
-   on for every member (his word that day: "Push these changes to the main") with today's
-   eight-hour figure: the first time the board showed the call 8 hours or less away,
-   whenever that check came. It reads his own EN09 / YMXS02 call (8 Nov) as "right on
-   time", SR02 / X39291 05 (7 Nov) as "14 h 29 m later" and SB05 / X30241 17 (19 Oct) as
-   "called when expected" from a check after the call. The proposed rule (what the board
-   showed 8 hours before the call came) is built beside it; only he sees it, in the "For you
-   to pick" box on the test site's Call stability page. As now or Proposed: when he says,
-   the other and the box go. Recommended to him: Proposed. Details in HANDOFF's top block.
+8. **Done 2026-11-12 (his "Proposed"): how the call card works out "expected".** What the
+   board showed 8 hours before the call came; lined up later than that, what it showed
+   then. On for every member; the pick box is gone. Left for a tidy-up, no decision needed:
+   the older rule's branch in `BoardAnalytics.callCard` (`opts.rule: 'eight'`) and its tests.
 9. **Done 2026-11-12 (his "3"): calls the tracker scored against the wrong trip.** A wait
    first seen after the turn had already gone on duty is no longer matched to that trip
    (`sleepCheck` and `finish` in `lib/board/insights.js`; 16 records on that morning's live
