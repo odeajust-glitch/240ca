@@ -1,9 +1,12 @@
 // Current, reviewed with the owner on 2026-11-12 (the tab-by-tab review; HANDOFF has the ten findings).
-// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10, to be tried on the test site only: every piece is behind
-// PREVIEW (board-test with the owner key). These run the page's own functions, cut from the page, twice:
-//   off the test site: the page as every member has it, word for word as before;
-//   on the test site with the owner key: the change.
-// Promoting a piece to the main site is his to say, in so many words. Turn ids and train ids only.
+// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10, looked at them on the test site, and the same day said:
+// "You can push all this to the main except the purple predictive stuff". So they are on for every member,
+// on both sites, on the Current tab (the short-row layout); item 6, the counts line, he had taken out
+// ("it does but take it out"). Snapshots keeps its older layout for members, and in it these boxes are as
+// they were. These run the page's own functions, cut from the page:
+//   the short-row layout (reviewed = true where a box is shared): the reviewed form, whoever is looking;
+//   the older layout: word for word as before.
+// Turn ids and train ids only.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +18,8 @@ const html = fs.readFileSync(require.resolve('../../public/board.html'), 'utf8')
 const cut = (from, to) => { const a = html.indexOf(from); const b = html.indexOf(to, a + 1); assert.ok(a > 0 && b > a, `not found in the page: ${from}`); return html.slice(a, b); };
 const text = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-// The page's Current functions in a sandbox. preview: the test site with the owner key. marks: tracked turns.
+// The page's Current functions in a sandbox. preview: the test site with the owner key (it no longer
+// changes any of these). marks: tracked turns.
 function page({ preview = false, marks = [] } = {}) {
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const ctx = { BoardTrains: T, BoardTurns: Turns, PREVIEW: preview, stampMin: T.toMin, esc, split: (s) => s.split(' '),
@@ -29,8 +33,8 @@ function page({ preview = false, marks = [] } = {}) {
   vm.runInContext(cut('const awayCall = (s, t) => {', 'function lineup2(s) {'), ctx); // awayCall, cur2Row
   vm.runInContext(cut('function s5CrewWhy(s, t) {', 'function lineup(s, previewS5 = false) {'), ctx); // s5CrewWhy, lineupWhy
   vm.runInContext(cut('function lineup2(s) {', 'function toronto2(s) {'), ctx);
-  vm.runInContext(cut('function garnetCrew(s) {', '// The reset tracker (owner, 2026-11-03)'), ctx); // garnet2, changes2, the review block, strip2, dot
-  vm.runInContext(cut('function poolBody(s, p) {', '// Pools at Sarnia (owner, 2026-11-09'), ctx);
+  vm.runInContext(cut('function garnetCrew(s) {', '// The reset tracker (owner, 2026-11-03)'), ctx); // garnet2, changes2, the review block, dot
+  vm.runInContext(cut('function poolBody(s, p, reviewed = false) {', '// Pools at Sarnia (owner, 2026-11-09'), ctx);
   vm.runInContext(cut('const MU_TURN = ', '// Jobs up for bid (owner, 2026-11-11'), ctx); // the Call board, Days off
   vm.runInContext(cut('let vacTab = ', '\nfunction sequence(s) {'), ctx);
   return { ctx, run: (code) => vm.runInContext(code, ctx) };
@@ -95,72 +99,103 @@ const LINED = new Set(['lineup', 'spareFill', 'homeTrain', 'onDuty', 'mayCall', 
 const cardOf = (turn) => Turns.facts(s, turn).map((x) => (LINED.has(x.kind)
   ? { kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') } : { kind: 'status', text: x.text }));
 
-test('the review’s pieces are for the test site only, at the owner’s word', () => {
-  // Owner, 2026-11-12, to "the ten things, numbered; I'd build 1, 2, 3, 5, 6, 7 and 10": "Go". His rule for the
-  // review: only so it shows on the test site, nothing to the main site "until I say so in so many words".
-  assert.ok(html.includes('He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review.'));
-  assert.ok(html.includes('// ---- Current, reviewed with the owner 2026-11-12: TEST SITE ONLY (PREVIEW)'));
-  // PREVIEW itself is the test site's address with the owner key, as it has been since 2026-11-10.
+test('the review’s pieces are on for every member, at the owner’s word', () => {
+  // Owner, 2026-11-12, to "the ten things, numbered; I'd build 1, 2, 3, 5, 6, 7 and 10": "Go" (the test site).
+  // Then, having looked at board-test on his phone: "You can push all this to the main except the purple
+  // predictive stuff which i believe you removed".
+  assert.ok(html.includes('He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review'));
+  assert.ok(html.includes('"You can push all this to the main except the purple predictive stuff"'));
+  const block = cut('// ---- Current, reviewed with the owner 2026-11-12 ---', '// ---- end of the Current review block');
+  assert.ok(!/\bPREVIEW\b/.test(block), 'nothing in the review block waits on the test site any more');
+  // The purple predictive pieces are not part of it: the likely-call line is off everywhere, and the train
+  // habit tag, its note and the spareboard odds still need the test site and its patterns file.
+  assert.ok(html.includes('const TRAIN_LIKELY = false;'));
+  assert.ok(html.includes('const P = TRAIN_LIKELY && PREVIEW && PATTERNS && PATTERNS.predict;'));
+  assert.ok(html.includes("const d = PREVIEW && PATTERNS && num ? (PATTERNS.drift || {})[num] : null;"));
+  assert.ok(html.includes('if (!PREVIEW || !PATTERNS || !od || t.status === \'ORD\') return \'\';'));
+  // PREVIEW itself is still the test site's address with the owner key, for the previews that remain.
   assert.ok(html.includes("const PREVIEW_HOST = /^board-test\\./.test(location.hostname);"));
   assert.ok(html.includes('const preview = PREVIEW_HOST && !!(h && OwnerKey.has());'));
-  // The styles are either classes only drawn on the test site or under the class the page sets with PREVIEW.
-  assert.ok(html.includes("document.body.classList.toggle('preview-site', PREVIEW);"));
-  for (const rule of html.match(/\n {2}(?: {2})?body\.preview-site #sec-(?:daysoff|yard)[^{]*\{[^}]*\}/g) || []) assert.ok(rule.split(',').every((sel) => !sel.includes('#sec-') || /body\.preview-site/.test(sel)), rule);
+  // The Days off and Yard rules reach the Current tab for everyone, and Snapshots only on the test site.
+  assert.ok(html.includes("document.body.classList.toggle('current', mode === 'current');"));
+  const rules = html.match(/\n {2}(?: {2})?body\.current #sec-(?:daysoff|yard)[^{]*\{[^}]*\}/g) || [];
+  assert.equal(rules.length, 3);
+  for (const rule of rules) assert.ok(rule.split('{')[0].split(',').every((sel) => /body\.(current|preview-site) #sec-(daysoff|yard)/.test(sel)), rule);
 });
 
-test('item 6: the counts line says they are the spareboards, on the test site only', () => {
-  const off = text(page().run('strip2')(s));
-  assert.equal(off, '3 trains · 1 ordered Conductors free 1 / 3 Engineers free 1 / 1');
-  const on = text(page({ preview: true }).run('strip2')(s));
-  assert.equal(on, '3 trains · 1 ordered Spare conductors free 1 / 3 Spare engineers free 1 / 1');
+test('the short-row layout draws the reviewed boxes; Snapshots’ older layout draws them as before', () => {
+  // Current for everyone; on the test site Snapshots draws the same way (an earlier preview, not his yet).
+  assert.ok(html.includes("const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too"));
+  assert.ok(html.includes("vacancies: (x) => vacancies(x, true).replace('Jobs going spare · 5', 'Jobs going spare'),"));
+  assert.ok(html.includes('pools: (x) => pools(x, poolPicks || [], true), daysoff: (x) => daysOff(x, true), callboard: (x) => onDuty(x, true) };'));
+  assert.ok(html.includes('const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === \'lineup\' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);'));
+  // The older layout's own calls carry no such word.
+  for (const line of ["html: (s) => pools(s, poolPicks || []) },", "html: (s) => vacancies(s) },", "html: (s) => daysOff(s) },", "html: (s) => onDuty(s) },"]) assert.ok(html.includes(line), line);
+  assert.ok(html.includes("'<details class=\"why\"><summary>Why</summary>' + lineupWhy(s, t, previewS5) +"));
+  // The test site's key changes none of them now.
+  const a = page();
+  const b = page({ preview: true });
+  for (const code of ['lineup2(s)', 'garnet2(s)', 'daysOff(s, true)', 'daysOff(s)', 'vacancies(s, true)', 'vacancies(s)', 'onDuty(s, true)', 'onDuty(s)', 'poolBody(s, s.pools[0], true)', 'poolBody(s, s.pools[0])', 'lineupWhy(s, s.lineup[1], true, true)', 'lineupWhy(s, s.lineup[1])']) {
+    a.ctx.s = s; b.ctx.s = s;
+    assert.equal(b.run(code), a.run(code), code);
+  }
+});
+
+test('item 6: no counts line on Current; he had it taken out', () => {
+  // On the test site it read "Spare conductors free 21 / 28 · Spare engineers free 0 / 3" at his "Go".
+  // Owner, 2026-11-12, looking at it there: "it does but take it out".
+  assert.ok(!html.includes('function strip2('));
+  assert.ok(!/strip2\(s\)/.test(html));
+  assert.ok(html.includes("${mode === 'current' || PREVIEW ? '' : strip(s, false)}"));
+  // The train count is still in the line-up's own heading, and Snapshots' older layout keeps its counts.
+  assert.ok(text(page().run('lineup2')(s)).startsWith('Train line-up 3 trains · 1 ordered'));
+  assert.ok(html.includes('<div class="l">Conductors available (spareboard)</div>'));
 });
 
 test('item 3: the note under the line-up says what the big time is; calls read "~" like every other box', () => {
-  const off = page().run('lineup2')(s);
-  assert.ok(off.includes('<div class="foot">The big time is on duty (planned or ordered). CO conductor, EN engineer. Tap a train for why that crew.</div>'));
-  assert.ok(off.includes('<span class="call">call 12th 1000</span>'));
-  const on = page({ preview: true }).run('lineup2')(s);
+  const on = page().run('lineup2')(s); // a member, the main site
   assert.ok(on.includes('The big time is the one on the CATS line-up (planned or ordered). The crew goes on duty 15 minutes before it (a deadhead at that time), and the call is 2 hours before on duty. CO conductor, EN engineer.'));
   assert.ok(!on.includes('The big time is on duty'));
   assert.ok(on.includes('<span class="call">call ~12th 1000</span>') && on.includes('<span class="call">call ~12th 1655</span>'));
+  // A train with no call worked out has no "~" in front of the dash.
+  assert.ok(page().run('lineup2')({ ...s, lineup: [{ ...s.lineup[0], call: '' }] }).includes('<span class="call">call —</span>'));
   // The figures the note gives are the checker's own.
   const cfg = require('../../lib/board/config');
   assert.deepEqual(cfg.prepMinutes, { train: 15, deadhead: 0 });
   assert.equal(cfg.callLeadMinutes, 120);
 });
 
-test('item 5: "why that crew" opens on the checker’s own sentence, on the test site only', () => {
+test('item 5: "why that crew" opens on the checker’s own sentence', () => {
+  // Owner, 2026-11-12, of "Tap a train: the reason comes first" on the test site: "5 yes".
   const row = s.lineup[1]; // E27861 12: nobody free on the Chain Gang
-  const off = page().run('lineupWhy')(s, row, true);
-  assert.ok(!off.includes('Skipped (keep their place)'));
-  assert.ok(off.includes('<p>Cover is an estimate, not a confirmed crew call.</p>'));
-  assert.ok(off.includes('expected cover B139 · Conductor slow board · call 12th 1655.'));
-  // A train with nobody going spare still ends on the old line for members.
-  assert.ok(page().run('lineupWhy')(s, s.lineup[0], true).endsWith('<p>No matching spare-job cover is saved for this train in this check.</p>'));
-
-  const p = page({ preview: true });
-  const on = p.run('lineupWhy')(s, row, true);
-  assert.ok(on.startsWith('<p class="whysaid">A and B used up for this road day → Chain Gang. Skipped (keep their place): SR04 on hold turn until 13th 0559; SR01 on rest until 13th 0240. No Chain Gang turn available → spareboard.</p><h4>Calling sequence</h4>'));
-  assert.ok(!on.includes('Called ~'), 'the row has the call; the sentence does not repeat it in the past tense');
-  assert.ok(on.includes('call ~12th 1655.'));
-  const plain = p.run('lineupWhy')(s, s.lineup[0], true);
-  assert.ok(plain.startsWith('<p class="whysaid">Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too.</p>'));
-  assert.ok(!plain.includes('No matching spare-job cover'));
+  const p = page();
   // The row puts the sentence at the very top of its fold, above anything else, and once.
   const fold = p.run('lineup2')(s).split('<div class="fold">')[2];
-  assert.ok(fold.startsWith('<b class="foldname">Why</b><p class="whysaid">A and B used up'));
+  assert.ok(fold.startsWith('<b class="foldname">Why</b><p class="whysaid">A and B used up for this road day → Chain Gang. Skipped (keep their place): SR04 on hold turn until 13th 0559; SR01 on rest until 13th 0240. No Chain Gang turn available → spareboard.</p>'));
   assert.equal(p.run('lineup2')(s).split('class="whysaid"').length - 1, s.lineup.length);
-  // L502: the 501/502 reason first, and "spare" said once about the turn going spare.
-  const l502 = p.run('lineupWhy')(s, s.lineup[2], true);
-  assert.ok(l502.startsWith('<p class="whysaid">L502 follows regular 501/502 board position (option 29): S502'));
-  assert.ok(text(l502).includes('Conductor: (S502 spare)') && !text(l502).includes('spare (S502 spare)'));
-  assert.ok(text(page().run('lineupWhy')(s, s.lineup[2], true)).includes('Conductor: spare (S502 spare)'));
+  assert.ok(!p.run('whySaid')(row).includes('Called ~'), 'the row has the call; the sentence does not repeat it in the past tense');
+  assert.equal(p.run('whySaid')(s.lineup[0]), '<p class="whysaid">Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too.</p>');
   assert.equal(p.run('whySaid')({ reason: '' }), '');
-  assert.equal(page().run('whySaid')(row), '');
+  // Under it, as the short-row layout asks for it: the sequence, the cover with "call ~", and no line about
+  // spare cover being "saved" on a train with nobody going spare.
+  const on = p.run('lineupWhy')(s, row, true, true);
+  assert.ok(on.startsWith('<h4>Calling sequence</h4>'));
+  assert.ok(on.includes('expected cover B139 · Conductor slow board · call ~12th 1655.'));
+  assert.ok(on.endsWith('<p>Cover is an estimate, not a confirmed crew call.</p>'));
+  assert.ok(!p.run('lineupWhy')(s, s.lineup[0], true, true).includes('No matching spare-job cover'));
+  // L502: "spare" said once about the turn going spare.
+  const l502 = p.run('lineupWhy')(s, s.lineup[2], true, true);
+  assert.ok(text(l502).includes('Conductor: (S502 spare)') && !text(l502).includes('spare (S502 spare)'));
+  assert.ok(fold.length && p.run('lineup2')(s).includes('<p class="whysaid">L502 follows regular 501/502 board position (option 29): S502'));
+  // Snapshots' older layout asks the old way and gets the old words.
+  const old = p.run('lineupWhy')(s, row);
+  assert.ok(!old.includes('whysaid') && !old.includes('Skipped (keep their place)'));
+  assert.ok(old.includes('expected cover B139 · Conductor slow board · call 12th 1655.'));
+  assert.ok(p.run('lineupWhy')(s, s.lineup[0]).endsWith('<p>No matching spare-job cover is saved for this train in this check.</p>'));
 });
 
 test('item 2: a day off is not taken once its own person is on duty on that turn after it began', () => {
-  const p = page({ preview: true });
+  const p = page();
   const worked = p.run('dayOffWorked');
   const [s101, sa08, ysby, b129] = s.daysOff;
   assert.equal(worked(s, sa08).train, 'Z14891 11'); // owner, 2026-11-12, of this very line: "It went this morning"
@@ -181,29 +216,35 @@ test('item 2: a day off is not taken once its own person is on duty on that turn
   assert.equal(worked({ ...s, onDuty: [{ ...s.onDuty[1], backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] }, s5).train, 'L50231 12');
 });
 
-test('item 2: the Days off box and the pool boards, off the test site and on it', () => {
-  const off = page().run('daysOff')(s);
-  assert.ok(text(off).startsWith('Days off 2 active · 2 upcoming Active now · 2 From Ends Turn 11th 1800 12th 1800 S101 EN 11th 2140 12th 2140 SA08 CO Upcoming · 2'));
-  assert.ok(!off.includes('not taken') && !off.includes('Listed, but working'));
-  const on = text(page({ preview: true }).run('daysOff')(s));
+test('item 2: the Days off box and the pool boards, on Current and in Snapshots’ older layout', () => {
+  const p = page();
+  const old = p.run('daysOff')(s);
+  assert.ok(text(old).startsWith('Days off 2 active · 2 upcoming Active now · 2 From Ends Turn 11th 1800 12th 1800 S101 EN 11th 2140 12th 2140 SA08 CO Upcoming · 2'));
+  assert.ok(!old.includes('not taken') && !old.includes('Listed, but working'));
+  const on = text(p.run('daysOff')(s, true));
   assert.ok(on.startsWith('Days off 1 active · 2 upcoming · 1 not taken Active now · 1 From Ends Turn 11th 1800 12th 1800 S101 EN Upcoming · 2'));
   assert.ok(on.includes('Listed, but working · 1 From Ends Turn 11th 2140 12th 2140 SA08 CO on duty 12th 0800 on Z14891 11, nobody filling in'));
   assert.ok(on.includes('The line-up and the alerts still read it as CATS listed it.'));
-  // Nothing worked: the box is as it always was, on the test site too.
+  // Nothing worked: the box is as it always was.
   const quiet = { ...s, onDuty: [] };
-  assert.equal(page({ preview: true }).run('daysOff')(quiet), page().run('daysOff')(quiet));
+  assert.equal(p.run('daysOff')(quiet, true), p.run('daysOff')(quiet));
 
-  const board = (pv, i) => text(page({ preview: pv }).run('poolBody')(s, s.pools[i]));
+  const board = (reviewed, i) => text(p.run('poolBody')(s, s.pools[i], reviewed));
   assert.ok(board(false, 0).includes('999 SA08 out working on Z14891; PL @ 11th 2140 · goes spare until 12th 2140'));
   assert.ok(board(true, 0).includes('999 SA08 out working on Z14891 001 SA02 available'));
   // S101's stands (a spare is working the job), and a day off still to come is left alone.
   assert.equal(board(true, 1), board(false, 1));
   assert.equal(board(true, 2), board(false, 2));
   assert.ok(board(true, 2).includes('B129 PL @ 13th 1400'));
+  assert.equal(text(p.run('poolBody')(s, s.pools[0])), board(false, 0), 'asked the old way, a board is the older layout’s');
+  // The Pools box hands the word on to each board.
+  assert.ok(html.includes('function pools(s, picked, reviewed = false) {'));
+  assert.ok(html.includes('<span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p, reviewed)}`).join(\'\');'));
 });
 
 test('item 1: the card under Find a turn names a predicted job and the call for the train home', () => {
-  const p = page({ preview: true });
+  // Owner, 2026-11-12, of his own card on the test site ("Home from Garnet on L50131 12 …, call ~1915"): "yes".
+  const p = page();
   const card = (turn) => p.run('cardLines')(s, turn, cardOf(turn)).map((l) => l.text);
   // A spare the order has for a job CATS has not listed: before, only "available" on both boards.
   assert.deepEqual(cardOf('B139').map((l) => l.text), ['Conductor fast board position 006: available', 'Conductor slow board position 001: available']);
@@ -237,18 +278,19 @@ test('item 1: the card under Find a turn names a predicted job and the call for 
   assert.equal(JSON.stringify(mine), before);
 });
 
-test('item 1: the page only calls the card’s extra lines on the test site', () => {
-  assert.ok(html.includes('const lines = PREVIEW ? cardLines(s, turn, built) : built;'));
+test('item 1: the page draws the card’s extra lines for every member', () => {
+  assert.ok(html.includes('const lines = cardLines(s, turn, built);'));
   assert.ok(html.includes("const built = [...where.map((text) => ({ kind: 'status', text })), ...lined];"));
 });
 
-test('item 7: Jobs going spare as short rows on the test site; the table as it was everywhere else', () => {
+test('item 7: Jobs going spare as short rows on Current; the table as it was in Snapshots’ older layout', () => {
+  // Owner, 2026-11-12, of "Jobs going spare is short rows that fit the screen" on the test site: "6 yes".
   const off = page().run('vacancies')(s);
   assert.equal((off.match(/<table>/g) || []).length, 2);
   assert.ok(!off.includes('vac2') && !off.includes('<details'));
   assert.ok(text(off).includes('12th 1530 YINS30 YD FO · planned Expected cover B104 estimate · Conductor fast board · call ~12th 1330 YINS30 (spare) returns 13th 0404'));
 
-  const on = page({ preview: true, marks: ['B139'] }).run('vacancies')(s);
+  const on = page({ marks: ['B139'] }).run('vacancies')(s, true);
   assert.ok(!on.includes('<table') && !on.includes('class="scroll"'), 'nothing left to sit off a phone’s edge');
   assert.equal((on.match(/<details class="cur2 vac2/g) || []).length, 4);
   const t = text(on);
@@ -270,29 +312,28 @@ test('item 7: Jobs going spare as short rows on the test site; the table as it w
     { ...s.vacancies[1], wrong: { order: 'SD11', train: 'M39671 11', spare: false } },
     { ...s.vacancies[0], untied: '12th 0730', fill: null },
     { ...s.vacancies[0], train: 'YFXS01', turn: 'YFXS01', fill: fill('', 'Conductor fast board', '12th 1330') }] };
-  const o = page({ preview: true }).run('vacancies')(odd);
+  const o = page().run('vacancies')(odd, true);
   assert.ok(o.includes('<details class="cur2 vac2 catswrong">') && o.includes('<details class="cur2 vac2 untied">'));
   assert.ok(text(o).includes('wrong turn') && text(o).includes('Wrong turn: the order has SD11 on M39671 11, so this job isn\'t going spare'));
   assert.ok(text(o).includes('probably not spare') && text(o).includes('hasn\'t been tied up yet'));
   assert.ok(text(o).includes('NO SPARE AVAILABLE'));
   // Nothing listed and nothing predicted: no box, either way.
   const none = { ...s, vacancies: [], vacanciesPredicted: [], vacanciesCats: undefined };
-  assert.equal(page({ preview: true }).run('vacancies')(none), '');
+  assert.equal(page().run('vacancies')(none, true), '');
   assert.equal(page().run('vacancies')(none), '');
-  assert.ok(text(page({ preview: true }).run('vacancies')({ ...s, vacancies: [] })).includes('CATS\'s option 5 lists no jobs going spare.'));
+  assert.ok(text(page().run('vacancies')({ ...s, vacancies: [] }, true)).includes('CATS\'s option 5 lists no jobs going spare.'));
 });
 
-test('item 10: the small wording, on the test site only', () => {
+test('item 10: the small wording', () => {
   // A fill-in line names the person once: the job's turn carries the same name while it is out working.
-  const names = (pv) => { const p = page({ preview: pv }); p.ctx.markTurn = (t) => String(t).replace(/\b(EN06|SD04|EN02|S101)\b/g, '$1 <span class="crewnm">Person, A</span>'); return p.run('onDuty')(s); };
-  assert.ok(names(false).includes('EN06 <span class="crewnm">Person, A</span> filling in on SD04 <span class="crewnm">Person, A</span>'));
+  const names = (reviewed) => { const p = page(); p.ctx.markTurn = (t) => String(t).replace(/\b(EN06|SD04|EN02|S101)\b/g, '$1 <span class="crewnm">Person, A</span>'); return p.run('onDuty')(s, reviewed); };
+  assert.ok(names(false).includes('EN06 <span class="crewnm">Person, A</span> filling in on SD04 <span class="crewnm">Person, A</span>'), 'Snapshots’ older layout: as it was');
   assert.ok(names(true).includes('<div class="crew">EN06 <span class="crewnm">Person, A</span> filling in on SD04</div>'));
   assert.ok(names(true).includes('EN02 <span class="crewnm">Person, A</span> filling in on S101</div>'));
+  assert.equal(names(), names(false), 'asked the old way, the Call board is the older layout’s');
   // Garnet: option 31 read and showing nobody is not "wasn't read".
-  const g = (pv, snap = s) => text(page({ preview: pv }).run('garnet2')(snap));
-  assert.ok(g(false).includes('The Garnet board wasn’t read in this check. S501 is shown away on the 501/502 board'));
-  assert.ok(g(true).includes('Nobody is shown at Garnet yet. S501 is shown away on the 501/502 board: CO out working on L50231 · EN out working on L50231.'));
+  const g = (snap = s) => text(page().run('garnet2')(snap));
+  assert.ok(g().includes('Nobody is shown at Garnet yet. S501 is shown away on the 501/502 board: CO out working on L50231 · EN out working on L50231.'));
   const unread = { ...s, screens: s.screens.filter((k) => k !== 'garnet') };
-  assert.ok(g(true, unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
-  assert.equal(g(true, unread), g(false, unread));
+  assert.ok(g(unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
 });

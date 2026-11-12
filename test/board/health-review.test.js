@@ -2,8 +2,9 @@
 // findings). He said "Go" to items 1 to 5. Two halves:
 //   the laptop (lib/board/health.js, scripts/board-auto.js): which waiting updates are only notes, and what
 //     became of each failed send. New figures on his own report; nothing a member sees.
-//   the page (public/board.html): every change behind PREVIEW (board-test with the owner key), so the main
-//     site's Page Health is word for word as it was until he says which stays.
+//   the page (public/board.html): tried on the test site first (behind PREVIEW), and on both sites since
+//     the same day at his word, after he had looked at board-test: "You can push all this to the main
+//     except the purple predictive stuff which i believe you removed". The page is his alone.
 // And the same day, of the test site's line-up: "can you take out the purple predictive text".
 // Turn ids and train ids only.
 const test = require('node:test');
@@ -98,7 +99,8 @@ test('what became of the day’s failed sends: only one kind needs the owner', (
   assert.equal(Health.healthOf({ alerts: sent }).alerts.open, 2);
 });
 
-// The page's own functions for the checker box, in a sandbox. preview: the test site with the owner key.
+// The page's own functions for the checker box, in a sandbox. preview: the test site with the owner key
+// (it no longer changes any of these).
 function page({ preview = false } = {}) {
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const ctx = { PREVIEW: preview, esc, publishedAt: NOW - 5 * 60000, healthClock: (ms) => `Nov 12, ${new Date(ms).toISOString().slice(11, 16)}`, Intl, Number, Math, String };
@@ -118,20 +120,27 @@ const report = (over = {}, laptop = {}) => ({ down: null, watch: { at: NOW - min
 const rowsOf = (p, h, waiting) => JSON.parse(JSON.stringify(p.run('healthRows')(h, NOW, true, waiting)));
 const said = (p, h, waiting) => text(p.run('healthVerdict')(rowsOf(p, h, waiting)));
 
-test('Page Health off the test site is word for word as it was', () => {
-  const p = page();
-  const rows = rowsOf(p, report());
-  assert.deepEqual(rows.map((r) => r.label), ['Laptop last checked', 'Website last published', 'Running code', 'GitHub', 'Worker timer', 'Last failed check', 'Microsoft sign-in', 'Watchdog restarts today', 'Alerts today', 'Laptop backup', 'Health sent']);
-  assert.equal(said(p, report()), '3 things need you GitHub: 2 newer updates waiting: git pull, then restart · checked 12 min ago Microsoft sign-in: 22 h 00 m ago; runs out ~Nov 12, 17:50 (1 h 50 m left) Alerts today: 91 sent, 1 failed (last failed 02:55: SR01 is back on the board in Sarnia: position 004 (3 ahead).)');
-  // The laptop's new figures change nothing there, and neither does a sign-up waiting.
+test('Page Health reads the same on the main site and the test site, at the owner’s word', () => {
+  const main = page();
+  const tst = page({ preview: true });
+  assert.ok(!/\bPREVIEW\b/.test(cut('  function healthRows(h, now, next, waiting) {', '  const healthTable = (rows) =>')), 'the checker box no longer asks which site it is on');
   const newer = report({}, { code: { ...report().laptop.code, behindCode: 0 }, alerts: { sent: 91, failed: 1, lastFailure: report().laptop.alerts.lastFailure, gone: 1, retried: 0, pending: 0, open: 0, unknown: 0, lastOpen: null } });
-  assert.equal(said(p, newer, { pending: [NOW - 140 * min], codes: 2 }), said(p, report()));
-  assert.ok(rows.every((r) => !('say' in r)));
-  assert.ok(html.includes("const rows = healthRows(h, now, true, PREVIEW ? accountsWaiting() : null);"));
+  const waiting = { pending: [NOW - 140 * min], codes: 2 };
+  for (const [h, w] of [[report(), null], [newer, waiting], [newer, null]]) {
+    assert.deepEqual(rowsOf(main, h, w), rowsOf(tst, h, w));
+    assert.equal(main.run('healthVerdict')(rowsOf(main, h, w)), tst.run('healthVerdict')(rowsOf(tst, h, w)));
+  }
+  assert.deepEqual(rowsOf(main, report()).map((r) => r.label), ['Laptop last checked', 'Website last published', 'Running code', 'GitHub', 'Worker timer', 'Last failed check', 'Microsoft sign-in', 'Watchdog restarts today', 'Alerts today', 'Laptop backup', 'Health sent']);
+  // A report from laptop code older than this has no second count and no word on the failed sends, so
+  // those two lines are as they were; the sign-in already puts the point first.
+  assert.equal(said(main, report()), '3 things need you GitHub: 2 newer updates waiting: git pull, then restart · checked 12 min ago Microsoft sign-in runs out in 1 h 50 m (Nov 12, 17:50). Press R in the checker window, then approve it on your phone. Alerts today: 91 sent, 1 failed (last failed 02:55: SR01 is back on the board in Sarnia: position 004 (3 ahead).)');
+  // With the laptop's new figures: notes and an unsubscribed phone are off the list, what waits on Members is on it.
+  assert.equal(said(main, newer, waiting), '3 things need you Microsoft sign-in runs out in 1 h 50 m (Nov 12, 17:50). Press R in the checker window, then approve it on your phone. 1 sign-up is waiting for your approval, since Nov 12, 13:40: Members tab. 2 name codes are waiting for your OK before My stats opens for them: Members tab. Open the Members tab');
+  assert.ok(html.includes('const rows = healthRows(h, now, true, accountsWaiting());'));
 });
 
-test('item 1: on the test site, notes-only updates and a phone that had unsubscribed do not “need you”', () => {
-  const p = page({ preview: true });
+test('item 1: notes-only updates and a phone that had unsubscribed do not “need you”', () => {
+  const p = page();
   const lf = report().laptop.alerts.lastFailure;
   const alerts = (more) => ({ sent: 91, failed: 1, lastFailure: lf, gone: 0, retried: 0, pending: 0, open: 0, unknown: 0, lastOpen: null, ...more });
   const code = (more) => ({ ...report().laptop.code, ...more });
@@ -163,7 +172,7 @@ test('item 1: on the test site, notes-only updates and a phone that had unsubscr
 });
 
 test('item 2: a sign-up waiting for approval, and a name code waiting for his OK, are on the list', () => {
-  const p = page({ preview: true });
+  const p = page();
   const quiet = report({}, { code: { ...report().laptop.code, behind: 0, behindCode: 0 }, alerts: { sent: 91, failed: 0, lastFailure: null }, signIn: { lastAt: NOW - 4 * 60 * min, endsAt: NOW + 20 * 60 * min } });
   assert.equal(said(p, quiet, { pending: [], codes: 0 }), 'All good · nothing needs you right now');
   assert.equal(said(p, quiet, null), 'All good · nothing needs you right now');
@@ -182,7 +191,7 @@ test('item 2: a sign-up waiting for approval, and a name code waiting for his OK
 });
 
 test('item 3: the point first and what to do; the checker down is one line, not five', () => {
-  const p = page({ preview: true });
+  const p = page();
   // The sign-in, with under two hours left and once it has run out.
   assert.ok(said(p, report()).includes('Microsoft sign-in runs out in 1 h 50 m (Nov 12, 17:50). Press R in the checker window, then approve it on your phone.'));
   assert.ok(said(p, report({}, { signIn: { lastAt: NOW - 25 * 60 * min, endsAt: NOW - 12 * min } })).includes('Microsoft sign-in has run out (Nov 12, 15:48). Press R in the checker window, then approve it on your phone.'));
@@ -194,27 +203,30 @@ test('item 3: the point first and what to do; the checker down is one line, not 
       signIn: { lastAt: NOW - 20 * 60 * min, endsAt: NOW + 4 * 60 * min }, alerts: { sent: 40, failed: 0, lastFailure: null }, code: { ...report().laptop.code, behind: 0, behindCode: 0 } });
   assert.equal(said(p, down), '1 thing needs you The checker has not checked since Nov 12, 12:40 (3 h 20 m ago). Last problem: CATS did not answer within a minute. On the laptop, look at the Board checker window; if it is stuck, press Ctrl+C and start it again.');
   assert.deepEqual(rowsOf(p, down).filter((r) => r.bad).map((r) => r.label), ['Laptop last checked', 'Your phones told it was down', 'Down alert', 'Last failed check', 'Watchdog restarts today']);
-  assert.ok(said(page(), down).startsWith('5 things need you Laptop last checked: Nov 12, 12:40 (3 h 20 m ago) Your phones told it was down:'));
   // A check that failed while the checker is otherwise up is still its own line.
   const failed = report({}, { lastProblem: { at: NOW - 2 * min, text: 'CATS did not answer within a minute.' } });
   assert.ok(said(p, failed).includes('Last failed check: Failed Nov 12, 15:58 (2 min ago) · CATS did not answer within a minute.'));
 });
 
-test('items 4 and 5 are on the page for the test site only', () => {
+test('items 4 and 5 are on the page, on both sites', () => {
   // Folded or trimmed: the rep-email form once everything is set, old CATS pages, the days before counting began, the one-link box.
-  assert.ok(html.includes("const fold = PREVIEW ? [`<details class=\"moredet\"${allSet ? '' : ' open'}><summary>Where Submit sends them: ${allSet ? 'both rep emails, the names passcode and the email sender are set' : 'something is missing'}</summary>`, '</details>'] : ['', ''];"));
-  assert.ok(html.includes('const oldQ = PREVIEW && Q.length > 0 && now - newestQ > 48 * 3600000;'));
-  assert.ok(html.includes('while (PREVIEW && kept > 1 && !days[kept - 1].opens && !days[kept - 1].phones) kept--;'));
-  assert.ok(html.includes("const sent = PREVIEW ? '' : `<section class=\"sheet\"><header><h2>Alerts sent</h2></header>"));
-  // An address of their own, kept until the report that says who is looking has come.
+  assert.ok(html.includes("const fold = [`<details class=\"moredet\"${allSet ? '' : ' open'}><summary>Where Submit sends them: ${allSet ? 'both rep emails, the names passcode and the email sender are set' : 'something is missing'}</summary>`, '</details>'];"));
+  assert.ok(html.includes('const oldQ = Q.length > 0 && now - newestQ > 48 * 3600000;'));
+  assert.ok(html.includes('while (kept > 1 && !days[kept - 1].opens && !days[kept - 1].phones) kept--;'));
+  assert.ok(!html.includes('<h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn'), 'the box that held one link is gone');
+  assert.equal(html.split('<h2>Alerts sent</h2>').length - 1, 1, 'the Notifications tab keeps its own heading');
+  assert.ok(html.includes('A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;'));
+  assert.equal(html.split('id="tonotes"').length - 1, 1);
+  // An address of their own, kept until the report that says who is looking has come: only the owner's key gets one.
   assert.ok(html.includes("let ownerTabWanted = { '#pagehealth': 'health', '#searchreview': 'review' }[location.hash] || '';"));
-  assert.ok(html.includes("const ownAddress = (hash) => { if (PREVIEW) {"));
-  assert.ok(html.includes("if (PREVIEW && ownerTabWanted && firstTabOpen) { const want = ownerTabWanted; ownerTabWanted = ''; setTimeout(() => setMode(want), 0); }"));
-  assert.ok(html.includes("if (PREVIEW && ownerTabWanted && healthData) { const want = ownerTabWanted; ownerTabWanted = ''; setMode(want); }"));
+  assert.ok(html.includes("const ownAddress = (hash) => { try { history.replaceState(null, '', location.pathname + location.search + hash); }"));
+  assert.ok(html.includes("if (h && ownerTabWanted && firstTabOpen) { const want = ownerTabWanted; ownerTabWanted = ''; setTimeout(() => setMode(want), 0); }"));
+  assert.ok(html.includes("if (ownerTabWanted && healthData) { const want = ownerTabWanted; ownerTabWanted = ''; setMode(want); }"));
+  assert.ok(html.includes("document.getElementById('modeReview').hidden = !h;"), 'the tab itself still needs the report');
   assert.ok(!html.includes('id="pagehealth"') && !html.includes('id="searchreview"'), 'no element by that name for the browser to jump to');
 });
 
-test('the purple “likely call” line is off the test site’s line-up, at the owner’s word; the test still scores', () => {
+test('the purple “likely call” line is off the line-up on both sites, at the owner’s word; the test still scores', () => {
   // Owner, 2026-11-12, looking at board-test: "can you take out the purple predictive text".
   assert.match(html, /\nconst TRAIN_LIKELY = false;\n/);
   assert.ok(html.includes('"can you take out the purple predictive\n// text"'));

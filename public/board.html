@@ -898,17 +898,21 @@
   details.cur2 .fold h3 { margin: 12px 0 4px; font-size: 14px; }
   details.cur2 .fold .os2-all > summary { cursor: pointer; color: var(--accent); padding: 8px 0; }
   details.cur2[hidden] { display: none; }
-  /* Current, reviewed with the owner 2026-11-12: test site only. These are either classes only drawn when
-     PREVIEW is on (whysaid, vac2) or under body.preview-site, which the page sets with PREVIEW. */
+  /* Current, reviewed with the owner 2026-11-12; on for every member since that day at his word. whysaid and
+     vac2 are drawn only in the short-row layout. The Days off and Yard rules are under body.current (the
+     Current tab) and body.preview-site (the test site, where Snapshots draws the same way): Snapshots keeps
+     its older layout for members. */
   details.cur2 .fold p.whysaid { color: var(--ink); font-size: 13.5px; line-height: 1.45; margin: 2px 0 8px; }
   details.vac2.catswrong > summary { opacity: .75; box-shadow: inset 3px 0 0 #b3261e; }
   details.vac2.untied > summary { opacity: .6; }
   details.vac2 .fold .crew { margin: 4px 0; font-size: 13px; }
   /* Days off: a long name wraps under its turn where it ran off a phone's edge (19 px at 390, 49 px at 360). */
+  body.current #sec-daysoff td:last-child .num, body.current #sec-daysoff td:last-child .crewnm,
   body.preview-site #sec-daysoff td:last-child .num, body.preview-site #sec-daysoff td:last-child .crewnm { white-space: normal; }
   @media (max-width: 420px) {
+    body.current #sec-daysoff th, body.current #sec-daysoff td, body.current #sec-yard th, body.current #sec-yard td,
     body.preview-site #sec-daysoff th, body.preview-site #sec-daysoff td, body.preview-site #sec-yard th, body.preview-site #sec-yard td { padding-left: 10px; padding-right: 10px; }
-    body.preview-site #sec-yard .crew span { white-space: normal !important; }
+    body.current #sec-yard .crew span, body.preview-site #sec-yard .crew span { white-space: normal !important; }
   }
   /* Analytics, new layout (Test preview): everything under #view.ana2. */
   .ana2 .ana2-about { margin: 0 0 14px; }
@@ -2649,15 +2653,19 @@ function s5CrewWhy(s, t) {
   const status = (r) => esc(r.status || 'status unavailable')
     .replace(/away \(term 1\)/g, 'in Garnet')
     .replace(/out working on L50131/g, 'returning on L50131');
-  // Test site (owner, 2026-11-12: "Go"): the crew as its row has it, cover named, "spare" said once.
-  const crew = PREVIEW ? lineupCrew(t, s).replace(/<span class="spare">spare<\/span> \(/g, '(') : lineupCrew(t);
+  // Owner, 2026-11-12, reviewing Current: the crew as its row has it, cover named, "spare" said once.
+  const crew = lineupCrew(t, s).replace(/<span class="spare">spare<\/span> \(/g, '(');
   return '<h4>Crew lined up for ' + esc(t.train) + '</h4><div class="craft-lines">' + crew +
     '</div><h4>Other crew</h4>' + (others.length ? '<ul>' + others.map((r) =>
       '<li><b>' + markTurn(r.turn) + (r.craft ? ' ' + esc(r.craft) : '') + ':</b> ' + status(r) + '</li>').join('') +
     '</ul>' : '<p>Other crew status is not available in this saved check.</p>') +
     '<p class="muted">' + (t.s5OnDuty ? 'Crew recorded on the dated Call Board.' : 'Lined-up crew is a prediction until confirmed by CATS.') + '</p>';
 }
-function lineupWhy(s, t, previewS5 = false, saidFirst = false) {
+// fresh: drawn for the short-row line-up (Current; Snapshots too on the test site). There the caller puts the
+// checker's own sentence first (whySaid), the cover's call reads "call ~" and the line that said no spare cover
+// was "saved" on a train with nobody going spare is left out (owner, 2026-11-12, reviewing Current; on for
+// every member that day: "You can push all this to the main"). Snapshots' older layout keeps its own wording.
+function lineupWhy(s, t, previewS5 = false, fresh = false) {
   const stamp = BoardTrains.resolve(t.order, s.taken);
   const road = stamp ? new Date((stampMin(stamp) - 300) * 60000).toISOString().slice(0, 10) : '';
   const seq = (s.callingSequence || []).filter((x) => x.day === road);
@@ -2679,18 +2687,13 @@ function lineupWhy(s, t, previewS5 = false, saidFirst = false) {
     const craft = v.cc === 'EN' ? 'Engineer' : 'Conductor';
     return '<li><b>' + craft + ':</b> ' +
       (f ? (f.turn ? 'expected cover ' + markTurn(f.turn) : 'no spare currently free') +
-        ' · ' + esc(f.board) + ' · call ' + (PREVIEW ? '~' : '') + esc(f.call) +
+        ' · ' + esc(f.board) + ' · call ' + (fresh ? '~' : '') + esc(f.call) +
         (f.skipped && f.skipped.length ? ' · passed over: ' + esc(f.skipped.join(' · ')) : '') +
         (f.sd ? ' · ' + markTurn(f.sd) + ' (Chain Gang) may be called' : '') : 'cover not available in this check') + '.</li>';
   }).join('');
-  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the checker's own sentence first, which pool, who
-  // was passed over and why, who is first out. It is in every check (t.reason) and was last shown before
-  // 2026-11-07. Its "Called ~…" is left off (the row has the call), and so is the line that said no spare
-  // cover was "saved" on a train with nobody going spare. saidFirst: the caller has put the sentence at the top itself.
-  const said = saidFirst ? '' : whySaid(t);
-  if (previewS5 && /^L502/.test(t.train) && /\bS5\b/.test(t.rules || '')) return said + s5CrewWhy(s, t) + (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '');
-  return said + sequence +
-    (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : PREVIEW ? '' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
+  if (previewS5 && /^L502/.test(t.train) && /\bS5\b/.test(t.rules || '')) return s5CrewWhy(s, t) + (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '');
+  return sequence +
+    (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : fresh ? '' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
 }
 function lineup(s, previewS5 = false) {
   if (!s.lineup.length) return '';
@@ -2825,13 +2828,13 @@ function lineup2(s) {
     const lead = planTrust(s, t);
     const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}${habit && t.status !== 'ORD' ? ` ${habit.chip}` : ''}`;
     const likely = likelyCall(s, t);
-    const line2 = `${lineupCrew(t, s).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${PREVIEW && t.call ? '~' : ''}${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
+    const line2 = `${lineupCrew(t, s).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${t.call ? '~' : ''}${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
     return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
       fold: whySaid(t) + (likely ? `<p class="habitnote"><b>When it is likely to be called:</b> ${esc(likely.text)}</p>` : '') + (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
-    <div class="foot">${PREVIEW ? LINEUP_NOTE : 'The big time is on duty (planned or ordered).'} CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
+    <div class="foot">${LINEUP_NOTE} CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
 }
 function toronto2(s) {
   const trains = s.macLineup || [];
@@ -2909,8 +2912,8 @@ function garnet2(s) {
   const [sym, od] = split(g.train);
   const c = g.crew;
   const guess = c ? null : garnetCrew(s);
-  // Test site (owner, 2026-11-12: "Go"): option 31 read and showing nobody is not "wasn't read".
-  const readG = PREVIEW && (s.screens || []).includes('garnet');
+  // Owner, 2026-11-12, reviewing Current: option 31 read and showing nobody is not "wasn't read".
+  const readG = (s.screens || []).includes('garnet');
   const crew = c ? markTurn(c.turn) + crewBoth(c.turn) : guess ? markTurn(guess.turn) + crewBoth(guess.turn) : '<span class="muted">crew not known</span>';
   const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
     : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
@@ -2928,10 +2931,14 @@ function changes2(s) {
   if (!s.changes.length) return `<p class="cur2-quiet">No changes since ${esc(w.time)}.</p>`;
   return changes(s);
 }
-// ---- Current, reviewed with the owner 2026-11-12: TEST SITE ONLY (PREVIEW) -------------------------------
-// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review. Everything here is used only when PREVIEW
-// is on (board-test with the owner key): each caller keeps its older line for everyone else, so the main
-// site and every member see the page as before. To promote a piece, drop that caller's PREVIEW test.
+// ---- Current, reviewed with the owner 2026-11-12 ---------------------------------------------------------
+// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review, looked at them on the test site, and the
+// same day: "You can push all this to the main except the purple predictive stuff". So these are ON FOR
+// EVERY MEMBER, both sites, on the Current tab (the short-row layout), and the card under Find a turn
+// wherever it shows. Item 6 he had taken out: no counts line on Current ("it does but take it out").
+// Snapshots keeps its older layout for members and none of this, as before (its own review round); on the
+// test site Snapshots draws like Current, so it has them there. A box both layouts share takes a
+// `reviewed` argument for that (pools, vacancies, daysOff, onDuty: sectionsGrid passes it).
 // HANDOFF, "Tab-by-tab review", has what each item is and what he was shown.
 //
 // Item 3. The big time on a line-up row is the line-up's own time (t.order), not on duty: Z14891 11 showed
@@ -2939,8 +2946,9 @@ function changes2(s) {
 // deadhead, the call 2 h before on duty (lib/board/config.js).
 const LINEUP_NOTE = 'The big time is the one on the CATS line-up (planned or ordered). The crew goes on duty 15 minutes before it (a deadhead at that time), and the call is 2 hours before on duty.';
 // Item 5. "Tap a train for why that crew": the checker's own sentence (t.reason), which pool, who was passed
-// over and why, who is first out. Its "Called ~…" is left off: the row has the call. Nothing off the test site.
-const whySaid = (t) => (PREVIEW && t && t.reason ? '<p class="whysaid">' + markTurn(String(t.reason).replace(/\s*Called ~[^.]*\./, '')) + '</p>' : '');
+// over and why, who is first out. Its "Called ~…" is left off: the row has the call. It is in every check
+// and was last shown before 2026-11-07.
+const whySaid = (t) => (t && t.reason ? '<p class="whysaid">' + markTurn(String(t.reason).replace(/\s*Called ~[^.]*\./, '')) + '</p>' : '');
 // Item 2. A day off the board still lists as active, whose own person has gone on duty on that turn since
 // it began with nobody filling in: it was not taken. Owner, 2026-11-12, of SA08 (day off from 11th 2140,
 // on duty on Z14891 11 at 12th 0800): "It went this morning". Road turns only; a trainee's line never
@@ -2967,7 +2975,7 @@ const dayOffNotTaken = (s, turn, craft) => {
 // less the note for a day off that was not taken.
 const lessDayOff = (text, d) => String(text).split('; ').filter((b) => !b.startsWith(`PL @ ${d.from}`)).join('; ');
 function statusShown(s, t) {
-  if (!PREVIEW || !/PL @/.test(t.status || '')) return t.status;
+  if (!/PL @/.test(t.status || '')) return t.status;
   const d = dayOffNotTaken(s, t.turn, t.craft);
   return d ? lessDayOff(t.status, d) || 'available' : t.status;
 }
@@ -3010,18 +3018,10 @@ function cardLines(s, turn, lines) {
   return out;
 }
 // ---- end of the Current review block ------------------------------------------------------------------
-function strip2(s) {
-  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
-  const spare = (craft) => {
-    const turns = new Map();
-    for (const p of s.pools.filter((q) => q.name.startsWith(`${craft} fast board`) || q.name.startsWith(`${craft} slow board`))) for (const t of p.turns) turns.set(t.turn, t);
-    if (!turns.size) return '—';
-    return `<b>${[...turns.values()].filter((t) => t.status === 'available').length}</b> / ${turns.size}`;
-  };
-  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the two counts are of the spareboards only, and say so.
-  const who = (craft) => (PREVIEW ? `Spare ${craft.toLowerCase()}s` : `${craft}s`);
-  return `<div class="cur2-strip"><span><b>${s.lineup.length}</b> ${s.lineup.length === 1 ? 'train' : 'trains'} · <b>${ord}</b> ordered</span><span>${who('Conductor')} free ${spare('Conductor')}</span><span>${who('Engineer')} free ${spare('Engineer')}</span></div>`;
-}
+// The counts line that sat above the boxes on Current ("N trains · N ordered · Conductors free 21 / 28 ·
+// Engineers free 0 / 3", strip2) is gone: the owner, 2026-11-12, looking at it on the test site with its
+// labels changed to "Spare conductors free": "it does but take it out". The train count is in the line-up's
+// heading and each spareboard shows who is available. Snapshots' older layout keeps its own counts (strip).
 function dot(status) {
   if (/out working/.test(status)) return 'out';
   if (/spare|B0/.test(status)) return 'spare';
@@ -3056,11 +3056,13 @@ function askResets(s) {
   resetsAsked = s.taken;
   getJSON('data/resets.json').then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
 }
-// One pool's board: its table and the notes under it.
-function poolBody(s, p) {
+// One pool's board: its table and the notes under it. reviewed: the short-row layout, where a day off
+// that was not taken is left off the turn's status (statusShown; owner, 2026-11-12).
+function poolBody(s, p, reviewed = false) {
   let out = 0; // place among the turns available now (test site: how soon such a turn has worked)
   const rows = p.turns.map((t) => {
     const r = resetFor(s, t);
+    const status = reviewed ? statusShown(s, t) : t.status;
     const open = !t.left && t.status === 'available';
     if (open) out++;
     // Test site: when this spare is likely to be called, and how often that window has held.
@@ -3071,7 +3073,7 @@ function poolBody(s, p) {
     const likelyHtml = likely ? `<details class="splikely${likely.tight ? ' tight' : ''}"><summary>likely call ${esc(likely.window)} <small>· held ${likely.held} of ${likely.n}</small></summary><p>${esc(likely.text)}</p></details>` : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${crewTag(resetKey(t))}${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(statusShown(s, t))}"></span>${esc(statusShown(s, t))}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
+    <td><span class="stat-dot ${dot(status)}"></span>${esc(status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
       ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2">${t.job ? `<div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div>` : ''}${likelyHtml}</td></tr>` : ''}`;
   }).join('');
@@ -3107,7 +3109,7 @@ const poolLabel = (q) => POOL_LABELS[poolShort(q)] || poolShort(q);
 const POOL_SPOTS = { 'A pool (SA)': 1, 'S1 (A)': 2, 'B pool (SB)': 3, 'S3 (B)': 4, 'Chain Gang (SR)': 5, SD: 6,
   'Conductor fast board': 10, 'Conductor slow board': 11, 'Engineer fast board': 12, 'Engineer slow board': 13, '501/502 (S5)': 14, Garnet: 15 };
 const poolSpot = (q) => POOL_SPOTS[poolShort(q)] || 50;
-function pools(s, picked) {
+function pools(s, picked, reviewed = false) {
   if (!s.pools.length) return '';
   askResets(s);
   const on = s.pools.filter((q) => picked.includes(poolShort(q)));
@@ -3115,7 +3117,7 @@ function pools(s, picked) {
   const gap = s.pools.filter((q) => poolSpot(q) < 9).length % 2 ? '<i class="poolgap" style="--o:9" aria-hidden="true"></i>' : '';
   const btns = s.pools.map((q, i) => `<button type="button" aria-pressed="${on.includes(q)}" data-poolpick="${i}" style="--o:${poolSpot(q)}">${esc(poolLabel(q))}</button>`).join('') + gap;
   // The boards open in the buttons' order (owner, 2026-11-10), whatever order they were switched on in.
-  const boards = [...on].sort((a, b) => poolSpot(a) - poolSpot(b)).map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolLabel(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p)}`).join('');
+  const boards = [...on].sort((a, b) => poolSpot(a) - poolSpot(b)).map((p) => `<div class="poolhead" data-poolname="${esc(poolShort(p))}"><span>${esc(poolLabel(p))}</span><span class="meta">${p.turns.length} turns</span></div>${poolBody(s, p, reviewed)}`).join('');
   return `<section class="sheet" id="sec-pools"><header><h2>Pools at Sarnia</h2><span class="meta">${on.length} of ${s.pools.length} pools · ${on.reduce((n, p) => n + p.turns.length, 0)} turns</span></header>
     <div class="poolfilter" role="group" aria-label="Pools to show">${btns}<button type="button" class="all" data-poolall="${all ? 'none' : 'all'}">${all ? 'Clear' : 'All'}</button></div>
     ${boards || '<p class="empty">Pick a pool above.</p>'}</section>`;
@@ -3133,25 +3135,27 @@ function crewShown(t) {
   }).join(' · ');
   return { crew, backfill: (t.backfill || []).filter((b) => !MU_TURN.test(b.job)) };
 }
-// Test site (owner, 2026-11-12: "Go"): a turn out working carries the name of whoever is working it, so
+// Owner, 2026-11-12, reviewing Current: a turn out working carries the name of whoever is working it, so
 // "EN06 ⟨name⟩ filling in on SD04 ⟨name⟩" named one person twice. The job's turn is left bare.
+// reviewed: the short-row layout (Current; Snapshots' older layout keeps the line as it was).
 const fillIn = (b) => `${markTurn(b.turn)} filling in on ${markTurn(b.job).replace(/ <span class="crewnm">[^<]*<\/span>/g, '')}`;
-function onDuty(s) {
+function onDuty(s, reviewed = false) {
   if (!s.onDuty.length) return '';
   const rows = s.onDuty.map((t0) => { const t = { ...t0, ...crewShown(t0) }; return `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${PREVIEW ? t.backfill.map(fillIn).join(' · ') : markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${reviewed ? t.backfill.map(fillIn).join(' · ') : markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
 // Upcoming days off (option 4, owner 2026-11-05): 24 h from the time shown.
 // Turn and craft only, never names. A turn off at a call is skipped or goes spare.
-function daysOff(s) {
+function daysOff(s, reviewed = false) {
   if (!(s.screens || []).includes('daysOff') && !(s.daysOff || []).length) return '';
   const list = s.daysOff || [];
-  // Test site (owner, 2026-11-12, reviewing Current: "Go"): a day off whose own person has gone on duty on that
-  // turn since it began is not listed as active (dayOffWorked). Off the test site this map is empty.
-  const worked = new Map(PREVIEW ? list.filter((d) => d.on).map((d) => [d, dayOffWorked(s, d)]).filter(([, t]) => t) : []);
+  // Owner, 2026-11-12, reviewing Current: a day off whose own person has gone on duty on that turn since it
+  // began is not listed as active (dayOffWorked). reviewed: the short-row layout; in Snapshots' older layout
+  // this map is empty and the box is as it was.
+  const worked = new Map(reviewed ? list.filter((d) => d.on).map((d) => [d, dayOffWorked(s, d)]).filter(([, t]) => t) : []);
   const active = list.filter((d) => d.on && !worked.has(d));
   const upcoming = list.filter((d) => !d.on);
   const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span>' + (d.yard ? yardTag(d.turn, d.craft) : '') + (worked.has(d) ? '<div class="crew">on duty ' + esc(worked.get(d).onDuty) + ' on ' + esc(worked.get(d).train) + ', nobody filling in</div>' : '') + '</td></tr>').join('');
@@ -3266,7 +3270,7 @@ function yardJobs(s) {
 // CATS still but I want the corrected jobs going spare to show"): corrected
 // by the order (the default), and as CATS shows it, wrong turns marked.
 let vacTab = 'fixed';
-function vacancies(s) {
+function vacancies(s, reviewed = false) {
   const cats = s.vacanciesCats;
   const wrongs = (cats || []).filter((v) => v.wrong).length;
   const tabbed = cats && (wrongs || cats.length !== (s.vacancies || []).length);
@@ -3304,11 +3308,12 @@ function vacancies(s) {
   const whyTab = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
   const none = '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>';
   const foot = `<div class="foot">"Expected cover" is an estimate, not a confirmed crew call: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div>`;
-  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the same jobs as short rows like the train line-up,
-  // the rest under a tap. The three-column table needed 401 to 431 px in a phone's 356 px box, so its Turn
-  // column (the turn going spare, "returns …") sat off the edge, and its middle column wrapped to two or
+  // Owner, 2026-11-12, reviewing Current ("6 yes" on the test site): the same jobs as short rows like the train
+  // line-up, the rest under a tap. The three-column table needed 401 to 431 px in a phone's 356 px box, so its
+  // Turn column (the turn going spare, "returns …") sat off the edge, and its middle column wrapped to two or
   // three words a line. Nothing is left out: what the Turn column held is on the row or in Details.
-  if (PREVIEW) {
+  // reviewed: the short-row layout; Snapshots' older layout keeps the table below.
+  if (reviewed) {
     let day = null;
     const row2 = (v, pred) => {
       const [d, time] = split(v.at || '');
@@ -5531,14 +5536,14 @@ source().then(async (src) => {
   let membersAdmin = false;
   let healthRequest = 0;
   let publishedAt = Date.parse(src.index?.generatedAt);
-  // Page Health, reviewed with the owner 2026-11-12 ("Go" to items 1 to 5): TEST SITE ONLY (PREVIEW). The page is
-  // his alone on either site; behind PREVIEW he can set board-test beside the main site before saying which stays.
+  // Page Health, reviewed with the owner 2026-11-12 ("Go" to items 1 to 5). On BOTH SITES since that day at his
+  // word ("You can push all this to the main except the purple predictive stuff"); the page is his alone.
   // Item 5: Page Health and Search Review get an address of their own, so a reload or a saved link comes back to
   // them (#pagehealth, #searchreview; "#health" would be the sign-in line's own id). Asked for before the report
   // that says who is looking has arrived, so it is kept until then.
   let ownerTabWanted = { '#pagehealth': 'health', '#searchreview': 'review' }[location.hash] || '';
   let firstTabOpen = false; // the page's first tab is drawn: opening the wanted one before that would be drawn over
-  const ownAddress = (hash) => { if (PREVIEW) { try { history.replaceState(null, '', location.pathname + location.search + hash); } catch (e) { /* not allowed in some frames */ } } };
+  const ownAddress = (hash) => { try { history.replaceState(null, '', location.pathname + location.search + hash); } catch (e) { /* not allowed in some frames */ } };
   // Item 2: what waits for him on the Members tab (sign-ups to approve, name codes to OK) is said here too.
   // Counts and the oldest time only. Asked again at most once a minute; the page is drawn again when it changes.
   let healthAccounts = null;
@@ -5649,7 +5654,7 @@ source().then(async (src) => {
     }
     membersOwner = !!(h && OwnerKey.has());
     document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
-    if (PREVIEW && ownerTabWanted && firstTabOpen) { const want = ownerTabWanted; ownerTabWanted = ''; setTimeout(() => setMode(want), 0); }
+    if (h && ownerTabWanted && firstTabOpen) { const want = ownerTabWanted; ownerTabWanted = ''; setTimeout(() => setMode(want), 0); }
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !report);
     if (!note.hidden && rejected) {
@@ -6018,9 +6023,9 @@ source().then(async (src) => {
     try { const r = await fetch('health/held186', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) cur = await r.json(); } catch (e) { /* offline */ }
     if (!box.isConnected) return;
     if (!cur) { box.innerHTML = '<p class="muted">Not available: re-paste the Worker (cloudflare/board-worker.js) to add these settings.</p>'; return; }
-    // Test site (owner, 2026-11-12: "Go", item 4): set once and left alone, so it folds away when nothing is missing.
+    // Owner, 2026-11-12, reviewing Page Health (item 4): set once and left alone, so it folds away when nothing is missing.
     const allSet = !!(cur.co && cur.en && cur.namesPass && cur.mail);
-    const fold = PREVIEW ? [`<details class="moredet"${allSet ? '' : ' open'}><summary>Where Submit sends them: ${allSet ? 'both rep emails, the names passcode and the email sender are set' : 'something is missing'}</summary>`, '</details>'] : ['', ''];
+    const fold = [`<details class="moredet"${allSet ? '' : ' open'}><summary>Where Submit sends them: ${allSet ? 'both rep emails, the names passcode and the email sender are set' : 'something is missing'}</summary>`, '</details>'];
     box.innerHTML = `${fold[0]}<form id="h186form" autocomplete="off" onsubmit="return false" class="h186form">
       <label>Conductors' rep email<input type="email" name="co" value="${esc(cur.co)}" placeholder="rep@example.com"></label>
       <label>Engineers' rep email<input type="email" name="en" value="${esc(cur.en)}" placeholder="rep@example.com"></label>
@@ -6166,12 +6171,12 @@ source().then(async (src) => {
     const resumed = restartAt && lastCheckLocal > restartAt;
     row('Watchdog restarts today', String(r.count) + (r.last ? ' · ' + (resumed ? 'Recovered · ' : '') +
       'Last restart ' + restartAt + ' · ' + r.last.text + (resumed ? ' · Successful check ' + stamp(L.lastCheck) : '') : ''), r.count > 0 && !resumed);
-    // Test site (owner, 2026-11-12, reviewing Page Health: "Go"): a failed send needs him only when it failed for a
+    // Owner, 2026-11-12, reviewing Page Health: a failed send needs him only when it failed for a
     // reason other than the phone having unsubscribed and did not go through on the next try (his rule, as put to
     // him). The laptop says what became of each (lib/board/health.js alertFailures); a report from older laptop
     // code has no such figures and the row is as it was.
     const A = L.alerts;
-    if (A && PREVIEW && typeof A.open === 'number') {
+    if (A && typeof A.open === 'number') {
       const n = (k, one, many = one) => (A[k] ? [`${A[k]} ${A[k] === 1 ? one : many}`] : []);
       const what = [...n('open', 'did not go'), ...n('pending', 'is being tried again', 'are being tried again'), ...n('retried', 'went through on the next try'),
         ...n('gone', 'to a phone that had unsubscribed (removed)', 'to phones that had unsubscribed (removed)'), ...n('unknown', 'with no reason kept')];
@@ -6181,7 +6186,7 @@ source().then(async (src) => {
     } else if (A) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
     row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
     row('Health sent', ago(L.at));
-    if (PREVIEW) {
+    {
       // The point first, and what to do (item 3). Only the verdict uses these; the table keeps its own words.
       const say = (label, text) => { const r = rows.find((x) => x.label === label && x.bad); if (r) r.say = text; };
       say('Laptop last checked', L.lastCheck ? `The checker has not checked since ${healthClock(L.lastCheck)} (${ago(L.lastCheck)}).${failed && !recovered ? ` Last problem: ${failed.text}` : ''} On the laptop, look at the Board checker window; if it is stuck, press Ctrl+C and start it again.`
@@ -6211,10 +6216,10 @@ source().then(async (src) => {
     if (waiting) row('Restart needed', 'Newer code was pulled (' + c.folder + ') but the checker is still running ' + c.hash + ': Ctrl+C and start it again', true);
     if (c.behind == null) row('GitHub', c.behindError ? 'Could not check GitHub: ' + c.behindError : 'Not checked yet');
     else {
-      // Test site (owner, 2026-11-12: "Go"): updates that only change notes are not "git pull, then restart".
+      // Owner, 2026-11-12, reviewing Page Health: updates that only change notes are not "git pull, then restart".
       // behindCode is how many of them change what the laptop runs or publishes; absent from older laptop code.
-      const notes = PREVIEW && c.behind > 0 && c.behindCode === 0;
-      const part = PREVIEW && c.behindCode > 0 && c.behindCode < c.behind ? ' (' + c.behindCode + ' of them change' + (c.behindCode === 1 ? 's' : '') + ' the checker or the site)' : '';
+      const notes = c.behind > 0 && c.behindCode === 0;
+      const part = c.behindCode > 0 && c.behindCode < c.behind ? ' (' + c.behindCode + ' of them change' + (c.behindCode === 1 ? 's' : '') + ' the checker or the site)' : '';
       const waiting = c.behind + ' newer update' + (c.behind === 1 ? '' : 's') + ' waiting';
       row('GitHub', (notes ? waiting + ', notes only: nothing to pull for' : c.behind > 0 ? waiting + part + ': git pull, then restart' : 'Up to date') + (c.behindAt ? ' · checked ' + ago(c.behindAt) : ''), c.behind > 0 && !notes);
     }
@@ -6222,15 +6227,11 @@ source().then(async (src) => {
   // "All good", or the rows that need the owner, in one line.
   function healthVerdict(rows) {
     let bad = rows.filter((r) => r.bad);
-    if (PREVIEW) {
-      // Test site (owner, 2026-11-12: "Go"): with the checker down, one line says so; the rows that only repeat it
-      // (who was told, the failed check, the watchdog) stay red in the table and off this list.
-      if (bad.some((r) => r.label === 'Laptop last checked')) bad = bad.filter((r) => !['Your phones told it was down', 'Down alert', 'Last failed check', 'Watchdog restarts today'].includes(r.label));
-      const members = bad.some((r) => r.label === 'Sign-ups waiting' || r.label === 'Name codes waiting');
-      return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li>${r.say ? esc(r.say) : `<b>${esc(r.label)}:</b> ${esc(r.text)}`}</li>`).join('')}</ul>${members ? '<p style="margin:6px 0 0"><button type="button" class="linkbtn" id="tomembers">Open the Members tab</button></p>' : ''}</div>`
-        : '<div class="hverdict ok" role="status"><b>All good</b> · nothing needs you right now</div>';
-    }
-    return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li><b>${esc(r.label)}:</b> ${esc(r.text)}</li>`).join('')}</ul></div>`
+    // Owner, 2026-11-12, reviewing Page Health: with the checker down, one line says so; the rows that only repeat it
+    // (who was told, the failed check, the watchdog) stay red in the table and off this list.
+    if (bad.some((r) => r.label === 'Laptop last checked')) bad = bad.filter((r) => !['Your phones told it was down', 'Down alert', 'Last failed check', 'Watchdog restarts today'].includes(r.label));
+    const members = bad.some((r) => r.label === 'Sign-ups waiting' || r.label === 'Name codes waiting');
+    return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li>${r.say ? esc(r.say) : `<b>${esc(r.label)}:</b> ${esc(r.text)}`}</li>`).join('')}</ul>${members ? '<p style="margin:6px 0 0"><button type="button" class="linkbtn" id="tomembers">Open the Members tab</button></p>' : ''}</div>`
       : '<div class="hverdict ok" role="status"><b>All good</b> · nothing needs you right now</div>';
   }
   const healthTable = (rows) => `<table class="htable"><tbody>${rows.map((r) => `<tr><th>${esc(r.label)}</th><td${r.bad ? ' class="warn"' : ''}>${esc(r.text)}</td></tr>`).join('')}</tbody></table>`;
@@ -6249,7 +6250,7 @@ source().then(async (src) => {
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
-    const rows = healthRows(h, now, true, PREVIEW ? accountsWaiting() : null);
+    const rows = healthRows(h, now, true, accountsWaiting());
     ownAddress('#pagehealth');
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
@@ -6308,22 +6309,21 @@ source().then(async (src) => {
       ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
       ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
-      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p>${PREVIEW ? '<p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p>' : ''}</div></section>`;
+      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
-    // Test site (owner, 2026-11-12: "Go", item 4): a box that held one link is a line under Who gets alerts.
-    const sent = PREVIEW ? '' : `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
+    // Item 4 (owner, 2026-11-12): the "Alerts sent" box held one link; it is the line under Who gets alerts above.
     // CATS's "Do you wish to place on another assignment?" pages, word for
     // word, as the checker answered them (owner, 2026-11-03).
     const Q = L.questions || [];
-    // Test site (item 4): pages more than two days old fold away under one line.
+    // Item 4: pages more than two days old fold away under one line.
     const newestQ = Q.length ? Math.max(...Q.map((q) => +new Date(q.at) || 0)) : 0;
-    const oldQ = PREVIEW && Q.length > 0 && now - newestQ > 48 * 3600000;
+    const oldQ = Q.length > 0 && now - newestQ > 48 * 3600000;
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header>${oldQ ? `<details class="moredet" style="margin:0 14px 12px"><summary>${Q.length} page${Q.length === 1 ? '' : 's'}, the newest from ${esc(healthClock(newestQ))}: nothing since</summary>` : ''}<ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul>${oldQ ? '</details>' : ''}</section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
       <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
-      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them · how many were sent</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}${sent}
+      <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them · how many were sent</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
@@ -6346,9 +6346,9 @@ source().then(async (src) => {
       const t = days[0] || { opens: 0, phones: 0 };
       const total = days.reduce((a, d) => a + d.opens, 0);
       const day = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-      // Test site (owner, 2026-11-12: "Go", item 4): the days before counting began (2 Nov) are not listed as zeros.
+      // Owner, 2026-11-12, reviewing Page Health (item 4): the days before counting began (2 Nov) are not listed as zeros.
       let kept = days.length;
-      while (PREVIEW && kept > 1 && !days[kept - 1].opens && !days[kept - 1].phones) kept--;
+      while (kept > 1 && !days[kept - 1].opens && !days[kept - 1].phones) kept--;
       const listed = days.slice(0, kept);
       const span = kept < days.length ? `Since ${day(listed[kept - 1].day)}, when counting began` : `Last ${days.length} days`;
       box.innerHTML = `<p><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}. <span class="muted">${span}: ${total} open${total === 1 ? '' : 's'}. Phones are counted once a day each.</span></p>
@@ -6470,9 +6470,9 @@ source().then(async (src) => {
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
       const built = [...where.map((text) => ({ kind: 'status', text })), ...lined];
-      // Test site (owner, 2026-11-12, reviewing Current: "Go"): a predicted job, the call for the train home,
-      // a day off that was not taken (cardLines).
-      const lines = PREVIEW ? cardLines(s, turn, built) : built;
+      // Owner, 2026-11-12, reviewing Current ("yes" to his own card on the test site): a predicted job, the
+      // call for the train home, a day off that was not taken (cardLines). Every member, whichever tab is open.
+      const lines = cardLines(s, turn, built);
       const cands = isPerson(entry) ? personCands[entry] || [] : [];
       const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
       return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
@@ -7026,7 +7026,9 @@ source().then(async (src) => {
     const order = sectionOrder();
     // Current (owner, 2026-11-10, approved in Test): the short rows. Snapshots keep the older layout.
     const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too
-    const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x).replace('Jobs going spare · 5', 'Jobs going spare') };
+    // The boxes both layouts share draw their reviewed form here (owner, 2026-11-12: "You can push all this to the main").
+    const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x, true).replace('Jobs going spare · 5', 'Jobs going spare'),
+      pools: (x) => pools(x, poolPicks || [], true), daysoff: (x) => daysOff(x, true), callboard: (x) => onDuty(x, true) };
     const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
@@ -7125,7 +7127,7 @@ source().then(async (src) => {
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${mode === 'current' || PREVIEW ? strip2(s) : strip(s, false)}
+      ${mode === 'current' || PREVIEW ? '' : strip(s, false)}
       ${arrangeBar()}
       ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
@@ -8414,10 +8416,11 @@ source().then(async (src) => {
   else if (wantNotes) setMode('notes');
   else if (wantMine) setMode('mine');
   else if (wantTest) setMode('analytics'); // the Test tab is gone (owner, 2026-11-10); an old link to it lands on Analytics
-  // The test site: Page Health or Search Review asked for by its address (owner, 2026-11-12). They need the report
-  // that says who is looking: if it has come, open now; if not, showHealth opens it when it does.
+  // Page Health or Search Review asked for by its address (owner, 2026-11-12). They need the report that says
+  // who is looking (only the owner's key gets one): if it has come, open now; if not, showHealth opens it when
+  // it does. Anyone else with such an address stays on the tab opened above.
   firstTabOpen = true;
-  if (PREVIEW && ownerTabWanted && healthData) { const want = ownerTabWanted; ownerTabWanted = ''; setMode(want); }
+  if (ownerTabWanted && healthData) { const want = ownerTabWanted; ownerTabWanted = ''; setMode(want); }
 
   // A newer board published while this page is open (live site only). On
   // the Current tab it loads by itself (owner, 2026-10-30: two phones showed
