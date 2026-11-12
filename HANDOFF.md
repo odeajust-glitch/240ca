@@ -414,7 +414,9 @@ trains on the Call Board).
       it has none; an account with a different code keeps its own and the line says so.
       It is the same switch as the Job postings tab's, not a second setting. Checked in
       a browser with the push step stood in for: sends `{ code, postings: { on: true } }`.
-    - **New postings shown on the page itself, TEST SITE ONLY, awaiting Justin (owner,
+    - **New postings shown on the page itself: ON BOTH SITES since 19:20 (owner: "you can
+      push those notifications to the main page"; the `PREVIEW` tests are out of
+      `paintNewPostings` and `markPostingsSeen`). First built for the test site (owner,
       18:50: asked how the alerts work without notifications; "Yes. Build it for the test
       site"):** for people who never allow phone notifications. Kept on the device
       (`postingsSeen` in localStorage: the circular numbers this device has shown).

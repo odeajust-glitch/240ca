@@ -2973,7 +2973,7 @@ function jobPostings() {
 // since 2026-11-11 ("everything else looks good, push to the main page").
 // Postings this device has not shown yet (owner, 2026-11-11: a way to hear
 // about new postings on the page itself, with no phone notifications: "Yes.
-// Build it for the test site"). Kept on the device (localStorage
+// Build it for the test site"; on both sites the same evening). Kept on the device (localStorage
 // `postingsSeen`: the circular numbers shown so far). A count on the tab, a
 // line above Current, and "new" beside each until the tab has been opened.
 // Every open posting counts, both crafts: the who-may-post rules run on the
@@ -6683,7 +6683,7 @@ source().then(async (src) => {
       if (redraw && changed && mode === 'postings') renderPostings();
     }).catch(() => {});
   }
-  // --- New postings, shown on the page (test site) ---
+  // --- New postings, shown on the page (both sites since 2026-11-11: "you can push those notifications to the main page") ---
   const SEEN_KEY = 'postingsSeen';
   let postMarked = false;
   const openPostings = () => {
@@ -6699,8 +6699,8 @@ source().then(async (src) => {
     const note = document.getElementById('postnote');
     const open = openPostings().map((j) => j.number);
     let seen = seenPostings();
-    if (PREVIEW && POSTINGS && !seen) { seen = open; keepSeen(seen); } // first visit: nothing is "new"
-    const fresh = PREVIEW && seen ? open.filter((n) => !seen.includes(n)) : [];
+    if (POSTINGS && !seen) { seen = open; keepSeen(seen); } // first visit: nothing is "new"
+    const fresh = seen ? open.filter((n) => !seen.includes(n)) : [];
     if (mode !== 'postings') postMarked = false;
     if (!postMarked) POST_NEW = new Set(fresh); // once the tab has shown them, its "new" marks stay put until it is left
     modePost.textContent = fresh.length && mode !== 'postings' ? `Job postings · ${fresh.length}` : 'Job postings';
@@ -6712,7 +6712,7 @@ source().then(async (src) => {
   }
   // The tab was opened: what it shows now counts as seen (the marks stay until it is left).
   function markPostingsSeen() {
-    if (!PREVIEW || !POSTINGS) return;
+    if (!POSTINGS) return;
     const seen = seenPostings() || [];
     keepSeen([...new Set([...seen, ...openPostings().map((j) => j.number)])]);
     postMarked = true;
