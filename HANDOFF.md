@@ -1,5 +1,20 @@
 # HANDOFF — read this before doing anything
 
+## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WAITING ON A WORKER PASTE (both) AND A LAPTOP PULL
+
+Owner (someone was sent the email code but never showed for approval): "add the section for
+people who haven't confirmed their email". **Worker:** `GET /health/accounts` also returns
+`unverified` (sign-ups that have not entered their emailed code, newest first; in a list
+of their own so a page that only knows `users` is unchanged; still cleared after two
+days), and `approve` now works on one of them: PIN and hire date deleted, status approved,
+their code record deleted, and an email telling them to use **Sign in** (their device has
+no sign-in yet, so they still need a code by email: a mistyped address cannot get in).
+`delete` already worked. **Page (`renderMembers`):** "Started signing up, email not
+confirmed (N)" under Waiting for approval, each with Email, PIN, Hire date, Started,
+**Approve anyway** (asks first) and **Delete**. Shown only when the Worker sends the list.
+Suite 397 of 397 (a new test in accounts.test.js). **The copy page is rebuilt (version on
+the page).** Not seen on the real site; the Members tab section not opened in a browser.
+
 ## Sign-up page wording — November 11, 2026, 21:00 Toronto. WAITING ON A WORKER PASTE (both Workers)
 
 Owner: "Can you make the instructions at the sign up site clearer. A lot of people are not

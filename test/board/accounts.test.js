@@ -615,3 +615,29 @@ test('my stats: the Worker knows the same shared name codes as the laptop, and r
   assert.equal(await state('Robert Example', 'BOEX'), 'wait'); // CATS has Bob: the owner says so
   assert.equal(await state('Pat', 'PAPA'), 'wait');
 });
+
+// Owner, 2026-11-11: "add the section for people who haven't confirmed their email".
+test('a sign-up that never entered its email code is listed apart, and the owner can approve it anyway', async () => {
+  const { call, cookieOf, mails } = await setup({ LOCK: 'on' });
+  await call('/auth/signup', { body: person('u') });
+  const firstCode = codeIn(mails);
+  let d = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+  assert.equal(d.users.length, 0); // not waiting for approval, as before
+  assert.deepEqual(d.unverified.map((u) => [u.name, u.email, u.pin, u.hireDate, u.status]), [['Pat Example u', 'patu@example.com', '123456', '2015-06-01', 'unverified']]);
+  assert.equal(d.unverified[0].key, undefined);
+  const id = d.unverified[0].id;
+  assert.deepEqual(await (await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } })).json(), { ok: true, mail: 'sent' });
+  assert.match(mails[mails.length - 1].body, /pick Sign in \(not Sign up\)/);
+  d = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+  assert.deepEqual([d.unverified.length, d.users.map((u) => [u.status, u.pin, u.hireDate])], [0, [['approved', undefined, undefined]]]);
+  // The sign-up's own code is spent; they get in by Sign in with a new one.
+  assert.equal((await call('/auth/verify', { body: { email: 'patu@example.com', code: firstCode } })).status, 400);
+  assert.equal((await call('/auth/code', { body: { email: 'patu@example.com' } })).status, 200);
+  const res = await call('/auth/verify', { body: { email: 'patu@example.com', code: codeIn(mails) } });
+  assert.equal((await call('/data/index.json', { cookie: cookieOf(res) })).status, 200);
+  // Deleting one works too.
+  await call('/auth/signup', { body: person('v') });
+  const v = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).unverified[0];
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: v.id, action: 'delete' } });
+  assert.equal((await (await call('/health/accounts', { key: OWNER_KEY })).json()).unverified.length, 0);
+});
