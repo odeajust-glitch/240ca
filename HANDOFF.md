@@ -2,6 +2,22 @@
 
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, 07:00 Toronto, at his word. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). One pick of his still open
 
+**Later the same morning (06:32 Toronto): the tracker fix for the wrongly matched calls is in, at his word.**
+Asked what items 2 and 3 on the waiting list meant, he was told (2 = As now or Proposed, 3 =
+whether to fix the tracker for the 15 calls) and answered **"3"**: read as yes to 3. If he meant
+something else, `git revert` the commit named "Tracker: a trip is never scored against a wait first
+seen after it went on duty". `lib/board/insights.js`, `sleepCheck`: when the turn was already on
+duty before the open wait was first seen, that on-duty is not the call for it. A different train:
+skipped, and the wait for the next trip stays open (it used to be closed and lost). The same train
+(a gap in the checks): no record, the wait closed. `finish` also leaves such records out of what
+the site publishes, so the ones already saved go at the next check. On that morning's live file it
+leaves out 16 of 1,336 records (one more had happened overnight: EN04 on DHT056B 12), none of them
+a taken-off record; "over 1 hour early" against the first time shown goes from 268 to 253. The
+card's "Not scored" group will read empty except for older archive months. **This one changes
+counts on both sites (Call stability's older figures, My stats) and needs the laptop's pull +
+restart like the rest.** `test/board/call-wrong-trip.test.js` (4). Suite 463 of 463. Not checked:
+a real run of the checker on the laptop; the rule was run on the live file, not on the saved checks.
+
 **Owner, 12 Nov, after the card had been on the test site as a preview for an hour (the laptop had
 already pulled it): "Push these changes to the main. Update the handoff and any house keeping
 items".** "The main" is the main site, as with My stats ("push it to the main page"); the git

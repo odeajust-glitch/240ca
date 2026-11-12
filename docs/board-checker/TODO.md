@@ -102,12 +102,11 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    showed 8 hours before the call came) is built beside it; only he sees it, in the "For you
    to pick" box on the test site's Call stability page. As now or Proposed: when he says,
    the other and the box go. Recommended to him: Proposed. Details in HANDOFF's top block.
-9. **Call card: 15 calls the tracker scores against the wrong trip.** A wait first seen
-   after the turn had already gone on duty is matched to that trip (13 of the 15 are the
-   next trip's line-up) and reads as 10 to 23 hours early. The card says "Not scored" for
-   them; the cause in `lib/board/insights.js` is still there, so the older figures under
-   "More numbers" still count them, and My stats is built from the same call records. Fixing it changes those counts and needs
-   his yes and a laptop pull. Show him SD09 on M39671 23 (25 Oct).
+9. **Done 2026-11-12 (his "3"): calls the tracker scored against the wrong trip.** A wait
+   first seen after the turn had already gone on duty is no longer matched to that trip
+   (`sleepCheck` and `finish` in `lib/board/insights.js`; 16 records on that morning's live
+   file). Waiting only on the laptop's pull + restart. If "3" meant something else, revert
+   that one commit.
 10. **Call card: small things to ask, none built.** A call 31 to 60 minutes early is amber
     on its row and in the counts but red on the picture (the graph's own rule from before):
     which does he want. "More numbers" on the Call stability page still holds the older
