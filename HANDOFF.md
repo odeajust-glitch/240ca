@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). NOTHING BUILT. Twelve items put to him; 2 and 11 TURNED DOWN ("2 leave it and leave 11"): do not raise them again. Asked which of the other ten to build. The tab-by-tab review below carries on as it was
+## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). His picks 1, 3, 5, 6 and 7 are BUILT FOR THE TEST SITE ONLY (`79fc425`, page only), WAITING ON ONE LAPTOP PULL; then his look on board-test. 2 and 11 TURNED DOWN ("2 leave it and leave 11"): do not raise them again. Nothing is on the main site. The tab-by-tab review below carries on as it was
 
 **Owner, 12 Nov: "Review the entire site, suggestion improvements to the layout or structure."** Taken as
 one round across all the tabs, under the same rules as the tab-by-tab review below (look for real, a short
@@ -81,6 +81,71 @@ as it is (item 2: "Line-up Snapshots" and its second line, and the icon's "Board
 order (item 11). **Both are turned down: not to be raised again, here or in the Settings round.** He named
 nothing to build, so nothing was built: he was asked in the same reply whether to go on my picks less 11
 (1, 3, 5, 6, 7), with or without 4. Items 8, 9, 10 and 12 are neither picked nor turned down.
+
+**His pick, 12 Nov about 16:00 Toronto: "1, 3, 5, 6, 7 (Recommended)"**, tapped in answer to "Items 2 (the
+site's name) and 11 (Settings order) are left as they are. Which of the rest should I build on the test
+site?" (the other choices were those plus 4, and nothing yet). **Not picked:** 4 (the tabs in four groups),
+8, 9, 10, 12. **Turned down:** 2 and 11.
+
+**BUILT, 12 Nov 16:05 to 16:35 Toronto, `79fc425`. All of it is in `public/board.html` behind `PREVIEW`
+(board-test with the owner key): no laptop code, no Worker change, no paste. A member on either site sees
+the page exactly as before.** New test file `test/board/site-review.test.js` (7). Suite **489 of 489**.
+- **Where.** One block of helpers just above `modeCurrent.onclick` (headed "Whole site, reviewed with the
+  owner 2026-11-12"): `tabOfAddress`, `tabStepWanted`, `tabTapped`, `TAB_BUTTON`, the `popstate` listener,
+  `siteReviewPaint`, `pinClose` / `pinTabs` / `pinPaint`, `mineJumpHtml` / `mineJump`. A line each in
+  `setMode` (the step, and `pinPaint()`), where `PREVIEW` is switched (`siteReviewPaint()`), `trackSummary`
+  and `paintTracked` (the History button), `renderMine`'s `draw`, `analyticsOverviewGuide` (`compact`) and
+  `anaHome`. `let tabQuiet` beside `firstTabOpen`. Styles in one block after the test site's own rules
+  (`.pin`, `.msjump`, `.ov2`, and rules under `body.preview-site`).
+- **What he sees on board-test, by item.**
+  1. A change of tab is a step: `setMode` adds one (`history.pushState`) when the tab really changes, the
+     first tab is up and the page has been touched; Back and Forward open the tab the address is for
+     (`tabOfAddress`; a tab the viewer does not have opens Current). Moving about inside a tab (another
+     snapshot, another turn) still rewrites the address in place, so Back from Snapshots goes to the tab
+     before, not through every check looked at. The two lines of the other session that open Page Health by
+     its address are as it left them (its test pins them).
+  3. The box on Current reads "Follow a turn (alerts)" (`siteReviewPaint`; the published page still says
+     "Find a turn"). A followed turn's card has "Turn History →" (a followed person opens on their own code
+     kept on the phone, else the turn they are on). On Snapshots the box, its label and "How to get alerts
+     on this phone" are left off and the card comes after the day and the hours. **My reading, told to him:
+     the card itself stays on Snapshots** (it says where the turn stood in that check); he had been told
+     "take it off Snapshots" of the box. With one followed turn, his Snapshots starts at 810 px (was about
+     913 for him).
+  5. Once the tab bar is off the top: a 50 px strip pinned there with the open tab's name (tap: every tab
+     this viewer has, in full rows, the page's own buttons pressed for real) and "▲ Top". A box jumped to
+     stops 56 px down so its heading clears the strip (`scrollPaddingTop`); the rail on a computer and the
+     Arrange bar stick below it. Drawn on every tab and at every width.
+  6. My stats: under the heading, "Jump to a section (18)", folded (open or shut kept on the phone,
+     `mineJumpOpen`), each section a button in My stats' own style. With the strip's "▲ Top" it is one tap
+     down and one back.
+  7. Analytics on a phone: the section row wraps into full rows (3 rows, 132 px, was one sideways row of 50
+     px showing 356 of 663). Overview is "Analytics pages", a line each for the six pages with its figure
+     (or its question), and the whole guide he approved on 8 Nov folded under "What each page answers, and
+     using the records", word for word. The page went from 2,868 to 1,306 px.
+- **To promote a piece:** drop its `PREVIEW` test (and the `body.preview-site` prefix of its styles) and
+  change the test that pins it, quoting him. They do not lean on each other, except that 6 is better with 5.
+- **Checked.** The suite. In a browser, this branch's page put over the real sites' data (in that browser
+  only; `boardNoCount` set; every request that is not a GET stopped; nothing saved): **as him on board-test
+  at 390 and 1280 px, light and dark,** all 14 tabs clicked and each showing its own heading, three tab
+  changes then Back three times and Forward once, the History button and Back from it, Snapshots with a
+  followed turn, the strip (shut, open, a tab picked from it, Top), a jump in My stats (the section lands at
+  56 px, the strip ends at 50), Analytics' row and Overview and a line tapped: no page errors, no sideways
+  scroll, nothing off the edge. **As a member on both sites: Current (scrolled 3,000 px), Turn History,
+  Order summary, 18.6(b), Analytics, Agreements, Job Aids, Job postings and Snapshots are the same to the
+  letter with the old page and the new, over the same answers** (a followed turn in the browser's storage);
+  My stats has its 18 sections and no jump list, no strip after scrolling, Analytics' row and Overview as
+  before, and tab changes add no steps.
+- **Not checked.** A real phone, and Back on a real Android phone above all (a browser's own Back button
+  here); an iPhone opened from its Home Screen icon (it has no Back button: the strip is what it gains);
+  page styles other than light and dark (the strip and the lists use each style's own colours and the tab
+  buttons' own rules); the published page on board-test (it needs his pull).
+- **Known edges.** In a browser that cannot say whether the page has been touched (older iPhones), a tab
+  the page opens by itself from its address counts as a step. A step is added for any change of tab,
+  including the page's own jumps (a train in Analytics opening Order summary, "Open the Members tab").
+
+**Waiting on him:** one laptop `git pull` (a restart is not needed for a page change; the next check
+publishes it), then his look at the five pieces on board-test and his say on each (keep, change, drop, or
+promote). Still open from the list: 4 (the grouped tabs: he has the picture), 8, 9, 10, 12.
 
 **Not checked.** A real phone or a real member's account; an iPhone; any page style but light; the sign-in
 page and grievance.html; Members at phone width (still loading when looked at; it drew at 1280 px). There
@@ -476,7 +541,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
 | 3 Members | — | — | next, on his word | — |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
-| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | none yet | nothing built; asked which of the other ten (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"** |
+| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | built for the test site only (`79fc425`), after his pull; his look still to come (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
 
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
