@@ -1,6 +1,65 @@
 # HANDOFF — read this before doing anything
 
-## Current handoff — November 9, 2026
+## Current handoff — November 11, 2026, 19:40 Toronto (end of a long session)
+
+**Where things stand.** Branch `claude/vigilant-planck-zawrj4` at `c2d4134` plus this note; the
+laptop is running `c2d4134` (checked 19:29, newest check 1923); both Workers run `08e6109`
+(the last Worker change; the copy page has it). Suite **384 of 384** with `npm ci`. Nothing
+is waiting on a pull or a paste. Each item below has its own dated note further down this
+file (search for the words in bold); the Housekeeping list in
+[TODO](docs/board-checker/TODO.md) has the small open decisions.
+
+**Done this session (10th evening → 11th evening), all at Justin's word:**
+- **Yard job names** (whose yard job it is, from the crews in town): **test site only.**
+- **Shared name codes split** (COBR/COBD, BRWA/BRW1/BRW2, JAMC/JAM1, MADE/MAD1, MARI/MAR1,
+  MARO/MAR2), the prompt when one is searched, old history re-tied by turn: live.
+- **18.6(b) on Page Health:** how many were sent, and who submitted and when: live
+  (records start 11 Nov, the day of the paste).
+- **Line-up wording:** "(SD04 Name spare)", no "goes": live.
+- **Extra yard jobs** (job id `Y?X…`): the crafts option 5 leaves out are predicted and
+  alerted: live. **Unfilled regular jobs** (YBHS61, YEBS04): watched only (`vacanciesWatch`).
+- **Job postings:** read from CATS's Circular Inquiry hourly; the **Job postings** tab;
+  cancelled postings; **alerts by account** (name code + choices on the member's account,
+  his who-may-post rules, reminders before the 1200 close); the option in the Track box;
+  the name code in ⚙ Settings; the on-page "new" count and line: all live on both sites.
+- **Reference is now "Job Aids"**; **Agreements** has the Conductor / Engineer buttons
+  and document chips: live on both sites.
+- **Calling sequence:** a train called to the wrong pool no longer uses the A/B turn it
+  skipped: live.
+
+**Not confirmed on a real device (say so if asked):** a job posting alert or reminder
+actually arriving on a phone (only Justin's account, JUOD, has them on); the extra-job
+prediction on a real listing; the `vacanciesWatch` record.
+
+**Booked into this session:** tonight **21:30 Toronto, the split name codes review** with
+Justin (show each code's turns and dates, he says which stretches move; manual moves need
+rules by turn *with a date range*, not built). Other sessions' reminders still standing:
+the email limit (13th), the alerts grace period (17th), Render (23rd), the likely-call
+test (25th). **The S5 swap watch has no one booked and found a swap on the new code on
+the 11th: see "S5 swap watch" below; the engine fix is the next real piece of work.**
+
+**Waiting on Justin:** whether Robbins stays MAR2 (his rule gave MAR1, taken); a notice
+telling members about job posting alerts and the changed name codes (offered, not sent);
+which Agreements documents count as "commonly used" (my pick stands until he says); the
+permanent-posting rule ("for now", to review); the order between jobs called at the same
+time, and whether a YMX job always takes an S1; whether to promote yard job names;
+"members seen today" on the Members tab (offered).
+
+**Small cleanups left:** the `sample` code in scripts/board-auto.js (keeps a masked copy
+of the postings screen when a read gives no jobs) can come out now the read works; clock
+times in the job postings notes written as 18:00 to 19:10 are about 90 min fast.
+
+**Three things the next session must know:**
+1. **Set `localStorage.boardNoCount = '1'` in any browser a session opens on the real
+   sites**, beside the owner-key placeholder: without it each run is counted as a
+   visitor (it inflated the 10th and 11th; see the ⚠ note below).
+2. **Never put a member's full name in a commit, a test or these notes.** Turn ids and
+   name codes only. (A push carrying full names was refused twice this session.)
+3. **A Worker change means rebuilding the copy page by hand** (replace the base64 on its
+   `var bytes` line and the version line, check it decodes to exactly the file, publish
+   to the same artifact link) and telling Justin to paste into both Workers.
+
+## Earlier handoff — November 9, 2026
 
 Start with the [November 9 continuation](docs/board-checker/HANDOFF-2026-11-08-SESSION.md#november-9-continuation). Reviewed application commit `e59a88c2cec09a861ab5bf14024db81adfda0c40` on `claude/vigilant-planck-zawrj4`. The branch includes the approved S5, Assignment errors, Current box memory, Call stability and sequence-notification changes. Test has no pending previews (the pool filter was promoted 2026-11-09, see below). Page Health went directly to the regular page at Justin’s request.
 
@@ -741,6 +800,9 @@ row from now on. Call stability had both S501 crafts' call for the 10th and no f
 | 08 | S501 | S502 at 0259 | before 8th fixes | swap |
 | 09 | S502 | S501 at 0058 | not known | swap |
 | 10 | S501 | S501 at every check to 0039; Call Board 0049 | not known | clean (1) |
+| 11 | S502 (EN09 on the engineer's job) | S502 at every check to 0039, **S501 at 0047**, Call Board 0052 | after the 8th fixes (restarted 10th evening) | **swap, on the new code** |
+
+**The watch lapsed and then failed its own test, 2026-11-11:** the session that booked the morning check is gone (its reminder is disabled, "session gone"), so nobody read the 11th until the evening handoff. Read then from the day file: the same one-check flip to the other crew on the first check after the 0045 call, on code that has the 8th's engine fixes. By the plan above that means **fix the engine** (the known-crew shortcut / S5 audit), not keep counting clean nights. Not started; nobody is booked to check L50231 12.
 
 **Saved B111 question looked at, 2026-11-10 (another session, started by Justin: "start
 with the rest tracker … the site should know who has enough time left for a road trip").
