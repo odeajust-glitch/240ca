@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, 07:00 Toronto, at his word. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). One pick of his still open
+## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, 06:28 Toronto, at his word. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). One pick of his still open
 
 **Later the same morning (06:32 Toronto): the tracker fix for the wrongly matched calls is in, at his word.**
 Asked what items 2 and 3 on the waiting list meant, he was told (2 = As now or Proposed, 3 =
@@ -102,7 +102,7 @@ minutes early being amber on its row and red on the picture; the old graph code
 branches), kept as the way back and to be deleted once he has lived with the card; his three "what
 bothers me" lines from the first message, which arrived as "...".
 
-**Checked on real data, 06:20 to 06:55 Toronto, with the card switched on** (this branch's page
+**Checked on real data, 06:15 to 06:28 Toronto, with the card switched on** (this branch's page
 files put in place in the browser here only, `boardNoCount` set, nothing pressed in Members):
 - **The real main site as a member (no owner key):** the Call stability page whole; ten real calls
   opened in dark at 390 px and measured (no label on another, none cut off, nothing wider than its
@@ -144,14 +144,14 @@ https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c.
 paste); (2) As now or Proposed; (3) a no to any of the three things above, if he has one; (4)
 whether to fix the tracker for the 15; (5) his three "what bothers me" lines.
 
-**Also seen at 06:55 while here (counts only):** both sites serve the My stats review
+**Also seen at about 06:25 while here (counts only):** both sites serve the My stats review
 (`MINE_MORE = true` in the page, `data/pools.json` published): that pull is done. **Neither Worker
 has the unconfirmed sign-ups paste yet** (`/health/accounts` has no `unverified` list on either):
 still waiting on him, copy page https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu. 34 members.
 
-## My stats reviewed — November 12, 2026, 00:05 Toronto. The laptop has pulled it (seen 06:55 on 12 Nov, both sites). The new sections are ON FOR EVERY MEMBER since 00:10 at his word
+## My stats reviewed — November 12, 2026, 00:05 Toronto. The laptop has pulled it (seen about 06:25 on 12 Nov, both sites). The new sections are ON FOR EVERY MEMBER since 00:10 at his word
 
-**12 Nov, 06:55 Toronto:** both sites serve this work (`const MINE_MORE = true;` in the page, `data/pools.json`
+**12 Nov, about 06:25 Toronto:** both sites serve this work (`const MINE_MORE = true;` in the page, `data/pools.json`
 published, 3.9 kB). Not opened as a signed-in member since the pull: the page was checked before it, on a
 copy with real records. Nothing below is waiting on a pull any more; the Worker needed no paste for it.
 
