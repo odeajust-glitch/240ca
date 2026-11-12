@@ -203,6 +203,11 @@ site sees the page exactly as before.** New test file `test/board/current-review
   his pull was looked at later that morning: below.)
 - **Left alone on purpose.** Turn History's "Now" for a spare (the same facts, its own round). What the
   engine and the alerts do with a day off not taken. The likely-call line's pale purple (his test).
+- **A limit of item 2, told to him 12 Nov 11:40.** `dayOffWorked` looks only at the check on screen: once
+  the person ties up at the away terminal and leaves the Call Board, nothing in that check says they
+  worked, so the day off reads "Active now" again until its 24 hours are up (SA08: from about 1600 to
+  2140 that day). To hold it, the page would have to look back through the day's earlier checks (it
+  has them loaded) or the laptop would have to say so. Not built: his to ask for.
 
 **Found while building, NOT changed (put to him):** Days off names whoever is working the turn, not who is
 off. With S101's engineer off and a spare (EN02) working S101's job, "Active now" read "S101 ⟨EN02's
