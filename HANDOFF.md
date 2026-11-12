@@ -39,7 +39,7 @@ the email limit (13th), the alerts grace period (17th), Render (23rd), the likel
 test (25th). **The S5 swap watch has no one booked and found a swap on the new code on
 the 11th: see "S5 swap watch" below; the engine fix is the next real piece of work.**
 
-**Waiting on Justin:** whether Robbins stays MAR2 (his rule gave MAR1, taken); a notice
+**Waiting on Justin:** (MAR2 for YSBY02's YA stays: "Yes", 2026-11-11.) A notice
 telling members about job posting alerts and the changed name codes (offered, not sent);
 which Agreements documents count as "commonly used" (my pick stands until he says); the
 permanent-posting rule ("for now", to review); the order between jobs called at the same
@@ -121,7 +121,7 @@ trains on the Call Board).
   - **The groups** (`CODE_GROUPS`, the same list in lib/board/people.js and
     public/board.html): COBR + COBD (his own choice the evening before, kept), BRWA +
     BRW1 + BRW2, JAMC + JAM1, MADE + MAD1, MARI + MAR1, MARO + **MAR2** (his rule gives
-    MAR1, which MARI's second already has: ❓ tell him, ask if he wants another). Who is
+    MAR1, which MARI's second already has; he confirmed MAR2 stays, 2026-11-11). Who is
     who was found on 2026-11-11 by turn: SB06 / SR11; SR08 / the FOs of YBHS31 and YPRS60;
     XSAS02's FO / YFLS01's FO; B111 / YMPS31's TT; SD02 / YPRS02's S1; B105 / YSBY02's YA.
     Each split-off person is found by a one-way hash (`OWN_CODES`), so no name is in the
