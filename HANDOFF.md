@@ -11,6 +11,10 @@ called, when they were called, how much it moved, how much warning they got, and
 the board shows why. Plain words, no jargon." His three "what bothers me" lines came through as
 "..." in the prompt: **still not known, ask.**
 
+**Where it is.** Commit `bbff903`, pushed 05:50 to `claude/vigilant-planck-zawrj4` (the branch the
+laptop pulls; a plain fast-forward from `3655ea7`) and to this session's `ccr-83c63a33-26zny2`.
+Neither site has it until the laptop pulls and restarts.
+
 **What a person sees on the test site (owner key on that device), and nowhere else.** Every place a
 call was drawn now shows one card (`BoardAnalytics.renderCallCard`): a headline, a four-line block
 (**Expected / Called / Warning / Why**), a small picture with its words on it (Lined up, Expected,
