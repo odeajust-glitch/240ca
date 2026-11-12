@@ -108,8 +108,9 @@ main site until then).
 **Where it is.** `claude/vigilant-planck-zawrj4` (the branch the laptop pulls) and this session's
 `ccr-83c63a33-26zny2`, same commit. The preview commits were `bbff903` and `b5a6116` (05:50); the
 laptop had pulled those by 06:15 (both sites served the gated code, the preview live on the test
-site). The switch-on commit sits on top of another session's two Members commits from the same
-morning (`e2d5475`, `7596f40`: phones with no account), replayed onto them with no conflict.
+site). The switch-on commit is `7edd4aa`, pushed 06:28; it sits on top of another session's two
+Members commits from the same morning (`e2d5475`, `7596f40`: phones with no account), replayed onto
+them with no conflict. **Neither site has the card for members until the laptop pulls `7edd4aa`.**
 
 **Files.** `public/board-analytics.js` (after `renderCallTimeline`: `callCard`, `callWords`,
 `callLastWord`, `callWhy`, `callStory`, `callPicture`, `renderCallCard`, `callSummary`,
