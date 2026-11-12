@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). NOTHING BUILT; twelve items put to him, waiting for his picks. The tab-by-tab review below carries on as it was
+## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). NOTHING BUILT. Twelve items put to him; 2 and 11 TURNED DOWN ("2 leave it and leave 11"): do not raise them again. Asked which of the other ten to build. The tab-by-tab review below carries on as it was
 
 **Owner, 12 Nov: "Review the entire site, suggestion improvements to the layout or structure."** Taken as
 one round across all the tabs, under the same rules as the tab-by-tab review below (look for real, a short
@@ -75,6 +75,12 @@ turn's page), 18.6(b) and Snapshots as rows.
 
 **Suggested to him if he would rather I chose:** 1, 3, 5, 6, 7 and 11 (page only, nothing moves); 4 is the
 big one and his to look at first; 2 and 9 need his answer; 8, 10 and 12 after.
+
+**His answer, 12 Nov about 15:40 Toronto: "2 leave it and leave 11".** Read as: the name on the page stays
+as it is (item 2: "Line-up Snapshots" and its second line, and the icon's "Board"), and Settings keeps its
+order (item 11). **Both are turned down: not to be raised again, here or in the Settings round.** He named
+nothing to build, so nothing was built: he was asked in the same reply whether to go on my picks less 11
+(1, 3, 5, 6, 7), with or without 4. Items 8, 9, 10 and 12 are neither picked nor turned down.
 
 **Not checked.** A real phone or a real member's account; an iPhone; any page style but light; the sign-in
 page and grievance.html; Members at phone width (still loading when looked at; it drew at 1280 px). There
@@ -470,7 +476,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
 | 3 Members | — | — | next, on his word | — |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
-| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | — | nothing built, waiting for his picks (the section at the top of this file) | — |
+| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | none yet | nothing built; asked which of the other ten (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"** |
 
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
