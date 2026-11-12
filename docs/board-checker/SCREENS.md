@@ -357,3 +357,46 @@ MO/DY/TIME  DDSD  LEAVE-TYPE  STAT  NAME                    ASSIGNMENT
   "not sure"); shown as is, not used.
 - Names are masked like every screen; only turn, craft and times are kept.
   Parser: `lib/board/screens.js` parseDaysOff; the rest in `lib/board/daysoff.js`.
+
+## Assignment history for the yard (`45 SA 3` → `7`, YD): owner's photos, 2026-11-12
+
+The same screen the checker reads hourly for trains coming home (ASSIGNMENT HISTORY,
+PSTS17A; `POOL OR YD/LO` = S1 and S5 there). Owner typed **YD** in `POOL OR YD/LO`,
+left `HOME/AWAY` and `ASSIGNMENT` ("for a specific job") blank, pressed Enter.
+`START DATE` came back filled in by CATS (261111, at 09:11 on the 12th). Before
+Enter the headings are the train ones (TRAIN ID, ODT-DATE/TIME, INT-TERMINAL, MILES,
+DUTY, MISC); with YD they become:
+
+```
+X   ASSIGNMENT   ODT-DATE/TIME     DESCRIPTION                  O-T
+[]  YEBS03       261111   0600     0600 EASTBD BP T/F
+[]  YSTY01       261111   0630     0630 TOWER S/S JT60
+[]  YPRS02       261111   0645     0645 PLANK M1/T1
+[]  YSBY03       261111   0700     0700 YDM BLOCK 3             0400
+[]  YBHS01       261111   0800     0800 BNKHSE S1/S1
+[]  YFLS01       261111   0800     0800 FRT LD S4/SX
+[]  YSBY06       261111   1430     1430 S/S TEMP YA
+[]  YPRS30       261111   1445     1445 PLANK RD W1/T2
+[]  YMPS31       261111   1500     1500 PULLER T/W OFF
+[]  YINS30       261111   1530     1530 INDTRL SN/SN
+[]  YBHS31       261111   1600     1600 BUNKHOUSE W3/T3
+[]  YEBS30       261111   1600     1600 EASTBD BP S4/M4
+[]  YFXS01       261111   1600     DAY XTRA FRT LD F/CW
+[]  YSBY04       261111   1900     1900 YDM BLOCK 4             0400
+[]  YPRS60       261111   2245     2245 PLANK F2/S2
+[]  YBHS60       261111   2300     2300 BNKHSE F3/S5
+VALID HOME AWAY CODES ==> 0 =HOME, 1=>5 =AWAY
+ENTER=INQ/DISPLAY CREW INFO   PF1=HELP   PF3=EXIT   PF8=PAGEDN   PF11=PREV MENU
+```
+
+- One line a yard job a day, in on-duty order; sixteen fit a page (PF8 for more). No
+  names on it. Rows are black and red in threes: banding, as on the train list.
+- ASSIGNMENT: the job id. ODT-DATE/TIME: on duty, YYMMDD HHMM. DESCRIPTION: the job's
+  own start time and name; an extra job (`YFXS01`) reads "DAY XTRA …" with no time.
+- **O-T: not confirmed.** 0400 on the two 12-hour tower jobs (YSBY03, YSBY04), blank
+  on the other fourteen, so it reads as overtime past 8 hours. There is no DUTY column:
+  off duty is not on this list the way it is for a train. Asked the owner what O-T is,
+  when it is filled in, and what a blank means (8 hours, or not tied up yet).
+- An X beside a line and Enter shows "crew info": not seen yet. Asked for a photo.
+- Not built. `parseAssignHistory` (lib/board/screens.js) only matches a train's line.
+

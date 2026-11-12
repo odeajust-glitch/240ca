@@ -1,0 +1,298 @@
+// Current, reviewed with the owner on 2026-11-12 (the tab-by-tab review; HANDOFF has the ten findings).
+// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10, to be tried on the test site only: every piece is behind
+// PREVIEW (board-test with the owner key). These run the page's own functions, cut from the page, twice:
+//   off the test site: the page as every member has it, word for word as before;
+//   on the test site with the owner key: the change.
+// Promoting a piece to the main site is his to say, in so many words. Turn ids and train ids only.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const T = require('../../public/board-trains');
+const Turns = require('../../public/board-turns');
+
+const html = fs.readFileSync(require.resolve('../../public/board.html'), 'utf8');
+const cut = (from, to) => { const a = html.indexOf(from); const b = html.indexOf(to, a + 1); assert.ok(a > 0 && b > a, `not found in the page: ${from}`); return html.slice(a, b); };
+const text = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+// The page's Current functions in a sandbox. preview: the test site with the owner key. marks: tracked turns.
+function page({ preview = false, marks = [] } = {}) {
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const ctx = { BoardTrains: T, BoardTurns: Turns, PREVIEW: preview, stampMin: T.toMin, esc, split: (s) => s.split(' '),
+    marked: (t) => marks.includes(t), markedIn: (t) => marks.some((m) => Turns.turnIn(t, m)), markTurn: (t) => esc(t),
+    crewTag: () => '', crewBoth: () => '', yardTag: () => '', yardWorking: () => '', resetFor: () => null, resetKey: (t) => t.turn, resetText: () => '',
+    SPARE_PREDICT: false, spareCall: () => null, boardOdds: () => '', trainHabit: () => null, planTrust: () => '', poolChip: () => '', likelyCall: () => null, staleChip: () => '',
+    // The crew of a row, as the page's lineupCrew words a job going spare when no cover is named.
+    lineupCrew: (t) => (/goes spare/.test(t.rules || '') ? '<span class="crew-craft"><span class="muted">Conductor:</span> <span class="spare">spare</span> (S502 spare)</span>' : '<span class="crew-craft"><span class="muted">Conductor:</span> SR06</span>') };
+  vm.createContext(ctx);
+  vm.runInContext(cut('function dt(stamp) {', 'const ON_TIME = 15;'), ctx);
+  vm.runInContext(cut('const awayCall = (s, t) => {', 'function lineup2(s) {'), ctx); // awayCall, cur2Row
+  vm.runInContext(cut('function s5CrewWhy(s, t) {', 'function lineup(s, previewS5 = false) {'), ctx); // s5CrewWhy, lineupWhy
+  vm.runInContext(cut('function lineup2(s) {', 'function toronto2(s) {'), ctx);
+  vm.runInContext(cut('function garnetCrew(s) {', '// The reset tracker (owner, 2026-11-03)'), ctx); // garnet2, changes2, the review block, strip2, dot
+  vm.runInContext(cut('function poolBody(s, p) {', '// Pools at Sarnia (owner, 2026-11-09'), ctx);
+  vm.runInContext(cut('const MU_TURN = ', '// Jobs up for bid (owner, 2026-11-11'), ctx); // the Call board, Days off
+  vm.runInContext(cut('let vacTab = ', '\nfunction sequence(s) {'), ctx);
+  return { ctx, run: (code) => vm.runInContext(code, ctx) };
+}
+
+// The 0852 check of 12 Nov 2026, cut down. SA08's conductor had a day off listed from 11th 2140 and went on
+// duty on his own turn at 12th 0800; S101's engineer had one from 11th 1800 and a spare (EN02) worked the job.
+const fill = (turn, board, call, more = {}) => ({ turn, board, call, skipped: [], sd: '', ...more });
+const s = {
+  taken: '2026-11-12 0852',
+  screens: ['lineup', 'macLineup', 'bunkhouse', 'garnet', 'garnetLineup', 'daysOff'],
+  lineup: [
+    { order: '12th 1200', status: 'ORD', train: 'DHT127B 12', deadhead: true, rules: 'Chain Gang: SR06 + SD09', call: '12th 1000', info: 'TOPC SD DT A1 B EnCo', engCrew: '45SASD0', trnCrew: '45SASR0',
+      reason: 'Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too. Called ~12th 1000.' },
+    { order: '12th 1910', status: 'PLN', train: 'E27861 12', deadhead: false, rules: 'spareboard (no Chain Gang turn free) + SD12', call: '12th 1655', info: 'TOPC 200MAC A EnCo', engCrew: '45SAS10', trnCrew: '45SASA0',
+      reason: 'A and B used up for this road day → Chain Gang. Called ~12th 1655. Skipped (keep their place): SR04 on hold turn until 13th 0559; SR01 on rest until 13th 0240. No Chain Gang turn available → spareboard.' },
+    { order: '13th 0400', status: 'PLN', train: 'L50231 13', deadhead: false, rules: 'S5: S502 (goes spare) + S502', call: '13th 0145', info: 'TOPC 500GAR A EnCo', engCrew: '45SAS50', trnCrew: '45SAS50',
+      reason: 'L502 follows regular 501/502 board position (option 29): S502 (home in Sarnia, position 001). Conductor: on a hold turn past the call → goes spare. Engineer: available.' },
+  ],
+  callingSequence: [],
+  onDuty: [
+    { onDuty: '12th 0145', station: 'SARNIA', train: 'X30241 08', crew: 'EN SD03 · CO SR03', backfill: [] },
+    { onDuty: '12th 0245', station: 'SARNIA', train: 'L50231 12', crew: 'EN S501 · CO S501', backfill: [] },
+    { onDuty: '12th 0735', station: 'TORONTO', train: 'A42531 12', crew: 'EN SD04 · CO SR08', backfill: [{ craft: 'EN', job: 'SD04', turn: 'EN06' }] },
+    { onDuty: '12th 0800', station: 'SARNIA', train: 'Z14891 11', crew: 'EN S109 · CO SA08', backfill: [] },
+    { onDuty: '12th 0945', station: 'SARNIA', train: 'M30241 10', crew: 'EN S101 · CO SA01', backfill: [{ craft: 'EN', job: 'S101', turn: 'EN02' }] },
+  ],
+  daysOff: [
+    { from: '11th 1800', until: '12th 1800', on: true, turn: 'S101', craft: 'EN', pool: 'S1', yard: false },
+    { from: '11th 2140', until: '12th 2140', on: true, turn: 'SA08', craft: 'CO', pool: 'SA', yard: false },
+    { from: '13th 0001', until: '14th 0001', on: false, turn: 'YSBY01', craft: 'YA', pool: '', yard: true },
+    { from: '13th 1400', until: '14th 1400', on: false, turn: 'B129', craft: 'B1', pool: 'EX', yard: false },
+  ],
+  pools: [
+    { name: 'A pool (SA)', turns: [{ pos: '999', turn: 'SA08', status: 'out working on Z14891; PL @ 11th 2140 · goes spare until 12th 2140' }, { pos: '001', turn: 'SA02', status: 'available' }] },
+    { name: 'S1 · engineers (A)', turns: [{ pos: '999', turn: 'S101', status: 'out working on M30241; PL @ 11th 1800 · goes spare until 12th 1800' }] },
+    { name: 'Conductor fast board', turns: [{ pos: '004', turn: 'B129', status: 'PL @ 13th 1400' }, { pos: '006', turn: 'B139', status: 'available' }] },
+    { name: 'Conductor slow board', turns: [{ pos: '001', turn: 'B139', status: 'available' }, { pos: '002', turn: 'B106', status: 'rest until 12th 1100' }] },
+    { name: 'Engineer fast board', turns: [{ pos: '001', turn: 'EN05', status: 'available' }] },
+    { name: '501/502 (S5)', turns: [{ pos: '999', turn: 'S501', craft: 'CO', status: 'out working on L50231' }, { pos: '999', turn: 'S501', craft: 'EN', status: 'out working on L50231' }, { pos: '001', turn: 'S502', craft: 'CO', status: 'hold turn until 13th 0559 (**)' }] },
+  ],
+  away: ['SR07'], returning: [],
+  bunkhouse: [{ pos: '005', en: 'SD07', co: 'SR07', offDuty: '12th 0559', rested: '12th 1359', ready: false }],
+  onTheWay: [{ crew: 'SD03 + SR03', en: 'SD03', co: 'SR03', train: 'X30241 08', onDuty: '12th 0145', offDuty: '12th 0945', rested: '12th 1745' }],
+  macLineup: [
+    { order: '12th 1904', status: 'PLN', train: 'E27121 12', deadhead: false, crew: 'SD07 + SR07', crewPos: '005', crewExpected: null, call: '12th 1649' },
+    { order: '12th 2300', status: 'PLN', train: 'M39931 13', deadhead: false, crew: 'SD03 + SR03', crewPos: '', crewExpected: { onDuty: '12th 0145', train: 'X30241 08', offDuty: '12th 0945', rested: '12th 1745' }, call: '12th 2045' },
+  ],
+  garnetHome: { train: 'L50131 12', status: 'ORD', order: '12th 2130', call: '12th 1915', crew: null },
+  vacancies: [
+    { pos: '002', at: '12th 1530', status: 'PLANNED', train: 'YINS30', pool: 'YD', cc: 'FO', turn: 'YINS30', yard: true, spare: true, returns: '13th 0404', fill: fill('B104', 'Conductor fast board', '12th 1330') },
+    { pos: '005', at: '12th 2210', status: 'PLANNED', train: 'M39671', pool: 'SD', cc: 'EN', turn: 'SD06', yard: false, spare: true, returns: '', fill: fill('EN05', 'Engineer slow board', '12th 1955', { skipped: ['EN03 (rest until 12th 2300)'] }) },
+  ],
+  vacanciesPredicted: [
+    { pos: '', at: '12th 1910', status: 'PLANNED', predicted: true, trainDay: 'E27861 12', why: 'no Chain Gang conductor is free', train: 'E27861', pool: '', cc: 'CO', turn: '', yard: false, spare: false, returns: '', fill: fill('B139', 'Conductor slow board', '12th 1655') },
+    { pos: '', at: '13th 0400', status: 'PLANNED', predicted: true, trainDay: 'L50231 13', why: 'is on a hold turn past the call', train: 'L50231', pool: 'S5', cc: 'CO', turn: 'S502', yard: false, spare: false, returns: '', fill: fill('B137', 'Conductor slow board', '13th 0145') },
+  ],
+  sequence: [], flags: [], yardJobs: [],
+};
+// The card's lines the way the page's trackSummary builds them from the turn's facts.
+const LINED = new Set(['lineup', 'spareFill', 'homeTrain', 'onDuty', 'mayCall', 'sequence']);
+const cardOf = (turn) => Turns.facts(s, turn).map((x) => (LINED.has(x.kind)
+  ? { kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') } : { kind: 'status', text: x.text }));
+
+test('the review’s pieces are for the test site only, at the owner’s word', () => {
+  // Owner, 2026-11-12, to "the ten things, numbered; I'd build 1, 2, 3, 5, 6, 7 and 10": "Go". His rule for the
+  // review: only so it shows on the test site, nothing to the main site "until I say so in so many words".
+  assert.ok(html.includes('He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review.'));
+  assert.ok(html.includes('// ---- Current, reviewed with the owner 2026-11-12: TEST SITE ONLY (PREVIEW)'));
+  // PREVIEW itself is the test site's address with the owner key, as it has been since 2026-11-10.
+  assert.ok(html.includes("const PREVIEW_HOST = /^board-test\\./.test(location.hostname);"));
+  assert.ok(html.includes('const preview = PREVIEW_HOST && !!(h && OwnerKey.has());'));
+  // The styles are either classes only drawn on the test site or under the class the page sets with PREVIEW.
+  assert.ok(html.includes("document.body.classList.toggle('preview-site', PREVIEW);"));
+  for (const rule of html.match(/\n {2}(?: {2})?body\.preview-site #sec-(?:daysoff|yard)[^{]*\{[^}]*\}/g) || []) assert.ok(rule.split(',').every((sel) => !sel.includes('#sec-') || /body\.preview-site/.test(sel)), rule);
+});
+
+test('item 6: the counts line says they are the spareboards, on the test site only', () => {
+  const off = text(page().run('strip2')(s));
+  assert.equal(off, '3 trains · 1 ordered Conductors free 1 / 3 Engineers free 1 / 1');
+  const on = text(page({ preview: true }).run('strip2')(s));
+  assert.equal(on, '3 trains · 1 ordered Spare conductors free 1 / 3 Spare engineers free 1 / 1');
+});
+
+test('item 3: the note under the line-up says what the big time is; calls read "~" like every other box', () => {
+  const off = page().run('lineup2')(s);
+  assert.ok(off.includes('<div class="foot">The big time is on duty (planned or ordered). CO conductor, EN engineer. Tap a train for why that crew.</div>'));
+  assert.ok(off.includes('<span class="call">call 12th 1000</span>'));
+  const on = page({ preview: true }).run('lineup2')(s);
+  assert.ok(on.includes('The big time is the one on the CATS line-up (planned or ordered). The crew goes on duty 15 minutes before it (a deadhead at that time), and the call is 2 hours before on duty. CO conductor, EN engineer.'));
+  assert.ok(!on.includes('The big time is on duty'));
+  assert.ok(on.includes('<span class="call">call ~12th 1000</span>') && on.includes('<span class="call">call ~12th 1655</span>'));
+  // The figures the note gives are the checker's own.
+  const cfg = require('../../lib/board/config');
+  assert.deepEqual(cfg.prepMinutes, { train: 15, deadhead: 0 });
+  assert.equal(cfg.callLeadMinutes, 120);
+});
+
+test('item 5: "why that crew" opens on the checker’s own sentence, on the test site only', () => {
+  const row = s.lineup[1]; // E27861 12: nobody free on the Chain Gang
+  const off = page().run('lineupWhy')(s, row, true);
+  assert.ok(!off.includes('Skipped (keep their place)'));
+  assert.ok(off.includes('<p>Cover is an estimate, not a confirmed crew call.</p>'));
+  assert.ok(off.includes('expected cover B139 · Conductor slow board · call 12th 1655.'));
+  // A train with nobody going spare still ends on the old line for members.
+  assert.ok(page().run('lineupWhy')(s, s.lineup[0], true).endsWith('<p>No matching spare-job cover is saved for this train in this check.</p>'));
+
+  const p = page({ preview: true });
+  const on = p.run('lineupWhy')(s, row, true);
+  assert.ok(on.startsWith('<p class="whysaid">A and B used up for this road day → Chain Gang. Skipped (keep their place): SR04 on hold turn until 13th 0559; SR01 on rest until 13th 0240. No Chain Gang turn available → spareboard.</p><h4>Calling sequence</h4>'));
+  assert.ok(!on.includes('Called ~'), 'the row has the call; the sentence does not repeat it in the past tense');
+  assert.ok(on.includes('call ~12th 1655.'));
+  const plain = p.run('lineupWhy')(s, s.lineup[0], true);
+  assert.ok(plain.startsWith('<p class="whysaid">Deadhead → always the next Chain Gang turn. CATS has it ordered for the Chain Gang too.</p>'));
+  assert.ok(!plain.includes('No matching spare-job cover'));
+  // The row puts the sentence at the very top of its fold, above anything else, and once.
+  const fold = p.run('lineup2')(s).split('<div class="fold">')[2];
+  assert.ok(fold.startsWith('<b class="foldname">Why</b><p class="whysaid">A and B used up'));
+  assert.equal(p.run('lineup2')(s).split('class="whysaid"').length - 1, s.lineup.length);
+  // L502: the 501/502 reason first, and "spare" said once about the turn going spare.
+  const l502 = p.run('lineupWhy')(s, s.lineup[2], true);
+  assert.ok(l502.startsWith('<p class="whysaid">L502 follows regular 501/502 board position (option 29): S502'));
+  assert.ok(text(l502).includes('Conductor: (S502 spare)') && !text(l502).includes('spare (S502 spare)'));
+  assert.ok(text(page().run('lineupWhy')(s, s.lineup[2], true)).includes('Conductor: spare (S502 spare)'));
+  assert.equal(p.run('whySaid')({ reason: '' }), '');
+  assert.equal(page().run('whySaid')(row), '');
+});
+
+test('item 2: a day off is not taken once its own person is on duty on that turn after it began', () => {
+  const p = page({ preview: true });
+  const worked = p.run('dayOffWorked');
+  const [s101, sa08, ysby, b129] = s.daysOff;
+  assert.equal(worked(s, sa08).train, 'Z14891 11'); // owner, 2026-11-12, of this very line: "It went this morning"
+  assert.equal(worked(s, s101), null, 'a spare is filling in on S101: that day off stands');
+  assert.equal(worked(s, ysby), null);
+  assert.equal(worked(s, b129), null);
+  // On duty before the day off began (still out when it starts) is not a day off given up.
+  assert.equal(worked({ ...s, daysOff: [], onDuty: [{ ...s.onDuty[3], onDuty: '11th 2000' }] }, sa08), null);
+  // The other craft on the same turn number, a trainee's line, and a turn not on the Call Board do not count.
+  assert.equal(worked(s, { ...sa08, craft: 'EN' }), null);
+  assert.equal(worked(s, { ...sa08, craft: 'TT' }), null);
+  assert.equal(worked(s, { ...sa08, turn: 'SA02' }), null);
+  assert.equal(worked(s, { ...sa08, on: false }), null);
+  // 501/502 is two turns with one number: each craft by its own line.
+  const s5 = { from: '12th 0100', until: '13th 0100', on: true, turn: 'S501', craft: 'CO', yard: false };
+  assert.equal(worked(s, s5).train, 'L50231 12');
+  assert.equal(worked({ ...s, onDuty: [{ ...s.onDuty[1], backfill: [{ craft: 'CO', job: 'S501', turn: 'B105' }] }] }, s5), null);
+  assert.equal(worked({ ...s, onDuty: [{ ...s.onDuty[1], backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] }, s5).train, 'L50231 12');
+});
+
+test('item 2: the Days off box and the pool boards, off the test site and on it', () => {
+  const off = page().run('daysOff')(s);
+  assert.ok(text(off).startsWith('Days off 2 active · 2 upcoming Active now · 2 From Ends Turn 11th 1800 12th 1800 S101 EN 11th 2140 12th 2140 SA08 CO Upcoming · 2'));
+  assert.ok(!off.includes('not taken') && !off.includes('Listed, but working'));
+  const on = text(page({ preview: true }).run('daysOff')(s));
+  assert.ok(on.startsWith('Days off 1 active · 2 upcoming · 1 not taken Active now · 1 From Ends Turn 11th 1800 12th 1800 S101 EN Upcoming · 2'));
+  assert.ok(on.includes('Listed, but working · 1 From Ends Turn 11th 2140 12th 2140 SA08 CO on duty 12th 0800 on Z14891 11, nobody filling in'));
+  assert.ok(on.includes('The line-up and the alerts still read it as CATS listed it.'));
+  // Nothing worked: the box is as it always was, on the test site too.
+  const quiet = { ...s, onDuty: [] };
+  assert.equal(page({ preview: true }).run('daysOff')(quiet), page().run('daysOff')(quiet));
+
+  const board = (pv, i) => text(page({ preview: pv }).run('poolBody')(s, s.pools[i]));
+  assert.ok(board(false, 0).includes('999 SA08 out working on Z14891; PL @ 11th 2140 · goes spare until 12th 2140'));
+  assert.ok(board(true, 0).includes('999 SA08 out working on Z14891 001 SA02 available'));
+  // S101's stands (a spare is working the job), and a day off still to come is left alone.
+  assert.equal(board(true, 1), board(false, 1));
+  assert.equal(board(true, 2), board(false, 2));
+  assert.ok(board(true, 2).includes('B129 PL @ 13th 1400'));
+});
+
+test('item 1: the card under Find a turn names a predicted job and the call for the train home', () => {
+  const p = page({ preview: true });
+  const card = (turn) => p.run('cardLines')(s, turn, cardOf(turn)).map((l) => l.text);
+  // A spare the order has for a job CATS has not listed: before, only "available" on both boards.
+  assert.deepEqual(cardOf('B139').map((l) => l.text), ['Conductor fast board position 006: available', 'Conductor slow board position 001: available']);
+  assert.equal(card('B139')[2], 'Lined up for E27861 12 (CO, planned 12th 1910, call ~12th 1655, off the Conductor slow board). Not on CATS yet: the line-up has no turn free (no Chain Gang conductor is free).');
+  assert.equal(card('B137').pop(), 'Lined up for L50231 13 (S5 CO, planned 13th 0400, call ~13th 0145, off the Conductor slow board). Not on CATS yet: the line-up has S502 going spare (it is on a hold turn past the call).');
+  // A listed job is said once, by the line the card already had.
+  assert.deepEqual(card('EN05').filter((t) => /M39671/.test(t)), ['Lined up for M39671 (SD EN, planned 12th 2210, call ~12th 1955, off the Engineer slow board)']);
+  // A Chain Gang turn that may be called when nobody is free on the slow board.
+  const may = { ...s, vacanciesPredicted: [{ ...s.vacanciesPredicted[0], fill: fill('', 'Conductor slow board', '12th 1655', { sd: 'SR06' }) }] };
+  assert.equal(p.run('cardLines')(may, 'SR06', []).pop().text, 'May be called for E27861 12 (CO, planned 12th 1910, call ~12th 1655): no one free on the conductor slow board. Not on CATS yet: the line-up has no turn free (no Chain Gang conductor is free).');
+  // The train home, with its call as the Toronto box works it out (on duty less 2 h; on duty 15 min before the order).
+  assert.ok(card('SR07').includes('Predicted home on E27121 12 (PLN 12th 1904), call ~12th 1649'));
+  assert.ok(card('SR03').some((t) => t.endsWith('predicted home on M39931 13 (PLN 12th 2300), call ~12th 2045')));
+  // Home from Garnet: the crew that took L502 out, by craft; not a craft someone else is working, and the fill-in instead.
+  assert.equal(card('S501-CO').pop(), 'Home from Garnet on L50131 12 (ORD 12th 2130), call ~12th 1915');
+  assert.ok(!card('S502-CO').some((t) => /Garnet/.test(t)));
+  const covered = { ...s, onDuty: [{ ...s.onDuty[1], backfill: [{ craft: 'EN', job: 'S501', turn: 'SA07' }] }] };
+  assert.ok(!p.run('cardLines')(covered, 'S501-EN', []).some((l) => /Garnet/.test(l.text)));
+  assert.ok(p.run('cardLines')(covered, 'S501-CO', []).some((l) => /Home from Garnet on L50131 12/.test(l.text)));
+  assert.ok(p.run('cardLines')(covered, 'SA07', []).some((l) => /Home from Garnet on L50131 12/.test(l.text)));
+  // The day off that was not taken comes off the status; one that stands stays.
+  assert.equal(card('SA08')[0], 'A pool (SA) position 999: out working on Z14891');
+  assert.equal(card('S101')[0], 'S1 (A) position 999: out working on M30241; PL @ 11th 1800 · goes spare until 12th 1800');
+  // The box is called Jobs going spare.
+  assert.deepEqual(card('YINS30'), ['Job YINS30 (YD FO, planned 12th 1530) is listed in Jobs going spare, returns 13th 0404']);
+  assert.ok(cardOf('YINS30')[0].text.includes('is on the vacancy list: goes spare'), 'the wording board-turns.js writes, which the card rewords');
+  // The lines handed in are not changed in place.
+  const mine = cardOf('SA08');
+  const before = JSON.stringify(mine);
+  p.run('cardLines')(s, 'SA08', mine);
+  assert.equal(JSON.stringify(mine), before);
+});
+
+test('item 1: the page only calls the card’s extra lines on the test site', () => {
+  assert.ok(html.includes('const lines = PREVIEW ? cardLines(s, turn, built) : built;'));
+  assert.ok(html.includes("const built = [...where.map((text) => ({ kind: 'status', text })), ...lined];"));
+});
+
+test('item 7: Jobs going spare as short rows on the test site; the table as it was everywhere else', () => {
+  const off = page().run('vacancies')(s);
+  assert.equal((off.match(/<table>/g) || []).length, 2);
+  assert.ok(!off.includes('vac2') && !off.includes('<details'));
+  assert.ok(text(off).includes('12th 1530 YINS30 YD FO · planned Expected cover B104 estimate · Conductor fast board · call ~12th 1330 YINS30 (spare) returns 13th 0404'));
+
+  const on = page({ preview: true, marks: ['B139'] }).run('vacancies')(s);
+  assert.ok(!on.includes('<table') && !on.includes('class="scroll"'), 'nothing left to sit off a phone’s edge');
+  assert.equal((on.match(/<details class="cur2 vac2/g) || []).length, 4);
+  const t = text(on);
+  assert.ok(t.startsWith('Jobs going spare · 5 2 jobs + 2 predicted 12th 1530 YINS30 YD FO PLN cover B104 call ~12th 1330 Details'));
+  // Everything the old Turn column held is still there: on the row, or under Details.
+  assert.ok(t.includes('Returns 13th 0404.'));
+  assert.ok(t.includes('2210 M39671 SD EN PLN SD06 (spare) cover EN05 call ~12th 1955'));
+  assert.ok(t.includes('skipped: EN03 (rest until 12th 2300)'));
+  assert.ok(t.includes('Predicted jobs going spare · 2'));
+  assert.ok(t.includes('1910 E27861 12 CO PLN predicted no turn free cover B139 call ~12th 1655 Details CO · planned 12th 1910 Predicted: the line-up has no turn free (no Chain Gang conductor is free).'));
+  assert.ok(t.includes('13th 0400 L50231 13 S5 CO PLN predicted CO S502 (spare) cover B137 call ~13th 0145'));
+  assert.ok(t.includes('Predicted: the line-up has S502 going spare (it is on a hold turn past the call).'));
+  assert.ok(t.endsWith('Listed and predicted jobs are filled together, earliest first.'));
+  // The tracked spare's row is picked out, as its table row was.
+  assert.equal((on.match(/<details class="cur2 vac2 hit"/g) || []).length, 1);
+  assert.ok(on.includes('<details class="cur2 vac2 hit"><summary><span class="t">1910</span>'));
+  // A job CATS lists under the wrong turn, and one whose earlier crew has not tied up, keep their marks and notes.
+  const odd = { ...s, vacanciesPredicted: [], vacancies: [
+    { ...s.vacancies[1], wrong: { order: 'SD11', train: 'M39671 11', spare: false } },
+    { ...s.vacancies[0], untied: '12th 0730', fill: null },
+    { ...s.vacancies[0], train: 'YFXS01', turn: 'YFXS01', fill: fill('', 'Conductor fast board', '12th 1330') }] };
+  const o = page({ preview: true }).run('vacancies')(odd);
+  assert.ok(o.includes('<details class="cur2 vac2 catswrong">') && o.includes('<details class="cur2 vac2 untied">'));
+  assert.ok(text(o).includes('wrong turn') && text(o).includes('Wrong turn: the order has SD11 on M39671 11, so this job isn\'t going spare'));
+  assert.ok(text(o).includes('probably not spare') && text(o).includes('hasn\'t been tied up yet'));
+  assert.ok(text(o).includes('NO SPARE AVAILABLE'));
+  // Nothing listed and nothing predicted: no box, either way.
+  const none = { ...s, vacancies: [], vacanciesPredicted: [], vacanciesCats: undefined };
+  assert.equal(page({ preview: true }).run('vacancies')(none), '');
+  assert.equal(page().run('vacancies')(none), '');
+  assert.ok(text(page({ preview: true }).run('vacancies')({ ...s, vacancies: [] })).includes('CATS\'s option 5 lists no jobs going spare.'));
+});
+
+test('item 10: the small wording, on the test site only', () => {
+  // A fill-in line names the person once: the job's turn carries the same name while it is out working.
+  const names = (pv) => { const p = page({ preview: pv }); p.ctx.markTurn = (t) => String(t).replace(/\b(EN06|SD04|EN02|S101)\b/g, '$1 <span class="crewnm">Person, A</span>'); return p.run('onDuty')(s); };
+  assert.ok(names(false).includes('EN06 <span class="crewnm">Person, A</span> filling in on SD04 <span class="crewnm">Person, A</span>'));
+  assert.ok(names(true).includes('<div class="crew">EN06 <span class="crewnm">Person, A</span> filling in on SD04</div>'));
+  assert.ok(names(true).includes('EN02 <span class="crewnm">Person, A</span> filling in on S101</div>'));
+  // Garnet: option 31 read and showing nobody is not "wasn't read".
+  const g = (pv, snap = s) => text(page({ preview: pv }).run('garnet2')(snap));
+  assert.ok(g(false).includes('The Garnet board wasn’t read in this check. S501 is shown away on the 501/502 board'));
+  assert.ok(g(true).includes('Nobody is shown at Garnet yet. S501 is shown away on the 501/502 board: CO out working on L50231 · EN out working on L50231.'));
+  const unread = { ...s, screens: s.screens.filter((k) => k !== 'garnet') };
+  assert.ok(g(true, unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
+  assert.equal(g(true, unread), g(false, unread));
+});

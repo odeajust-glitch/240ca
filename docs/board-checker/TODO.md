@@ -93,6 +93,12 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    how to tell real overtime from a ticket left open (trainee only on the job; the rest
    of the crew gone), where the hours show (Turn History / My stats work hours), and
    whether the Yard jobs box should mark or drop a job left open like that.
+   **2026-11-12:** asked how long past its shift a job should stay in the Yard jobs box
+   (the Current review's item 4), he said "We can add a check it's similar to how we get
+   the off duty times for trains coming back to Sarnia" and sent the screen: Assignment
+   History with YD typed, which has an O-T column (0400 on the 12-hour tower jobs) and no
+   off duty. Laid out in SCREENS; three questions put to him (what O-T is and when it is
+   filled in, what a blank means, what "crew info" shows). Not built.
 8. **Done 2026-11-12 (his "Proposed"): how the call card works out "expected".** What the
    board showed 8 hours before the call came; lined up later than that, what it showed
    then. On for every member; the pick box is gone. Left for a tidy-up, no decision needed:

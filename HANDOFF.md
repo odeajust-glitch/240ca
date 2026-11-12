@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current) is reviewed and shown to him; NOTHING BUILT; waiting for his picks
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks BUILT FOR THE TEST SITE ONLY (12 Nov, 09:25 Toronto). WAITING ON ONE LAPTOP PULL + RESTART, then his look. Nothing is on the main site
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -142,7 +142,85 @@ Nothing was pressed that saves: no alert, no Track OK, no Settings Save.
 - **"yes"** to saving on the branch the laptop pulls: from here this session pushes to
   `claude/vigilant-planck-zawrj4` (fetch and rebase first, as the others do).
 
-**Built:** nothing. **Turned down:** nothing yet.
+**His pick, 12 Nov about 08:50: "Go"**, to "If you'd rather I choose, I'd build 1, 2, 3, 5, 6, 7 and 10. Say
+go and I'll do those." Not picked: 4 (waits on the yard screen, below), 8 (the first screen: his taste, not
+asked again), 9 (crew order: "doesn't really matter"). **Turned down:** nothing in so many words.
+
+**BUILT, 12 Nov 08:55 to 09:25 Toronto. All of it is in `public/board.html` behind `PREVIEW` (board-test
+with the owner key): no laptop code (`lib/`, `scripts/`), no Worker change, no paste. A member on either
+site sees the page exactly as before.** New test file `test/board/current-review.test.js` (10). Suite
+**472 of 472**.
+- **Where.** One block of helpers between `changes2` and `strip2`, headed "Current, reviewed with the owner
+  2026-11-12: TEST SITE ONLY": `LINEUP_NOTE`, `whySaid`, `dayOffWorked`, `dayOffNotTaken`, `lessDayOff`,
+  `statusShown`, `cardLines`. Then a `PREVIEW` branch in each caller, the older line kept beside it:
+  `strip2`, `lineup2`, `lineupWhy`, `s5CrewWhy`, `onDuty` (+ `fillIn`), `garnet2`, `daysOff`, `poolBody`,
+  `trackSummary`, `vacancies`. Styles after `details.cur2[hidden]`: `.whysaid`, `.vac2`, and two rules
+  under `body.preview-site` (the class the page sets with `PREVIEW`).
+- **What he sees on board-test, by item.**
+  1. The card under Find a turn: a spare lined up for a predicted job gets "Lined up for E27861 12 (CO,
+     planned 12th 1910, call ~12th 1655, off the Conductor slow board). Not on CATS yet: the line-up has no
+     turn free (no Chain Gang conductor is free)."; a Chain Gang turn the same as "May be called for …"; a
+     crew away gets ", call ~12th 2045" after its train home; the 501/502 crew that took L502 out (or
+     whoever is filling in on it, by craft) gets "Home from Garnet on L50131 12 (ORD 12th 2130), call
+     ~12th 1915". Done in the page (`cardLines`), not in `factsOf`, which also builds turns.json.
+  2. A day off whose own person has gone on duty on that turn since it began, with nobody filling in
+     (`dayOffWorked`: road turns, CO or EN, on duty at or after the day off's start): out of "Active now"
+     into "Listed, but working" with "on duty 12th 0800 on Z14891 11, nobody filling in"; the heading
+     counts it as "not taken"; the note is off its pool row and off its card ("out working on Z14891").
+     **Shown only: the line-up and the alerts still read the day off as CATS listed it** (said on the page).
+  3. Under the line-up: "The big time is the one on the CATS line-up (planned or ordered). The crew goes on
+     duty 15 minutes before it (a deadhead at that time), and the call is 2 hours before on duty."
+  5. A train's Why opens on the checker's sentence (`t.reason`, its "Called ~…" left off since the row has
+     the call), above the likely-call test's notes; "No matching spare-job cover is saved…" is gone. L502's
+     too (it answers the 8 Nov S5 audit's finding 3).
+  6. "Spare conductors free 21 / 28 · Spare engineers free 0 / 3".
+  7. Jobs going spare as short rows like the train line-up (`details.cur2.vac2`): time, job, craft and
+     PLN / ORD chips, whose job it is "(spare)", "cover B104", "call ~12th 1330"; Details has the reason
+     for a predicted job, the wrong-turn and not-tied-up notes, the full cover line with who was skipped,
+     "CATS lists …" and "Returns …". No table left. Days off: long names wrap. At 420 px and under, Days
+     off and Yard jobs get tighter cells and a yard crew may wrap. Measured after: no table wider than its
+     box at 390 or 360 px; the box 1,054 px for six jobs at 390 px (rows shut).
+  10. "EN06 ⟨name⟩ filling in on SD04" (the job's turn bare); Garnet's Details says "Nobody is shown at
+      Garnet yet." when option 31 was read; L502's Why says "Conductor: (S502 ⟨name⟩ spare) · B137 ⟨name⟩";
+      a tracked yard job "is listed in Jobs going spare"; Sarnia calls read "call ~12th 0745" on the rows
+      and in the Why's cover line, like Toronto's.
+- **To promote a piece:** drop that caller's `PREVIEW` test (for the styles, the `body.preview-site`
+  prefix), and change the test that pins it, quoting him. One piece at a time is fine: they do not lean on
+  each other, except that 2's three places (box, pool row, card) belong together.
+- **Checked.** The suite. Each piece broken on purpose eleven ways (shown to every member, or the day-off
+  conditions loosened): a test fails every time. In a browser, this branch's page put over the real sites'
+  data (in that browser only; `boardNoCount` set; nothing saved, every non-GET stopped): **a member's
+  Current and Snapshots, all eleven pools on, every fold open, ten tracked turns, are the same to the
+  letter with the old page and the new, on both sites, three times over** (one thing aside: the reset
+  colour on a spare's job row, which the page paints only on a full redraw, old page and new alike). His
+  own test-site view at 390, 360 and 1280 px, light and dark, every piece read back from the live 0852 to
+  0908 checks: B139's card, SA08's day off, S101's left standing (EN02 was working that job), SR03's and
+  SR07's train home, S501's L501. No page errors, no sideways scroll. Every tab clicked as the owner on
+  the test site and as a member on both: each shows its own heading.
+- **Not checked.** A real phone. Page styles other than light and dark (the new rows are the line-up's own
+  row, which every style already dresses). A job CATS lists under the wrong turn, or with its earlier
+  crew not tied up, in the new rows: in the test only, none was on the board. The published page after
+  his pull.
+- **Left alone on purpose.** Turn History's "Now" for a spare (the same facts, its own round). What the
+  engine and the alerts do with a day off not taken. The likely-call line's pale purple (his test).
+
+**Found while building, NOT changed (put to him):** Days off names whoever is working the turn, not who is
+off. With S101's engineer off and a spare (EN02) working S101's job, "Active now" read "S101 ⟨EN02's
+person⟩ EN"; before the job went out it had read the holder's name. It is the crew names rule (a turn out
+working shows who is working it) reaching a box where the turn's own person is the point. The pool row
+reads the same way.
+
+**Yard Assignment History: his three photos, 12 Nov 09:11 (item 4, and Housekeeping item 7's real yard
+hours). NOTHING BUILT.** Laid out in [SCREENS](docs/board-checker/SCREENS.md), "Assignment history for
+the yard". In short: the same PSTS17A screen with **YD** typed in `POOL OR YD/LO`, `HOME/AWAY` left
+blank; `START DATE` filled itself in (261111 at 09:11 on the 12th). The columns change to ASSIGNMENT,
+ODT-DATE/TIME, DESCRIPTION, **O-T**: there is no DUTY column, so no off duty to read as there is for a
+train. O-T was 0400 on YSBY03 and YSBY04 (the 12-hour tower jobs) and blank on the other fourteen,
+YFLS01 among them (the job his housekeeping note says a trainee left open). **Asked him:** is O-T the
+overtime on top of 8 hours, and when is it filled in; does a blank mean 8 hours or not tied up yet; and
+what an X beside a job and Enter ("crew info") shows, since that may be what tells a ticket left open
+from overtime. The reader would be a checker change (a laptop pull and restart; the read runs for both
+sites, what the page shows from it can stay on the test site).
 
 **For round 2 (Page Health), seen on the way:** any push to the laptop's branch, notes only included,
 turns Page Health's GitHub row red ("N newer updates waiting: git pull, then restart") and its verdict

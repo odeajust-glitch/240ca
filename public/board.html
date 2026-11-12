@@ -898,6 +898,18 @@
   details.cur2 .fold h3 { margin: 12px 0 4px; font-size: 14px; }
   details.cur2 .fold .os2-all > summary { cursor: pointer; color: var(--accent); padding: 8px 0; }
   details.cur2[hidden] { display: none; }
+  /* Current, reviewed with the owner 2026-11-12: test site only. These are either classes only drawn when
+     PREVIEW is on (whysaid, vac2) or under body.preview-site, which the page sets with PREVIEW. */
+  details.cur2 .fold p.whysaid { color: var(--ink); font-size: 13.5px; line-height: 1.45; margin: 2px 0 8px; }
+  details.vac2.catswrong > summary { opacity: .75; box-shadow: inset 3px 0 0 #b3261e; }
+  details.vac2.untied > summary { opacity: .6; }
+  details.vac2 .fold .crew { margin: 4px 0; font-size: 13px; }
+  /* Days off: a long name wraps under its turn where it ran off a phone's edge (19 px at 390, 49 px at 360). */
+  body.preview-site #sec-daysoff td:last-child .num, body.preview-site #sec-daysoff td:last-child .crewnm { white-space: normal; }
+  @media (max-width: 420px) {
+    body.preview-site #sec-daysoff th, body.preview-site #sec-daysoff td, body.preview-site #sec-yard th, body.preview-site #sec-yard td { padding-left: 10px; padding-right: 10px; }
+    body.preview-site #sec-yard .crew span { white-space: normal !important; }
+  }
   /* Analytics, new layout (Test preview): everything under #view.ana2. */
   .ana2 .ana2-about { margin: 0 0 14px; }
   .ana2 .ana2-about > summary { cursor: pointer; color: var(--accent); font-size: 13.5px; padding: 6px 0; }
@@ -2637,13 +2649,15 @@ function s5CrewWhy(s, t) {
   const status = (r) => esc(r.status || 'status unavailable')
     .replace(/away \(term 1\)/g, 'in Garnet')
     .replace(/out working on L50131/g, 'returning on L50131');
-  return '<h4>Crew lined up for ' + esc(t.train) + '</h4><div class="craft-lines">' + lineupCrew(t) +
+  // Test site (owner, 2026-11-12: "Go"): the crew as its row has it, cover named, "spare" said once.
+  const crew = PREVIEW ? lineupCrew(t, s).replace(/<span class="spare">spare<\/span> \(/g, '(') : lineupCrew(t);
+  return '<h4>Crew lined up for ' + esc(t.train) + '</h4><div class="craft-lines">' + crew +
     '</div><h4>Other crew</h4>' + (others.length ? '<ul>' + others.map((r) =>
       '<li><b>' + markTurn(r.turn) + (r.craft ? ' ' + esc(r.craft) : '') + ':</b> ' + status(r) + '</li>').join('') +
     '</ul>' : '<p>Other crew status is not available in this saved check.</p>') +
     '<p class="muted">' + (t.s5OnDuty ? 'Crew recorded on the dated Call Board.' : 'Lined-up crew is a prediction until confirmed by CATS.') + '</p>';
 }
-function lineupWhy(s, t, previewS5 = false) {
+function lineupWhy(s, t, previewS5 = false, saidFirst = false) {
   const stamp = BoardTrains.resolve(t.order, s.taken);
   const road = stamp ? new Date((stampMin(stamp) - 300) * 60000).toISOString().slice(0, 10) : '';
   const seq = (s.callingSequence || []).filter((x) => x.day === road);
@@ -2665,13 +2679,18 @@ function lineupWhy(s, t, previewS5 = false) {
     const craft = v.cc === 'EN' ? 'Engineer' : 'Conductor';
     return '<li><b>' + craft + ':</b> ' +
       (f ? (f.turn ? 'expected cover ' + markTurn(f.turn) : 'no spare currently free') +
-        ' · ' + esc(f.board) + ' · call ' + esc(f.call) +
+        ' · ' + esc(f.board) + ' · call ' + (PREVIEW ? '~' : '') + esc(f.call) +
         (f.skipped && f.skipped.length ? ' · passed over: ' + esc(f.skipped.join(' · ')) : '') +
         (f.sd ? ' · ' + markTurn(f.sd) + ' (Chain Gang) may be called' : '') : 'cover not available in this check') + '.</li>';
   }).join('');
-  if (previewS5 && /^L502/.test(t.train) && /\bS5\b/.test(t.rules || '')) return s5CrewWhy(s, t) + (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '');
-  return sequence +
-    (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
+  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the checker's own sentence first, which pool, who
+  // was passed over and why, who is first out. It is in every check (t.reason) and was last shown before
+  // 2026-11-07. Its "Called ~…" is left off (the row has the call), and so is the line that said no spare
+  // cover was "saved" on a train with nobody going spare. saidFirst: the caller has put the sentence at the top itself.
+  const said = saidFirst ? '' : whySaid(t);
+  if (previewS5 && /^L502/.test(t.train) && /\bS5\b/.test(t.rules || '')) return said + s5CrewWhy(s, t) + (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : '');
+  return said + sequence +
+    (covers ? '<ul>' + covers + '</ul><p>Cover is an estimate, not a confirmed crew call.</p>' : PREVIEW ? '' : '<p>No matching spare-job cover is saved for this train in this check.</p>');
 }
 function lineup(s, previewS5 = false) {
   if (!s.lineup.length) return '';
@@ -2806,13 +2825,13 @@ function lineup2(s) {
     const lead = planTrust(s, t);
     const chips = `<span class="st ${esc(t.status)}">${esc(t.status)}</span> ${poolChip(t.rules)}${t.deadhead ? ' <span class="chip">DH</span>' : ''}${habit && t.status !== 'ORD' ? ` ${habit.chip}` : ''}`;
     const likely = likelyCall(s, t);
-    const line2 = `${lineupCrew(t, s).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
+    const line2 = `${lineupCrew(t, s).replace('Conductor:', 'CO').replace('Engineer:', 'EN')}<span class="call">call ${PREVIEW && t.call ? '~' : ''}${esc(t.call || '—')}</span>${staleChip(s, t)}${likely ? `<span class="likely${likely.tight ? ' tight' : ''}">likely call ${esc(likely.wide)} <small>· held ${likely.held} of ${likely.n}${likely.own ? '' : ' (all trains)'}</small></span>` : ''}`;
     return bar + cur2Row({ hit: markedIn(t.rules), time: dutyTime || t.order, train: sym, od, chips, line2,
-      fold: (likely ? `<p class="habitnote"><b>When it is likely to be called:</b> ${esc(likely.text)}</p>` : '') + (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
+      fold: whySaid(t) + (likely ? `<p class="habitnote"><b>When it is likely to be called:</b> ${esc(likely.text)}</p>` : '') + (habit || lead ? `<p class="habitnote"><b>How this train has gone:</b> ${habit ? esc(habit.text) : ''} ${esc(lead)}</p>` : '') + lineupWhy(s, t, true, true) + `<p>CATS details: ${esc(t.info)} · ${esc(t.engCrew)} / ${esc(t.trnCrew)}</p>` });
   }).join('');
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   return `<section class="sheet" id="sec-lineup"><header><h2>Train line-up</h2><span class="meta">${s.lineup.length} trains · ${ord} ordered</span></header>${rows}
-    <div class="foot">The big time is on duty (planned or ordered). CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
+    <div class="foot">${PREVIEW ? LINEUP_NOTE : 'The big time is on duty (planned or ordered).'} CO conductor, EN engineer. Tap a train for why that crew.</div></section>`;
 }
 function toronto2(s) {
   const trains = s.macLineup || [];
@@ -2890,11 +2909,14 @@ function garnet2(s) {
   const [sym, od] = split(g.train);
   const c = g.crew;
   const guess = c ? null : garnetCrew(s);
+  // Test site (owner, 2026-11-12: "Go"): option 31 read and showing nobody is not "wasn't read".
+  const readG = PREVIEW && (s.screens || []).includes('garnet');
   const crew = c ? markTurn(c.turn) + crewBoth(c.turn) : guess ? markTurn(guess.turn) + crewBoth(guess.turn) : '<span class="muted">crew not known</span>';
   const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
     : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
   const detail = c ? `<p>${esc(c.crafts)} · from the Garnet board.</p>`
-    : guess ? `<p>The Garnet board wasn’t read in this check. ${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.</p>` : '<p>The Garnet board wasn’t read in this check and no 501/502 turn is shown away.</p>';
+    : guess ? `<p>${readG ? 'Nobody is shown at Garnet yet.' : 'The Garnet board wasn’t read in this check.'} ${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.</p>`
+      : readG ? '<p>Nobody is shown at Garnet, and no 501/502 turn is shown away.</p>' : '<p>The Garnet board wasn’t read in this check and no 501/502 turn is shown away.</p>';
   return `<section class="sheet" id="sec-garnet"><header><h2>Garnet line-up · L501 home</h2></header><div class="daybar">${esc(d)}</div>
     ${cur2Row({ hit: !!(c ? marked(c.turn) : guess && marked(guess.turn)), time, train: sym, od, chips: `<span class="st ${esc(g.status)}">${esc(g.status)}</span>`,
       line2: `<span class="crew-craft">${crew}</span>${state ? `<span class="call">${state}</span>` : ''}<span class="call">call ~${esc(awayCall(s, { order: g.order, train: g.train }))}</span>`, foldName: 'Details', fold: detail })}
@@ -2906,6 +2928,88 @@ function changes2(s) {
   if (!s.changes.length) return `<p class="cur2-quiet">No changes since ${esc(w.time)}.</p>`;
   return changes(s);
 }
+// ---- Current, reviewed with the owner 2026-11-12: TEST SITE ONLY (PREVIEW) -------------------------------
+// He said "Go" to items 1, 2, 3, 5, 6, 7 and 10 of that review. Everything here is used only when PREVIEW
+// is on (board-test with the owner key): each caller keeps its older line for everyone else, so the main
+// site and every member see the page as before. To promote a piece, drop that caller's PREVIEW test.
+// HANDOFF, "Tab-by-tab review", has what each item is and what he was shown.
+//
+// Item 3. The big time on a line-up row is the line-up's own time (t.order), not on duty: Z14891 11 showed
+// 0815 there and was on duty at 0800 on the Call Board. Prep is 15 min for a train and none for a
+// deadhead, the call 2 h before on duty (lib/board/config.js).
+const LINEUP_NOTE = 'The big time is the one on the CATS line-up (planned or ordered). The crew goes on duty 15 minutes before it (a deadhead at that time), and the call is 2 hours before on duty.';
+// Item 5. "Tap a train for why that crew": the checker's own sentence (t.reason), which pool, who was passed
+// over and why, who is first out. Its "Called ~…" is left off: the row has the call. Nothing off the test site.
+const whySaid = (t) => (PREVIEW && t && t.reason ? '<p class="whysaid">' + markTurn(String(t.reason).replace(/\s*Called ~[^.]*\./, '')) + '</p>' : '');
+// Item 2. A day off the board still lists as active, whose own person has gone on duty on that turn since
+// it began with nobody filling in: it was not taken. Owner, 2026-11-12, of SA08 (day off from 11th 2140,
+// on duty on Z14891 11 at 12th 0800): "It went this morning". Road turns only; a trainee's line never
+// counts. Returns that Call Board entry. The checker's line-up and alerts still read the day off as CATS
+// listed it: this changes only what the page shows.
+function dayOffWorked(s, d) {
+  if (!d || !d.on || d.yard || !/^(CO|EN)$/.test(d.craft || '')) return null;
+  const from = BoardTrains.resolve(d.from, s.taken);
+  if (!from) return null;
+  const co = d.craft === 'CO';
+  for (const t of s.onDuty || []) {
+    const own = String(t.crew || '').split(' · ').some((c) => { const [cc, turn] = c.trim().split(' '); return turn === d.turn && /^(CO|EN|LE)$/.test(cc) && (cc === 'CO') === co; });
+    if (!own || (t.backfill || []).some((b) => b.job === d.turn && (b.craft === 'CO') === co)) continue;
+    const on = BoardTrains.resolve(t.onDuty, s.taken);
+    if (on && stampMin(on) >= stampMin(from)) return t;
+  }
+  return null;
+}
+const dayOffNotTaken = (s, turn, craft) => {
+  const d = (s.daysOff || []).find((x) => x.on && x.turn === turn && (!craft || (x.craft === 'CO') === (craft === 'CO')));
+  return d && dayOffWorked(s, d) ? d : null;
+};
+// A status as the checker wrote it ("out working on Z14891; PL @ 11th 2140 · goes spare until 12th 2140"),
+// less the note for a day off that was not taken.
+const lessDayOff = (text, d) => String(text).split('; ').filter((b) => !b.startsWith(`PL @ ${d.from}`)).join('; ');
+function statusShown(s, t) {
+  if (!PREVIEW || !/PL @/.test(t.status || '')) return t.status;
+  const d = dayOffNotTaken(s, t.turn, t.craft);
+  return d ? lessDayOff(t.status, d) || 'available' : t.status;
+}
+// Item 1 (with 2 and 10 where they show on the same card). The lines of the card under Find a turn:
+// lines = [{ kind, text }] as the page built them for `turn` ("SR03", "S501-CO").
+//   a spare lined up for a job the order has going spare that CATS has not listed yet (the board and
+//     the alerts already say so; the card read only "available");
+//   the call for the train home, as the Toronto and Garnet boxes have it;
+//   the day-off note off the status when the day off was not taken;
+//   "Jobs going spare" by the name its box has.
+function cardLines(s, turn, lines) {
+  const { base, craft } = BoardTurns.splitCraft(turn);
+  const out = lines.map((l) => ({ ...l }));
+  const off = dayOffNotTaken(s, base, craft);
+  for (const l of out) {
+    if (off && l.kind === 'status') l.text = lessDayOff(l.text, off);
+    l.text = l.text.replace(' is on the vacancy list: goes spare', ' is listed in Jobs going spare');
+    if (l.kind !== 'homeTrain') continue;
+    const t = (s.macLineup || []).find((x) => l.text.includes(` on ${x.train} (${x.status} ${x.order})`));
+    if (t) l.text += `, call ~${awayCall(s, t)}`;
+  }
+  for (const v of s.vacanciesPredicted || []) {
+    if (!v.fill) continue;
+    const job = v.trainDay || v.train;
+    const what = `${v.pool ? `${v.pool} ` : ''}${v.cc}, ${v.status === 'ORDERED' ? 'ordered' : 'planned'} ${v.at}`;
+    const why = v.extra ? (v.why || 'an extra job: its whole crew is called off the spareboard')
+      : v.turn ? `the line-up has ${v.turn} going spare${v.why ? ` (it ${v.why})` : ''}` : `the line-up has no turn free${v.why ? ` (${v.why})` : ''}`;
+    if (v.fill.turn === base) out.push({ kind: 'spareFill', text: `Lined up for ${job} (${what}, call ~${v.fill.call}, off the ${v.fill.board}). Not on CATS yet: ${why}.` });
+    else if (v.fill.sd === base) out.push({ kind: 'mayCall', text: `May be called for ${job} (${what}, call ~${v.fill.call}): no one free on the ${/^SD/.test(base) ? 'engineer' : 'conductor'} slow board. Not on CATS yet: ${why}.` });
+  }
+  // Home from Garnet: the 501/502 crew that took L502 out, or whoever is filling in on it.
+  const g = s.garnetHome;
+  if (g && g.train && !out.some((l) => l.text.includes(g.train))) {
+    const guess = g.crew ? null : garnetCrew(s);
+    const crewTurn = g.crew ? g.crew.turn : guess ? guess.turn : '';
+    const fills = guess ? guess.fills : [];
+    const covered = !!craft && fills.some((x) => (x.craft === 'CO') === (craft === 'CO'));
+    if ((crewTurn && crewTurn === base && !covered) || fills.some((x) => x.turn === base)) out.push({ kind: 'homeTrain', text: `Home from Garnet on ${g.train} (${g.status} ${g.order}), call ~${awayCall(s, { order: g.order, train: g.train })}` });
+  }
+  return out;
+}
+// ---- end of the Current review block ------------------------------------------------------------------
 function strip2(s) {
   const ord = s.lineup.filter((t) => t.status === 'ORD').length;
   const spare = (craft) => {
@@ -2914,7 +3018,9 @@ function strip2(s) {
     if (!turns.size) return '—';
     return `<b>${[...turns.values()].filter((t) => t.status === 'available').length}</b> / ${turns.size}`;
   };
-  return `<div class="cur2-strip"><span><b>${s.lineup.length}</b> ${s.lineup.length === 1 ? 'train' : 'trains'} · <b>${ord}</b> ordered</span><span>Conductors free ${spare('Conductor')}</span><span>Engineers free ${spare('Engineer')}</span></div>`;
+  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the two counts are of the spareboards only, and say so.
+  const who = (craft) => (PREVIEW ? `Spare ${craft.toLowerCase()}s` : `${craft}s`);
+  return `<div class="cur2-strip"><span><b>${s.lineup.length}</b> ${s.lineup.length === 1 ? 'train' : 'trains'} · <b>${ord}</b> ordered</span><span>${who('Conductor')} free ${spare('Conductor')}</span><span>${who('Engineer')} free ${spare('Engineer')}</span></div>`;
 }
 function dot(status) {
   if (/out working/.test(status)) return 'out';
@@ -2965,7 +3071,7 @@ function poolBody(s, p) {
     const likelyHtml = likely ? `<details class="splikely${likely.tight ? ' tight' : ''}"><summary>likely call ${esc(likely.window)} <small>· held ${likely.held} of ${likely.n}</small></summary><p>${esc(likely.text)}</p></details>` : '';
     const cls = [marked(t.turn, t.craft) ? 'hit' : '', r ? `reset-${r.level === 'red' ? 'r' : 'y'}` : ''].filter(Boolean).join(' ');
     return `<tr data-rturn="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${cls ? ` class="${cls}"` : ''}><td class="num">${esc(t.pos)}</td><td class="num"><b>${esc(t.turn)}</b>${crewTag(resetKey(t))}${t.viewTime ? ` <span class="vt">${esc(t.viewTime)}</span>` : ''}${t.craft ? ` <span class="chip">${esc(t.craft)}</span>` : ''}</td>
-    <td><span class="stat-dot ${dot(t.status)}"></span>${esc(t.status)}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
+    <td><span class="stat-dot ${dot(statusShown(s, t))}"></span>${esc(statusShown(s, t))}<span class="rdue">${r ? esc(resetText(r)) : ''}</span>${odds}</td></tr>${t.job || likelyHtml
       // The spare's job on its own line under the turn, across the row (owner, 2026-11-05: beside the turn it pushed Status off a phone).
       ? `<tr class="jobrow${cls ? ` ${cls}` : ''}"><td></td><td colspan="2">${t.job ? `<div class="jobline">→ <b>${esc(t.job.train)}</b>${t.job.covers && !t.job.yard ? ` <span class="nw">(${esc(t.job.covers)}'s job)</span>` : ''} · <span class="nw">call ~${esc(t.job.call)}</span></div>` : ''}${likelyHtml}</td></tr>` : ''}`;
   }).join('');
@@ -3027,10 +3133,13 @@ function crewShown(t) {
   }).join(' · ');
   return { crew, backfill: (t.backfill || []).filter((b) => !MU_TURN.test(b.job)) };
 }
+// Test site (owner, 2026-11-12: "Go"): a turn out working carries the name of whoever is working it, so
+// "EN06 ⟨name⟩ filling in on SD04 ⟨name⟩" named one person twice. The job's turn is left bare.
+const fillIn = (b) => `${markTurn(b.turn)} filling in on ${markTurn(b.job).replace(/ <span class="crewnm">[^<]*<\/span>/g, '')}`;
 function onDuty(s) {
   if (!s.onDuty.length) return '';
   const rows = s.onDuty.map((t0) => { const t = { ...t0, ...crewShown(t0) }; return `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${markTurn(t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${PREVIEW ? t.backfill.map(fillIn).join(' · ') : markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
@@ -3040,12 +3149,17 @@ function onDuty(s) {
 function daysOff(s) {
   if (!(s.screens || []).includes('daysOff') && !(s.daysOff || []).length) return '';
   const list = s.daysOff || [];
-  const active = list.filter((d) => d.on);
+  // Test site (owner, 2026-11-12, reviewing Current: "Go"): a day off whose own person has gone on duty on that
+  // turn since it began is not listed as active (dayOffWorked). Off the test site this map is empty.
+  const worked = new Map(PREVIEW ? list.filter((d) => d.on).map((d) => [d, dayOffWorked(s, d)]).filter(([, t]) => t) : []);
+  const active = list.filter((d) => d.on && !worked.has(d));
   const upcoming = list.filter((d) => !d.on);
-  const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span>' + (d.yard ? yardTag(d.turn, d.craft) : '') + '</td></tr>').join('');
+  const rows = (items) => items.map((d) => '<tr' + (marked(d.turn) ? ' class="hit"' : '') + '><td class="num">' + esc(d.from) + '</td><td class="num">' + esc(d.until || 'not recorded') + '</td><td><b class="num">' + markTurn(d.turn) + '</b> <span class="chip">' + esc(d.craft) + '</span>' + (d.yard ? yardTag(d.turn, d.craft) : '') + (worked.has(d) ? '<div class="crew">on duty ' + esc(worked.get(d).onDuty) + ' on ' + esc(worked.get(d).train) + ', nobody filling in</div>' : '') + '</td></tr>').join('');
   const group = (name, items) => '<h3 class="off-heading">' + name + ' · ' + items.length + '</h3><div class="scroll"><table><thead><tr><th>From</th><th>Ends</th><th>Turn</th></tr></thead><tbody>' + (rows(items) || '<tr><td colspan="3" class="muted">None in this check.</td></tr>') + '</tbody></table></div>';
-  return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${active.length} active · ${upcoming.length} upcoming</span></header>
-    ${group('Active now', active)}${group('Upcoming', upcoming)}
+  const notTaken = !worked.size ? '' : group('Listed, but working', [...worked.keys()])
+    + '<p class="anote" style="margin:6px 14px 10px">On the Call Board on their own turn since the day off began, so it is not shown as a day off here. The line-up and the alerts still read it as CATS listed it.</p>';
+  return `<section class="sheet" id="sec-daysoff"><header><h2>Days off</h2><span class="meta">${active.length} active · ${upcoming.length} upcoming${worked.size ? ` · ${worked.size} not taken` : ''}</span></header>
+    ${group('Active now', active)}${group('Upcoming', upcoming)}${notTaken}
     <div class="foot">From CATS option 4 (upcoming days off). Each is taken as 24 h from the time shown. A turn off at a train's call still takes it and goes spare; a spare off then is passed over. A trainee (ET / TT) off changes nothing: their jobs never go spare.</div></section>`;
 }
 
@@ -3187,8 +3301,43 @@ function vacancies(s) {
     <p class="anote" style="margin:4px 14px 10px">On the corrected train line-up as going spare, or the rest of an extra yard job's crew, but not on CATS's option 5${s.option5Read === false ? ' (option 5 wasn\'t read this check)' : ' yet'}. A guess until CATS lists it.</p>
     <div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${predRows}</tbody></table></div>`;
   const tabs = tabbed ? `<div class="tabs" role="tablist"><button type="button" role="tab" data-vactab="fixed" aria-selected="${!showCats}">Corrected (by the order)</button><button type="button" role="tab" data-vactab="cats" aria-selected="${showCats}">As CATS shows${wrongs ? ` <span class="bad">· ${wrongs} wrong</span>` : ''}</button></div>` : '';
-  const why = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
-  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${why}
+  const whyTab = tabbed ? `<p class="anote" style="margin:10px 14px">${showCats ? 'Exactly what CATS\'s option 5 lists. A job under a turn the order doesn\'t have on that train is marked <span class="bad">wrong turn</span>.' : 'CATS\'s option 5 checked against the order: a job CATS lists under the wrong turn is left out (or moved to the order\'s turn if that one goes spare too). See "As CATS shows" for CATS\'s own list.'}</p>` : '';
+  const none = '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>';
+  const foot = `<div class="foot">"Expected cover" is an estimate, not a confirmed crew call: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div>`;
+  // Test site (owner, 2026-11-12, reviewing Current: "Go"): the same jobs as short rows like the train line-up,
+  // the rest under a tap. The three-column table needed 401 to 431 px in a phone's 356 px box, so its Turn
+  // column (the turn going spare, "returns …") sat off the edge, and its middle column wrapped to two or
+  // three words a line. Nothing is left out: what the Turn column held is on the row or in Details.
+  if (PREVIEW) {
+    let day = null;
+    const row2 = (v, pred) => {
+      const [d, time] = split(v.at || '');
+      const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+      day = d;
+      const [sym, od] = split((pred && v.trainDay) || v.train || '');
+      const ord = v.status === 'ORDERED';
+      const job = [v.pool, v.cc].filter(Boolean).join(' ');
+      const chips = `<span class="chip">${esc(job)}</span> <span class="st ${ord ? 'ORD' : 'PLN'}">${ord ? 'ORD' : 'PLN'}</span>${pred ? ' <span class="chip">predicted</span>' : ''}${v.untied ? ' <span class="chip">probably not spare</span>' : ''}${v.wrong ? ' <span class="bad">wrong turn</span>' : ''}`;
+      // Whose job it is. A yard job is its own "turn", so it is not said twice.
+      const state = v.untied ? '<span class="muted">(probably not)</span>' : '<span class="spare">(spare)</span>';
+      const own = !v.turn ? '<span class="crew-craft"><span class="spare">no turn free</span></span>'
+        : v.turn !== v.train ? `<span class="crew-craft">${markTurn(v.pool === 'S5' ? `${v.cc === 'EN' ? 'EN' : 'CO'} ${v.turn}` : v.turn)} ${state}</span>` : '';
+      const cover = !v.fill ? '' : `<span class="crew-craft">${v.fill.turn ? `cover <b class="num">${markTurn(v.fill.turn)}</b>` : '<strong class="spare">NO SPARE AVAILABLE</strong>'}</span><span class="call">call ~${esc(v.fill.call)}</span>`;
+      const said = !pred ? '' : `<p>Predicted: ${v.extra ? esc(v.why || 'an extra job: its whole crew is called off the spareboard') : v.turn ? `the line-up has ${esc(v.turn)} going spare${v.why ? ` (it ${esc(v.why)})` : ''}` : `the line-up has no turn free${v.why ? ` (${esc(v.why)})` : ''}`}.</p>`;
+      const fold = `<p>${esc(job)} · ${ord ? 'ordered' : 'planned'} ${esc(v.at)}</p>${said}${wrongNote(v)}${untiedNote(v)}${fill(v)}${v.cats && !showCats ? `<p>CATS lists ${esc(v.cats)}.</p>` : ''}${v.returns ? `<p>Returns ${esc(v.returns)}.</p>` : ''}`;
+      return bar + cur2Row({ hit: marked(v.turn) || !!(v.fill && marked(v.fill.turn)), time: time || v.at, train: sym, od, chips, line2: own + cover, fold, foldName: 'Details' })
+        .replace('<details class="cur2', `<details class="cur2 vac2${v.wrong ? ' catswrong' : ''}${v.untied ? ' untied' : ''}`);
+    };
+    const rows2 = list.map((v) => row2(v, false)).join('');
+    day = null;
+    const pred2 = predicted.map((v) => row2(v, true)).join('');
+    const predHead = !predicted.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Predicted jobs going spare · ${predicted.length}</h3>
+    <p class="anote" style="margin:4px 14px 10px">On the corrected train line-up as going spare, or the rest of an extra yard job's crew, but not on CATS's option 5${s.option5Read === false ? ' (option 5 wasn\'t read this check)' : ' yet'}. A guess until CATS lists it.</p>`;
+    return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${whyTab}
+    ${rows2 || none}${predHead}${pred2}
+    ${foot}</section>`;
+  }
+  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${whyTab}
     ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>'}${predSection}
     <div class="foot">"Expected cover" is an estimate, not a confirmed crew call: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div></section>`;
 }
@@ -6229,7 +6378,10 @@ source().then(async (src) => {
       const where = spareBoardsLine(s, f).filter((x) => !LINED.has(x.kind)).map((x) => x.text);
       const lined = f.filter((x) => LINED.has(x.kind) && !(x.kind === 'homeTrain' && !x.train && /^No train/.test(x.text)))
         .map((x) => ({ kind: x.kind, text: x.text.replace(/^Projected for /, 'Lined up for ').replace(/^Projected to fill /, 'Lined up for ') }));
-      const lines = [...where.map((text) => ({ kind: 'status', text })), ...lined];
+      const built = [...where.map((text) => ({ kind: 'status', text })), ...lined];
+      // Test site (owner, 2026-11-12, reviewing Current: "Go"): a predicted job, the call for the train home,
+      // a day off that was not taken (cardLines).
+      const lines = PREVIEW ? cardLines(s, turn, built) : built;
       const cands = isPerson(entry) ? personCands[entry] || [] : [];
       const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
       return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}</li>`;
