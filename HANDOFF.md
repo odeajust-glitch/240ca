@@ -1,5 +1,77 @@
 # HANDOFF — read this before doing anything
 
+## Call stability graph review — November 12, 2026, 03:10 Toronto. LOOKED ONLY, NOTHING BUILT. WAITING ON JUSTIN'S PICK
+
+**Owner:** "Improve the Call stability graph and the information around it ... First look, don't
+build ... Show me a short list of what you found and what you would change, with a before/after
+picture for the main ideas. Wait for my answer before building anything ... A person should be able
+to tell at a glance: when they expected to be called, when they were called, how much it moved,
+how much warning they got, and why it moved if the board shows why. Plain words, no jargon ...
+Don't change how the numbers are worked out ... unless you show me a real call where it gives a
+wrong or misleading answer and I say yes ... It goes to the test site first as a preview." His
+three "what bothers me" lines came through as "...": ask for them.
+
+**Where it is.** This session's own branch `ccr-83c63a33-26zny2`, cut from
+`claude/vigilant-planck-zawrj4` at `3655ea7`. **Only this note is new; no code, no test, no page
+change, nothing on the shared branch.** The findings, with now / proposed pictures from real
+calls, are on a private page for him: https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c. The
+proposed pictures are a sketch drawn over the real page in a browser here (a scratch file, not in
+the repo): the build is still to do.
+
+**Looked at on the live test site** (no owner key in the browser, `boardNoCount` set): the Call
+stability page whole; 16 real calls opened through Analytics at 390 px (on time, later, earlier,
+short notice, taken off, moved to another train, Sarnia, Toronto, yard, L501 home); three again in
+dark and at 1280 px; Turn History (the regular layout) and Order summary's "The crew's call". No
+page errors, no sideways scroll. **Not looked at:** My week in a browser (it wants a followed turn;
+the code draws the same card), the test site's preview Turn History layout, the other page styles.
+Counts are from that morning's `data/analytics.json`: 1,323 call records, 1,099 called, 224 taken off.
+
+**Found (the page has each with its real call):**
+1. The five answers are spread over the row, the headline, the small print and a six-row table, in
+   the board's words ("first lined", "8 h window", "notice given", "lost to the early call").
+2. Of 525 calls over an hour early or late, **416 were for a different train than first lined up
+   for**; 109 were the same train. The headline does not tell them apart. Half the Why boxes are six
+   lines or more (longest 31): a log, not a reason.
+3. **Short notice is the headline only when the call was early**: 98 calls with under 8 h read
+   "Called at the planned time" or "late" (B123 DHT130B 09, 1 h 34 m, green). EN01 DHT021B 07 draws
+   "waiting" from before the turn was lined up and its words are cut off.
+4. "Notice given" runs from the first lining up for anything: SD02 M39491 10 reads "5 h 45 m notice"
+   while the board still showed a 1655 call when it was called at 0200.
+5. **Two yardsticks:** the graph, rows and Sarnia / Mac yard cards measure from the first planned
+   call (`firstCall`); the tiles under More numbers and My stats measure from the eight-hour
+   baseline (`expected` at `sleepAt`). They land in different bands on 311 of 1,065 calls and point
+   opposite ways on 87 (SB06 M38261 10: 4 h 35 m early against 30 m late). `callReviewRecord` shows
+   both as "Original expected call" / "Eight-hour baseline".
+6. 252 calls within 30 minutes are headed "Called 15 m early / late" (amber, "lost to the early
+   call") though every count calls them on time.
+7. "Removed from the line-up": the reason sits in a red box below; 186 of 224 name who took the
+   job, 29 were on the line-up under 30 minutes.
+8. Plain faults: labels printed on each other at phone width (the page's own example 4), "White
+   bar" in the key (black in light styles), **the Why box in Turn History wraps one word to a line
+   on a phone**, 43 `calledWhy` lines of the form "Called for DHT130B 09 ... not the DHT130B they
+   were lined up for" (a job id with and without its day: `whyFor` in lib/board/insights.js), the
+   "By turn" rows ("Green 4 Yellow 2 Red 10 ... Earlier · later 1 · 11").
+
+**Proposed, for him to pick (A to G on the page):** A one plain block on every call (Expected,
+Called, Warning, Why), a picture with the words on it and no key, two fold-outs ("Every change the
+board showed", "i · How this is worked out"), in every place the graph is used; B under 8 h the
+warning is always the headline (his 10 Nov rule, applied to on-time and late calls: 98 headlines);
+C a new line for what the board was saying at the end ("the board still showed 1655 when the call
+came" / "the time last changed 10 min before the call"); D which "expected" leads (first shown, or
+8 hours before, or first shown with the other beside it); E within 30 minutes reads "Called when
+expected" (252 headlines); F taken off: reason first, waits under 30 minutes folded away; G the
+plain faults, the By turn wording, How to read behind an "i". **B, C, D and E change what a
+headline says, so each needs his yes; none changes how a number is worked out.**
+
+**For whoever builds it:** `renderCallTimelineV2` is called at about board.html 4275, 4451, 7070,
+7495 (the examples, `{ bare: true }`) and 7630-7633; four of those patch its markup by exact string
+(`'<details class="call-timeline ct2">'`, `'<summary>Show call timeline</summary>'`). Tests pin
+strings in call-timeline.test.js and insights.test.js (`class="ct2-why"`, "Now on M3 10"). Preview
+= behind `PREVIEW` on the test site (the rule since 10 Nov: no preview tab on the main site). He
+likes a phone-sized picture of each change, and explanations behind an "i".
+
+**❓ For Justin:** his pick; his three "what bothers me" lines.
+
 ## My stats reviewed — November 12, 2026, 00:05 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are ON FOR EVERY MEMBER in the code since 00:10 at his word
 
 **00:10, owner, after the report and the preview, asked "Show the new sections to every member?":
