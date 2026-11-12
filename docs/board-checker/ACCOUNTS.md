@@ -135,9 +135,9 @@ in CATS.
 ## My stats: each member's own, nobody else's
 
 Owner, 2026-11-11: "Very detailed statistics, trends"; "only available to the
-person who owns the account. They can see theirs and no one else's". Built on
-branch `ccr-83c63a33-26zny2`; see the note at the top of HANDOFF for whether it
-is merged and live.
+person who owns the account. They can see theirs and no one else's". Merged
+2026-11-11; it needs the Worker paste (`13a1b85` or later) and a laptop pull.
+See the note at the top of HANDOFF for whether those are done.
 
 - **Laptop** (`lib/board/mystats.js`): each site build writes one record per
   person to `accounts/stats/<name-code hash>.json` (hashes, no names) and keeps

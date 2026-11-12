@@ -1,18 +1,26 @@
 # HANDOFF — read this before doing anything
 
-## My stats — built November 11, 2026, 20:00 Toronto, by a separate session. NOT live, NOT merged
+## My stats — merged November 11, 2026, 20:05 Toronto. WAITING ON A WORKER PASTE AND A LAPTOP PULL
 
 **Owner (after asking what a name code's history could show him): "Very detailed statistics,
 trends. Anything you can think of" ... "Make it so this page is only available to the
-person who owns the account. They can see theirs and no one else's."**
+person who owns the account. They can see theirs and no one else's." Then, shown a preview:
+"Yea. Can you push it to the test page".**
 
-**Where it is.** Branch **`ccr-83c63a33-26zny2`**, one commit on top of
-`claude/vigilant-planck-zawrj4` at `061ebe0`. That session was told to push only to its own
-branch, so **the laptop's branch does not have it**: it needs Justin's word to be merged
-(a fast-forward if nothing else landed), then a laptop pull + restart, **and a Worker paste
-into both Workers** (the copy page has NOT been rebuilt for it; do that at the merge).
-Suite **394 of 394**. A private preview of the tab drawn from his own record (JUOD, as of
-the 11th 1930 check): https://claude.ai/artifact/7pnMxDbxvYb2M9A4hr5dv5.
+**Where it is.** Built by a separate session on `ccr-83c63a33-26zny2`, then at his word
+fast-forwarded into **`claude/vigilant-planck-zawrj4`** (commit `13a1b85` is the code; the
+branch tip is this note). Suite **394 of 394**. **The copy page is rebuilt for `13a1b85`**
+(checked: it decodes to exactly `cloudflare/board-worker.js`, 1976 lines; the page before
+it decoded to exactly `08e6109`). **Two things are waiting on Justin, in either order
+(nothing is exposed whichever comes first):**
+1. **Paste the Worker into both Workers** (`board-test` and `board`) from the copy page.
+   Until then the Workers run `08e6109` and the tab stays hidden.
+2. **Laptop: `git pull` and restart.** Until then nothing writes the records and the page
+   has no My stats tab.
+Then the tab shows **on the test site only, on his owner-key device** (`MINE_ALL = false`),
+with his own record (the code in `accounts/owner.json`, JUOD). A private preview of the tab
+drawn from his own record as of the 11th 1930 check:
+https://claude.ai/artifact/7pnMxDbxvYb2M9A4hr5dv5.
 
 **What it is.**
 - **Laptop** (`lib/board/mystats.js`, two small places in `lib/board/site.js`): every site
@@ -56,8 +64,12 @@ the owner confirms, the file is never served, a removed member gets nothing). Th
 draws at phone and desktop width, light and dark, no sideways scroll, no page errors, and
 each state (no code, waiting, not theirs, nothing kept, old Worker) says the right thing.
 `personRecord` is a copy of `personHistory` in `board.html`; a test holds the two equal.
-**Not checked:** the real Workers (nothing pasted), the laptop's build and publish with real
-history, the Members tab buttons in a browser, a second member's phone.
+**Not checked:** the real Workers (not pasted yet), the laptop's build and publish with real
+history, the Members tab buttons in a browser, a second member's phone. **Once he has
+pasted and pulled, look:** `auth/me` on either site answers with `statsCode`; after the next
+publish the bucket has `accounts/stats/` (about 168 files) and `BoardChecker\my-stats.json`
+exists; the publish line shows no "my stats:" in what it skipped; the tab on board-test
+matches the preview.
 
 **Limits, told to him:** Turn History's person search still shows anyone's trips to any
 member who types their code (he asked for this page to be private, not that one); the data
@@ -67,7 +79,7 @@ whose names make the same code, not yet in `CODE_GROUPS`, would both pass the na
 split the code as usual, then it waits for him. Old files stay in the bucket after a person
 drops out of the record (the publish never deletes under `accounts/`).
 
-**❓ For Justin:** merge and go live on the test site; promote to every member after he has
+**❓ For Justin:** the paste and the pull above; promote to every member after he has
 looked; whether Admins should be able to confirm a code; whether the person search in Turn
 History should be narrowed now that this page exists.
 
