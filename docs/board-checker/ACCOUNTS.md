@@ -132,6 +132,35 @@ in CATS.
   copy of the file they saved; changing `BOARD_NAMES_KEY` and the saved
   passcode ends that.
 
+## My stats: each member's own, nobody else's
+
+Owner, 2026-11-11: "Very detailed statistics, trends"; "only available to the
+person who owns the account. They can see theirs and no one else's". Live
+since 2026-11-11 (Worker `13a1b85` or later). The note at the top of HANDOFF
+has what was checked.
+
+- **Laptop** (`lib/board/mystats.js`): each site build writes one record per
+  person to `accounts/stats/<name-code hash>.json` (hashes, no names) and keeps
+  400 days of it in `BoardChecker\my-stats.json`. `accounts/` is never served
+  as a file and never deleted by the publish.
+- **Worker** `GET /auth/stats`: to a signed-in approved member, the record for
+  the name code saved on their own account (⚙ Settings → Profile). Nothing in
+  the request chooses whose. Answers `{ state, code, stats }`; `state` is
+  `none` (no code saved), `wait`, `no` or `ok`.
+- **Whose code it is.** A member types their own code, so it only counts when
+  (a) it matches the name they were approved under: first two letters of the
+  first name + first two of a later name, or (b) you pressed **"XXXX is
+  theirs"** on the Members tab. A code two or three people have had
+  (`CODE_GROUPS`, the same list as `lib/board/people.js`) always waits for
+  you. **"Not theirs"** shuts it for that code. Your OK is for that code only:
+  if they change it, it waits again. Only the owner key can do this.
+- **Page**: the **My stats** tab (`public/board-mystats.js`, `renderMine` in
+  `board.html`). No box to type a code into. Every signed-in member on both
+  sites since 2026-11-11 (`MINE_ALL = true` in `board.html`; `false` = the
+  test site only).
+- **Not covered:** Turn History's person search is unchanged, so a member who
+  types someone's name code there still sees that person's trips.
+
 ## Worker settings
 
 | Name | Type | What |

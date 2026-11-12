@@ -18,6 +18,11 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
 - **Names for followers on Page Health:** three answers pending from the owner (capture
   names for everyone each check; OWNER_EMAIL deleted on `board`; layout). See HANDOFF.
 
+- **My stats** (each member's own statistics, private to their account): built 2026-11-11,
+  Worker pasted, and switched on for every member at his word the same evening ("push it to
+  the main page"). Waiting on one laptop pull + restart to publish the page with the tab on.
+  After that: watch the Members tab for name codes waiting for his OK. See the top of HANDOFF.
+
 ### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
 
 Small decisions parked for a housekeeping pass; ask, don't build.

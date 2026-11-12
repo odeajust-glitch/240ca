@@ -504,3 +504,109 @@ test('approval notes stop at 60% of the day\'s emails; codes go on to the limit'
   assert.equal((await call('/auth/signup', { body: person('r2'), ip: '11.1.1.2' })).status, 200);
   assert.equal(mails.length, sent + 1);
 });
+
+// Owner, 2026-11-11: My stats. "Make it so this page is only available to
+// the person who owns the account. They can see theirs and no one else's."
+test('my stats: a member gets the record for the name code on their own account, and nobody else\'s', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const People = require('../../lib/board/people');
+  const join = async (p) => {
+    await call('/auth/signup', { body: p });
+    const res = await call('/auth/verify', { body: { email: p.email, code: codeIn(mails) } });
+    const id = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === p.email).id;
+    await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+    return { id, cookie: cookieOf(res) };
+  };
+  const pat = await join({ name: 'Pat Example', email: 'pat@example.com', pin: '123456', hireDate: '2015-06-01' });
+  const sam = await join({ name: 'Sam Other', email: 'sam@example.com', pin: '654321', hireDate: '2016-06-01' });
+  // What the laptop published, by name-code hash.
+  const fileOf = (code) => `accounts/stats/${People.personHash(code)}.json`;
+  store.set(fileOf('PAEX'), JSON.stringify({ v: 1, trips: [{ id: 'PAT 01' }] }));
+  store.set(fileOf('SAOT'), JSON.stringify({ v: 1, trips: [{ id: 'SAM 01' }] }));
+  store.set(fileOf('COBR'), JSON.stringify({ v: 1, trips: [{ id: 'SHARED 01' }] }));
+
+  // Never a file anyone can fetch, signed in or not; and nothing without an account.
+  assert.equal((await call(`/${fileOf('PAEX')}`, { cookie: pat.cookie })).status, 404);
+  assert.equal((await call(`/${fileOf('PAEX')}`, { key: OWNER_KEY })).status, 404);
+  assert.equal((await call('/auth/stats')).status, 401);
+  assert.equal((await call('/auth/stats', { cookie: pat.cookie, body: {} })).status, 405);
+
+  // No code saved yet: told so, nothing else.
+  assert.deepEqual(await (await call('/auth/stats', { cookie: pat.cookie })).json(), { state: 'none', code: '' });
+  assert.equal((await (await call('/auth/me', { cookie: pat.cookie })).json()).statsCode, 'none');
+
+  // Their own code (it matches the name they were approved under): their record.
+  await call('/auth/profile', { cookie: pat.cookie, body: { code: 'paex' } });
+  let res = await call('/auth/stats', { cookie: pat.cookie });
+  assert.equal(res.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await res.json(), { state: 'ok', code: 'PAEX', stats: { v: 1, trips: [{ id: 'PAT 01' }] } });
+  // Nothing in the request picks whose: a code or a hash on the address is ignored.
+  assert.deepEqual((await (await call(`/auth/stats?code=SAOT&h=${People.personHash('SAOT')}`, { cookie: pat.cookie })).json()).stats.trips, [{ id: 'PAT 01' }]);
+
+  // Someone else's code typed into their own profile: no record, it waits for the owner.
+  await call('/auth/profile', { cookie: pat.cookie, body: { code: 'SAOT' } });
+  assert.deepEqual(await (await call('/auth/stats', { cookie: pat.cookie })).json(), { state: 'wait', code: 'SAOT' });
+  assert.equal((await (await call('/auth/me', { cookie: pat.cookie })).json()).statsCode, 'wait');
+  // Sam still sees Sam's own.
+  await call('/auth/profile', { cookie: sam.cookie, body: { code: 'SAOT' } });
+  assert.deepEqual((await (await call('/auth/stats', { cookie: sam.cookie })).json()).stats.trips, [{ id: 'SAM 01' }]);
+
+  // A code more than one person has had never counts by the name alone.
+  const col = await join({ name: 'Cory Brown', email: 'cory@example.com', pin: '111111', hireDate: '2017-06-01' });
+  await call('/auth/profile', { cookie: col.cookie, body: { code: 'COBR' } });
+  assert.deepEqual(await (await call('/auth/stats', { cookie: col.cookie })).json(), { state: 'wait', code: 'COBR' });
+  let list = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users;
+  assert.deepEqual(list.map((u) => [u.name, u.codeState]).sort(), [['Cory Brown', 'wait'], ['Pat Example', 'wait'], ['Sam Other', 'ok']]);
+  // Only the owner confirms a code: not a member, not an Admin.
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: sam.id, action: 'role', role: 'admin' } });
+  assert.equal((await call('/health/accounts', { cookie: sam.cookie, body: { id: pat.id, action: 'code', ok: true } })).status, 403);
+  assert.equal((await call('/health/accounts', { cookie: pat.cookie, body: { id: pat.id, action: 'code', ok: true } })).status, 404);
+  assert.deepEqual(await (await call('/auth/stats', { cookie: pat.cookie })).json(), { state: 'wait', code: 'SAOT' });
+  assert.equal((await call('/health/accounts', { key: OWNER_KEY, body: { id: col.id, action: 'code', ok: true } })).status, 200);
+  assert.deepEqual((await (await call('/auth/stats', { cookie: col.cookie })).json()).stats.trips, [{ id: 'SHARED 01' }]);
+  // The OK is for that code only: change it and it waits again.
+  await call('/auth/profile', { cookie: col.cookie, body: { code: 'COBD' } });
+  assert.deepEqual(await (await call('/auth/stats', { cookie: col.cookie })).json(), { state: 'wait', code: 'COBD' });
+  // "Not theirs" shuts it, even for a code that matches the name.
+  await call('/auth/profile', { cookie: pat.cookie, body: { code: 'PAEX' } });
+  assert.equal((await (await call('/auth/stats', { cookie: pat.cookie })).json()).state, 'ok');
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: pat.id, action: 'code', ok: false } });
+  assert.deepEqual(await (await call('/auth/stats', { cookie: pat.cookie })).json(), { state: 'no', code: 'PAEX' });
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: pat.id, action: 'code', ok: true } });
+  assert.equal((await (await call('/auth/stats', { cookie: pat.cookie })).json()).state, 'ok');
+
+  // A removed member gets nothing.
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: pat.id, action: 'remove' } });
+  assert.equal((await call('/auth/stats', { cookie: pat.cookie })).status, 401);
+
+  // The owner's own device: the code saved on it, like anyone's.
+  res = await call('/auth/owner', { key: OWNER_KEY, body: {} });
+  const own = cookieOf(res);
+  assert.deepEqual(await (await call('/auth/stats', { cookie: own })).json(), { state: 'none', code: '' });
+  await call('/auth/profile', { cookie: own, body: { code: 'SAOT' } });
+  assert.deepEqual((await (await call('/auth/stats', { cookie: own })).json()).stats.trips, [{ id: 'SAM 01' }]);
+  assert.deepEqual((await (await call('/auth/stats', { key: OWNER_KEY })).json()).code, 'SAOT');
+});
+
+test('my stats: the Worker knows the same shared name codes as the laptop, and reads a name the way a code is made', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudflare/board-worker.js'), 'utf8');
+  const groups = JSON.parse(/const CODE_GROUPS = (\[\[.*?\]\]);/.exec(src)[1].replace(/'/g, '"'));
+  assert.deepEqual(groups, require('../../lib/board/people').CODE_GROUPS);
+  const { call, cookieOf, mails } = await setup();
+  const state = async (name, code) => {
+    const email = `${code.toLowerCase()}${Math.random().toString(36).slice(2, 8)}@example.com`;
+    await call('/auth/signup', { body: { name, email, pin: '123456', hireDate: '2015-06-01' } });
+    const res = await call('/auth/verify', { body: { email, code: codeIn(mails) } });
+    const id = (await (await call('/health/accounts', { key: OWNER_KEY })).json()).users.find((u) => u.email === email).id;
+    await call('/health/accounts', { key: OWNER_KEY, body: { id, action: 'approve' } });
+    await call('/auth/profile', { cookie: cookieOf(res), body: { code } });
+    return (await (await call('/auth/stats', { cookie: cookieOf(res) })).json()).state;
+  };
+  assert.equal(await state("Jules O'Dell", 'JUOD'), 'ok');
+  assert.equal(await state("O'Dell, Jules", 'JUOD'), 'ok');
+  assert.equal(await state('Pat Q. Van Example', 'PAVA'), 'ok');
+  assert.equal(await state('Pat Q. Van Example', 'PAEX'), 'ok');
+  assert.equal(await state('Pat Example', 'EXPA'), 'wait'); // back to front
+  assert.equal(await state('Robert Example', 'BOEX'), 'wait'); // CATS has Bob: the owner says so
+  assert.equal(await state('Pat', 'PAPA'), 'wait');
+});

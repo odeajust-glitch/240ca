@@ -1,5 +1,92 @@
 # HANDOFF — read this before doing anything
 
+## My stats — ON FOR EVERY MEMBER in the code, November 11, 2026, 20:20 Toronto. WAITING ON ONE LAPTOP PULL
+
+**Owner (after asking what a name code's history could show him): "Very detailed statistics,
+trends. Anything you can think of" ... "Make it so this page is only available to the
+person who owns the account. They can see theirs and no one else's." Then, shown a preview:
+"Yea. Can you push it to the test page". Then: "push it to the main page".**
+
+**Where it is.** On `claude/vigilant-planck-zawrj4`: `13a1b85` is the feature, the commit
+after this note's first version set **`MINE_ALL = true`** (the tab for every signed-in
+member on both sites) and reworded the name code hint in Settings ("For My stats and your
+job posting alerts"). Suite **394 of 394**.
+- **Done by Justin, seen from here at 20:15:** the Worker is pasted into **both** Workers
+  (the copy page is at `13a1b85`; `GET /auth/stats` answers on `board` and `board-test`) and
+  the laptop pulled `13a1b85` (the bucket has `board-mystats.js` and the records).
+- **Checked on the real sites at 20:15, with his owner key:** `/auth/stats` gives his own
+  record (JUOD, 12 trips, 24 Oct to 11 Nov) on both; the record's file asked for directly is
+  a 404; the real board-test page opened at `#mystats` in a browser at phone width draws the
+  tab with the same numbers as the preview, no page errors, no sideways scroll.
+- **The tab sits beside Turn History, 20:35 (owner: "can you put current, turn history and
+  my stats in the same row"):** the button moved to third in the bar; on a phone the first
+  row is Current, Turn History and My stats, a third each (`body.has-mine`, set by
+  `paintMine`); with no My stats (signed out) Current and Turn History keep half each.
+  Checked on the real page file against a stand-in Worker at 390, 340 and 1280 px.
+- **Waiting on Justin: one more laptop `git pull` + restart** (a page change only, no paste).
+  Until then the published page still has `MINE_ALL = false`: test site, owner key only.
+- **Not checked:** the tab as a regular signed-in member sees it on a phone (only the owner
+  key could be used from here); the Members tab's "XXXX is theirs" / "Not theirs" buttons on
+  the real site. Private preview from before the merge:
+  https://claude.ai/artifact/7pnMxDbxvYb2M9A4hr5dv5.
+- **What members will meet:** no name code saved → the tab tells them to save it in
+  ⚙ Settings → Profile; a code that does not match their sign-up name, or a shared code →
+  "waiting to be confirmed", and **it sits there until Justin presses "XXXX is theirs" on
+  the Members tab** (nothing alerts him: look down the Members list for "My stats waits for
+  your OK"). Not announced to members.
+
+**What it is.**
+- **Laptop** (`lib/board/mystats.js`, two small places in `lib/board/site.js`): every site
+  build works out each person's record with `BoardMyStats.build` (their trips with off duty,
+  how the call moved, plan / order times, who with; rests; resets and the next one due; their
+  place on their own board each time it moved; runaround-log entries and stale trains while
+  they were on the turn), joins it to what earlier builds kept (**`BoardChecker\my-stats.json`**,
+  400 days, so the page reaches back past `BOARD_SITE_DAYS`) and writes
+  **`<site>\accounts\stats\<name-code hash>.json`**, one per person (168 files, 0.9 MB on the
+  11th's data). Under `accounts/` on purpose: the Worker already never serves that prefix and
+  the publish never deletes it, so nothing is exposed whichever of the pull and the paste
+  comes first. A record holds nothing that changes every check (days, not minutes, for the
+  turns; no "last seen"), so a file only uploads when something happened to that person.
+- **Worker** (`myStats`, `codeState`, `codesOfName`, `CODE_GROUPS`): **`GET /auth/stats`**
+  gives a signed-in approved member the record for the name code **saved on their own
+  account**. Nothing in the request picks whose. Because a member types their own code, it
+  only counts once it is known to be theirs: it matches the name they were approved under
+  (first two letters of the first name + first two of any later name), **or the owner said
+  so on the Members tab** (`codeOk` = the code confirmed; changing the code asks again;
+  `codeNo` = "not theirs"). A code in `CODE_GROUPS` (a third copy of the list; a test holds
+  it equal to `lib/board/people.js`) always waits for him. Only the owner key confirms, not
+  an Admin. `/auth/me` now also says `statsCode` (none / ok / wait / no): that is how the
+  page knows the Worker has it. The owner's own devices use the code in `accounts/owner.json`.
+- **Page** (`public/board-mystats.js` = the numbers and the drawing, shared with the tests;
+  in `board.html`: the `modeMine` button, `renderMine`, `paintMine`, `#mystats`, and on the
+  Members tab a "Name code" line per approved member with "XXXX is theirs" / "Not theirs"
+  for the ones waiting). **`MINE_ALL = true` since 20:20 on the 11th: every signed-in member,
+  both sites.** `false` takes it back to the test site (board-test + owner key) only.
+- **On the page:** trips / hours / days worked / calls within 30 min; where the time went
+  (on duty, held away, home); the hour of day they go on duty (out / home); days of the week;
+  a calendar of hours a day; week by week and month by month; every round trip; how the call
+  moved against the one slept on; plan and order times against on duty; call after rest, rest
+  booked, place on the board and how fast it moves; resets; turns side by side; who they
+  worked with; runaround-log entries and stale trains. Dates: last 30 / 90 days / everything.
+
+**Checked:** the 394 tests (`test/board/mystats.test.js`, two new ones in
+`accounts.test.js`: own record only, another member's code waits, a shared code waits, only
+the owner confirms, the file is never served, a removed member gets nothing). The real
+`board.html` in a browser against a stand-in for the Worker with his real record: the tab
+draws at phone and desktop width, light and dark, no sideways scroll, no page errors, and
+each state (no code, waiting, not theirs, nothing kept, old Worker) says the right thing.
+`personRecord` is a copy of `personHistory` in `board.html`; a test holds the two equal.
+**Limits, told to him:** Turn History's person search still shows anyone's trips to any
+member who types their code (he asked for this page to be private, not that one); the data
+files it reads (`people.json`, `turns.json`) are still there. A member whose CATS first
+name differs from the one they signed up with (Bob / Robert) waits for his OK. Two people
+whose names make the same code, not yet in `CODE_GROUPS`, would both pass the name check:
+split the code as usual, then it waits for him. Old files stay in the bucket after a person
+drops out of the record (the publish never deletes under `accounts/`).
+
+**❓ For Justin:** the pull above; a notice to members about the new tab (not sent); whether Admins should be able to confirm a code; whether the person search in Turn
+History should be narrowed now that this page exists.
+
 ## Current handoff — November 11, 2026, 19:40 Toronto (end of a long session)
 
 **Where things stand.** Branch `claude/vigilant-planck-zawrj4` at `c2d4134` plus this note; the
