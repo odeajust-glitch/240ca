@@ -110,6 +110,7 @@ answers (needs rules by turn **with a date range**; `retie` is turn-only):
 **22:30: MADE's own YPRS30 / YINS30 on 3–4 Nov → MAD1 (the trainee; in `DATED`, pushed). Yard on-duty sightings never saved a craft, so MADE's older yard shifts (24–28 Oct) cannot be split by TT; left on MADE unless he says.**
 **22:40: MARO's YSTY01 on 1 Nov → MAR2 (owner: yes; in `DATED`, pushed). No third person on MADE (the XSAS05 spare is a different code). Only JAMC's four yard shifts of 24–25 Oct are still open.**
 **23:00: JAMC settled by the XSAS01 rotation (Sat/Sun YBHS01, Mon/Tue YPRS02, Wed YPRS30, Thu/Fri off, read from its holders' shifts in people.json): YBHS01 on 24 and 25 Oct → JAM1; YPRS02 and YFXS03 stay on JAMC. Review finished; all moves are in `DATED`, pushed, waiting on a laptop pull + restart, then verify on the live site.**
+**23:00 Toronto (21:57 by the site clock): laptop pulled to `2c56e67`; every `DATED` move verified on live `data/people.json`, and the Assigned line is off the Yard jobs box on both sites, 13 tabs, no errors. Review closed. Open: YFLS01 still lists only a TT at 21:51 though due off ~1600 (asked the owner whether CATS still shows it).**
 2. MADE owns YPRS30 / YINS30 on 3–4 Nov while also owning B111; plus YPRS60, YINS60, YMPS60 shifts 24–28 Oct (MAD1's?).
 3. MARO on S502 and YSTY01 at the same time 1 Nov; YSBY04 shifts 24–25 Oct (MAR2's?).
 4. MARI on YBHS01 24 and 25 Oct while owning S306 (MAR1's?).
