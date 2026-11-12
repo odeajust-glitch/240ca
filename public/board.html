@@ -3024,20 +3024,13 @@ function yardWorking(j) {
   const turnOf = (craft) => (new RegExp(`(?:^|· )${craft} ([A-Z][A-Z0-9]+\\d{2})`).exec(j.crew || '') || [])[1] || '';
   return `<div class="crew">${work.map(([c, n]) => { const t = turnOf(c); return `<span style="white-space:nowrap">${esc(c)}${t ? ` <span class="mono">${markTurn(t).replace(/ <span class="crewnm">.*$/, '')}</span>` : ''} ${esc(n)}</span>`; }).join(' · ')}</div>`;
 }
-// Whose job it is, when that is someone other than the crew on it. Left out
-// when the same people are working it, or when nobody holds it (an extra job).
-function yardAssigned(j) {
-  const own = yardOwners(j.job).filter(([, n]) => n !== 'open turn');
-  if (!own.length) return '';
-  const work = CREW_WORK && CREW_WORK[`${j.job}|${j.onDuty}`];
-  const same = work && own.every(([c, n]) => work.some(([wc, wn]) => wc === c && wn === n));
-  if (same) return '';
-  return `<div class="crew muted">Assigned: ${own.map(([c, n]) => `<span style="white-space:nowrap">${esc(c)} ${esc(n)}</span>`).join(' · ')}</div>`;
-}
+// Whose job it is (the home turns) is not shown here (owner, 2026-11-11: "Can remove the
+// assigned from yard jobs on duty. Just show who's working it now"); it is still beside a
+// yard job in Days off and in the job's Turn History heading.
 function yardJobs(s) {
   if (!(s.yardJobs || []).length) return '';
   const rows = s.yardJobs.map((j) => `<tr${marked(j.job) || markedIn(j.crew) ? ' class="hit"' : ''}><td class="num">${esc(j.onDuty || '—')}</td>
-    <td><b class="num">${markTurn(j.job)}</b>${yardWorking(j)}${yardAssigned(j)}</td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
+    <td><b class="num">${markTurn(j.job)}</b>${yardWorking(j)}</td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
   return `<section class="sheet" id="sec-yard"><header><h2>Yard jobs · on duty</h2><span class="meta">${s.yardJobs.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>Job · crew</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="foot">Off duty: 8 hours after on duty, 12 hours in the tower (YSBY).</div></section>`;

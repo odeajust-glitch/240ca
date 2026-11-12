@@ -128,8 +128,9 @@ page and its crew start the next); `recordYardWork` / `workingByJob` (names.js) 
 in names.json as `@yardwork|<job>|<on duty>` and publish it in the locked crew.json as
 `working: { "<job>|<on duty>": [[craft, "Last, F"]] }` (jobs read in the last two checks
 only). Page: `yardWorking` (the crew, with the spare's turn where they are one) and
-`yardAssigned` (whose job it is, shown only when that is someone else; open turns and an
-extra job's empty slots left out); `CREW_WORK`. Members with crew names only; without
+`CREW_WORK`. **The "Assigned" line was taken off this box at 21:00 (owner: "Can remove the
+assigned from yard jobs on duty. Just show who's working it now"); `yardAssigned` is gone.
+Whose job it is still shows in Days off and in a yard job's Turn History heading.** Members with crew names only; without
 them the box is as before. Test in names.test.js (the layout of his photos, made-up
 names), suite 385 of 385. **Checked in a browser on the main site with a stand-in crew
 per job; NOT yet with the laptop's real read: needs a pull and restart, then compare
