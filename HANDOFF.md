@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## My stats reviewed — November 12, 2026, 00:30 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are on the TEST page only until Justin says
+## My stats reviewed — November 12, 2026, 00:05 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are on the TEST page only until Justin says
 
 **Owner (max effort, five steps):** "Check the numbers ... work every figure on the page out
 again from the saved checks ... Fix what you find. Each fix gets a test ... Look at it the way a
@@ -117,6 +117,12 @@ local copy); a real phone (the spreadsheet's share sheet was only stood in for; 
 fallback colours were not seen); yard holders' shifts from 3 Nov until the pull (not in the
 checks at all); who worked what before 24 Oct (no names); off duty times marked ~. In the 12
 pixel-lettering styles the section headings are 8 px, as on every other tab (each style's own rule).
+
+**Seen on the live sites at 00:04 on the 12th (owner key, counts only):** neither site has this
+commit yet (no `MINE_MORE` in the page, no `data/pools.json`); both have the laptop's pull of
+`e662679`. **Neither Worker has the unconfirmed sign-ups paste** (`/health/accounts` has no
+`unverified` list), so the copy page at `881e02d` is still waiting to be pasted into both. 34
+approved members, none waiting for a name code OK.
 
 **Private preview for him** (his own record with the new sections on, built by this code from the
 checks up to 11 Nov 2222; the spreadsheet button is hidden there, a preview cannot hand over a
