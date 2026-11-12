@@ -543,6 +543,19 @@ start it again" (the folder's code is newer than the running code), which is not
 **Found, not changed:** that line is the same kind of false alarm as the notes-only GitHub line was; telling
 them apart is a laptop change (which of the pulled updates touch `lib/` or `scripts/`).
 
+**15:25 Toronto, 12 Nov: NOT PULLED YET.** The laptop is on `290d077` and both sites serve the page from
+before `6403bde` (the counts line still on Current): watched read-only from 13:32 to 15:22. So **the look at
+both live sites after his pull is still owed** (a member on each site: the pieces on, no counts line, no
+purple, Snapshots as before; him on the main site: Page Health the new way, the two addresses). The other
+session's notes (`69501ed`, the whole-site layout review at the top of this file, idle and waiting on his
+picks, nothing built) went on top of `f35ae76` at 14:00, so his `git log --oneline -1` after the pull starts
+with whatever is newest then, not `f35ae76` as he was first told: told him. **If that session is told to
+build, it changes the same page as this review: one at a time** (told him). Seen live while waiting: the test
+site's Page Health reads "1 thing needs you: GitHub: 3 newer updates waiting (1 of them changes the checker
+or the site): git pull, then restart" (the laptop's second count at work on a real mix of notes and code);
+the main site, still on the old page, "3 newer updates waiting: git pull, then restart". A check failed at
+14:46 ("CATS did not answer within a minute") and the next ones went through by themselves.
+
 **Page Health seen live on the test site after his pull and restart (12 Nov 11:50, laptop on `290d077`,
 running since the 11:46 check).** Opened cold at `#pagehealth`. "1 thing needs you: 1 sign-up is waiting for
 your approval, since Nov 12, 08:40: Members tab." with the button (by 13:15 it read "All good": approved).
