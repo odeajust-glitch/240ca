@@ -1693,6 +1693,10 @@ button:disabled { opacity: .55; cursor: default; }
 .person dt { color: var(--muted); }
 .person dd { margin: 0; font-variant-numeric: tabular-nums; }
 .none { color: var(--muted); margin: .3rem 0; }
+.steps { margin: .3rem 0 .2rem; padding-left: 1.3rem; }
+.steps li { margin: .2rem 0; }
+.codebox { background: var(--tint); border-radius: 8px; padding: .7rem .9rem; }
+#codeHead { margin-top: .9rem; }
 p { margin: .4rem 0; }
 [hidden] { display: none !important; }
 </style>
@@ -1710,7 +1714,8 @@ p { margin: .4rem 0; }
 </section>
 
 <section id="wait" hidden>
-  <h2>Waiting for approval</h2>
+  <h2>Step 3 of 3: waiting for approval</h2>
+  <p>Your email is confirmed and your sign-up has been sent.</p>
   <p>Each sign-up is checked by hand, so this can take a day or so. Once you're approved, this phone or computer opens the site by itself, and you get an email.</p>
   <button type="button" id="again">Check again</button>
   <button type="button" class="plain" id="out2">Start over</button>
@@ -1727,14 +1732,21 @@ p { margin: .4rem 0; }
     <button type="submit">Email me a sign-in code</button>
   </form>
   <form id="fCode" hidden>
-    <p id="codeNote"></p>
-    <label for="inCode">Code</label>
-    <input id="inCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
-    <button type="submit">Continue</button>
+    <h2 id="codeHead">Check your email</h2>
+    <p id="codeNote" class="codebox"></p>
+    <label for="inCode">6-digit code from the email</label>
+    <input id="inCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
+    <button type="submit" id="codeGo">Continue</button>
     <button type="button" class="plain" id="back">Go back</button>
+    <p class="hint">No email after a few minutes? Look in junk mail. Still nothing: go back, check the address is spelled right and send it again.</p>
   </form>
   <form id="fUp" hidden>
-    <p>Each sign-up is approved by hand.</p>
+    <p><b>Signing up takes three steps:</b></p>
+    <ol class="steps">
+      <li>Fill in this form.</li>
+      <li><b>Enter the 6-digit code we email you.</b> Your sign-up is not sent until you do.</li>
+      <li>Wait to be approved. Each sign-up is checked by hand.</li>
+    </ol>
     <label for="upName">Full name</label>
     <input id="upName" autocomplete="name" maxlength="80" required>
     <label for="upEmail">Email</label>
@@ -1744,7 +1756,8 @@ p { margin: .4rem 0; }
     <label for="upHire">Hire date</label>
     <input id="upHire" type="date" required>
     <p class="hint">Your PIN and hire date are only used to confirm who you are. They are deleted as soon as your sign-up is approved or declined, and never shown on the site.</p>
-    <button type="submit">Send for approval</button>
+    <button type="submit">Next: email me my code</button>
+    <p class="hint">Step 1 of 3. Keep this page open: the next screen asks for the code from your email.</p>
   </form>
 </section>
 
@@ -1798,7 +1811,8 @@ p { margin: .4rem 0; }
 
   var triedOwner = false;
   var codeEmail = '';
-  function askCode(email, note) { codeEmail = email; $('codeNote').textContent = note; $('fIn').hidden = true; $('fUp').hidden = true; $('fCode').hidden = false; $('inCode').value = ''; $('inCode').focus(); }
+  // signup: the code step of a sign-up (owner, 2026-11-11: "a lot of people are not understanding they need to verify with a code from their email").
+  function askCode(email, note, signup) { codeEmail = email; $('codeNote').textContent = note; $('codeHead').textContent = signup ? 'Step 2 of 3: enter the code from your email' : 'Check your email'; $('codeGo').textContent = signup ? 'Confirm my email' : 'Continue'; $('fIn').hidden = true; $('fUp').hidden = true; $('fCode').hidden = false; $('inCode').value = ''; $('inCode').focus(); }
   function refresh(follow) {
     return api('/auth/me').then(function (me) {
       if (me.error) { say(me.error, true); show('forms'); return; }
@@ -1845,7 +1859,8 @@ p { margin: .4rem 0; }
     api('/auth/signup', { name: $('upName').value, email: $('upEmail').value, pin: $('upPin').value, hireDate: $('upHire').value }).then(function (r) {
       busy(f, false);
       if (r.error) { if (r.use === 'signin') { tab(false); $('inEmail').value = $('upEmail').value; } say(r.error, true); return; }
-      askCode($('upEmail').value, 'Almost done: a 6-digit code was emailed to you to confirm your address. Enter it here. Give it a minute, and look in junk mail too.');
+      askCode($('upEmail').value, 'You are not signed up yet. We emailed a 6-digit code to ' + $('upEmail').value + '. Open that email, then type the code below. It can take a minute to arrive.', true);
+      say('Not finished yet: enter the code from your email below.');
     });
   };
   function signOut() { api('/auth/logout', {}).then(function () { say(''); triedOwner = true; refresh(false); }); }

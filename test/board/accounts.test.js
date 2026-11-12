@@ -44,7 +44,12 @@ test('unlocked, the site is open, the account page works and account files are n
   assert.equal((await call('/')).status, 200);
   let res = await call('/account');
   assert.equal(res.status, 200);
-  assert.match(await res.text(), /Send for approval/);
+  const page = await res.text();
+  assert.match(page, /Next: email me my code/);
+  // Owner, 2026-11-11: people missed that the emailed code is part of signing up.
+  assert.match(page, /Signing up takes three steps/);
+  assert.match(page, /Step 2 of 3: enter the code from your email/);
+  assert.match(page, /You are not signed up yet/);
   res = await call('/auth/me');
   assert.deepEqual(await res.json(), { ready: true, mailReady: true, lock: false, notice: false, signedIn: false, status: null, name: null, email: null, role: null });
   res = await call('/auth/signup', { body: person('a') });
