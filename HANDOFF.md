@@ -42,7 +42,7 @@ the 11th: see "S5 swap watch" below; the engine fix is the next real piece of wo
 telling members about job posting alerts and the changed name codes (offered, not sent);
 which Agreements documents count as "commonly used" (my pick stands until he says); the
 permanent-posting rule ("for now", to review); the order between jobs called at the same
-time, and whether a YMX job always takes an S1; whether to promote yard job names;
+time (a YMX job always takes an S1: answered "Yes" 2026-11-11, as the rule already has it); whether to promote yard job names;
 "members seen today" on the Members tab (offered).
 
 **Small cleanups left:** the `sample` code in scripts/board-auto.js (keeps a masked copy

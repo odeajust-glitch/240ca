@@ -47,9 +47,10 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    acts on it. When two or three have happened, compare each with who worked the job
    and show him: right spare, wrong spare, or no call at all. Then he says whether it
    becomes a real prediction. Details in HANDOFF, "Extra yard jobs".
-5. **Extra yard jobs, two questions still open:** which job is called first when two
-   start at the same time (11 Nov: the first spare out got YEBS30, not YFXS01's FO);
-   whether a YMX job always takes an S1 (YMXS02 8 Nov showed EN + FO only).
+5. **Extra yard jobs, one question still open:** which job is called first when two
+   start at the same time (11 Nov: the first spare out got YEBS30, not YFXS01's FO).
+   Answered 2026-11-11: a YMX job always takes an S1 ("Yes"), as the rule has it (EN, FO
+   and S1); YMXS02 on 8 Nov showing only EN + FO was the site not matching the S1.
 6. **Job postings (both sites since 2026-11-11; the tab appears once the laptop has read
    CATS).** After the first real read: does it list what CATS lists, for both crafts;
    then the alerts (built 2026-11-11, by account, on both sites that evening at his
