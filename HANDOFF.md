@@ -119,13 +119,41 @@ with no first initial (SA07's): the crew names' own loose end.
 the down banner and a check where a CATS screen was not read (not seen live); a board with no trains.
 Nothing was pressed that saves: no alert, no Track OK, no Settings Save.
 
-**His picks:** none yet. **Built:** nothing. **Turned down:** nothing yet.
+**His answers, 12 Nov about 08:35 (his words in quotes):**
+- **Item 2 / question A.** He quoted the Call Board's line for Z14891 11 and said **"It went this
+  morning"**: SA08's own conductor worked the train, so the day off the page still listed was not taken.
+  He has not yet said in words that the site should drop a day off when it sees that; put back to him as
+  the rule item 2 would use (a day off is over once its person is on the Call Board on their own turn),
+  page only, test site.
+- **Item 4 / question B.** No cut-off in hours. **"We can add a check it's similar to how we get the off
+  duty times for trains coming back to Sarnia"**: read the yard jobs' real off duty from CATS, the way
+  the checker reads Assignment History for trains (PSTS17A, 3 → 7, about once an hour, `POOL OR YD/LO` =
+  S1 and S5, `HOME/AWAY` = 1; `parseAssignHistory` only knows a train's line). **Asked him for two
+  things before anything is built:** what he types in `POOL OR YD/LO` (and `HOME/AWAY`) to list the yard
+  jobs, and a photo of what comes back. It is a checker change (one more read an hour, skipped if it
+  fails; a laptop pull and restart; the read cannot be test-site only, what the page shows from it can).
+  It is also what Housekeeping item 7 (real yard hours) needs. Item 4 waits on this.
+- **Item 9 / question C.** **"Can switch it. But it doesn't really matter"**: conductor first in every
+  box if item 9 is ever picked; low on the list.
+- **His picks:** not yet. He asked what "the numbers you want tried" meant; explained (the ten items are
+  numbered; he names the ones to build on the test site). My suggestion to him if he would rather I
+  chose: 1, 2, 3, 5, 6, 7 and 10 (sure, and none waits on anything); 4 waits on the CATS screen, 8 is his
+  taste, 9 he says does not matter.
+- **"yes"** to saving on the branch the laptop pulls: from here this session pushes to
+  `claude/vigilant-planck-zawrj4` (fetch and rebase first, as the others do).
+
+**Built:** nothing. **Turned down:** nothing yet.
+
+**For round 2 (Page Health), seen on the way:** any push to the laptop's branch, notes only included,
+turns Page Health's GitHub row red ("N newer updates waiting: git pull, then restart") and its verdict
+to "needs you" (`codeRows`: `c.behind > 0` is `bad`). He was told the updates sitting there on the 12th
+were notes and need no pull.
 
 **Also seen at 08:09 that morning:** both sites served the page of `61d6b10` and Page Health's running
 code was `61d6b10`, level with GitHub: the pull and restart the block below waits on are done. The other
-session ("Turn history work schedule insights", branch `ccr-83c63a33-26zny2`) had been idle since its
-06:40 push. This session's branch is `ccr-bc91e48e-oqfmn2`; until he says so, this note is only there, not
-on `claude/vigilant-planck-zawrj4`.
+session ("Turn history work schedule insights", branch `ccr-83c63a33-26zny2`) pushed a notes commit at
+08:31 and was idle after it. This session's own branch is `ccr-bc91e48e-oqfmn2`, kept level with the
+laptop's.
 
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
 
