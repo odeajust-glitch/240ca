@@ -3969,7 +3969,7 @@ function trainHabit(train) {
 // runs, as a window with how often it held. Nothing for an ordered train (its
 // time is the answer) or one with too few runs and no fallback.
 function likelyCall(s, t) {
-  const P = PREVIEW && PATTERNS && PATTERNS.predict;
+  const P = TRAIN_LIKELY && PREVIEW && PATTERNS && PATTERNS.predict;
   const order = BoardTrains.resolve(t.order, s.taken);
   if (!P || !order || t.status === 'ORD' || t.deadhead) return null;
   const hours = (stampMin(order) - stampMin(s.sameUntil || s.taken)) / 60;
@@ -4012,6 +4012,11 @@ function sparePlace(s, turn) {
 }
 const SPARE_WIDE_MAX = 360;
 const SPARE_PREDICT = false; // the spareboard's predictions, off for now (owner, 2026-11-10); the figures are still built
+// The purple "likely call" line on a planned Sarnia train and its note in the row's Why, on the test site's
+// line-up: off (owner, 2026-11-12, looking at board-test on his phone: "can you take out the purple predictive
+// text"). The two-week test goes on scoring the window from the saved checks (Analytics, Likely-call test,
+// to 2026-11-24): only the line on the rows is gone. true brings it back.
+const TRAIN_LIKELY = false;
 function spareCall(s, p, t) {
   const P = PREVIEW && PATTERNS && PATTERNS.spare;
   const m = SPARE_BOARD.exec(p.name || '');
@@ -5526,6 +5531,31 @@ source().then(async (src) => {
   let membersAdmin = false;
   let healthRequest = 0;
   let publishedAt = Date.parse(src.index?.generatedAt);
+  // Page Health, reviewed with the owner 2026-11-12 ("Go" to items 1 to 5): TEST SITE ONLY (PREVIEW). The page is
+  // his alone on either site; behind PREVIEW he can set board-test beside the main site before saying which stays.
+  // Item 5: Page Health and Search Review get an address of their own, so a reload or a saved link comes back to
+  // them (#pagehealth, #searchreview; "#health" would be the sign-in line's own id). Asked for before the report
+  // that says who is looking has arrived, so it is kept until then.
+  let ownerTabWanted = { '#pagehealth': 'health', '#searchreview': 'review' }[location.hash] || '';
+  let firstTabOpen = false; // the page's first tab is drawn: opening the wanted one before that would be drawn over
+  const ownAddress = (hash) => { if (PREVIEW) { try { history.replaceState(null, '', location.pathname + location.search + hash); } catch (e) { /* not allowed in some frames */ } } };
+  // Item 2: what waits for him on the Members tab (sign-ups to approve, name codes to OK) is said here too.
+  // Counts and the oldest time only. Asked again at most once a minute; the page is drawn again when it changes.
+  let healthAccounts = null;
+  let healthAccountsAsked = 0;
+  function accountsWaiting() {
+    if (Date.now() - healthAccountsAsked > 60000) {
+      healthAccountsAsked = Date.now();
+      fetch('health/accounts', { cache: 'no-store', headers: OwnerKey.headers() }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d || !Array.isArray(d.users)) return;
+        const next = { pending: d.users.filter((u) => u.status === 'pending').map((u) => +u.requestedAt || 0), codes: d.users.filter((u) => u.status === 'approved' && u.codeState === 'wait').length };
+        const changed = JSON.stringify(next) !== JSON.stringify(healthAccounts);
+        healthAccounts = next;
+        if (changed && mode === 'health') renderHealth();
+      }).catch(() => { /* the Members tab says what is wrong */ });
+    }
+    return healthAccounts;
+  }
   const retryHealth = () => showHealth(document.getElementById('updated'), true);
   const retryButton = '<button type="button" class="linkbtn" data-health-retry>Retry</button>';
   function wireHealthRetry(root) {
@@ -5619,6 +5649,7 @@ source().then(async (src) => {
     }
     membersOwner = !!(h && OwnerKey.has());
     document.getElementById('modeMembers').hidden = !(membersOwner || membersAdmin);
+    if (PREVIEW && ownerTabWanted && firstTabOpen) { const want = ownerTabWanted; ownerTabWanted = ''; setTimeout(() => setMode(want), 0); }
     const note = document.getElementById('keynote');
     note.hidden = !(OwnerKey.has() && !report);
     if (!note.hidden && rejected) {
@@ -5987,12 +6018,15 @@ source().then(async (src) => {
     try { const r = await fetch('health/held186', { cache: 'no-store', headers: OwnerKey.headers() }); if (r.ok) cur = await r.json(); } catch (e) { /* offline */ }
     if (!box.isConnected) return;
     if (!cur) { box.innerHTML = '<p class="muted">Not available: re-paste the Worker (cloudflare/board-worker.js) to add these settings.</p>'; return; }
-    box.innerHTML = `<form id="h186form" autocomplete="off" onsubmit="return false" class="h186form">
+    // Test site (owner, 2026-11-12: "Go", item 4): set once and left alone, so it folds away when nothing is missing.
+    const allSet = !!(cur.co && cur.en && cur.namesPass && cur.mail);
+    const fold = PREVIEW ? [`<details class="moredet"${allSet ? '' : ' open'}><summary>Where Submit sends them: ${allSet ? 'both rep emails, the names passcode and the email sender are set' : 'something is missing'}</summary>`, '</details>'] : ['', ''];
+    box.innerHTML = `${fold[0]}<form id="h186form" autocomplete="off" onsubmit="return false" class="h186form">
       <label>Conductors' rep email<input type="email" name="co" value="${esc(cur.co)}" placeholder="rep@example.com"></label>
       <label>Engineers' rep email<input type="email" name="en" value="${esc(cur.en)}" placeholder="rep@example.com"></label>
       <label>Crew names passcode <span class="muted">(${cur.namesPass ? 'saved: your owner key opens the names' : 'not saved'})</span><input type="password" name="namesPass" placeholder="${cur.namesPass ? 'leave blank to keep it' : 'the BOARD_NAMES_KEY passcode'}" autocomplete="new-password"></label>
       <p><button type="submit" class="linkbtn" id="h186save">Save</button> <span id="h186msg" role="status"></span></p>
-      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>${heldSent(cur.sent, cur.log)}`;
+      <p class="${cur.mail ? 'muted' : 'warn'}">Email sender: ${cur.mail ? 'set up.' : 'not set up yet (MAIL_SCRIPT_URL and MAIL_SCRIPT_KEY in the Worker; docs/board-checker/EMAIL.md). Until then Submit is off and members can only export.'}</p></form>${fold[1]}${heldSent(cur.sent, cur.log)}`;
     const form = document.getElementById('h186form');
     form.onsubmit = async () => {
       const msg = document.getElementById('h186msg');
@@ -6012,6 +6046,7 @@ source().then(async (src) => {
   async function renderReview() {
     const view = document.getElementById('view');
     if (!healthData) { view.innerHTML = '<p class="empty">Search Review is only for the owner.</p>'; return; }
+    ownAddress('#searchreview');
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Search Review <span class="muted">(only you see this)</span></h1>
       <section class="sheet"><header><h2>Questions asked</h2><span class="meta">kept 60 days, newest first</span></header><div class="hbody" id="hquestions"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Agreement search models</h2><span class="meta">which AI answers in the Agreements tab</span></header><div class="hbody" id="hmodels"><p class="muted">Loading…</p></div></section>
@@ -6100,7 +6135,7 @@ source().then(async (src) => {
   }
   // The board checker's rows: [{ label, text, bad }]. next: the Test preview
   // (owner, 2026-11-10), with the code version spelled out.
-  function healthRows(h, now, next) {
+  function healthRows(h, now, next, waiting) {
     const L = h.laptop;
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const rows = [];
@@ -6131,9 +6166,38 @@ source().then(async (src) => {
     const resumed = restartAt && lastCheckLocal > restartAt;
     row('Watchdog restarts today', String(r.count) + (r.last ? ' · ' + (resumed ? 'Recovered · ' : '') +
       'Last restart ' + restartAt + ' · ' + r.last.text + (resumed ? ' · Successful check ' + stamp(L.lastCheck) : '') : ''), r.count > 0 && !resumed);
-    if (L.alerts) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
+    // Test site (owner, 2026-11-12, reviewing Page Health: "Go"): a failed send needs him only when it failed for a
+    // reason other than the phone having unsubscribed and did not go through on the next try (his rule, as put to
+    // him). The laptop says what became of each (lib/board/health.js alertFailures); a report from older laptop
+    // code has no such figures and the row is as it was.
+    const A = L.alerts;
+    if (A && PREVIEW && typeof A.open === 'number') {
+      const n = (k, one, many = one) => (A[k] ? [`${A[k]} ${A[k] === 1 ? one : many}`] : []);
+      const what = [...n('open', 'did not go'), ...n('pending', 'is being tried again', 'are being tried again'), ...n('retried', 'went through on the next try'),
+        ...n('gone', 'to a phone that had unsubscribed (removed)', 'to phones that had unsubscribed (removed)'), ...n('unknown', 'with no reason kept')];
+      const last = A.open && A.lastOpen ? `${A.lastOpen.turn} at ${A.lastOpen.at.slice(-5)}: ${A.lastOpen.why}` : '';
+      rows.push({ label: 'Alerts today', text: `${A.sent} sent, ${A.failed} failed${what.length ? `: ${what.join(', ')}` : ''}${last ? `. Last: ${last}` : ''}`, bad: A.open > 0,
+        say: A.open > 0 ? `${A.open} alert${A.open === 1 ? '' : 's'} did not reach a phone${last ? ` (${last})` : ''}.` : '' });
+    } else if (A) row('Alerts today', `${L.alerts.sent} sent, ${L.alerts.failed} failed${L.alerts.lastFailure ? ` (last failed ${L.alerts.lastFailure.at.slice(-5)}: ${L.alerts.lastFailure.text})` : ''}`, L.alerts.failed > 0);
     row('Laptop backup', L.backup ? ago(L.backup) : 'none yet', !L.backup || now - L.backup > 30 * 3600000);
     row('Health sent', ago(L.at));
+    if (PREVIEW) {
+      // The point first, and what to do (item 3). Only the verdict uses these; the table keeps its own words.
+      const say = (label, text) => { const r = rows.find((x) => x.label === label && x.bad); if (r) r.say = text; };
+      say('Laptop last checked', L.lastCheck ? `The checker has not checked since ${healthClock(L.lastCheck)} (${ago(L.lastCheck)}).${failed && !recovered ? ` Last problem: ${failed.text}` : ''} On the laptop, look at the Board checker window; if it is stuck, press Ctrl+C and start it again.`
+        : 'The checker has not reported a check yet. On the laptop, look at the Board checker window.');
+      if (L.signIn) {
+        const left = L.signIn.endsAt - now;
+        say('Microsoft sign-in', `${left > 0 ? `Microsoft sign-in runs out in ${Math.floor(left / 3600000)} h ${String(Math.floor(left / 60000) % 60).padStart(2, '0')} m (${healthClock(L.signIn.endsAt)})` : `Microsoft sign-in has run out (${healthClock(L.signIn.endsAt)})`}. Press R in the checker window, then approve it on your phone.`);
+      }
+      // What waits on the Members tab (item 2).
+      const p = (waiting && waiting.pending) || [];
+      const oldest = Math.min(...p.filter(Boolean));
+      if (p.length) rows.push({ label: 'Sign-ups waiting', text: `${p.length} waiting for your approval${Number.isFinite(oldest) ? `, the oldest since ${healthClock(oldest)} (${ago(oldest)})` : ''}`, bad: true,
+        say: `${p.length} sign-up${p.length === 1 ? ' is' : 's are'} waiting for your approval${Number.isFinite(oldest) ? `, since ${healthClock(oldest)}` : ''}: Members tab.` });
+      if (waiting && waiting.codes) rows.push({ label: 'Name codes waiting', text: `${waiting.codes} waiting for your OK before My stats opens for them`, bad: true,
+        say: `${waiting.codes} name code${waiting.codes === 1 ? ' is' : 's are'} waiting for your OK before My stats opens for them: Members tab.` });
+    }
     return rows;
   }
   // The code the checker is running, in words: when it's from, whether the
@@ -6146,11 +6210,26 @@ source().then(async (src) => {
     const waiting = c.folder && c.folder !== c.hash;
     if (waiting) row('Restart needed', 'Newer code was pulled (' + c.folder + ') but the checker is still running ' + c.hash + ': Ctrl+C and start it again', true);
     if (c.behind == null) row('GitHub', c.behindError ? 'Could not check GitHub: ' + c.behindError : 'Not checked yet');
-    else row('GitHub', (c.behind > 0 ? c.behind + ' newer update' + (c.behind === 1 ? '' : 's') + ' waiting: git pull, then restart' : 'Up to date') + (c.behindAt ? ' · checked ' + ago(c.behindAt) : ''), c.behind > 0);
+    else {
+      // Test site (owner, 2026-11-12: "Go"): updates that only change notes are not "git pull, then restart".
+      // behindCode is how many of them change what the laptop runs or publishes; absent from older laptop code.
+      const notes = PREVIEW && c.behind > 0 && c.behindCode === 0;
+      const part = PREVIEW && c.behindCode > 0 && c.behindCode < c.behind ? ' (' + c.behindCode + ' of them change' + (c.behindCode === 1 ? 's' : '') + ' the checker or the site)' : '';
+      const waiting = c.behind + ' newer update' + (c.behind === 1 ? '' : 's') + ' waiting';
+      row('GitHub', (notes ? waiting + ', notes only: nothing to pull for' : c.behind > 0 ? waiting + part + ': git pull, then restart' : 'Up to date') + (c.behindAt ? ' · checked ' + ago(c.behindAt) : ''), c.behind > 0 && !notes);
+    }
   }
   // "All good", or the rows that need the owner, in one line.
   function healthVerdict(rows) {
-    const bad = rows.filter((r) => r.bad);
+    let bad = rows.filter((r) => r.bad);
+    if (PREVIEW) {
+      // Test site (owner, 2026-11-12: "Go"): with the checker down, one line says so; the rows that only repeat it
+      // (who was told, the failed check, the watchdog) stay red in the table and off this list.
+      if (bad.some((r) => r.label === 'Laptop last checked')) bad = bad.filter((r) => !['Your phones told it was down', 'Down alert', 'Last failed check', 'Watchdog restarts today'].includes(r.label));
+      const members = bad.some((r) => r.label === 'Sign-ups waiting' || r.label === 'Name codes waiting');
+      return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li>${r.say ? esc(r.say) : `<b>${esc(r.label)}:</b> ${esc(r.text)}`}</li>`).join('')}</ul>${members ? '<p style="margin:6px 0 0"><button type="button" class="linkbtn" id="tomembers">Open the Members tab</button></p>' : ''}</div>`
+        : '<div class="hverdict ok" role="status"><b>All good</b> · nothing needs you right now</div>';
+    }
     return bad.length ? `<div class="hverdict bad" role="status"><b>${bad.length === 1 ? '1 thing needs you' : bad.length + ' things need you'}</b><ul>${bad.map((r) => `<li><b>${esc(r.label)}:</b> ${esc(r.text)}</li>`).join('')}</ul></div>`
       : '<div class="hverdict ok" role="status"><b>All good</b> · nothing needs you right now</div>';
   }
@@ -6170,7 +6249,8 @@ source().then(async (src) => {
     const now = Date.now();
     const ago = (ms) => { const m = Math.max(0, Math.round((now - ms) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`; };
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
-    const rows = healthRows(h, now, true);
+    const rows = healthRows(h, now, true, PREVIEW ? accountsWaiting() : null);
+    ownAddress('#pagehealth');
     // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
     // name code (known once they're seen on a board) and their turn now.
     const S = L.subscribers;
@@ -6228,14 +6308,18 @@ source().then(async (src) => {
       ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
       ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
-      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p></div></section>`;
+      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p>${PREVIEW ? '<p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p>' : ''}</div></section>`;
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
-    const sent = `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
+    // Test site (owner, 2026-11-12: "Go", item 4): a box that held one link is a line under Who gets alerts.
+    const sent = PREVIEW ? '' : `<section class="sheet"><header><h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
     // CATS's "Do you wish to place on another assignment?" pages, word for
     // word, as the checker answered them (owner, 2026-11-03).
     const Q = L.questions || [];
-    const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header><ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul></section>` : '';
+    // Test site (item 4): pages more than two days old fold away under one line.
+    const newestQ = Q.length ? Math.max(...Q.map((q) => +new Date(q.at) || 0)) : 0;
+    const oldQ = PREVIEW && Q.length > 0 && now - newestQ > 48 * 3600000;
+    const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header>${oldQ ? `<details class="moredet" style="margin:0 14px 12px"><summary>${Q.length} page${Q.length === 1 ? '' : 's'}, the newest from ${esc(healthClock(newestQ))}: nothing since</summary>` : ''}<ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul>${oldQ ? '</details>' : ''}</section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
       <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
@@ -6248,6 +6332,8 @@ source().then(async (src) => {
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
     document.getElementById('tonotes').onclick = () => setMode('notes');
+    const toMembers = document.getElementById('tomembers');
+    if (toMembers) toMembers.onclick = () => setMode('members');
     paintHeldSettings();
     // Visitors (owner, 2026-11-01, option B; moved here 2026-11-02): opens
     // and phones per day, from the Worker (owner only).
@@ -6260,8 +6346,13 @@ source().then(async (src) => {
       const t = days[0] || { opens: 0, phones: 0 };
       const total = days.reduce((a, d) => a + d.opens, 0);
       const day = (d) => new Date(`${d}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-      box.innerHTML = `<p><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}. <span class="muted">Last ${days.length} days: ${total} open${total === 1 ? '' : 's'}. Phones are counted once a day each.</span></p>
-        <div class="scroll visits"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${days.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
+      // Test site (owner, 2026-11-12: "Go", item 4): the days before counting began (2 Nov) are not listed as zeros.
+      let kept = days.length;
+      while (PREVIEW && kept > 1 && !days[kept - 1].opens && !days[kept - 1].phones) kept--;
+      const listed = days.slice(0, kept);
+      const span = kept < days.length ? `Since ${day(listed[kept - 1].day)}, when counting began` : `Last ${days.length} days`;
+      box.innerHTML = `<p><b>Today:</b> opened ${t.opens} time${t.opens === 1 ? '' : 's'} on ${t.phones} phone${t.phones === 1 ? '' : 's'}. <span class="muted">${span}: ${total} open${total === 1 ? '' : 's'}. Phones are counted once a day each.</span></p>
+        <div class="scroll visits"><table><thead><tr><th>Day</th><th>Opens</th><th>Phones</th></tr></thead><tbody>${listed.map((d) => `<tr><td>${day(d.day)}</td><td>${d.opens}</td><td>${d.phones}</td></tr>`).join('')}</tbody></table></div>`;
     } catch (e) {
       if (box.isConnected) box.innerHTML = '<p class="muted">Visitor numbers aren\'t available right now.</p>';
     }
@@ -8323,6 +8414,10 @@ source().then(async (src) => {
   else if (wantNotes) setMode('notes');
   else if (wantMine) setMode('mine');
   else if (wantTest) setMode('analytics'); // the Test tab is gone (owner, 2026-11-10); an old link to it lands on Analytics
+  // The test site: Page Health or Search Review asked for by its address (owner, 2026-11-12). They need the report
+  // that says who is looking: if it has come, open now; if not, showHealth opens it when it does.
+  firstTabOpen = true;
+  if (PREVIEW && ownerTabWanted && healthData) { const want = ownerTabWanted; ownerTabWanted = ''; setMode(want); }
 
   // A newer board published while this page is open (live site only). On
   // the Current tab it loads by itself (owner, 2026-10-30: two phones showed

@@ -303,7 +303,7 @@ async function askOwner(page, s) {
   try {
     const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, { method: 'POST', body: msg.body, headers, signal: AbortSignal.timeout(10000) });
     ok = res.ok;
-    writeAlertsLog(new Map([['CATS is asking you (the page sent to ntfy)', { turn: 'YOU', kind: 'ntfy', phones: ok ? 1 : 0, failed: ok ? 0 : 1 }]]));
+    writeAlertsLog(new Map([['CATS is asking you (the page sent to ntfy)', { turn: 'YOU', kind: 'ntfy', phones: ok ? 1 : 0, failed: ok ? 0 : 1, ...(ok ? {} : { errors: ['ntfy did not take it'] }) }]]));
   } catch { /* ok stays false */ }
   if (!ok) { console.log('  (the CATS page couldn\'t be sent to your phone)'); noteAnswer(rec, 'Not sent: ntfy didn\'t answer.'); return null; }
   console.log(`\x07[${stamp()}] CATS is showing a page it can't get past. Sent it to your phone (ntfy): answer there${msg.actions ? ' (Y / N buttons)' : ''}, or deal with it here. Waiting up to ${waitMin} minutes.`);
@@ -1068,7 +1068,7 @@ async function sendWeekly() {
       const l = { turn: code, kind: 'weekly', phones: 0, failed: 0 };
       for (const ph of phones) {
         const r = await sendPush(ph, { title: 'My week', body: text, tag: 'week', url: './#week' }, { keys, sub });
-        if (r.ok) l.phones++; else { l.failed++; failed++; }
+        if (r.ok) l.phones++; else { l.failed++; failed++; Health.noteFailure(l, r); }
       }
       log.set(text, l);
       console.log(`[${stamp()}] My week sent for ${code} (${l.phones} phone${l.phones === 1 ? '' : 's'}): ${text}`);
@@ -1107,7 +1107,7 @@ async function sendHeldAlerts() {
         const l = { turn: e.turn, kind: 'held', phones: 0, failed: 0, why: `${e.turn} was on ${e.train} (seen on that turn on the board when it went on duty), held 14 h+ by the 18.6(b) tab's count. Sent to phones following that person's name code, once per trip.` };
         for (const ph of subs.filter((s) => (s.turns || []).includes(`@${e.hash}`) && wants(s, e.hash))) {
           const r = await sendPush(ph, { title: 'Held 14 h+', body: e.text, tag: `held-${e.train}`, url: e.url || './#14h' }, { keys, sub });
-          if (r.ok) l.phones++; else l.failed++;
+          if (r.ok) l.phones++; else { l.failed++; Health.noteFailure(l, r); }
         }
         log.set(e.text, l);
         if (!l.phones && l.failed) delete told[e.key]; // try again next check
@@ -1205,7 +1205,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
         const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: TurnAlerts.goLink(e, states) }, { keys, sub });
         const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
-        if (r.ok) l.phones++; else l.failed++;
+        if (r.ok) l.phones++; else { l.failed++; Health.noteFailure(l, r); }
         if (r.ok) { sent++; said.add(e.text); continue; }
         if (r.gone) { await deleteObject(settings.r2, s.key); delete nextBases[s.key]; dropped++; break; }
         errors.add(r.message);
@@ -1236,6 +1236,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
             log.set(e.text, l);
             if (r.ok) { l.phones++; sent++; went = true; said.add(e.text); continue; }
             l.failed++;
+            Health.noteFailure(l, r);
             if (r.gone) { await deleteObject(settings.r2, d.key); delete nextBases[d.key]; dropped++; } else errors.add(r.message);
           }
           if (went) Postings.sent(mine.told, e); // no device reached: it goes with the next check
@@ -1275,7 +1276,7 @@ function writeAlertsLog(log) {
   // Notifications tab, "see exactly the notifications being sent, then the
   // logic behind it"): one JSON line each, in BoardChecker.
   try {
-    fs.appendFileSync(ALERTS_JSON_LOG, [...log].map(([text, l]) => JSON.stringify({ at: now, turn: l.turn, kind: l.kind, phones: l.phones, failed: l.failed || 0, text, ...(l.why ? { why: l.why } : {}) })).join('\n') + '\n');
+    fs.appendFileSync(ALERTS_JSON_LOG, [...log].map(([text, l]) => JSON.stringify({ at: now, turn: l.turn, kind: l.kind, phones: l.phones, failed: l.failed || 0, ...(l.failed ? { gone: l.gone || 0, errors: l.errors || [] } : {}), text, ...(l.why ? { why: l.why } : {}) })).join('\n') + '\n');
   } catch (err) {
     console.log(`  (alerts: couldn't write ${ALERTS_JSON_LOG}: ${err.message})`);
   }
@@ -1350,7 +1351,12 @@ function refreshCodeBehind() {
   if (!branch || branch === 'HEAD') { codeBehind = Health.behindOf('', 'not on a branch'); return; }
   execFile('git', ['fetch', '--quiet', 'origin', branch], opts, (err) => {
     if (err) { codeBehind = Health.behindOf('', err.killed ? 'GitHub did not answer in time' : (err.stderr || err.message)); return; }
-    execFile('git', ['rev-list', '--count', 'HEAD..FETCH_HEAD'], opts, (err2, out) => { codeBehind = Health.behindOf(err2 ? '' : out, err2 && (err2.stderr || err2.message)); });
+    execFile('git', ['rev-list', '--count', 'HEAD..FETCH_HEAD'], opts, (err2, out) => {
+      if (err2) { codeBehind = Health.behindOf('', err2.stderr || err2.message); return; }
+      // How many of those change what the laptop runs or publishes (owner, 2026-11-12: Page Health said
+      // "git pull, then restart" for notes). If git won't say, the page falls back to the plain count.
+      execFile('git', ['rev-list', '--count', 'HEAD..FETCH_HEAD', '--', ...Health.CODE_PATHS], opts, (err3, outCode) => { codeBehind = Health.behindOf(out, null, Date.now(), err3 ? undefined : outCode); });
+    });
   });
 }
 function healthNow() {
@@ -1358,13 +1364,15 @@ function healthNow() {
   const read = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
   const today = new Date().toLocaleDateString('en-CA');
   const todayToronto = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+  const nowToronto = new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(',', '');
   return Health.healthOf({
     ...health,
     code: runningCode ? { ...runningCode, folder: gitNow(['rev-parse', '--short', 'HEAD']) || runningCode.hash, ...codeBehind } : null,
     signIn: SignIn.loadState(SIGNIN_FILE),
     signInHours: SignIn.signInHours(),
     restarts: Health.restartsToday(read(path.join(OUT_DIR, 'restarts.log')), today),
-    alerts: Health.alertsToday(read(alertsLog()), todayToronto),
+    // What became of the day's failed sends rides along (owner, 2026-11-12: one failed send kept Page Health red all day).
+    alerts: { ...Health.alertsToday(read(alertsLog()), todayToronto), ...Health.alertFailures(read(ALERTS_JSON_LOG), todayToronto, nowToronto) },
     sent: Health.recentAlerts(read(alertsLog())),
     backup: (() => { try { return JSON.parse(read(path.join(OUT_DIR, 'backup.json'))).lastAt || null; } catch { return null; } })(),
     questions: readQuestions().slice(0, 5),
@@ -1514,7 +1522,7 @@ function alertPhone(text, { urgent = false, signinButton = false } = {}) {
       // can be judged against ntfy (owner, 2026-11-04: "see if its more
       // workable"): which got through, and after how many tries.
       const kind = { ntfy: 'ntfy', Pushover: 'pushover', 'site alert': 'ownerPush' }[name];
-      writeAlertsLog(new Map([[`${text}${r.tries > 1 ? ` (${r.ok ? `after ${r.tries} tries` : r.message})` : r.ok ? '' : ` (${r.message})`}`, { turn: 'YOU', kind, phones: r.ok ? (r.phones || 1) : 0, failed: r.ok ? 0 : 1 }]]));
+      writeAlertsLog(new Map([[`${text}${r.tries > 1 ? ` (${r.ok ? `after ${r.tries} tries` : r.message})` : r.ok ? '' : ` (${r.message})`}`, { turn: 'YOU', kind, phones: r.ok ? (r.phones || 1) : 0, failed: r.ok ? 0 : 1, ...(r.ok ? {} : { errors: [String(r.message || 'not sent').split('\n')[0].slice(0, 100)] }) }]]));
   }).catch(() => {})));
 }
 

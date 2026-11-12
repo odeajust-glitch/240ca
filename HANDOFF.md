@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven of his picks are LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto, WAITING ON HIS LOOK and his say on each. Round 2 (Page Health): reviewed 12 Nov, seven findings shown to him, NOTHING BUILT, waiting for his picks. Nothing is on the main site
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Round 1 (Current): seven picks LIVE ON THE TEST SITE ONLY since 12 Nov 09:56 Toronto; his say on each still to come. Round 2 (Page Health): five picks BUILT 12 Nov 11:40, WAITING ON ONE LAPTOP PULL + RESTART (it changes the checker's report). Nothing is on the main site
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -310,7 +310,61 @@ so "test site only" here means behind `PREVIEW` so he can set board-test beside 
 **Answered by the look:** the GitHub row does work on the Windows laptop (it reported 1, then 2, waiting
 that morning), the old ❓.
 
-**His picks:** none yet. **Built:** nothing.
+**His pick, 12 Nov 11:12: "Go"**, to "Which of these seven to build, by number, or go for my pick: 1, 2, 3, 4
+and 5", in the message that also carried the one question (when a failed alert needs him: "only when it
+failed for a reason other than the phone having unsubscribed, and it didn't go through on the next try"),
+so that rule is taken as agreed. Not picked: 6 (members seen today) and 7 (folding the quiet rows).
+
+**BUILT, 12 Nov 11:15 to 11:40 Toronto. Two halves; suite 481 of 481 (9 new in
+`test/board/health-review.test.js`). No Worker change, no paste.**
+- **The laptop (it needs the pull + restart; nothing a member sees):** `lib/board/health.js`: `behindOf`
+  takes a second count, the updates waiting that touch `CODE_PATHS` (everything but `*.md`, `docs/`,
+  `test/`), and reports it as `code.behindCode`; `noteFailure(l, r)` keeps on an alert's log entry
+  whether the phone was gone and what the push service said; `alertFailures(jsonLog, today, now)` says
+  what became of the day's failed sends: `gone` (the phone had unsubscribed, removed), `retried` (the same
+  alert reached a phone within 35 min), `pending` (failed inside the last 35 min), `open` (failed for a
+  reason and never went: the one kind that needs him, with `lastOpen`), `unknown` (lines from before
+  this, no reason kept). `scripts/board-auto.js`: `refreshCodeBehind` asks git the second question;
+  `Health.noteFailure` at the four places a phone is sent an alert (turn alerts, job postings, My week,
+  held 14 h+); the JSON alerts log line carries `gone` and `errors` when a send failed (the Desktop text
+  log is unchanged); the report's `alerts` has the new figures beside `sent` / `failed` / `lastFailure`.
+  The main site's Page Health ignores all of it.
+- **The page, behind `PREVIEW` (his Page Health on board-test; the main site's is the same to the letter
+  as before):** `codeRows` says "N newer updates waiting, notes only: nothing to pull for" and does not
+  mark it; the Alerts row words each kind and is marked only for `open`; `accountsWaiting()` asks
+  `/health/accounts` (counts and the oldest time only, at most once a minute) and `healthRows` adds
+  "Sign-ups waiting" and "Name codes waiting"; `healthVerdict` uses a row's `say` (the sign-in: "runs out
+  in 1 h 09 m (Nov 12, 12:31). Press R in the checker window, then approve it on your phone."), shows
+  the checker being down as one line with the last problem and what to do, leaves the rows that only
+  repeat it off the list, and has an "Open the Members tab" button; the rep-email form folds once both
+  emails, the passcode and the sender are set; Visitors starts at the first day counted; CATS pages
+  older than two days fold; "Alerts sent" is a line under Who gets alerts; Page Health and Search
+  Review have addresses (`#pagehealth`, `#searchreview`; `ownAddress`, `ownerTabWanted`, `firstTabOpen`).
+- **To promote:** drop the `PREVIEW` tests in `codeRows`, `healthRows`, `healthVerdict`, `renderHealth`,
+  `paintHeldSettings`, `ownAddress` and where `accountsWaiting()` is called; the laptop half is already
+  for both sites.
+- **Checked.** The suite. In a browser, this branch's page over the real sites' data (in the browser
+  only; nothing saved; the figures the laptop will send after its pull stood in for): on board-test as
+  him, the real report of 11:20 ("4 things need you": the old GitHub and alerts lines still, since the
+  laptop had the older code, the new sign-in line, and the sign-up waiting since 08:40), the report as
+  it will be ("notes only", "1 with no reason kept", not marked), the checker down (one line), both
+  addresses opened cold, 390 and 1280 px; the button to Members. **On the main site as him: Page Health
+  and Search Review the same to the letter with the old page and the new** (owner-only answers held
+  steady for both looks). A member's Current and Snapshots the same to the letter on both sites; every
+  tab clicked as him and as a member. No page errors.
+- **Not checked.** The laptop half on the laptop: `git rev-list … -- <paths>` on Windows (run here on
+  Linux and in a test repository), a real failed send written by the new code, the report's new figures
+  arriving. After his pull: Page Health on board-test should read "notes only" when only notes wait, and
+  the Alerts row should name what became of a failed send from then on (the 02:55 one that day stays
+  "no reason kept"). A real phone.
+
+**The purple "likely call" line is OFF the test site's line-up since 12 Nov 11:40 (owner, with a
+screenshot of board-test: "can you take out the purple predictive text").** `const TRAIN_LIKELY = false;`
+beside `SPARE_PREDICT` in board.html; `likelyCall` answers nothing, so the line and its "When it is
+likely to be called" note in the row's Why are gone. **The two-week test still scores the window**
+(Analytics → Likely-call test, to 24 Nov: the laptop builds it from the saved checks). Left on, and
+asked him about: the purple "usually +1.3 h" chip and "How this train has gone" (the habit, not the
+prediction). His screenshot showed round 1's Why and the "~" call working on his phone.
 
 ## Call stability: the plain call card — ON FOR EVERY MEMBER in the code since November 12, 2026, at his word; "expected" is his pick ("Proposed"). WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste)
 
