@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, listPostingAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordYardCrew, saveNames } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -448,6 +448,7 @@ function learnPeople(list) {
 async function runRoute(page, opts = {}) {
   const screens = [];
   const yardNames = []; // yard job crews by name, matched to turns at the end
+  const yardCarry = {}; // the yard job a page ended on: its crew can start the next page
   const trainNames = []; // train crews by name: who's working whose job
   const unmaskedRows = async () => {
     try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
@@ -493,7 +494,7 @@ async function runRoute(page, opts = {}) {
     }
     {
       const rows = await unmaskedRows();
-      if (rows) { yardNames.push(...S.parseYardCrewNames(rows)); trainNames.push(...S.parseTrainCrewNames(rows)); }
+      if (rows) { yardNames.push(...S.parseYardCrewNames(rows, yardCarry)); trainNames.push(...S.parseTrainCrewNames(rows)); }
       if (rows && parsed.crewsInTown) townPages.push(rows);
     }
     const shown = (await screenState(page)).text;
@@ -873,6 +874,8 @@ async function runRoute(page, opts = {}) {
   if (town.length) console.log(`  Crews in town: ${town.length} people read.`);
   // Whose yard job it is, by name (crew names on the board; laptop only).
   if (opts.names) { try { opts.names.yard = S.parseYardOwners(townPages); } catch { /* the board can do without */ } }
+  // Who is on each yard job now, by name (the Call Board's own crew lines).
+  if (opts.names) opts.names.yardWork = yardNames.filter((y) => y.name && y.onDuty != null).map(({ job, craft, name, onDuty }) => ({ job, craft, name, onDuty }));
   // Days off seen in earlier checks, kept until each ends (a line can leave
   // option 4's "upcoming" list once it starts): turn, craft, times only.
   const daysOffKnown = DaysOff.load(DAYS_OFF_FILE);
@@ -1928,7 +1931,7 @@ async function main() {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
       try {
-        saveNames(NAMES_FILE, recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []));
+        saveNames(NAMES_FILE, recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []));
       } catch (err) {
         console.log(`  (crew names not saved: ${err.message})`);
       }

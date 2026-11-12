@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { parseGrid } = require('../../lib/board/grid');
 const S = require('../../lib/board/screens');
-const { recordNames, recordBoardCrew, recordYardCrew, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
+const { recordNames, recordBoardCrew, recordYardCrew, recordYardWork, workingByJob, namesForHeld, lockNames, loadNames, saveNames, shortName, namesByTurn } = require('../../lib/board/names');
 const { unlockNames } = require('../../public/board-names');
 const { buildSite } = require('../../lib/board/site');
 
@@ -181,4 +181,44 @@ test('yard jobs: whose job it is, from the crews in town, not who is on duty', (
     SA05: 'Allen, B', 'XSAS01-EN': 'open turn', 'XSAS01-FO': 'Lake, C', 'XSAS01-S1': 'Field, P', 'YEBS30-FO': 'van de Meadow, J', 'YEBS30-S1': 'Grove, T' });
   // Not seen for 14 days: gone.
   assert.deepEqual(namesByTurn(store, new Date('2026-12-01T03:00:00Z')), {});
+});
+
+// Owner, 2026-11-11 (two Call Board photos beside the site): "The call board has the
+// right jobs but wrong people currently working it listed". Made-up names, his layout.
+test('yard jobs: who is working each one now, read off the Call Board', () => {
+  const { fmt, at } = require('../../lib/board/time');
+  const lines = [
+    'YBHS31    REL#3  MO/TU  OFF     ON  DUTY  AT:  SARNIA      26/11/11  1600',
+    '     FO   MEADOW+         A   ALEXANDER',
+    '     S1   BROOK+          J   JEREMY',
+    'YEBS30    1600  EASTBD  BP  S4/M4  ON  DUTY  AT:  SARNIA   26/11/11  1600',
+    '     FO   GROVE+          J   JASON',
+    '     S1   LAKE+   (N/NT)C  CHASE',
+    'YMPS31    1500  PULLER  T/W  OFF   ON  DUTY  AT:  SARNIA   26/11/11  1500',
+    '     TT   DALE  #         M   MATTHEW',
+    '     S1   FIELD*+(NET)S  SCOTT',
+    'YSBY04    1900  YDM  BLOCK  4      ON  DUTY  AT:  SARNIA   26/11/11  1900',
+  ];
+  const rows = parseGrid(lines.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${m[0]}`)].join(' | ')));
+  const crew = S.parseYardCrewNames(rows);
+  assert.deepEqual(crew.map((c) => `${c.job} ${c.craft} ${c.name} ${fmt(c.onDuty)}`), [
+    'YBHS31 FO Alexander Meadow 11th 1600', 'YBHS31 S1 Jeremy Brook 11th 1600', 'YEBS30 FO Jason Grove 11th 1600', 'YEBS30 S1 Chase Lake 11th 1600',
+    'YMPS31 TT Matthew Dale 11th 1500', 'YMPS31 S1 Scott Field 11th 1500']);
+  const now = new Date('2026-11-12T01:39:00Z');
+  const store = recordYardWork(recordYardCrew({}, [{ job: 'YBHS31', craft: 'FO', name: 'Bo Owner' }], now), crew, now);
+  assert.deepEqual(workingByJob(store, fmt), {
+    'YBHS31|11th 1600': [['FO', 'Meadow, A'], ['S1', 'Brook, J']], 'YEBS30|11th 1600': [['FO', 'Grove, J'], ['S1', 'Lake, C']], 'YMPS31|11th 1500': [['TT', 'Dale, M'], ['S1', 'Field, S']] });
+  // Whose job it is stays its own list, and neither kind leaks into the turns.
+  assert.deepEqual(namesByTurn(store, new Date('2026-11-12T01:40:00Z')), { 'YBHS31-FO': 'Owner, B' });
+  // A job at the foot of one page with its crew at the top of the next.
+  const page = (ls) => parseGrid(ls.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${m[0]}`)].join(' | ')));
+  const carry = {};
+  const first = S.parseYardCrewNames(page(['TRAINS  ENROUTE', 'YINS30    1530  INDTRL  SN/SN     ON  DUTY  AT:  SARNIA   26/11/11  1530']), carry);
+  const second = S.parseYardCrewNames(page(['TRAINS  ENROUTE', '     FO   STONE+          M   MATHEW', '     S1   HILL*+(NET)R  RYAN', 'YSBY04    1900  YDM  BLOCK  4   ON  DUTY  AT:  SARNIA   26/11/11  1900']), carry);
+  assert.deepEqual([first.length, second.map((c) => `${c.job} ${c.craft} ${c.name} ${fmt(c.onDuty)}`)], [0, ['YINS30 FO Mathew Stone 11th 1530', 'YINS30 S1 Ryan Hill 11th 1530']]);
+  assert.deepEqual(S.parseYardCrewNames(page(['     FO   STONE+          M   MATHEW'])), []); // without it, as before
+  // A later check without that job on the Call Board: it is no longer "working".
+  const later = new Date('2026-11-12T03:00:00Z');
+  recordYardWork(store, [{ job: 'YSBY04', craft: 'YA', name: 'Pat Tower', onDuty: at(2026, 11, 11, 19, 0) }], later);
+  assert.deepEqual(workingByJob(store, fmt), { 'YSBY04|11th 1900': [['YA', 'Tower, P']] });
 });

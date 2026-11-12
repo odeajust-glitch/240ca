@@ -2382,6 +2382,8 @@ function poolChip(rules) {
 // CREW_NAMES variable is on (loadCrew), so that variable is the switch.
 // Names never go into an alert: they are only drawn here.
 let CREW = null;
+// Who is on each yard job now, from the Call Board's own crew lines: { "<job>|<on duty>": [[craft, "Last, F"], …] }.
+let CREW_WORK = null;
 let CREW_NOTE = 'Not asked for yet.';
 let crewAsked = false;
 const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
@@ -3004,10 +3006,34 @@ function postingAlertsBox() {
 }
 
 // Yard jobs on duty (owner, 2026-10-24), taken as 8 h long; YSBY (the tower) 12 h (2026-11-03).
+// The crew on a yard job (owner, 2026-11-11: "The call board has the right jobs
+// but wrong people currently working it listed"). With the crew names on: every
+// person the Call Board shows on the job, by craft, with their spareboard turn
+// where they are a spare. The site used to show only the spares it could match
+// to a turn, so a regular or a relief crew on the job was missing and the
+// "Assigned" line under it read as the crew. The names are keyed by the job
+// and its on-duty time, so an older snapshot's shift never takes today's crew.
+function yardWorking(j) {
+  const work = CREW_WORK && CREW_WORK[`${j.job}|${j.onDuty}`];
+  if (!work || !work.length) return `<div class="crew mono">${markTurn(j.crew)}</div>`;
+  // "S1 B134 · FO B130": the spares among them, as the checker matched them.
+  const turnOf = (craft) => (new RegExp(`(?:^|· )${craft} ([A-Z][A-Z0-9]+\\d{2})`).exec(j.crew || '') || [])[1] || '';
+  return `<div class="crew">${work.map(([c, n]) => { const t = turnOf(c); return `<span style="white-space:nowrap">${esc(c)}${t ? ` <span class="mono">${markTurn(t).replace(/ <span class="crewnm">.*$/, '')}</span>` : ''} ${esc(n)}</span>`; }).join(' · ')}</div>`;
+}
+// Whose job it is, when that is someone other than the crew on it. Left out
+// when the same people are working it, or when nobody holds it (an extra job).
+function yardAssigned(j) {
+  const own = yardOwners(j.job).filter(([, n]) => n !== 'open turn');
+  if (!own.length) return '';
+  const work = CREW_WORK && CREW_WORK[`${j.job}|${j.onDuty}`];
+  const same = work && own.every(([c, n]) => work.some(([wc, wn]) => wc === c && wn === n));
+  if (same) return '';
+  return `<div class="crew muted">Assigned: ${own.map(([c, n]) => `<span style="white-space:nowrap">${esc(c)} ${esc(n)}</span>`).join(' · ')}</div>`;
+}
 function yardJobs(s) {
   if (!(s.yardJobs || []).length) return '';
   const rows = s.yardJobs.map((j) => `<tr${marked(j.job) || markedIn(j.crew) ? ' class="hit"' : ''}><td class="num">${esc(j.onDuty || '—')}</td>
-    <td><b class="num">${markTurn(j.job)}</b><div class="crew mono">${markTurn(j.crew)}</div>${yardOwners(j.job).length ? `<div class="crew">Assigned: ${yardOwners(j.job).map(([c, n]) => `<span style="white-space:nowrap">${esc(c)} ${esc(n)}</span>`).join(' · ')}</div>` : ''}</td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
+    <td><b class="num">${markTurn(j.job)}</b>${yardWorking(j)}${yardAssigned(j)}</td><td class="num">${j.off ? `~${esc(j.off)}` : '—'}</td></tr>`).join('');
   return `<section class="sheet" id="sec-yard"><header><h2>Yard jobs · on duty</h2><span class="meta">${s.yardJobs.length} jobs</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>Job · crew</th><th>Off</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="foot">Off duty: 8 hours after on duty, 12 hours in the tower (YSBY).</div></section>`;
@@ -5191,6 +5217,7 @@ source().then(async (src) => {
       if (!got || !got.turns) return say('The saved passcode does not open the names file: it is not the same as BOARD_NAMES_KEY on the laptop. Save the right one under Article 18.6(b) submissions.');
       const n = Object.keys(got.turns).length;
       CREW = got.turns;
+      CREW_WORK = got.working || null;
       setMode(mode);
       say(n ? `Showing ${n} name${n === 1 ? '' : 's'}, from Call Boards read in the last 14 days (file made ${got.at ? new Date(got.at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'at an unknown time'}).` : 'The names file opened but it is empty: the laptop has read no Call Board names in the last 14 days.');
     } catch (e) { say(`Could not load the names (${e.message}).`); }

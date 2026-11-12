@@ -28,6 +28,29 @@ file (search for the words in bold); the Housekeeping list in
 - **Calling sequence:** a train called to the wrong pool no longer uses the A/B turn it
   skipped: live.
 
+**Added after the summary above was written, 2026-11-11 20:45:** yard job names went to
+both sites (19:55); **the Yard jobs box now shows who is actually working each job**
+(owner, with two Call Board photos beside the site: "The call board has the right jobs
+but wrong people currently working it listed"; "it is getting the jobs working confused
+with how it lists the 'home turn' in option 6"). The site only ever showed a yard job's
+worker when the checker could match them to a spareboard turn, so a regular or a relief
+crew on the job was missing and the "Assigned" line under it (the crews in town's home
+turns) read as the crew. Now `parseYardCrewNames` (screens.js) also gives each person's
+name and the job's on-duty time, and carries a job across pages (its line can end one
+page and its crew start the next); `recordYardWork` / `workingByJob` (names.js) keep it
+in names.json as `@yardwork|<job>|<on duty>` and publish it in the locked crew.json as
+`working: { "<job>|<on duty>": [[craft, "Last, F"]] }` (jobs read in the last two checks
+only). Page: `yardWorking` (the crew, with the spare's turn where they are one) and
+`yardAssigned` (whose job it is, shown only when that is someone else; open turns and an
+extra job's empty slots left out); `CREW_WORK`. Members with crew names only; without
+them the box is as before. Test in names.test.js (the layout of his photos, made-up
+names), suite 385 of 385. **Checked in a browser on the main site with a stand-in crew
+per job; NOT yet with the laptop's real read: needs a pull and restart, then compare
+with CATS.** ⚠ My first version used the page's `mode` inside a top-level function and
+the whole page failed to load ("Couldn't load the snapshots"); the tests did not catch
+it, the browser check did, before anything was pushed. **Always load the page in a
+browser before pushing a board.html change.**
+
 **Not confirmed on a real device (say so if asked):** a job posting alert or reminder
 actually arriving on a phone (only Justin's account, JUOD, has them on); the extra-job
 prediction on a real listing; the `vacanciesWatch` record.
