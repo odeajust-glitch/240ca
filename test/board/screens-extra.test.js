@@ -692,3 +692,15 @@ test('job postings: the Circular Inquiry gives each job up for bid and its closi
     '786301 ENG DRAG POOL | SD07 EN U 2026-11-26 T',
   ]);
 });
+
+test('a stretch placed by hand: the second COBR on SR01 only before the 25 Oct board change', () => {
+  const P = require('../../lib/board/people');
+  const rules = P.emptySplits();
+  const cobr = P.personHash('COBR');
+  const cobd = P.personHash('COBD');
+  const seen = [{ h: cobr, turn: 'SR01' }, { h: cobr, turn: 'SB03' }];
+  assert.deepEqual(P.retie(seen, rules, 1, '2026-10-24 0418').map((p) => p.h), [cobd, cobr]);
+  assert.deepEqual(P.retie(seen, rules, 1, '2026-10-25 1209').map((p) => p.h), [cobd, cobr]);
+  assert.deepEqual(P.retie(seen, rules, 1, '2026-10-25 1216').map((p) => p.h), [cobr, cobr]);
+  assert.notEqual(P.splitsSig(rules), P.splitsSig({ map: rules.map }));
+});

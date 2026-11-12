@@ -92,7 +92,7 @@ History should be narrowed now that this page exists.
 Booked review ran against live `data/people.json` (laptop on `def1438`). Clean: COBD, BRWA,
 BRW1, BRW2, JAM1, MAD1, MAR1, MAR2. Asked Justin about five things, build nothing until he
 answers (needs rules by turn **with a date range**; `retie` is turn-only):
-1. COBR owns SR01 and SB03 at once 24–25 Oct (one is COBD's).
+1. COBR owns SR01 and SB03 at once 24–25 Oct. **Answered 21:55: the second COBR "was sr01 before the change". Built: `DATED` in lib/board/people.js (code, turn, until/since) → `splits.dated`, `retie(…, taken)`; SR01 before 2026-10-25 1216 goes to COBD. Needs a laptop pull + restart; then check COBD shows SR01 24–25 Oct and COBR only SB03. Add further hand-placed stretches to `DATED`.**
 2. MADE owns YPRS30 / YINS30 on 3–4 Nov while also owning B111; plus YPRS60, YINS60, YMPS60 shifts 24–28 Oct (MAD1's?).
 3. MARO on S502 and YSTY01 at the same time 1 Nov; YSBY04 shifts 24–25 Oct (MAR2's?).
 4. MARI on YBHS01 24 and 25 Oct while owning S306 (MAR1's?).
