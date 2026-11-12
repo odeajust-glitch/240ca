@@ -99,6 +99,13 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    History with YD typed, which has an O-T column (0400 on the 12-hour tower jobs) and no
    off duty. Laid out in SCREENS; three questions put to him (what O-T is and when it is
    filled in, what a blank means, what "crew info" shows). Not built.
+   **His answers the same morning: "Yes, yes add the 3rd thing to house keeping".** Read
+   as: (1) yes, O-T is the overtime on top of the 8 hours and is filled in when the crew
+   ties up; (2) yes to an either/or of mine (does a blank O-T mean exactly 8 hours, or not
+   tied up yet), taken as both: blank until the crew ties up, and blank after it when
+   there was no overtime; (3) is item 11 below. If the first "yes" was for something else
+   in that message (Days off showing whose turn it is, or starting Page Health), he was
+   asked to say so. Check (2) with him before a reader is built on it.
 8. **Done 2026-11-12 (his "Proposed"): how the call card works out "expected".** What the
    board showed 8 hours before the call came; lined up later than that, what it showed
    then. On for every member; the pick box is gone. Left for a tidy-up, no decision needed:
@@ -114,6 +121,16 @@ Small decisions parked for a housekeeping pass; ask, don't build.
     figures in the older words: keep, reword or drop. (His three "what bothers me" lines
     that never arrived: "Ignore that", 2026-11-12. Closed.) Once he has lived with the card,
     the old graph code kept as the way back (`CALL_CARD = false`) can go: his word first.
+11. **Yard Assignment History: what "crew info" shows** (owner, 2026-11-12: "add the 3rd
+    thing to house keeping"). On the yard list (CATS 3 then 7, YD typed in POOL OR YD/LO;
+    laid out in SCREENS from his photos), an X beside a job and then Enter opens "crew
+    info". Not seen yet. Wanted from him when he gets to it: a photo of that page for a
+    job whose ticket was left open (YFLS01 of 11 Nov, or YMPS31 from the 9th). Why it
+    matters: the list itself cannot tell a ticket left open from overtime still being
+    worked (O-T is blank in both cases until the crew ties up); if crew info shows each
+    person and whether they have tied up, it can. It decides how item 7 (real yard hours)
+    and the Current review's item 4 (the Yard jobs box listing shifts that ended long ago:
+    HANDOFF, "Tab-by-tab review") get built. Neither is built.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both

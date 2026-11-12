@@ -221,6 +221,18 @@ overtime on top of 8 hours, and when is it filled in; does a blank mean 8 hours 
 what an X beside a job and Enter ("crew info") shows, since that may be what tells a ticket left open
 from overtime. The reader would be a checker change (a laptop pull and restart; the read runs for both
 sites, what the page shows from it can stay on the test site).
+**His answers, 12 Nov about 09:35: "Yes, yes add the 3rd thing to house keeping".** Read as answers to
+those three, in order: O-T is the overtime on top of 8 hours, filled in when the crew ties up; a blank is
+both of what I asked (an either/or of mine: 8 hours once tied up, and blank until then); and the crew
+info page is Housekeeping item 11 in TODO, a photo from him when he gets to it. **So item 4 and the yard
+hours stay unbuilt until that photo.** The same message of mine had also asked whether Days off should
+always show whose turn it is, and said Page Health starts on his word: neither is taken as answered by
+"Yes, yes"; he was told how I read it and asked to say if a yes was meant for either.
+
+**At 09:38 the laptop had not pulled the build:** running code `4419335` (the notes commit before it; he
+had pulled and restarted for that one), one update waiting, both sites still serving the page of
+`61d6b10`. The test site shows nothing new until one more pull and restart. Then, still to do: look at
+the published page on board-test as he sees it, and as a member on the main site.
 
 **For round 2 (Page Health), seen on the way:** any push to the laptop's branch, notes only included,
 turns Page Health's GitHub row red ("N newer updates waiting: git pull, then restart") and its verdict

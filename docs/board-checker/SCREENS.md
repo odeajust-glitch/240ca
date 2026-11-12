@@ -393,10 +393,15 @@ ENTER=INQ/DISPLAY CREW INFO   PF1=HELP   PF3=EXIT   PF8=PAGEDN   PF11=PREV MENU
   names on it. Rows are black and red in threes: banding, as on the train list.
 - ASSIGNMENT: the job id. ODT-DATE/TIME: on duty, YYMMDD HHMM. DESCRIPTION: the job's
   own start time and name; an extra job (`YFXS01`) reads "DAY XTRA …" with no time.
-- **O-T: not confirmed.** 0400 on the two 12-hour tower jobs (YSBY03, YSBY04), blank
-  on the other fourteen, so it reads as overtime past 8 hours. There is no DUTY column:
-  off duty is not on this list the way it is for a train. Asked the owner what O-T is,
-  when it is filled in, and what a blank means (8 hours, or not tied up yet).
-- An X beside a line and Enter shows "crew info": not seen yet. Asked for a photo.
+- **O-T: overtime on top of the 8 hours, filled in when the crew ties up** (owner,
+  2026-11-12: "Yes"). 0400 on the two 12-hour tower jobs (YSBY03, YSBY04), blank on the
+  other fourteen. There is no DUTY column: off duty is not on this list the way it is for
+  a train; it would be on duty + 8 h + O-T once O-T is in.
+- **A blank O-T:** asked as an either/or (exactly 8 hours, or not tied up yet); his "yes"
+  is taken as both: blank until the crew ties up, blank after it when there was no
+  overtime. So the list alone cannot tell a ticket left open from overtime still being
+  worked. Confirm with him before building on it.
+- An X beside a line and Enter shows "crew info": not seen yet. On the Housekeeping list
+  (TODO, item 11) at his word: a photo when he gets to it.
 - Not built. `parseAssignHistory` (lib/board/screens.js) only matches a train's line.
 
