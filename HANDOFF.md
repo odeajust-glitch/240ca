@@ -546,6 +546,27 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
+### The four menus at the top of Current (Trains, Pools, Spareboards, Other) — asked 12 Nov evening. NOTHING BUILT
+
+**Owner, 12 Nov about 18:00 Toronto: "Can we clean up what's in the trains pools spareboard and the last drop
+down menu in that group of 4".** Looked at on both sites (a member on main, him on test, 390 px, the 1745
+check): every button tapped. All 21 land on their box, and a box folded shut opens. Your other session
+("Site layout and structure review") was **running** at the time and has test-site changes on the same page
+(`79fc425`): told him, nothing changed here. Put to him, with a picture of each (now, and cleaned up, drawn in
+a browser only):
+1. **CATS option numbers on the buttons** ("Line-up 41", "SD 27", "Conductor fast 13"): the boxes never use
+   them. Names as the boxes and the pool buttons have them ("Drags", "1st Manifest", "Sarnia line-up").
+2. **Pools out of order** (Chain Gang, A, B, SD, S1, S3) where the pool buttons run A, 1st Manifest, B, 3rd
+   Manifest, Chain Gang, Drags, 501/502, Garnet: same order.
+3. **"Bunkhouse 28" sits in Pools** and lands on the Toronto box, the same place as "Toronto line-up 41": one
+   "Toronto" button, in Trains.
+4. **"Road jobs" in Other lands on the Call board**, the same place as "Call board" in Trains: off.
+5. **Boxes with no button:** Calling sequence and Changes (and To check, when it shows): add to Other.
+6. A pool button switches that pool on beside the ones already showing (for this visit, not saved on the
+   phone), so tapping three pools stacks three boards. ❓ Asked him: keep, or show only the one tapped.
+The menus list the CATS screens read in that check, so a button vanishes when a screen was not read; the
+cleaned-up menus would list the boxes instead (a box with nothing to show greyed, as now).
+
 ### His say on rounds 1 and 2 — 12 Nov about 11:55 Toronto: on to the main site
 
 **His words, in full**, in reply to the list of what to check on the test page (Current: 1 the counts line says
