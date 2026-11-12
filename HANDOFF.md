@@ -382,6 +382,16 @@ History should be narrowed now that this page exists.
 
 ## Phones with no account, listed on Members — November 12, 2026
 
+**Cut-off built the same day (owner: "7 days from when we locked the site"): from 19:00 Toronto
+on 2026-11-17 the laptop sends alerts only to phones with an account** (`Health.membersOnly`,
+`NO_ACCOUNT_CUTOFF`; used by `alertPhones()` in scripts/board-auto.js for turn alerts, the weekly
+and the held-away alerts). A phone with no account is skipped, not deleted: it works again once
+its owner signs in and saves its alerts. **The owner's own phones carry no account (owner key), so
+any phone following the owner's name code (`BOARD_OWNER_CODE`, else the first `BOARD_WEEKLY_CODES`,
+default JUOD) is kept.** Not covered: the Worker's own "checker is down / back" message still goes
+to every phone (needs a Worker change), and `scripts/announce.js` is unchanged. The Members tab
+shows the date. To move or drop the date, change `NO_ACCOUNT_CUTOFF` in lib/board/health.js.
+
 Owner wants to message people privately to make an account "before their notifications don't
 work anymore". Built **without a Worker change** (he could not paste until later): the laptop's
 subscriber report (`Health.subscribersOf`, served to the owner in `/health` as

@@ -1055,7 +1055,7 @@ async function sendWeekly() {
   const found = read('analytics.json');
   const codes = String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',').map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{3}[A-Z1-9]$/.test(c));
   try {
-    const subs = await listSubscriptions(settings.r2);
+    const subs = await alertPhones(settings.r2);
     const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
     const sub = (process.env.BOARD_SITE_URL || '').trim() || config.siteUrl;
     const log = new Map();
@@ -1095,7 +1095,7 @@ async function sendHeldAlerts() {
   if (!state.since) state.since = toStamp(Date.now() - 2 * 86400000);
   const read = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, 'site', 'data', f), 'utf8')); } catch { return {}; } };
   try {
-    const subs = await listSubscriptions(settings.r2);
+    const subs = await alertPhones(settings.r2);
     const wants = (s, h) => { const p = (s.prefs || {})[`@${h}`] || {}; return p.held !== false; };
     const followed = new Set(subs.flatMap((s) => (s.turns || []).filter((t) => t.startsWith('@')).map((t) => t.slice(1)).filter((h) => wants(s, h))));
     const { events, told } = HeldAlerts.heldEvents({ trains: read('trains.json').trains || [], people: read('people.json').people || {}, followed, told: state.told || {}, since: state.since });
@@ -1183,7 +1183,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
   try { TurnAlerts.saveTold(TOLD_FILE, told); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
   try {
     // Every check: a phone's time alerts depend on its own last-told call.
-    const subs = await listSubscriptions(settings.r2, retryingFetch(fetch));
+    const subs = await alertPhones(settings.r2, retryingFetch(fetch));
     health.phones = subs.length;
     // Subscriber health is refreshed independently before publishing.
     if (!subs.length) return;
@@ -1308,6 +1308,10 @@ try {
     health.phones = saved.phones;
   }
 } catch { /* first run or unreadable cache: show unavailable */ }
+// The phones alerts go to: every phone until a week after the lock, then only
+// members' (and the owner's own). See Health.membersOnly.
+const ownerHash = () => People.personHash(((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase());
+const alertPhones = async (...args) => Health.membersOnly(await listSubscriptions(...args), Date.now(), ownerHash());
 async function refreshSubscriberHealth(r2) {
   const checkedAt = Date.now();
   try {

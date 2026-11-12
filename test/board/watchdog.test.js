@@ -91,6 +91,7 @@ test('health: who gets alerts, by turn and by followed person', () => {
   // Two of the four phones are a member's; the other two are listed with what they follow.
   const subs = [{ turns: ['SR03', `@${a}`], account: 'm1' }, { turns: ['SR03', 'SD08'], updated: '2026-11-01T00:00:00.000Z' }, { turns: [`@${a}`, `@${b}`, 'SR03'], updated: '2026-11-05T00:00:00.000Z' }, { turns: ['B126'], account: 'm2' }];
   assert.deepEqual(subscribersOf(subs, { [a]: { turn: 'SR03' } }, new Map([[a, 'JUOD']])), {
+    noAccountCutoff: Date.parse('2026-11-18T00:00:00Z'),
     noAccount: [
       { turns: ['SR03'], people: [{ code: 'JUOD', turn: 'SR03' }, { code: null, turn: null }], updated: '2026-11-05T00:00:00.000Z' },
       { turns: ['SD08', 'SR03'], people: [], updated: '2026-11-01T00:00:00.000Z' },
@@ -99,7 +100,7 @@ test('health: who gets alerts, by turn and by followed person', () => {
     turns: [['SR03', 3], ['B126', 1], ['SD08', 1]],
     people: [{ code: 'JUOD', turn: 'SR03', phones: 2 }, { code: null, turn: null, phones: 1 }],
   });
-  assert.deepEqual(subscribersOf([]), { noAccount: [], phones: 0, turns: [], people: [] });
+  assert.deepEqual(subscribersOf([]), { noAccount: [], noAccountCutoff: Date.parse('2026-11-18T00:00:00Z'), phones: 0, turns: [], people: [] });
 });
 
 // Owner, 2026-11-02: "what notifications are being sent out for whom".
@@ -116,4 +117,15 @@ test('health: the latest alerts sent, newest first', () => {
     { at: '2026-11-02 06:11', turn: 'SD05', kind: 'aheadBack', phones: 0, failed: 1, text: 'SD05: SD10 ahead of you is back.' },
   ]);
   assert.equal(recentAlerts(log).length, 3);
+});
+
+// Owner, 2026-11-12: alerts stop for phones with no account a week after the lock.
+test('alerts: phones with no account are skipped from 19:00 on 17 Nov, the owner\'s kept', () => {
+  const { membersOnly, NO_ACCOUNT_CUTOFF } = require('../../lib/board/health');
+  const me = 'cccccccccccccccc';
+  const subs = [{ turns: ['SR03'], account: 'm1' }, { turns: ['SD05'] }, { turns: [`@${me}`] }];
+  assert.equal(new Date(NO_ACCOUNT_CUTOFF).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }), '2026-11-17 19:00:00');
+  assert.equal(membersOnly(subs, NO_ACCOUNT_CUTOFF - 1, me).length, 3);
+  assert.deepEqual(membersOnly(subs, NO_ACCOUNT_CUTOFF, me), [subs[0], subs[2]]);
+  assert.deepEqual(membersOnly(subs, NO_ACCOUNT_CUTOFF), [subs[0]]);
 });
