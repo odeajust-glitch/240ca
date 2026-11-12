@@ -60,6 +60,15 @@ Small decisions parked for a housekeeping pass; ask, don't build.
    then the alerts (built 2026-11-11, by account, on both sites that evening at his
    word): confirm one real alert and one reminder arrive on his own phone. Rules for permanent postings are "for now": review.
    Details in HANDOFF.
+7. **Yard shifts: an overtime checker, for more accurate work hours** (owner, 2026-11-11:
+   "Add a house keeping item to add in a yard shifts overtime checker so we have more
+   accurate work hours"). Not built. What he said about it: a yard shift is 8 hours; a
+   job still listed on duty long after that with only a trainee on it (YFLS01 on 11 Nov,
+   on at 0800, still shown at 2151) is a trainee who forgot to tie up their ticket, and
+   it stays there until they fix it, so it is not hours worked. To work out with him:
+   how to tell real overtime from a ticket left open (trainee only on the job; the rest
+   of the crew gone), where the hours show (Turn History / My stats work hours), and
+   whether the Yard jobs box should mark or drop a job left open like that.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both
