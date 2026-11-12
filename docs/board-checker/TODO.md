@@ -105,8 +105,8 @@ Small decisions parked for a housekeeping pass; ask, don't build.
 10. **Call card: small things to ask, none built.** A call 31 to 60 minutes early is amber
     on its row and in the counts but red on the picture (the graph's own rule from before):
     which does he want. "More numbers" on the Call stability page still holds the older
-    figures in the older words: keep, reword or drop. His three "what bothers me" lines from
-    the first message never arrived (the prompt had "..."). Once he has lived with the card,
+    figures in the older words: keep, reword or drop. (His three "what bothers me" lines
+    that never arrived: "Ignore that", 2026-11-12. Closed.) Once he has lived with the card,
     the old graph code kept as the way back (`CALL_CARD = false`) can go: his word first.
 
 

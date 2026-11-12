@@ -160,7 +160,8 @@ https://claude.ai/artifact/CqaYd9Yg8zRaa8QdKgJp2c.
 
 **Waiting on Justin:** (1) one laptop `git pull` + **restart**, so both sites have the card, the
 picked rule and the tracker fix (no Worker paste); (2) a no to any of the three things above, if he
-has one; (3) his three "what bothers me" lines.
+has one. (His three "what bothers me" lines from the first message, which arrived as "...": asked
+what they were, he said "Ignore that". Closed, do not ask again.)
 
 **Also seen at about 06:25 while here (counts only):** both sites serve the My stats review
 (`MINE_MORE = true` in the page, `data/pools.json` published): that pull is done. **Neither Worker
