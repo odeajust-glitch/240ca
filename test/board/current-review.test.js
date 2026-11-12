@@ -337,3 +337,13 @@ test('item 10: the small wording', () => {
   const unread = { ...s, screens: s.screens.filter((k) => k !== 'garnet') };
   assert.ok(g(unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
 });
+
+test('the four menus above the boxes are off on the test site; members keep them', () => {
+  // Owner, 2026-11-12, shown the Trains, Pools, Spareboards and Other menus now and cleaned up:
+  // "I want them removed not fixed". Test site only (PREVIEW) until he says otherwise.
+  assert.ok(html.includes('"I want them removed not fixed"'));
+  assert.ok(html.includes('    const menusOff = PREVIEW;'));
+  assert.ok(html.includes('${menusOff ? (same ? `<div class="screens" style="margin-top:8px">${same}</div>` : \'\') : `<div class="screens" style="margin-top:8px">${screens}${same}</div>`}</div>'));
+  // The menus are still built for everyone else, as they were.
+  assert.ok(html.includes("['Trains', ['callBoard', 'lineup', 'macLineup', 'garnetLineup']],"));
+});

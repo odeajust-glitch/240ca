@@ -564,7 +564,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
-### The four menus at the top of Current (Trains, Pools, Spareboards, Other) — asked 12 Nov evening. NOTHING BUILT
+### The four menus at the top of Current (Trains, Pools, Spareboards, Other) — 12 Nov evening. REMOVED ON THE TEST SITE at his word; members keep them
 
 **Owner, 12 Nov about 18:00 Toronto: "Can we clean up what's in the trains pools spareboard and the last drop
 down menu in that group of 4".** Looked at on both sites (a member on main, him on test, 390 px, the 1745
@@ -584,6 +584,14 @@ a browser only):
    phone), so tapping three pools stacks three boards. ❓ Asked him: keep, or show only the one tapped.
 The menus list the CATS screens read in that check, so a button vanishes when a screen was not read; the
 cleaned-up menus would list the boxes instead (a box with nothing to show greyed, as now).
+
+**His answer, 12 Nov about 18:10: "I want them removed not fixed".** Built for the TEST SITE ONLY: in `show`,
+`const menusOff = PREVIEW;` leaves the four menus off Current and Snapshots (the "No change until" chip that
+shared their row stays). Members on both sites keep them, the same to the letter (checked in a browser over
+the 1804 check). On his test-site view the first train row moved up 106 px (1,101 → 995 with two followed
+turns). Test in `current-review.test.js`; suite 490 of 490. To promote: drop `PREVIEW` there (then `screens`,
+`screenGroups` and the `[data-jump]` wiring can go, and `SCREENS` / `JUMPS` if nothing else uses them). The
+other session was idle (waiting on him) when this was built.
 
 ### His say on rounds 1 and 2 — 12 Nov about 11:55 Toronto: on to the main site
 

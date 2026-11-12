@@ -7173,11 +7173,15 @@ source().then(async (src) => {
       return links ? '<details class="screen-group"><summary>' + title + '</summary><div class="screen-links">' + links + '</div></details>' : '';
     }).join('');
     const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
+    // The four menus above the boxes (Trains, Pools, Spareboards, Other): off on the test site. Owner,
+    // 2026-11-12, shown them now and cleaned up: "I want them removed not fixed". The "No change until"
+    // chip that shared their row stays. Off the test site they are as they were.
+    const menusOff = PREVIEW;
     document.getElementById('view').innerHTML = `
       <div class="head">
         <div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div>
           ${agebar}
-          <div class="screens" style="margin-top:8px">${screens}${same}</div></div>
+          ${menusOff ? (same ? `<div class="screens" style="margin-top:8px">${same}</div>` : '') : `<div class="screens" style="margin-top:8px">${screens}${same}</div>`}</div>
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
