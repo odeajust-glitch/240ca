@@ -232,6 +232,23 @@ woke up (every 10 minutes when the Cron Trigger is there), and whether the
 ntfy topic and the VAPID key are set. "never ran" → add the Cron Trigger
 (section 8).
 
+## Test alert from the Worker (2026-11-12)
+
+Owner: "add the send test alert route to the Worker". The same test as the
+laptop's `node scripts/alert-check.js SD02`, without the laptop:
+`POST /health/test-alert` with `{ "to": "SD02" }` (a turn, or a name code)
+and the owner key (header `x-owner-key`); anyone else gets 404. It sends
+"Test: SD02" to every phone following it and answers
+`{ following, skipped, sent, failed, dropped }`.
+
+- Phones that also follow your own code (`OWNER_CODE`, else JUOD) are skipped,
+  as on the laptop; `"all": true` sends to them too.
+- `"dry": true` only counts the phones; nothing is sent.
+- It needs the `VAPID_KEYS` secret (the section above) on the Worker asked;
+  without it the answer says so (503).
+- No button on the page yet: a Claude session whose environment holds the
+  owner key can send it, or `curl` with the key.
+
 ## RailroadTracker relay on the Worker (2026-11-03, moved off Render)
 
 The laptop sends each check to `POST /api/board` and the app reads

@@ -251,7 +251,8 @@ async function vapidFor(endpoint, keys, signer, cache, subject) {
   return v;
 }
 // Every phone with turn alerts (subs/), one message each. → { sent, failed, dropped }.
-async function pushAll(env, message, { fetchImpl = fetch, only = null } = {}) {
+// `dry`: goes through the phones (so `only` can count them) and sends nothing.
+async function pushAll(env, message, { fetchImpl = fetch, only = null, dry = false } = {}) {
   const out = { sent: 0, failed: 0, dropped: 0 };
   let keys;
   try { keys = JSON.parse(env.VAPID_KEYS); } catch { return { ...out, error: 'VAPID_KEYS is not the push-keys.json text' }; }
@@ -273,6 +274,7 @@ async function pushAll(env, message, { fetchImpl = fetch, only = null } = {}) {
         let host = '';
         try { host = new URL(sub.endpoint).hostname; } catch { /* checked below */ }
         if (!PUSH_HOSTS.some((re) => re.test(host)) || !sub.keys || (only && !only(sub))) continue;
+        if (dry) continue;
         const res = await fetchImpl(sub.endpoint, {
           method: 'POST',
           headers: { 'content-encoding': 'aes128gcm', 'content-type': 'application/octet-stream', ttl: String(6 * 3600), urgency: 'high',
@@ -285,6 +287,44 @@ async function pushAll(env, message, { fetchImpl = fetch, only = null } = {}) {
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
   return out;
+}
+
+// A test alert to the phones following a turn or a name code (owner,
+// 2026-11-12: "add the send test alert route to the Worker"), so it can be
+// sent without the laptop. POST /health/test-alert { to: "SD02" }, owner
+// only (404 otherwise, like /health). The same message and the same rule as
+// the laptop's scripts/alert-check.js: phones that also follow the owner's
+// own code (OWNER_CODE, else JUOD) are skipped unless { all: true }, so a
+// test for someone else doesn't land on the owner's phone. { dry: true }
+// only counts. → { ok, to, following, skipped, sent, failed, dropped }.
+const NAME_CODE = /^[A-Z]{3}[A-Z1-9]$/;
+async function testAlert(request, env) {
+  if (!(await isOwner(request, env))) return json({ error: 'not found' }, 404);
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  let body;
+  try { body = JSON.parse(await request.text()); } catch { return json({ error: 'not JSON' }, 400); }
+  const to = String((body && body.to) || '').trim().toUpperCase();
+  const code = NAME_CODE.test(to);
+  if (!code && !/^[A-Z0-9]{2,6}(-(EN|CO|TT|ET))?$/.test(to)) return json({ error: 'to must be a turn (SD02) or a name code' }, 400);
+  if (!env.VAPID_KEYS) return json({ error: 'VAPID_KEYS is not set on this Worker, so it cannot send alerts' }, 503);
+  const owner = String(env.OWNER_CODE || 'JUOD').trim().toUpperCase();
+  const ownerTag = `@${await personHashOf(owner)}`;
+  const tag = code ? `@${await personHashOf(to)}` : to;
+  const all = body.all === true || to === owner;
+  let following = 0;
+  let skipped = 0;
+  const only = (sub) => {
+    const turns = sub.turns || [];
+    if (!turns.some((t) => t === tag || (!code && String(t).replace(/-(CO|EN|TT|ET)$/, '') === to))) return false;
+    following++;
+    if (!all && turns.includes(ownerTag)) { skipped++; return false; }
+    return true;
+  };
+  const time = new Date().toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const message = { title: `Test: ${to}`, body: `Test alert from the board checker (${time}). This phone is set up for ${to}.`, tag: `test-${to}`, url: './#current' };
+  const out = await pushAll(env, message, { only, dry: body.dry === true });
+  if (out.error) return json({ error: out.error }, 503);
+  return json({ ok: true, to, dry: body.dry === true, following, skipped, ...out });
 }
 
 // --- RailroadTracker relay (same checks as lib/board/relay.js on Render) ---
@@ -1966,6 +2006,7 @@ export default {
     if (url.pathname === '/health/spend') return spendApi(request, env);
     if (url.pathname === '/health/questions') return questionsApi(request, env);
     if (url.pathname === '/health/alerts') return alertsFor(request, env);
+    if (url.pathname === '/health/test-alert') return testAlert(request, env);
     if (url.pathname === '/health/held186') return held186Settings(request, env);
     if (url.pathname === '/api/held186') return request.method === 'POST' ? held186Submit(request, env) : held186Ready(env);
     if (url.pathname === '/push/subscribe') {
