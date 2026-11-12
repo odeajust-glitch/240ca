@@ -661,6 +661,14 @@ start it again" (the folder's code is newer than the running code), which is not
 **Found, not changed:** that line is the same kind of false alarm as the notes-only GitHub line was; telling
 them apart is a laptop change (which of the pulled updates touch `lib/` or `scripts/`).
 
+**LIVE ON BOTH SITES, seen 12 Nov 18:27 Toronto** (he pulled after 17:18; the laptop runs `f44ab69`, which
+holds `6403bde`). The real published pages, nothing put in place: a member on the main site and the test site
+has no counts line and no purple, 10 reason sentences for 10 trains, the new line-up note, Jobs going spare as
+rows (no table), the card's "Home from Garnet on L50131 12 (ORD 12th 2130), call ~12th 1915"; Snapshots'
+older layout as before (its counts and tables). His Page Health on the main site opened at `#pagehealth`:
+"All good", GitHub "1 newer update waiting, notes only: nothing to pull for" (the first real notes-only
+reading, the old ❓ answered), Alerts "161 sent, 1 failed: 1 with no reason kept". No page errors.
+
 **15:25 Toronto, 12 Nov: NOT PULLED YET.** The laptop is on `290d077` and both sites serve the page from
 before `6403bde` (the counts line still on Current): watched read-only from 13:32 to 15:22. So **the look at
 both live sites after his pull is still owed** (a member on each site: the pieces on, no counts line, no
