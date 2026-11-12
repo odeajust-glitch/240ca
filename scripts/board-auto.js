@@ -841,7 +841,7 @@ async function runRoute(page, opts = {}) {
     codeByHash.set(h, code); // memory only: the owner's "who gets alerts"
     const k = `${h}/${turn}`;
     const was = seen.get(k) || {};
-    seen.set(k, { h, turn, own: own || was.own || false, ...(extra.craft || was.craft ? { craft: extra.craft || was.craft } : {}), ...(extra.train || was.train ? { train: extra.train || was.train } : {}) });
+    seen.set(k, { h, turn, own: own || was.own || false, ...(extra.craft || was.craft ? { craft: extra.craft || was.craft } : {}), ...(extra.train || was.train ? { train: extra.train || was.train } : {}), ...(extra.duty || was.duty ? { duty: true } : {}) });
   };
   // A name with TV beside it is on another turn for now (owner, 2026-10-26:
   // "it's supposed to ignore it if it has a TV beside the name"): not a sighting.
@@ -855,7 +855,12 @@ async function runRoute(page, opts = {}) {
     if (/^(TT|ET)$/.test(t.craft)) sight(t.code, `${t.job}-${t.craft}`, true, { train: t.train });
     else sight(t.code, t.job, knownPeople.get(t.key) === t.job, { craft: t.craft, train: t.train });
   }
-  for (const y of yardNames) sight(y.code, y.job, false);
+  // duty: their name is on that yard job's own crew lines now, so they are
+  // working it. Being listed on the job in the crews in town (below) says
+  // whose job it is, not who is on it today; the two used to look the same
+  // (found checking My stats, 2026-11-11). The summary says yardDuty: 1 so the
+  // site knows this check tells them apart (lib/board/resets.js collect).
+  for (const y of yardNames) sight(y.code, y.job, false, { duty: y.onDuty != null });
   // In the Toronto bunkhouse under a turn (their own or one they're covering).
   for (const b of bunkNames) sight(b.code, b.turn, knownPeople.get(b.key) === b.turn);
   // The crews in town (owner, 2026-11-03: "anything past the crews in town
@@ -885,7 +890,7 @@ async function runRoute(page, opts = {}) {
     const codeSplits = People.loadSplits(CODE_SPLITS_FILE);
     if (People.learnSplit(codeSplits, codeSeen, Date.now() / 60000)) fs.writeFileSync(CODE_SPLITS_FILE, JSON.stringify(codeSplits));
   } catch (err) { console.log(`  (name code splits not saved: ${err.message})`); }
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, ...(daysOffKnown.length ? { daysOffKnown } : {}) };
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, yardDuty: 1, ...(daysOffKnown.length ? { daysOffKnown } : {}) };
 }
 
 // The full view, plus what changed since the previous check (kept in

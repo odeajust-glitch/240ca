@@ -158,6 +158,34 @@ has what was checked.
   `board.html`). No box to type a code into. Every signed-in member on both
   sites since 2026-11-11 (`MINE_ALL = true` in `board.html`; `false` = the
   test site only).
+- **What counts as a trip** (reviewed 2026-11-12 against the names the checker
+  reads off the Call Board; the rules are at the top of `build` in
+  `public/board-mystats.js`, a test for each in `test/board/mystats-review.test.js`):
+  a train their name was on, at the on-duty time last shown; before names
+  were read (3 November), a train their turn was on, unless someone else's
+  name was on that job or the turn was off the train again before it went on
+  duty; a yard shift only by name, one per day worked. Days a person is only
+  *listed* on a yard job (its own crew, or TEMP on it, in the crews in town)
+  say whose job it is, not who came in: those days are `unk` on the record and
+  the page leaves them out of every count and says so. From the laptop pull of
+  the checker change (2026-11-12) the checker marks who is on a yard job's own
+  crew lines (`duty` on the sighting, `yardDuty: 1` on the summary) and those
+  days are known.
+- **The newer sections** (the days hour by hour, the drawings, "Duty and rest
+  beside the rules", "You and your pool", the trip log and its spreadsheet):
+  `MINE_MORE` in `board.html`. `false` = the test site with the owner key
+  only. The corrected numbers are for every member either way.
+- **You and your pool.** The site build writes `data/pools.json`: for each
+  pool an average and a middle band over the last four weeks, and nothing
+  else (no hashes, no turns, no lists of figures). A figure is given only
+  when at least 5 people in the pool have enough saved; each end of the band
+  is the midpoint between two neighbouring people's figures, so no number in
+  the file is one person's own; rates are rounded to 0.1 and times to 5
+  minutes. A pool too small to give (501/502 is four people at most) is set
+  beside every road pool together, and that group is given only when the
+  people in it outside the pools already given number none, or five or more.
+  The member's own figure never leaves their record: the page works it out on
+  their phone with the same function (`poolFigures`).
 - **Not covered:** Turn History's person search is unchanged, so a member who
   types someone's name code there still sees that person's trips.
 

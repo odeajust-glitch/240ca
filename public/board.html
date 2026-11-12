@@ -5408,6 +5408,12 @@ source().then(async (src) => {
   // board-mystats.js. MINE_ALL: every signed-in member on both sites (owner,
   // 2026-11-11: "push it to the main page"); false = the test site only.
   const MINE_ALL = true;
+  // The newer sections and drawings (2026-11-11: the days hour by hour, the
+  // round trips, calls and plans drawn, the place on the board, duty and rest
+  // beside the rules, the pool comparison, the trip log and its spreadsheet):
+  // false = the test site only, until the owner says to show them to every
+  // member. The corrected numbers are for everyone either way.
+  const MINE_MORE = false;
   let mineReady = false;
   let mineRange = 'all';
   // has-mine: on a phone the first row of tabs is then Current, Turn History and My stats.
@@ -5419,7 +5425,11 @@ source().then(async (src) => {
     if (!view.querySelector('.ms')) view.innerHTML = '<p class="empty">Loading your stats…</p>';
     let d = null;
     let status = 0;
+    const more = MINE_MORE || PREVIEW;
+    // Each pool's average and middle half (no one's own figures), for the pool comparison.
+    const poolsAsked = more ? getJSON('data/pools.json').catch(() => null) : Promise.resolve(null);
     try { const r = await fetch('auth/stats', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
+    const pools = await poolsAsked;
     if (mode !== 'mine') return;
     const say = (text) => { view.innerHTML = `<div class="ms"><header class="ms-head"><div><h2>My stats</h2><p class="ms-note">Only you can open this page.</p></div></header><p class="ms-empty">${text}</p></div>`; };
     if (status === 401) return say('Sign in to see your own stats. <a href="account">Sign in</a>');
@@ -5428,9 +5438,28 @@ source().then(async (src) => {
     if (d.state === 'wait') return say(`Your name code <b>${esc(d.code)}</b> is waiting to be confirmed as yours, because it doesn’t match the name on your account or more than one person has had it. Nothing more to do: your stats show here once it’s confirmed.`);
     if (d.state === 'no') return say(`The name code <b>${esc(d.code)}</b> isn’t confirmed as yours. If yours is different, change it in ⚙ Settings → Profile.`);
     if (!d.stats) return say(`Nothing is kept for <b>${esc(d.code)}</b> yet. Your stats build up from the board checks once your name is seen on a board.`);
+    const now = src.live && src.index ? src.index.latest : '';
+    // The trips as a spreadsheet. On a phone it goes through the share sheet
+    // (Save to Files, Numbers, Mail): a plain download from a page opened off
+    // the home screen icon can leave an iPhone on a preview with no way back.
+    const csv = async () => {
+      const name = `my-trips-${new Date(torontoNowMin() * 60000).toISOString().slice(0, 10)}.csv`;
+      const text = '\ufeff' + BoardMyStats.csv(d.stats, mineRange);
+      try {
+        const file = new File([text], name, { type: 'text/csv' });
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { await navigator.share({ files: [file], title: 'My trips' }); return; }
+      } catch (e) { if (e && e.name === 'AbortError') return; /* no share sheet: the download below */ }
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
     const draw = () => {
-      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code });
-      BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); });
+      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now });
+      BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); }, csv);
     };
     draw();
   }

@@ -159,6 +159,36 @@ test('collect: each turn\'s trains, and jobs a spare filled in', () => {
   assert.deepEqual(acc.filled[`A42431 03/${t(3, 1000)}`], ['S104']);
 });
 
+// Found checking My stats (2026-11-11): since the crews in town were read
+// (3 November) a yard job's own people were never counted as working it, and
+// someone listed TEMP on one was counted every day it ran, worked or not.
+test('collect: once the checker marks who is on a yard job\'s crew lines, that is who worked it', () => {
+  const input = { yardJobs: [{ job: 'YBHS01', onDuty: t(5, 800) }, { job: 'YMXS02', onDuty: t(5, 700) }] };
+  const people = [
+    { h: 'own', turn: 'YBHS01', own: true, duty: true }, // its own crew, on its crew lines now
+    { h: 'temp', turn: 'YMXS02', own: false }, // listed TEMP on the job in the crews in town, not on its lines today
+    { h: 'spare', turn: 'YMXS02', own: false, duty: true }, // a spare called for it
+    { h: 'dayoff', turn: 'YBHS01', own: true }, // its own crew, not in today
+  ];
+  const acc = R.empty();
+  R.collect(acc, input, people, t(5, 900), [], { yardDuty: true });
+  assert.deepEqual(Object.keys(acc.trips).sort(), ['own', 'spare']);
+  assert.deepEqual(acc.trips.own[`YBHS01/${t(5, 800)}`], { train: 'YBHS01', on: t(5, 800), job: 'YBHS01', yard: true, sure: true, first: t(5, 900), last: t(5, 900) });
+  assert.equal(acc.yardFrom, t(5, 900));
+  // A check saved before the checker change reads as it always did (seen on it, not their own turn), and is not marked sure.
+  const old = R.empty();
+  R.collect(old, input, people, t(5, 830));
+  assert.deepEqual(Object.keys(old.trips).sort(), ['spare', 'temp']);
+  assert.equal(old.trips.temp[`YMXS02/${t(5, 700)}`].sure, undefined);
+  assert.equal(old.yardFrom, undefined);
+  // Days joined: marked once is marked, and the first marked check is remembered.
+  const joined = R.merge(R.merge(R.empty(), old), acc);
+  assert.deepEqual([joined.trips.spare[`YMXS02/${t(5, 700)}`].sure, joined.trips.spare[`YMXS02/${t(5, 700)}`].first, joined.yardFrom], [true, t(5, 830), t(5, 900)]);
+  // A regular yard job's holder is still left off the reset board (the next test), marked or not.
+  const turns = R.byTurn(acc, { own: [{ turn: 'YBHS01', own: true, from: '2026-11-03 0000', to: '2026-11-05 0900' }] }, t(5, 900));
+  assert.equal(turns.YBHS01, undefined);
+});
+
 // Owner, 2026-11-03: "anyone on a regular yard job should be reset cause
 // they have set days off. Its the people on the boards that matter."
 test('regular yard jobs are left out', () => {

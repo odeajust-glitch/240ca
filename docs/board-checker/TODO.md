@@ -22,6 +22,30 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
   Worker pasted, and switched on for every member at his word the same evening ("push it to
   the main page"). Waiting on one laptop pull + restart to publish the page with the tab on.
   After that: watch the Members tab for name codes waiting for his OK. See the top of HANDOFF.
+  **Reviewed 2026-11-12** (every figure recounted for 168 people; 15 kinds of wrong number
+  fixed, a test each; new sections and drawings built). Waiting on: (1) a laptop pull + restart,
+  before 23 November; (2) **his word to show the new sections to every member** (`MINE_MORE`,
+  now the test site only); (3) his answer on whether the reset tracker and Turn History should
+  take the same corrections (below).
+  **Not built, each needs more history than is saved** (told to him 2026-11-12):
+  month-on-month trend lines (two full months: from 1 January 2027); the 28-day total against
+  the 192 h limit as a drawing (the figure itself appears by itself once a person has 28 days:
+  from about 20 November); odds by day of the week and a week-shaped heat grid (8 to 12 weeks, so
+  each weekday has 8 or more); how long from each place on the board to the call (20 or more
+  climbs on one board; most people have 3 to 6); held-away by terminal over time and how often
+  14 h is reached (15 or more stays a terminal: about 3 months); how regular the resets are (10
+  or more: 2 to 3 months); a pool's figures over time (nothing keeps past pools files yet: it
+  would start from the day that is built); the same month a year back (13 months); a yard job
+  holder's own shift pattern (from the checker change plus a few weeks). Cannot be told from
+  the checks at all: booked off or on vacation against simply not called.
+- **Found in the My stats review, the board's to decide (ask, don't build):** the reset
+  tracker (`lib/board/resets.js work`) counts as duty a call that was replaced before on duty,
+  a stale spare-to-turn match, a new holder's predecessor's inbound trip, and every train of
+  the turn a trainee is on, so its colours can differ from a person's own trips; Turn
+  History's person search shows a yard job once however many days it was worked, gives a
+  turn's holder its trainee's trains and the other way round, and gives everyone seen on a
+  make-up turn every train it worked. My stats has all of these right since 2026-11-12
+  (`personRecord(..., { strict: true })` and `build` in `public/board-mystats.js`).
 
 ### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
 

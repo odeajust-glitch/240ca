@@ -1,5 +1,127 @@
 # HANDOFF — read this before doing anything
 
+## My stats reviewed — November 12, 2026, 00:30 Toronto. WAITING ON ONE LAPTOP PULL + RESTART (no Worker paste). The new sections are on the TEST page only until Justin says
+
+**Owner (max effort, five steps):** "Check the numbers ... work every figure on the page out
+again from the saved checks ... Fix what you find. Each fix gets a test ... Look at it the way a
+member does ... in light, dark and at least two of the other page styles ... Check the Members tab
+buttons ... Add what would make the page more useful. Build the ones that need no more history ...
+A comparison with other people must never show another person's own numbers ... Make the data more
+visual ... **Do not switch anything on or off for members without asking me.**"
+
+**State.** On `claude/vigilant-planck-zawrj4`. Suite **431 of 431** (34 new: `test/board/mystats-review.test.js`,
+one in `resets.test.js`). **No Worker change, so no paste.** Changed: `public/board-mystats.js`
+(most of it), `lib/board/mystats.js`, `lib/board/site.js`, `lib/board/resets.js` (`collect` / `merge`
+only), **`scripts/board-auto.js` (the checker: one flag)**, `public/board.html` (`MINE_MORE`, `renderMine`).
+**All of it waits on one laptop `git pull` + restart.** Pull **before 23 November**: until then the site
+still holds every day since the names began (24 Oct), so every record is rebuilt in full; after that
+the oldest days are kept as they were first built (`my-stats.json`).
+
+**What was wrong (each has a test).** Checked by rebuilding all 168 people's records and setting
+them beside the names the checker read off the Call Board (the reset tracker's by-name trips) and
+the raw snapshots. Trip list or hours changed for **143 of 168 people**; trips 1,023 → 1,286.
+1. **Yard shifts counted once a job, not once a day** (a turn's history keeps one line per train
+   *name*; a yard job's name is the same every day). Yard shifts 151 → 537. DYRI 2 → 8.
+2. **Since 3 Nov the crews in town list every yard job's own people, and anyone TEMP on it, all
+   day every day**: whose job it is, not who came in. A job's own crew had no shifts at all; a
+   TEMP person had one every day the job ran. Now a yard shift counts by name only while the job
+   is on the Call Board, or when the job's own crew lines show their turn; the other days are
+   **"not recorded"** (`unk` on the record: 45 people, 329 days) and are left out of every count
+   of days, with a notice at the top of their page. **The checker change below ends this from the
+   pull on.**
+3. **A trainee's slot gave the turn's holder the trainee's train, and gave the trainee every train
+   of the turn** ("EN S304 · ET S303 · CO SB04"). ADAH 8 → 2 trips; JOHE 12 → 10.
+4. **Make-up turns (MU01…) are placeholders**: three people at once got every train one worked. MIDE, NICI.
+5. **A train kept on a turn's record as "working SA05 (CO)"** (a stale spare-to-turn match) went
+   to the turn's holder. BUSM lost two trains he was never on (one overlapped one he worked).
+6. **Called, then replaced before on duty, counted as worked.** BRCU E27861 09, SOJA L50231 06,
+   GAMA M39671 04, MASM / TRHO Q13931 08.
+7. **A train renumbered while the crew was on it counted two or three times.** NIKE, COBD, BRCU, NICI.
+8. **88 pairs of overlapping trips** (someone on two trains at once) → 0.
+9. **A trip on someone's first day went to nobody; one first seen on their last day went to them.**
+10. **"Most on duty in any 7 days" was wrong for three of the 14 checked, each falsely over the
+    60 h limit**: BUSM 68 h 03 → 42 h 48, ADAH 60 h 46 → 19 h 22, JOHE 60 h 51 → 44 h 53.
+11. **Board places**: nobody on 501/502 had any (their lines read "position 001 (CO):"); a move
+    between boards was measured as one climb; a climb started from the call's own "out working".
+12. **Resets**: one shown from time off nobody saw (start of the checks); the next-reset date
+    ignored a call already in hand; none can be told around the unrecorded yard days.
+13. **A yard shift was given the previous day's call**; time off after an assumed 8 / 12 h yard
+    shift was flagged "under 12 h" as if read (now marked ~ and drawn as a ring).
+14. **Would have begun 23 Nov**: a trip from the evening before the first day the site keeps was
+    in both the kept record and the build, so it would have counted twice (`merge`).
+15. **Page styles** (measured in all 68, photographed in light, dark, retro, mario and others):
+    the heading, note and footnote sat on the page backdrop and could not be read in 7 styles
+    (now on the sheet); the calendar's day numbers fell to 2:1 in white-on-dark styles; the pale
+    fill is `transparent` in retro and tablet (the "At home" bar and every shaded strip vanished);
+    accent = amber in 8 styles (going out and coming home looked the same: now solid / striped /
+    hollow); big figures wrapped in the pixel-font styles (now shrunk to fit); the place-on-board
+    labels piled up; wide tables gave no sign they scroll sideways.
+**JUOD himself:** 12 trips, 90 h 37, 12 of 19 days, 6 round trips, calls, resets (26 Oct 0559,
+3 Nov 0755, 7 Nov 0559), due 15th 0449: all unchanged and right. Changed: place on the board
+"3 times measured" (was 4: one mixed two boards), 7 h 09 a place (was 8 h 19), 42 h 52 home to the
+next call (was 45 h 08); his 501/502 places are now read.
+
+**New on the tab, `MINE_MORE` (false = test site + owner key only; the corrected numbers are for
+everyone either way):** the days hour by hour (duty, held away, booked rest, the call, resets);
+hours in the 7 days ending each day beside the 60 h line; each round trip as a bar; each call
+against the one slept on, and each train against its first plan; place on the board over time;
+when each turn goes on duty; **"Duty and rest beside the rules"** (longest duty, shortest time off
+at home / away, called under 8 h after going off, on duty before the booked rest was up, most in
+any 7 and 28 days, held 14 h or more, a dot for each time off); the reset clock; **"You and your
+pool"**; jobs filled in on; **every trip as a log, and as a spreadsheet** (on a phone it goes
+through the share sheet, `navigator.share`, because a plain download from the home-screen app can
+strand an iPhone on a preview; elsewhere it downloads `my-trips-<date>.csv`).
+**Colours:** the tab now makes its own pale fill from each style's ink and sheet (`--ms-pale`),
+uses outlines instead of shadows, and keeps every mixed colour inside an `@supports` block with a
+plain fallback before it (iOS 15 and older have no `color-mix`). A test reads every page style's
+colours out of `board.html` and holds the calendar's day numbers at 3:1 or better in each, so a
+new style that breaks it fails the suite.
+**The pool comparison:** `data/pools.json` (written by the site build, `lib/board/mystats.js pools`):
+per pool an average and a band, nothing else: no hashes, no turns, no lists. At least 5 people or
+not given; each end of the band is the midpoint between two neighbouring people's figures, so no
+number published is one person's own; rates to 0.1, times to 5 minutes. A pool too small to give
+(501/502 is four people at most) is set beside "every road pool together", and that only when the
+people outside the given pools number none or five or more. The member's own figure is worked out
+on their own phone from their own record. On the 11th's data: SR 8, B 13, SA 9, SD 8, S1 9 people.
+
+**The checker change (for the board / checker session).** `scripts/board-auto.js`: a name on a yard
+job's own crew lines is now sighted with `duty: true`, and the summary says `yardDuty: 1`.
+`lib/board/resets.js collect`: on a check that says so, a yard shift is counted for exactly those
+names (marked `sure`), own crew included; `acc.yardFrom` = the first such check. Older checks read
+as before. **So from the pull on the reset tracker stops counting someone listed TEMP on a yard
+job as working it every day**, and counts a yard job's own crew when they are on its lines (a
+regular yard job's holder is still left off the reset board). **Could not be run against real CATS
+from here**: after the pull, look at one day file's `resets.trips` for a `sure` yard trip and at a
+yard holder's My stats.
+
+**Found, NOT changed (they are the board's, ask Justin):**
+- **The reset tracker (`resets.js work`) counts as duty**: a call replaced before on duty; a stale
+  spare-to-turn match; a new holder's predecessor's inbound trip (SHLE DH27331 06); every train of
+  the turn a trainee is on. So the board's reset colours can differ from My stats, which now works
+  its resets out from its own trips (BRCU: needed by 14th 0129 on the board, 17th 1459 by his trips).
+- **Turn History** shows a yard job once however many days it was worked, and has items 3, 4 and 5
+  above (`personHistory` in `board.html`; My stats' strict rules are a switch on the shared copy).
+- **Name-code hashes can be worked back** (about 600,000 possible codes): the existing person-search
+  gap, not a new one.
+
+**Checked:** every count on the page against a minute-by-minute recount for all 168 people (0
+differences); trips against the by-name sightings; 14 people in detail (JUOD, DYRI, BRCU, JAGR,
+MIDE, SCME, ADAH, CHST, MASM, COBD, NIKE, NICI, BUSM, JOHE); every person's page drawn with no
+error; the real `board.html` and the real Worker code on a local copy with the live data, as a
+signed-in **ordinary member**, 390 px: all 68 page styles measured (no sideways scroll, nothing
+past the edge, no cut text, no drawing label outside or on another, text contrast), seven kinds
+of member; **the Members tab's "XXXX is theirs" / "Not theirs" worked end to end** (waits → theirs
+→ stats show; not theirs → shut; changing the code asks again; a member cannot confirm their own).
+**Not checked:** the checker change against CATS; the live sites and the laptop's own build (only a
+local copy); a real phone (the spreadsheet's share sheet was only stood in for; an old iPhone's
+fallback colours were not seen); yard holders' shifts from 3 Nov until the pull (not in the
+checks at all); who worked what before 24 Oct (no names); off duty times marked ~. In the 12
+pixel-lettering styles the section headings are 8 px, as on every other tab (each style's own rule).
+
+**❓ For Justin:** (1) the pull; (2) **show the new sections to every member?** (`MINE_MORE = true`,
+then a pull); (3) should the reset tracker and Turn History take the same corrections; (4) still
+open from before: a notice to members, Admins confirming codes, the person search.
+
 ## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WAITING ON A WORKER PASTE (both) AND A LAPTOP PULL
 
 Owner (someone was sent the email code but never showed for approval): "add the section for
