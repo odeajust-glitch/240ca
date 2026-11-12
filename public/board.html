@@ -5432,6 +5432,9 @@ source().then(async (src) => {
       ${said ? `<p class="mmsg${said.bad ? ' bad' : ''}" role="status">${esc(said.text)}</p>` : ''}
       <h2>Waiting for approval (${waiting.length})</h2>
       ${waiting.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Asked', day(u.requestedAt)]], '<button type="button" class="go" data-act="approve">Approve</button><button type="button" data-act="decline">Decline</button>')).join('') || '<p class="muted">Nobody is waiting.</p>'}
+      ${Array.isArray(d.unverified) ? `<h2>Started signing up, email not confirmed (${d.unverified.length})</h2>
+      <p class="muted">They filled in the form but have not typed in the 6-digit code that was emailed to them, so they are not waiting for approval yet. Each drops off this list after two days. <b>Approve anyway</b> lets them in without that code: they are emailed to use Sign in, which still needs their email to work, so check the address is spelled right first.</p>
+      ${d.unverified.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Started', u.requestedAt ? new Date(u.requestedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '']], '<button type="button" class="go" data-act="approve" data-early="1">Approve anyway</button><button type="button" data-act="delete">Delete</button>')).join('') || '<p class="muted">Nobody.</p>'}` : ''}
       <h2>Admins (${admins.length})</h2>
       ${admins.map(approvedRow).join('') || '<p class="muted">No Admins. Pick Admin under Access on a member to make one.</p>'}
       <h2>Members (${plain.length})</h2>
@@ -5441,7 +5444,8 @@ source().then(async (src) => {
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
       const name = box.dataset.name;
-      const ask = action === 'decline' ? `Decline ${name}? They are emailed that the details did not match.`
+      const ask = action === 'approve' && extra && extra.early ? `Approve ${name} without the email code? Check the email address is right: they get in by Sign in, with a code sent to it.`
+        : action === 'decline' ? `Decline ${name}? They are emailed that the details did not match.`
         : action === 'remove' ? `Remove ${name}? They are signed out everywhere and cannot sign up again unless you delete them from the list.`
           : action === 'delete' ? `Delete ${name} from the list? They could then sign up again.` : '';
       if (ask && !confirm(ask)) return;
@@ -5454,7 +5458,7 @@ source().then(async (src) => {
           : out.mail ? { bad: true, text: `Done, but the email to ${name} did not go (${out.mail === 'cap' ? 'today’s email allowance is used up' : out.mail === 'off' ? 'the email sender is not set up' : 'the Gmail script failed'}). Let them know yourself.` }
             : { text: action === 'role' ? `${name} is now ${extra.role === 'admin' ? 'an Admin' : 'a Member'}.` : 'Done.' });
     };
-    view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => (/^code(ok|no)$/.test(b.dataset.act) ? send(b.parentElement, 'code', { ok: b.dataset.act === 'codeok' }) : send(b.parentElement, b.dataset.act)); });
+    view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => (/^code(ok|no)$/.test(b.dataset.act) ? send(b.parentElement, 'code', { ok: b.dataset.act === 'codeok' }) : send(b.parentElement, b.dataset.act, b.dataset.early ? { early: true } : undefined)); });
     view.querySelectorAll('.members [data-role]').forEach((sel) => { sel.onchange = () => send(sel.closest('.mact'), 'role', { role: sel.value }); });
   }
   async function renderNotes() {

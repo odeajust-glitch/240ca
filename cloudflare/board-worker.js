@@ -1398,6 +1398,10 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
   if (!you) return json({ error: 'not found' }, 404);
   if (request.method === 'GET') {
     const users = [];
+    // Started signing up but never typed the emailed code (owner, 2026-11-11:
+    // "add the section for people who haven't confirmed their email"): a list
+    // of their own, so pages that only know `users` are unchanged.
+    const unverified = [];
     let cursor;
     do {
       const page = await env.SITE.list({ prefix: `${ACC}users/`, cursor });
@@ -1405,10 +1409,12 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
       for (const u of got.filter(Boolean)) {
         if (u.status !== 'unverified') users.push(u);
         else if (now - (u.requestedAt || 0) > 2 * 86400000) await saveUser(env, u.id, null, now); // never confirmed their email
+        else unverified.push(u);
       }
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     users.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
+    unverified.sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
     // What each member's phones follow (subs/ stamped by subscribe()).
     const follows = new Map();
     let unknownPhones = 0;
@@ -1429,7 +1435,7 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     // My stats: whether each member's name code counts as theirs yet.
     for (const u of users) if (u.status === 'approved') u.codeState = codeState(u);
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
-    return json({ you, users, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env) });
+    return json({ you, users, unverified, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env) });
   }
   if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
   const b = await bodyJson(request);
@@ -1445,6 +1451,14 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     await saveUser(env, id, { ...rest, status: 'approved', approvedAt: now }, now);
     mail = await accountMail(env, user.email, 'You\'re approved',
       `Hi ${user.name},\n\nYour sign-up is approved.\n\nThe phone or computer you signed up on is already signed in. Just open ${site}/\n\nOn any other device, open ${site}/account, pick Sign in and enter this email address. A 6-digit code comes by email.`, now, true);
+  } else if (action === 'approve' && user.status === 'unverified') {
+    // Approved by eye without the emailed code. Their device holds no
+    // sign-in yet (that comes with a code), so the email says to use Sign in.
+    const { pin, hireDate, ...rest } = user;
+    await saveUser(env, id, { ...rest, status: 'approved', approvedAt: now }, now);
+    await env.SITE.delete(`${ACC}codes/${id}.json`);
+    mail = await accountMail(env, user.email, 'You\'re approved',
+      `Hi ${user.name},\n\nYour sign-up is approved.\n\nTo get in: open ${site}/account, pick Sign in (not Sign up) and enter this email address. A 6-digit code comes by email; type it into that page.`, now);
   } else if (action === 'decline' && user.status === 'pending') {
     const { pin, hireDate, ...rest } = user;
     await saveUser(env, id, { ...rest, status: 'declined', declinedAt: now }, now);
