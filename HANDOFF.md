@@ -330,7 +330,9 @@ only): Job Aids → Yard jobs → the YM table; Next Yard Job YSBY01 Sat 14th 07
 spareboard: rank 140 (step 1), nobody: rank 410 (step 3), the same as ym.html's box; 390 px, no errors; a search
 keystroke draws it again without fetching the list. ym.html with the shared code over the real board-test: the same
 six jobs and orders, no errors. The Claude page: not republished (nothing it shows changed; built from the new
-template it gives the same answers).
+template it gives the same answers). **For the test site clean-up (its own section above):** this now sits inside its
+item 5 (Job Aids yard jobs) but belongs with item 10 (the yardmaster pieces): whatever he picks for 5, the YM table, Next
+Yard Job and the two answers go with 10.
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
