@@ -102,8 +102,9 @@ with no account, as built; or top)?
 
 **His picks, 12 Nov about 20:00 Toronto: "1, 3, 4, 5 and 6, and give me the updated worker to post".** Not
 picked: 2 (the Worker paste, which is what the second half of his message asks for), 7 (naming the code a
-member follows: a Worker change) and 8 (the Approved date). Where Who gets alerts sits: not answered; left at
-the bottom, with a jump to it at the top.
+member follows: a Worker change) and 8 (the Approved date). Where Who gets alerts sits: **his answer, 12 Nov
+about 21:05 Toronto: "leave it at the bottom"** (beside the phones with no account, with the jump to it at the
+top). Not to be asked again.
 
 **BUILT, `f57b390`, behind `PREVIEW` like the two asks (`review` = `PREVIEW && membersOwner`, now decided
 at the top of `renderMembers`).** Suite **504 of 504** (2 more tests in `members-review.test.js`, which draw
@@ -158,10 +159,22 @@ counts at 635 px, Waiting at 635, "email not confirmed" at 711, Admins 1,442, Me
 everything after it down by 228 px shut. Recommended to him: leave it where it is (beside the phones with no
 account, the same subject; the top kept for what needs his action), or move the two together to the top.
 
+**Seen again 12 Nov about 21:05 Toronto (read only, field names and counts):** the two Workers are NOT on the
+same version. `board-test` runs `3f24ee2` (the screenshot mark session's: `ownerMark`, and a `mark` on all 35
+accounts); **`board` runs `e3e7936`** (no `mark`, no `ownerMark`). He most likely pasted `board` from the copy
+page before it was rebuilt for `3f24ee2` (13 Nov 00:55 UTC) and `board-test` after. Both have the unverified
+list, the sign-up wording and the test alert route. **Told him: paste the copy page (now version `3f24ee2`)
+into `board` once more**; that is the screenshot mark's (another session's), nothing of this round.
+
 **Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at board-test's
-Members and Page Health, and where Who gets alerts should sit.
+Members and Page Health (keep, change, drop or promote each piece), and the `board` Worker pasted once more.
+Next in the tab review: round 4, Turn History, on his word.
 
 ## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone
+
+**Seen 12 Nov about 21:05 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
+a `mark` on all 35 accounts); `board` still runs `e3e7936` (no marks). The main Worker needs the `3f24ee2` copy
+page pasted once more: told him.
 
 **Owner, 13 Nov, having tried the test-site version on his phone: "I pulled it, trying it now, works
 great, push to the main page".** Done as he had been told it would be for members: the number now comes from
@@ -799,7 +812,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 |---|---|---|---|---|
 | 1 Current | 10 | 1, 2, 3, 5, 6, 7, 10 ("Go") | 1, 2, 3, 5, 7, 10 on for every member (`6403bde`, after his pull) | **6 turned down after seeing it: the counts line is taken out** ("it does but take it out"). 4 waits on his "crew info" photo (Housekeeping 11). 8 (first screen) his taste, not asked again. 9 (crew order) "doesn't really matter" |
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
-| 3 Members | 8 (and his two asks) | his two asks (Who gets alerts moved here, names beside the phones with no account); then 1, 3, 4, 5, 6 | all built for the test site only (`71a4fa0`, `f57b390`), after his pull (the section at the top of this file) | 2 is the Worker paste (copy page given); 7 (name the followed code: a Worker change) and 8 (Approved date) not picked |
+| 3 Members | 8 (and his two asks) | his two asks (Who gets alerts moved here, names beside the phones with no account); then 1, 3, 4, 5, 6 | all built for the test site only (`71a4fa0`, `f57b390`), after his pull (the section at the top of this file) | 2 is the Worker paste (copy page given; pasted). 7 (name the followed code: a Worker change) and 8 (Approved date) not picked. Who gets alerts stays at the bottom ("leave it at the bottom") |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
 | Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | built for the test site only (`79fc425`), after his pull; his look still to come (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
 
