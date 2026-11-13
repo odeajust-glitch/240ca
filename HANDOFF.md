@@ -18,7 +18,7 @@ test it and tell you if i can see it, then we can test with a camera".
   "Stronger" slider 4 to 30, default 10) and shows it to pinch-zoom; then type the code as before. Nothing is sent
   anywhere. "No mark found" on the test site now points to that box. Members on either site and him on the main
   site: no code, no box, as before.
-- **Checked.** Suite **569 of 569** (`shotmark.test.js` 9: the default and every picked strength, kept on the phone,
+- **Checked.** Suite **607 of 607** after rebasing on the evening's work (`shotmark.test.js` 9: the default and every picked strength, kept on the phone,
   a bad or blocked value → default, 12 codes ≥ 130 px apart, gap ≤ 150, redrawn on a new strength; a made-up photo
   with a 5-level mark and a glow: the mark stands out by more than 25 levels, the glow flattened; the box test site
   only; nothing sent). 8 breaks on purpose (default back to 5/7, strength ignored, no redraw, no glow removal, gain
@@ -26,7 +26,8 @@ test it and tell you if i can see it, then we can test with a camera".
   (Python reader, his real mark under the trial code, 7 sharing stand-ins, light and dark): 6 of 7 with the code at
   the new strengths, the old ones and none alike (the squashed one never read). **In a browser, this branch's page
   over the real board-test:** as him, 2% black / 3% white, 12 codes; the picker redraws at 1% and keeps it; a photo
-  stand-in sharpened in the box (the code shows; pinch to zoom); no key: no layer; no errors.
+  stand-in sharpened in the box (the code shows; pinch to zoom); no key: no layer; no errors (again after the
+  rebase, on the merged page).
 - **Not checked:** a real camera (his next test), how faint it looks on his phone (his first test).
 **Next:** he looks at board-test on his phone and says whether he can see it. Then a photo of the screen with
 another phone → Page Health → Trace a screenshot → the photo box → read the code → Look up. If he can see it, the
