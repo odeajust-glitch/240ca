@@ -1,5 +1,36 @@
 # HANDOFF — read this before doing anything
 
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening), NOTHING BUILT; going through his CATS screens first
+
+**Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
+yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
+This is the next step after the section below (which only records the YA jobs going spare and shows them on
+the test site's Analytics). Nothing predicts who fills a YA job; the yardmaster spareboard is not read, and
+no seniority or qualified-yardmaster list is read.
+
+**What the Sarnia calling manual says** (`data/crew_calling_cty.pdf`, "Relief – Yardmasters", p. 20, dated
+2011): by **seniority**, not first in first out like the fast and slow boards: (1) senior qualified
+unassigned yardmaster available for a 2 h call at straight time; (2) the same who can give on-time relief;
+(3) senior qualified regular yardmaster (on rest days) for a 2 h call at time and a half, if it doesn't
+interfere with their own job; (4) the same, on-time relief; (5, 6) senior qualified unassigned yardmaster
+working under 4.16 (a qualified YM working as a conductor, as SA01 did on YSBY04 28 Oct and YSBY06 31 Oct),
+2 h call, then on-time relief; (7, 8) the same under any other agreement (5.1); (9) canvass any qualified
+yardmaster in seniority order. Locomotive engineers only at the canvass. The yardmasters' own agreement is
+not in the corpus. **Not confirmed with him that Sarnia still works this way.**
+
+**To ask him as the screens come** (railway questions: ask, don't guess): which screen is the yardmaster
+spareboard and what order it is in; does the manual's ladder hold; is the call 2 h before the start; can a
+qualified yardmaster on a pool or spare turn be told apart anywhere on CATS.
+
+**Seen on the way, not his ask, nothing built (yard crews FO/S1, not yardmasters):** replaying the 29 live
+days, the site named the right spare for 61 of 118 FO/S1 yard jobs; 36 of the 57 misses were the right
+spares on another job starting at the same time. In 12 of 12 FO+S1 pairs where one spare had never worked
+FO, that spare took the S1; the manual's "same on-duty time: the employee chooses" fits the rest. Scripts were
+in the session's scratchpad only; redo from the day files if he asks.
+
+**For the next session:** this one also began on a stale checkout (50 commits behind the branch); fetch the
+branch and read this file from it before anything else.
+
 ## Yardmaster jobs going spare (CATS CC YA) kept and shown — BUILT 13 Nov 2026 (laptop `lib/board/site.js`, `lib/board/insights.js`; page `public/board.html`, test site only). WAITING ON ONE LAPTOP PULL + RESTART (the next publish redoes all 30 days: FORMAT 29 → 30, one slower publish); then his look at Analytics → Yardmaster jobs on board-test
 
 **Owner, 13 Nov:** "can you see YM jobs that go spare, if you have been recording them can you show me what
