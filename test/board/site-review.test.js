@@ -143,6 +143,8 @@ test('7. Analytics: the section row wraps and Overview is a line a page, for eve
 
 test('left as they are at his word: the site’s name (item 2) and the order of Settings (item 11)', () => {
   assert.ok(html.includes('<title>Line-up Snapshots</title>') && html.includes('<h1>Line-up Snapshots</h1>'));
+  // 13 Nov he asked for it ("Can we change the name of the site to Hearding CATS"): the test site only so far.
+  assert.ok(html.includes("const SITE_NAME = { was: 'Line-up Snapshots', test: 'Herding CATS' };") && html.includes('const name = PREVIEW ? SITE_NAME.test : SITE_NAME.was;'));
   const settings = cut('<div class="settings" id="settings"', '<div class="signnote');
   const order = ['<h2>Profile</h2>', '<h2 id="styhead">Page style</h2>'].map((x) => settings.indexOf(x));
   assert.ok(order[0] > 0 && order[1] > order[0], 'Profile, then Page style');
