@@ -1,5 +1,43 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids: days out of Sarnia, a calendar for each turn (S1, S3, A pool, B pool, 501/502) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look
+
+**Owner, 13 Nov:** "Also can you add a thing that will add a calendar showing each turns days out of sarnia, So
+s1, s2, A pool, B pool and 502/501 turns", then "s3*" (S2 does not exist: no S2xx turn on any board).
+
+**What he sees on board-test (owner key, `PREVIEW`).** Job Aids → a folded section after the yard jobs, **"Days
+out of Sarnia: S1, S3, A pool, B pool, 501/502"**: pool buttons, then a button per turn (the turns that left
+Sarnia in the file; trainee slots 98/99 left out), a line ("SA01: out 14 of 29 days · 8 trips · last out Nov 12
+0945, still away") and a Mon–Sun calendar from the file's first day to today: a day out shaded, "↑0705" on duty
+in Sarnia (leaving), "↓0245" on duty in Toronto (home about 8 h later), today outlined. The search box: a
+turn (SB04) opens its calendar. A member on either site, and his own view of the main site: nothing new.
+
+**How a day counts (told to him in the page's footnote).** From `data/trains.json` (the site's own, ~30 days;
+`src.trains()`, loaded once when the tab opens on the test site): out from going on duty in Sarnia to going on
+duty in Toronto for the trip home. The trip home: the train's `back` when its crew has this turn, else the
+first train from Toronto with the turn before its next trip out (the conductor and engineer can come home on
+different trains). Turns are the Call Board's (EN / CO / LE; a trainee riding is not the turn); the bunkhouse
+pairing (`awayCo` / `awayEn`) only where the Call Board had no conductor / engineer (it guessed wrong once:
+RM39491 10 named SA05, who went out ten minutes before on M30241 09). A second trip out within 8 h is dropped.
+**501/502:** L501 home from Garnet is not in that file, so a day out is the day it took L502 (alternate days).
+No trip home seen: the last trip, 4 days back at most, is "still away" (shaded to today); an older one shades
+only its day out and is counted as "not seen" in the footnote. **A record, not a schedule:** these pools have
+no set days. On the real file: 33 turns, no trip home before its trip out or after the next trip out; 0 to 2
+trips home not seen per turn.
+
+**Where.** `public/board-ref.js`: `OUT_POOLS`, `crewTurns`, `tripsOut`, `daysOut`, `outBox`, `wireOut`
+(exported as `paintOut`), the section in `render` behind `state.preview` (`outTurnQ` for the search).
+`public/board.html`: `renderRef` loads the trains on the test site and paints the box; styles `.refpick`,
+`.outcal` after `.refout`. **To promote:** drop `state.preview ?` on the section and `PREVIEW &&` in
+`renderRef`, change the test, quoting him.
+
+**Checked.** Suite **557 of 557** (`test/board/ref.test.js`, 2 new: each rule above on made-up trains, the
+calendar's shading and times, the gating, the search; broken on purpose five ways, a test fails every time; at
+first three breaks went uncaught, the fixtures were made to catch them). In a browser at 390 px over the real
+board-test as him: A pool, S3 → S305, 501/502, the search SB04 and R013; the section stays open while picking;
+no sideways scroll, no page errors. Board-test and board as a member, board as him: no section. **Not
+checked:** a real phone; page styles other than light (`color-mix` on `--accent` for the shading).
+
 ## 501/502: L502 now goes one day each (S501, S502, S501…), never by option 29 position — 13 Nov 2026, about 06:20 Toronto (laptop engine). ON `claude/vigilant-planck-zawrj4` (his "Yes" to this work going there). WAITING ON ONE LAPTOP PULL + RESTART
 
 **Owner, 13 Nov about 06:09 Toronto, photos of L50231 14 and the 501/502 board:** the site had L50231 14 for

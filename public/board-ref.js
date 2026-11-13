@@ -3,7 +3,9 @@
 // status and ECC codes, job types for Eastern Canada, Mac / B.I.T. / Malport
 // track lengths and the held-away penalty (with a calculator). Typed in from
 // the owner's photos of the CATS Eastern Canada Guide for Operating Crews and
-// the sheets posted at work. Nothing here comes from CATS checks.
+// the sheets posted at work. On the test site only (2026-11-13): the yard jobs
+// and their relief rotations (read off the checks once, kept below) and each
+// road turn's days out of Sarnia (from the site's trains file, live).
 (function (root) {
   const STATUS = [
     ['A', 'Available'], ['B', 'Working'], ['C', 'To Place'], ['D', 'Bereavement'],
@@ -174,6 +176,102 @@
       <p class="muted">Worked out from the board checks of 24 Oct to 12 Nov 2026 (which jobs went on duty each day, and who held and worked them), not from a posted sheet: a bulletin or a change of card changes it. Days are the day a job goes on duty (a 2359 start is the night into the next day). 8 h unless marked.</p>`;
   }
 
+  // Days out of Sarnia, a calendar for each turn (owner, 2026-11-13: "add a thing that will
+  // add a calendar showing each turns days out of sarnia, So s1, s3, A pool, B pool and
+  // 502/501 turns"). From the site's own trains file (data/trains.json, the last 30 days or
+  // so): a turn is out from going on duty in Sarnia to going on duty in Toronto for the trip
+  // home (the trip's `back` when it has this turn, else the first train from Toronto with it
+  // before its next one out). 501/502 come home from Garnet on L501 the same day; L501 is
+  // not in that file, so a 501/502 day out is the day it took L502. These pools have no set
+  // days, so it is a record, not a schedule.
+  const OUT_POOLS = [['S1', '1st Manifest (S1)', /^S1\d\d$/], ['S3', '3rd Manifest (S3)', /^S3\d\d$/], ['SA', 'A pool (SA)', /^SA\d\d$/],
+    ['SB', 'B pool (SB)', /^SB\d\d$/], ['S5', '501/502', /^S50[12]$/]];
+  // A train's turns as the Call Board gives them: engineer and conductor (a trainee, ET /
+  // TT, is not a turn of its own). Where the Call Board had no conductor (or engineer), the
+  // one the Toronto bunkhouse paired with it (awayCo / awayEn); never in place of one the
+  // Call Board named (that pairing is a guess: RM39491 10, 11 Nov, named SA05, who had gone
+  // out ten minutes before on M30241 09).
+  const crewTurns = (r) => {
+    const crew = String(r.crew || '');
+    const own = [...crew.matchAll(/\b(?:EN|CO|LE)\s+([A-Z][A-Z0-9]\d{2})\b/g)].map((m) => m[1]);
+    const fill = [!/\bCO\s/.test(crew) && r.awayCo, !/\b(?:EN|LE)\s/.test(crew) && r.awayEn].filter(Boolean);
+    return [...new Set([...own, ...fill])].filter((t) => !/9[89]$/.test(t));
+  };
+  const minsBetween = (a, b) => (Date.parse(`${b.slice(0, 10)}T${b.slice(11, 13)}:${b.slice(13, 15)}:00Z`) - Date.parse(`${a.slice(0, 10)}T${a.slice(11, 13)}:${a.slice(13, 15)}:00Z`)) / 60000;
+  const addDays = (day, n) => { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  // A turn's trips out: [{ id, out: 'YYYY-MM-DD HHMM', home: { id, at } | null, garnet, away }].
+  function tripsOut(trains, turn, today) {
+    const has = (r) => crewTurns(r).includes(turn);
+    const by = (a, b) => (a.onDuty < b.onDuty ? -1 : 1);
+    // A second trip out within 8 h of the last can't be this turn's own: the first is kept.
+    const outs = (trains || []).filter((r) => r.from === 'sarnia' && r.onDuty && has(r)).sort(by)
+      .filter((r, i, all) => i === 0 || minsBetween(all[i - 1].onDuty, r.onDuty) >= 8 * 60);
+    const homes = (trains || []).filter((r) => r.from === 'mac' && r.onDuty && has(r)).sort(by);
+    return outs.map((r, i) => {
+      const next = outs[i + 1];
+      const garnet = /^S50[12]$/.test(turn) || /^L502/.test(r.id);
+      let home = r.back && r.back.onDuty && (!r.back.crew || crewTurns({ crew: r.back.crew }).includes(turn) || r.awayCo === turn || r.awayEn === turn) ? { id: r.back.id, at: r.back.onDuty } : null;
+      if (!home && !garnet) { const m = homes.find((h) => h.onDuty > r.onDuty && (!next || h.onDuty < next.onDuty)); if (m) home = { id: m.id, at: m.onDuty }; }
+      // Not home yet: the last trip out, a few days ago at most.
+      const away = !home && !garnet && !next && !!today && r.onDuty.slice(0, 10) >= addDays(today, -4);
+      return { id: r.id, out: r.onDuty, home, garnet, away };
+    });
+  }
+  // Each day of a turn's trips: { 'YYYY-MM-DD': { out: [HHMM], home: [HHMM] } } and the days out.
+  function daysOut(trains, turn, today) {
+    const trips = tripsOut(trains, turn, today);
+    const days = {};
+    const day = (d) => days[d] || (days[d] = { out: [], home: [] });
+    for (const t of trips) {
+      const from = t.out.slice(0, 10);
+      const to = t.home ? t.home.at.slice(0, 10) : t.away ? today : from;
+      day(from).out.push(t.out.slice(11));
+      if (t.home) day(to).home.push(t.home.at.slice(11));
+      for (let d = from; d <= to; d = addDays(d, 1)) day(d).isOut = true;
+    }
+    return { trips, days, count: Object.values(days).filter((d) => d.isOut).length, unseen: trips.filter((t) => !t.home && !t.garnet && !t.away).length };
+  }
+  function outBox(state) {
+    const trains = state.trains;
+    if (trains === undefined) return '<p class="muted">Loading the trains…</p>';
+    if (!trains || !trains.length) return '<p class="muted">The trains aren’t available right now.</p>';
+    const today = state.today || new Date().toLocaleDateString('en-CA');
+    const firstDay = trains.map((r) => (r.from === 'sarnia' && r.onDuty ? r.onDuty.slice(0, 10) : null)).filter(Boolean).sort()[0] || today;
+    const turnsIn = (re) => [...new Set(trains.flatMap((r) => (r.from === 'sarnia' && r.onDuty ? crewTurns(r) : [])).filter((t) => re.test(t)))].sort();
+    const pool = OUT_POOLS.find((p) => p[0] === state.outPool) || OUT_POOLS.find((p) => state.outTurn && p[2].test(state.outTurn)) || OUT_POOLS[2];
+    const turns = turnsIn(pool[2]);
+    const turn = turns.includes(state.outTurn) ? state.outTurn : turns[0];
+    const pick = (attr, list, on) => `<div class="refpick" role="group">${list.map(([v, label]) => `<button type="button" data-${attr}="${esc(v)}" aria-pressed="${v === on}">${esc(label)}</button>`).join('')}</div>`;
+    let html = pick('outpool', OUT_POOLS.map((p) => [p[0], p[1]]), pool[0]) + (turns.length ? pick('outturn', turns.map((t) => [t, t]), turn) : '<p class="muted">No trips out for this pool in the trains file.</p>');
+    if (!turn) return html;
+    const d = daysOut(trains, turn, today);
+    const start = addDays(firstDay, -((new Date(`${firstDay}T12:00:00Z`).getUTCDay() + 6) % 7));
+    const label = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const rows = [];
+    for (let w = start; w <= today; w = addDays(w, 7)) {
+      rows.push(`<tr>${[0, 1, 2, 3, 4, 5, 6].map((i) => {
+        const day = addDays(w, i);
+        if (day < firstDay || day > today) return '<td class="blank"></td>';
+        const x = d.days[day] || {};
+        const num = +day.slice(8, 10) === 1 || day === firstDay ? label(day) : String(+day.slice(8, 10));
+        return `<td class="${x.isOut ? 'out' : ''}${day === today ? ' today' : ''}"><div class="dn">${esc(num)}</div>${(x.out || []).map((t) => `<div>↑${esc(t)}</div>`).join('')}${(x.home || []).map((t) => `<div>↓${esc(t)}</div>`).join('')}</td>`;
+      }).join('')}</tr>`);
+    }
+    const span = Math.round((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${firstDay}T12:00:00Z`)) / 864e5) + 1;
+    const last = d.trips[d.trips.length - 1];
+    html += `<p class="refout"><b class="num">${esc(turn)}</b>: out <b>${d.count}</b> of ${span} days · ${d.trips.length} trip${d.trips.length === 1 ? '' : 's'}${last ? ` · last out ${esc(label(last.out.slice(0, 10)))} ${esc(last.out.slice(11))}${last.away ? ', still away' : ''}` : ''}</p>
+      <table class="outcal"><thead><tr>${DAYS.map((x) => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>
+      <p class="muted">Shaded: out of Sarnia. ↑ on duty in Sarnia, leaving · ↓ on duty in Toronto, coming home (home about 8 h later). ${pool[0] === 'S5' ? '501/502 come home from Garnet on L501 the same day. ' : ''}${d.unseen ? `${d.unseen} trip${d.unseen === 1 ? '' : 's'} home not seen: only the day out is shaded. ` : ''}From the site’s trains of the last ${span} days; these turns have no set days, so this is what they worked, not a schedule.</p>`;
+    return html;
+  }
+  function wireOut(view, state) {
+    const box = view.querySelector('#outbox');
+    if (!box) return;
+    box.innerHTML = outBox(state);
+    box.querySelectorAll('[data-outpool]').forEach((b) => { b.onclick = () => { state.outPool = b.dataset.outpool; state.outTurn = null; wireOut(view, state); }; });
+    box.querySelectorAll('[data-outturn]').forEach((b) => { b.onclick = () => { state.outTurn = b.dataset.outturn; wireOut(view, state); }; });
+  }
+
   // Held-away penalty miles for the total time off duty, in minutes (the
   // posted "Held-Away Penalty" sheet): nothing to 10:00; 12.5 miles an hour
   // (by the minute) to 12:00; 12:01–13:00 and 13:01–14:00 start 12.5 higher;
@@ -210,6 +308,9 @@
       return `<h4>${esc(y.name)}</h4><table class="reft"><thead><tr><th>Track</th><th>Length</th><th></th></tr></thead><tbody>${rows.map(([t, len, note]) =>
         `<tr><td class="num"><b>${esc(t)}</b></td><td class="num">${len}</td><td class="muted">${esc(note || '')}</td></tr>`).join('')}</tbody></table>`;
     }).join('');
+    // A turn typed in the search opens its days out.
+    const outTurnQ = q && OUT_POOLS.some((p) => p[2].test(q)) ? q : null;
+    if (outTurnQ) { state.outTurn = outTurnQ; state.outPool = null; }
     const sec = (id, title, body, open) => `<details class="refsec" id="ref-${id}"${open || q ? ' open' : ''}><summary>${title}</summary>${body || '<p class="empty" style="padding:0">Nothing matches.</p>'}</details>`;
     const penaltyRows = [];
     for (let m = 600; m <= 960; m += 1) penaltyRows.push(`<tr><td class="num">${hm(m)}</td><td class="num">${penalty(m).toFixed(2)}</td></tr>`);
@@ -224,13 +325,15 @@
         <p class="muted">From the posted sheet (B-Force Timekeeping 1-888-878-1111). The times are total time off duty.</p>
         <details><summary>The whole table</summary><table class="reft"><thead><tr><th>Off duty</th><th>Miles</th></tr></thead><tbody>${penaltyRows.join('')}${steps}</tbody></table></details>`, true)}
       ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
+      ${state.preview ? sec('daysout', 'Days out of Sarnia: S1, S3, A pool, B pool, 501/502', !q || outTurnQ || hit('days out of Sarnia', ...OUT_POOLS.map((p) => p[1])) ? '<div id="outbox"></div>' : '') : ''}
       ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
       ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
       ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
+    if (state.preview) wireOut(view, state);
     const box = view.querySelector('#refq');
-    box.oninput = () => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
+    box.oninput =() => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
     const out = view.querySelector('#refout');
     if (!out) return;
     const calc = () => {
@@ -252,7 +355,7 @@
     calc();
   }
 
-  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, penalty, render };
+  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, OUT_POOLS, crewTurns, tripsOut, daysOut, outBox, paintOut: wireOut, penalty, render };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BoardRef = api;
 })(typeof window !== 'undefined' ? window : globalThis);
