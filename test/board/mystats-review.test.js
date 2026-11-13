@@ -642,8 +642,12 @@ test('review: the new sections are on for every signed-in member, and the page h
   assert.match(html, /\n  const MINE_MORE = true;\n/);
   assert.match(html, /const more = MINE_MORE \|\| PREVIEW;/);
   assert.match(html, /const poolsAsked = more \? getJSON\('data\/pools\.json'\)/); // the pool averages are only fetched for the comparison
-  assert.match(html, /BoardMyStats\.html\(d\.stats, \{ range: mineRange, code: d\.code, more, pools, now \}\)/);
-  assert.match(html, /fetch\('auth\/stats'/); // still the member's own record and nothing else: no code or hash goes in the request
+  // The test site's yard pieces and the owner's look at another code (owner, 2026-11-13: "Push to the test site.
+  // Also build in the ability to search other name codes so I can see other My Stats pages"): only under PREVIEW.
+  assert.match(html, /BoardMyStats\.html\(d\.stats, \{ range: mineRange, code: d\.code, more, pools, now, \.\.\.\(PREVIEW \? \{ yard: true, yardJobs, other: !!d\.other \} : \{\}\) \}\)/);
+  // Still the member's own record and nothing else: no code or hash goes in the request, but the owner's on the test site.
+  assert.match(html, /const look = PREVIEW \? mineLook : '';/);
+  assert.match(html, /fetch\(look \? `auth\/stats\?code=\$\{encodeURIComponent\(look\)\}` : 'auth\/stats'/);
   assert.doesNotMatch(html.slice(html.indexOf('async function renderMine()'), html.indexOf('async function renderMembers(')), /accounts\/stats|people\.json/);
 });
 
@@ -678,7 +682,8 @@ test('review: every run of a yard job is kept apart, with the turns its crew lin
     { taken: '2026-11-05 1400', yardJobs: [{ job: 'YBHS31', onDuty: '5th 1600', crew: '' }, { job: 'YMPS31', onDuty: '', crew: 'S1 B111' }] },
   ]);
   const on4 = m('2026-11-04 1600'); const on5 = m('2026-11-05 1600');
-  assert.deepEqual(yard.runs, { YBHS31: { [on4]: { on: on4, first: m('2026-11-04 1400'), last: m('2026-11-04 2330') }, [on5]: { on: on5, first: m('2026-11-05 1400'), last: m('2026-11-05 1400') } } });
+  // gone (the first check without the run) and crew (the turns on its crew lines): for the test site's yard pieces (owner, 2026-11-13).
+  assert.deepEqual(yard.runs, { YBHS31: { [on4]: { on: on4, first: m('2026-11-04 1400'), last: m('2026-11-04 2330'), crew: ['S1 B109', 'S2 SA01'], gone: m('2026-11-05 1400') }, [on5]: { on: on5, first: m('2026-11-05 1400'), last: m('2026-11-05 1400') } } });
   assert.deepEqual(Object.keys(yard.byTurn).sort(), ['B109', 'SA01']);
   assert.deepEqual(yard.byTurn.B109[`YBHS31/${on4}`], { job: 'YBHS31', on: on4, cc: 'S1', first: m('2026-11-04 1400'), last: m('2026-11-04 2330') });
   assert.equal(yard.byTurn.SA01[`YBHS31/${on4}`].last, m('2026-11-04 1400'));
@@ -710,6 +715,9 @@ test('review: the site build publishes the pools file beside the data, with no p
   const built = buildSite({ historyDir: hist, outDir: path.join(root, 'site'), days: 0, now: new Date('2026-10-16T12:00:00Z') });
   assert.equal((built.skipped || []).some((x) => /my stats/.test(x)), false);
   const pools = JSON.parse(fs.readFileSync(path.join(root, 'site', 'data', 'pools.json'), 'utf8'));
-  assert.deepEqual(Object.keys(pools), ['from', 'to', 'pools']);
+  // yard: the yard workers' figures for the test site's "You and the yard" (owner, 2026-11-13: "Let's do that. Push to
+  // the test site"); and the yard jobs' own runs beside it. Neither has a person in it.
+  assert.deepEqual(Object.keys(pools), ['from', 'to', 'pools', 'yard']);
   assert.doesNotMatch(JSON.stringify(pools), /[0-9a-f]{16}/);
+  assert.doesNotMatch(fs.readFileSync(path.join(root, 'site', 'data', 'yardjobs.json'), 'utf8'), /[0-9a-f]{16}/);
 });

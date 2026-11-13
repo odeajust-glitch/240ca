@@ -1085,6 +1085,11 @@
   body.everyone .rail .tracked .tsum button.hist { display: inline; border: 0; background: none; padding: 2px 0; margin: 2px 0 0; color: var(--accent); font: 600 13px/1.3 var(--body); text-decoration: underline; cursor: pointer; }
   /* 6. My stats: a folded list of its sections, each a button that jumps to it. */
   .msjump { background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: 10px; }
+  /* My stats: the owner's box to open another name code's page (test site, owner key only; owner, 2026-11-13). */
+  .mslook { display: grid; gap: 6px; margin: 0 0 14px; padding: 10px 14px; background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: 10px; }
+  .mslook label { font-weight: 600; } .mslook small { color: var(--soft); }
+  .mslook span { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .mslook input { width: 7.5em; font: inherit; text-transform: uppercase; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); color: var(--ink); }
   .msjump > summary { padding: 12px 14px; font: 600 14.5px/1.3 var(--body); cursor: pointer; }
   .msjump > div { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 12px 14px; }
   /* 7. Analytics on a phone: the section row wraps into full rows (nothing off the edge), and Overview is a
@@ -5846,6 +5851,10 @@ source().then(async (src) => {
   const MINE_MORE = true;
   let mineReady = false;
   let mineRange = 'all';
+  // Another name code's page, opened by the owner on the test site (owner, 2026-11-13: "build in the ability to
+  // search other name codes so I can see other My Stats pages so I can verify the information"). The Worker gives
+  // it to the owner key only (/auth/stats?code=); '' = their own page.
+  let mineLook = '';
   // has-mine: on a phone the first row of tabs is then Current, Turn History and My stats.
   function paintMine() { const b = document.getElementById('modeMine'); if (!b) return; b.hidden = !(mineReady && (MINE_ALL || PREVIEW)); document.body.classList.toggle('has-mine', !b.hidden); }
   async function renderMine() {
@@ -5856,12 +5865,28 @@ source().then(async (src) => {
     let d = null;
     let status = 0;
     const more = MINE_MORE || PREVIEW;
+    // The test site (board-test with the owner key): the yard pieces (owner, 2026-11-13: real yard shift ends,
+    // overtime, the yard job, the yard beside them, days off, the crew, how each yard job runs) and the box to open
+    // another name code's page. Members, and the main site, get neither.
+    const look = PREVIEW ? mineLook : '';
     // Each pool's average and middle half (no one's own figures), for the pool comparison.
     const poolsAsked = more ? getJSON('data/pools.json').catch(() => null) : Promise.resolve(null);
-    try { const r = await fetch('auth/stats', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
-    const pools = await poolsAsked;
+    const yardJobsAsked = PREVIEW ? getJSON('data/yardjobs.json').catch(() => null) : Promise.resolve(null);
+    try { const r = await fetch(look ? `auth/stats?code=${encodeURIComponent(look)}` : 'auth/stats', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
+    const [pools, yardJobs] = await Promise.all([poolsAsked, yardJobsAsked]);
     if (mode !== 'mine') return;
-    const say = (text) => { view.innerHTML = `<div class="ms"><header class="ms-head"><div><h2>My stats</h2><p class="ms-note">Only you can open this page.</p></div></header><p class="ms-empty">${text}</p></div>`; };
+    // The owner's box: open another name code's page, or go back to their own.
+    const lookBox = () => {
+      if (!PREVIEW) return;
+      view.insertAdjacentHTML('afterbegin', `<form class="mslook" id="mslook"><label for="mslookcode">Open another name code's page</label><span><input id="mslookcode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. JUOD" value="${esc(look)}"><button type="submit" class="ms-btn">Open</button>${look ? '<button type="button" class="ms-btn" id="mslookback">Back to mine</button>' : ''}</span><small>Test site, owner key only.</small></form>`);
+      const form = document.getElementById('mslook');
+      form.onsubmit = (e) => { e.preventDefault(); const v = String(document.getElementById('mslookcode').value || '').trim().toUpperCase(); if (v === look) return; mineLook = v; renderMine(); };
+      const back = document.getElementById('mslookback');
+      if (back) back.onclick = () => { mineLook = ''; renderMine(); };
+    };
+    const say = (text) => { view.innerHTML = `<div class="ms"><header class="ms-head"><div><h2>My stats</h2><p class="ms-note">Only you can open this page.</p></div></header><p class="ms-empty">${text}</p></div>`; lookBox(); };
+    if (look && status === 400) return say(`<b>${esc(look)}</b> isn’t a name code: four letters (the last can be a number from 1 to 9).`);
+    if (look && d && d.state === 'ok' && !d.stats) return say(`Nothing is kept for <b>${esc(d.code)}</b>. A code shows here once that person’s name has been seen on a board.`);
     if (status === 401) return say('Sign in to see your own stats. <a href="account">Sign in</a>');
     if (!d || !d.state) return say(status === 405 || status === 404 ? 'My stats isn’t switched on for this site yet.' : 'Couldn’t load your stats. Check the connection and open the tab again.');
     if (d.state === 'none') return say('Your stats are found by your name code. Save it in ⚙ Settings → Profile: the first two letters of your first name and the first two of your last name.');
@@ -5873,8 +5898,8 @@ source().then(async (src) => {
     // (Save to Files, Numbers, Mail): a plain download from a page opened off
     // the home screen icon can leave an iPhone on a preview with no way back.
     const csv = async () => {
-      const name = `my-trips-${new Date(torontoNowMin() * 60000).toISOString().slice(0, 10)}.csv`;
-      const text = '\ufeff' + BoardMyStats.csv(d.stats, mineRange);
+      const name = `${d.other ? `trips-${d.code}` : 'my-trips'}-${new Date(torontoNowMin() * 60000).toISOString().slice(0, 10)}.csv`;
+      const text = '\ufeff' + BoardMyStats.csv(d.stats, mineRange, { yard: PREVIEW });
       try {
         const file = new File([text], name, { type: 'text/csv' });
         if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { await navigator.share({ files: [file], title: 'My trips' }); return; }
@@ -5888,9 +5913,10 @@ source().then(async (src) => {
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     };
     const draw = () => {
-      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now });
+      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now, ...(PREVIEW ? { yard: true, yardJobs, other: !!d.other } : {}) });
       BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); }, csv);
       mineJump(view); // whole-site review 2026-11-12, item 6 (every member since that evening, his pick 6)
+      lookBox();
     };
     draw();
   }

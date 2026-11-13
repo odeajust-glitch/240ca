@@ -1672,6 +1672,14 @@ async function myStats(request, env) {
   if (!who && keyMatches(request, env)) who = { id: 'owner', status: 'approved' };
   if (!who || who.status !== 'approved') return json({ error: 'Sign in first.' }, 401);
   const owner = who.id === 'owner';
+  // The owner looking at another name code's page (owner, 2026-11-13: "build in the ability to search other name
+  // codes so I can see other My Stats pages so I can verify the information"). The owner key only: a member's or
+  // an Admin's ?code is ignored, as it always was, and they get their own.
+  const look = owner ? String(new URL(request.url).searchParams.get('code') || '').trim().toUpperCase() : '';
+  if (look) {
+    if (!/^[A-Z]{3}[A-Z1-9]$/.test(look)) return json({ error: 'A name code is four letters (the last can be a number from 1 to 9).' }, 400);
+    return json({ state: 'ok', code: look, other: true, stats: await readJson(env, `${STATS_PREFIX}${await personHashOf(look)}.json`) });
+  }
   const rec = owner ? await readJson(env, OWNER_PROFILE_KEY) : await readJson(env, userKey(who.id));
   const state = codeState(rec, owner);
   const code = (rec && rec.code) || '';

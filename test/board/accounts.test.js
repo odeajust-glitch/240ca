@@ -591,6 +591,21 @@ test('my stats: a member gets the record for the name code on their own account,
   await call('/auth/profile', { cookie: own, body: { code: 'SAOT' } });
   assert.deepEqual((await (await call('/auth/stats', { cookie: own })).json()).stats.trips, [{ id: 'SAM 01' }]);
   assert.deepEqual((await (await call('/auth/stats', { key: OWNER_KEY })).json()).code, 'SAOT');
+  // The owner can look at any name code's page (owner, 2026-11-13: "search other name codes so I can see other My
+  // Stats pages so I can verify the information"); a member or an Admin asking the same gets their own, as before.
+  for (const asOwner of [{ key: OWNER_KEY }, { cookie: own }]) {
+    res = await call('/auth/stats?code=paex', asOwner);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await res.json(), { state: 'ok', code: 'PAEX', other: true, stats: { v: 1, trips: [{ id: 'PAT 01' }] } });
+    assert.deepEqual(await (await call('/auth/stats?code=ZZZZ', asOwner)).json(), { state: 'ok', code: 'ZZZZ', other: true, stats: null });
+    assert.equal((await (await call('/auth/stats?code=BRW1', asOwner)).json()).code, 'BRW1', 'a split code');
+    for (const bad of ['PA', 'PAEX1', 'PA3X', 'PAE0', '../x']) assert.equal((await call(`/auth/stats?code=${encodeURIComponent(bad)}`, asOwner)).status, 400, bad);
+  }
+  for (const [who, cookie] of [['an Admin', sam.cookie], ['a member', col.cookie]]) {
+    const mine = await (await call('/auth/stats', { cookie })).json();
+    assert.deepEqual(await (await call('/auth/stats?code=PAEX', { cookie })).json(), mine, `${who} gets their own`);
+    assert.equal(mine.other, undefined);
+  }
 });
 
 test('my stats: the Worker knows the same shared name codes as the laptop, and reads a name the way a code is made', async () => {

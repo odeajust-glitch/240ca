@@ -1,6 +1,63 @@
 # HANDOFF — read this before doing anything
 
-## My stats for someone working only yard jobs — reviewed 13 Nov 2026 at his asking. NOTHING BUILT; eight items put to him, waiting on his picks
+## My stats for yard workers: the eight items, and the owner's look at any name code's page — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026. WAITING ON (1) THE WORKER PASTE (copy page rebuilt; board-test at least) AND (2) ONE LAPTOP PULL + RESTART
+
+**Owner, 13 Nov,** shown the eight items (the review below): **"Let's do that. Push to the test site. Also build in
+the ability to search other name codes so I can see other My Stats pages so I can verify the information"**.
+**What he sees on board-test with the owner key (`PREVIEW`), My stats tab:**
+- **"Open another name code's page"** box at the top: type a code (BRW1 style split codes too), Open, "Back to mine".
+  The page says "XXXX's page, opened with the owner key". Members and the main site: no box.
+- **The yard pieces (on his own page and any code's):** yard shifts end when their job left the Call Board (1);
+  "Yard shifts that ran over, and early finishes" with a bar a shift (2); "Your yard job" at the top: job, craft,
+  usual start, usual length, shifts elsewhere, days off with a reason, how many timed (3); "You and the yard" in
+  place of the pool message (4); "shift" for "trip" and no road-only rows for someone with only yard shifts (5);
+  the calendar marks days off the board gave a reason for, and "Days your job went spare for your craft" replaces
+  the old any-craft count (6); "Spares on your yard crews" (7); "How each yard job runs", the jobs they worked
+  first, the rest folded (8). The spreadsheet takes the Call Board ends too.
+**How:**
+- **Worker** (`myStats`): `GET /auth/stats?code=XXXX` for the owner key only (owner session or key header): that
+  code's record, `{ state: 'ok', code, other: true, stats }` (`stats: null` if none); a bad code is 400. **A
+  member's or an Admin's `?code` is ignored, as it always was** (they get their own). Copy page rebuilt (see the
+  link in the "Screenshot mark" section; version line names this commit).
+- **Laptop** (all new fields; every old field byte for byte the same: checked on all 168 records):
+  `lib/board/mystats.js collectYard` keeps per run `gone` (the first check without it) and `crew` (turns on its
+  crew lines), per job and run the vacancy list's crafts (`spare`), Train Service 4's days off lines (`booked`),
+  and when the checks ran (`cover`). `public/board-mystats.js build`: a yard shift gets `cb` (`boardEnd`: halfway
+  between the last check listing the job and the first not; trusted only with a check within 30 min after, the
+  start seen, 2 h to its length + 4 h; capped at the next trip's start; none when they left the crew lines early),
+  `cc` (craft, from the reset tracker's yard sighting: `lib/board/resets.js collect` now keeps `p.craft` as `cc`,
+  **so only from checks made after the restart**; or a spare's crew line), `yw`. The record gets `yoff`: days on a
+  turn of their own with no duty where the board said why (`booked`, `spare` for their craft or, craft unknown, two
+  crafts, `norun` while the checks covered its start), kept through `merge`. Off duty (`off`) stays the 8 / 12 h
+  the rest of the site uses. `pools.json` gets `yard` (`yardSummary`, 5 people or nothing, band ends halfway between
+  two people); `data/yardjobs.json` (`yardJobs`): per job its usual start, its length (12 h where its runs usually
+  go 10 h or more, else 8 h: `lengthFrom`; found: YSBY06 runs 8 h), runs, timed, middle length, over 15 min, early
+  30 min, longest. No person in either.
+- **Page:** `BoardMyStats.html(..., { yard: true, yardJobs, other })` and `csv(..., { yard: PREVIEW })` only under
+  `PREVIEW`; `data/yardjobs.json` fetched only then. **Without `yard` every page and spreadsheet is the same to the
+  byte as before** (checked: 168 people x 3 ranges x 2, old module against new).
+**Checked.** Suite **541 of 541** (`test/board/mystats-yard.test.js`, 10 new; `accounts.test.js` the owner's look;
+`mystats-review.test.js` two pinned lines moved, quoting him). **20 breaks on purpose** (members could look up,
+no code check, yard view / box / jobs file for everyone, each trust rule of `boardEnd`, yard view not applied, days
+off off the calendar, one spare craft enough, `yoff` not merged, 4-person comparison, the YSBY length rule, no cap,
+an end for someone who left early, a road row back, `gone` never set, road vacancies as yard, craft not kept, the
+jobs file not written): a test failed every time. **The main site's 29 published days rebuilt locally** (the
+pools part came out identical to the published `pools.json`): 471 of 595 yard shifts get a Call Board end, 242 a
+spare on the crew, 18 days off with a reason (13 booked, 5 spare), 7 yard workers in "You and the yard", 28 jobs.
+In a browser, this branch's page over board-test's live data with those records stood in (in that browser only):
+his own page, JAM1 (a split code: a yard job holder), CLLE (a yard spare), CRSC, COBO (road: no yard pieces),
+"ab" (not a code), ZZZZ (nothing kept), Back to mine; light, dark, Departure Board, Retro, Mario; no page errors,
+no sideways scroll. A member stand-in on board-test and him on the main site: no box, no yard pieces, no jobs
+file asked for.
+**Not checked:** the Call Board ends against a real time sheet (ask one yard member to compare a week before this
+goes to members: about half of 8 h runs end within 15 min of 8 h, a quarter run 30 min to 4 h over); the YSBY
+(yardmaster) runs listed 12 h 40 to 15 h 50: real, or CATS keeping the job up until its relief? (ask him); crafts
+before the restart (most yard holders' craft comes only from new checks, so "spare for your craft" waits on that);
+a real phone.
+**For members (only at his word):** drop `PREVIEW` from the three places in `renderMine` (`yard`, `yardJobs`,
+`csv`), keep the box owner-only; change `mystats-yard.test.js`'s gating test, quoting him.
+
+## My stats for someone working only yard jobs — reviewed 13 Nov 2026 at his asking. All eight items BUILT for the test site (the section above)
 
 **Owner:** "Review my stats tab for someone working just yard jobs and see if we need more data points so they have a
 more complete picture there".
