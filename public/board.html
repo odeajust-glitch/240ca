@@ -7454,6 +7454,8 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#ref'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
+    // Yard jobs, their days off and the relief rotations: the test site only for now (owner, 2026-11-13).
+    refState.preview = PREVIEW;
     window.BoardRef.render(view, refState);
   }
   // Job postings tab (owner, 2026-11-11: "can this information be put on a

@@ -61,6 +61,127 @@
     { name: 'Mac Yard: C yard', tracks: C },
   ];
 
+  // Yard jobs: when each goes on duty, its crew's days off and who covers them, the relief
+  // jobs' weeks, the tower's two-week turn about and the extras (owner, 2026-11-13: "I want
+  // to add the yard jobs and their schedule and rotations. Can you pull all this info").
+  // Not off a posted sheet: worked out from the board checks of 24 Oct to 12 Nov 2026 (each
+  // job's on-duty times on the Call Board, and who held and who worked it), so a bulletin
+  // or a change of card changes it. Days are the day a job goes on duty (a 2359 start is the
+  // night into the next day). 8 h, 12 h in the tower: the lengths the site assumes.
+  // [job, on duty, hours, { off: days with no relief job, none: what covers them, note }].
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const YARD_JOBS = [
+    ['YEBS03', '0600', 8, { note: 'Sat and Sun: not clear from the checks.' }],
+    ['YSTY01', '0630', 8, { off: ['Sat', 'Sun'], none: 'no relief job (other yard crews, spares)' }],
+    ['YPRS02', '0645', 8],
+    ['YBHS01', '0800', 8],
+    ['YFLS01', '0800', 8, { off: ['Sun'], none: 'no relief job (spares)' }],
+    ['YSBY06', '1430', 12, { off: ['Sat', 'Sun'], none: 'no relief job (other yard crews, spares)' }],
+    ['YPRS30', '1445', 8],
+    ['YMPS31', '1500', 8],
+    ['YINS30', '1530', 8, { off: ['Sat', 'Sun'], none: 'the job runs Monday to Friday only' }],
+    ['YBHS31', '1600', 8],
+    ['YEBS30', '1600', 8],
+    ['YPRS60', '2245', 8],
+    ['YBHS60', '2300', 8],
+    ['YINS60', '2330', 8],
+    ['YFLS60', '2359', 8],
+    ['YMPS60', '2359', 8],
+  ];
+  // A relief crew's own name for the job it covers: Thu and Fri YEBS03 runs as YEBS04 at
+  // 0700; Sat YBHS60 runs as YBHS61.
+  const RUNS_AS = { YEBS04: { job: 'YEBS03', start: '0700' }, YBHS61: { job: 'YBHS60', start: '2300' } };
+  // [relief job, its days off, the job it works each other day]. XSAS01 "TH/FR OFF" and
+  // XSAS03 "MO/TU OFF" are CATS's own headings on the crews in town; the rest are read off
+  // the checks the same way (each works five days and is off two).
+  const RELIEF = [
+    ['XSAS01', ['Thu', 'Fri'], { Mon: 'YPRS02', Tue: 'YPRS02', Wed: 'YPRS30', Sat: 'YBHS01', Sun: 'YBHS01' }],
+    ['XSAS02', ['Tue', 'Wed'], { Mon: 'YFLS60', Thu: 'YPRS30', Fri: 'YPRS60', Sat: 'YPRS60', Sun: 'YFLS60' }],
+    ['XSAS03', ['Mon', 'Tue'], { Wed: 'YBHS31', Thu: 'YBHS31', Fri: 'YBHS60', Sat: 'YINS60', Sun: 'YINS60' }],
+    ['XSAS04', ['Thu', 'Fri'], { Mon: 'YEBS30', Tue: 'YMPS31', Wed: 'YMPS31', Sat: 'YFLS01', Sun: 'YEBS30' }],
+    ['XSAS05', ['Tue', 'Wed'], { Mon: 'YMPS60', Thu: 'YEBS04', Fri: 'YEBS04', Sat: 'YBHS61', Sun: 'YMPS60' }],
+  ];
+  // The tower (YSBY, 12 h): YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 and
+  // YSBY04 the others, 2-2-3 over two weeks. Week A started Monday 26 Oct 2026 (and 9 Nov).
+  const TOWER = { anchor: '2026-10-26', a: ['YSBY01', 'YSBY02'], b: ['YSBY03', 'YSBY04'], weekA: 'AABBAAA' };
+  const EXTRAS = [['YFXS01', '1600', '7 times, mostly Thu and Fri'], ['YFXS03', '0900', 'once'], ['YHXS01', '0700', 'once'],
+    ['YMXS01', '2359 or 0800', 'twice'], ['YMXS02', '1700', 'once'], ['YSBY05', '0700, 12 h', 'once']];
+
+  const startOf = (job) => (RUNS_AS[job] ? RUNS_AS[job].start : (YARD_JOBS.find((j) => j[0] === job) || [])[1]);
+  // Each job's crew: the days a relief covers (by its own name) and the days nothing does.
+  function yardCover(job) {
+    const by = [];
+    for (const [rel, , week] of RELIEF) {
+      for (const d of DAYS) {
+        const w = week[d];
+        if (w && (w === job || (RUNS_AS[w] && RUNS_AS[w].job === job))) by.push({ day: d, relief: rel, as: w === job ? null : w });
+      }
+    }
+    const j = YARD_JOBS.find((x) => x[0] === job);
+    const extra = (j && j[3]) || {};
+    const set = DAYS.filter((d) => by.some((b) => b.day === d) || (extra.off || []).includes(d));
+    // In week order from the first of a run, so Sunday and Monday read "Sun, Mon".
+    const first = set.findIndex((d) => !set.includes(DAYS[(DAYS.indexOf(d) + 6) % 7]));
+    const off = first > 0 ? [...set.slice(first), ...set.slice(0, first)] : set;
+    return { off, by, none: (extra.off || []).length ? { days: extra.off, text: extra.none } : null, note: extra.note || '' };
+  }
+  // 'a' (YSBY01 / YSBY02) or 'b' (YSBY03 / YSBY04) on a date ('YYYY-MM-DD').
+  function towerOn(day) {
+    const ms = Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10)) - Date.UTC(+TOWER.anchor.slice(0, 4), +TOWER.anchor.slice(5, 7) - 1, +TOWER.anchor.slice(8, 10));
+    const n = Math.round(ms / 864e5);
+    const i = ((n % 14) + 14) % 14;
+    const inA = TOWER.weekA[i % 7] === 'A';
+    return (i < 7) === inA ? 'a' : 'b';
+  }
+  // A relief job's week from the day after its days off: "Thu YPRS30 1445 · Fri–Sat YPRS60 2245 …".
+  function reliefWeek(off, week) {
+    const last = Math.max(...off.map((d) => DAYS.indexOf(d)));
+    const order = [...DAYS.slice(last + 1), ...DAYS.slice(0, last + 1)].filter((d) => week[d]);
+    const runs = [];
+    for (const d of order) {
+      const r = runs[runs.length - 1];
+      if (r && r.job === week[d]) r.days.push(d); else runs.push({ job: week[d], days: [d] });
+    }
+    return runs;
+  }
+  function yardSection(q, hit, today) {
+    const dash = (ds) => (ds.length > 2 ? `${ds[0]}–${ds[ds.length - 1]}` : ds.join(', '));
+    const jobs = YARD_JOBS.filter(([job, start]) => {
+      const c = yardCover(job);
+      return hit(job, start, ...c.off, ...c.by.map((b) => b.relief), ...c.by.map((b) => b.as || ''));
+    }).map(([job, start, hours]) => {
+      const c = yardCover(job);
+      const rels = [...new Set(c.by.map((b) => b.relief))];
+      const cover = rels.map((rel) => {
+        const mine = c.by.filter((b) => b.relief === rel);
+        const as = mine.find((b) => b.as);
+        return `<b class="num">${esc(rel)}</b>${rels.length > 1 || c.none ? ` (${esc(mine.map((b) => b.day).join(', '))})` : ''}${as ? ` <span class="muted">as ${esc(as.as)} at ${esc(RUNS_AS[as.as].start)}</span>` : ''}`;
+      });
+      if (c.none) cover.push(`${c.by.length ? `${esc(c.none.days.join(', '))}: ` : ''}<span class="muted">${esc(c.none.text)}</span>`);
+      return `<tr><td class="num"><b>${esc(job)}</b>${hours !== 8 ? ` <span class="chip">${hours} h</span>` : ''}</td><td class="num">${esc(start)}</td><td>${esc(c.off.join(', '))}</td><td>${cover.join('<br>')}${c.note ? `<div class="crew">${esc(c.note)}</div>` : ''}</td></tr>`;
+    }).join('');
+    const relief = RELIEF.filter(([rel, off, week]) => hit(rel, ...off, ...Object.values(week), ...Object.values(week).map((w) => (RUNS_AS[w] ? RUNS_AS[w].job : '')))).map(([rel, off, week]) =>
+      `<tr><td class="num"><b>${esc(rel)}</b></td><td>${esc(off.join(', '))}</td><td>${reliefWeek(off, week).map((r) => `<div class="nw">${esc(dash(r.days))} <b class="num">${esc(r.job)}</b> ${esc(startOf(r.job) || '')}</div>`).join('')}</td></tr>`).join('');
+    const monday = (() => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d; })();
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const label = (d) => d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const towerWeeks = [0, 7].map((add) => {
+      const start = new Date(monday); start.setUTCDate(start.getUTCDate() + add);
+      const days = DAYS.map((d, i) => { const x = new Date(start); x.setUTCDate(x.getUTCDate() + i); return { d, side: towerOn(iso(x)) }; });
+      const runs = [];
+      for (const x of days) { const r = runs[runs.length - 1]; if (r && r.side === x.side) r.days.push(x.d); else runs.push({ side: x.side, days: [x.d] }); }
+      return `<tr><td class="nw">${add ? 'Next week' : 'This week'}<div class="crew">from ${esc(label(start))}</div></td><td>${runs.map((r) => `<div class="nw">${esc(dash(r.days))}: <b class="num">${esc(TOWER[r.side].join(' / '))}</b></div>`).join('')}</td></tr>`;
+    }).join('');
+    const towerHit = hit('tower', 'YSBY', ...TOWER.a, ...TOWER.b);
+    const extras = EXTRAS.filter(([job, start]) => hit(job, start, 'extra')).map(([job, start, seen]) => `<tr><td class="num"><b>${esc(job)}</b></td><td class="num">${esc(start)}</td><td class="muted">${esc(seen)}</td></tr>`).join('');
+    if (q && !jobs && !relief && !towerHit && !extras) return '';
+    return `${jobs ? `<h4>Each job</h4><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Crew off</th><th>Covered by</th></tr></thead><tbody>${jobs}</tbody></table>` : ''}
+      ${relief ? `<h4>Relief jobs: their week</h4><table class="reft"><thead><tr><th>Relief</th><th>Off</th><th>Works</th></tr></thead><tbody>${relief}</tbody></table>` : ''}
+      ${towerHit ? `<h4>Tower (YSBY, 12 h)</h4><p class="muted" style="margin:0 0 6px">YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 (0700) and YSBY04 (1900) the others: 2 on, 2 off, 3 on, then the other way round the next week. YSBY06 (1430) is in the table above.</p><table class="reft"><tbody>${towerWeeks}</tbody></table>` : ''}
+      ${extras ? `<h4>Extra jobs</h4><p class="muted" style="margin:0 0 6px">Called now and then and filled from the spareboard. Seen in the checks:</p><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Seen</th></tr></thead><tbody>${extras}</tbody></table>` : ''}
+      <p class="muted">Worked out from the board checks of 24 Oct to 12 Nov 2026 (which jobs went on duty each day, and who held and worked them), not from a posted sheet: a bulletin or a change of card changes it. Days are the day a job goes on duty (a 2359 start is the night into the next day). 8 h unless marked.</p>`;
+  }
+
   // Held-away penalty miles for the total time off duty, in minutes (the
   // posted "Held-Away Penalty" sheet): nothing to 10:00; 12.5 miles an hour
   // (by the minute) to 12:00; 12:01–13:00 and 13:01–14:00 start 12.5 higher;
@@ -110,6 +231,7 @@
           <p id="refout" class="refout"></p></div>
         <p class="muted">From the posted sheet (B-Force Timekeeping 1-888-878-1111). The times are total time off duty.</p>
         <details><summary>The whole table</summary><table class="reft"><thead><tr><th>Off duty</th><th>Miles</th></tr></thead><tbody>${penaltyRows.join('')}${steps}</tbody></table></details>`, true)}
+      ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
       ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
       ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
       ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
@@ -138,7 +260,7 @@
     calc();
   }
 
-  const api = { STATUS, JOBS, YARDS, penalty, render };
+  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, penalty, render };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BoardRef = api;
 })(typeof window !== 'undefined' ? window : globalThis);

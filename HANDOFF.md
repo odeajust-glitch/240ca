@@ -1,5 +1,54 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids: yard jobs, their days off and the relief rotations — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, one line in `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look and his answer on YEBS03's weekends
+
+**Owner, 13 Nov:** "read the handoff, I want to add some information to the Job Aid section", then "I want to
+add the yard jobs and their schedule and rotations. Can you pull all this info". Built on the test site only
+(the rule he has kept for everything; he was told so and did not say otherwise).
+
+**Where it came from.** No sheet: read off the main site's 29 saved days (`data/<day>.json`, read only;
+yard jobs from 24 Oct to 12 Nov): every yard job's on-duty time on the Call Board (`yardJobs`, 377 runs),
+who held each job (`people`, `own: true`, from the crews in town) and who worked it (`own: false`), each
+shift matched to its run so a 2300 / 2359 job counts on the day it goes on duty. `data/yardjobs.json` is not
+published yet (not pulled), so it was not used. **Agrees with:** CATS's own headings "XSAS01 REL#1 TH/FR OFF"
+and "XSAS03 REL#3 MO/TU OFF" (the crews-in-town test fixtures) and his own XSAS01 reading of 11 Nov (Sat/Sun
+YBHS01, Mon/Tue YPRS02, Wed YPRS30). Every relief job comes out five days on, two off. The scripts were in
+the session's scratchpad only (not kept); the method is above, and the numbers are in the code's comments.
+
+**What he sees on board-test (owner key, `PREVIEW`).** Job Aids → a new folded section, second, **"Yard jobs:
+start times, days off and relief"**: (1) **Each job**: the 16 regular jobs by on-duty time, the crew's two days
+off and which relief covers them (YBHS60's Saturday is XSAS05 as YBHS61; YEBS03's Thu/Fri is XSAS05 as YEBS04
+at 0700); (2) **Relief jobs: their week**: XSAS01 to XSAS05, days off and each day's job with its start, from
+the day after the days off; (3) **Tower (YSBY, 12 h)**: YSBY01/02 and YSBY03/04 take turns 2-2-3 over two
+weeks (week A began Mon 26 Oct and 9 Nov); "This week" and "Next week" are worked out from the phone's date;
+(4) **Extra jobs** (YFXS01, YFXS03, YHXS01, YMXS01, YMXS02, YSBY05) with how often the checks saw them; a
+footnote saying where it came from and that a bulletin or a change of card changes it. The tab's search finds
+a job, a relief or "tower". **No names anywhere.** A member on either site, and his own view of the main site,
+get the tab exactly as before.
+
+**Not certain, told to him / to ask:** ❓ **YEBS03 on Sat and Sun** (the checks show XSAS01, a YINS60 holder
+and spares on it, the own crew once in three weekends): the page says "not clear from the checks". YFLS01's
+Sunday, YSTY01's and YSBY06's weekends: no relief job seen (other yard crews and spares): put as such. The
+crafts (FO, S1, YA, EN) are left off. Only three weeks of data: each weekday seen three times.
+
+**Where.** `public/board-ref.js`: `DAYS`, `YARD_JOBS`, `RUNS_AS`, `RELIEF`, `TOWER`, `EXTRAS`, then
+`yardCover`, `towerOn`, `reliefWeek`, `yardSection`; the section in `render` behind `state.preview`.
+`public/board.html` `renderRef`: `refState.preview = PREVIEW`. **To change a rotation:** edit `RELIEF` (each
+job's "covered by" is worked out from it). **To promote:** drop `state.preview ?` in `render` (and the
+`refState.preview` line), and change the gating test in `test/board/ref.test.js`, quoting him.
+
+**Checked.** Suite **548 of 548** (`test/board/ref.test.js`, 4 new: relief five on / two off and on known
+jobs, CATS's two headings and his XSAS01 reading; each job's days off and cover; the tower against all 21
+days the checks saw; the gating and the search; each broken on purpose four ways, a test fails every time).
+In a browser at 390 px, this branch's page over the real sites (nothing saved, every non-GET stopped):
+board-test as him: the section, no sideways scroll, every table inside its box, the search for XSAS02,
+YBHS60 and "tower"; board-test and board as a member, and board as him: the tab as before, no section. No
+page errors. **Not checked:** a real phone; page styles other than light.
+
+**Also for the next session:** this session too began on a stale checkout (42 commits behind
+`origin/claude/vigilant-planck-zawrj4`; fast-forwarded). `node_modules` was empty: `npm ci` before `npm
+test` (without it 18 tests fail for missing packages).
+
 ## The Call Board dropped his CO line; the 501/502 board's MU01 had the wrong name — both fixed 13 Nov 2026, about 06:05 Toronto (laptop + page). ON `claude/vigilant-planck-zawrj4` (his "Yes" to putting this work there, the Toronto fix below). WAITING ON ONE LAPTOP PULL + RESTART
 
 **Owner, 13 Nov about 05:47 and 05:52 Toronto, two photos of Current:** (1) the 501/502 board's **MU01 CO "out
