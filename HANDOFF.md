@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Toronto line-up named the wrong person on MU01 — fixed 12 Nov 2026, about 21:40 Toronto (laptop + page). ON BRANCH `claude/wrong-crew-train-dzel7q` ONLY until he says to put it on `claude/vigilant-planck-zawrj4`; then ONE LAPTOP PULL + RESTART, and compare with CATS 28
+## Toronto line-up named the wrong person on MU01 — fixed 12 Nov 2026, about 21:40 Toronto (laptop + page). ON `claude/vigilant-planck-zawrj4` SINCE ABOUT 22:05 at his word ("Yes", asked whether to put it there). WAITING ON ONE LAPTOP PULL + RESTART; then compare with CATS 28
 
 **Owner, 12 Nov about 21:11 Toronto, two photos:** CATS option 28 (Pool Maintenance Inquiry, POOL S1, TERM 1:
 the bunkhouse) beside the site's "Toronto line-up · Mac yard" (the 20:51 check): "This is showing the wrong
@@ -14,7 +14,8 @@ so the list had whoever held "MU01" last somewhere else. A spare covering a regu
 had the same problem. Also found: pool-row names kept two-letter initials as part of the surname ("DG" →
 "Grove Dg, D"); 28 has one (S109's), and the fix would have shown it.
 
-**Built (`f6c8e32` before this note; no Worker change, no paste):**
+**Built (`cf6daaf`; no Worker change, no paste; made in a session on `claude/wrong-crew-train-dzel7q`, which
+holds the same commits):**
 - **Laptop** (`scripts/board-auto.js`): each page of 28 read by name goes to `names.bunk` (`parseBoardCrew`,
   which now gives `pos`). `lib/board/names.js` `recordBunkhouse` keeps it in names.json as `@bunk`, stamped
   with the check's `probedAt`. `namesByTurn` skips it, so the turns' names are unchanged. `boardPersonName`
@@ -30,7 +31,7 @@ had the same problem. Also found: pool-row names kept two-letter initials as par
   the Call Board). docs/board-checker/ACCOUNTS.md has the crew.json format.
 - **Until the laptop has this code**, nothing changes on the site: the page and crew.json come from the laptop.
 
-**Checked.** Suite **528 of 528** after rebasing on the alert change above (`test/board/toronto-names.test.js`,
+**Checked.** Suite **531 of 531** after rebasing on the alert change and the visible code (`8cd9b36`) (`test/board/toronto-names.test.js`,
 5 tests: 28's rows in the layout of his photo with made-up names, the site build with two checks, the box with
 and without the names, the older table layout). Each piece was broken on purpose six ways, and a test failed every
 time. In Chromium at 390 and 1280 px, the page was loaded over a site built from the 15 Oct fixture, with a
