@@ -103,7 +103,7 @@ punitive rates; (3) the senior qualified unassigned TC available at straight tim
 spareboard; (4) the senior regularly assigned TC at punitive rates; (5) the senior unassigned TC under 4.3 / 4.16 in yard
 service (incl. yard / joint spareboard) at punitive rates; (6) the senior qualified TC on a road service spareboard;
 (7) the senior qualified TC working in road service, if it won't interfere with their normal assignment. Note: same
-starting time, the senior chooses. **What it would change on the page, told to him, nothing changed yet:** the spare at
+starting time, the senior chooses. **What it would change on the page, told to him; ON HOLD at his word ("hold off for now"), nothing changed:** the spare at
 overtime becomes step 2 (now it falls to the canvass); the yard at straight time is one step in seniority order
 (working that day or not) and takes the conductor spareboard too; the 4.16 overtime step is the yard only (and the joint
 spareboard); road conductors come after, spareboard then working (if it won't interfere); no separate 5.1 step; the TC
