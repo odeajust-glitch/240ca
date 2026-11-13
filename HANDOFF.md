@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Tab review round 3: Members — 12 Nov 2026, 19:15 to 19:55 Toronto. His two asks BUILT FOR THE TEST SITE ONLY (`71a4fa0`, page only), WAITING ON ONE LAPTOP PULL; then his look. A cleanup list of eight put to him: nothing else built, waiting on his picks
+## Tab review round 3: Members — 12 Nov 2026, 19:15 to 20:40 Toronto. His two asks (`71a4fa0`) and his picks 1, 3, 4, 5, 6 of the eight (`f57b390`) BUILT FOR THE TEST SITE ONLY (page only), WAITING ON ONE LAPTOP PULL; then his look. The Worker (copy page, `e3e7936`) WAITING ON HIS PASTE INTO BOTH
 
 **Owner, 12 Nov about 19:15 Toronto:** "Start members, I would like to clean up the members tab, move the
 'whos getting alerts' to members from page health. The list of turns being tracks that don't have an
@@ -69,8 +69,52 @@ the cut-off (only phones following his name code are), and SR03 now shows anothe
 that phone was his, it stops on the 18th. And: where should Who gets alerts sit (bottom, beside the phones
 with no account, as built; or top)?
 
-**Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at the two
-pieces on board-test, and his picks from the eight.
+**His picks, 12 Nov about 20:00 Toronto: "1, 3, 4, 5 and 6, and give me the updated worker to post".** Not
+picked: 2 (the Worker paste, which is what the second half of his message asks for), 7 (naming the code a
+member follows: a Worker change) and 8 (the Approved date). Where Who gets alerts sits: not answered; left at
+the bottom, with a jump to it at the top.
+
+**BUILT, `f57b390`, behind `PREVIEW` like the two asks (`review` = `PREVIEW && membersOwner`, now decided
+at the top of `renderMembers`).** Suite **504 of 504** (2 more tests in `members-review.test.js`, which draw
+the tab with made-up members three ways: him on the test site, him on the main site, an Admin; each piece
+broken on purpose seven ways, a test failed every time).
+1. **Heading:** `membersHead`: "(you and your Admins see this)" for him, "(the owner and Admins see this)"
+   for an Admin. An Admin never has `PREVIEW` (it needs the owner key), so the Admin wording shows only once
+   promoted.
+3. **One line per member** (`memberLine`, Admins and Members; waiting and declined keep their cards): name,
+   name code ("no code", or "CODE · to OK" in the accent colour when it waits for his OK), last seen short
+   (`seenShort`: "Today 06:53", "Yesterday 18:45", "9 days ago"); tap opens the full card, every fact as
+   before. Cards left open, and the no-code fold, stay open when the tab is drawn again (after an action).
+   **The counts at the top** (`topHtml`): Waiting · Email not confirmed (when the Worker sends it) · Admins ·
+   Members · Who gets alerts · No account, each a button that jumps to its heading (`m-wait` …; lands at
+   56 px, under the pinned strip). Name codes waiting for his OK are named there too.
+4. **One heading, one explanation:** the Worker's "N phones get alerts without a known member…" line is
+   left off when the laptop's list is there; the list's note now opens with what those phones are and how
+   they get matched.
+5. **Remove access** is at the foot of the opened card, under a dashed line, 14 px below Access (still asks
+   first).
+6. **"N of 35 have no name code saved, so My stats can't find their record"**, folded under the counts;
+   each name opens that member's line.
+On board-test as him (live data, this branch's page, nothing saved): 8,899 → 4,444 px at 390 px (3,693 at
+1280); every line one row (44 px) at 390, some names wrap at 340; jumps, the fold, a name opening its card,
+Remove access asking first (dismissed), drawn again: open cards kept. 390 light, 340, 1280 dark: no sideways
+scroll, no page errors. **The main site's Members, Page Health and Current: the same to the letter (HTML),
+old page and new.** The new lines use `--rule` (the old cards' `--line` is not defined anywhere in the page,
+so they fall back to a light grey on dark styles; left alone). Not checked: a real phone; styles other than
+light and dark; an Admin's real view.
+**To promote:** drop `PREVIEW` from `const review = …` in `renderMembers` (that promotes the two asks too),
+or keep `review` for the two asks and give these pieces their own switch; change the tests, quoting him.
+
+**The Worker he asked for: the copy page https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu, unchanged,
+version `e3e7936`, 2046 lines.** Decoded here: it is byte for byte `e3e7936`'s `cloudflare/board-worker.js`
+= `881e02d` (unconfirmed sign-ups, the sign-up wording) + the owner-only test alert route of another
+session. **That route's two commits were not on this branch: cherry-picked here (`e439cbc`, `1b3be4d`), so
+the branch's Worker is now exactly the copy page's** (their warning: a copy page rebuilt from a branch
+without it loses the route). No Worker change of this session. He pastes it into both Workers; afterwards
+`/health/accounts` should carry `unverified` on both (look, counts only).
+
+**Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at board-test's
+Members and Page Health, the Worker paste into both, and where Who gets alerts should sit.
 
 ## Screenshot mark (a hidden account number in every screen) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only), WAITING ON ONE LAPTOP PULL; then his look and his say. Nothing on the main site; no Worker change
 
@@ -666,7 +710,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 |---|---|---|---|---|
 | 1 Current | 10 | 1, 2, 3, 5, 6, 7, 10 ("Go") | 1, 2, 3, 5, 7, 10 on for every member (`6403bde`, after his pull) | **6 turned down after seeing it: the counts line is taken out** ("it does but take it out"). 4 waits on his "crew info" photo (Housekeeping 11). 8 (first screen) his taste, not asked again. 9 (crew order) "doesn't really matter" |
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
-| 3 Members | 8 (and his two asks) | his two asks: Who gets alerts moved here, names beside the phones with no account | the two asks built for the test site only (`71a4fa0`), after his pull; the eight put to him, nothing else built (the section at the top of this file) | — |
+| 3 Members | 8 (and his two asks) | his two asks (Who gets alerts moved here, names beside the phones with no account); then 1, 3, 4, 5, 6 | all built for the test site only (`71a4fa0`, `f57b390`), after his pull (the section at the top of this file) | 2 is the Worker paste (copy page given); 7 (name the followed code: a Worker change) and 8 (Approved date) not picked |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
 | Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | built for the test site only (`79fc425`), after his pull; his look still to come (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
 
@@ -1184,7 +1228,7 @@ new sections to every member?~~ answered 00:10: "Push it"; (3) should the reset 
 History take the same corrections; (4) still open from before: a notice to members, Admins
 confirming codes, the person search; the Worker paste of `881e02d` into both Workers.
 
-## Test alert route on the Worker — November 11, 2026, 22:50 Toronto. ON BRANCH `ccr-1807ddfe-7kgr2g` ONLY; WAITING ON A MERGE AND A WORKER PASTE (both)
+## Test alert route on the Worker — November 11, 2026, 22:50 Toronto. ON `claude/vigilant-planck-zawrj4` SINCE 12 Nov EVENING (cherry-picked as `e439cbc`, by the Members session); WAITING ON A WORKER PASTE (both)
 
 Owner asked to send a test notification to SD02 from a cloud session; that could only be
 done on the laptop (`node scripts/alert-check.js SD02`; the push key and the phone list are
