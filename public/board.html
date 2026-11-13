@@ -721,6 +721,25 @@
   /* Members, round 3 of the tab review (test site): Who gets alerts moved here; "has an account" in the no-account list. */
   .members .mwho > p { margin: 6px 0; font-size: 14px; }
   .members .mwho details > summary { cursor: pointer; font-size: 14px; margin: 6px 0; }
+  .members .mjumps { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
+  .members .mjump { font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; }
+  .members .mnocode > summary { cursor: pointer; font-size: 13.5px; margin: 6px 0; }
+  .members .mnocode p, .members .mtop .mmsg { font-size: 13.5px; margin: 4px 0 8px; line-height: 1.7; }
+  .members details.mline { border-top: 1px solid var(--rule); }
+  .members details.mline > summary { display: flex; align-items: baseline; gap: 10px; padding: 11px 0; cursor: pointer; list-style: none; }
+  .members details.mline > summary::-webkit-details-marker { display: none; }
+  .members details.mline > summary::after { content: '›'; color: var(--soft); display: inline-block; width: 10px; transition: transform .15s; }
+  .members details.mline[open] > summary::after { transform: rotate(90deg); }
+  .members details.mline > summary b { flex: 1; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+  .members .mline .mcode { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .members .mline .mcode.mflag { color: var(--accent); font-weight: 600; }
+  .members .mline .mcode.muted { font-family: inherit; font-size: 12.5px; }
+  .members .mline .mseen { color: var(--soft); font-size: 12.5px; white-space: nowrap; }
+  .members .mcard { padding: 0 0 14px; overflow-wrap: anywhere; }
+  .members .mcard dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 12px; font-size: 13.5px; }
+  .members .mcard dt { color: var(--soft); }
+  .members .mcard dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .members .mact.mrm { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--rule); }
   .members .mhas { display: inline-block; font-size: 12px; padding: 0 6px; margin-left: 2px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); }
   .heldlog { list-style: none; margin: 0 0 8px; padding: 0; } .heldlog li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; } .heldlog li > div { margin: 1px 0; }
   .infoline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
@@ -5933,7 +5952,7 @@ source().then(async (src) => {
       ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
       ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
       `;
-    if (o.members) return `<h2>Who gets alerts</h2><div class="mwho">${body}<p class="muted">This shows what phones follow, not whose they are. Each member's card above shows what their phones follow (for phones that saved their alerts while signed in); phones with no account are listed below. A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div>`;
+    if (o.members) return `<h2 id="m-who">Who gets alerts</h2><div class="mwho">${body}<p class="muted">This shows what phones follow, not whose they are. Each member's card above shows what their phones follow (for phones that saved their alerts while signed in); phones with no account are listed below. A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div>`;
     return `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">${body}<p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
   }
   // Members, reviewed with the owner 2026-11-12 (round 3 of the tab review): TEST SITE ONLY (PREVIEW).
@@ -5977,12 +5996,23 @@ source().then(async (src) => {
     const personLine = (x) => `<span class="mono">${esc(x.code || 'not seen yet')}</span>${x.name ? ` ${esc(x.name)}` : x.why ? ` <span class="muted">${esc(x.why)}</span>` : ''}${x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : ''}${has(x.account)}`;
     return `<div class="mrow"><dl><dt>Turns</dt><dd>${n.turns.length ? n.turns.map(turnLine).join('<br>') : 'none'}</dd><dt>People</dt><dd>${n.people.length ? n.people.map(personLine).join('<br>') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`;
   }
+  // Item 1: the heading says who sees the tab (the owner and his Admins), for each of them.
+  const membersHead = (isOwner) => `<h1 class="hpt">Members <span class="muted">(${isOwner ? 'you and your Admins see this' : 'the owner and Admins see this'})</span></h1>`;
+  // Last seen, short, for a member's one line: "Today 06:53", "Yesterday 18:45", "9 days ago".
+  const seenShort = (ms, now = Date.now()) => {
+    if (!ms) return 'Not seen';
+    const days = Math.floor((new Date(now).setHours(0, 0, 0, 0) - new Date(ms).setHours(0, 0, 0, 0)) / 86400000);
+    const time = new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return days <= 0 ? `Today ${time}` : days === 1 ? `Yesterday ${time}` : `${days} days ago`;
+  };
   const agoStamp = (ms, now = Date.now()) => { if (!ms) return 'Unavailable'; const m = Math.max(0, Math.round((now - ms) / 60000)); return healthClock(ms) + ' (' + (m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`) + ')'; };
   async function renderMembers(said) {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#members'); } catch (e) { /* not allowed in some frames */ }
     if (!membersOwner && !membersAdmin) { view.innerHTML = '<p class="empty">Members is only for the owner.</p>'; return; }
-    const head = '<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>';
+    // Round 3 of the tab review (owner, 2026-11-12), TEST SITE ONLY: everything under `review` below.
+    const review = PREVIEW && membersOwner;
+    const head = review ? membersHead(membersOwner) : '<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>';
     if (!view.querySelector('.members')) view.innerHTML = `<div class="healthpage members">${head}<p class="muted">Loading…</p></div>`;
     let d = null;
     let status = 0;
@@ -6027,30 +6057,52 @@ source().then(async (src) => {
     const codeFact = (u) => (u.codeState === undefined ? [] : [['Name code', !u.code ? 'None saved' : u.codeState === 'wait' ? `${u.code} · does not match their name, or is a shared code: My stats waits for your OK` : u.codeState === 'no' ? `${u.code} · marked not theirs (no My stats)` : `${u.code} · theirs (My stats on)`]]);
     // Round 3 of the tab review (owner, 2026-11-12), TEST SITE ONLY: Who gets alerts moved here from Page
     // Health, and names beside what each phone with no account follows (looseRowHtml, above this function).
-    const review = PREVIEW && membersOwner;
     const whoOpen = view.querySelector('[data-health-followed]')?.open;
     const NAMES = review ? CREW || healthCrew : null;
-    const whoHtml = !review ? '' : alertsSub ? whoGetsAlerts(alertsSub, { stamp: agoStamp, expanded: whoOpen, stale: false, members: true }) : '<h2>Who gets alerts</h2><p class="muted">Couldn’t load who gets alerts. Open the tab again.</p>';
+    const whoHtml = !review ? '' : alertsSub ? whoGetsAlerts(alertsSub, { stamp: agoStamp, expanded: whoOpen, stale: false, members: true }) : '<h2 id="m-who">Who gets alerts</h2><p class="muted">Couldn’t load who gets alerts. Open the tab again.</p>';
     const codeBtns = (u) => (!owner || !u.code || (u.codeState !== 'wait' && u.codeState !== 'no') ? '' : `<button type="button" data-act="codeok">${esc(u.code)} is theirs</button>${u.codeState === 'wait' ? '<button type="button" data-act="codeno">Not theirs</button>' : ''}`);
     const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)], ...codeFact(u)],
       codeBtns(u) + (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
       + (owner || u.role !== 'admin' ? '<button type="button" data-act="remove">Remove access</button>' : ''));
+    // Items 3 and 5 ("1, 3, 4, 5 and 6"): one line per member (name, name code, last seen) that opens to the
+    // full card; Remove access at the foot of the opened card, away from Access. Cards left open stay open
+    // when the tab is drawn again (after Approve, a change of Access, …).
+    const openIds = new Set([...view.querySelectorAll('.members details.mline[open]')].map((x) => x.dataset.id));
+    const noCodeOpen = !!view.querySelector('.members details.mnocode')?.open;
+    const memberLine = (u) => {
+      const tag = u.codeState === undefined ? '' : !u.code ? '<span class="mcode muted">no code</span>'
+        : `<span class="mcode${u.codeState === 'wait' ? ' mflag' : ''}">${esc(u.code)}${u.codeState === 'wait' ? ' · to OK' : u.codeState === 'no' ? ' · not theirs' : ''}</span>`;
+      const facts = [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)], ...codeFact(u)];
+      const ids = `data-id="${esc(u.id)}" data-name="${esc(u.name)}"`;
+      const access = owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`;
+      const rm = owner || u.role !== 'admin' ? `<div class="mact mrm" ${ids}><button type="button" data-act="remove">Remove access</button></div>` : '';
+      return `<details class="mline" data-id="${esc(u.id)}"${openIds.has(u.id) ? ' open' : ''}><summary><b>${esc(u.name)}</b>${tag}<span class="mseen">${esc(seenShort(u.seenAt))}</span></summary><div class="mcard"><dl>${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="mact" ${ids}>${codeBtns(u)}${access}</div>${rm}</div></details>`;
+    };
+    const memberRow = review ? memberLine : approvedRow;
+    // Items 3 and 6: the counts at the top, each a jump to its list; name codes waiting for his OK; and who has
+    // no name code saved (no My stats), folded. A name opens that member's line.
+    const openBtn = (u) => `<button type="button" class="linkbtn" data-open="${esc(u.id)}">${esc(u.name)}</button>`;
+    const noCode = approved.some((u) => u.codeState !== undefined) ? approved.filter((u) => !u.code) : [];
+    const toOk = approved.filter((u) => u.codeState === 'wait');
+    const jump = (id, label, n) => `<button type="button" class="mjump" data-jump="${id}">${label}${n === undefined ? '' : ` <b>${n}</b>`}</button>`;
+    const topHtml = !review ? '' : `<div class="mtop"><div class="mjumps">${jump('m-wait', 'Waiting', waiting.length)}${Array.isArray(d.unverified) ? jump('m-unver', 'Email not confirmed', d.unverified.length) : ''}${jump('m-admins', 'Admins', admins.length)}${jump('m-members', 'Members', plain.length)}${jump('m-who', 'Who gets alerts')}${loose && loose.length ? jump('m-loose', 'No account', loose.length) : ''}</div>${toOk.length ? `<p class="mmsg">${toOk.length} name code${toOk.length === 1 ? ' is' : 's are'} waiting for your OK: ${toOk.map(openBtn).join(', ')}.</p>` : ''}${noCode.length ? `<details class="mnocode"${noCodeOpen ? ' open' : ''}><summary>${noCode.length} of ${approved.length} have no name code saved, so My stats can’t find their record</summary><p>${noCode.map(openBtn).join(', ')}</p></details>` : ''}</div>`;
+    const sec = (id) => (review ? ` id="${id}"` : '');
     view.innerHTML = `<div class="healthpage members">${head}
       <p class="muted">The site is ${d.lock ? '<b>locked</b>: only approved members get in' : 'open to everyone (not locked yet)'}. Emails sent today: ${esc(d.mailToday)} of ${esc(d.mailMax)}${d.mailReady ? '' : ' · <b>the email sender is not set up</b>'}.</p>
-      ${said ? `<p class="mmsg${said.bad ? ' bad' : ''}" role="status">${esc(said.text)}</p>` : ''}
-      <h2>Waiting for approval (${waiting.length})</h2>
+      ${said ? `<p class="mmsg${said.bad ? ' bad' : ''}" role="status">${esc(said.text)}</p>` : ''}${topHtml}
+      <h2${sec('m-wait')}>Waiting for approval (${waiting.length})</h2>
       ${waiting.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Asked', day(u.requestedAt)]], '<button type="button" class="go" data-act="approve">Approve</button><button type="button" data-act="decline">Decline</button>')).join('') || '<p class="muted">Nobody is waiting.</p>'}
-      ${Array.isArray(d.unverified) ? `<h2>Started signing up, email not confirmed (${d.unverified.length})</h2>
+      ${Array.isArray(d.unverified) ? `<h2${sec('m-unver')}>Started signing up, email not confirmed (${d.unverified.length})</h2>
       <p class="muted">They filled in the form but have not typed in the 6-digit code that was emailed to them, so they are not waiting for approval yet. Each drops off this list after two days. <b>Approve anyway</b> lets them in without that code: they are emailed to use Sign in, which still needs their email to work, so check the address is spelled right first.</p>
       ${d.unverified.map((u) => row(u, [['Email', u.email], ['PIN', u.pin || ''], ['Hire date', u.hireDate || ''], ['Started', u.requestedAt ? new Date(u.requestedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '']], '<button type="button" class="go" data-act="approve" data-early="1">Approve anyway</button><button type="button" data-act="delete">Delete</button>')).join('') || '<p class="muted">Nobody.</p>'}` : ''}
-      <h2>Admins (${admins.length})</h2>
-      ${admins.map(approvedRow).join('') || '<p class="muted">No Admins. Pick Admin under Access on a member to make one.</p>'}
-      <h2>Members (${plain.length})</h2>
-      ${plain.map(approvedRow).join('') || '<p class="muted">Nobody yet.</p>'}
+      <h2${sec('m-admins')}>Admins (${admins.length})</h2>
+      ${admins.map(memberRow).join('') || '<p class="muted">No Admins. Pick Admin under Access on a member to make one.</p>'}
+      <h2${sec('m-members')}>Members (${plain.length})</h2>
+      ${plain.map(memberRow).join('') || '<p class="muted">Nobody yet.</p>'}
       ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}${whoHtml}
-      ${d.unknownPhones ? `<p class="muted" style="margin-top:18px">${esc(d.unknownPhones)} phone${d.unknownPhones === 1 ? ' gets' : 's get'} alerts without a known member: set up before accounts, or not signed in. Each is matched to its member the next time it changes its alerts while signed in.</p>` : ''}
-      ${loose && loose.length ? `<h2>Phones with no account (${loose.length})</h2>
-      <p class="muted">What each one follows, newest change first${looseAt ? `; as of ${esc(new Date(looseAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}` : ''}. The phone's owner isn't known, only what it follows: usually their own turn or name code.${!review ? '' : NAMES ? ' Beside a turn is whose turn it is (while it is out on a trip, whoever is working it); beside a name code, the person it belongs to. <b>Has an account</b> means that person has already signed up here: the phone only needs signing in, then its alerts saved again.' : ' Names are not loaded on this device yet, so only turns and codes show (they need the crew names passcode saved on Page Health).'}${looseCut ? ` <b>${Date.now() < looseCut ? 'Alerts to these phones stop' : 'Alerts to these phones stopped'} ${esc(new Date(looseCut).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}</b>, until the phone is signed in to an account and its alerts are saved again. A phone that follows your own name code is kept.` : ''}</p>
+      ${d.unknownPhones && !(review && loose && loose.length) ? `<p class="muted" style="margin-top:18px">${esc(d.unknownPhones)} phone${d.unknownPhones === 1 ? ' gets' : 's get'} alerts without a known member: set up before accounts, or not signed in. Each is matched to its member the next time it changes its alerts while signed in.</p>` : ''}
+      ${loose && loose.length ? `<h2${sec('m-loose')}>Phones with no account (${loose.length})</h2>
+      <p class="muted">${review ? 'Phones that get alerts with no member’s account behind them: set up before accounts, or never signed in. Each is matched to its member the next time it changes its alerts while signed in. Newest change first' : 'What each one follows, newest change first'}${looseAt ? `; as of ${esc(new Date(looseAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}` : ''}.${review ? '' : " The phone's owner isn't known, only what it follows: usually their own turn or name code."}${!review ? '' : NAMES ? ' Beside a turn is whose turn it is (while it is out on a trip, whoever is working it); beside a name code, the person it belongs to. <b>Has an account</b> means that person has already signed up here: the phone only needs signing in, then its alerts saved again.' : ' Names are not loaded on this device yet, so only turns and codes show (they need the crew names passcode saved on Page Health).'}${looseCut ? ` <b>${Date.now() < looseCut ? 'Alerts to these phones stop' : 'Alerts to these phones stopped'} ${esc(new Date(looseCut).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}</b>, until the phone is signed in to an account and its alerts are saved again. A phone that follows your own name code is kept.` : ''}</p>
       ${review ? loose.map((p) => looseRowHtml(p, NAMES, approved, day)).join('') : loose.map((p) => `<div class="mrow"><dl><dt>Turns</dt><dd class="mono">${esc(p.turns.join(', ') || 'none')}</dd><dt>People</dt><dd class="mono">${p.people.length ? p.people.map((x) => esc(x.code || 'not seen yet') + (x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : '')).join(', ') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`).join('')}` : ''}
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
@@ -6073,6 +6125,10 @@ source().then(async (src) => {
     view.querySelectorAll('.members [data-role]').forEach((sel) => { sel.onchange = () => send(sel.closest('.mact'), 'role', { role: sel.value }); });
     const toNotes = view.querySelector('.members #tonotes');
     if (toNotes) toNotes.onclick = () => setMode('notes');
+    view.querySelectorAll('.members [data-jump]').forEach((b) => { b.onclick = () => document.getElementById(b.dataset.jump)?.scrollIntoView({ block: 'start' }); });
+    view.querySelectorAll('.members [data-open]').forEach((b) => {
+      b.onclick = () => { const line = [...view.querySelectorAll('.members details.mline')].find((x) => x.dataset.id === b.dataset.open); if (line) { line.open = true; line.scrollIntoView({ block: 'start' }); } };
+    });
   }
   async function renderNotes() {
     const view = document.getElementById('view');

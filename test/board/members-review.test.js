@@ -46,7 +46,7 @@ test('Who gets alerts: the same section either way, in each tab’s own style', 
   const tab = ctx.whoGetsAlerts(S, { stamp: (ms) => `at ${ms}`, expanded: true, stale: false, members: true });
   assert.ok(page.startsWith('<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">\n      <p>5 phones · last confirmed at 1</p>'));
   assert.ok(page.endsWith('(the Members tab shows each member\'s follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>'));
-  assert.ok(tab.startsWith('<h2>Who gets alerts</h2><div class="mwho">\n      <p>5 phones · last confirmed at 1</p>'));
+  assert.ok(tab.startsWith('<h2 id="m-who">Who gets alerts</h2><div class="mwho">\n      <p>5 phones · last confirmed at 1</p>'));
   assert.ok(tab.includes('phones with no account are listed below'));
   const body = (x) => x.slice(x.indexOf('<details'), x.indexOf('</details>'));
   assert.equal(body(tab), body(page), 'the tables are the same');
@@ -92,4 +92,82 @@ test('phones with no account: whose turn or name code it is, and whether they al
   // Members on either site, and anyone but the owner on the test site, keep the old rows.
   assert.ok(html.includes("      ${review ? loose.map((p) => looseRowHtml(p, NAMES, approved, day)).join('') : loose.map((p) => `<div class=\"mrow\"><dl><dt>Turns</dt><dd class=\"mono\">${esc(p.turns.join(', ') || 'none')}</dd>"));
   assert.ok(html.includes("    const NAMES = review ? CREW || healthCrew : null;\n"));
+});
+
+// "1, 3, 4, 5 and 6" (owner, 2026-11-12, of the eight put to him): the heading says who sees the tab; one line
+// per member opening to the card, with the counts at the top as jumps; the two lines about phones with no
+// account made one; Remove access at the foot of the opened card; who has no name code saved, folded at the top.
+// Test site only, like the rest of this file: the tab drawn three ways below, with made-up members.
+const DAY = 86400000;
+const NOW = Date.UTC(2026, 10, 13, 17, 0);
+const USERS = [
+  { id: 'a1', name: 'Ann Admin', email: 'a@x', status: 'approved', role: 'admin', approvedAt: NOW - 3 * DAY, seenAt: NOW - 60000, code: 'ANAD', codeState: 'ok', follows: { turns: ['SB02'], people: 1, phones: 1 } },
+  { id: 'm1', name: 'Bob Member', email: 'b@x', status: 'approved', role: 'member', approvedAt: NOW - 3 * DAY, seenAt: NOW - 9 * DAY, code: '', codeState: 'none' },
+  { id: 'm2', name: 'Cy <Code>', email: 'c@x', status: 'approved', role: 'member', approvedAt: NOW - 3 * DAY, seenAt: null, code: 'CYCO', codeState: 'wait' },
+  { id: 'w1', name: 'Dee Waiting', email: 'd@x', status: 'pending', requestedAt: NOW - DAY, pin: '1', hireDate: '2020-01-01' },
+];
+async function drawMembers({ preview, owner, admin }) {
+  const view = { innerHTML: '', querySelector: () => null, querySelectorAll: () => [] };
+  const answers = {
+    'health/accounts': { you: owner ? 'owner' : 'admin', users: USERS, unknownPhones: 2, lock: true, mailToday: 1, mailMax: 70, mailReady: true },
+    health: { laptop: { subscribers: { phones: 3, confirmedAt: NOW, turns: [['SB02', 1]], people: [], checkedAt: NOW, noAccount: [{ turns: ['SB02'], people: [], updated: '2026-11-08T12:00:00Z' }, { turns: ['SD05'], people: [], updated: null }] } } },
+  };
+  const ctx = vm.createContext({
+    esc, PREVIEW: preview, membersOwner: owner, membersAdmin: admin, mode: 'members', CREW: { SB02: 'Admin, A' }, healthCrew: null,
+    document: { getElementById: () => view }, history: { replaceState() {} }, OwnerKey: { headers: () => ({}) },
+    fetch: async (url) => ({ ok: true, status: 200, json: async () => answers[url] }), healthClock: (ms) => `T${ms}`, setMode() {}, Date: class extends Date { constructor(...a) { super(...(a.length ? a : [NOW])); } static now() { return NOW; } },
+  });
+  vm.runInContext(`${cut('const CODE_GROUPS = ', '\n')}\n${cut('const codeGroup = ', '\n')}\nfunction loadHealthCrew() {}\n${cut('  const crewFits = ', '  async function renderNotes() {')}\nthis.renderMembers = renderMembers; this.seenShort = seenShort; this.membersHead = membersHead;`, ctx);
+  await ctx.renderMembers();
+  return { html: view.innerHTML, ctx };
+}
+
+test('1, 3, 4, 5, 6: the Members tab cleaned up, for him on the test site', async () => {
+  const { html: tab, ctx } = await drawMembers({ preview: true, owner: true, admin: false });
+  // 1. Who sees the tab, said to each.
+  assert.ok(tab.includes('<h1 class="hpt">Members <span class="muted">(you and your Admins see this)</span></h1>'));
+  assert.equal(ctx.membersHead(false), '<h1 class="hpt">Members <span class="muted">(the owner and Admins see this)</span></h1>');
+  assert.ok(!tab.includes('only you see this'));
+  // 3. The counts at the top, each a jump to its list.
+  assert.ok(tab.includes('<div class="mjumps"><button type="button" class="mjump" data-jump="m-wait">Waiting <b>1</b></button><button type="button" class="mjump" data-jump="m-admins">Admins <b>1</b></button><button type="button" class="mjump" data-jump="m-members">Members <b>2</b></button><button type="button" class="mjump" data-jump="m-who">Who gets alerts</button><button type="button" class="mjump" data-jump="m-loose">No account <b>2</b></button></div>'));
+  for (const id of ['m-wait', 'm-admins', 'm-members', 'm-who', 'm-loose']) assert.ok(tab.includes(` id="${id}"`), id);
+  // 3. One line a member: name, name code (or none, or waiting for his OK), last seen; the card inside.
+  assert.equal(tab.split('<details class="mline"').length - 1, 3, 'the approved members only');
+  assert.ok(tab.includes('<summary><b>Ann Admin</b><span class="mcode">ANAD</span><span class="mseen">Today '));
+  assert.ok(tab.includes('<summary><b>Bob Member</b><span class="mcode muted">no code</span><span class="mseen">9 days ago</span></summary>'));
+  assert.ok(tab.includes('<summary><b>Cy &lt;Code&gt;</b><span class="mcode mflag">CYCO · to OK</span><span class="mseen">Not seen</span></summary>'));
+  assert.ok(tab.includes('<dt>Follows</dt><dd>SB02 · 1 name code (1 phone)</dd>'), 'the card keeps every fact');
+  // 5. Access with the code buttons; Remove access on its own at the foot of the card.
+  assert.ok(tab.includes('<div class="mact" data-id="m2" data-name="Cy &lt;Code&gt;"><button type="button" data-act="codeok">CYCO is theirs</button><button type="button" data-act="codeno">Not theirs</button><label>Access <select data-role'));
+  assert.ok(tab.includes('</select></label></div><div class="mact mrm" data-id="m2" data-name="Cy &lt;Code&gt;"><button type="button" data-act="remove">Remove access</button></div></div></details>'));
+  // Waiting for approval keeps its full card and buttons.
+  assert.ok(tab.includes('<div class="mrow"><b>Dee Waiting</b>'));
+  // 6. Who has no name code saved, folded at the top; a code waiting for his OK said there too.
+  assert.ok(tab.includes('<details class="mnocode"><summary>1 of 3 have no name code saved, so My stats can’t find their record</summary><p><button type="button" class="linkbtn" data-open="m1">Bob Member</button></p></details>'));
+  assert.ok(tab.includes('<p class="mmsg">1 name code is waiting for your OK: <button type="button" class="linkbtn" data-open="m2">Cy &lt;Code&gt;</button>.</p>'));
+  // 4. One heading and one explanation for the phones with no account: the Worker's line is not repeated.
+  assert.ok(!tab.includes('phones get alerts without a known member'));
+  assert.ok(tab.includes('<p class="muted">Phones that get alerts with no member’s account behind them: set up before accounts, or never signed in. Each is matched to its member the next time it changes its alerts while signed in. Newest change first; as of '));
+  assert.ok(!tab.includes("The phone's owner isn't known"));
+  // Last seen, short.
+  assert.equal(ctx.seenShort(null), 'Not seen');
+  assert.equal(ctx.seenShort(NOW - 9 * DAY, NOW), '9 days ago');
+  assert.match(ctx.seenShort(NOW - DAY, NOW), /^Yesterday \d\d:\d\d$/);
+  // The page wires the jumps and the names, and keeps open cards open when the tab is drawn again.
+  assert.ok(html.includes("const openIds = new Set([...view.querySelectorAll('.members details.mline[open]')].map((x) => x.dataset.id));"));
+  assert.ok(html.includes("view.querySelectorAll('.members [data-jump]').forEach((b) => { b.onclick = () => document.getElementById(b.dataset.jump)?.scrollIntoView({ block: 'start' }); });"));
+});
+
+test('1, 3, 4, 5, 6: the main site, and an Admin anywhere, keep the tab as it was', async () => {
+  for (const who of [{ preview: false, owner: true, admin: false }, { preview: true, owner: false, admin: true }, { preview: false, owner: false, admin: true }]) {
+    const { html: tab } = await drawMembers(who);
+    assert.ok(tab.includes('<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>'), JSON.stringify(who));
+    assert.ok(!tab.includes('class="mline"') && !tab.includes('class="mjumps"') && !tab.includes('class="mnocode"') && !tab.includes('class="mact mrm"') && !tab.includes(' id="m-'));
+    assert.ok(tab.includes('<h2>Admins (1)</h2>') && tab.includes('<div class="mrow"><b>Bob Member</b>'));
+    assert.ok(tab.includes('<button type="button" data-act="remove">Remove access</button></div></div>'), 'Remove access beside Access, as before');
+    assert.ok(tab.includes('2 phones get alerts without a known member'));
+  }
+  // Only the owner key gets the laptop's report: an Admin has no phones-with-no-account list or Who gets alerts.
+  const { html: admin } = await drawMembers({ preview: true, owner: false, admin: true });
+  assert.ok(!admin.includes('Phones with no account') && !admin.includes('Who gets alerts'));
 });
