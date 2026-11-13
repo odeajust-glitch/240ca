@@ -213,6 +213,14 @@ a secret the Worker keeps, so nobody can work out another account's number from 
   the letter with the old page and the new while the Worker gives no numbers.**
 - **Not checked:** the Worker itself on Cloudflare (only Node with a stand-in bucket); a real member's phone;
   an iPhone's own screenshots.
+- **The paste, checked 13 Nov about 01:05 UTC (his word: "pasted it into both, check it"; read only, counts
+  only):** both Workers serve `3f24ee2`: `/health/accounts` lists 35 accounts, every one with a number, all 35
+  different, and `ownerMark`; `/auth/me` as the owner key's session carries the same number; **both sites give
+  every account the same number** (one secret, one bucket); `unverified` is there and `GET /health/test-alert`
+  answers 405 (the other session's route is in). **The page is not yet:** the laptop runs `adb089b` (pulled
+  just before `3f24ee2`), so both sites still serve the test-site version (no mark for members). **Waiting on
+  one more laptop `git pull`** (no restart); then look: `#shotmark` on both sites as the owner, a fresh
+  screenshot traced on Page Health.
 - **After his paste, look (read only, counts only):** `/auth/me` as the owner session carries `mark`;
   `/health/accounts` carries `ownerMark` and a `mark` on every user; then, after the pull, the layer on
   both sites (as the owner, `#shotmark` present) and a trace of a fresh screenshot.
