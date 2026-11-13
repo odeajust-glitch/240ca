@@ -30,6 +30,11 @@ are correct before pushing it as a feature". **Built:**
   name or email; checked live: his account's name makes JUOD, no other approved account's does). A
   member who saved JUOD as their code, or fakes the key on their page, still gets nothing. Needs one more
   laptop pull + restart (laptop code only).
+- **Live state, 13 Nov 17:45 Toronto:** the laptop runs `e92fcc4` (has `2b4a863`, the fix), the page with
+  the TEST box is published, **2 phones follow TEST**, no "Bump (test)" sent yet (log read to 17:29; none
+  since the fix). **He said: "ok ill let you know when one comes in".** Next: when he reports one, check it
+  against the board (people.json / the day file at that check) and the Notifications tab row; then, at his
+  word, `MEMBERS_ON = true`.
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a
