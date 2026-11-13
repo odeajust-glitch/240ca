@@ -163,19 +163,29 @@ account, the same subject; the top kept for what needs his action), or move the 
 same version. `board-test` runs `3f24ee2` (the screenshot mark session's: `ownerMark`, and a `mark` on all 35
 accounts); **`board` runs `e3e7936`** (no `mark`, no `ownerMark`). Either he pasted `board` before the copy page
 was rebuilt for `3f24ee2` (about 19:52) and `board-test` after, or he is part-way through pasting the new one
-for the other session. Both have the unverified
+for the other session. **19:57: he pasted `board` again ("pasted board again"): both Workers on `3f24ee2` now
+(`ownerMark`, a `mark` on all 35 accounts, on both).** Both have the unverified
 list, the sign-up wording and the test alert route. **Told him: paste the copy page (now version `3f24ee2`)
 into `board` once more**; that is the screenshot mark's (another session's), nothing of this round.
 
-**Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at board-test's
-Members and Page Health (keep, change, drop or promote each piece), and the `board` Worker pasted once more.
-Next in the tab review: round 4, Turn History, on his word.
+**LIVE ON THE TEST SITE since the 1949 check (published 19:51).** He pulled and restarted: the laptop's report
+at 19:52 runs `adb089b` (folder the same), which holds `71a4fa0` and `f57b390`. Read at 19:57 to 19:59, the real
+published pages, nothing put in place: his board-test Members has the new heading, the counts row (with "Email
+not confirmed 3"), one line per member, Who gets alerts at the bottom, names and "has an account" in the
+no-account list; his board-test Page Health has no Who gets alerts (the trace box is there). The main site's
+Members is the old layout, now with "Started signing up, email not confirmed (3)" (the Worker paste; that
+section is not gated). No page errors. At 19:59 no check had run since 19:51: he was pulling again (the other
+sessions' `3f24ee2` and `fe570e8` came after `adb089b`).
+
+**Waiting on him:** his look at board-test's Members and Page Health and his say on each piece (keep, change,
+drop or promote). Next in the tab review: round 4, Turn History, on his word.
 
 ## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone
 
 **Seen 12 Nov at 19:55 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
 a `mark` on all 35 accounts); `board` still runs `e3e7936` (no marks). The main Worker needs the `3f24ee2` copy
-page pasted once more: told him.
+page pasted once more: told him. **19:57: pasted ("pasted board again"); both Workers on `3f24ee2`, seen.** At
+19:59 the laptop still ran `adb089b` (before `3f24ee2`) and no check had run since 19:51: he was pulling.
 
 **Owner, 13 Nov, having tried the test-site version on his phone: "I pulled it, trying it now, works
 great, push to the main page".** Done as he had been told it would be for members: the number now comes from
