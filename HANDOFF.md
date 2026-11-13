@@ -1,6 +1,40 @@
 # HANDOFF — read this before doing anything
 
-## Displacement alerts — BUILT 13 Nov 2026, ON FOR EVERY MEMBER at his word, WAITING ON ONE LAPTOP PULL + RESTART (laptop code; the Notifications tab label goes out with the next check). No Worker change
+## Displacement alerts — BUILT 13 Nov 2026, OWNER TEST FIRST (members get nothing yet; his phones following the code TEST get every bump, who bumped whom), WAITING ON ONE LAPTOP PULL + RESTART. To put on for members: `MEMBERS_ON = true` in lib/board/displaced.js, at his word. No Worker change
+
+**Owner, later the same evening (replaces his "On for everyone now"):** "So on the main site, build a
+feature if youre tracking TEST as a name code, and have the owners key, you will get all the bumping
+notifications that would normally goto everyone. Say whos getting bumped by whom. That way i can see if they
+are correct before pushing it as a feature". **Built:**
+- `MEMBERS_ON = false` (displaced.js): no member's account is told; the code for it is there, behind that switch.
+- Every bump found goes to `testDevices`: phones following `@`hash(TEST) saved with the owner key. While the
+  site is locked a phone's alerts are saved only by a signed-in member (the Worker writes their account on
+  it) or with the owner key (no account), so: no account and `updated` since the lock (`LOCKED_AT`, 19:00
+  Toronto 10 Nov), or account `owner` (his device registered for his account's alerts). A member who types
+  TEST gets nothing. TEST is no one's code (not in people.json).
+- The message (`testText`), title "Bump (test)": "Joe Haugh bumped Justin O'Dea off S501 CO (13th 1220
+  check). No account has their name code, so nobody would be told." / "… Would go to 2 devices on their
+  account." "(from S108)" after the bumper when they held another turn at the check before. The bumped
+  person's name is what that turn showed in names.json **before** this check was saved (`namesBefore`,
+  read just before the save in the main loop; `boardNameNow(…, withinMin)`), else their code. A change of
+  card is one line (`boardChangeText`). Each its own notification (tag per turn and check). Notifications
+  tab: kind "Bump (owner test)" (`displacedTest`) with its rule; "Displaced" says it is not sent yet.
+- The page (both sites, owner key only): typing TEST in "Follow a turn" opens "Owner test: every bump the
+  board checker finds comes to this phone …" → Follow TEST → the usual Track box (its choices don't matter;
+  the job posting tick is not offered for TEST) → OK. Its card on Current: "Owner test: every bump the
+  checker finds comes to this phone." Without the key TEST is "Not found", as before.
+- His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
+  codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
+- **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a
+  browser, this branch's page over the real main site as him (390 px; every request that is not a GET
+  stopped, nothing saved): the TEST box, Follow, no job posting tick, OK, the card; as a device with no
+  owner key: "Not found". **Not checked:** a real bump reaching his phone (needs the pull + restart and a
+  real bump), the bumped person's name from the real names.json.
+- **To check them, he** follows TEST on his phone (owner key on it) after the pull, then compares each
+  "Bump (test)" with CATS. To go live for members: `MEMBERS_ON = true` and change the test that pins it,
+  quoting him.
+
+**Earlier the same evening, for the record:**
 
 **Owner, 13 Nov evening:** "I want to add a feature that will notify you if you have been displaced … Joe
 Haugh has displaced me so I need to place. If you look the board now you might be able to make a
@@ -9,7 +43,7 @@ check (on rest until 14th 0530); at 1220 the same row showed JOHA (Joe Haugh) as
 "available", and JUOD on no board since. JOHA had lost SR10 on the 11th (0814) and was on no board for two
 days: he was placing. **His answers (asked once, all three tapped):** the alert names who took it: **"Full
 name"**; it goes to **"Only their account"** (not to phones following the person); **"On for everyone now"**
-(not owner copies first).
+(not owner copies first). **Superseded the same evening by the owner test above.**
 
 **The rule (`lib/board/displaced.js`, `update`), per check that read names.** A turn of someone's own
 (their craft's on 501/502: `S501-CO`) shows exactly one other person as its own holder; they were its holder

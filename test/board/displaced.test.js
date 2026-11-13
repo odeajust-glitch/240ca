@@ -154,3 +154,51 @@ test('displaced: only the displaced member\'s own devices are told (owner: "Only
   // The owner's phones are his even with no code saved on his own profile.
   assert.deepEqual(D.devicesFor('h:JUOD', subs, [], hashOf, 'h:JUOD').map((x) => x.key), ['owner-phone', 'owner-device']);
 });
+
+// Owner, 2026-11-13, the same evening: "if youre tracking TEST as a name code,
+// and have the owners key, you will get all the bumping notifications that
+// would normally goto everyone. Say whos getting bumped by whom. That way i can
+// see if they are correct before pushing it as a feature".
+test('displaced, owner test: members are not told yet; every bump goes to his TEST phones', () => {
+  assert.equal(D.MEMBERS_ON, false);
+  assert.equal(D.TEST_CODE, 'TEST');
+  const fs = require('fs');
+  const auto = fs.readFileSync(require.resolve('../../scripts/board-auto.js'), 'utf8');
+  assert.ok(auto.includes("if (Displaced.MEMBERS_ON) await tell({ turn: d.turn, kind: 'displaced'"));
+  assert.ok(auto.includes('await tell({ turn: d.turn, kind: \'displacedTest\''));
+  // His TEST phones are kept past the 17 Nov cut-off for phones with no account.
+  assert.ok(auto.includes('Health.membersOnly(await listSubscriptions(...args), Date.now(), [ownerHash(), People.personHash(Displaced.TEST_CODE)])'));
+});
+
+test('displaced, owner test: who bumped whom, from where, and whether their account would hear', () => {
+  assert.equal(D.testText({ turn: 'S501-CO' }, "Justin O'Dea", 'Joe Haugh', '13th 1220', 0),
+    "Joe Haugh bumped Justin O'Dea off S501 CO (13th 1220 check). No account has their name code, so nobody would be told.");
+  // The 1358 chain: the new holder of SD05 was on S108 at the check before.
+  let r = D.update({ turns: {} }, [own('134d', 'S108'), own('374a', 'SD05')], at(2026, 11, 13, 13, 49));
+  r = D.update(r.memory, [own('164b', 'S108'), own('134d', 'SD05')], at(2026, 11, 13, 13, 58));
+  assert.equal(r.events[0].from, 'S108');
+  assert.equal(D.testText(r.events[0], 'Sam Senior', 'Pat Placer', '13th 1358', 1), 'Pat Placer (from S108) bumped Sam Senior off SD05 (13th 1358 check). Would go to 1 device on their account.');
+  assert.equal(D.testText({ turn: 'SR03' }, null, null, '9th 0008', 2), 'Someone bumped the holder off SR03 (9th 0008 check). Would go to 2 devices on their account.');
+  assert.equal(D.boardChangeText(18, '25th 1216'), '18 turns changed holder in the 25th 1216 check: taken as a change of card, so no bump alerts for it.');
+});
+
+test('displaced, owner test: only phones saved with the owner key that follow TEST', () => {
+  const t = 'tttttttttttttttt';
+  const after = '2026-11-13T22:00:00.000Z';
+  const subs = [
+    { key: 'owner-phone', turns: [`@${t}`], updated: after }, // owner key: the Worker writes no account
+    { key: 'owner-device', account: 'owner', turns: [`@${t}`, 'SR03'], updated: after },
+    { key: 'member', account: 'a'.repeat(32), turns: [`@${t}`], updated: after }, // a member typing TEST
+    { key: 'before-lock', turns: [`@${t}`], updated: '2026-11-09T12:00:00.000Z' },
+    { key: 'no-date', turns: [`@${t}`] },
+    { key: 'owner-other', turns: ['@cccccccccccccccc'], updated: after },
+  ];
+  assert.deepEqual(D.testDevices(subs, t).map((x) => x.key), ['owner-phone', 'owner-device']);
+  assert.equal(new Date(D.LOCKED_AT).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }), '2026-11-10 19:00:00');
+  // The page follows TEST straight away only with the owner key, and never offers
+  // it as a job posting code.
+  const html = require('fs').readFileSync(require.resolve('../../public/board.html'), 'utf8');
+  assert.ok(html.includes("const BUMP_TEST = 'TEST';"));
+  assert.ok(html.includes('if (t === BUMP_TEST && OwnerKey.has()) {'));
+  assert.ok(html.includes('|| myCode === BUMP_TEST ? \'\' :'));
+});

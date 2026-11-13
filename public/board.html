@@ -5110,6 +5110,8 @@ const whenGo = () => fetch('data/whengo.json', { cache: 'no-cache' }).then((r) =
 // each person was seen on (data/people.json, lib/board/people.js). What's
 // typed is hashed here the same way and looked up.
 const isCode = (t) => /^[A-Z]{3}[A-Z1-9]$/.test(t || '');
+// The owner's displacement test code (lib/board/displaced.js TEST_CODE).
+const BUMP_TEST = 'TEST';
 // Two or three people whose names make the same code (owner, 2026-11-11):
 // the first keeps it, the second's ends in 1, the third's in 2 (COBD was
 // given by hand before that). The same list as lib/board/people.js.
@@ -5888,7 +5890,7 @@ source().then(async (src) => {
   // the logic behind it"). Owner only: the Worker's /health/alerts gives the
   // last 30 days (the laptop's alerts logs); each alert's own "why" is kept
   // from 2026-11-05 on, and every kind has its rule below.
-  const NOTE_KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', before: 'Reminder', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered', stand: 'Tracked', weekly: 'My week', held: 'Held 14 h+', displaced: 'Displaced', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)' };
+  const NOTE_KINDS = { lineup: 'Lined up', ordered: 'Ordered', time: 'Time change', before: 'Reminder', onDuty: 'On duty', position: 'Position', aheadRest: 'Ahead on rest', aheadBack: 'Ahead back', reset: 'Reset', resetAhead: 'Reset ahead', rescue: 'Rescue', mayCall: 'May be called', catsWrong: 'CATS wrong turn', stale: 'Past call, not ordered', stand: 'Tracked', weekly: 'My week', held: 'Held 14 h+', displaced: 'Displaced', displacedTest: 'Bump (owner test)', ntfy: 'Checker (ntfy)', pushover: 'Checker (Pushover)', ownerPush: 'Checker (site alert)' };
   const NOTE_RULES = {
     lineup: 'The board check works out who gets each train on the Sarnia line-up (A and B pools by road day, then the Chain Gang; engineers from SD, S1, S3; spareboards for jobs going spare, first in first out). When the train a turn is lined up for changes, its phones are told. A switch to another train waits one check (sent only if it\'s still there next check), and a train the turn was told about in the last 6 h isn\'t sent again unless it\'s now ordered.',
     ordered: 'The line-up shows the train ORD (ordered). Once per train; if it\'s ordered with a new time, the time change isn\'t sent as well.',
@@ -5907,7 +5909,8 @@ source().then(async (src) => {
     stand: 'Sent once when a phone starts following a turn or person: where it stands right now.',
     weekly: 'My week, Sunday: the person\'s week of work.',
     held: 'Sent to phones following a person by name code when a crew they were on (seen on that turn when the train went on duty) was held 14 h or more at the away terminal, as the Article 18.6(b) tab counts it, so they can send it to their rep from that tab. Once per trip.',
-    displaced: 'Sent to the devices of a member\'s own account (found by the name code saved in their Settings; your own phones too) when their own turn (their craft\'s on 501/502) shows someone else as its own holder, they were on it at a check in the last hour, and they are on no board at all in this check. The message names who the board shows on the turn now. Not for yard jobs, trainee slots or MU; not when the new holder has TV or TEMP VCNY on another turn (a temporary vacancy); none at all when more than 6 turns change holder in one check (a change of card). Once per bump.',
+    displacedTest: 'The owner\'s test of displacement alerts (13 Nov): every bump the checker finds, sent only to the owner\'s phones following the name code TEST (saved with the owner key), saying who bumped whom off which turn and how many devices the bumped person\'s account has (what they would get once it is on for members). A check where more than 6 turns change holder is one line, a change of card. The rule is the one under Displaced.',
+    displaced: 'Not sent yet: the owner is testing it (Bump, owner test). Once on, sent to the devices of a member\'s own account (found by the name code saved in their Settings; your own phones too) when their own turn (their craft\'s on 501/502) shows someone else as its own holder, they were on it at a check in the last hour, and they are on no board at all in this check. The message names who the board shows on the turn now. Not for yard jobs, trainee slots or MU; not when the new holder has TV or TEMP VCNY on another turn (a temporary vacancy); none at all when more than 6 turns change holder in one check (a change of card). Once per bump.',
     ntfy: 'The checker\'s own messages to you (CATS asking a question, Microsoft sign-in, stuck).', pushover: 'The checker\'s own messages to you, by Pushover.', ownerPush: 'The checker\'s own messages to you, by a site alert.',
   };
   let notesData = null;
@@ -6801,6 +6804,7 @@ source().then(async (src) => {
       const turn = nowTurn(entry);
       const gone = isPerson(entry) && personGone[entry];
       if (!turn && gone) return `<li><b class="num">${esc(label(entry))}</b><div>Not found on a turn now. Last seen on <b>${esc(gone.turn)}</b> until ${esc(dt(gone.to))}${gone.why === 'taken' ? `; someone else is on ${esc(gone.turn)} now` : ''}.</div><div class="muted">Alerts start again when they're seen on a turn of their own.</div></li>`;
+      if (!turn && codes()[entry] === BUMP_TEST) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Owner test: every bump the checker finds comes to this phone${OwnerKey.has() ? '' : ' (only with the owner key on it)'}.</div></li>`;
       if (!turn) return `<li><b class="num">${esc(label(entry))}</b><div class="muted">Not seen on a turn in the saved checks yet.</div></li>`;
       const f = isPerson(entry) ? Person.factsFor(s, entry, turn) : BoardTurns.facts(s, turn);
       const where = spareBoardsLine(s, f).filter((x) => !LINED.has(x.kind)).map((x) => x.text);
@@ -6942,7 +6946,7 @@ source().then(async (src) => {
     const me = POST_ME && POST_ME.signedIn ? POST_ME : null;
     const postWas = !!(me && me.postings && me.postings.on);
     const otherCode = me && me.code && myCode && me.code !== myCode ? me.code : '';
-    const postOpt = !isPerson(turn) || !me || !myCode ? '' : `<label><input type="checkbox" id="dlgpost" ${postWas ? 'checked' : ''}> a job ${otherCode ? `${esc(otherCode)} (your own name code, in ⚙ Settings)` : 'they'} can post for goes up <span class="muted">(job postings)</span></label>`;
+    const postOpt = !isPerson(turn) || !me || !myCode || myCode === BUMP_TEST ? '' : `<label><input type="checkbox" id="dlgpost" ${postWas ? 'checked' : ''}> a job ${otherCode ? `${esc(otherCode)} (your own name code, in ⚙ Settings)` : 'they'} can post for goes up <span class="muted">(job postings)</span></label>`;
     dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="Track ${esc(label(turn))}">
       <header><h2>Track <span class="num">${esc(label(turn))}</span></h2></header>
       <div class="alertopts"><span class="lbl">Alert me when ${esc(label(turn))}:</span>
@@ -7035,6 +7039,24 @@ source().then(async (src) => {
   async function openTrackAny(v) {
     const t = clean(v);
     if (!isCode(t)) return openTrack(t);
+    // The owner's displacement test (owner, 2026-11-13: "if youre tracking
+    // TEST as a name code, and have the owners key, you will get all the
+    // bumping notifications … Say whos getting bumped by whom"): with the
+    // owner key on this device, TEST is followed straight away. The laptop
+    // sends the bumps only to phones saved with the owner key
+    // (lib/board/displaced.js testDevices), so a member following it gets none.
+    if (t === BUMP_TEST && OwnerKey.has()) {
+      const h = `@${await Person.hash(t)}`;
+      dlg.innerHTML = `<div class="dlg" role="dialog" aria-modal="true"><header><h2>Track ${esc(t)}</h2></header>
+        <div class="alertnote"><b>Owner test: every bump the board checker finds comes to this phone</b>, saying who bumped whom off which turn, and whether their account would be told. Members get nothing yet. Then tap OK on the next box; its alert choices don't matter for this.</div>
+        <div class="btns"><button type="button" class="ok" id="dlgperson">👤 Follow ${esc(t)}</button><button type="button" id="dlgcancel">Cancel</button></div></div>`;
+      dlg.dataset.turn = '';
+      dlg.hidden = false;
+      const shut = () => { dlg.hidden = true; dlg.innerHTML = ''; turnBox.value = ''; turnClear.hidden = true; };
+      document.getElementById('dlgcancel').onclick = shut;
+      document.getElementById('dlgperson').onclick = () => { shut(); keepCode(h, t); openTrack(h); };
+      return;
+    }
     const list = await Person.find(t);
     const h = `@${await Person.hash(t)}`;
     const cur = list && Person.current(list, Person.pickOf(h));
