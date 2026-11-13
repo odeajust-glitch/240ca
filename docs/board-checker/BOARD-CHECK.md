@@ -36,7 +36,10 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
    this morning can not work it next. The rotation goes s501, then s502, then
    s501"; "If he's on rest and his job goes out he waits till the next time his
    turn goes out in two days"). A day crewed all by MU is still that crew's day;
-   option 29's position never decides it. Each craft that can't go is spare.
+   option 29's position never decides it. Each craft that can't go is spare,
+   but not before the crew ties up in Sarnia: then its booked rest decides
+   (owner, 2026-11-13). A cancelled L502 still uses up its crew's day ("the
+   crew that is supposed to work gets paid to stay at home").
 6. **No trains run to Niagara Falls, Port Robinson or Fort Erie** today, so
    that line of the manual doesn't apply (owner, 2026-10-14).
 7. **Holes don't move the Chain Gang (owner, 2026-10-14).** If an SR turn shows

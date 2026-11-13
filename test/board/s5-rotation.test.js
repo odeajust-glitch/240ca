@@ -37,6 +37,37 @@ test('the 13th\'s L502 went with S502, so the 14th\'s is S501\'s, whatever optio
  assert.deepEqual(runBoardCheck({...i,lineup:[l502(14),l502(15)]}).predictions.map(x=>x.turn),['S501','S502']);
 });
 
+test('the crew coming home on L501 is lined up, never spare until it ties up in Sarnia (owner, 2026-11-13)',()=>{
+ // "have the line up show the crew coming home on 501 as working the 502 for the next evening. You will
+ // have to make sure not to show it spare untill the crew ties up and then you can see if they booked
+ // rest past it."
+ const base={now:at(2026,11,13,12),chainGangHome:[],lineup:[l502(14)],callBoard:[went(13,[['EN','S502'],['CO','MU01']])]};
+ const s502=[row('S502','CO',1,{st:'**',rn:'HT',statusUntil:at(2026,11,14,5,5)}),row('S502','EN',999,{working:true,workingOn:'L50231'})];
+ const run=(s501)=>runBoardCheck({...base,s5:[...s502,...s501]}).predictions[0];
+ // At Garnet, with a rest that would run past the 14th 0145 call and a hold turn: not spare yet.
+ let p=run([row('S501','EN',1,{terminal:1,restUntil:at(2026,11,14,3)}),row('S501','CO',1,{terminal:1,rn:'HT',statusUntil:at(2026,11,14,6)})]);
+ assert.deepEqual([p.turn,p.spare,p.engineerSpare,p.s5Pending],['S501',false,false,true]);
+ assert.match(p.reason,/Whether either goes spare is known once S501 is off duty/);
+ // On duty bringing L50131 home (B0 and all): still not spare.
+ p=run(['EN','CO'].map(c=>row('S501',c,999,{terminal:1,working:true,workingOn:'L50131',st:'B0'})));
+ assert.deepEqual([p.spare,p.engineerSpare,p.s5Pending],[false,false,true]);
+ // Tied up in Sarnia: the conductor booked rest past the call → spare; the engineer's ends before it.
+ p=run([row('S501','EN',2,{restUntil:at(2026,11,14,1)}),row('S501','CO',1,{restUntil:at(2026,11,14,3)})]);
+ assert.deepEqual([p.turn,p.spare,p.engineerSpare,p.s5Pending],['S501',true,false,false]);
+ assert.match(p.reason,/Conductor: on rest until 14th 0300 → goes spare\. Engineer: available\./);
+ // One tied up, one still on L501: each craft on its own.
+ p=run([row('S501','EN',999,{terminal:1,working:true,workingOn:'L50131'}),row('S501','CO',1,{restUntil:at(2026,11,14,3)})]);
+ assert.deepEqual([p.spare,p.engineerSpare,p.s5Pending],[true,false,true]);
+ assert.match(p.reason,/Conductor: on rest until 14th 0300 → goes spare\. Engineer: known once off duty in Sarnia\./);
+});
+
+test('a cancelled L502 still uses up its crew\'s day (owner, 2026-11-13)',()=>{
+ // "it goes by the day, if they cancel it the crew that is supposed to work gets paid to stay at home".
+ // S502 had the 13th, the 14th's (S501's) is cancelled: the 15th is S502's, not S501's.
+ const i={...input(),now:at(2026,11,14,12),callBoard:[],departed:[went(13,[['EN','S502'],['CO','S502']])],lineup:[l502(15)]};
+ assert.equal(runBoardCheck(i).predictions[0].turn,'S502');
+});
+
 test('the last L502 seen sets the days; an all-MU day is still its crew\'s day',()=>{
  const i=input();
  // 5th S502, 6th all MU (S501's day), so the 7th is S502's and the 8th S501's.

@@ -65,8 +65,15 @@ board's order (`s5Order`) follows it. Alerts follow the prediction (S502 no long
 last-seen day beating the stored one, a crew's trip around); four older tests that encoded board position
 changed (engine.test.js ×4, screens-extra, s5-review), two of them because the real history contradicted
 them (L50231 26 went to S502's jobs; the 9th was S502's). Suite **557 of 557**; each piece broken on purpose.
-**Not changed, worth asking:** if an L502 is ever cancelled for a day, does the next go by the day or to the
-other crew? Both read the same on every saved day; the code goes by the day.
+**Answered the same morning (about 06:30):** a cancelled L502 still uses up its day ("it goes by the day, if they
+cancel it the crew that is supposed to work gets paid to stay at home"), as built. He also said: show the crew
+coming home on L501 on the next L502 (as built) and "make sure not to show it spare untill the crew ties up
+and then you can see if they booked rest past it". Before, only a crew on duty on L501 waited; one resting at
+Garnet could show spare for a status or a long rest there. Now `notTiedUp` (engine.js): a craft at Garnet or
+on L501 is never spare ("known once off duty in Sarnia"); tied up, its booked rest decides; each craft on its
+own. Tests: "the crew coming home on L501 …" and "a cancelled L502 …" (s5-rotation.test.js). Suite **559
+of 559**. He also said his tie-up "corrected" the order on the old code (board position moved), and the
+501/502 board still named the bunkhouse's MU01: the laptop has not pulled yet.
 **After his pull + restart:** L50231 14 should show S501 (pending until they're off duty from L50131).
 
 ## Job Aids: yard jobs, their days off and the relief rotations — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, one line in `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look and his answer on YEBS03's weekends
@@ -3993,6 +4000,11 @@ below qualify older notes. Do not resolve an uncertainty by inventing a railway 
   member who can't go (rest, hold, PL, away) is spare for his own craft only and waits for his turn's next
   day. **Option 29's position, rest and MU never decide whose day it is.** Supersedes the 2026-11-07 "first
   regular turn on option 29 is next" and the 2026-10-25 "first crew up on 29" readings (engine.js s5TurnOn).
+- **501/502, his answers the same morning:** a cancelled L502 still uses up its day ("it goes by the day, if
+  they cancel it the crew that is supposed to work gets paid to stay at home"). The crew coming home on L501 is
+  lined up for the next L502, and **neither craft is shown spare until it ties up in Sarnia**; then its booked
+  rest decides ("make sure not to show it spare untill the crew ties up and then you can see if they booked
+  rest past it"). At Garnet or on L501: "known once off duty", each craft on its own row.
 
 - **PL rules** (daysoff.js plFor / offAt / maybeOff), measured from going on
   duty (call + 2 h) to the PL's start: already on at the call → off; a **yard
