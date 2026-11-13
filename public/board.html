@@ -1069,6 +1069,9 @@
   /* The screenshot mark (owner, 2026-11-12; every signed-in account since 11-13, drawn by paintShotMark): one see-through layer over
      everything, its 8 x 8 tile at 8 CSS px a cell, hard-edged (soft edges round the faint wash away). */
   #shotmark { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }
+  /* The faint visible code (owner, 2026-11-13: "build it on the test site, 5% light 7% dark"; TEST SITE ONLY, his own
+     view: drawn by paintShotCode under PREVIEW): one more see-through layer, the account's code at a slant. */
+  #shotcode { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 400px 880px; }
   /* What already sticks to the top keeps clear of the strip. */
   body.everyone .rail { top: 64px; }
   body.everyone .arrangebar.on { top: 50px; }
@@ -5711,6 +5714,7 @@ source().then(async (src) => {
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
       paintMine();
+      paintShotCode(); // the faint visible code (test site only)
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
       if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']); else if (!PREVIEW && at >= 0) ANA_SECS.splice(at, 1);
@@ -8602,6 +8606,18 @@ source().then(async (src) => {
       const b = new Uint8Array(await sha(`mark:${id}`));
       return ((b[0] << 16) | (b[1] << 8) | b[2]) >>> 4;
     }
+    // The faint visible code (owner, 2026-11-13, told the hidden mark can't be read from a photo of a screen:
+    // "build it on the test site, 5% light 7% dark"): the same 20-bit number as 4 characters in Crockford's base 32
+    // (no I, L, O or U; 32^4 = 2^20, so every number has exactly one code). THE ALPHABET MUST NEVER CHANGE once
+    // codes are out, or older photos would name no one.
+    const CODE_ABC = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    const codeOf = (mark) => [15, 10, 5, 0].map((sh) => CODE_ABC[(mark >>> sh) & 31]).join('');
+    // What someone typed off a photo: small letters, spaces and dashes are fine; O is read as 0, I and L as 1.
+    function markOfCode(text) {
+      const t = String(text == null ? '' : text).toUpperCase().replace(/[\s.·\-–—]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+      if (!/^[0-9A-HJKMNP-TV-Z]{4}$/.test(t)) return null;
+      return [...t].reduce((n, ch) => n * 32 + CODE_ABC.indexOf(ch), 0);
+    }
 
     // ---- reading a screenshot (the same steps as wm.py's decode, grey only) ----
     function fft(re, im, inverse) {
@@ -8826,7 +8842,7 @@ source().then(async (src) => {
       out.found = out.strength >= 3 && z >= 6 && ab >= 0.8 && ab - an >= 0.35;
       return out;
     }
-    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, decode };
+    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, codeOf, markOfCode, decode };
   })();
   // The mark on the page (every signed-in account the Worker gives a number to, both sites) and Page Health's
   // "Trace a screenshot" (the owner's own page, both sites).
@@ -8839,6 +8855,7 @@ source().then(async (src) => {
     return (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) / 255 >= 0.5;
   };
   function paintShotMark() {
+    paintShotCode(); // the faint visible code (test site only)
     const old = document.getElementById('shotmark');
     const mark = SHOT_ME && SHOT_ME.signedIn ? SHOT_ME.mark : null;
     if (!Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotMarkFor = ''; return; }
@@ -8856,12 +8873,66 @@ source().then(async (src) => {
   // A change of page style, or of the phone's light or dark setting, can turn the page from light to dark.
   window.addEventListener('board-theme', () => { paintShotMark(); });
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { paintShotMark(); }); } catch (e) { /* an older browser */ }
+  // The faint visible code (owner, 2026-11-13: the hidden mark can't be read from a photo of a screen; "build it on
+  // the test site, 5% light 7% dark"). TEST SITE ONLY: PREVIEW (board-test with the owner key), the same number as
+  // the hidden mark, at a slant: black at 5% on a light page, white at 7% on a dark one. A member on either site, and
+  // the owner on the main site, get none. The hidden mark stays as it is under it.
+  // The codes are scattered, not in rows: a tile of 400 x 880 CSS px, 40 codes at least 77 px apart (wrapping round
+  // the tile's edges), no spot more than 77 px from one. Codes in a small even grid (150 x 104, tried first) gave
+  // emailed screenshots of dark pages a second spacing that the reader took for the hidden mark's (6 of 8 read, 8
+  // of 8 without the code); scattered, and the tile bigger than any spacing the reader looks for, 8 of 8 again.
+  const SHOTCODE_W = 400, SHOTCODE_H = 880;
+  const SHOTCODE_AT = [[54, 746], [306, 224], [198, 396], [261, 694], [38, 25], [334, 381], [305, 2], [178, 635], [92, 832], [10, 476], [87, 371], [12, 195], [93, 203], [48, 293], [332, 590], [121, 517], [353, 745], [202, 518], [196, 26], [17, 619], [157, 150], [308, 475], [143, 305], [269, 73], [94, 638], [228, 197], [388, 98], [197, 759], [249, 279], [126, 715], [269, 811], [107, 73], [250, 585], [389, 829], [361, 291], [312, 147], [126, 439], [11, 394], [346, 667], [48, 545]];
+  let shotCodeFor = '';
+  function shotCodeTile(code, light) {
+    const ink = light ? '#000' : '#fff', op = light ? 0.05 : 0.07;
+    const parts = [];
+    // A code near an edge is drawn again across it, so the tiles meet without a seam.
+    for (const [x, y] of SHOTCODE_AT) for (const dx of [-SHOTCODE_W, 0, SHOTCODE_W]) for (const dy of [-SHOTCODE_H, 0, SHOTCODE_H]) {
+      const X = x + dx, Y = y + dy;
+      if (X < -40 || X > SHOTCODE_W + 40 || Y < -40 || Y > SHOTCODE_H + 40) continue;
+      parts.push(`<text x="${X}" y="${Y}" text-anchor="middle" dominant-baseline="central" transform="rotate(-24 ${X} ${Y})">${code}</text>`);
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SHOTCODE_W}" height="${SHOTCODE_H}"><g font-family="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.5" fill="${ink}" fill-opacity="${op}">${parts.join('')}</g></svg>`;
+    return `url("data:image/svg+xml;base64,${btoa(svg)}")`;
+  }
+  function paintShotCode() {
+    const old = document.getElementById('shotcode');
+    const mark = SHOT_ME && SHOT_ME.signedIn ? SHOT_ME.mark : null;
+    if (!PREVIEW || !Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotCodeFor = ''; return; }
+    const light = lightPage();
+    const key = `${mark}|${light}`;
+    if (old && shotCodeFor === key) return;
+    const el = old || document.createElement('div');
+    el.id = 'shotcode'; el.setAttribute('aria-hidden', 'true');
+    el.style.backgroundImage = shotCodeTile(ShotMark.codeOf(mark), light);
+    if (!old) document.body.appendChild(el);
+    shotCodeFor = key;
+  }
   function traceSection() {
     return `<section class="sheet" id="htrace"><header><h2>Trace a screenshot</h2><span class="meta">only you see this</span></header><div class="hbody">
       <p>Pick a screenshot of this site. This phone reads the hidden mark in it and names the account it was taken on. The picture is not sent anywhere.</p>
       <p class="muted">Every signed-in member’s screens carry the mark, on both sites. Screenshots from before it was switched on carry none.</p>
       <p><input type="file" accept="image/*" id="tracefile" aria-label="Pick a screenshot"></p>
-      <div id="traceout" role="status" aria-live="polite">${traceLast}</div></div></section>`;
+      <div id="traceout" role="status" aria-live="polite">${traceLast}</div>${PREVIEW ? traceCodeBox() : ''}</div></section>`;
+  }
+  // A photo of a screen (TEST SITE ONLY, with the visible code): type the code seen on it.
+  let traceCodeLast = '';
+  function traceCodeBox() {
+    return `<div id="tracecodebox"><p><b>A photo of a screen?</b> The hidden mark can’t be read from a photo. On this test site your own screens also show a faint code at a slant (4 letters and numbers): type the code you see on the photo.</p>
+      <p><input type="text" id="tracecode" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 7KQ2" aria-label="The code on the photo"> <button type="button" id="tracecodego">Look up</button></p>
+      <div id="tracecodeout" role="status" aria-live="polite">${traceCodeLast}</div></div>`;
+  }
+  async function traceByCode(text) {
+    const mark = ShotMark.markOfCode(text);
+    if (mark === null) return '<p class="warn">A code is 4 letters and numbers, as on the screen.</p>';
+    const code = ShotMark.codeOf(mark);
+    const cands = await traceCandidates();
+    if (!cands.ready) return '<p class="warn">This site’s Worker doesn’t give out the account numbers yet: paste the new Worker code into both Workers.</p>';
+    // Only the Worker's numbers: the test-site trial's was never drawn as a code.
+    const hits = cands.filter((c) => c.id !== 'owner-trial' && c.mark === mark);
+    if (!hits.length) return `<p><b>No account has the code ${code}.</b></p><p class="muted">Check each letter: O and 0 are read the same, and I, L and 1; a code never has a U.</p>`;
+    return `${hits.map((h) => `<p class="ok"><b>${code}: ${esc(h.who)}</b></p>`).join('')}<p class="muted">A strong lead, not proof: it names the account whose screen it was, not who took the photo or sent it on.</p>`;
   }
   // Who a mark could belong to: the owner key and every account on the Members list (any status, so a removed
   // member's older screenshot still names them), each with the number the Worker gives it; and the test-site
@@ -8902,9 +8973,19 @@ source().then(async (src) => {
     const hit = r.found && cands.find((c) => c.id === r.best);
     if (hit) return `<p class="ok"><b>Taken on ${esc(hit.who)}</b></p><p class="muted">${r.cellsAgree} of 20 number cells match that account; the next closest account matches ${r.nextCellsAgree}. Read in ${secs} s.</p><p class="muted">A strong lead, not proof: it names the account whose screen it was, not who sent the picture on.</p>`;
     if (r.strength >= 3 && r.z >= 6) return `<p><b>A mark is there, but it matches no account on the list</b> (number ${r.read}).</p><p class="muted">The account may have been deleted, or the picture is too damaged to be sure.</p>`;
-    return '<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark was switched on, photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.</p>';
+    return `<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark was switched on, photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.${PREVIEW ? ' For a photo of a screen, type the code you see on it below.' : ''}</p>`;
   }
   function wireTrace(view) {
+    const codeIn = view.querySelector('#tracecode'), codeGo = view.querySelector('#tracecodego');
+    if (codeIn && codeGo) {
+      const look = async () => {
+        const sayCode = (html) => { traceCodeLast = html; const o = document.getElementById('tracecodeout'); if (o) o.innerHTML = html; };
+        sayCode('<p class="muted">Looking it up…</p>');
+        try { sayCode(await traceByCode(codeIn.value)); } catch (e) { sayCode(`<p class="warn">Couldn’t look it up: ${esc(e && e.message ? e.message : String(e))}</p>`); }
+      };
+      codeGo.onclick = look;
+      codeIn.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); look(); } };
+    }
     const input = view.querySelector('#tracefile');
     if (!input) return;
     input.onchange = async () => {

@@ -130,3 +130,62 @@ test('on for every signed-in account with a number from the Worker, both sites; 
   assert.ok(!/method:\s*'POST'/.test(trace) && !/FormData|sendBeacon|XMLHttpRequest/.test(trace));
   assert.ok(!block.includes('fetch('), 'the reader itself asks nothing of anyone');
 });
+
+// The faint visible code (owner, 2026-11-13, told the hidden mark can't be read from a photo of a screen: "build it on
+// the test site, 5% light 7% dark"). TEST SITE ONLY: drawn under PREVIEW (board-test with the owner key).
+test('the visible code: the same number as 4 characters, one code per number, read back however it is typed', () => {
+  assert.equal(SM.codeOf(0), '0000');
+  assert.equal(SM.codeOf((1 << 20) - 1), 'ZZZZ');
+  assert.equal(SM.codeOf(802536), 'RFQ8'); // worked out by hand: 24, 15, 23, 8 in Crockford's base 32
+  const seen = new Set();
+  for (let m = 0; m < 1 << 20; m++) {
+    const c = SM.codeOf(m);
+    assert.ok(/^[0-9A-HJKMNP-TV-Z]{4}$/.test(c), c); // no I, L, O or U
+    if (SM.markOfCode(c) !== m) assert.fail(`${m} -> ${c} -> ${SM.markOfCode(c)}`);
+    seen.add(c);
+  }
+  assert.equal(seen.size, 1 << 20, 'every number its own code');
+  for (const typed of ['RFQ8', 'rfq8', ' r f q 8 ', 'RFQ-8', 'rf.q8']) assert.equal(SM.markOfCode(typed), 802536, typed);
+  assert.equal(SM.markOfCode('OOOO'), 0, 'O read as 0');
+  assert.equal(SM.markOfCode('il1I'), SM.markOfCode('1111'), 'I and L read as 1');
+  for (const bad of ['', null, undefined, 'RFQ', 'RFQ88', 'U000', 'RF?8', '12345']) assert.equal(SM.markOfCode(bad), null, String(bad));
+});
+
+test('the visible code: test site only, 5% black on a light page, 7% white on a dark one, the hidden mark untouched', () => {
+  const code = cut('  let shotCodeFor = \'\';', '  function traceSection() {');
+  assert.ok(code.includes("if (!PREVIEW || !Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotCodeFor = ''; return; }"), 'the test site with the owner key only, and only with a number from the Worker');
+  assert.ok(code.includes("el.style.backgroundImage = shotCodeTile(ShotMark.codeOf(mark), light);"), 'the same number as the hidden mark');
+  // The tile, as the page builds it.
+  const tile = new Function(`${cut('  const SHOTCODE_W = 400', '  function paintShotCode() {')}\nreturn shotCodeTile;`)();
+  const svgOf = (u) => Buffer.from(/base64,([^"]+)"/.exec(u)[1], 'base64').toString('utf8');
+  const light = svgOf(tile('RFQ8', true)), dark = svgOf(tile('RFQ8', false));
+  assert.ok(light.includes('fill="#000" fill-opacity="0.05"') && dark.includes('fill="#fff" fill-opacity="0.07"'), 'his strengths');
+  for (const s of [light, dark]) assert.ok(s.match(/>RFQ8</g).length >= 40);
+  // Scattered, not in rows (an even grid of codes gave emailed dark screenshots a spacing the reader took for the
+  // hidden mark's): 40 codes at least 77 px apart round the tile's edges, none of the screen far from one, and the
+  // tile bigger than any spacing the reader looks for (420 px of picture, at 1.64 picture px a CSS px, text-message size).
+  const at = new Function(`${cut('  const SHOTCODE_W = 400', '  let shotCodeFor')}\nreturn { W: SHOTCODE_W, H: SHOTCODE_H, P: SHOTCODE_AT };`)();
+  assert.equal(at.P.length, 40);
+  const d = (a, b) => { const dx = Math.min(Math.abs(a[0] - b[0]), at.W - Math.abs(a[0] - b[0])), dy = Math.min(Math.abs(a[1] - b[1]), at.H - Math.abs(a[1] - b[1])); return Math.hypot(dx, dy); };
+  for (let i = 0; i < at.P.length; i++) for (let j = i + 1; j < at.P.length; j++) assert.ok(d(at.P[i], at.P[j]) >= 77, `${i} ${j}`);
+  let gap = 0;
+  for (let x = 0; x < at.W; x += 4) for (let y = 0; y < at.H; y += 4) gap = Math.max(gap, Math.min(...at.P.map((p) => d([x, y], p))));
+  assert.ok(gap <= 80, `a spot ${gap} px from any code`);
+  assert.ok(Math.min(at.W, at.H) * 1.64 > 420);
+  // Repainted when the test site switches on or off, and with the page style (paintShotMark runs on both).
+  assert.ok(html.includes("paintMine();\n      paintShotCode(); // the faint visible code (test site only)"));
+  assert.ok(cut('  function paintShotMark() {', '  // A change of page style').includes('  paintShotCode(); // the faint visible code (test site only)'));
+  const style = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+  assert.ok(style.includes('#shotcode { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 400px 880px; }'), 'taps go through; the tile the codes are laid out on');
+  // The hidden mark is drawn as before (the layout and tile tests above), whatever the test site does.
+  assert.ok(!cut('  function paintShotMark() {', '  // A change of page style').includes('PREVIEW'));
+});
+
+test('a photo of a screen: the code box on the test site only, matched against the Worker’s numbers, nothing sent anywhere', () => {
+  assert.ok(html.includes("${traceLast}</div>${PREVIEW ? traceCodeBox() : ''}</div></section>"), 'the main site’s Page Health is as it was');
+  assert.ok(html.includes("${PREVIEW ? ' For a photo of a screen, type the code you see on it below.' : ''}"));
+  const look = cut('  async function traceByCode(text) {', '  // Who a mark could belong to');
+  assert.ok(look.includes("const hits = cands.filter((c) => c.id !== 'owner-trial' && c.mark === mark);"), 'the trial’s number was never drawn as a code');
+  assert.ok(look.includes("if (!cands.ready) return"), 'before the Worker gives out numbers it says so');
+  assert.ok(!look.includes('fetch('), 'the only request is the Members list traceCandidates already asks for');
+});
