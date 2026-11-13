@@ -1,5 +1,44 @@
 # HANDOFF — read this before doing anything
 
+## What is on the test site and not the main site — listed for him 12 Nov 2026, about 20:35 Toronto. NOTHING BUILT OR PROMOTED; waiting on his picks
+
+**Owner:** "review the test site, list what needs to be pushed to the main so I can review". Read as: everything
+behind `PREVIEW` that a member does not get, as a numbered list for him to pick from. Nothing changed.
+
+**How it was looked at.** This checkout was stale (`056ebc9`); fast-forwarded to GitHub (`19d3573`) first. The
+laptop runs `19d3573` (`/health` → `laptop.code`), so both sites serve the newest page. Both live sites opened
+as him (owner key placeholder, `boardNoCount`, every non-GET stopped but `auth/owner`), 390 × 844, light, on
+the 20:28 check: every tab, `innerText` of `#view` main against test, SR03 looked up (`#turn=SR03`, SR03 in
+`trackTurns` in the browser only), three tab changes. No page errors, no sideways scroll, nothing saved.
+**The same on both sites, to the letter:** Order summary, Job Aids, Job postings, Notifications.
+
+**The list given to him (his numbers; each is page only, a switch to drop plus its test; no Worker paste):**
+1 Current's four menus off (`menusOff`) · 2 "Follow a turn (alerts)" + "Turn History →" on a followed turn's
+card + the follow box off Snapshots (`siteReviewPaint`, `paintTracked`, rail CSS) · 3 the pinned strip with
+▲ Top (`pinPaint`) · 4 Back = the tab before (`tabStepWanted`; 3 steps on test, 0 on main) · 5 Turn History's
+layout of 10 Nov (`turnPanel` tn2, `workHistory` work2, person search folds, `recentChips`; SR03 2,244 px vs
+3,627) · 6 My stats' jump list (`mineJump`) · 7 18.6(b) as rows (`ana2Stack` in the held view; 2,417 vs 3,883
+px, the rows are taller) · 8 Analytics Overview as "Analytics pages" + the section row wrapping (`compact:
+PREVIEW`, `.ana2 .anatabs` CSS; 2,928 → 1,306 px) · 9 My week's "Sleep this week" (not looked at today) · 10
+Agreements' examples and two folds · 11 Agreements' answer tools (formatting, [n] passages, add-a-document
+offer, "Didn't find it?", Copy answer); 10 and 11 are one switch (`preview: PREVIEW` in `renderAsk`) unless
+split · 12 Snapshots drawn like Current (`fresh`; 9,179 → 7,313 px) · 13 Members: Who gets alerts moved from
+Page Health, names beside phones with no account · 14 Members cleanup (picks 1, 3, 4, 5, 6); 13 and 14 are one
+switch (`review`) unless split · 15 the compact header (no second line: told him it sits against his "2 leave
+it", the name staying as it is) · 16 the newer-version bar (`checkSiteVersion`; not seen today).
+**Left off the list as staying on the test site at his word:** the purple "usually" tags and "How this train
+has gone"; Analytics → Likely-call test (tabled to 24 Nov). The likely-call line and spareboard predictions are
+off on both.
+
+**Found, told him, nothing changed:** the board-test Worker has **no `KIMI_API_KEY` and no `ANTHROPIC_API_KEY`**
+(its Search Review: "KIMI BALANCE couldn't read it (KIMI_API_KEY is not set)" and "ANTHROPIC_API_KEY isn't set";
+the main Worker has both), so a question asked in Agreements on board-test cannot be answered (`kimiChat` /
+the Claude call throw): item 11 cannot be tried there for real. The fix is his (a secret on the board-test
+Worker in Cloudflare). Not asked to verify by sending a question (nothing sent from a session). Also only a
+Worker difference: "Emails sent today: 7 of 95" on main, "7 of 70" on test (Members).
+
+**Not checked:** a real phone; an Admin's view; page styles but light; items 9 and 16 in a browser.
+
 ## Is the call prediction worth it? Read 13 Nov 2026 on all 28 saved days, at his asking. Nothing built. TABLED UNTIL 24 NOV at his word: review and plan then (check-in booked)
 
 **Owner, 13 Nov:** "Can you give me a summary on if the call prediction would be effective with the data you
