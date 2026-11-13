@@ -1,5 +1,20 @@
 # HANDOFF — read this before doing anything
 
+## The "a Toronto South crew may get it" alert taken off — 13 Nov 2026, at his word. WAITING ON ONE LAPTOP PULL + RESTART (the checker's own code)
+
+**Owner, 13 Nov:** "can we remove the notification for possible toronto south crew on train". It was the
+alert (owner, 2026-10-25) to the bunkhouse crew first in line when an ordered Mac yard train had no crew
+rested by its call: "<turn>: <train> is ordered for … (call …) and no crew in the bunkhouse is rested by
+then (you're on rest until …): a Toronto South crew may get it." (kind `mayCall`, under the phone's "may be
+called" option). **Taken off in `lib/board/alerts.js`:** no `south` worked out in `turnStates`, no alert in
+`turnEvents` (a phone's remembered `south` is dropped on the next check), and no "first in line for …, a
+Toronto South crew may get it" in the "tracked" message. **Left as they were:** the Sarnia "may be called"
+alert (same option), the crews' own lined-up / ordered / time-change alerts home from Toronto, and the
+page's **"possible Toronto South crew"** label on Current's Toronto line-up (information, not a
+notification: told him it stays unless he says). `torontoSouth` stays in `lib/board/toronto.js` for that
+label. Test rewritten (`test/board/alerts.test.js`, "no Toronto South crew may get it alert any more",
+quoting him). Suite **523 of 523**.
+
 ## The test site's pieces on to the main site — 12 Nov 2026, about 21:00 Toronto, at his word ("1-8. 10, 11, 12, 13, 14, 15, 16"). ON FOR EVERY MEMBER, BOTH SITES, in the code (page only). WAITING ON ONE LAPTOP PULL. 9 not picked; 16 HELD BACK (it cannot show as built: told him)
 
 **His answer** to the sixteen-item list below ("Reply with the numbers to push"): **"1-8. 10, 11, 12, 13, 14, 15,

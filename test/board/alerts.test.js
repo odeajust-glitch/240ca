@@ -393,18 +393,26 @@ test('turn alerts: reminder before the expected call', () => {
   assert.deepEqual(r.events, []);
 });
 
-// Owner, 2026-10-25: an ordered Mac yard train with no crew rested by the
-// call: the crew first in line (on rest) hears a Toronto South crew may get it.
-test('turn alerts: Toronto South may get an ordered train', () => {
+// Owner, 2026-10-25: an ordered Mac yard train with no crew rested by the call: the crew first in line (on
+// rest) heard "a Toronto South crew may get it". Taken off 2026-11-13 at his word: "can we remove the
+// notification for possible toronto south crew on train". No alert now, in any state of the train; what a
+// phone remembered for it is dropped; and the "tracked" message no longer says it.
+test('turn alerts: no "Toronto South crew may get it" alert any more', () => {
   const now = at(2026, 10, 24, 14, 0);
   const train = { symbol: 'M38331', originDay: '24', status: 'ORD', order: at(2026, 10, 24, 18, 30), deadhead: false };
   const bunk = [{ pos: 3, en: 'SD13', co: 'SR02', restUntil: at(2026, 10, 24, 16, 44) }];
   const st = (status) => turnStates({ now, predictions: [] }, [], { macLineup: [{ ...train, status }], bunkhouse: bunk });
-  const r = turnEvents({}, st('ORD'), { lineupRead: true });
-  assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall').map((e) => e.turn).sort(), ['SD13', 'SR02']);
-  assert.match(r.events.find((e) => e.turn === 'SD13').text, /M38331 24 is ordered for 24th 1830 \(call 24th 1615\) and no crew in the bunkhouse is rested by then \(you're on rest until 24th 1644\): a Toronto South crew may get it\./);
-  assert.deepEqual(turnEvents(r.told, st('ORD'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // once
-  assert.deepEqual(turnEvents({}, st('PLN'), { lineupRead: true }).events.filter((e) => e.kind === 'mayCall'), []); // planned: stays theirs
+  for (const status of ['ORD', 'PLN']) {
+    const r = turnEvents({}, st(status), { lineupRead: true });
+    assert.ok(!r.events.some((e) => /Toronto South/.test(e.text)), status);
+    assert.deepEqual(r.events.filter((e) => e.kind === 'mayCall'), [], status);
+    assert.equal(st(status).SD13.south, undefined);
+  }
+  // A phone that was told before: its memory of it goes, and nothing is sent.
+  const r = turnEvents({ SD13: { south: 'M38331 24' } }, st('ORD'), { lineupRead: true });
+  assert.equal(r.told.SD13.south, undefined);
+  assert.deepEqual(r.events.filter((e) => e.turn === 'SD13' && e.kind === 'mayCall'), []);
+  // (A crew's own train home out of Toronto is still told: the next test, unchanged.)
 });
 
 // Owner, 2026-10-25: crews in the Toronto bunkhouse hear about the train
