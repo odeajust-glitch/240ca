@@ -26,6 +26,10 @@ footnote saying where it came from and that a bulletin or a change of card chang
 a job, a relief or "tower". **No names anywhere.** A member on either site, and his own view of the main site,
 get the tab exactly as before.
 
+**13 Nov, later: "can get rid of the covered by column for the non relief jobs".** Done: the Each job table is
+Job · On duty · Crew off (YINS30 keeps "Runs Mon–Fri only" under its name); who covers what is only in the relief
+jobs' table now. The search no longer lists a regular job for a relief's name (the relief's row names its jobs).
+
 **Not certain, told to him / to ask:** ❓ **YEBS03 on Sat and Sun** (the checks show XSAS01, a YINS60 holder
 and spares on it, the own crew once in three weekends): the page says "not clear from the checks". YFLS01's
 Sunday, YSTY01's and YSBY06's weekends: no relief job seen (other yard crews and spares): put as such. The
