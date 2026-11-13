@@ -260,7 +260,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 </main>
 
 <footer><div class="wrap">
-  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read 13 Nov 2026 (34 people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with four rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; straight-time steps pass over anyone on overtime; after the spare, someone in the yard at straight time comes before anyone on overtime; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
+  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read 13 Nov 2026 (34 people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with the rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; if nobody is on the spareboard, anyone working in the yard that day who hasn't been called yet gets it first (moved up from their own shift); straight-time steps pass over anyone on overtime, so someone in the yard at straight time comes before the regular yardmasters on their rest day; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
   <p><b>Set by hand for now.</b> Where road and spare turns are at call time, their rest, and the spare yardmaster's last yard shift and shifts this week. Temporary vacancies are still to come; the "Working at call time" box is there until then.</p>
 </div></footer>
 
@@ -620,7 +620,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   // --- Rules -----------------------------------------------------------------
   const GROUP_OPTS = [['spare', 'Spare yardmaster'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)'], ['engineer', 'Working as an engineer (canvass only)']];
   // A step can't be set to engineers (a hard rule: the canvass only, last).
-  const STEP_GROUPS = [['spare', 'Spare yardmaster'], ['yard', 'Working in the yard (4.16)'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)']];
+  const STEP_GROUPS = [['spare', 'Spare yardmaster'], ['yardday', 'Working in the yard that day, not called yet'], ['yard', 'Working in the yard (4.16)'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)']];
   const canvassRow = (s, i) => `<div class="srow canvass${s.on ? '' : ' off'}" data-i="${i}">
       <input type="checkbox" data-k="on" aria-label="Canvass on"${s.on ? ' checked' : ''}>
       <span class="n">${i + 1}</span>

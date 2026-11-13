@@ -15,7 +15,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 4: his rules of 13 Nov, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -139,14 +139,25 @@ to save examples or rules; view-only sees them).
   - **"Anyone available on the yardmaster spareboard? Yes / No"** with the job (`sc.spareboard`): No and the spare
     steps find nobody ("nobody available on the spareboard"). **My reading: the yardmaster spareboard (EXYA01);
     asked him whether he meant the conductor spareboard** (covering the yard job of someone moved up).
-  - Checked: suite with `ym-call-order.test.js` 7 (two new: the spareboard answer; a check's Yes / No agreeing or
-    not, who first, someone missing, the fit fixing it); broken on purpose four ways, all caught. The page at
+  - Checked: suite with `ym-call-order.test.js` 8 (the spareboard answer; a check's Yes / No agreeing or not, who
+    first, someone missing, the fit fixing it; version 6: the yard that day: already called, still working the
+    night before, moved up not overtime, on rest skipped); broken on purpose eight ways, all caught. The page at
     360 px: marked, noted, saved, spareboard No, reopened; no errors, no sideways scroll.
-  - **Asked him, not answered yet:** (1) is someone in the yard set up to the yardmaster job **instead of their own
-    shift that day** (their own job then goes to the spareboard)? The page now leaves out anyone whose own shift is
-    within 8 h (rank 290's YMPS60 2359, for a 1900 job); (2) does the 4.16 time-and-a-half step take road
-    conductors (Chain Gang, A and B pools), or only the yard? A setting on the page ("The 4.16 time-and-a-half step
-    takes"), default the manual's (both).
+  - **The yard that day, version 6** (his answer to my question (1) below: "Anyone that is working that day the job is
+    going spare, in the yard, hasnt been called yet and isnt on rest will get the job first if no one is on the
+    spareboard"): step 3 "Working in the yard that day, not called yet" (`yardday`), straight time, right after the
+    spare. In it: a conductor on a yard or relief job whose own job works on the day the YA job starts (`today`),
+    whose own call (own start − 2 h) is after this call ("already called for …" otherwise), not on rest at the call.
+    The shift they give up is not held against them, nor is overtime (it replaces it), and only a shift they are
+    actually working at the time counts (no hours-between guess: rest decides). The earlier straight-time yard
+    step stays after it (a yard worker on a rest day under 5 shifts, e.g. rank 490), then the regulars. His Saturday
+    cases now: YSBY02 1900 → the spare, then rank 290 (YMPS60 2359 that night); YSBY01 0700 → the spare, then rank
+    410 (XSAS01 → YBHS01 0800, called 0600). The fit keeps the spare and this step first (576 sets).
+  - **Still asked, not answered:** (2) does the 4.16 time-and-a-half step take road conductors (Chain Gang, A and B
+    pools), or only the yard? A setting on the page ("The 4.16 time-and-a-half step takes"), default the manual's
+    (both). (3) "the spareboard" taken as the yardmaster spareboard (his "if no one is on the spareboard" fits it);
+    not confirmed. (4) Whether a yard worker on a rest day at straight time (by the 5-shift count) comes before the
+    regular yardmasters on overtime, as the page has it.
 - **Teaching (fit now 576 sets: the spare stays first; the order of the other four groups, the layout, the own-shift
   hours and the 4.16 step's reach are tried; rest, overtime, engineers and the call lead stay as he set them):**
   "Is this right?" saves an example (the job, the time, everyone's situation, who should get it, and

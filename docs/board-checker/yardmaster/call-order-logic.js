@@ -129,7 +129,7 @@
   const shiftsAround = (code, iso) => shiftsOver(code, iso, -1, 1);
 
   const GROUPS = {
-    spare: 'Spare yardmaster', yard: 'Working in the yard (4.16)', regular: 'Regular yardmaster', c416: 'Working under 4.16 (conductor)',
+    spare: 'Spare yardmaster', yardday: 'Working in the yard that day, not called yet', yard: 'Working in the yard (4.16)', regular: 'Regular yardmaster', c416: 'Working under 4.16 (conductor)',
     other: 'Another agreement (5.1)', engineer: 'Working as a locomotive engineer', any: 'Canvass', none: 'No current job',
   };
   const STATUS = { available: 'Available', off: 'Off', vacation: 'Vacation', busy: 'Not available' };
@@ -139,7 +139,9 @@
   // is made they are skipped"; the overtime rule "is correct"; engineers: "this is a hard rule
   // so it only goes to the conductors in the yard first"; and, of the regular yardmasters on
   // their rest day, "these 3 wouldnt get it first sicne they will get paid overtime, it will goto
-  // someone in the yard making straight time first").
+  // someone in the yard making straight time first"; then: "Anyone that is working that day the job
+  // is going spare, in the yard, hasnt been called yet and isnt on rest will get the job first if no
+  // one is on the spareboard").
   function startingRules() {
     return {
       leadMin: 120, gapH: 8, ownShifts: true, groupBy: 'now', groupOverride: {},
@@ -147,6 +149,8 @@
       steps: [
         { group: 'spare', need: 'call', pay: 'straight', on: true },
         { group: 'spare', need: 'start', pay: 'straight', on: true },
+        { group: 'yardday', need: 'call', pay: 'straight', on: true },
+        { group: 'yardday', need: 'start', pay: 'straight', on: true },
         { group: 'yard', need: 'call', pay: 'straight', on: true },
         { group: 'yard', need: 'start', pay: 'straight', on: true },
         { group: 'regular', need: 'call', pay: 'ot', on: true },
@@ -201,6 +205,8 @@
       const ended = past.filter((x) => x.e <= start).map((x) => x.e);
       const lastSched = ended.length ? Math.max(...ended) : null;
       const weekSched = known ? past.filter((x) => x.s >= wk).length : null;
+      // Their own job on the day the job goes spare: the shift they give up if moved up.
+      const today = workOn(now, sc.date);
       const lastIn = fromLocal(f.lastYard);
       const weekIn = f.week === '' || f.week == null || Number.isNaN(+f.week) ? null : +f.week;
       return {
@@ -208,6 +214,7 @@
         gNow: groupOf(now), gPerm: groupOf(p.perm), yardNow: inYard(now), yardPerm: inYard(p.perm), freeAt: fromLocal(f.freeAt), shifts: shiftsAround(now, sc.date),
         holder: (!!pp && pp.craft === 'YA' && pp.turn === jobTurn) || (!!f.now && !!pn && pn.turn === jobTurn),
         lastSched, weekSched, lastEnd: lastIn != null ? lastIn : lastSched, weekCount: weekIn != null ? weekIn : weekSched,
+        today: today ? { job: today.job, s: toMin(sc.date, today.start) } : null,
       };
     });
     const ya = YA_JOBS[jobTurn];
@@ -237,19 +244,27 @@
       if (prep.spareOff && groupOfRow(r) === 'spare') return 'nobody available on the spareboard';
       if (r.status !== 'available') return STATUS[r.status].toLowerCase();
       if (rules.restSkips && r.freeAt != null && r.freeAt > call) return `on rest until ${fmt(r.freeAt)} when the call is made`;
+      // Moved up from their own shift that day: it must not have been called yet, and it is the
+      // shift they give up, so it is not held against them (nor is overtime: it replaces it).
+      const movedUp = st.group === 'yardday';
+      if (movedUp && r.today && r.today.s - rules.leadMin <= call) return `already called for ${r.today.job} ${fmt(r.today.s)}`;
+      // For them "isnt on rest" is the test (rest is booked), so only a shift they are actually
+      // working at the time counts, not the hours-between guess.
+      const g = movedUp ? 0 : gap;
       if (rules.ownShifts) {
-        const o = r.shifts.find((x) => x.s < end + gap && x.e > start - gap);
+        const o = r.shifts.find((x) => x.s < end + g && x.e > start - g && !(movedUp && r.today && x.s === r.today.s));
         if (o) return `works ${o.job} ${fmt(o.s)}–${hhmmOf(o.e)}`;
       }
       const by = st.need === 'call' ? call : start;
       if (r.freeAt != null && r.freeAt > by) return `not free until ${fmt(r.freeAt)}`;
-      if (st.pay === 'straight') { const ot = otWhy(r); if (ot) return ot; }
+      if (st.pay === 'straight' && st.group !== 'yardday') { const ot = otWhy(r); if (ot) return ot; }
       return '';
     };
     const inStep = (st, r) => {
       if (st.group === 'any') return true;
       const g = groupOfRow(r);
       if (g === 'engineer') return false; // engineers: the canvass only (owner: "a hard rule")
+      if (st.group === 'yardday') return g === 'c416' && yardOf(r) && !!r.today; // their yard job works that day
       if (st.group === 'yard') return g === 'c416' && yardOf(r); // conductors on a yard or relief job
       if (st.group === 'c416') return (g === 'c416' || g === 'none') && (rules.c416Scope !== 'yard' || yardOf(r));
       return g === st.group;
@@ -272,12 +287,12 @@
   const clone = (x) => JSON.parse(JSON.stringify(x));
   function permute(a) { if (a.length <= 1) return [a]; const out = []; a.forEach((x, i) => { for (const rest of permute([...a.slice(0, i), ...a.slice(i + 1)])) out.push([x, ...rest]); }); return out; }
   // The owner's own rules (rest, overtime, engineers, the call lead) stay as they are, and the
-  // spare yardmaster stays first; the search tries the order of the other groups, the call /
+  // spare yardmaster and then the yard that day stay first; the search tries the order of the other groups, the call /
   // on-time layout, the own-shift check and its hours, and whether the 4.16 step takes road
   // conductors.
   function buildRules(base, v) {
     const b = normalize(base);
-    const pay = (g) => (g === 'spare' || g === 'yard' ? 'straight' : 'ot');
+    const pay = (g) => (g === 'spare' || g === 'yardday' || g === 'yard' ? 'straight' : 'ot');
     const steps = v.layout === 'pairs'
       ? v.order.flatMap((g) => [{ group: g, need: 'call', pay: pay(g), on: true }, { group: g, need: 'start', pay: pay(g), on: true }])
       : [...v.order.map((g) => ({ group: g, need: 'call', pay: pay(g), on: true })), ...v.order.map((g) => ({ group: g, need: 'start', pay: pay(g), on: true }))];
@@ -331,7 +346,7 @@
     const found = [];
     for (const rest of permute(['yard', 'regular', 'c416', 'other'])) for (const layout of ['pairs', 'callsFirst']) for (const ownShifts of [true, false])
       for (const gapH of (ownShifts ? [0, 4, 8, 10, 12] : [normalize(current).gapH])) for (const c416Scope of ['all', 'yard']) {
-        const r = buildRules(current, { order: ['spare', ...rest], layout, gapH, ownShifts, c416Scope });
+        const r = buildRules(current, { order: ['spare', 'yardday', ...rest], layout, gapH, ownShifts, c416Scope });
         const key = JSON.stringify(shape(r));
         if (seen.has(key)) continue;
         seen.add(key);
@@ -346,7 +361,7 @@
     const on = rules.steps.filter((s) => s.on);
     const order = [];
     for (const s of on) if (s.group !== 'any' && !order.includes(s.group)) order.push(s.group);
-    const name = { spare: 'spare YM', yard: 'yard at straight time', regular: 'regular YM', c416: '4.16', other: '5.1' };
+    const name = { spare: 'spare YM', yardday: 'yard, working that day', yard: 'yard at straight time', regular: 'regular YM', c416: '4.16', other: '5.1' };
     const real = on.filter((s) => s.group !== 'any');
     const firstStart = real.findIndex((s) => s.need === 'start');
     const callsFirst = firstStart > -1 && !real.slice(firstStart).some((s) => s.need === 'call');
