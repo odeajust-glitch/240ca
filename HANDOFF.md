@@ -1906,6 +1906,14 @@ worker were already there; this filled the gaps. **No Worker paste needed** (it 
 - `public/board.html`: `#a2hsset` in ⚙ Settings, one-time banner `#a2hsnote` (dismissal in `localStorage.a2hsDismissed`), iPhone steps `#a2hsios`; Android uses `beforeinstallprompt`. All hidden when opened from the icon. `black-translucent` status bar, with `body` padded by the top safe area and a dark strip behind the clock in standalone mode.
 - Checked in a browser: iPhone banner → steps, second visit no banner, standalone hides both, Android prompt called, offline reload shows the saved page (tested against a local copy; Playwright routing gets in the way of a service worker offline test on the real site). **Not yet tried on a real phone** — the owner has a test list.
 - A phone that already had the old icon keeps the old icon and name until it is removed and added again.
+- **13 Nov 01:23, his Android phone:** a silent Chrome notification each time he opens the board: "Line-up · Tap to
+  copy the URL for this app · Share · Open in Chrome browser". That is Chrome's own notice for a site kept as an
+  old-style home-screen shortcut opened full screen (no address bar); a full install (WebAPK) does not show it.
+  "Line-up" is not the manifest's name ("Board" / "Sarnia Board"), so his icon is an old shortcut. Checked read
+  only: on both sites Chromium finds no installability errors, the manifest parses, `sw.js` is active, and the
+  manifest, icons and `sw.js` are served before the sign-in check (`OPEN_FILES`). Told him: remove the "Line-up"
+  icon, then ⚙ Settings → Add to Home Screen (or Chrome ⋮ → Install app); if the notice still comes, long-press
+  it to turn it off. Nothing changed. Not seen: whether his reinstall gives the full app.
 
 ## Split name codes review — done November 11, 2026, 21:35 Toronto (waiting on Justin)
 
