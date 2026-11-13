@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). WAITING ON ONE LAPTOP PULL + RESTART; the backfill from 26 Oct runs by itself on the first check
+## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. WAITING ON his look on board-test, and the `b329d94` Worker paste for the code lookup (copy page given again 13 Nov about 07:10, checked byte for byte)
 
 **Owner, 13 Nov:** "Do not use the call board to determine off duty since if they forget to tie up it will sit there.
 We have to manually close our ticket in the computer, untill we do the job will stay on the call board", then "We
@@ -55,9 +55,20 @@ most of the rest within a minute or two. So "on rest until" counts from the off-
 **Not checked:** the real screen (his laptop's first read is the test): the box labels with YD, where the O-T cell
 sits, the last page's F8, how far back CATS keeps the yard list, and whether CATS carries the yard read's START
 DATE into the next train read (that read leaves START DATE as CATS has it; three days back is within its 8 pages).
-**Next:** after the pull and restart, the window line; a few shifts against his photo of the 11th (YSBY03 / YSBY04
-0400, the rest blank). Then his look on board-test: a yard worker's My stats (owner lookup), the board colours.
-The main site only at his word.
+**Seen live, 13 Nov about 07:15 Toronto (read only: /health, data/2026-11-13.json, yardjobs.json,
+resets-test.json).** His first pull at about 06:56 got `eec4d11` (before this push at 07:00); by 07:12 the laptop
+reported `64e328b`. **The backfill read at 07:08: 342 yard shifts, on duty 26 Oct 0600 to 13 Nov 0800, 17 to 20 a
+day, 89 with O-T filled in.** **The 11th is his photo exactly:** YSBY03 0700 and YSBY04 1900 at 240 min (0400), the
+other 14 of the photo blank; the next page's YINS60 2330 60 min, YFLS60 and YMPS60 2359 blank. YSTY01 on the 11th is
+blank: the 2 h 10 "over" the Call Board gave it was the ticket closed late, as he said. `resets-test.json`: 263 named
+yard shifts ended by CATS. `yardjobs.json`: YSBY01 to YSBY05 12 h jobs (all O-T 0400), YSBY06 8 h, the rest 8 h;
+YMPS31 ran 15 min or more over on 9 of 18 runs (longest 11 h 50), YMPS60 4 of 17; most jobs 0 or 1. Runs not timed
+are the Call Board's 23 to 25 Oct (before the backfill's start) and today's still on. **Rest check with the real O-T:**
+of the 71 shifts with a rest booked (all now have O-T), rest until − (8 h + O-T) is a whole number of hours in 60 (46
+from the old 8 / 12 h), within 2 min in 3 more; the other 8 are blank-O-T shifts 5 to 19 min short of 10 h (crews off
+a few minutes before 8 h: YFLS60 / YMPS60 2359 jobs off about 0740 to 0752; a blank O-T cannot show it).
+**Next:** his look on board-test (a yard worker's My stats through the owner lookup once `b329d94` is pasted; the
+board colours from `resets-test.json`). The main site only at his word.
 
 ## Job Aids: "Due out of Sarnia", the pools' rotation by day and as a calendar file (.ics) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
 
