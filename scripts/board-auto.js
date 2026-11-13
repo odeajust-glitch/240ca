@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE, YM_SENIORITY_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -62,6 +62,7 @@ const Postings = require('../lib/board/postings');
 const OwnerNotify = require('../lib/board/owner-notify');
 const Trainees = require('../lib/board/trainees');
 const S = require('../lib/board/screens');
+const Seniority = require('../lib/board/seniority');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
 const { formatReport, describeMe } = require('../lib/board/report');
@@ -412,6 +413,32 @@ async function fillCircularInquiry(page, today) {
   }, today);
 }
 
+// The Seniority List Inquiry's boxes (owner's photos, 2026-11-13), each found
+// right of its label on the same line: LIST CODE's two (3G, YA), DIST (45),
+// SUB-DIST (SA). EMP-NBR, NAME, FIRST TV DATE, SERVICE and TEMP ASGN stay
+// empty. → the labels with no box found (nothing typed for those).
+async function fillSeniorityInquiry(page) {
+  return catsFrame(page).evaluate((want) => {
+    const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const boxes = [...document.querySelectorAll('input[type=text]')].filter(visible).map((el) => ({ el, r: el.getBoundingClientRect() }));
+    const texts = [];
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) texts.push(n);
+    const missing = [];
+    for (const [label, src, values] of want) {
+      const re = new RegExp(src);
+      const node = texts.find((n) => re.test(n.textContent.replace(/\s+/g, ' ').trim()));
+      if (!node) { missing.push(label); continue; }
+      const range = document.createRange(); range.selectNodeContents(node);
+      const lr = range.getBoundingClientRect();
+      const row = boxes.filter((b) => Math.abs((b.r.top + b.r.bottom) / 2 - (lr.top + lr.bottom) / 2) < 12 && b.r.left >= lr.right - 4).sort((a, b) => a.r.left - b.r.left);
+      if (row.length < values.length) { missing.push(label); continue; }
+      values.forEach((v, i) => { row[i].el.value = v; });
+    }
+    return missing;
+  }, [['LIST CODE', '(^|\\s)CODE:$', ['3G', 'YA']], ['DIST', '(^|\\s)DIST:$', ['45']], ['SUB-DIST', 'SUB-DIST:$', ['SA']]]);
+}
+
 async function chooseFromMenus(page, option, menu = 3) {
   await toMainMenu(page);
   await fill(page, { 0: '45', 1: 'SA', 2: String(menu) });
@@ -439,6 +466,7 @@ let assignReadAt = 0; // the assignment history (3 → 7) is read about once an 
 let yardHistReadAt = 0; // and with YD, for the yard jobs' O-T (tried about once an hour, read or not)
 let yardAskedTried = ''; // a yard backfill asked with scripts/assign-backfill.js: tried on the next check, once
 let postingsReadAt = 0; // the jobs up for bid (3 → 8, 1 → 8) are read about once an hour
+let ymTries = { slot: '', n: 0 }; // the yardmaster seniority list (3 → 1): tries in this half day
 const knownPeople = {
   get: (key) => Holders.turnOf(holders || (holders = Holders.loadHolders(HOLDERS_FILE)), key),
 };
@@ -798,6 +826,58 @@ async function runRoute(page, opts = {}) {
     // Tried, read or not: not again for an hour (a screen that doesn't fit is logged once an hour, not every check).
     postingsReadAt = Date.now();
     if (read) { try { fs.writeFileSync(POSTINGS_FILE, JSON.stringify({ ...kept, at: now.toISOString() })); } catch (err) { console.log(`  (job postings not saved: ${err.message})`); } }
+  }
+
+  // The yardmaster seniority list (owner, 2026-11-13: "lets figure out the YM
+  // seniority list first"; "add this into the board check only 2 times a day,
+  // once the first check after 0000 and once the first check after 1200").
+  // 3 → 1, LIST CODE 3G YA, DIST 45, SUB-DIST SA, Enter, F8 to END OF LIST.
+  // It has names, so it is read unmasked, in memory, never captured into the
+  // saved check; the parsed list goes only to BoardChecker\yardmaster-seniority.json
+  // (lib/board/seniority.js), and only when the end of the list was reached.
+  // A failed try is tried again at the next check, three tries a half day.
+  {
+    const now = new Date();
+    let saved = null;
+    try { saved = JSON.parse(fs.readFileSync(YM_SENIORITY_FILE, 'utf8')); } catch { /* none yet */ }
+    const slot = Seniority.slotOf(now);
+    if (ymTries.slot !== slot) ymTries = { slot, n: 0 };
+    if (Seniority.due(saved, now, ymTries.n)) {
+      ymTries.n++;
+      try {
+        let s = await chooseFromMenus(page, 1);
+        if (!S.isSeniorityList(s.text)) throw new Error('not the Seniority List Inquiry screen');
+        const missing = await fillSeniorityInquiry(page);
+        if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
+        s = await press(page, 'Enter');
+        if (!S.isSeniorityList(s.text)) throw new Error('not the Seniority List Inquiry screen after Enter');
+        if (!/YARDMSTRS/.test(s.text)) throw new Error(`not the yardmasters' list (CATS: ${(s.text.match(/(INVALID[^=]{0,60}|ERROR[^=]{0,60}|NO\s+RECORDS[^=]{0,60})/) || ['nothing said'])[0].trim()})`);
+        const list = new Map();
+        let ended = false;
+        let pages = 0;
+        for (let pageNo = 0; pageNo < 15; pageNo++) {
+          const rows = await unmaskedRows();
+          pages++;
+          for (const p of rows ? S.parseSeniorityList(rows) : []) list.set(p.rank, p);
+          if (/END\s+OF\s+LIST/.test(s.text)) { ended = true; break; }
+          const next = await press(page, 'F8').catch(() => null);
+          if (!next || !S.isSeniorityList(next.text) || next.text === s.text) break;
+          s = next;
+        }
+        if (ended && list.size) {
+          const people = [...list.values()].sort((a, b) => a.rank - b.rank);
+          const kept = Seniority.keep(saved, people, { now, pages });
+          fs.writeFileSync(YM_SENIORITY_FILE, JSON.stringify(kept));
+          ymTries.n = Seniority.MAX_TRIES;
+          console.log(`  Yardmaster seniority (3 → 1, 3G YA): ${people.length} people on ${pages} page${pages === 1 ? '' : 's'}${kept.since === kept.at && saved ? ' (changed since the last read)' : ''}.`);
+        } else {
+          console.log(`  (yardmaster seniority (3 → 1): ${list.size} read on ${pages} page${pages === 1 ? '' : 's'}, the end of the list not reached; not saved, tried again next check)`);
+        }
+      } catch (err) {
+        if (err instanceof NeedSignIn) throw err;
+        console.log(`  (skipped yardmaster seniority (3 → 1): ${err.message})`);
+      }
+    }
   }
 
   // Owner, 2026-10-24: the spareboards, the jobs going spare, 501/502 and

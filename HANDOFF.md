@@ -1,12 +1,57 @@
 # HANDOFF — read this before doing anything
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening), NOTHING BUILT; going through his CATS screens first
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). Step 1, THE YARDMASTER SENIORITY LIST, BUILT (laptop only), WAITING ON ONE LAPTOP PULL + RESTART. No calling rules built: his to confirm next
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
 This is the next step after the section below (which only records the YA jobs going spare and shows them on
 the test site's Analytics). Nothing predicts who fills a YA job; the yardmaster spareboard is not read, and
 no seniority or qualified-yardmaster list is read.
+
+**Then: "let me confirm the rules, but lets figure out the YM seinority list first, those are new screens";
+"the order is 3 then 1 ... then enter 3g YA 45 SA ... you have to record the names and their permanent job.
+Once we figure that out we will set out the rules for determining who gets called"; sent his photos (the
+screen empty, typed, and all five pages); "Save this list the way it is we will use it to make an artifact to
+test predictions"; then "can we add this into the board check only 2 times a day, once the first check after
+0000 and once the first check after 1200 everyday".**
+
+**The screen** is written up in SCREENS.md ("Yardmaster seniority list"): SENIORITY LIST INQUIRY (PSTS02F),
+3 → 1, LIST CODE 3G + YA, DIST 45, SUB-DIST SA; seven people a page, two lines each (rank, date, name with
+CATS's marks, 45 SA, awarded, move type, status; then the current assignment and its description). 13 Nov:
+34 people: 6 hold a YA job (YSTY01, YSBY01–04, 06), 1 the yardmaster spare `EXYA01YA` ("TRAFFIC COORDINATORS
+SPARE"), 7 are engineers (S102, S302, SD01, SD07, EN08, EN09, S502), 7 road conductors (SR01, SR07, SR10,
+SA03, SA07, SA08, SB04), 10 on yard FO / S1 jobs (two of them relief jobs XSAS01, XSAS04), 3 with none (off or
+on vacation).
+
+**Saved.** The full list with names: sent to him as a file (`yardmaster-seniority-2026-11-13-WITH-NAMES.md`;
+this session's scratchpad only, gone with it). **The repository is public, so no names are committed:**
+`docs/board-checker/yardmaster/seniority-2026-11-13.json` has the same 34 rows without names (rank, date,
+marks, 45 SA, awarded, move, status, assignment split into pool / turn / craft, description), for the
+prediction artifact. **Already in the repo before this (not mine, told to him):** SCREENS.md's option 4
+example has three real names (line ~349).
+
+**BUILT (laptop code; the site is untouched).** `scripts/board-auto.js`, after the job postings: on the
+first check in each half day (0000–1159, 1200–2359 Toronto; `lib/board/seniority.js slotOf`, kept in the file
+so a restart doesn't read it twice), 3 → 1, `fillSeniorityInquiry` puts 3G / YA / 45 / SA in the boxes right of
+LIST CODE, DIST and SUB-DIST, Enter, checks for YARDMSTRS, then reads each page **unmasked, in memory** (never
+`capture`d into the saved check) and F8 to END OF LIST. `S.parseSeniorityList` → per person `{ rank, date,
+name, key (SURNAME/I/FIR, as the boards match people), marks, tags, dist, sub, awarded, move, status,
+assignment, pool, turn, craft, yard, description }`. Saved only when the end of the list was reached, to
+**`BoardChecker\yardmaster-seniority.json`** (`{ at, slot, since, pages, count, list, past }`; `past` keeps the
+60 earlier versions with from / until, so a prediction can be tested against the list as it stood that day).
+A failed or short read is tried at the next check, three tries a half day. **Names never leave the laptop:**
+the file is on the backup's skip list beside names.json (`backup.js SKIP_FILES`), and nothing the site builds
+reads it. One line in the log each read: "Yardmaster seniority (3 → 1, 3G YA): 34 people on 5 pages".
+
+**Checked.** Suite **573 of 573** (`test/board/seniority.test.js`, 5, made-up names only: the photo layout,
+the checker's own cell layout, the half days, the versions, and that the file is skipped by the backup, read by
+nothing on the site and never captured; broken on purpose six ways, each caught). His real 34 rows through the
+parser: all 34, each with its key and job. **Not checked:** the real screen from the laptop: the boxes are
+found by their labels (if CATS draws the labels another way, the log says "no box for …" and nothing else is
+touched); the first read is the first check after his pull + restart.
+
+**Next, his:** the rules for who gets called (the manual's ladder below, to confirm), and what CATS's marks
+(`*`, `+`, `(NET)`, `(NODP)`) and MOVE TYPE (B, F) mean if they matter.
 
 **What the Sarnia calling manual says** (`data/crew_calling_cty.pdf`, "Relief – Yardmasters", p. 20, dated
 2011): by **seniority**, not first in first out like the fast and slow boards: (1) senior qualified
@@ -18,9 +63,9 @@ working under 4.16 (a qualified YM working as a conductor, as SA01 did on YSBY04
 yardmaster in seniority order. Locomotive engineers only at the canvass. The yardmasters' own agreement is
 not in the corpus. **Not confirmed with him that Sarnia still works this way.**
 
-**To ask him as the screens come** (railway questions: ask, don't guess): which screen is the yardmaster
-spareboard and what order it is in; does the manual's ladder hold; is the call 2 h before the start; can a
-qualified yardmaster on a pool or spare turn be told apart anywhere on CATS.
+**To ask him with the rules** (railway questions: ask, don't guess): does the manual's ladder hold; is the
+call 2 h before the start; the yardmaster spare (`EXYA01YA`): is there a board for it on CATS. Who is a
+qualified yardmaster is now answered by the list itself (everyone on it, wherever they work).
 
 **Seen on the way, not his ask, nothing built (yard crews FO/S1, not yardmasters):** replaying the 29 live
 days, the site named the right spare for 61 of 118 FO/S1 yard jobs; 36 of the 57 misses were the right

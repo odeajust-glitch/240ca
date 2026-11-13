@@ -409,3 +409,54 @@ ENTER=INQ/DISPLAY CREW INFO   PF1=HELP   PF3=EXIT   PF8=PAGEDN   PF11=PREV MENU
   no overtime once the run has left the Call Board (the ticket closed: owner, 2026-11-13, "untill we do the job will
   stay on the call board"). `parseAssignHistory` still only matches a train's line.
 
+
+## Yardmaster seniority list (`45 SA 3` → `1`, list code 3G YA): owner's photos, 2026-11-13
+
+Owner: "the order is 3 then 1 ... then enter 3g YA 45 SA ... you have to record the names
+and their permanent job"; then "add this into the board check only 2 times a day, once the
+first check after 0000 and once the first check after 1200". Train Service menu, option 1:
+SENIORITY LIST INQUIRY (PSTS02F), empty at first. Typed: LIST CODE `3G` and `YA` (two
+boxes), DIST `45`, SUB-DIST `SA`; EMP-NBR, OR NAME, FIRST TV DATE, SERVICE and TEMP ASGN(Y)
+left empty. Enter. The title line then reads `YARDMSTRS (LN,HA,SA,OAKVL)`. Seven people a
+page, two lines each; PF8 pages down ("PRESS PFKEY8 TO SCROLL", P004-1); the last page says
+"END OF LIST" (E008-1). On 13 Nov: five pages, 34 people. **Names below are made up.**
+
+```
+LIST CODE: [3G][YA]          SENIORITY LIST INQUIRY                       PSTS02F
+                             YARDMSTRS (LN,HA,SA,OAKVL)
+EMP-NBR: [      ]  OR NAME: [                  ]       FIRST TV DATE: [      ]
+          DIST: [45]  SUB-DIST: [SA]  SERVICE: [ ]  TEMP ASGN(Y): [ ]
+RANK   DATE       EMPLOYEE NAME            DIST/SUB   AWARDED      MOVE TYPE   STATUS
+                                                       CURRENT ASSIGNMENT
+   30  930421  ALDER*+         TJ  TOMAS     45  SA   2610251200       B
+                                           YSTY01YA   0630 TOWER S/S  JT60
+   60  960713  BIRCH+          PG  PETER     45  SA   2610251200       B         OFF
+                                           YSBY01YA   0700 YDM BLOCK 1
+  140  150724  CEDAR*+         M   MILO      45  SA   2610251212
+                                           EXYA01YA   TRAFFIC COORDINATORS SPARE
+  295  231010  GUM*+           K   KURT      45  SA                              VACATION
+  410  250925  IVY*+ (NET)     C   COLE      45  SA   2610251200       B
+                                           XSAS01FO   REL#1 TH/FR OFF
+ENTER=INQ/RESTART   PF1=HELP   PF3=EXIT   PF7=PAGEUP   PF8=PAGEDN   PF11=PREV MENU
+PRESS PFKEY8 TO SCROLL                                                     P004-1
+```
+
+- RANK: the order on the list. Gaps (30, 40, 60, 140 …): the list covers London, Hamilton,
+  Sarnia and Oakville and only 45 SA is shown, so the others' places are missing. The
+  DATE column (YYMMDD) is not always in rank order (rank 180 is dated 2015, after 2017s).
+- EMPLOYEE NAME: surname with CATS's marks (`*`, `+`, `(NET)`, `(NODP)`; not known what
+  they mean), initials, first name. One had no initials shown.
+- AWARDED: YYMMDDHHMM, when the current assignment was awarded (most 2610251200, the 25 Oct
+  board change). MOVE TYPE: B, F or blank (not known). STATUS: OFF, VACATION or blank.
+- Second line, CURRENT ASSIGNMENT: eight letters, job or pool + turn then craft, and its
+  description: `YSTY01YA` / `YSBY01`–`06` + `YA` (the yardmaster jobs), `EXYA01YA` (TRAFFIC
+  COORDINATORS SPARE: the yardmaster spare turn), `S1S102EN`, `SDSD01EN`, `EXEN08EN`
+  (engineer spare), `SRSR10CO`, `SASA07CO`, `SBSB04CO`, yard `YMPS60FO`, `YBHS01S1`,
+  relief `XSAS01FO` (REL#1). "OFF" after a relief job's days (TH/FR OFF) is the job's own
+  description, not the status. Someone with no assignment (on vacation, off) has no
+  second line.
+- **Built 13 Nov:** `isSeniorityList` / `parseSeniorityList` (lib/board/screens.js), read by
+  scripts/board-auto.js on the first check after 0000 and after 1200 (Toronto), unmasked
+  and in memory only, kept in `BoardChecker\yardmaster-seniority.json` (lib/board/seniority.js),
+  never in history\, the backup or the site. Its `key` (SURNAME/I/FIR) is how the boards
+  match people.
