@@ -375,6 +375,9 @@
   .sheet > header h2 { margin: 0; font: 700 19px/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
   .sheet > header .meta { font-size: 12.5px; color: var(--soft); }
   .sheet .foot { padding: 10px 14px; font-size: 12.5px; color: var(--soft); border-top: 1px solid var(--rule-soft); }
+  .sheet.ymlist > p { margin: 10px 14px; font-size: 13.5px; }
+  .sheet.ymlist > p + p { margin-top: -4px; }
+  .sheet.ymlist > .scroll { border-top: 1px solid var(--rule-soft); }
 
   /* Line-up timetable */
   .daybar { font: 600 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); background: var(--bg); padding: 6px 14px; border-bottom: 1px solid var(--rule-soft); }
@@ -4331,9 +4334,9 @@ function analyticsOverviewGuide({ preview = false, callCount = '', numbers = nul
 function analyticsOverview(o) {
   const tabs = `<div class="tabs anatabs" role="tablist">${ANA_SECS.map(([k, l]) => `<button type="button" role="tab" data-sec="${k}" aria-selected="${k === o.sec}">${l}</button>`).join('')}</div>`;
   const intro = '<p class="anote">Search a train number (e.g. <b>148</b> for every x148), a turn (<b>SR03</b>) or a name code, or pick a section.</p>';
-  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: ANA2 ? anaAssignments2 : anaAssignments, likely: PREVIEW ? likelyTest : anaHome, ym: PREVIEW ? anaYardmaster : anaHome, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
+  const body = { overview: anaHome, week: ANA2 ? anaMyWeek2 : anaMyWeek, trains: anaTrains, turns: anaTurns, sleep: anaSleepAll, runlog: anaRunLog, assignments: ANA2 ? anaAssignments2 : anaAssignments, likely: PREVIEW ? likelyTest : anaHome, ym: PREVIEW ? anaYardmaster : anaHome, ymlist: PREVIEW ? anaYmList : anaHome, runarounds: anaAssignments, spare: anaSpare, cats: anaAssignments, stale: anaStale, pred: anaPred }[o.sec] || anaHome;
   const dates = (o.runs || []).filter((r) => r.ran && r.at).map((r) => r.at.slice(0, 10)).sort();
-  const coverage = o.sec === 'overview' || o.sec === 'likely' || o.sec === 'ym' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
+  const coverage = o.sec === 'overview' || o.sec === 'likely' || o.sec === 'ym' || o.sec === 'ymlist' ? '' : `<p class="anote"><b>On-duty train records in this selection:</b> ${dates.length ? `${esc(dates[0])} to ${esc(dates[dates.length - 1])}` : 'none recorded'}. Trackers may cover different dates; a date span does not guarantee uninterrupted checking.</p>`;
   return intro + `<section class="sheet secpick">${tabs}</section>` + coverage + body(o);
 }
 // A starting point for Analytics; existing detail sections and calculations stay available.
@@ -4790,6 +4793,62 @@ function anaYardmaster({ yardmasterJobs = [] }) {
     <div class="strip">${anaTile(yardmasterJobs.length, 'Yardmaster jobs going spare')}${anaTile(`${seen} <small>/ ${yardmasterJobs.length}</small>`, 'Shift seen on the Call Board')}${anaTile(`${named} <small>/ ${seen}</small>`, 'Worked by someone on a board')}</div>
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${anaList('By job', count((j) => j.train))}${anaList('By day of the week', count(wd))}${anaList('Worked by', count((j) => j.crew || (j.onDuty ? 'no turn named' : 'not seen')))}</div></section>
     <section class="sheet"><header><h2>Every one</h2><span class="meta">newest first</span></header><div class="scroll"><table class="orders"><thead><tr><th>Job</th><th>Starts</th><th>First listed</th><th>Worked by</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+// The yardmaster seniority list as the laptop last read it from CATS (owner, 2026-11-13: "can you add another
+// tab that just has the YM seinoity list as it was last seen"): data/ym-list.json, the same file as ym.html,
+// the names opened with the crew names' key the same way. Test site only, like the Yardmaster jobs page.
+let ymNamesCache = null; // { at, byRank }: the names opened once for each publish of the file
+async function loadYmList() {
+  let data = null;
+  try { data = await getJSON('data/ym-list.json'); } catch (e) { return { error: /: 404$/.test(e.message) ? 'none' : e.message }; }
+  if (!data || !Array.isArray(data.list) || !data.list.length) return { error: 'none' };
+  let byRank = ymNamesCache && ymNamesCache.at === data.at ? ymNamesCache.byRank : null;
+  if (!byRank && data.names && window.BoardNames) {
+    try {
+      const k = await fetch('api/crewkey', { cache: 'no-store', headers: OwnerKey.headers() });
+      const got = k.ok ? await BoardNames.unlockNames(data.names, (await k.json()).pass) : null;
+      if (got && got.byRank) { byRank = got.byRank; ymNamesCache = { at: data.at, byRank }; }
+    } catch (e) { /* the list shows by rank */ }
+  }
+  return { ...data, byRank };
+}
+// CATS's dates: "930421" (YYMMDD) and "2610251200" (YYMMDDHHMM) -> "21 Apr 1993", "25 Oct 2026 1200".
+function catsDate(s) {
+  const m = /^(\d\d)(\d\d)(\d\d)(\d{4})?$/.exec(s || '');
+  if (!m || +m[2] < 1 || +m[2] > 12) return s || '';
+  return `${+m[3]} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1]} ${(+m[1] < 50 ? 2000 : 1900) + +m[1]}${m[4] ? ` ${m[4]}` : ''}`;
+}
+function anaYmList({ ymList: L }) {
+  if (!L || L.error) {
+    return L && L.error === 'none' ? '<p class="empty">The yardmaster seniority list isn’t on the site yet. The laptop publishes it once it has read the list from CATS.</p>'
+      : `<p class="empty">The yardmaster seniority list didn’t load${L && L.error ? ` (${esc(L.error)})` : ''}. Try again in a minute.</p>`;
+  }
+  const when = (iso) => (iso ? new Date(iso).toLocaleString('en-GB', { timeZone: 'America/Toronto', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '');
+  const list = [...L.list].sort((a, b) => a.rank - b.rank);
+  const cats = L.source === 'cats';
+  const names = L.byRank || null;
+  const t = L.tempRead;
+  const temps = list.filter((r) => r.temp && r.temp.assignment).length;
+  const tempLine = !cats ? '' : t && t.ok ? `Read with TEMP ASGN Y too: ${plural(temps, 'person', 'people')} on a temporary assignment, shown under their own job.`
+    : t ? 'The read with TEMP ASGN Y didn’t finish, so no temporary assignments are shown; it’s tried again at the next read.'
+      : 'Temporary assignments (TEMP ASGN Y) aren’t read yet: the first read with them is the first check after 0000.';
+  const note = '<p class="anote">The yardmaster seniority list: CATS 3 → 1, list code 3G YA, district 45 SA. The board checker reads it twice a day, at the first check after 0000 and the first after 1200 (Toronto), and this page shows the newest read as CATS showed it, in seniority order: each person’s marks and status, their job and its description, their seniority date, and when the job was awarded with its move type. The dates picked above don’t change it.</p>';
+  const read = cats ? `<p>As CATS showed it at the read of <b>${esc(when(L.read))}</b>${L.since && L.since < L.read ? `, the same since ${esc(when(L.since))}` : ''}.${names ? '' : ' <b>The names didn’t open, so people show by rank.</b>'}</p><p class="muted">${tempLine}</p>`
+    : '<p>The laptop hasn’t read the list from CATS yet: this is the 13 Nov 2026 copy kept in the code, without names.</p>';
+  const off = list.filter((r) => r.status).length;
+  const ya = list.filter((r) => r.craft === 'YA' && r.yard).length;
+  const rows = list.map((r) => {
+    const marks = [r.marks, ...(r.tags || []).map((x) => `(${x})`)].filter(Boolean).join(' ');
+    const who = names && names[r.rank] ? esc(names[r.rank]) : `<span class="muted">no name</span>`;
+    const job = r.assignment ? `<b>${esc(r.assignment)}</b>${r.description ? ` <span class="muted">${esc(r.description)}</span>` : ''}` : '<span class="muted">none</span>';
+    const temp = r.temp && r.temp.assignment ? `<div class="crew"><b>Temporary:</b> ${esc(r.temp.assignment)}${r.temp.description ? ` · ${esc(r.temp.description)}` : ''}</div>` : '';
+    return `<tr class="nolink"><td><b>${esc(r.rank)}</b> · ${who}${marks ? ` <span class="muted">${esc(marks)}</span>` : ''}${r.status ? ` <span class="chip">${esc(r.status)}</span>` : ''}</td>
+      <td>${job}${temp}</td><td class="num">${esc(catsDate(r.date))}</td><td class="num">${r.awarded ? esc(catsDate(r.awarded)) : '<span class="muted">—</span>'}${r.move ? ` · move ${esc(r.move)}` : ''}</td></tr>`;
+  }).join('');
+  return `${note}
+    <div class="strip">${anaTile(list.length, 'People on the list')}${anaTile(ya, 'Holding a yardmaster job')}${anaTile(off, 'OFF or VACATION on the list')}${cats && t && t.ok ? anaTile(temps, 'On a temporary assignment') : ''}</div>
+    <section class="sheet ymlist"><header><h2>The list</h2><span class="meta">in seniority order</span></header>${read}
+      <div class="scroll"><table class="orders" data-ana2-paged="1"><thead><tr><th>Rank · name</th><th>Job</th><th>Seniority date</th><th>Awarded</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 // A5: jobs going spare and who filled them.
 function anaSpare({ spareJobs }) {
@@ -5847,6 +5906,9 @@ source().then(async (src) => {
       // Yardmaster jobs going spare (owner, 2026-11-13): an Analytics page on the test site.
       const ym = ANA_SECS.findIndex((x) => x[0] === 'ym');
       if (PREVIEW && ym < 0) ANA_SECS.push(['ym', 'Yardmaster jobs']); else if (!PREVIEW && ym >= 0) ANA_SECS.splice(ym, 1);
+      // The yardmaster seniority list as last read (owner, 2026-11-13): its own tab, beside it.
+      const yl = ANA_SECS.findIndex((x) => x[0] === 'ymlist');
+      if (PREVIEW && yl < 0) ANA_SECS.push(['ymlist', 'YM seniority list']); else if (!PREVIEW && yl >= 0) ANA_SECS.splice(yl, 1);
       if (PREVIEW) loadCrew();
       paintNewPostings();
       if (PREVIEW) { checkSiteVersion(); getJSON('data/patterns.json').then((x) => { if (x && x.board) { PATTERNS = x; setMode(mode); } }).catch(() => {}); }
@@ -8558,7 +8620,10 @@ source().then(async (src) => {
         }
         if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
       }
-      body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, yardmasterJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks });
+      // The YM seniority list tab (test site): its file, read when the tab is open.
+      const ymList = PREVIEW && ana.sec === 'ymlist' ? await loadYmList() : null;
+      if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
+      body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, yardmasterJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks, ymList });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];

@@ -182,3 +182,94 @@ test('yardmaster call order: the test site page has "If a yardmaster job went sp
   assert.match(page, /box\.hidden = !LIVE;/);
   assert.match(page, /LIVE = data\.live && data\.live\.byRank \? data\.live : null;/);
 });
+
+// The test site's "YM seniority list" tab (owner, 2026-11-13: "add another tab that just has the YM seinoity list
+// as it was last seen"): public/board.html's loadYmList / catsDate / anaYmList run as they are, made-up people.
+function ymListTab(stubs = {}) {
+  const fs = require('fs');
+  const path = require('path');
+  const vm = require('vm');
+  const html = fs.readFileSync(path.join(__dirname, '../../public/board.html'), 'utf8');
+  const from = html.indexOf('let ymNamesCache = null;');
+  const to = html.indexOf('// A5: jobs going spare and who filled them.', from);
+  assert.ok(from > 0 && to > from, 'the YM seniority list code is in the page');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ctx = vm.createContext({
+    esc, plural: (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`,
+    anaTile: (v, l) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`,
+    OwnerKey: { headers: () => ({ 'x-owner-key': 'k' }) }, window: {}, ...stubs,
+  });
+  if (!ctx.window.BoardNames && ctx.BoardNames) ctx.window.BoardNames = ctx.BoardNames;
+  vm.runInContext(html.slice(from, to), ctx);
+  return { ctx, html };
+}
+
+test('YM seniority list tab: the newest read as CATS showed it, in rank order, names by rank, statuses and temporary jobs', () => {
+  const vm = require('vm');
+  const { ctx } = ymListTab();
+  const run = (L) => vm.runInContext(`anaYmList(${JSON.stringify({ ymList: L })})`, ctx);
+  assert.equal(vm.runInContext("catsDate('930421')", ctx), '21 Apr 1993');
+  assert.equal(vm.runInContext("catsDate('2610251200')", ctx), '25 Oct 2026 1200');
+  assert.equal(vm.runInContext("catsDate('151301')", ctx), '151301'); // not a date: as it was
+  const row = (rank, extra) => ({ rank, date: '150724', marks: '*+', tags: [], dist: '45', sub: 'SA', awarded: '2610251200', move: 'B', status: '', assignment: '', craft: '', yard: false, description: '', ...extra });
+  const L = {
+    source: 'cats', read: '2026-11-13T20:46:29.689Z', since: '2026-11-13T20:46:29.689Z', tempRead: { ok: true, rows: 3, pages: 1, temps: 1 },
+    list: [row(30, { assignment: 'SDSD05EN', craft: 'EN', description: 'DRAG POOL', status: 'OFF', tags: ['NET'] }),
+      row(10, { assignment: 'YSTY01YA', craft: 'YA', yard: true, description: '0630 TOWER S/S JT60' }),
+      row(20, { assignment: '', status: 'VACATION', awarded: '', move: '', temp: { assignment: 'YSBY02YA', description: '1900 YDM BLOCK 2' } })],
+    byRank: { 10: 'Alder, T', 20: 'Birch, M', 30: 'Cedar, J' },
+  };
+  const out = run(L);
+  const order = [...out.matchAll(/<tr class="nolink"><td><b>(\d+)<\/b> · ([^<]+)/g)].map((m) => `${m[1]} ${m[2].trim()}`);
+  assert.deepEqual(order, ['10 Alder, T', '20 Birch, M', '30 Cedar, J']); // seniority order, whatever order the file has
+  assert.match(out, /As CATS showed it at the read of <b>Fri, 13 Nov 2026, 15:46<\/b>\./); // Toronto time
+  assert.match(out, /Cedar, J <span class="muted">\*\+ \(NET\)<\/span> <span class="chip">OFF<\/span>/);
+  assert.match(out, /<b>YSTY01YA<\/b> <span class="muted">0630 TOWER S\/S JT60<\/span>/);
+  assert.match(out, /<b>Temporary:<\/b> YSBY02YA · 1900 YDM BLOCK 2/);
+  assert.match(out, /1 person on a temporary assignment, shown under their own job/);
+  assert.match(out, /<div class="v">3<\/div><div class="l">People on the list/);
+  assert.match(out, /<div class="v">1<\/div><div class="l">Holding a yardmaster job/);
+  assert.match(out, /<div class="v">2<\/div><div class="l">OFF or VACATION on the list/);
+  assert.match(out, /<div class="v">1<\/div><div class="l">On a temporary assignment/);
+  assert.match(out, /data-ana2-paged="1"/); // all of it: the test site's cards don't stop at 10
+  // A list changed earlier and read again since: when it was first seen this way.
+  assert.match(run({ ...L, since: '2026-11-13T05:10:00.000Z' }), /15:46<\/b>, the same since Fri, 13 Nov 2026, 00:10\./);
+  // No names opened: by rank, and said so.
+  const noNames = run({ ...L, byRank: null });
+  assert.match(noNames, /The names didn’t open, so people show by rank/);
+  assert.doesNotMatch(noNames, /Alder|Birch|Cedar/);
+  // The read with TEMP ASGN Y: not yet, or failed.
+  assert.match(run({ ...L, tempRead: null }), /aren’t read yet: the first read with them is the first check after 0000/);
+  assert.match(run({ ...L, tempRead: { ok: false } }), /didn’t finish, so no temporary assignments are shown/);
+  assert.doesNotMatch(run({ ...L, tempRead: null }), /On a temporary assignment/);
+  // Before the laptop's first read: the copy in the code.
+  assert.match(run({ ...L, source: 'the 13 Nov list, no names', byRank: null }), /hasn’t read the list from CATS yet/);
+  assert.match(run({ error: 'none' }), /isn’t on the site yet/);
+  assert.match(run({ error: 'data/ym-list.json: 500' }), /didn’t load \(data\/ym-list\.json: 500\)/);
+});
+
+test('YM seniority list tab: the names opened with the crew names key and the owner key, once per publish of the file', async () => {
+  const calls = [];
+  const file = { at: '2026-11-13T22:55:29.234Z', read: '2026-11-13T20:46:29.689Z', source: 'cats', list: [{ rank: 10 }], names: { v: 1, data: 'locked' } };
+  const { ctx } = ymListTab({
+    getJSON: async (url) => { calls.push(`get ${url}`); return file; },
+    fetch: async (url, o) => { calls.push(`fetch ${url} ${o.headers['x-owner-key']}`); return { ok: true, json: async () => ({ pass: 'p' }) }; },
+    BoardNames: { unlockNames: async (locked, pass) => { calls.push(`unlock ${locked.data} ${pass}`); return { byRank: { 10: 'Alder, T' } }; } },
+  });
+  const a = await require('vm').runInContext('loadYmList()', ctx);
+  assert.deepEqual(a.byRank, { 10: 'Alder, T' });
+  assert.deepEqual(calls, ['get data/ym-list.json', 'fetch api/crewkey k', 'unlock locked p']);
+  await require('vm').runInContext('loadYmList()', ctx); // the same publish: the names already open
+  assert.deepEqual(calls.slice(3), ['get data/ym-list.json']);
+  const gone = ymListTab({ getJSON: async () => { throw new Error('data/ym-list.json: 404'); } });
+  assert.deepEqual({ ...(await require('vm').runInContext('loadYmList()', gone.ctx)) }, { error: 'none' });
+});
+
+test('YM seniority list tab: on the test site only, beside Yardmaster jobs, loaded only when open', () => {
+  const { html } = ymListTab();
+  assert.doesNotMatch(html.match(/const ANA_SECS = \[[^\n]*/)[0], /ymlist/); // the main site never has it
+  assert.ok(html.includes("if (PREVIEW && yl < 0) ANA_SECS.push(['ymlist', 'YM seniority list']); else if (!PREVIEW && yl >= 0) ANA_SECS.splice(yl, 1);"));
+  assert.ok(html.indexOf("ANA_SECS.push(['ymlist'") > html.indexOf("ANA_SECS.push(['ym', 'Yardmaster jobs'])"));
+  assert.ok(html.includes('ymlist: PREVIEW ? anaYmList : anaHome'));
+  assert.ok(html.includes("const ymList = PREVIEW && ana.sec === 'ymlist' ? await loadYmList() : null;"));
+});

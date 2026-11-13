@@ -123,7 +123,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT, WAITING ON THE SAME PULL + RESTART.** **His questions are on hold until the yardmaster has looked** (his word)
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT AND SEEN LIVE (check 1754).** **A "YM seniority list" tab in the test site's Analytics (the list as last read) BUILT, WAITING ON ONE LAPTOP PULL (no restart needed).** **His questions are on hold until the yardmaster has looked** (his word)
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -250,8 +250,27 @@ available, named on the box:** EXYA01YA (the yardmaster spare) and EXEN08EN, whi
 A YA holder showing "status not known" is taken as available, their own shift deciding (as the tool does). **Checked:**
 suite 599 of 599 (`seniority.test.js`: each kind of status from a made-up snapshot; `ym-call-order.test.js`: the box is
 in `ym.html`, hidden without `live`). In a browser over a stand-in list made from the real 17:16 check: six jobs, the
-spare (rank 140) first and then the yard that day, the why table, the open button, 390 px, no errors. **Not checked:**
-the real `data/ym-list.json` with `live` (after the pull + restart).
+spare (rank 140) first and then the yard that day, the why table, the open button, 390 px, no errors. **Seen live after
+his pull + restart (13 Nov, "pulled and restarted, check the test site"), check 1754:** `data/ym-list.json` has `live`
+(34 people: 27 available, 3 off, 4 busy) and the names (locked); in a browser over the real board-test (GET only):
+Analytics → Yardmaster jobs → the link → `ym.html` → the box with the six jobs, names, and the why table for each,
+390 px, no errors. `tempRead` is null, as expected: the list was read at 15:46 in this half day, so the first read with
+TEMP ASGN Y is the first check after 0000.
+
+**"YM seniority list" tab, 13 Nov evening** (owner: "can you add another tab that just has the YM seinoity list as it was
+last seen"). **BUILT, WAITING ON ONE LAPTOP PULL** (`public/board.html` only; `buildSite` copies the page at every
+check, so no restart). An Analytics tab on the test site with the owner key (pushed beside "Yardmaster jobs" when
+`PREVIEW`, like it; the main site never has it). It reads `data/ym-list.json` when the tab is open (`loadYmList`; the
+names opened with `/api/crewkey` and the owner key, as `ym.html` does, once per publish of the file) and shows the newest
+read as CATS showed it, in rank order (`anaYmList`): rank · "Last, F", CATS's marks and tags, the status (OFF,
+VACATION) as a chip, the job and its description, a temporary assignment under it once TEMP ASGN Y is read, the
+seniority date and the awarded date (`catsDate`: "930421" → "21 Apr 1993") with the move type. Above the list: when it
+was read (Toronto), "the same since …" when the read before was the same, and whether TEMP ASGN Y has been read. Tiles:
+people, holding a YA job, OFF or VACATION, on a temporary assignment (once read). All 34 rows show (the test site's
+cards stop at 10 otherwise: `data-ana2-paged`). Before the laptop's first read: the 13 Nov copy, by rank. **Checked:**
+suite 602 of 602 (`ym-call-order.test.js`, 3 more: the page's own functions run with made-up people; broken on purpose
+eight ways, each caught). In a browser, this branch's `board.html` over the real board-test (GET only): the tab, the 34
+people with names as read at 15:46, 390 px (cards) and 1280 px (table), no page errors.
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
