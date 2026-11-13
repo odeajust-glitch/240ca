@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. WAITING ON his look on board-test, and the `b329d94` Worker paste for the code lookup (copy page given again 13 Nov about 07:10, checked byte for byte)
+## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. The `b329d94` Worker PASTED INTO BOTH ("pasted both workers, check it"), checked about 07:25. WAITING ON his look on board-test
 
 **Owner, 13 Nov:** "Do not use the call board to determine off duty since if they forget to tie up it will sit there.
 We have to manually close our ticket in the computer, untill we do the job will stay on the call board", then "We
@@ -67,8 +67,17 @@ are the Call Board's 23 to 25 Oct (before the backfill's start) and today's stil
 of the 71 shifts with a rest booked (all now have O-T), rest until − (8 h + O-T) is a whole number of hours in 60 (46
 from the old 8 / 12 h), within 2 min in 3 more; the other 8 are blank-O-T shifts 5 to 19 min short of 10 h (crews off
 a few minutes before 8 h: YFLS60 / YMPS60 2359 jobs off about 0740 to 0752; a blank O-T cannot show it).
-**Next:** his look on board-test (a yard worker's My stats through the owner lookup once `b329d94` is pasted; the
-board colours from `resets-test.json`). The main site only at his word.
+**The Worker paste, checked 13 Nov about 07:25 Toronto (his word: "pasted both workers, check it"; read only,
+counts only):** both `board-test` and `board` answer the owner key's `GET /auth/stats?code=`: a bad code 400 with
+the name-code message, a code with no record `{ state: ok, other: true, stats: null }`, a yard worker's code their
+record (14 yard shifts, 11 with `oe`, 1 `ru`, no `cb` / `ob`; the 3 without an end are 23 to 25 Oct, before the
+backfill's 26 Oct). **In a browser on the real board-test with the owner key (nothing intercepted, nothing
+written):** `PREVIEW` on, `resets-test.json` read, My stats' lookup box opened that code: "<code>'s page, opened
+with the owner key", the yard sections, "11 of 14 yard timed by CATS", "2 of 11 shifts 15 min or more over", no
+errors, no sideways scroll. A backfill from 23 Oct would time those 3: `node scripts/assign-backfill.js 2026-10-23
+yard` on the laptop (offered, not asked for).
+**Next:** his look on board-test (a yard worker's My stats through the lookup; the board colours from
+`resets-test.json`). The main site only at his word.
 
 ## Job Aids: "Days out of Sarnia: add each pool to your calendar" — a calendar file (.ics) for each pool from the pools' rotation — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
 
