@@ -24,6 +24,11 @@ screen, 15 px bold, at 4%, 6% and 9% opacity. After the photo stand-in made hars
 blur, 1100 px, JPEG 70) it read by eye at all three on light pages and at 6% and 9% on dark (4% barely). Not built:
 waiting on the owner. Not checked: a real camera, how it looks on his phone.
 
+**Built for the test site the same day** ("build it on the test site, 5% light 7% dark"): see HANDOFF. The code is the
+account's mark number in Crockford base 32, **scattered** (40 codes in a 400 x 880 CSS px tile), not in the
+mock-up's even grid: the grid gave emailed screenshots of dark pages a spacing the reader took for the hidden
+mark's (6 of 8 read, 8 of 8 without it); scattered, 8 of 8, and no read anywhere worse than without the code.
+
 ## Blocking or noticing a screenshot: no
 
 A web page is not told when the phone takes a screenshot and cannot stop one (iPhone or Android, Safari

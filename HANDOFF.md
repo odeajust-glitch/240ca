@@ -360,7 +360,7 @@ sessions' `3f24ee2` and `fe570e8` came after `adb089b`).
 **Waiting on him:** his look at board-test's Members and Page Health and his say on each piece (keep, change,
 drop or promote). Next in the tab review: round 4, Turn History, on his word.
 
-## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone. **13 Nov: he reports screenshots trace, photos of the screen do not; a faint VISIBLE code mocked up (nothing built), waiting on his word**
+## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone. **13 Nov: photos of the screen don't trace, so a faint VISIBLE code is BUILT FOR THE TEST SITE ONLY, his own view (`f8d1573`, page only), WAITING ON ONE LAPTOP PULL; then his look (a real photo on his phone)**
 
 **13 Nov, the owner, having tried it:** "The screenshot reviewer, it works great for direct screen shots, but
 doesnt work for pictures of screen shots, is there anyway to fix this" ("pictures" taken as a photo of the screen
@@ -377,6 +377,44 @@ dark; keep the hidden mark (invisible, read by the phone; every screenshot so fa
 gets "or type the code you see". It would show members their pages are marked (the other open question).
 **Asked: build it on the test site first, his own view only?** Not checked: a real camera, how it looks on his
 phone.
+
+**His answer, 13 Nov: "build it on the test site, 5% light 7% dark". BUILT (`f8d1573`, `public/board.html` only; no
+Worker change, no paste), WAITING ON ONE LAPTOP PULL.**
+- **What he sees on board-test (owner key, `PREVIEW`):** one more see-through layer (`#shotcode`, taps go through)
+  with his account's code, the hidden mark's same number as 4 characters (`ShotMark.codeOf`: Crockford base 32, no
+  I, L, O or U; **the alphabet must never change**), 15 px bold at a slant, black at 5% on a light page, white at
+  7% on a dark one (follows a change of page style). The owner key's code is `8MGZ` (from the Worker's
+  `ownerMark`). Page Health → Trace a screenshot gets **"A photo of a screen?"**: type the code (small letters,
+  spaces, O for 0 and I/L for 1 all fine; `markOfCode`), Look up names the account from `/health/accounts` (the
+  trial's number is left out: it was never drawn as a code); "No mark found" adds "type the code you see on it
+  below". **A member on either site, and him on the main site, get neither** (checked in a browser).
+- **Laid out scattered, not in rows:** 40 codes in a 400 x 880 CSS px tile, at least 77 px apart round its edges,
+  no spot more than 77 px from one (`SHOTCODE_AT`, toroidal Poisson-disk, seed 1). **Why:** the mock-up's even
+  150 x 104 grid gave emailed (JPEG 90) screenshots of dark pages a second spacing that the reader's `find_period`
+  took for the hidden mark's: 6 of 8 read against 8 of 8 without the code. Tried four layouts over 8 views of
+  board-test as him (Current at 4 scrolls, My stats at 2, Analytics, Page Health), light and dark, 6 kinds of
+  sharing each: scattered 400 x 880 brings dark emailed back to 8 of 8 and costs nothing anywhere else (a 192 x 128
+  grid, lined up with the mark's tile, fixed emailed but read 0 of 8 at text-message size on dark).
+- **Checked.** Suite **526 of 526** (`test/board/shotmark.test.js`, 3 new: every one of the 2^20 numbers has its
+  own code and reads back; typed codes; test-site gating, his strengths, the scattered layout's spacing, the code box
+  on the test site only, matched against the Worker's numbers, no new request); 13 breaks on purpose (no `PREVIEW`
+  test, other strengths, the box for everyone, a changed alphabet, the trial matched, O not read as 0, no repaint
+  when the test site switches on, taps blocked, the old grid back, two codes too close, a code missing): a test
+  fails every time. **In a browser, this branch's page over the live data, read only:** as him on board-test, light
+  and dark, the layer is drawn with his code at 5% / 7%; typing `8MGZ` (and "8 m g z") names "the owner key";
+  another code says no account has it; "AB" asks for 4 characters; **the hidden mark with the code over it, final
+  layout, 224 reads (Python reader, the 12 Nov sharing stand-ins): never worse than without the code, no wrong
+  account**; the page's own Trace box read his dark-page emailed and Messenger-style copies as "the owner key".
+  The code read by eye through the harsh photo stand-in, light and dark. A member stand-in on board-test (made-up
+  answer, no owner key) and him on the main site: hidden mark only, no code, no code box.
+- **Noticed, not changed:** at text-message size (640 px wide, JPEG 60) the hidden mark often says "not sure" on
+  dark pages (1 or 2 of 8, with or without the code; light 5 or 6 of 8): two accounts' numbers differ from his in only
+  6 of 20 pairs, so at that size the margin over the next closest isn't met. It never named a wrong account.
+- **Not checked:** a real photo with a real phone (moire, glare): the first thing to ask him after the pull; an
+  iPhone's own rendering of the code font; page styles other than light and dark.
+- **For members (only at his word):** drop the `PREVIEW` tests in `paintShotCode` and `traceSection`/`traceResult`
+  and change the tests, quoting him. Members would see the code: that tells them pages are marked (the other open
+  question). No Worker change needed (the numbers already come from the secret).
 
 **Seen 12 Nov at 19:55 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
 a `mark` on all 35 accounts); `board` still runs `e3e7936` (no marks). The main Worker needs the `3f24ee2` copy
