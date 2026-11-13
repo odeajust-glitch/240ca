@@ -157,7 +157,16 @@ serves it; the Claude page embeds it; the tests require it).
   locked with a test passcode: names open ("Last, F" by rank), the Saturday case right (rank 290), 390 px, no errors; without the owner
   key: "on the test site only". The Claude page rebuilt from the same template: the same answers. **Fixed on the way:**
   Analytics on the test site folds every `.anote` into "About these numbers", so the link is a box of its own.
-- **Not checked:** the real list from the laptop (the first read and publish after his pull + restart).
+- **Seen live after his pull + restart, 13 Nov evening ("pulled and restarted, check the test site"), check 1651:** the
+  laptop **read the list from CATS** at 15:46 Toronto (34 people, `source: cats`): the seniority read works on the real
+  screen. `data/ym-list.json` on board-test has it, no name in the clear; `ym.html` and `board-ym.js` published (CRLF from
+  the laptop's checkout, same content). In a browser over the real board-test (nothing of mine put over it, GET only):
+  Analytics → Yardmaster jobs → "The call order test →" → `ym.html` → the list (13 Nov 2026, 34 people, 12 not
+  available) → his Saturday 1900 case as on the Claude page (rank 290, then 490, 30, 40), 390 px, no errors.
+  **Names were missing:** the 15:46 read ran on the code before `short` (the laptop's first pull), so `names` was null.
+  **Fixed:** `seniorityShort` (screens.js) makes "Last, F" from the name as CATS showed it, used by `siteList` when a
+  saved row has no `short`; and no doubled "Rank N" on the pick card when there are no names. Needs one more pull +
+  restart; without it the names come with the first read after 0000.
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at

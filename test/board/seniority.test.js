@@ -155,6 +155,10 @@ test('yardmaster seniority: names stay on the laptop, except locked for the test
   assert.equal(got.source, 'cats');
   assert.doesNotMatch(JSON.stringify(got.list), /ALDER|Alder|CEDAR|Cedar|TOMAS|MILO/);
   assert.deepEqual(got.list.map((r) => [r.rank, r.assignment, r.status]), [[30, 'YSTY01YA', ''], [140, 'EXYA01YA', 'OFF']]);
+  // A list saved before the short names were kept: made from the name as CATS showed it.
+  const older = path.join(root, 'older.json');
+  fs.writeFileSync(older, JSON.stringify({ at: '2026-11-13T20:46:29.689Z', list: people.map(({ short, ...r }) => r) }));
+  assert.deepEqual(Sen.siteList(older).names, { 30: 'Alder, T', 140: 'Cedar, M' });
   // Before the laptop has read it: the 13 Nov copy in the repository, no names.
   const early = Sen.siteList(path.join(root, 'none.json'));
   assert.equal(early.list.length, 34);

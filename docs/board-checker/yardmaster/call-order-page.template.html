@@ -370,7 +370,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       const o = res.pick; const p = o.r.p;
       html += `<div class="pick"><p class="label">Gets the call</p>
         <p class="pick-name">${esc(p.surname)} <small>${esc(p.first)}</small></p>
-        <p class="pick-meta"><span class="chip">Rank ${p.rank}</span> ${personLine(o.r)}</p>
+        <p class="pick-meta">${p.first ? `<span class="chip">Rank ${p.rank}</span> ` : ''}${personLine(o.r)}</p>
         <p class="pick-why">${esc(stepName(o))}. Called <b class="mono">${esc(Y.fmt(res.call))}</b>${o.st.need === 'start' ? ' (on-time relief: not free by the call)' : ''}.</p></div>`;
       const next = res.order.slice(1, 4);
       if (next.length) html += `<div class="next"><p class="label">Next in line</p><ol>${next.map((n) => `<li><b>${esc(nameOf(n.r.p))}</b> <span class="tag">rank ${n.r.p.rank} · step ${n.i + 1}</span></li>`).join('')}</ol></div>`;
