@@ -456,6 +456,11 @@ PRESS PFKEY8 TO SCROLL                                                     P004-
   relief `XSAS01FO` (REL#1). "OFF" after a relief job's days (TH/FR OFF) is the job's own
   description, not the status. Someone with no assignment (on vacation, off) has no
   second line.
+- **TEMP ASGN(Y)** (owner, 2026-11-13: "there is a box that says temp assy(y) put Y in that slot then make the
+  seinority list from that infomation"): the checker reads the list twice each time, the box empty (each person's
+  permanent job) and then with **Y** (temporary assignments). The layout with Y is not seen yet: a temporary job is
+  taken from a second assignment line under the person, or else from the one shown when it differs from the
+  permanent one (lib/board/seniority.js `withTemp`). A photo of the screen with Y would settle it.
 - **Built 13 Nov:** `isSeniorityList` / `parseSeniorityList` (lib/board/screens.js), read by
   scripts/board-auto.js on the first check after 0000 and after 1200 (Toronto), unmasked
   and in memory only, kept in `BoardChecker\yardmaster-seniority.json` (lib/board/seniority.js),

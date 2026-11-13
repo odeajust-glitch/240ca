@@ -209,6 +209,24 @@ serves it; the Claude page embeds it; the tests require it).
   saved row has no `short`; and no doubled "Rank N" on the pick card when there are no names. Needs one more pull +
   restart; without it the names come with the first read after 0000.
 
+**TEMP ASGN(Y), 13 Nov evening** (owner: "when youre doing the seinoity list check and you enter in 3g ya 45 sa there
+is a box that says temp assy(y) put Y in that slot then make the seinority list from that infomation"; this is the
+temporary vacancy check he had said he would show me). **BUILT, WAITING ON ONE LAPTOP PULL + RESTART.** Each read
+now does the list twice: the box empty (permanent jobs, as before) and then with **Y** (`fillSeniorityInquiry(page,
+true)`; the box is found right of "ASGN(Y):"). `Seniority.withTemp` puts each person's temporary assignment beside the
+permanent job (`temp` { assignment, pool, turn, craft, yard, description, awarded, move }), by rank: a second
+assignment line on the Y list (`parseSeniorityList` now keeps one as `extra`), or else the job it shows when it
+differs. A failed Y pass costs only the temporary jobs (`tempRead` { ok, rows, pages, temps } in the laptop file and
+in `data/ym-list.json`, so a session can see whether it worked). On the page a temporary job shows under the person
+("Temporary: …") and is their job at call time to start with (`catsFacts`), so it decides their group and shifts.
+**The screen with Y is not seen yet:** check `tempRead` after the first read; a photo of it would settle the layout.
+**When:** the list was read in this half day (15:46), so the first read with Y is the first check after 0000, unless
+`BoardChecker\yardmaster-seniority.json` is deleted before the restart (it is read again at the first check; only one
+version is kept so far). Tests: `seniority.test.js` (a second line kept; the merge both ways; a new version; the
+site's list with `temp` and `tempRead`, no names; the route's second pass with Y) and `ym-call-order.test.js` (a
+temporary job is the job at call time); broken on purpose five ways, all caught. In a browser over a stand-in list
+with one temporary job: the card shows it, the call-time box starts on it, no errors. Suite 597 of 597.
+
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
 punitive rates; (3) the senior qualified unassigned TC available at straight time in yard service, incl. a yard / joint

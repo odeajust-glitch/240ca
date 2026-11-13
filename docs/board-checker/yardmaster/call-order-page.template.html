@@ -417,6 +417,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       return `<div class="pc" data-rank="${p.rank}">
         <div class="pc-h"><span class="rk">${p.rank}</span><b>${esc(p.surname)}</b><span>${esc(p.first)}</span>${p.cats ? `<span class="chip">${esc(p.cats)} on ${esc(LIST_DAY)}</span>` : ''}<span class="tag" data-flag></span></div>
         <p class="pc-job"><span class="code">${esc(p.perm || '—')}</span> ${esc(p.permDesc || 'no current job')}</p>
+        ${p.temp ? `<p class="pc-job">Temporary: <span class="code">${esc(p.temp.assignment)}</span> ${esc(p.temp.description || '')}</p>` : ''}
         <div class="pc-f">
           <label class="f">Status<select name="st">${STATUS_OPTS.map(([v, t]) => `<option value="${v}"${(x.status || 'available') === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
           <label class="f">On rest until<input type="datetime-local" name="free" value="${esc(x.freeAt || '')}"></label>
@@ -897,7 +898,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       const n = by[x.rank] || '';
       const cut = n.lastIndexOf(', ');
       return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
-        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', hint: '' };
+        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', temp: x.temp || null, hint: '' };
     });
   }
   async function boot(hot) {

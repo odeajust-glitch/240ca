@@ -183,10 +183,11 @@
     ? 'Canvass: anyone on the list, in seniority order, engineers last'
     : `${GROUPS[st.group]} · ${st.need === 'call' ? callWords(rules) : 'on-time relief'} · ${st.pay === 'straight' ? 'straight time' : 'time and a half'}`);
 
-  // New scenario facts: CATS's statuses of 13 Nov (OFF and VACATION: not available).
+  // New scenario facts: CATS's statuses as read (OFF and VACATION: not available), and anyone on a
+  // temporary assignment (the list with TEMP ASGN Y, owner 13 Nov) working that job at call time.
   function catsFacts(people) {
     const f = {};
-    for (const p of people) f[p.rank] = { status: p.cats === 'OFF' ? 'off' : p.cats === 'VACATION' ? 'vacation' : 'available', now: '', freeAt: '', lastYard: '', week: '' };
+    for (const p of people) f[p.rank] = { status: p.cats === 'OFF' ? 'off' : p.cats === 'VACATION' ? 'vacation' : 'available', now: p.temp && p.temp.assignment ? p.temp.assignment : '', freeAt: '', lastYard: '', week: '' };
     return f;
   }
 

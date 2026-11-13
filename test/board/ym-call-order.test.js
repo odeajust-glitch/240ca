@@ -161,3 +161,15 @@ test('yardmaster call order: the test site\'s page is the template built, test s
   assert.ok(board.indexOf('href="ym.html"') > board.indexOf('function anaYardmaster('));
   assert.ok(board.indexOf('href="ym.html"') < board.indexOf('function anaSpare('));
 });
+
+test('yardmaster call order: someone on a temporary assignment works that job at call time to start with', () => {
+  const people = [...PEOPLE, { rank: 75, surname: 'JUNIPER', first: 'Test', perm: '', cats: '', temp: { assignment: 'SDSD05EN', turn: 'SD05' } }];
+  const f = Y.catsFacts(people);
+  assert.equal(f[75].now, 'SDSD05EN');
+  assert.equal(f[60].now, '');
+  // On an engineer's job for now: the canvass only, by the job at call time.
+  const res = Y.decide({ ...JOB, facts: f }, RULES, people);
+  const row = res.steps.find((s) => s.st.group === 'any').rows.find((x) => x.r.p.rank === 75);
+  assert.equal(row.group, 'engineer');
+  assert.equal(row.r.moved, true);
+});

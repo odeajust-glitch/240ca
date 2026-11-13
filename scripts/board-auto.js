@@ -416,9 +416,12 @@ async function fillCircularInquiry(page, today) {
 
 // The Seniority List Inquiry's boxes (owner's photos, 2026-11-13), each found
 // right of its label on the same line: LIST CODE's two (3G, YA), DIST (45),
-// SUB-DIST (SA). EMP-NBR, NAME, FIRST TV DATE, SERVICE and TEMP ASGN stay
+// SUB-DIST (SA), and TEMP ASGN(Y): Y for the temporary assignments (owner,
+// 2026-11-13: "there is a box that says temp assy(y) put Y in that slot then make
+// the seinority list from that infomation"), emptied for the permanent ones (its
+// box not found then is no matter). EMP-NBR, NAME, FIRST TV DATE and SERVICE stay
 // empty. → the labels with no box found (nothing typed for those).
-async function fillSeniorityInquiry(page) {
+async function fillSeniorityInquiry(page, temp = false) {
   return catsFrame(page).evaluate((want) => {
     const visible = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
     const boxes = [...document.querySelectorAll('input[type=text]')].filter(visible).map((el) => ({ el, r: el.getBoundingClientRect() }));
@@ -426,18 +429,19 @@ async function fillSeniorityInquiry(page) {
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.textContent.trim()) texts.push(n);
     const missing = [];
-    for (const [label, src, values] of want) {
+    for (const [label, src, values, optional] of want) {
       const re = new RegExp(src);
       const node = texts.find((n) => re.test(n.textContent.replace(/\s+/g, ' ').trim()));
-      if (!node) { missing.push(label); continue; }
+      if (!node) { if (!optional) missing.push(label); continue; }
       const range = document.createRange(); range.selectNodeContents(node);
       const lr = range.getBoundingClientRect();
       const row = boxes.filter((b) => Math.abs((b.r.top + b.r.bottom) / 2 - (lr.top + lr.bottom) / 2) < 12 && b.r.left >= lr.right - 4).sort((a, b) => a.r.left - b.r.left);
-      if (row.length < values.length) { missing.push(label); continue; }
+      if (row.length < values.length) { if (!optional) missing.push(label); continue; }
       values.forEach((v, i) => { row[i].el.value = v; });
     }
     return missing;
-  }, [['LIST CODE', '(^|\\s)CODE:$', ['3G', 'YA']], ['DIST', '(^|\\s)DIST:$', ['45']], ['SUB-DIST', 'SUB-DIST:$', ['SA']]]);
+  }, [['LIST CODE', '(^|\\s)CODE:$', ['3G', 'YA']], ['DIST', '(^|\\s)DIST:$', ['45']], ['SUB-DIST', 'SUB-DIST:$', ['SA']],
+    ['TEMP ASGN(Y)', 'ASGN\\(Y\\):?$', [temp ? 'Y' : ''], !temp]]);
 }
 
 async function chooseFromMenus(page, option, menu = 3) {
@@ -837,6 +841,10 @@ async function runRoute(page, opts = {}) {
   // saved check; the parsed list goes only to BoardChecker\yardmaster-seniority.json
   // (lib/board/seniority.js), and only when the end of the list was reached.
   // A failed try is tried again at the next check, three tries a half day.
+  // Then the same list again with Y in TEMP ASGN(Y) (owner, 2026-11-13): who is
+  // on a temporary assignment, and on what. Each person keeps their permanent
+  // job; a temporary one is put beside it (Seniority.withTemp). A failed second
+  // pass costs only the temporary jobs, never the list.
   {
     const now = new Date();
     let saved = null;
@@ -845,10 +853,11 @@ async function runRoute(page, opts = {}) {
     if (ymTries.slot !== slot) ymTries = { slot, n: 0 };
     if (Seniority.due(saved, now, ymTries.n)) {
       ymTries.n++;
-      try {
+      // One pass over the list, permanent (temp false) or temporary assignments (true).
+      const readList = async (temp) => {
         let s = await chooseFromMenus(page, 1);
         if (!S.isSeniorityList(s.text)) throw new Error('not the Seniority List Inquiry screen');
-        const missing = await fillSeniorityInquiry(page);
+        const missing = await fillSeniorityInquiry(page, temp);
         if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
         s = await press(page, 'Enter');
         if (!S.isSeniorityList(s.text)) throw new Error('not the Seniority List Inquiry screen after Enter');
@@ -865,12 +874,23 @@ async function runRoute(page, opts = {}) {
           if (!next || !S.isSeniorityList(next.text) || next.text === s.text) break;
           s = next;
         }
+        return { list, ended, pages };
+      };
+      try {
+        const { list, ended, pages } = await readList(false);
         if (ended && list.size) {
-          const people = [...list.values()].sort((a, b) => a.rank - b.rank);
-          const kept = Seniority.keep(saved, people, { now, pages });
+          let temp = null;
+          try { temp = await readList(true); } catch (err) {
+            if (err instanceof NeedSignIn) throw err;
+            console.log(`  (yardmaster seniority, temporary assignments (TEMP ASGN Y): ${err.message})`);
+          }
+          const tempOk = !!(temp && temp.ended && temp.list.size);
+          const people = Seniority.withTemp([...list.values()].sort((a, b) => a.rank - b.rank), tempOk ? [...temp.list.values()] : null);
+          const tempRead = temp ? { ok: tempOk, rows: temp.list.size, pages: temp.pages, temps: people.filter((p) => p.temp).length } : { ok: false };
+          const kept = Seniority.keep(saved, people, { now, pages, tempRead });
           fs.writeFileSync(YM_SENIORITY_FILE, JSON.stringify(kept));
           ymTries.n = Seniority.MAX_TRIES;
-          console.log(`  Yardmaster seniority (3 → 1, 3G YA): ${people.length} people on ${pages} page${pages === 1 ? '' : 's'}${kept.since === kept.at && saved ? ' (changed since the last read)' : ''}.`);
+          console.log(`  Yardmaster seniority (3 → 1, 3G YA): ${people.length} people on ${pages} page${pages === 1 ? '' : 's'}${tempOk ? `; with TEMP ASGN Y: ${tempRead.temps} on a temporary assignment` : '; temporary assignments not read'}${kept.since === kept.at && saved ? ' (changed since the last read)' : ''}.`);
         } else {
           console.log(`  (yardmaster seniority (3 → 1): ${list.size} read on ${pages} page${pages === 1 ? '' : 's'}, the end of the list not reached; not saved, tried again next check)`);
         }

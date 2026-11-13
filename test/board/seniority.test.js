@@ -182,3 +182,50 @@ test('yardmaster seniority: names stay on the laptop, except locked for the test
   assert.doesNotMatch(block, /capture\(/);
   assert.match(block, /unmaskedRows\(\)/);
 });
+
+test('yardmaster seniority: with TEMP ASGN Y, each temporary assignment put beside the permanent job', () => {
+  // The permanent list, then the same list read with Y (owner, 2026-11-13: "put Y in that slot then make
+  // the seinority list from that infomation"). Made-up names; the layout with Y not seen yet, so both
+  // ways it might show a temporary job are taken: in place of the permanent one, or on a second line.
+  const perm = S.parseSeniorityList(grid([
+    '   30   930421   ALDER*+        TJ    TOMAS        45   SA    2610251200          B',
+    '                                              YSTY01YA    0630  TOWER  S/S    JT60',
+    '  320   231010   HAZEL*+(NET)MA       MARTIN       45   SA                                 OFF',
+    '  487   250925   O\'KAPOK+       BO    BRIAN        45   SA    2610251200          B',
+    '                                              YBHS31FO    1600  BUNKHOUSE  W3/T3',
+  ]));
+  const temp = S.parseSeniorityList(grid([
+    '   30   930421   ALDER*+        TJ    TOMAS        45   SA    2610251200          B',
+    '                                              YSTY01YA    0630  TOWER  S/S    JT60',
+    '  320   231010   HAZEL*+(NET)MA       MARTIN       45   SA    2611121400          T',
+    '                                              SDSD05EN    DRAG  POOL',
+    '  487   250925   O\'KAPOK+       BO    BRIAN        45   SA    2610251200          B',
+    '                                              YBHS31FO    1600  BUNKHOUSE  W3/T3',
+    '                                              YPRS60FO    2245  PLANK  F2/S2',
+    'END  OF  LIST',
+  ]));
+  assert.deepEqual(temp[2].extra.map((x) => x.assignment), ['YPRS60FO']); // a second line is kept, not lost
+  const merged = Sen.withTemp(perm, temp);
+  assert.equal(merged[0].temp, undefined); // the same job: nothing temporary
+  assert.deepEqual([merged[1].assignment, merged[1].temp.assignment, merged[1].temp.turn, merged[1].temp.awarded], ['', 'SDSD05EN', 'SD05', '2611121400']);
+  assert.deepEqual([merged[2].assignment, merged[2].temp.assignment, merged[2].temp.description], ['YBHS31FO', 'YPRS60FO', '2245 PLANK F2/S2']);
+  assert.equal(Sen.withTemp(perm, null), perm); // not read: the list as it was
+  // A new temporary job is a new version of the list; the site gets it, still without names.
+  const t1 = new Date('2026-11-14T05:05:00Z');
+  const a = Sen.keep(null, perm, { now: t1 });
+  const b = Sen.keep(a, merged, { now: new Date('2026-11-14T17:05:00Z'), tempRead: { ok: true, rows: 3, pages: 1, temps: 2 } });
+  assert.equal(b.past.length, 1);
+  assert.deepEqual(b.tempRead, { ok: true, rows: 3, pages: 1, temps: 2 });
+  const os = require('os');
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ym-temp-')), 'yardmaster-seniority.json');
+  fs.writeFileSync(file, JSON.stringify(b));
+  const site = Sen.siteList(file);
+  assert.deepEqual(site.list.map((r) => r.temp ? r.temp.assignment : ''), ['', 'SDSD05EN', 'YPRS60FO']);
+  assert.deepEqual(site.tempRead, { ok: true, rows: 3, pages: 1, temps: 2 });
+  assert.doesNotMatch(JSON.stringify(site.list), /ALDER|Alder|HAZEL|Hazel|KAPOK|Kapok/);
+  // The route: a second pass with Y in TEMP ASGN(Y), its failure never costs the list.
+  const auto = fs.readFileSync(path.join(__dirname, '../../scripts/board-auto.js'), 'utf8');
+  assert.ok(auto.includes("['TEMP ASGN(Y)', 'ASGN") && auto.includes("[temp ? 'Y' : ''], !temp]"), 'Y in TEMP ASGN(Y) on the second pass only');
+  assert.match(auto, /await readList\(true\)/);
+  assert.match(auto, /Seniority\.withTemp\(/);
+});
