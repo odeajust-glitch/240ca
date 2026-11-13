@@ -1111,6 +1111,12 @@ pure functions near the top ("Answer tools ... TEST SITE ONLY"): `answerHtml(raw
   on purpose), a real phone, iPhone.
 - **To promote:** `preview: true` in `renderAsk` (it carries the examples and the folds too), and the tests that
   pin `preview: PREVIEW`.
+- **Seen live on the test site, 12 Nov 21:27 Toronto,** after his pull (the laptop on `19d3573`): the real
+  published page as him (examples, the two folds, "the documents picked above", the CROR offer; a stand-in
+  answer drawn with 7 passage taps, [1] opening its passage, Copy read back; a stand-in "could not find" with
+  the box and no Copy); a member on both sites: none of it. No real question asked since the pull (Search
+  Review, counted). **Promoted since by another session at his word** (`0e26826`, his items 10 and 11 of its
+  list): `renderAsk` passes `preview: true`, so his next pull puts all of it on both sites for every member.
 
 ### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 
