@@ -1,5 +1,40 @@
 # HANDOFF — read this before doing anything
 
+## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
+
+**Owner, 13 Nov:** "Test Site Clean up . This will be the chat to clean up the things on the test site". Read as:
+everything a member does not get because it is behind `PREVIEW` (board-test with the owner key) or the test
+site's own data, put to him as one numbered list to decide item by item, as on 12 Nov ("What is on the test site
+and not the main site", further down). Build only what he picks; nothing he has said no to.
+
+**How it was looked at.** This checkout began stale (`056ebc9`); fast-forwarded to GitHub (`e8dbba8`) first
+(`git fetch --deepen=150`, `merge --ff-only`). The laptop runs `e92fcc4` (`/health` → `laptop.code`): live is this
+code less `e8dbba8` (the YM seniority list tab). From the code: every `PREVIEW` / `state.preview` / `opts.yard`
+test in `public/board.html`, `board-ref.js`, `board-mystats.js`, `ym.html`, and the test-only files `buildSite`
+writes (`resets-test.json`, `yardjobs.json`, `patterns.json`, `ym-list.json`). No browser look this round.
+
+**The list given to him (his numbers):**
+- Finished, waiting on his look: 1 "Herding CATS" name (the Home Screen name "Board" is separate) · 2 My stats for
+  yard workers (the eight yard pieces) · 3 My stats "Open another name code's page" (owner key only wherever it
+  goes) · 4 the reset tracker timing yard shifts by CATS's O-T (`resets-test.json`; main board, alerts and My stats
+  still 8 / 12 h) · 5 Job Aids yard jobs, days off and relief (YEBS03's weekends still his) · 6 Job Aids "Days out
+  of Sarnia" calendar files (not yet imported for real) · 7 the faint visible screenshot code on his own view and
+  "look up a code" on Page Health (recommended K until a real photo is tried) · 8 My week's "Sleep this week" (not
+  picked 12 Nov).
+- Parked, recommended K: 9 Likely-call test and the purple pieces (tabled to 24 Nov) · 10 the yardmaster pieces
+  (Analytics' Yardmaster jobs and YM seniority list, `ym.html`; waiting on the yardmaster's look).
+- Recommended X: 11 the "newer version" bar (`checkSiteVersion`: has never shown, Cloudflare drops the tag; or the
+  laptop writes a fingerprint into `data/index.json` so it works) · 12 code tidy, no one sees a change: the
+  `|| PREVIEW` left on switches already on for everyone (`callCardOn`, `MINE_ALL`, `MINE_MORE`), and the Test tab's
+  leftovers (removed 10 Nov: `testPreview`, `target === 'test'`, `wantTest`, `mode === 'test'`).
+- Also told him: the TEST SITE badge stays; the bump test (following TEST) is on both sites with the owner key, not a
+  test-site piece; as of 12 Nov the board-test Worker had no `KIMI_API_KEY` / `ANTHROPIC_API_KEY` (Agreements can't
+  answer there; his to fix in Cloudflare, not re-checked).
+
+**Next:** his reply; then build his picks (each is page only unless noted: 4 needs the laptop to publish the
+main site's tracker the test site's way, a laptop pull + restart), change the tests that pin them quoting him,
+and update this section.
+
 ## Displacement alerts — BUILT 13 Nov 2026, OWNER TEST FIRST (members get nothing yet; his phones following the code TEST get every bump, who bumped whom), WAITING ON ONE LAPTOP PULL + RESTART. To put on for members: `MEMBERS_ON = true` in lib/board/displaced.js, at his word. No Worker change
 
 **Owner, later the same evening (replaces his "On for everyone now"):** "So on the main site, build a
