@@ -601,6 +601,22 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
+### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). BUILT FOR THE TEST SITE ONLY
+
+**Owner: "for the article 18.6 (b) can you add a reminder that an AD claim needs to be filed and to talk to
+their Local Chair person. This applies to engineers only".** Built behind `PREVIEW` (his view on board-test):
+"Engineer: an AD claim needs to be filed. Talk to your Local Chairperson." ("Local Chairperson" as the site
+already says it elsewhere; "AD claim" in his words, not spelled out). Where: (1) the claim form, right under
+Conductor / Engineer, shown only while Engineer is picked (`enAdNote`, toggled in `wireClaim`'s `update`);
+(2) on an engineer's held trip in a turn or name-code search (`held186`); (3) once at the top of the 18.6(b)
+tab, "Engineers held 14 h+: …" (`heldView`, `adTop`). The claim's text and where Submit sends it are
+unchanged. Test `test/board/held-ad.test.js` (3); suite 498 of 498. Checked in a browser over the live data:
+on board-test as him, the tab's line, the form hiding and showing it as the craft is switched, S302's three
+held trips in Turn History each with it; a member's 18.6(b) tab and an engineer's form the same to the letter
+as before on both sites. **Not done, put to him:** the "held 14 h+" phone alert (laptop, every member who
+follows a crew member) still says only "Open the board's Article 18.6(b) tab to send it to your rep" for an
+engineer too. To promote: drop `PREVIEW` in `enAdNote` and change the test, quoting him.
+
 ### The four menus at the top of Current (Trains, Pools, Spareboards, Other) — 12 Nov evening. REMOVED ON THE TEST SITE at his word; members keep them
 
 **Owner, 12 Nov about 18:00 Toronto: "Can we clean up what's in the trains pools spareboard and the last drop
