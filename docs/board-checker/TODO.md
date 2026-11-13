@@ -317,6 +317,11 @@ per week per person (A7). Taken off (owner, 2026-11-03): calendar export.
 
 ## Done
 
+- 2026-11-13: **Displacement alerts** (lib/board/displaced.js; owner: "notify you if you have
+  been displaced"): a member's own account is told when their turn shows someone else as its
+  own holder and they are on no board; the alert names who. On for everyone once the laptop
+  pulls. Bears on item 6 (Home turn, To Place); see HANDOFF.
+
 - 2026-11-10: **Analytics new layout promoted to the main site; Test tab removed from both
   sites.** Previews go to the test site only from now on; see HANDOFF.
 

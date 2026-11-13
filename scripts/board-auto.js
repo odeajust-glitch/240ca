@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE, YM_SENIORITY_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE, YM_SENIORITY_FILE, DISPLACED_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -50,8 +50,8 @@ const ResetAlerts = require('../lib/board/reset-alerts');
 const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
-const { listSubscriptions, listPostingAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
+const { listSubscriptions, listPostingAccounts, listCodeAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
+const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames, boardNameNow } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -59,6 +59,7 @@ const { describeFrame } = require('../lib/board/capture');
 const { parseGrid } = require('../lib/board/grid');
 const People = require('../lib/board/people');
 const Postings = require('../lib/board/postings');
+const Displaced = require('../lib/board/displaced');
 const OwnerNotify = require('../lib/board/owner-notify');
 const Trainees = require('../lib/board/trainees');
 const S = require('../lib/board/screens');
@@ -69,7 +70,7 @@ const { formatReport, describeMe } = require('../lib/board/report');
 const { snapshot, changeLines } = require('../lib/board/view');
 const { pushCheck, mineForPhone } = require('../lib/board/relay');
 const { buildSite, publishSiteDir, siteSettings } = require('../lib/board/site');
-const { at, hhmmBefore } = require('../lib/board/time');
+const { at, hhmmBefore, fmt } = require('../lib/board/time');
 const config = require('../lib/board/config');
 
 const OUT_DIR = DATA_DIR;
@@ -1005,6 +1006,11 @@ async function runRoute(page, opts = {}) {
   // turn when they're known to hold it (owner at Garnet, 2026-11-04: seen
   // as "not their own" turn, so his alerts stopped after 30 min).
   for (const b of boardNames) if (!b.tv) sight(b.code, b.turn, !!b.own || (b.from === 'pool' && knownPeople.get(b.key) === b.turn), { craft: b.craft });
+  // Who is on a temporary vacancy this check (TV here, TEMP VCNY in the crews
+  // in town below), as hashes: on someone's turn for now, so not a bump
+  // (lib/board/displaced.js; owner, 2026-11-13).
+  const tempAway = new Set();
+  for (const b of boardNames) if (b.tv && b.code) tempAway.add(People.personHash(b.code));
   // A trainee (TT / ET) on a crew line rides with that turn: their own
   // trainee slot, S501-TT (owner, 2026-11-04: WADE, a TT on S501).
   for (const t of trainNames) {
@@ -1026,7 +1032,7 @@ async function runRoute(page, opts = {}) {
   // TEMP VCNY = working another job for now, seen there instead (like TV).
   const town = S.parseCrewsInTownNames(townPages);
   for (const n of town) {
-    if (n.status === 'tempVacancy') continue;
+    if (n.status === 'tempVacancy') { if (n.code) tempAway.add(People.personHash(n.code)); continue; }
     // Trainees: their own slot beside the turn (S501-TT), never the holder's
     // (owner, 2026-11-04: WADE showed as S501's conductor).
     if (n.trainee && n.turn) { sight(n.code, `${n.turn}-${n.craft}`, true); continue; }
@@ -1046,7 +1052,7 @@ async function runRoute(page, opts = {}) {
     const codeSplits = People.loadSplits(CODE_SPLITS_FILE);
     if (People.learnSplit(codeSplits, codeSeen, Date.now() / 60000)) fs.writeFileSync(CODE_SPLITS_FILE, JSON.stringify(codeSplits));
   } catch (err) { console.log(`  (name code splits not saved: ${err.message})`); }
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, yardDuty: 1, ...(daysOffKnown.length ? { daysOffKnown } : {}) };
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, yardDuty: 1, ...(tempAway.size ? { tempAway: [...tempAway] } : {}), ...(daysOffKnown.length ? { daysOffKnown } : {}) };
 }
 
 // The full view, plus what changed since the previous check (kept in
@@ -1319,9 +1325,19 @@ function resetEventsNow(ctx) {
   }
 }
 
-async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = []) {
+async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [], { tempAway = [] } = {}) {
   const settings = siteSettings();
   if (!settings.r2) return;
+  // Displacement alerts (owner, 2026-11-13; lib/board/displaced.js): who is
+  // off their own turn this check because someone else is now on it. What
+  // this check saw is kept once the alerts are out (displacedDone), so a check
+  // that can't reach Cloudflare leaves them for the next one.
+  let displaced = { memory: null, events: [] };
+  try {
+    displaced = Displaced.update(TurnAlerts.loadTold(DISPLACED_FILE), sightings, now, { tempAway });
+    if (displaced.boardChange) console.log(`  Displacements: ${displaced.changes} turns changed holder in this one check (a change of card?), so no displacement alerts.`);
+  } catch (err) { console.log(`  (displacement alerts skipped: ${err.message})`); }
+  let displacedDone = !displaced.events.length;
   // Followed people: their own turn now (owner, 2026-10-25); a trainee's
   // slot (S501-TT) gets the turn crew's train alerts (owner, 2026-11-04).
   const personTurns = TurnAlerts.updatePersonTurns(TurnAlerts.loadTold(PERSON_TURNS_FILE) || {}, sightings);
@@ -1342,7 +1358,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     const subs = await alertPhones(settings.r2, retryingFetch(fetch));
     health.phones = subs.length;
     // Subscriber health is refreshed independently before publishing.
-    if (!subs.length) return;
+    if (!subs.length) { displacedDone = true; return; }
     const bases = TurnAlerts.loadTold(PHONES_FILE) || {};
     const nextBases = {};
     const keys = loadOrCreateKeys(PUSH_KEYS_FILE);
@@ -1358,7 +1374,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       nextBases[s.key] = mine.base;
       const owed = pending.filter((p) => p.phone === s.key);
       for (const { event: e, at } of [...owed, ...mine.events.map((event) => ({ event, at: Date.now() }))]) {
-        const r = await sendPush(s, { title: e.turn, body: e.text, tag: `turn-${e.turn}`, url: TurnAlerts.goLink(e, states) }, { keys, sub });
+        const r = await sendPush(s, { title: e.title || e.turn, body: e.text, tag: e.tag || `turn-${e.turn}`, url: TurnAlerts.goLink(e, states) }, { keys, sub });
         const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
         if (r.ok) l.phones++; else { l.failed++; Health.noteFailure(l, r); }
@@ -1402,6 +1418,34 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     } catch (err) {
       if (err.code !== 'ENOENT') console.log(`  (job posting alerts skipped: ${err.message})`);
     }
+    // Displacement alerts go to every device of the displaced member's own
+    // account (owner, 2026-11-13: "Only their account"; Displaced.devicesFor),
+    // found by the name code saved on it, with the name of whoever the board
+    // shows on the turn now (owner: "Full name"). A device that can't be
+    // reached now gets it next check.
+    if (displaced.events.length) try {
+      const accounts = await listCodeAccounts(settings.r2, retryingFetch(fetch));
+      const store = loadNames(NAMES_FILE);
+      const owner = ownerHash();
+      for (const d of displaced.events) {
+        const devices = Displaced.devicesFor(d.h, subs.filter((x) => nextBases[x.key] !== undefined), accounts, People.personHash, owner);
+        const name = boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;
+        const e = { turn: d.turn, kind: 'displaced', title: 'Displaced', tag: `displaced-${d.turn}`, text: Displaced.text(d, name, fmt(now)), why: Displaced.why(d, (h) => codeByHash.get(h) || null, fmt) };
+        console.log(`  Displaced: ${codeByHash.get(d.h) || 'a holder'} off ${Displaced.turnLabel(d.turn)}, ${name || 'someone else'} on it; ${devices.length} device(s) on their account.`);
+        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, why: e.why };
+        log.set(e.text, l);
+        for (const x of devices) {
+          const r = await sendPush(x, { title: e.title, body: e.text, tag: e.tag, url: TurnAlerts.goLink(e, states) }, { keys, sub });
+          if (r.ok) { l.phones++; sent++; said.add(e.text); continue; }
+          l.failed++;
+          Health.noteFailure(l, r);
+          if (r.gone) { await deleteObject(settings.r2, x.key); delete nextBases[x.key]; dropped++; } else { errors.add(r.message); nextPending.push({ at: Date.now(), phone: x.key, event: e }); }
+        }
+      }
+      displacedDone = true;
+    } catch (err) {
+      console.log(`  (displacement alerts not sent: ${err.message}; tried again next check)`);
+    }
     try { TurnAlerts.saveTold(PHONES_FILE, nextBases); } catch (err) { console.log(`  (turn alerts: couldn't save ${err.message})`); }
     writeAlertsLog(log);
     if (sent || dropped || errors.size) {
@@ -1415,6 +1459,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     console.log(`[${stamp()}] Turn alerts not sent: ${err.message}${events.length ? `; ${events.length} kept for the next check` : ''}`);
   } finally {
     try { TurnAlerts.saveTold(PENDING_ALERTS_FILE, nextPending); } catch { /* next time */ }
+    if (displacedDone && displaced.memory) { try { TurnAlerts.saveTold(DISPLACED_FILE, displaced.memory); } catch (err) { console.log(`  (displacements not saved: ${err.message})`); } }
   }
 }
 
@@ -2123,7 +2168,7 @@ async function main() {
           .catch((err) => console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`))
           .finally(() => { site.busy = null; });
       } else console.log(`  (snapshot website: the last upload is still going; this check goes with the next one)`);
-      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx));
+      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx), { tempAway: summary.tempAway || [] });
       await backupLaptop();
       await sendWeekly();
       await sendHeldAlerts();

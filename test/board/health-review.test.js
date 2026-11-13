@@ -64,7 +64,8 @@ test('a failed send: what the push service said is kept with the alert', () => {
   assert.deepEqual(l.errors, ['push service answered 500', 'fetch failed', 'no reason given']);
   assert.equal(l.gone, 1);
   // Every place the checker sends a phone an alert notes it, and the JSON log line carries it.
-  assert.equal(auto.split('Health.noteFailure(l, r)').length - 1, 4);
+  // (5 since the displacement alerts, owner 2026-11-13.)
+  assert.equal(auto.split('Health.noteFailure(l, r)').length - 1, 5);
   assert.ok(auto.includes('...(l.failed ? { gone: l.gone || 0, errors: l.errors || [] } : {})'));
   assert.ok(auto.includes('alerts: { ...Health.alertsToday(read(alertsLog()), todayToronto), ...Health.alertFailures(read(ALERTS_JSON_LOG), todayToronto, nowToronto) },'));
 });
