@@ -97,6 +97,25 @@ screen" makes a shortcut), or "Create shortcut" was picked. Told him: remove the
 drawer for "Line-up" / "Sarnia Board" and add that; if none, ⋮ → Add to Home screen → **Install**; if Chrome
 offers no Install, uninstall the old app in Android Settings → Apps and try again. Offered (not built): the
 page's "How to get alerts" Android line could say to pick Install, not Create shortcut.
+## ⚠ Yard shift ends from 3 → 6 are when the tie-up was ENTERED in CATS, often late — found 13 Nov 2026. The test site's yard overtime OVERSTATES; the reset-tracker switch he said yes to is ON HOLD; proposed reading 3 → 7 (YD) for CATS's own O-T
+
+**Owner, 13 Nov:** said yes to switching the reset tracker to the real yard end times, and asked "What screen are you
+seeing, option 3, then option 7 ?". **Answer:** 3 → 6 (the Call Board report: the yard jobs list and the crews in
+town). The checker reads 3 → 7 (Assignment History, PSTS17A) only for the S1 and S5 trains, hourly; **not YD**.
+**Checked against his 3 → 7 YD photo of 12 Nov (the 11th's jobs; docs/board-checker/SCREENS.md "Assignment history
+for the yard"; O-T = overtime on top of 8 h, blank = 8 h):** 3 → 6 ends agree within about 20 min for 9 jobs, but
+YSTY01 +2 h 10, YBHS01 +3 h 27, YSBY03 and YSBY04 +1 h 30 (O-T 0400: 12 h shifts; 3 → 6 said 13 h 30). The crews'
+"on rest until" times give it away: YBHS01 and YFLS01 (0800 jobs) rest until 0200 = off at 1600 with 10 h booked,
+YSBY03 (0700) until 0500 = off 1900, YSTY01 (0630) until 0030 = off 1430, all matching O-T; CATS showed the tie-up
+hours later (YFLS01 at 1856, 1936, 1919 on three days). Over the 29 days, 207 own-line book-offs: 104 tied up
+within 15 min of "rest until − 10 h", 53 15 to 60 min after, 44 over an hour after (6 had under 10 h booked). **So
+the job leaving the Call Board and the crew line going on rest are the same CATS event (the tie-up entered), and
+the earlier "173 of 175 agree" check proved nothing about the real off duty.** The test site's "ran over" and the
+"rest you booked" (measured from that time) are off on those days. **Proposed to him:** read 3 → 7 with YD in the
+checker (hourly, like the trains; skipped if it fails; a laptop pull + restart), length = 8 h + O-T (blank once
+the crew is on rest = 8 h), rest booked from that end; then My stats' yard view and the reset tracker on it (test
+site first). **Waiting on his yes.** Until then nothing more is switched.
+
 ## Yard shifts: each person's own end and the rest they booked — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-mystats.js`, `lib/board/mystats.js`; no Worker change). WAITING ON ONE LAPTOP PULL + RESTART
 
 **Owner, 13 Nov:** asked "Can we add a check in for the end of yard shifts for the board checker or did we add it in
