@@ -1325,7 +1325,7 @@ function resetEventsNow(ctx) {
   }
 }
 
-async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [], { tempAway = [] } = {}) {
+async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [], { tempAway = [], namesBefore = null } = {}) {
   const settings = siteSettings();
   if (!settings.r2) return;
   // Displacement alerts (owner, 2026-11-13; lib/board/displaced.js): who is
@@ -1374,7 +1374,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       nextBases[s.key] = mine.base;
       const owed = pending.filter((p) => p.phone === s.key);
       for (const { event: e, at } of [...owed, ...mine.events.map((event) => ({ event, at: Date.now() }))]) {
-        const r = await sendPush(s, { title: e.title || e.turn, body: e.text, tag: e.tag || `turn-${e.turn}`, url: TurnAlerts.goLink(e, states) }, { keys, sub });
+        const r = await sendPush(s, { title: e.title || e.turn, body: e.text, tag: e.tag || `turn-${e.turn}`, url: e.url || TurnAlerts.goLink(e, states) }, { keys, sub });
         const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
         if (r.ok) l.phones++; else { l.failed++; Health.noteFailure(l, r); }
@@ -1418,29 +1418,46 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     } catch (err) {
       if (err.code !== 'ENOENT') console.log(`  (job posting alerts skipped: ${err.message})`);
     }
-    // Displacement alerts go to every device of the displaced member's own
-    // account (owner, 2026-11-13: "Only their account"; Displaced.devicesFor),
-    // found by the name code saved on it, with the name of whoever the board
-    // shows on the turn now (owner: "Full name"). A device that can't be
-    // reached now gets it next check.
-    if (displaced.events.length) try {
+    // Displacement alerts. On test first (owner, 2026-11-13: "if youre
+    // tracking TEST as a name code, and have the owners key, you will get all
+    // the bumping notifications … Say whos getting bumped by whom"): every
+    // bump found goes to the owner's phones following TEST
+    // (Displaced.testDevices), naming both people and how many devices the
+    // displaced person's account has; a change of card is said as one line.
+    // Members are told only once Displaced.MEMBERS_ON is true: then every
+    // device of the displaced member's own account (owner: "Only their
+    // account"; Displaced.devicesFor), found by the name code saved on it,
+    // naming whoever the board shows on the turn now (owner: "Full name").
+    // A device that can't be reached now gets it next check.
+    if (displaced.events.length || displaced.boardChange) try {
+      const live = subs.filter((x) => nextBases[x.key] !== undefined);
       const accounts = await listCodeAccounts(settings.r2, retryingFetch(fetch));
+      const testers = Displaced.testDevices(live, People.personHash(Displaced.TEST_CODE), accounts, ownerCode());
       const store = loadNames(NAMES_FILE);
+      const before = namesBefore || {};
       const owner = ownerHash();
-      for (const d of displaced.events) {
-        const devices = Displaced.devicesFor(d.h, subs.filter((x) => nextBases[x.key] !== undefined), accounts, People.personHash, owner);
-        const name = boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;
-        const e = { turn: d.turn, kind: 'displaced', title: 'Displaced', tag: `displaced-${d.turn}`, text: Displaced.text(d, name, fmt(now)), why: Displaced.why(d, (h) => codeByHash.get(h) || null, fmt) };
-        console.log(`  Displaced: ${codeByHash.get(d.h) || 'a holder'} off ${Displaced.turnLabel(d.turn)}, ${name || 'someone else'} on it; ${devices.length} device(s) on their account.`);
-        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, why: e.why };
+      const tell = async (e, devices) => {
+        const l = log.get(e.text) || { turn: e.turn, kind: e.kind, phones: 0, failed: 0, ...(e.why ? { why: e.why } : {}) };
         log.set(e.text, l);
         for (const x of devices) {
-          const r = await sendPush(x, { title: e.title, body: e.text, tag: e.tag, url: TurnAlerts.goLink(e, states) }, { keys, sub });
+          const r = await sendPush(x, { title: e.title, body: e.text, tag: e.tag, url: e.url || TurnAlerts.goLink(e, states) }, { keys, sub });
           if (r.ok) { l.phones++; sent++; said.add(e.text); continue; }
           l.failed++;
           Health.noteFailure(l, r);
           if (r.gone) { await deleteObject(settings.r2, x.key); delete nextBases[x.key]; dropped++; } else { errors.add(r.message); nextPending.push({ at: Date.now(), phone: x.key, event: e }); }
         }
+      };
+      if (displaced.boardChange) await tell({ turn: 'BUMPS', kind: 'displacedTest', title: 'Bumps (test)', tag: `bumptest-${now}`, url: './#current', text: Displaced.boardChangeText(displaced.changes, fmt(now)) }, testers);
+      for (const d of displaced.events) {
+        const devices = Displaced.devicesFor(d.h, live, accounts, People.personHash, owner);
+        const by = boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;
+        // Who it was: the name the turn showed before this check was saved.
+        const was = boardNameNow(before, d.turn, new Date(), Displaced.RECENT_MIN + 15);
+        const bumped = (was && was !== by ? was : null) || codeByHash.get(d.h) || null;
+        const why = Displaced.why(d, (h) => codeByHash.get(h) || null, fmt);
+        console.log(`  Displaced: ${bumped || 'a holder'} off ${Displaced.turnLabel(d.turn)}, ${by || 'someone else'} on it; ${devices.length} device(s) on their account${Displaced.MEMBERS_ON ? '' : ' (members not told yet: owner test)'}.`);
+        await tell({ turn: d.turn, kind: 'displacedTest', title: 'Bump (test)', tag: `bumptest-${d.turn}-${d.at}`, text: Displaced.testText(d, bumped, by, fmt(now), devices.length), why }, testers);
+        if (Displaced.MEMBERS_ON) await tell({ turn: d.turn, kind: 'displaced', title: 'Displaced', tag: `displaced-${d.turn}`, text: Displaced.text(d, by, fmt(now)), why }, devices);
       }
       displacedDone = true;
     } catch (err) {
@@ -1503,6 +1520,8 @@ const SUBSCRIBER_HEALTH_FILE = path.join(DATA_DIR, 'subscriber-health.json');
 const SUBSCRIBER_CODES_FILE = path.join(DATA_DIR, 'subscriber-codes.json');
 let savedCodes = {};
 try { savedCodes = JSON.parse(fs.readFileSync(SUBSCRIBER_CODES_FILE, 'utf8')) || {}; for (const [h, code] of Object.entries(savedCodes)) codeByHash.set(h, code); } catch { /* first run */ }
+// The owner's displacement test code, so Page Health's followers say TEST.
+codeByHash.set(People.personHash(Displaced.TEST_CODE), Displaced.TEST_CODE);
 try {
   const saved = JSON.parse(fs.readFileSync(SUBSCRIBER_HEALTH_FILE, 'utf8'));
   if (saved && typeof saved.phones === 'number') {
@@ -1512,8 +1531,9 @@ try {
 } catch { /* first run or unreadable cache: show unavailable */ }
 // The phones alerts go to: every phone until a week after the lock, then only
 // members' (and the owner's own). See Health.membersOnly.
-const ownerHash = () => People.personHash(((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase());
-const alertPhones = async (...args) => Health.membersOnly(await listSubscriptions(...args), Date.now(), ownerHash());
+const ownerCode = () => ((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase();
+const ownerHash = () => People.personHash(ownerCode());
+const alertPhones = async (...args) => Health.membersOnly(await listSubscriptions(...args), Date.now(), [ownerHash(), People.personHash(Displaced.TEST_CODE)]);
 async function refreshSubscriberHealth(r2) {
   const checkedAt = Date.now();
   try {
@@ -2148,6 +2168,9 @@ async function main() {
       } catch (err) {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
+      // The crew names as they were before this check (who a turn showed
+      // before: the displacement test names who was bumped). Laptop only.
+      const namesBefore = loadNames(NAMES_FILE);
       try {
         const store = recordBunkhouse(recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []), names.bunk, summary.probedAt);
         saveNames(NAMES_FILE, recordMakeUps(store, { boards: names.mu, trains: names }, summary.probedAt));
@@ -2168,7 +2191,7 @@ async function main() {
           .catch((err) => console.log(`[${stamp()}] Snapshot website not updated: ${err.message}`))
           .finally(() => { site.busy = null; });
       } else console.log(`  (snapshot website: the last upload is still going; this check goes with the next one)`);
-      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx), { tempAway: summary.tempAway || [] });
+      await sendTurnAlerts(alertStates, lineupRead, alertNow, summary.people || [], resetEventsNow(resetCtx), { tempAway: summary.tempAway || [], namesBefore });
       await backupLaptop();
       await sendWeekly();
       await sendHeldAlerts();

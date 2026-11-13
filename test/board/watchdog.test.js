@@ -128,4 +128,9 @@ test('alerts: phones with no account are skipped from 19:00 on 17 Nov, the owner
   assert.equal(membersOnly(subs, NO_ACCOUNT_CUTOFF - 1, me).length, 3);
   assert.deepEqual(membersOnly(subs, NO_ACCOUNT_CUTOFF, me), [subs[0], subs[2]]);
   assert.deepEqual(membersOnly(subs, NO_ACCOUNT_CUTOFF), [subs[0]]);
+  // Several kept codes: his own and TEST (his displacement test phones, 2026-11-13).
+  const test = 'tttttttttttttttt';
+  const more = [...subs, { turns: [`@${test}`] }];
+  assert.deepEqual(membersOnly(more, NO_ACCOUNT_CUTOFF, [me, test]), [more[0], more[2], more[3]]);
+  assert.deepEqual(membersOnly(more, NO_ACCOUNT_CUTOFF, me), [more[0], more[2]]);
 });
