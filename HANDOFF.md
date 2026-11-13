@@ -1,5 +1,41 @@
 # HANDOFF — read this before doing anything
 
+## The Call Board dropped his CO line; the 501/502 board's MU01 had the wrong name — both fixed 13 Nov 2026, about 06:05 Toronto (laptop + page). ON `claude/vigilant-planck-zawrj4` (his "Yes" to putting this work there, the Toronto fix below). WAITING ON ONE LAPTOP PULL + RESTART
+
+**Owner, 13 Nov about 05:47 and 05:52 Toronto, two photos of Current:** (1) the 501/502 board's **MU01 CO "out
+working on L50231"** had the name of the MU01 who had been in the Toronto bunkhouse: "⟨he⟩ is not working
+502"; (2) "It also doesn't have me on the call board": **L50131 12 showed only "EN S501"**, his CO S501 missing.
+
+**(2) Why: a train's last crew line at the top of the next Call Board page was dropped.** Read from the live
+site's day files (turn ids only): L50131 12 had "EN S501 · CO S501" on every check from 12th 20:05 to 13th 05:33
+and at 05:49, and only "EN S501" at **05:41**, the check where M39671 11 first appeared, which also lost its
+"CO SA02" (back at 05:49). `parseCallBoardPage` started each page with no train, so lines before the page's
+first heading were thrown away. **Fixed:** `carriedOn` / `callBoardPageNo` in `lib/board/screens.js`: the train or
+yard job a page ends on carries on into the very next page (PAGE n + 1 only), in `parseCallBoardPage`
+(summary.js passes the carry), `parseCallBoardNames` and `parseTrainCrewNames` (board-auto.js passes
+`nameCarry` / `trainCarry`, like the yard jobs' `yardCarry`). The crews in town end it. His phone still showed
+the 05:41 board at 05:52.
+
+**(1) Why: an MU turn was named by its number, and MU01 was two people at once** (the CO on L50231, and the
+bunkhouse's MU01, who went home on E27331 13 as his own spare turn). The turn list picked the Call Board's
+newest "MU01" trip, the wrong one for the 501/502 row. **Fixed:** an MU turn is never named by its number
+anywhere (`namesByTurn` leaves MU turns out; the page's `crewTag` / `crewIn` skip them). Each MU row is named
+from its own screen in the newest check: board-auto.js tags 29 / 31's name rows (`learn`, label `s5` / `garnet`),
+`recordMakeUps` keeps them with the Call Board's MU crew lines as `@mu` (stamped with `probedAt`), and crew.json
+carries `mu: { taken, boards, trains }` (`makeUpNames`; board names from site.js `BOARD_NAME`). The page:
+the 501/502 / Garnet boards' MU rows (`poolBody` → `muTag`), a Call Board MU line the spare's own turn didn't
+replace (`crewLine`), a Toronto crew on its way (`wayCrew`); on that snapshot only, otherwise no name.
+**Found on the way, fixed:** a working pool row's name ran into the train after it (29's MU01 read as
+"⟨surname⟩ ⟨initial⟩ ⟨first⟩, L"): `parseBoardCrew` now stops a name at a train symbol.
+
+**Checked.** Suite **551 of 551** (`test/board/callboard-pages.test.js` 2: the 05:41 layout on three pages, made-up
+names; `test/board/makeup-names.test.js` 5; the two names tests that expected an MU01 by number changed). Ten
+pieces broken on purpose, a test failed every time. In Chromium at 390 and 1280 px over the 15 Oct fixture with
+a stand-in 501/502 board and Call Board (made-up names): the MU01 row and each train's MU01 named from their
+own rows; with an old names file, MU01 has no name; no page errors, no sideways scroll; the Toronto box as before.
+**Not checked:** real CATS (a page that really splits a train; 29 by name on the laptop), the published site.
+**After his pull + restart:** the 501/502 board's MU01 and the Call Board's MU lines against CATS.
+
 ## Home Screen icon with the Chrome badge — 13 Nov 2026 (owner's two phone screenshots). Nothing changed; steps given
 
 His Android home screen had the old installed app ("Line-up", 240 icon, opened with no address bar) and now

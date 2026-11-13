@@ -99,7 +99,8 @@ test('names: each turn\'s latest name as "Last, F", a 501/502 turn by craft', ()
   // A 501 job: conductor and engineer under one turn number.
   recordNames(store, [{ symbol: 'L50131', originDay: '18', crew: [{ craft: 'EN', turn: 'S501', name: 'Ann Lee' }, { craft: 'CO', turn: 'S501', name: "Justin O'Dea" }] }], at);
   assert.equal(store['L50131 18|S501'].name, "Justin O'Dea"); // as before: the last read
-  assert.deepEqual(namesByTurn(store, new Date('2026-10-18T06:00:00Z')), { MU01: "O'Brien-Smith, K", 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SD11: 'Wilson, D', SR05: 'de Man, M' });
+  // No MU01: a make-up turn is never named by its number (owner, 2026-11-13; names.js recordMakeUps).
+  assert.deepEqual(namesByTurn(store, new Date('2026-10-18T06:00:00Z')), { 'S501-CO': "O'Dea, J", 'S501-EN': 'Lee, A', SD11: 'Wilson, D', SR05: 'de Man, M' });
   // A spare on the turn later is the name shown; an old S5 entry with no craft is left out.
   recordNames(store, [{ symbol: 'M38331', originDay: '20', crew: [{ craft: 'CO', turn: 'SR05', name: 'Sam Spare' }] }], new Date('2026-10-20T05:00:00Z'));
   store['L50231 16|S502'] = { name: 'Old Entry', seen: '2026-10-16T05:00:00.000Z' };

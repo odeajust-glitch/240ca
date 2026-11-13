@@ -125,6 +125,17 @@ in CATS.
   `bunkCrew`, `southCrew`) uses it on that snapshot only; on any other, a turn
   takes its turn's name as before and a make-up (MU) turn none, never someone
   else's. The turns' names never come from the bunkhouse.
+- **A make-up turn (MU01) is never named by its number** (owner, 2026-11-13:
+  the 501/502 board's MU01 "out working on L50231" had the name of the
+  bunkhouse's MU01, who "is not working 502"). `namesByTurn` leaves MU turns
+  out, and the page's `crewTag` / `crewIn` never name one. `crew.json` carries
+  `mu: { taken, boards: [[board, craft, turn, "Last, F"]], trains: [[train,
+  craft, turn, "Last, F"]] }`: each MU row as its own screen showed it in the
+  newest check (29 / 31 by name; the Call Board's crew lines), `taken` as for
+  `bunk` (`recordMakeUps` / `makeUpNames`). The page names the 501/502 and
+  Garnet boards' MU rows, a Call Board MU line the spare's own turn didn't
+  replace, and a Toronto crew on its way from it (`muName`, `crewLine`,
+  `wayCrew`), on that snapshot only.
 - **Worker** `GET /api/crewkey`: the passcode (the "Crew names passcode"
   saved on Page Health) to an approved signed-in member or the owner key,
   and only where the variable `CREW_NAMES` = `on`. Not tied to `LOCK`.

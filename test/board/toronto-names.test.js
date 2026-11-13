@@ -47,8 +47,8 @@ test('Toronto bunkhouse: its own names by position, kept apart from the turns, f
   assert.deepEqual(bunkhouseNames(store, check1), [
     ['001', 'EN', 'SD08', 'Hill, C'], ['001', 'CO', 'MU01', 'Lake, B'], ['002', 'EN', 'SD09', 'Stone, A'],
     ['002', 'CO', 'SR06', 'Field, E'], ['003', 'EN', 'S109', 'Grove, D'], ['003', 'CO', 'SA08', 'Brook, G']]);
-  // The turns' names are as before: the bunkhouse never names a turn.
-  assert.deepEqual(namesByTurn(store, new Date(check1)), { MU01: 'Other, K' });
+  // The bunkhouse never names a turn, and a make-up turn is never named by its number at all.
+  assert.deepEqual(namesByTurn(store, new Date(check1)), {});
   // 28's names not read in the next check: the list stays, but it is not that check's.
   const check2 = '2026-11-13T01:56:00.000Z';
   recordBunkhouse(recordNames(store, onSarniaTrain, new Date(check2)), undefined, check2);
@@ -60,7 +60,7 @@ test('Toronto bunkhouse: its own names by position, kept apart from the turns, f
   assert.deepEqual(bunkhouseNames(store, check2), []);
   recordBunkhouse(store, [{ pos: '001', craft: 'LE', turn: 'SD08', name: 'Casey Hill' }, { pos: '001', craft: 'B1', turn: 'MU02', name: 'Bo Brake' }], check2);
   assert.deepEqual(bunkhouseNames(store, check2), [['001', 'EN', 'SD08', 'Hill, C']]);
-  assert.deepEqual(namesByTurn(store, new Date(check2)), { MU01: 'Other, K' });
+  assert.deepEqual(namesByTurn(store, new Date(check2)), {});
 });
 
 test('Toronto bunkhouse: the site locks the newest check\'s names into data/crew.json with its snapshot, nowhere else', async () => {
@@ -84,7 +84,7 @@ test('Toronto bunkhouse: the site locks the newest check\'s names into data/crew
   };
   const { out, index, got } = await build(checkAt);
   assert.ok(loadNames(namesFile)['@bunk']);
-  assert.deepEqual(got.turns, { MU01: 'Other, K' });
+  assert.deepEqual(got.turns, {});
   assert.deepEqual([index.latest, index.checked], ['2026-10-15 0815', '2026-10-15 0820']);
   assert.equal(got.bunk.taken, index.latest, 'the snapshot the newest check\'s board is, not the check\'s own time');
   assert.deepEqual(got.bunk.rows.slice(0, 2), [['001', 'EN', 'SD08', 'Hill, C'], ['001', 'CO', 'MU01', 'Lake, B']]);

@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, listPostingAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -449,6 +449,8 @@ async function runRoute(page, opts = {}) {
   const screens = [];
   const yardNames = []; // yard job crews by name, matched to turns at the end
   const yardCarry = {}; // the yard job a page ended on: its crew can start the next page
+  const nameCarry = {}; // the same for a train's crew (owner, 2026-11-13: screens.js carriedOn)
+  const trainCarry = {};
   const trainNames = []; // train crews by name: who's working whose job
   const unmaskedRows = async () => {
     try { return parseGrid((await describeFrame(catsFrame(page), { unmasked: true })).nameGrid); } catch { return null; }
@@ -462,7 +464,16 @@ async function runRoute(page, opts = {}) {
     boardNames.push(...S.parseBoardNames(rows)); // learned once, at the end
     // Who each turn shows, by name, for the crew names on the board
     // (members only, locked on the site): carried with the Call Board names.
-    if (opts.names) { try { (opts.names.board = opts.names.board || []).push(...S.parseBoardCrew(rows)); } catch { /* the board can do without */ } }
+    if (opts.names) {
+      try {
+        const crew = S.parseBoardCrew(rows);
+        (opts.names.board = opts.names.board || []).push(...crew);
+        // 501/502 (29) and Garnet (31): their make-up turns are named by their own rows (owner,
+        // 2026-11-13: the bunkhouse's MU01 "is not working 502"; names.js recordMakeUps).
+        const board = (screens[screens.length - 1] || {}).label;
+        if (board === 's5' || board === 'garnet') (opts.names.mu = opts.names.mu || []).push(...crew.map((c) => ({ ...c, board })));
+      } catch { /* the board can do without */ }
+    }
   };
   // `label` tells the loader which screens are Mac yard's (they look like
   // Sarnia's 23 and 41).
@@ -489,12 +500,12 @@ async function runRoute(page, opts = {}) {
     if (opts.names) {
       try {
         const { nameGrid } = await describeFrame(catsFrame(page), { unmasked: true });
-        opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid)));
+        opts.names.push(...S.parseCallBoardNames(parseGrid(nameGrid), nameCarry));
       } catch { /* the letters can do without; the check can't wait on it */ }
     }
     {
       const rows = await unmaskedRows();
-      if (rows) { yardNames.push(...S.parseYardCrewNames(rows, yardCarry)); trainNames.push(...S.parseTrainCrewNames(rows)); }
+      if (rows) { yardNames.push(...S.parseYardCrewNames(rows, yardCarry)); trainNames.push(...S.parseTrainCrewNames(rows, trainCarry)); }
       if (rows && parsed.crewsInTown) townPages.push(rows);
     }
     const shown = (await screenState(page)).text;
@@ -1952,7 +1963,8 @@ async function main() {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
       try {
-        saveNames(NAMES_FILE, recordBunkhouse(recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []), names.bunk, summary.probedAt));
+        const store = recordBunkhouse(recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []), names.bunk, summary.probedAt);
+        saveNames(NAMES_FILE, recordMakeUps(store, { boards: names.mu, trains: names }, summary.probedAt));
       } catch (err) {
         console.log(`  (crew names not saved: ${err.message})`);
       }
