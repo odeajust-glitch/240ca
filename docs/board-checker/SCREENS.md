@@ -345,9 +345,9 @@ blank); F8 pages down. Title `UPCOMING DAYS OFF`, screen id PSTS02M.
 
 ```
 MO/DY/TIME  DDSD  LEAVE-TYPE  STAT  NAME                    ASSIGNMENT
-11/06-0001  45SA  OFF               MARTIN*+   J  JIMMY     U-45SAS1S102ET
-11/06-0001  45SA  OFF         A     HAYNES*+   D  DEREK     A-45SAYSBY03YA
-11/07-0500  45SA  OFF         A     CROTEAU*+  PA PIERRE    U-45SAS1S104ET
+11/06-0001  45SA  OFF               ALDER*+    J  JONAS     U-45SAS1S102ET
+11/06-0001  45SA  OFF         A     BIRCH*+    D  DARYL     A-45SAYSBY03YA
+11/07-0500  45SA  OFF         A     CEDAR*+    PA PAUL      U-45SAS1S104ET
 ```
 
 - MO/DY/TIME: when the days off start. **24 h from that time** (owner).
@@ -355,7 +355,8 @@ MO/DY/TIME  DDSD  LEAVE-TYPE  STAT  NAME                    ASSIGNMENT
   job keeps its id, YSBY03) - craft (ET, EN, CO, YA).
 - STAT (A / B / blank) and the A/U/X types: meaning not known yet (owner
   "not sure"); shown as is, not used.
-- Names are masked like every screen; only turn, craft and times are kept.
+- Names are masked like every screen; only turn, craft and times are kept. (The names in the
+  example above are made up.)
   Parser: `lib/board/screens.js` parseDaysOff; the rest in `lib/board/daysoff.js`.
 
 ## Assignment history for the yard (`45 SA 3` → `7`, YD): owner's photos, 2026-11-12

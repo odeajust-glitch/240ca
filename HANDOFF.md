@@ -27,8 +27,11 @@ on vacation).
 this session's scratchpad only, gone with it). **The repository is public, so no names are committed:**
 `docs/board-checker/yardmaster/seniority-2026-11-13.json` has the same 34 rows without names (rank, date,
 marks, 45 SA, awarded, move, status, assignment split into pool / turn / craft, description), for the
-prediction artifact. **Already in the repo before this (not mine, told to him):** SCREENS.md's option 4
-example has three real names (line ~349).
+prediction artifact. **Real names already in the repo (found 13 Nov):** SCREENS.md's option 4 example had three:
+**replaced with made-up ones at his word ("yes replace the names in screens.md")**. Still there, his to
+say: the same three and three more in `test/board/daysoff.test.js` (lines 22–27, and the list on line 47
+that checks they are never saved), and the old text in the git history on GitHub (only a history rewrite
+and force push would take it out: not done, not offered as routine).
 
 **BUILT (laptop code; the site is untouched).** `scripts/board-auto.js`, after the job postings: on the
 first check in each half day (0000–1159, 1200–2359 Toronto; `lib/board/seniority.js slotOf`, kept in the file
