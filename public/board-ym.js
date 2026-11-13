@@ -1,5 +1,7 @@
-// Yardmaster Call Order: the logic. Pure functions, shared by the page and its tests.
-// The page (docs/board-checker/yardmaster/call-order-page.template.html) embeds this file.
+// Yardmaster Call Order: the logic. Pure functions, shared by the pages and their tests: the
+// board's test-site page (public/ym.html loads this file) and the owner's Claude page (which
+// embeds it). Both pages are built from docs/board-checker/yardmaster/call-order-page.template.html
+// by docs/board-checker/yardmaster/build.js.
 (function (root) {
   'use strict';
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

@@ -123,15 +123,54 @@ test('yardmaster seniority: each version of the list kept with when it was seen'
   assert.equal(r.past.length, Sen.KEEP_PAST);
 });
 
-test('yardmaster seniority: names stay on the laptop (never backed up, never published)', () => {
+test('yardmaster seniority: each person\'s short name, "Last, F", as the board\'s crew names', () => {
+  const list = S.parseSeniorityList(grid([
+    '   30   930421   ALDER*+        TJ    TOMAS        45   SA    2610251200          B',
+    '  480   250925   JUNIPER*+(NET)       GORDON       45   SA    2610251200          B',
+    '  487   250925   O\'KAPOK+       BO    BRIAN        45   SA    2610251200          B',
+  ]));
+  assert.deepEqual(list.map((p) => p.short), ['Alder, T', 'Juniper, G', "O'Kapok, B"]);
+});
+
+test('yardmaster seniority: names stay on the laptop, except locked for the test site (never backed up, never in the clear)', async () => {
+  const os = require('os');
+  const { buildSite } = require('../../lib/board/site');
+  const { unlockNames } = require('../../public/board-names');
   const backup = fs.readFileSync(path.join(__dirname, '../../lib/board/backup.js'), 'utf8');
   assert.match(backup, /SKIP_FILES = .*yardmaster-seniority\\\.json/);
   const { YM_SENIORITY_FILE, DATA_DIR } = require('../../lib/board/paths');
   assert.equal(path.dirname(YM_SENIORITY_FILE), DATA_DIR);
-  // Nothing the site builds reads it.
-  for (const f of ['lib/board/site.js', 'lib/board/insights.js', 'lib/board/summary.js']) {
-    assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../..', f), 'utf8'), /yardmaster-seniority|YM_SENIORITY_FILE/, f);
-  }
+  // The site gets the list without names, and the names by rank apart.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ym-site-'));
+  const file = path.join(root, 'yardmaster-seniority.json');
+  const people = S.parseSeniorityList(grid([
+    '   30   930421   ALDER*+        TJ    TOMAS        45   SA    2610251200          B',
+    '                                              YSTY01YA    0630  TOWER  S/S    JT60',
+    '  140   150724   CEDAR*+        M     MILO         45   SA    2610251212                   OFF',
+    '                                              EXYA01YA    TRAFFIC  COORDINATORS  SPARE',
+  ]));
+  fs.writeFileSync(file, JSON.stringify(Sen.keep(null, people, { now: new Date('2026-11-14T05:05:00Z'), pages: 1 })));
+  const got = Sen.siteList(file);
+  assert.deepEqual(got.names, { 30: 'Alder, T', 140: 'Cedar, M' });
+  assert.equal(got.source, 'cats');
+  assert.doesNotMatch(JSON.stringify(got.list), /ALDER|Alder|CEDAR|Cedar|TOMAS|MILO/);
+  assert.deepEqual(got.list.map((r) => [r.rank, r.assignment, r.status]), [[30, 'YSTY01YA', ''], [140, 'EXYA01YA', 'OFF']]);
+  // Before the laptop has read it: the 13 Nov copy in the repository, no names.
+  const early = Sen.siteList(path.join(root, 'none.json'));
+  assert.equal(early.list.length, 34);
+  assert.equal(early.names, null);
+  // buildSite: data/ym-list.json with the names locked by the names key; no key, no names. And the page.
+  const hist = path.join(root, 'history', '2026-10-15');
+  fs.mkdirSync(hist, { recursive: true });
+  fs.copyFileSync(path.join(__dirname, '../fixtures/board/2026-10-15b.json'), path.join(hist, '0815.json'));
+  const out = path.join(root, 'site');
+  buildSite({ historyDir: path.join(root, 'history'), outDir: out, days: 0, ym: file, names: { file: path.join(root, 'names.json'), key: 'pass phrase' } });
+  const pub = fs.readFileSync(path.join(out, 'data/ym-list.json'), 'utf8');
+  assert.doesNotMatch(pub, /ALDER|Alder|CEDAR|Cedar|TOMAS|MILO/);
+  assert.deepEqual(await unlockNames(JSON.parse(pub).names, 'pass phrase'), { byRank: { 30: 'Alder, T', 140: 'Cedar, M' } });
+  assert.ok(fs.existsSync(path.join(out, 'ym.html')) && fs.existsSync(path.join(out, 'board-ym.js')));
+  buildSite({ historyDir: path.join(root, 'history'), outDir: out, days: 0, ym: file, names: { file: path.join(root, 'names.json'), key: '' } });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(out, 'data/ym-list.json'), 'utf8')).names, null);
   // The route reads it unmasked and never captures it into the saved check.
   const auto = fs.readFileSync(path.join(__dirname, '../../scripts/board-auto.js'), 'utf8');
   const block = auto.slice(auto.indexOf('// The yardmaster seniority list (owner, 2026-11-13'), auto.indexOf('// Owner, 2026-10-24: the spareboards'));

@@ -4774,7 +4774,10 @@ function anaStale({ stale = [], preview = false }) {
 // (insights.js yardmasterJobs): listed by CATS; the shift as the Call Board showed it.
 function anaYardmaster({ yardmasterJobs = [] }) {
   const note = '<p class="anote">Yardmaster jobs (CATS craft <b>YA</b>) on the vacancy list (option 5). They go to the yardmaster spareboard, which the checker doesn’t read, so they stay off every other list, alert and prediction. “Worked by” is the yardmaster’s own turn when the Call Board shows them and they’re on a board the checker reads (an A pool turn, a spareboard turn); blank means someone not on those boards; a dash means the shift wasn’t seen on the Call Board.</p>';
-  if (!yardmasterJobs.length) return `${note}<p class="empty">No yardmaster jobs going spare in the dates picked.</p>`;
+  // Who would get one: the call order test page (owner, 2026-11-13: "build this into the test site as is
+  // for now"), test site only like this section.
+  const tool = '<section class="sheet"><header><h2>Who would get one</h2></header><p><a href="ym.html"><b>The call order test →</b></a></p><p class="muted">The yardmaster seniority list worked through step by step, with the rules so far.</p></section>';
+  if (!yardmasterJobs.length) return `${note}${tool}<p class="empty">No yardmaster jobs going spare in the dates picked.</p>`;
   const count = (key) => [...yardmasterJobs.reduce((m, j) => m.set(key(j), (m.get(key(j)) || 0) + 1), new Map())].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
   const day = (j) => (j.at || j.first || '').slice(0, 10);
   const wd = (j) => new Date(`${day(j)}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'long', timeZone: 'UTC' });
@@ -4783,7 +4786,7 @@ function anaYardmaster({ yardmasterJobs = [] }) {
   const rows = [...yardmasterJobs].reverse().map((j) => `<tr class="nolink"><td class="num"><b>${esc(j.train)}</b><div class="crew">${esc(j.status === 'ORDERED' ? 'ordered' : 'planned')}</div></td>
       <td class="num">${esc(j.at ? dt(j.at) : '—')}</td><td class="num">${stampBtn(j.first)}${j.last && j.last !== j.first ? `<div class="crew">to ${esc(dt(j.last))}</div>` : ''}</td>
       <td class="num">${j.onDuty ? `${j.crew ? `<b>${esc(j.crew)}</b>` : '<span class="muted">no turn named</span>'}<div class="crew">on duty ${esc(dt(j.onDuty))}</div>` : '<span class="muted">—</span>'}</td></tr>`).join('');
-  return `${note}
+  return `${note}${tool}
     <div class="strip">${anaTile(yardmasterJobs.length, 'Yardmaster jobs going spare')}${anaTile(`${seen} <small>/ ${yardmasterJobs.length}</small>`, 'Shift seen on the Call Board')}${anaTile(`${named} <small>/ ${seen}</small>`, 'Worked by someone on a board')}</div>
     <section class="sheet"><header><h2>Breakdown</h2></header><div class="agrid">${anaList('By job', count((j) => j.train))}${anaList('By day of the week', count(wd))}${anaList('Worked by', count((j) => j.crew || (j.onDuty ? 'no turn named' : 'not seen')))}</div></section>
     <section class="sheet"><header><h2>Every one</h2><span class="meta">newest first</span></header><div class="scroll"><table class="orders"><thead><tr><th>Job</th><th>Starts</th><th>First listed</th><th>Worked by</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;

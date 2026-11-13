@@ -15,7 +15,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **His questions are on hold until the yardmaster has looked** (his word)
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -70,6 +70,44 @@ touched); the first read is the first check after his pull + restart.
 
 **Next, his:** the rules for who gets called (the manual's ladder below, to confirm), and what CATS's marks
 (`*`, `+`, `(NET)`, `(NODP)`) and MOVE TYPE (B, F) mean if they matter.
+
+**On the test site, 13 Nov evening** (owner: "save all your questions for now, until he looks at it. Can you build
+this into the test site as is for now and we can edit it later"). **One page, two builds:**
+`docs/board-checker/yardmaster/call-order-page.template.html` + `build.js` → `public/ym.html` (`node
+docs/board-checker/yardmaster/build.js site`; a test fails if it is out of date) and the Claude page (`build.js artifact
+<people.json> <out.html>`: names embedded; never commit either). The logic moved to **`public/board-ym.js`** (the site
+serves it; the Claude page embeds it; the tests require it).
+- **Where:** Analytics → "Yardmaster jobs" (test site only) → a box "Who would get one" → "The call order test →" →
+  `ym.html`. The page itself shows only on board-test with the owner key (as `PREVIEW`); anywhere else it says "on the
+  test site only, for now". Nothing on the main site; a member sees nothing.
+- **Its list:** `data/ym-list.json`, written by `buildSite` (option `ym`, board-auto passes `YM_SENIORITY_FILE`) from
+  `Seniority.siteList`: the list **without names** (rank, date, marks, 45 SA, awarded, move, status, assignment,
+  description) and the **names by rank locked** with the crew names' key (`lockNames({ byRank }, names.key)`), opened in
+  the browser with `/api/crewkey` like `data/crew.json`. Names are "Last, F" (`parseSeniorityList` now gives `short`).
+  Before the laptop has read the list: the repo's 13 Nov copy (no names), so the page works by rank. No key: no names.
+- **Saving:** checks and rules stay on the device (the site has no shared store for them; the shared copy for the
+  yardmaster is the Claude page). Shared saving here would need a Worker change: not built.
+- **Checked:** suite 583 of 583 (`seniority.test.js`: short names; the list published with names only locked, none
+  without the key, and `ym.html` / `board-ym.js` copied; `ym-call-order.test.js`: `ym.html` is the template built, test
+  site only, no names; the one link sits in the Yardmaster jobs section). In a browser over the **real board-test**
+  (this branch's `board.html` and `ym.html` put over it in that browser only; GET only): Analytics → Yardmaster jobs →
+  the link → `ym.html` → "The yardmaster list is not on the site yet …" (true until the pull); with a stand-in list
+  locked with a test passcode: names open ("Last, F" by rank), the Saturday case right (rank 290), 390 px, no errors; without the owner
+  key: "on the test site only". The Claude page rebuilt from the same template: the same answers. **Fixed on the way:**
+  Analytics on the test site folds every `.anote` into "About these numbers", so the link is a box of its own.
+- **Not checked:** the real list from the laptop (the first read and publish after his pull + restart).
+
+**The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
+anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
+punitive rates; (3) the senior qualified unassigned TC available at straight time in yard service, incl. a yard / joint
+spareboard; (4) the senior regularly assigned TC at punitive rates; (5) the senior unassigned TC under 4.3 / 4.16 in yard
+service (incl. yard / joint spareboard) at punitive rates; (6) the senior qualified TC on a road service spareboard;
+(7) the senior qualified TC working in road service, if it won't interfere with their normal assignment. Note: same
+starting time, the senior chooses. **What it would change on the page, told to him, nothing changed yet:** the spare at
+overtime becomes step 2 (now it falls to the canvass); the yard at straight time is one step in seniority order
+(working that day or not) and takes the conductor spareboard too; the 4.16 overtime step is the yard only (and the joint
+spareboard); road conductors come after, spareboard then working (if it won't interfere); no separate 5.1 step; the TC
+spareboard goes by first up, not seniority. The agreement is not in the corpus.
 
 **Temporary vacancies, checked 13 Nov at his asking** ("can you see if anyone on that yard master seinoirty list is
 showing on a different home turn, if they are they are on a temporary vacancy. We can add that check in after but

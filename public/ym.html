@@ -1,0 +1,923 @@
+<!doctype html>
+<!-- Built by docs/board-checker/yardmaster/build.js from call-order-page.template.html: edit those, not this file. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Yardmaster Call Order</title>
+<style>
+/* Layout: one column of working panels, 1080px at most; the job and the answer sit side by side when there is room. */
+:root {
+  --bg: #f2f4f7; --surface: #ffffff; --surface-2: #eaeef3; --ink: #142130; --muted: #556274; --line: #d3dae3;
+  --accent: #8a5100; --accent-ink: #ffffff; --accent-soft: #fbeedb; --focus: #1f63d6;
+  --ok: #1d7444; --ok-soft: #e1f2e7; --bad: #b3261e; --bad-soft: #fce7e5; --warn: #855500; --warn-soft: #fff3d4;
+  --f-head: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e141b; --surface: #151d27; --surface-2: #1b2531; --ink: #e2e8ef; --muted: #98a5b5; --line: #2a3645;
+  --accent: #f0a43e; --accent-ink: #1b1204; --accent-soft: #382811; --focus: #74a9ff;
+  --ok: #5ec98b; --ok-soft: #12301f; --bad: #ff7d71; --bad-soft: #3b1714; --warn: #f0c35d; --warn-soft: #382c0f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e141b; --surface: #151d27; --surface-2: #1b2531; --ink: #e2e8ef; --muted: #98a5b5; --line: #2a3645;
+  --accent: #f0a43e; --accent-ink: #1b1204; --accent-soft: #382811; --focus: #74a9ff;
+  --ok: #5ec98b; --ok-soft: #12301f; --bad: #ff7d71; --bad-soft: #3b1714; --warn: #f0c35d; --warn-soft: #382c0f; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { padding-block: 28px 8px; }
+.eyebrow { margin: 0; font: 600 12px/1.4 var(--f-body); letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+h1 { margin: 2px 0 6px; font: 700 clamp(28px, 5vw, 40px)/1.05 var(--f-head); letter-spacing: -.01em; text-wrap: balance; }
+h2 { margin: 0; font: 600 21px/1.2 var(--f-head); text-wrap: balance; }
+h3 { margin: 0; font: 600 16px/1.3 var(--f-head); }
+.lede { margin: 0; max-width: 68ch; color: var(--muted); }
+.rules-state { margin: 10px 0 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.rules-state .chip { white-space: normal; }
+main { display: grid; gap: 16px; padding-block: 16px 40px; }
+.row2 { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { .row2 { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.panel > header { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.sub { margin: 0; color: var(--muted); font-size: 14px; max-width: 70ch; }
+.mono, code, .code { font-family: var(--f-mono); font-size: .92em; font-variant-numeric: tabular-nums; }
+.label { margin: 0; font: 600 11px/1.3 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font: 500 12px/1.6 var(--f-body); background: var(--surface-2); color: var(--ink); white-space: nowrap; }
+.chip.draft { background: var(--warn-soft); color: var(--warn); }
+.chip.saved { background: var(--ok-soft); color: var(--ok); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.acc { background: var(--accent-soft); color: var(--accent); }
+/* Forms */
+.fields { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.fields .wide { grid-column: 1 / -1; }
+label.f { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+input, select, textarea, button { font: inherit; color: inherit; }
+input[type=text], input[type=number], input[type=date], input[type=datetime-local], select, textarea {
+  width: 100%; min-width: 0; box-sizing: border-box; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 15px; }
+textarea { min-height: 70px; resize: vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button { cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: var(--surface-2); padding: 7px 12px; font-size: 14px; font-weight: 500; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.primary:hover { filter: brightness(1.06); }
+button.ghost { background: transparent; }
+button.small { padding: 3px 9px; font-size: 13px; }
+button[disabled] { opacity: .5; cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.warn { margin: 0; padding: 8px 10px; border-radius: 7px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+.msg { margin: 0; font-size: 14px; }
+.msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+/* The answer */
+.pick { display: grid; gap: 6px; padding: 14px 16px; border-radius: 9px; background: var(--accent-soft); border: 1px solid var(--accent); }
+.pick.none { background: var(--bad-soft); border-color: var(--bad); }
+.pick-name { margin: 0; font: 700 clamp(24px, 4vw, 32px)/1.1 var(--f-head); }
+.pick-name small { font: 500 .6em var(--f-body); color: var(--muted); }
+.pick-meta, .pick-why { margin: 0; font-size: 14px; }
+.next ol { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 3px; }
+.ex-banner { margin: 0; padding: 8px 10px; border-radius: 7px; background: var(--surface-2); font-size: 14px; }
+details.walk > summary, details.box > summary { cursor: pointer; font-weight: 600; }
+.steps { display: grid; gap: 12px; margin-top: 10px; }
+.step h3 { font-size: 15px; }
+.step h3 .n { font-family: var(--f-mono); color: var(--muted); margin-right: 6px; }
+.tablewrap { overflow-x: auto; }
+table.walk { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 4px; }
+table.walk td { padding: 4px 8px 4px 0; border-top: 1px solid var(--line); vertical-align: top; }
+table.walk td.rk { width: 3.2em; font-family: var(--f-mono); color: var(--muted); }
+table.walk tr.win td { background: var(--accent-soft); }
+table.walk .yes { color: var(--ok); font-weight: 600; }
+table.walk .no { color: var(--muted); }
+.yn-field { border: 0; padding: 0; margin: 0; display: flex; gap: 6px 16px; align-items: center; flex-wrap: wrap; font-size: 15px; min-width: 0; }
+.yn-field legend { font-size: 13px; color: var(--muted); padding: 0; margin-bottom: 4px; }
+.yn-field label { display: inline-flex; gap: 6px; align-items: center; }
+ol.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.crow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+.crow.yes { border-color: var(--ok); background: var(--ok-soft); }
+.crow.no { border-color: var(--bad); background: var(--bad-soft); }
+.crow-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.crow .pos { font-family: var(--f-mono); color: var(--muted); min-width: 1.4em; text-align: right; }
+.crow-who b { font-family: var(--f-head); font-size: 16px; }
+.crow-who .tag { display: block; }
+.yn { display: flex; gap: 6px; }
+.yn button[aria-pressed="true"][data-yn="yes"] { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.yn button[aria-pressed="true"][data-yn="no"] { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+@media (max-width: 520px) { .crow-main { grid-template-columns: auto minmax(0, 1fr); } .yn { grid-column: 2; } }
+.ex .fails { color: var(--bad); }
+/* People */
+.peoplebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); margin-top: 10px; }
+.pc { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; display: grid; gap: 6px; background: var(--surface); min-width: 0; }
+.pc.out { background: var(--surface-2); }
+.pc.holder { border-style: dashed; }
+.pc-h { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pc-h .rk { font-family: var(--f-mono); color: var(--muted); font-size: 13px; }
+.pc-h b { font-family: var(--f-head); font-size: 16px; letter-spacing: .01em; }
+.pc-job { margin: 0; font-size: 13px; color: var(--muted); }
+.pc-f { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pc-f .wide { grid-column: 1 / -1; }
+.pc-f label.f { font-size: 12px; }
+.pc-f input, .pc-f select { font-size: 14px; padding: 5px 7px; }
+.hint { margin: 0; font-size: 12px; color: var(--warn); }
+.tag { font-size: 12px; color: var(--muted); }
+.sched { margin: 0; font-size: 12px; color: var(--muted); }
+.srow.canvass { grid-template-columns: auto auto minmax(0, 1fr); }
+.srow.canvass .clabel { font-size: 14px; }
+@media (max-width: 720px) { .srow.canvass .clabel { grid-column: 3 / -1; } }
+/* Examples */
+.score { margin: 0; font-size: 15px; }
+.score b { font-family: var(--f-head); font-size: 20px; }
+ul.exlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ex { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; }
+.ex .mark { font: 700 16px/1.3 var(--f-head); width: 1.4em; text-align: center; border-radius: 6px; }
+.ex.ok .mark { color: var(--ok); background: var(--ok-soft); }
+.ex.bad .mark { color: var(--bad); background: var(--bad-soft); }
+.ex p { margin: 2px 0 0; font-size: 14px; }
+.ex .why { color: var(--ink); }
+.ex .by { color: var(--muted); font-size: 12px; }
+.ex-act { display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 520px) { .ex { grid-template-columns: auto minmax(0, 1fr); } .ex-act { grid-column: 2; flex-direction: row; } }
+/* Rules */
+.steplist { display: grid; gap: 8px; }
+.srow { display: grid; grid-template-columns: auto auto minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.srow.off { opacity: .55; }
+.srow .n { font-family: var(--f-mono); color: var(--muted); min-width: 1.6em; }
+.srow .mv { display: flex; gap: 4px; }
+@media (max-width: 720px) { .srow { grid-template-columns: auto auto minmax(0, 1fr) minmax(0, 1fr); } .srow select[data-k=group] { grid-column: 3 / 5; } .srow select.need { grid-column: 3; } .srow select.pay { grid-column: 4; } .srow .mv { grid-column: 3 / 5; } }
+.settings { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.check input { margin-top: 4px; }
+.fit { display: grid; gap: 8px; }
+.cand { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.cand ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.cand li.chg { color: var(--accent); font-weight: 500; }
+.hist { display: grid; gap: 6px; }
+.hrow { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; font-size: 14px; border-top: 1px solid var(--line); padding-top: 6px; }
+.ogrid { display: grid; gap: 6px 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); margin-top: 8px; }
+.ogrid label { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; }
+footer { padding-block: 0 40px; color: var(--muted); font-size: 13px; }
+footer p { margin: 0 0 6px; max-width: 80ch; }
+@media (prefers-reduced-motion: no-preference) { .pick { transition: background .2s; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <p class="eyebrow">Sarnia · Yardmaster relief</p>
+  <h1>Yardmaster Call Order</h1>
+  <p class="lede">Put in a yardmaster job going spare. The page goes down the Sarnia yardmaster seniority list (CATS list 3G YA, read <span data-listlong>13 Nov 2026</span>) and shows who gets the call, and why each person ahead of them doesn't. When it gets one wrong, save the case as an example and adjust the rules until it gets them all right.</p>
+  <p class="rules-state" id="rulesState"></p>
+  <p class="note" id="back-link" hidden><a href="./#analytics">← Back to the board</a></p>
+</div></header>
+
+<main class="wrap">
+  <div class="row2">
+    <section class="panel" id="job" aria-labelledby="h-job">
+      <header><h2 id="h-job">The job going spare</h2></header>
+      <div class="fields">
+        <label class="f wide">Job<select id="job-sel"></select></label>
+        <label class="f wide" id="job-other-wrap" hidden>Job code<input type="text" id="job-other" placeholder="YSBY05" autocomplete="off"></label>
+        <label class="f">Date<input type="date" id="job-date"></label>
+        <label class="f">Starts<input type="text" id="job-start" inputmode="numeric" maxlength="4" placeholder="0700"></label>
+        <label class="f">Hours<input type="number" id="job-hours" min="1" max="16" step="0.5"></label>
+        <fieldset class="f wide yn-field"><legend>Anyone available on the yardmaster spareboard?</legend>
+          <label><input type="radio" name="spareboard" id="sb-yes" value="yes"> Yes</label>
+          <label><input type="radio" name="spareboard" id="sb-no" value="no"> No</label>
+        </fieldset>
+      </div>
+      <div id="job-note"></div>
+    </section>
+
+    <section class="panel" id="answer" aria-labelledby="h-answer">
+      <header><h2 id="h-answer">Who gets the call</h2><button class="small ghost" id="copy">Copy as text</button></header>
+      <div id="answer-body"></div>
+      <p class="msg" id="copy-msg" hidden></p>
+      <details class="walk" id="walk"><summary id="walk-sum">How it went down the list</summary><div class="steps" id="walk-body"></div></details>
+    </section>
+  </div>
+
+  <section class="panel" id="teach" aria-labelledby="h-teach">
+    <header><h2 id="h-teach">Check the call order</h2><span class="chip" id="sync-chip">Connecting…</span></header>
+    <p class="sub">The order the page would call people in, each one if those ahead of them can't take it. Mark the people you're sure of: <b>Yes</b> if they'd be called at that point, <b>No</b> if not, and say why under a No. Leave the rest blank.</p>
+    <ol class="checklist" id="check-list"></ol>
+    <div class="actions"><button class="small" id="check-more" hidden></button></div>
+    <div class="fields">
+      <label class="f">Who should get it first?<select id="check-first"></select></label>
+      <label class="f">Someone missing from the order?<select id="miss-who"></select></label>
+      <label class="f wide" id="miss-note-wrap" hidden>Why should they be called?<input type="text" id="miss-note" placeholder="Not on overtime; his rest ended at 1600" autocomplete="off"></label>
+      <label class="f wide">Anything else the rules should know<textarea id="check-note" placeholder="Optional"></textarea></label>
+    </div>
+    <div class="actions"><button class="primary" id="check-save">Save this check</button><button class="ghost" id="check-clear">Clear my marks</button></div>
+    <p class="msg" id="teach-msg" hidden></p>
+    <p class="note">Saving keeps the job, the time, the spareboard answer, everyone's situation as set under "Who's available at call time" below, and your marks. Every saved check is run again whenever the rules change.</p>
+  </section>
+
+  <section class="panel" id="people" aria-labelledby="h-people">
+    <header><h2 id="h-people">Who's available at call time</h2></header>
+    <p class="sub">Everyone on the list, in seniority order. Statuses start as CATS showed them on <span data-listday>13 Nov</span>. For a real case, set each person as they were then: off, on rest until a time (rest booked past the call: skipped), and, for overtime, when their last yard shift ended and how many yard shifts they had worked since Monday. The grey line under each person comes from their job's own schedule; fill the boxes in when you know better.</p>
+    <div class="peoplebar">
+      <span id="people-sum" class="chip"></span>
+      <button class="small" id="people-cats">Use CATS statuses (<span data-listday>13 Nov</span>)</button>
+      <button class="small" id="people-all">Everyone available</button>
+    </div>
+    <details class="box" id="people-box"><summary>Show all <span data-listcount>34</span> people</summary><div class="pgrid" id="pgrid"></div></details>
+  </section>
+
+  <section class="panel" id="examples" aria-labelledby="h-ex">
+    <header><h2 id="h-ex">Examples</h2></header>
+    <p class="score" id="ex-score"></p>
+    <p class="note" id="ex-sync"></p>
+    <ul class="exlist" id="ex-list"></ul>
+  </section>
+
+  <section class="panel" id="rules" aria-labelledby="h-rules">
+    <header><h2 id="h-rules">Rules</h2><span id="rules-chip"></span></header>
+    <p class="sub">Each step takes the most senior person who fits it. A step can be switched off, moved or changed; the answer and the examples' score update as you go. Changes are a draft until saved.</p>
+    <div class="steplist" id="steplist"></div>
+    <div class="actions"><button class="small" id="step-add">Add a step</button></div>
+    <p class="note">Engineers (qualified yardmasters working as locomotive engineers) are reached only in the canvass, after everyone else. That is a hard rule, so no step can be set to them.</p>
+    <div class="settings">
+      <label class="check"><input type="checkbox" id="r-rest"><span>Anyone on rest when the call is made is skipped (rest is booked)</span></label>
+      <label class="check"><input type="checkbox" id="r-ot"><span>Straight-time steps pass over anyone who would be on overtime</span></label>
+      <label class="f">Overtime: hours from the end of their last yard shift<input type="number" id="r-otgap" min="0" max="16" step="1"></label>
+      <label class="f">Overtime: straight-time yard shifts a week (from Monday 0001)<input type="number" id="r-otweek" min="1" max="7" step="1"></label>
+      <label class="f">The 4.16 time-and-a-half step takes<select id="r-c416"><option value="all">conductors in the yard and on the road</option><option value="yard">conductors in the yard only</option></select></label>
+      <label class="f">Call goes out this many hours before the start<input type="number" id="r-lead" min="0" max="6" step="0.5"></label>
+      <label class="check"><input type="checkbox" id="r-own"><span>Check their own shifts (the tower rotation, yard jobs' days off)</span></label>
+      <label class="f">Hours needed between their own shift and this one (not decided yet)<input type="number" id="r-gap" min="0" max="16" step="1"></label>
+      <label class="f">Call people by<select id="r-groupby"><option value="now">the job they work at call time</option><option value="perm">their permanent job</option></select></label>
+    </div>
+    <details class="box" id="ovr-box"><summary id="ovr-sum">People called in a different group</summary>
+      <p class="note">By default each person's group comes from their job (YA job: regular yardmaster; EXYA01: the spare; conductor or yard job: 4.16; engineer job: canvass only). Change one here if it is wrong.</p>
+      <div class="ogrid" id="ogrid"></div>
+    </details>
+    <div class="actions">
+      <input type="text" id="rules-note" placeholder="What changed and why" aria-label="What changed and why" style="flex:1 1 220px">
+      <button class="primary" id="rules-save">Save rules for everyone</button>
+      <button id="rules-revert">Back to saved</button>
+      <button class="ghost" id="rules-manual">Back to the starting rules</button>
+    </div>
+    <p class="msg" id="rules-msg" hidden></p>
+    <div class="fit">
+      <div class="actions"><button id="fit-run">Find rules that fit the examples</button><span class="note">Tries the groups in every order, both call layouts, the own-shift check and its hours, and the 4.16 step with and without road conductors. The rest, overtime, engineer and call-lead rules stay as they are.</span></div>
+      <div id="fit-out"></div>
+    </div>
+    <details class="box" id="hist-box"><summary>Saved versions</summary><div class="hist" id="hist"></div></details>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read <span data-listlong>13 Nov 2026</span> (<span data-listcount>34</span> people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with the rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; if nobody is on the spareboard, anyone working in the yard that day who hasn't been called yet gets it first (moved up from their own shift); straight-time steps pass over anyone on overtime, so someone in the yard at straight time comes before the regular yardmasters on their rest day; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
+  <p><b>Set by hand for now.</b> Where road and spare turns are at call time, their rest, and the spare yardmaster's last yard shift and shifts this week. Temporary vacancies are still to come; the "Working at call time" box is there until then.</p>
+</div></footer>
+
+<datalist id="codes"></datalist>
+<script type="application/json" id="people-data">null</script>
+<script type="application/json" id="ym-config">{"mode":"site"}</script>
+<script src="board-names.js"></script>
+<script src="board-ym.js"></script>
+<script>
+(function () {
+  'use strict';
+  const Y = window.YM;
+  // The Claude page carries the list (with names) in the page; the board's test site (ym.html)
+  // fetches it from data/ym-list.json, the names locked as the crew names are (owner, 13 Nov:
+  // "build this into the test site as is for now").
+  const CONFIG = (() => { try { return JSON.parse(document.getElementById('ym-config').textContent) || {}; } catch { return {}; } })();
+  let PEOPLE = [];
+  let byRank = new Map();
+  let LIST_DAY = '13 Nov';
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const nameOf = (p) => (p.first ? `${p.surname}, ${p.first}` : p.surname);
+  const permOf = (p) => (p.perm ? `${p.perm} ${p.permDesc}`.trim() : 'no current job');
+  const clone = Y.clone;
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const startRules = () => Y.normalize(Y.startingRules());
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* not kept */ } },
+  };
+  const todayISO = () => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); } catch { return new Date().toISOString().slice(0, 10); } };
+  const holderOf = (job) => PEOPLE.find((p) => { const c = Y.parseCode(p.perm); return c && c.craft === 'YA' && c.turn === job; });
+  const GROUP_SHORT = { spare: 'Spare YM', regular: 'Regular YM', c416: '4.16', other: '5.1', engineer: 'Engineer', any: 'Canvass', none: 'No job' };
+  const shortDate = (iso) => { try { return new Date(iso).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }); } catch { return iso; } };
+
+  function defaultScenario() {
+    const tomorrow = Y.addDays(todayISO(), 1);
+    const job = Y.towerOn(tomorrow) === 'a' ? 'YSBY01' : 'YSBY03';
+    return { job, date: tomorrow, start: Y.YA_JOBS[job].start, hours: Y.YA_JOBS[job].hours, spareboard: 'yes', facts: Y.catsFacts(PEOPLE) };
+  }
+
+  const state = {
+    sc: null, rules: startRules(), saved: null, savedMeta: null, examples: [], history: [], db: null, user: null, me: null,
+    canWrite: null, names: {}, mode: 'connecting', teach: null, openEx: null, fit: null, armed: null, sync: '',
+  };
+
+  // --- The job ---------------------------------------------------------------
+  function fillJobSelect() {
+    const opts = Object.entries(Y.YA_JOBS).map(([job, j]) => { const h = holderOf(job); return `<option value="${job}">${job} · ${j.start} ${esc(j.label)}${h ? ` · ${esc(h.surname)}` : ''}</option>`; });
+    opts.push('<option value="OTHER">Another job (type its code)</option>');
+    $('#job-sel').innerHTML = opts.join('');
+  }
+  function showScenario() {
+    const sc = state.sc;
+    const known = !!Y.YA_JOBS[sc.job];
+    $('#job-sel').value = known ? sc.job : 'OTHER';
+    $('#job-other-wrap').hidden = known;
+    if (!known) $('#job-other').value = sc.job;
+    $('#job-date').value = sc.date;
+    $('#job-start').value = sc.start;
+    $('#job-hours').value = sc.hours;
+    $('#sb-yes').checked = (sc.spareboard || 'yes') !== 'no';
+    $('#sb-no').checked = sc.spareboard === 'no';
+  }
+  function wireJob() {
+    $('#job-sel').addEventListener('change', (e) => {
+      const v = e.target.value;
+      if (v === 'OTHER') { state.sc.job = ($('#job-other').value || '').toUpperCase(); $('#job-other-wrap').hidden = false; }
+      else { state.sc.job = v; state.sc.start = Y.YA_JOBS[v].start; state.sc.hours = Y.YA_JOBS[v].hours; }
+      clearCheck(); showScenario(); update();
+    });
+    $('#job-other').addEventListener('change', (e) => { state.sc.job = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); clearCheck(); update(); });
+    $('#job-date').addEventListener('change', (e) => { if (e.target.value) { state.sc.date = e.target.value; clearCheck(); update(); } });
+    for (const el of document.querySelectorAll('input[name=spareboard]')) el.addEventListener('change', (e) => { state.sc.spareboard = e.target.value; update(); });
+    $('#job-start').addEventListener('change', (e) => {
+      const v = e.target.value.replace(/\D/g, '').padStart(4, '0').slice(-4);
+      if (+v.slice(0, 2) < 24 && +v.slice(2) < 60) state.sc.start = v;
+      e.target.value = state.sc.start; clearCheck(); update();
+    });
+    $('#job-hours').addEventListener('change', (e) => { const v = +e.target.value; if (v > 0 && v <= 16) state.sc.hours = v; e.target.value = state.sc.hours; clearCheck(); update(); });
+  }
+  function renderJobNote(prep, res) {
+    const sc = state.sc;
+    const ya = Y.YA_JOBS[prep.job];
+    const h = holderOf(prep.job);
+    const parts = [`<p class="note">Call goes out <b class="mono">${esc(Y.fmt(res.call))}</b> for <b class="mono">${esc(Y.fmt(res.start))}</b>, off <b class="mono">${esc(Y.fmt(res.end))}</b>.</p>`];
+    parts.push(`<p class="note">${h ? `Its holder: <b>${esc(nameOf(h))}</b> (rank ${h.rank}).` : 'Nobody on the list holds this job.'}${ya ? ` ${prep.job} works ${esc(ya.rota)}.` : ''}</p>`);
+    if (prep.spareOff) parts.push('<p class="note">Nobody available on the yardmaster spareboard: the spare steps find nobody.</p>');
+    if (ya && prep.runs === false) parts.push(`<p class="warn">By the ${esc(ya.rota.includes('tower') ? 'tower rotation' : 'schedule')}, ${prep.job} does not run on ${esc(Y.dowOf(sc.date))} ${esc(sc.date)}. Check the date, or carry on if it really ran.</p>`);
+    $('#job-note').innerHTML = parts.join('');
+  }
+
+  // --- The answer ------------------------------------------------------------
+  const stepName = (o) => `Step ${o.i + 1}: ${Y.stepLabel(o.st, state.rules)}`;
+  function personLine(r) {
+    const p = r.p;
+    const moved = r.moved ? ` · working <span class="code">${esc(r.now)}</span> at call time` : '';
+    return `<span class="code">${esc(p.perm || '—')}</span> ${esc(p.permDesc || 'no current job')}${moved}`;
+  }
+  function renderAnswer(prep, res) {
+    const ex = state.openEx && state.examples.find((x) => x.id === state.openEx);
+    const banner = ex ? `<p class="ex-banner">Showing a saved check${same(ex.sc, state.sc) ? '' : ' (changed since)'}${ex.expected != null ? `: first should be <b>${esc(expectedName(ex))}</b>` : ''}. Its marks are under "Check the call order". <button class="small ghost" id="close-ex">Close</button></p>` : '';
+    let html = banner;
+    if (!res.pick) {
+      html += '<div class="pick none"><p class="label">Gets the call</p><p class="pick-name">Nobody on the list</p><p class="pick-why">No one on the yardmaster list fits any step of these rules. It would go off the list, or stay open.</p></div>';
+    } else {
+      const o = res.pick; const p = o.r.p;
+      html += `<div class="pick"><p class="label">Gets the call</p>
+        <p class="pick-name">${esc(p.surname)} <small>${esc(p.first)}</small></p>
+        <p class="pick-meta"><span class="chip">Rank ${p.rank}</span> ${personLine(o.r)}</p>
+        <p class="pick-why">${esc(stepName(o))}. Called <b class="mono">${esc(Y.fmt(res.call))}</b>${o.st.need === 'start' ? ' (on-time relief: not free by the call)' : ''}.</p></div>`;
+      const next = res.order.slice(1, 4);
+      if (next.length) html += `<div class="next"><p class="label">Next in line</p><ol>${next.map((n) => `<li><b>${esc(nameOf(n.r.p))}</b> <span class="tag">rank ${n.r.p.rank} · step ${n.i + 1}</span></li>`).join('')}</ol></div>`;
+    }
+    $('#answer-body').innerHTML = html;
+    const close = $('#close-ex');
+    if (close) close.addEventListener('click', () => { state.openEx = null; update(); });
+    // The walk down the list.
+    const looked = new Set(res.steps.flatMap((s) => s.rows.map((x) => x.r.p.rank))).size;
+    $('#walk-sum').textContent = `How it went down the list (${res.steps.length} steps, ${looked} people)`;
+    $('#walk-body').innerHTML = res.steps.map((s) => {
+      const rows = s.rows.length ? s.rows.map((x) => {
+        const win = res.pick && res.pick.r === x.r && res.pick.i === s.i;
+        const earlier = !x.why && !win && res.order.findIndex((o) => o.r === x.r) > -1 && res.order.find((o) => o.r === x.r).i !== s.i;
+        const what = x.why ? `<span class="no">${esc(x.why)}</span>` : win ? '<span class="yes">gets the call</span>' : earlier ? '<span class="no">counted at an earlier step</span>' : '<span class="yes">could take it (next in line)</span>';
+        return `<tr class="${win ? 'win' : ''}"><td class="rk">${x.r.p.rank}</td><td>${esc(nameOf(x.r.p))}${x.r.moved ? ` <span class="tag">(on ${esc(x.r.now)})</span>` : ''}${s.st.group === 'any' && x.group === 'engineer' ? ' <span class="tag">engineer</span>' : ''}</td><td>${what}</td></tr>`;
+      }).join('') : '<tr><td colspan="3" class="no">Nobody on the list is in this group.</td></tr>';
+      return `<div class="step"><h3><span class="n">${s.i + 1}</span>${esc(Y.stepLabel(s.st, state.rules))}</h3><div class="tablewrap"><table class="walk"><tbody>${rows}</tbody></table></div></div>`;
+    }).join('');
+  }
+  function answerText(res) {
+    const sc = state.sc;
+    const head = `${state.sc.job} going spare ${Y.fmt(res.start)} (call ${Y.fmt(res.call)})`;
+    if (!res.pick) return `${head}: nobody on the yardmaster list fits these rules.`;
+    const o = res.pick;
+    const next = res.order.slice(1, 4).map((n) => `${nameOf(n.r.p)} (${n.r.p.rank})`).join(', ');
+    return `${head}: ${nameOf(o.r.p)} (rank ${o.r.p.rank}), ${stepName(o)}.${next ? ` Next: ${next}.` : ''} [${sc.date}]`;
+  }
+
+  // --- People at call time -------------------------------------------------
+  function codeList() {
+    const codes = new Set();
+    for (const p of PEOPLE) if (p.perm) codes.add(p.perm);
+    for (const j of Object.keys(Y.YA_JOBS)) codes.add(`${j}YA`);
+    for (const [j] of Y.YARD) { codes.add(`${j}FO`); codes.add(`${j}S1`); }
+    for (const [r] of Y.RELIEF) { codes.add(`${r}FO`); codes.add(`${r}S1`); }
+    $('#codes').innerHTML = [...codes].sort().map((c) => `<option value="${c}"></option>`).join('');
+  }
+  const STATUS_OPTS = [['available', 'Available'], ['off', 'Off'], ['vacation', 'Vacation'], ['busy', 'Not available (working, booked off)']];
+  function renderPeopleGrid() {
+    const f = state.sc.facts;
+    $('#pgrid').innerHTML = PEOPLE.map((p) => {
+      const x = f[p.rank] || {};
+      return `<div class="pc" data-rank="${p.rank}">
+        <div class="pc-h"><span class="rk">${p.rank}</span><b>${esc(p.surname)}</b><span>${esc(p.first)}</span>${p.cats ? `<span class="chip">${esc(p.cats)} on ${esc(LIST_DAY)}</span>` : ''}<span class="tag" data-flag></span></div>
+        <p class="pc-job"><span class="code">${esc(p.perm || '—')}</span> ${esc(p.permDesc || 'no current job')}</p>
+        <div class="pc-f">
+          <label class="f">Status<select name="st">${STATUS_OPTS.map(([v, t]) => `<option value="${v}"${(x.status || 'available') === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+          <label class="f">On rest until<input type="datetime-local" name="free" value="${esc(x.freeAt || '')}"></label>
+          <label class="f">Last yard shift ended<input type="datetime-local" name="lastYard" value="${esc(x.lastYard || '')}"></label>
+          <label class="f">Yard shifts since Monday<input type="number" name="week" min="0" max="7" step="1" inputmode="numeric" value="${esc(x.week == null ? '' : x.week)}"></label>
+          <p class="sched wide" data-sched></p>
+          <label class="f wide">Working at call time<input type="text" name="now" list="codes" autocomplete="off" placeholder="${esc(p.perm || 'no job')} (own job)" value="${esc(x.now || '')}"></label>
+        </div>
+        ${p.hint ? `<p class="hint">${esc(p.hint)}</p>` : ''}
+      </div>`;
+    }).join('');
+  }
+  function refreshPeople(prep) {
+    let out = 0; let moved = 0;
+    for (const r of prep.rows) {
+      const card = document.querySelector(`.pc[data-rank="${r.p.rank}"]`);
+      const notAvail = r.status !== 'available';
+      if (notAvail) out++;
+      if (r.moved) moved++;
+      if (!card) continue;
+      card.classList.toggle('out', notAvail);
+      card.classList.toggle('holder', r.holder);
+      const flag = card.querySelector('[data-flag]');
+      const g = (state.rules.groupOverride && state.rules.groupOverride[r.p.rank]) || (state.rules.groupBy === 'perm' ? r.gPerm : r.gNow);
+      const inYard = state.rules.groupBy === 'perm' ? r.yardPerm : r.yardNow;
+      flag.textContent = r.holder ? 'holds this job' : g === 'c416' ? (inYard ? '4.16 · yard' : '4.16 · road') : GROUP_SHORT[g] || '';
+      const sched = card.querySelector('[data-sched]');
+      const job = (Y.parseCode(r.now) || {}).turn || '';
+      if (sched) sched.textContent = r.weekSched == null
+        ? `No schedule known for ${job || 'no job'}: fill in the last yard shift and shifts since Monday if they matter.`
+        : `From ${job}'s schedule: last yard shift ended ${r.lastSched != null ? Y.fmt(r.lastSched) : 'over a week before'}; ${r.weekSched} yard shift${r.weekSched === 1 ? '' : 's'} since Monday.`;
+      const wk = card.querySelector('[name=week]');
+      if (wk) wk.placeholder = r.weekSched == null ? '' : String(r.weekSched);
+    }
+    $('#people-sum').textContent = `${PEOPLE.length} people · ${out} not available${moved ? ` · ${moved} on another job` : ''}`;
+  }
+  function wirePeople() {
+    $('#pgrid').addEventListener('change', (e) => {
+      const card = e.target.closest('.pc');
+      if (!card) return;
+      const rank = +card.dataset.rank;
+      const f = state.sc.facts[rank] || (state.sc.facts[rank] = { status: 'available', now: '', freeAt: '', lastYard: '', week: '' });
+      if (e.target.name === 'st') f.status = e.target.value;
+      else if (e.target.name === 'free') f.freeAt = e.target.value;
+      else if (e.target.name === 'lastYard') f.lastYard = e.target.value;
+      else if (e.target.name === 'week') { f.week = e.target.value === '' ? '' : String(Math.max(0, Math.min(7, Math.round(+e.target.value) || 0))); e.target.value = f.week; }
+      else if (e.target.name === 'now') { f.now = e.target.value.toUpperCase().replace(/\s+/g, ''); e.target.value = f.now; }
+      update();
+    });
+    $('#people-cats').addEventListener('click', () => { state.sc.facts = Y.catsFacts(PEOPLE); renderPeopleGrid(); update(); });
+    $('#people-all').addEventListener('click', () => { const f = {}; for (const p of PEOPLE) f[p.rank] = { status: 'available', now: '', freeAt: '', lastYard: '', week: '' }; state.sc.facts = f; renderPeopleGrid(); update(); });
+  }
+
+  // --- Check the call order (owner, 13 Nov: "beside each person its supposed to call add
+  // 'yes/no' for the order. if that is off from the prediction allow us to make a comment") ------
+  const SHOW = 8;
+  const check = { marks: {}, notes: {}, first: '', miss: '', showAll: false };
+  function fillCheckSelects() {
+    const opts = PEOPLE.map((p) => `<option value="${p.rank}">${p.rank} · ${esc(nameOf(p))}</option>`).join('');
+    $('#check-first').innerHTML = `<option value="">Not sure</option>${opts}<option value="0">Nobody on this list</option>`;
+    $('#miss-who').innerHTML = `<option value="">No</option>${opts}`;
+  }
+  function clearCheck() {
+    check.marks = {}; check.notes = {}; check.first = ''; check.miss = '';
+    $('#check-note').value = ''; $('#miss-note').value = ''; $('#miss-who').value = ''; $('#miss-note-wrap').hidden = true;
+  }
+  function firstValue(res) {
+    if (check.first !== '') return check.first;
+    const top = res.order[0];
+    return top && check.marks[top.r.p.rank] === 'yes' ? String(top.r.p.rank) : '';
+  }
+  function renderCheck(res) {
+    const order = res.order;
+    const shown = check.showAll ? order : order.slice(0, SHOW);
+    $('#check-list').innerHTML = shown.length ? shown.map((o, k) => {
+      const p = o.r.p; const m = check.marks[p.rank] || '';
+      return `<li class="crow ${m}" data-rank="${p.rank}"><div class="crow-main"><span class="pos">${k + 1}</span>
+        <div class="crow-who"><b>${esc(p.surname)}</b> ${esc(p.first)}<span class="tag">rank ${p.rank} · step ${o.i + 1}: ${esc(Y.stepLabel(o.st, state.rules))}${o.r.moved ? ` · on ${esc(o.r.now)}` : ''}</span></div>
+        <div class="yn" role="group" aria-label="${esc(p.surname)} called at ${k + 1}?"><button class="small" data-yn="yes" aria-pressed="${m === 'yes'}">Yes</button><button class="small" data-yn="no" aria-pressed="${m === 'no'}">No</button></div></div>
+        ${m === 'no' ? `<input type="text" class="crow-note" data-note="${p.rank}" autocomplete="off" placeholder="Why not? (on overtime, on rest, should come after …)" aria-label="Why not ${esc(p.surname)}" value="${esc(check.notes[p.rank] || '')}">` : ''}</li>`;
+    }).join('') : '<li class="note">Nobody on the list can be called under these rules.</li>';
+    $('#check-more').hidden = order.length <= SHOW;
+    $('#check-more').textContent = check.showAll ? `Show the first ${SHOW}` : `Show all ${order.length}`;
+    $('#check-first').value = firstValue(res);
+    $('#check-save').disabled = state.mode === 'readonly' || state.mode === 'connecting';
+  }
+  function wireCheck() {
+    $('#check-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-yn]');
+      if (!b) return;
+      const rank = +b.closest('.crow').dataset.rank;
+      if (check.marks[rank] === b.dataset.yn) delete check.marks[rank]; else check.marks[rank] = b.dataset.yn;
+      renderCheck(state.last.res);
+      if (check.marks[rank] === 'no') { const n = document.querySelector(`[data-note="${rank}"]`); if (n) n.focus(); }
+    });
+    $('#check-list').addEventListener('input', (e) => { const n = e.target.closest('[data-note]'); if (n) check.notes[+n.dataset.note] = n.value; });
+    $('#check-more').addEventListener('click', () => { check.showAll = !check.showAll; renderCheck(state.last.res); });
+    $('#check-first').addEventListener('change', (e) => { check.first = e.target.value; });
+    $('#miss-who').addEventListener('change', (e) => { check.miss = e.target.value; $('#miss-note-wrap').hidden = !check.miss; });
+    $('#check-clear').addEventListener('click', () => { clearCheck(); renderCheck(state.last.res); say('#teach-msg', '', ''); });
+    $('#check-save').addEventListener('click', async () => {
+      const res = state.last.res;
+      const order = res.order.map((o) => o.r.p.rank);
+      const marks = {}; const notes = {};
+      for (const rk of order) {
+        if (!check.marks[rk]) continue;
+        marks[rk] = check.marks[rk];
+        const t = (check.notes[rk] || '').trim();
+        if (marks[rk] === 'no' && t) notes[rk] = t;
+      }
+      const fv = $('#check-first').value;
+      const expected = fv === '' ? null : +fv;
+      const missing = check.miss ? [{ rank: +check.miss, note: $('#miss-note').value.trim() }] : [];
+      const reason = $('#check-note').value.trim();
+      if (!Object.keys(marks).length && expected == null && !missing.length) { say('#teach-msg', 'Mark at least one person Yes or No, or choose who should get it first.', 'bad'); return; }
+      const ex = { sc: clone(state.sc), order, marks, notes, missing, expected, reason, picked: order[0] || 0, at: new Date().toISOString(), by: state.me || null, rules: Y.describe(state.rules).join('; ') };
+      const verdict = Y.agrees(ex, res);
+      $('#check-save').disabled = true;
+      try {
+        await addExample(ex);
+        clearCheck(); renderCheck(state.last.res);
+        say('#teach-msg', verdict.ok ? 'Saved. The rules agree with your marks.' : 'Saved. The rules don\'t agree with your marks yet. It is listed under Examples, and "Find rules that fit the examples" will try to fix it.', verdict.ok ? 'ok' : 'bad');
+      } catch (err) {
+        say('#teach-msg', saveError(err), 'bad');
+      } finally { $('#check-save').disabled = state.mode === 'readonly'; }
+    });
+  }
+  function say(sel, text, kind) { const el = $(sel); el.textContent = text; el.className = `msg ${kind || ''}`; el.hidden = !text; }
+  function saveError(err) {
+    const code = err && err.code;
+    if (code === 'invalid_argument') return 'Your access can view this page but not save to it. Ask the owner for edit (Contributor) access.';
+    if (code === 'quota_exceeded') return 'The page has run out of room for examples. Delete some old ones.';
+    if (code === 'revoked') return 'Your access to this page changed. Reload it.';
+    return 'That did not save. Check the connection and try again.';
+  }
+
+  // --- Examples --------------------------------------------------------------
+  const prepCache = new Map();
+  const prepOf = (ex) => { const k = ex.id || JSON.stringify(ex.sc); if (!prepCache.has(k)) prepCache.set(k, Y.prepare(ex.sc, PEOPLE)); return prepCache.get(k); };
+  const verdictOf = (ex, rules) => Y.agrees(ex, Y.evaluate(prepOf(ex), rules));
+  const rankName = (rank) => (rank ? (byRank.get(+rank) ? `${nameOf(byRank.get(+rank))} (${rank})` : `rank ${rank}`) : 'nobody on the list');
+  const expectedName = (ex) => rankName(ex.expected);
+  function scoreOf(rules) { let ok = 0; for (const ex of state.examples) if (verdictOf(ex, rules).ok) ok++; return ok; }
+  const failText = (f) => (f.kind === 'gone' ? `${rankName(f.rank)} is no longer called` : f.kind === 'order' ? 'the people marked Yes come in a different order'
+    : f.kind === 'still' ? `${rankName(f.rank)} is still in the same spot` : f.kind === 'missing' ? `${rankName(f.rank)} is still not called` : `${rankName(f.got)} gets it, not ${rankName(f.want)}`);
+  function marksText(ex) {
+    const out = [];
+    for (const rk of ex.order || []) {
+      const m = (ex.marks || {})[rk];
+      if (!m) continue;
+      const p = byRank.get(+rk); const n = p ? p.surname : `rank ${rk}`;
+      const note = (ex.notes || {})[rk];
+      out.push(m === 'yes' ? `✓ ${n}` : `✗ ${n}${note ? ` (“${note}”)` : ''}`);
+    }
+    return out.join(' · ');
+  }
+  function renderExamples() {
+    const n = state.examples.length;
+    const draft = scoreOf(state.rules);
+    const saved = state.saved || startRules();
+    const dirty = !same(state.rules, saved);
+    $('#ex-score').innerHTML = n ? `<b>${draft} of ${n}</b> saved checks agree with ${dirty ? 'these draft rules' : 'the saved rules'}${dirty ? ` · saved rules: ${scoreOf(saved)} of ${n}` : ''}` : 'No examples yet. Set up a job above, mark the call order, and save the first check.';
+    $('#ex-sync').textContent = state.sync;
+    $('#ex-list').innerHTML = state.examples.map((ex) => {
+      const v = verdictOf(ex, state.rules);
+      const ok = v.ok;
+      const marks = marksText(ex);
+      const miss = (ex.missing || [])[0];
+      const job = ex.sc.job; let when = '';
+      try { when = Y.fmt(Y.toMin(ex.sc.date, ex.sc.start)); } catch { /* bad date */ }
+      const who = ex.by && state.names[ex.by] ? state.names[ex.by] : (ex.by ? 'Someone' : '');
+      return `<li class="ex ${ok ? 'ok' : 'bad'}"><span class="mark" aria-label="${ok ? 'right' : 'wrong'}">${ok ? '✓' : '✗'}</span>
+        <div><b>${esc(job)} ${esc(when)}</b>${ex.sc.spareboard === 'no' ? ' <span class="tag">· nobody on the spareboard</span>' : ''}
+        ${ex.expected != null ? `<p>First: <b>${esc(expectedName(ex))}</b></p>` : ''}
+        ${marks ? `<p>${esc(marks)}</p>` : ''}
+        ${miss ? `<p>Missing: ${esc(rankName(miss.rank))}${miss.note ? ` (“${esc(miss.note)}”)` : ''}</p>` : ''}
+        ${ok ? '' : `<p class="fails">With these rules: ${esc(v.fails.map(failText).join('; '))}.</p>`}
+        ${ex.reason ? `<p class="why">“${esc(ex.reason)}”</p>` : ''}<p class="by">${who ? `${esc(who)}, ` : ''}${esc(shortDate(ex.at))}</p></div>
+        <div class="ex-act"><button class="small" data-open="${esc(ex.id)}">Open</button>${state.mode !== 'readonly' ? `<button class="small ghost" data-del="${esc(ex.id)}">${state.armed === ex.id ? 'Delete for everyone?' : 'Delete'}</button>` : ''}</div></li>`;
+    }).join('');
+  }
+  function wireExamples() {
+    $('#ex-list').addEventListener('click', async (e) => {
+      const open = e.target.closest('[data-open]');
+      const del = e.target.closest('[data-del]');
+      if (open) {
+        const ex = state.examples.find((x) => x.id === open.dataset.open);
+        if (!ex) return;
+        state.sc = clone(ex.sc); state.openEx = ex.id;
+        clearCheck();
+        check.marks = { ...(ex.marks || {}) }; check.notes = { ...(ex.notes || {}) };
+        check.first = ex.expected == null ? '' : String(ex.expected);
+        const m = (ex.missing || [])[0];
+        check.miss = m ? String(m.rank) : ''; $('#miss-who').value = check.miss; $('#miss-note').value = m ? m.note || '' : ''; $('#miss-note-wrap').hidden = !check.miss;
+        $('#check-note').value = ex.reason || '';
+        showScenario(); renderPeopleGrid(); update();
+        $('#answer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (del) {
+        const id = del.dataset.del;
+        if (state.armed !== id) { state.armed = id; renderExamples(); setTimeout(() => { if (state.armed === id) { state.armed = null; renderExamples(); } }, 4000); return; }
+        state.armed = null;
+        try { await removeExample(id); } catch (err) { state.sync = saveError(err); renderExamples(); }
+      }
+    });
+  }
+
+  // --- Rules -----------------------------------------------------------------
+  const GROUP_OPTS = [['spare', 'Spare yardmaster'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)'], ['engineer', 'Working as an engineer (canvass only)']];
+  // A step can't be set to engineers (a hard rule: the canvass only, last).
+  const STEP_GROUPS = [['spare', 'Spare yardmaster'], ['yardday', 'Working in the yard that day, not called yet'], ['yard', 'Working in the yard (4.16)'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)']];
+  const canvassRow = (s, i) => `<div class="srow canvass${s.on ? '' : ' off'}" data-i="${i}">
+      <input type="checkbox" data-k="on" aria-label="Canvass on"${s.on ? ' checked' : ''}>
+      <span class="n">${i + 1}</span>
+      <span class="clabel">Canvass: anyone on the list, in seniority order, engineers last. Always the last step.</span>
+    </div>`;
+  function renderRules() {
+    const R = state.rules;
+    const saved = state.saved || startRules();
+    const dirty = !same(R, saved);
+    $('#rules-chip').innerHTML = dirty ? '<span class="chip draft">Draft, not saved</span>' : `<span class="chip saved">${state.saved ? 'Saved' : 'The starting rules'}</span>`;
+    $('#rulesState').innerHTML = state.saved
+      ? `<span class="chip ${dirty ? 'draft' : 'saved'}">${dirty ? 'Using draft rules' : 'Using the saved rules'}</span><span class="note">${state.savedMeta && state.savedMeta.at ? `last saved ${esc(shortDate(state.savedMeta.at))}${state.savedMeta.by && state.names[state.savedMeta.by] ? ` by ${esc(state.names[state.savedMeta.by])}` : ''}` : ''}</span>`
+      : `<span class="chip ${dirty ? 'draft' : 'acc'}">${dirty ? 'Using draft rules' : 'Starting rules: the 2011 calling manual plus the rules confirmed 13 Nov'}</span>`;
+    $('#steplist').innerHTML = R.steps.map((s, i) => (s.group === 'any' ? canvassRow(s, i) : `<div class="srow${s.on ? '' : ' off'}" data-i="${i}">
+      <input type="checkbox" data-k="on" aria-label="Step ${i + 1} on"${s.on ? ' checked' : ''}>
+      <span class="n">${i + 1}</span>
+      <select data-k="group" aria-label="Step ${i + 1} group">${STEP_GROUPS.map(([v, t]) => `<option value="${v}"${s.group === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <select data-k="need" class="need" aria-label="Step ${i + 1} call">${[['call', `${R.leadMin / 60}-hour call`], ['start', 'On-time relief']].map(([v, t]) => `<option value="${v}"${s.need === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <select data-k="pay" class="pay" aria-label="Step ${i + 1} pay">${[['straight', 'Straight time'], ['ot', 'Time and a half']].map(([v, t]) => `<option value="${v}"${s.pay === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <span class="mv"><button class="small" data-mv="-1" aria-label="Move step ${i + 1} up"${i === 0 ? ' disabled' : ''}>▲</button><button class="small" data-mv="1" aria-label="Move step ${i + 1} down"${i >= R.steps.length - 2 ? ' disabled' : ''}>▼</button><button class="small ghost" data-rm aria-label="Remove step ${i + 1}">✕</button></span>
+    </div>`)).join('');
+    $('#r-lead').value = R.leadMin / 60;
+    $('#r-gap').value = R.gapH;
+    $('#r-gap').disabled = !R.ownShifts;
+    $('#r-own').checked = R.ownShifts;
+    $('#r-groupby').value = R.groupBy;
+    $('#r-rest').checked = R.restSkips;
+    $('#r-ot').checked = R.otRule;
+    $('#r-otgap').value = R.otGapH;
+    $('#r-otweek').value = R.otWeek;
+    $('#r-otgap').disabled = $('#r-otweek').disabled = !R.otRule;
+    $('#r-c416').value = R.c416Scope;
+    const ovr = R.groupOverride || {};
+    $('#ovr-sum').textContent = `People called in a different group (${Object.keys(ovr).length})`;
+    $('#ogrid').innerHTML = PEOPLE.map((p) => `<label><span>${p.rank} · ${esc(nameOf(p))}</span><select data-ovr="${p.rank}"><option value="">From their job</option>${GROUP_OPTS.filter(([v]) => v !== 'any').map(([v, t]) => `<option value="${v}"${ovr[p.rank] === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
+    const canSave = state.mode === 'shared' || state.mode === 'local';
+    $('#rules-save').textContent = state.mode === 'local' ? 'Save rules on this device' : 'Save rules for everyone';
+    $('#rules-save').disabled = !dirty || !canSave;
+    $('#rules-revert').disabled = !dirty;
+    $('#hist').innerHTML = state.history.length ? state.history.map((h) => `<div class="hrow"><span>${esc(shortDate(h.at))}${h.by && state.names[h.by] ? ` · ${esc(state.names[h.by])}` : ''}${h.score ? ` · ${esc(h.score)} right` : ''}${h.note ? ` · “${esc(h.note)}”` : ''}</span><button class="small" data-hist="${esc(h.id)}">Use these</button></div>`).join('') : '<p class="note">Nothing saved yet.</p>';
+  }
+  function wireRules() {
+    $('#steplist').addEventListener('change', (e) => {
+      const row = e.target.closest('.srow'); if (!row) return;
+      const s = state.rules.steps[+row.dataset.i];
+      const k = e.target.dataset.k;
+      if (k === 'on') s.on = e.target.checked; else if (k) s[k] = e.target.value;
+      update();
+    });
+    $('#steplist').addEventListener('click', (e) => {
+      const row = e.target.closest('.srow'); if (!row) return;
+      const i = +row.dataset.i; const steps = state.rules.steps;
+      const mv = e.target.closest('[data-mv]');
+      if (mv) { const j = i + +mv.dataset.mv; if (steps[i].group !== 'any' && j >= 0 && j < steps.length - 1) { [steps[i], steps[j]] = [steps[j], steps[i]]; update(); } }
+      if (e.target.closest('[data-rm]') && steps[i].group !== 'any') { steps.splice(i, 1); update(); }
+    });
+    $('#step-add').addEventListener('click', () => { state.rules.steps.splice(state.rules.steps.length - 1, 0, { group: 'c416', need: 'call', pay: 'ot', on: true }); update(); });
+    $('#r-lead').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 6) state.rules.leadMin = Math.round(v * 60); update(); });
+    $('#r-gap').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 16) state.rules.gapH = v; update(); });
+    $('#r-own').addEventListener('change', (e) => { state.rules.ownShifts = e.target.checked; update(); });
+    $('#r-groupby').addEventListener('change', (e) => { state.rules.groupBy = e.target.value; update(); });
+    $('#r-rest').addEventListener('change', (e) => { state.rules.restSkips = e.target.checked; update(); });
+    $('#r-ot').addEventListener('change', (e) => { state.rules.otRule = e.target.checked; update(); });
+    $('#r-otgap').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 16) state.rules.otGapH = v; update(); });
+    $('#r-otweek').addEventListener('change', (e) => { const v = Math.round(+e.target.value); if (v >= 1 && v <= 7) state.rules.otWeek = v; update(); });
+    $('#r-c416').addEventListener('change', (e) => { state.rules.c416Scope = e.target.value; update(); });
+    $('#ogrid').addEventListener('change', (e) => {
+      const rank = e.target.dataset.ovr; if (!rank) return;
+      const o = state.rules.groupOverride || (state.rules.groupOverride = {});
+      if (e.target.value) o[rank] = e.target.value; else delete o[rank];
+      update();
+    });
+    $('#rules-revert').addEventListener('click', () => { state.rules = clone(state.saved || startRules()); state.fit = null; update(); });
+    $('#rules-manual').addEventListener('click', () => { state.rules = startRules(); state.fit = null; update(); });
+    $('#rules-save').addEventListener('click', async () => {
+      const note = $('#rules-note').value.trim();
+      $('#rules-save').disabled = true;
+      try {
+        await saveRules(note);
+        $('#rules-note').value = '';
+        say('#rules-msg', state.mode === 'local' ? 'Saved on this device.' : 'Saved. Everyone who opens the page now uses these rules.', 'ok');
+      } catch (err) { say('#rules-msg', saveError(err), 'bad'); }
+      update();
+    });
+    $('#hist').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-hist]'); if (!b) return;
+      const h = state.history.find((x) => x.id === b.dataset.hist);
+      if (h && h.rules) { state.rules = Y.normalize(clone(h.rules)); update(); $('#rules').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+    $('#fit-run').addEventListener('click', () => {
+      if (!state.examples.length) { state.fit = { msg: 'Save a few examples first: the search needs cases to fit.' }; renderFit(); return; }
+      state.fit = { msg: `Trying rule sets against ${state.examples.length} example${state.examples.length === 1 ? '' : 's'}…` };
+      renderFit();
+      setTimeout(() => {
+        const out = Y.fit(state.examples, PEOPLE, state.rules, { top: 3 });
+        state.fit = out; renderFit();
+      }, 30);
+    });
+    $('#fit-out').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-cand]'); if (!b || !state.fit || !state.fit.best) return;
+      const c = state.fit.best[+b.dataset.cand];
+      state.rules = Y.normalize(clone(c.rules)); update();
+      say('#rules-msg', 'Trying these rules (a draft). Save them if they look right.', 'ok');
+    });
+  }
+  function renderFit() {
+    const f = state.fit;
+    if (!f) { $('#fit-out').innerHTML = ''; return; }
+    if (f.msg) { $('#fit-out').innerHTML = `<p class="note">${esc(f.msg)}</p>`; return; }
+    const now = Y.describe(state.rules);
+    const head = `<p class="note">Tried ${f.tried} rule sets. The current rules get ${f.current} of ${f.total} right.</p>`;
+    if (!f.best.length || f.best[0].score <= f.current) { $('#fit-out').innerHTML = `${head}<p class="note">No change to the order, the call layout, the own-shift hours or the 4.16 step gets more right. The examples' reasons may need a new kind of rule: tell Claude what they say.</p>`; return; }
+    $('#fit-out').innerHTML = head + f.best.filter((c) => c.score > f.current).map((c, i) => {
+      const d = Y.describe(c.rules);
+      return `<div class="cand"><p class="msg"><b>${c.score} of ${f.total} right</b> · ${c.distance} change${c.distance === 1 ? '' : 's'}</p><ul>${d.map((line, k) => `<li class="${line !== now[k] ? 'chg' : ''}">${esc(line)}</li>`).join('')}</ul><div class="actions"><button class="small" data-cand="${f.best.indexOf(c)}">Try these</button></div></div>`;
+    }).join('');
+  }
+
+  // --- Storage: shared when the page can, this device otherwise ---------------
+  function goLocal(why) {
+    state.mode = 'local';
+    state.examples = (store.get('ym-examples') || []);
+    const r = store.get('ym-rules');
+    if (r && r.rules) { state.saved = Y.normalize(r.rules); state.savedMeta = r; state.rules = clone(state.saved); }
+    state.history = store.get('ym-history') || [];
+    state.sync = why;
+    $('#sync-chip').textContent = 'On this device only';
+    update();
+  }
+  async function addExample(ex) {
+    if (state.mode === 'shared') { await state.db.collection('examples').add(ex); return; }
+    const list = store.get('ym-examples') || [];
+    list.unshift({ ...ex, id: `local-${Date.now()}` });
+    store.set('ym-examples', list); state.examples = list; update();
+  }
+  async function removeExample(id) {
+    if (state.mode === 'shared') { await state.db.doc(`examples/${id}`).delete(); return; }
+    const list = (store.get('ym-examples') || []).filter((x) => x.id !== id);
+    store.set('ym-examples', list); state.examples = list; update();
+  }
+  async function saveRules(note) {
+    const doc = { rules: clone(state.rules), at: new Date().toISOString(), by: state.me || null, note, score: `${scoreOf(state.rules)}/${state.examples.length}` };
+    if (state.mode === 'shared') {
+      await state.db.doc('settings/rules').set(doc);
+      await state.db.collection('rulesHistory').add(doc);
+      return;
+    }
+    store.set('ym-rules', doc);
+    const h = [{ ...doc, id: `local-${Date.now()}` }, ...(store.get('ym-history') || [])].slice(0, 20);
+    store.set('ym-history', h);
+    state.saved = clone(doc.rules); state.savedMeta = doc; state.history = h;
+  }
+  async function loadNames() {
+    if (!state.user || typeof state.user.profiles !== 'function') return;
+    const ids = [...new Set([...state.examples.map((x) => x.by), ...state.history.map((x) => x.by), state.savedMeta && state.savedMeta.by].filter((x) => x && !state.names[x]))];
+    if (!ids.length) return;
+    try {
+      const ps = await state.user.profiles(ids);
+      for (const id of ids) state.names[id] = (ps[id] && ps[id].name) || 'Someone';
+      renderExamples(); renderRules();
+    } catch { /* names are a nicety */ }
+  }
+  async function connect() {
+    if (CONFIG.mode === 'site') { goLocal('On the test site, checks and rules are kept on this device only.'); return; }
+    const c = window.claude;
+    if (!c || typeof c.use !== 'function') { goLocal('This page is open outside Claude, so examples and rules are kept on this device only.'); return; }
+    let db = null; let user = null;
+    try { [db, user] = await Promise.all([c.use('db'), c.use('user')]); } catch { /* both optional */ }
+    state.user = user;
+    if (user) {
+      try { state.me = await user.id(); } catch { /* unknown */ }
+      try { state.canWrite = await user.can('data.write'); } catch { /* not told */ }
+    }
+    if (!db) { goLocal('Examples and rules are kept on this device only. Open the page signed in to share them.'); return; }
+    state.db = db;
+    state.mode = state.canWrite === false ? 'readonly' : 'shared';
+    $('#sync-chip').textContent = state.mode === 'readonly' ? 'View only' : 'Shared with everyone on this page';
+    state.sync = state.mode === 'readonly' ? 'You can see the examples but not add to them. Ask the owner for edit (Contributor) access to teach it.' : 'Loading the shared examples…';
+    update();
+    let heard = false;
+    const timer = setTimeout(() => { if (!heard) { state.sync = 'The shared examples did not load. Reload the page to try again.'; renderExamples(); } }, 10000);
+    const fail = (err) => { clearTimeout(timer); state.sync = err && err.code === 'revoked' ? 'Your access to this page changed. Reload it.' : 'The shared examples stopped updating. Reload the page.'; renderExamples(); };
+    db.doc('settings/rules').onSnapshot((snap) => {
+      const wasClean = same(state.rules, state.saved || startRules());
+      const d = snap.exists ? snap.data() : null;
+      state.saved = d && d.rules ? Y.normalize(d.rules) : null;
+      state.savedMeta = d;
+      if (wasClean) state.rules = clone(state.saved || startRules());
+      loadNames(); update();
+    }, fail);
+    db.collection('examples').orderBy('at', 'desc').limit(300).onSnapshot((qs) => {
+      heard = true; clearTimeout(timer);
+      state.examples = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      if (state.mode !== 'readonly') state.sync = '';
+      loadNames(); update();
+    }, fail);
+    db.collection('rulesHistory').orderBy('at', 'desc').limit(20).onSnapshot((qs) => {
+      state.history = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      loadNames(); renderRules();
+    }, fail);
+  }
+
+  // --- Everything that follows a change ----------------------------------------
+  function update() {
+    state.rules = Y.normalize(state.rules);
+    const prep = Y.prepare(state.sc, PEOPLE);
+    const res = Y.evaluate(prep, state.rules);
+    state.last = { prep, res };
+    renderJobNote(prep, res);
+    renderAnswer(prep, res);
+    renderCheck(res);
+    refreshPeople(prep);
+    renderExamples();
+    renderRules();
+    store.set('ym-scenario', state.sc);
+  }
+
+  function start(hot) {
+    const kept = (hot && hot.sc) || store.get('ym-scenario');
+    state.sc = kept && kept.job && kept.date && kept.facts ? kept : defaultScenario();
+    fillJobSelect(); fillCheckSelects(); codeList();
+    if (hot && hot.check) Object.assign(check, hot.check);
+    showScenario(); renderPeopleGrid();
+    wireJob(); wirePeople(); wireCheck(); wireExamples(); wireRules();
+    $('#copy').addEventListener('click', () => {
+      const text = answerText(state.last.res);
+      const done = (ok) => say('#copy-msg', ok ? 'Copied.' : text, ok ? 'ok' : '');
+      try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch { done(false); }
+    });
+    update();
+    connect();
+    if (window.claude && window.claude.hot && typeof window.claude.hot.snapshot === 'function') {
+      try { window.claude.hot.snapshot(() => ({ sc: state.sc, check })); /* never the rules: a new version brings its own */ } catch { /* optional */ }
+    }
+  }
+  // --- Loading the list ----------------------------------------------------------
+  function notice(text) {
+    $('main').innerHTML = `<section class="panel"><p class="sub">${esc(text)}</p><p class="note"><a href="./">Back to the board</a></p></section>`;
+  }
+  const dayWords = (iso, year) => { try { return new Date(iso).toLocaleDateString('en-GB', { timeZone: 'America/Toronto', day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) }).replace(/\./g, '').replace(/,/g, ''); } catch { return ''; } };
+  async function loadPeople() {
+    if (CONFIG.mode !== 'site') return JSON.parse(document.getElementById('people-data').textContent);
+    $('#back-link').hidden = false;
+    const key = (() => { try { return localStorage.getItem('boardOwnerKey') || ''; } catch { return ''; } })();
+    // The test site only, with the owner key: as every test-site piece on the board.
+    if (!/^board-test\./.test(location.hostname) || !key) { notice('This page is on the test site only, for now.'); return null; }
+    const headers = { 'x-owner-key': key };
+    let data = null;
+    try { const r = await fetch('data/ym-list.json', { cache: 'no-store', headers }); if (r.ok) data = await r.json(); } catch { /* said below */ }
+    if (!data || !Array.isArray(data.list) || !data.list.length) {
+      notice("The yardmaster list is not on the site yet. It comes with the laptop's next publish once the laptop has the newest code (pull, then restart the checker).");
+      return null;
+    }
+    let names = null;
+    if (data.names && window.BoardNames) {
+      try {
+        const k = await fetch('api/crewkey', { cache: 'no-store', headers });
+        if (k.ok) names = await window.BoardNames.unlockNames(data.names, (await k.json()).pass);
+      } catch { /* the page works by rank without them */ }
+    }
+    const by = (names && names.byRank) || {};
+    if (data.read) { LIST_DAY = dayWords(data.read, false) || LIST_DAY; for (const el of document.querySelectorAll('[data-listlong]')) el.textContent = dayWords(data.read, true); }
+    for (const el of document.querySelectorAll('[data-listday]')) el.textContent = LIST_DAY;
+    for (const el of document.querySelectorAll('[data-listcount]')) el.textContent = String(data.list.length);
+    if (!names && data.names) say('#copy-msg', 'The names did not open, so people show by rank.', '');
+    return data.list.map((x) => {
+      const n = by[x.rank] || '';
+      const cut = n.lastIndexOf(', ');
+      return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
+        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', hint: '' };
+    });
+  }
+  async function boot(hot) {
+    const list = await loadPeople();
+    if (!list) return;
+    PEOPLE = list;
+    byRank = new Map(PEOPLE.map((p) => [p.rank, p]));
+    start(hot);
+  }
+  const hot = window.claude && window.claude.hot;
+  if (hot && typeof hot.ready === 'function') hot.ready(boot); else boot((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>

@@ -159,8 +159,9 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 <header class="top"><div class="wrap">
   <p class="eyebrow">Sarnia · Yardmaster relief</p>
   <h1>Yardmaster Call Order</h1>
-  <p class="lede">Put in a yardmaster job going spare. The page goes down the Sarnia yardmaster seniority list (CATS list 3G YA, read 13 Nov 2026) and shows who gets the call, and why each person ahead of them doesn't. When it gets one wrong, save the case as an example and adjust the rules until it gets them all right.</p>
+  <p class="lede">Put in a yardmaster job going spare. The page goes down the Sarnia yardmaster seniority list (CATS list 3G YA, read <span data-listlong>13 Nov 2026</span>) and shows who gets the call, and why each person ahead of them doesn't. When it gets one wrong, save the case as an example and adjust the rules until it gets them all right.</p>
   <p class="rules-state" id="rulesState"></p>
+  <p class="note" id="back-link" hidden><a href="./#analytics">← Back to the board</a></p>
 </div></header>
 
 <main class="wrap">
@@ -207,13 +208,13 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 
   <section class="panel" id="people" aria-labelledby="h-people">
     <header><h2 id="h-people">Who's available at call time</h2></header>
-    <p class="sub">Everyone on the list, in seniority order. Statuses start as CATS showed them on 13 Nov. For a real case, set each person as they were then: off, on rest until a time (rest booked past the call: skipped), and, for overtime, when their last yard shift ended and how many yard shifts they had worked since Monday. The grey line under each person comes from their job's own schedule; fill the boxes in when you know better.</p>
+    <p class="sub">Everyone on the list, in seniority order. Statuses start as CATS showed them on <span data-listday>13 Nov</span>. For a real case, set each person as they were then: off, on rest until a time (rest booked past the call: skipped), and, for overtime, when their last yard shift ended and how many yard shifts they had worked since Monday. The grey line under each person comes from their job's own schedule; fill the boxes in when you know better.</p>
     <div class="peoplebar">
       <span id="people-sum" class="chip"></span>
-      <button class="small" id="people-cats">Use CATS statuses (13 Nov)</button>
+      <button class="small" id="people-cats">Use CATS statuses (<span data-listday>13 Nov</span>)</button>
       <button class="small" id="people-all">Everyone available</button>
     </div>
-    <details class="box" id="people-box"><summary>Show all 34 people</summary><div class="pgrid" id="pgrid"></div></details>
+    <details class="box" id="people-box"><summary>Show all <span data-listcount>34</span> people</summary><div class="pgrid" id="pgrid"></div></details>
   </section>
 
   <section class="panel" id="examples" aria-labelledby="h-ex">
@@ -260,22 +261,28 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 </main>
 
 <footer><div class="wrap">
-  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read 13 Nov 2026 (34 people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with the rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; if nobody is on the spareboard, anyone working in the yard that day who hasn't been called yet gets it first (moved up from their own shift); straight-time steps pass over anyone on overtime, so someone in the yard at straight time comes before the regular yardmasters on their rest day; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
+  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read <span data-listlong>13 Nov 2026</span> (<span data-listcount>34</span> people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with the rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; if nobody is on the spareboard, anyone working in the yard that day who hasn't been called yet gets it first (moved up from their own shift); straight-time steps pass over anyone on overtime, so someone in the yard at straight time comes before the regular yardmasters on their rest day; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
   <p><b>Set by hand for now.</b> Where road and spare turns are at call time, their rest, and the spare yardmaster's last yard shift and shifts this week. Temporary vacancies are still to come; the "Working at call time" box is there until then.</p>
 </div></footer>
 
 <datalist id="codes"></datalist>
 <script type="application/json" id="people-data">/*__PEOPLE__*/</script>
+<script type="application/json" id="ym-config">/*__CONFIG__*/</script>
 <script>/*__LOGIC__*/</script>
 <script>
 (function () {
   'use strict';
   const Y = window.YM;
-  const PEOPLE = JSON.parse(document.getElementById('people-data').textContent);
-  const byRank = new Map(PEOPLE.map((p) => [p.rank, p]));
+  // The Claude page carries the list (with names) in the page; the board's test site (ym.html)
+  // fetches it from data/ym-list.json, the names locked as the crew names are (owner, 13 Nov:
+  // "build this into the test site as is for now").
+  const CONFIG = (() => { try { return JSON.parse(document.getElementById('ym-config').textContent) || {}; } catch { return {}; } })();
+  let PEOPLE = [];
+  let byRank = new Map();
+  let LIST_DAY = '13 Nov';
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const nameOf = (p) => `${p.surname}, ${p.first}`;
+  const nameOf = (p) => (p.first ? `${p.surname}, ${p.first}` : p.surname);
   const permOf = (p) => (p.perm ? `${p.perm} ${p.permDesc}`.trim() : 'no current job');
   const clone = Y.clone;
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -408,7 +415,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     $('#pgrid').innerHTML = PEOPLE.map((p) => {
       const x = f[p.rank] || {};
       return `<div class="pc" data-rank="${p.rank}">
-        <div class="pc-h"><span class="rk">${p.rank}</span><b>${esc(p.surname)}</b><span>${esc(p.first)}</span>${p.cats ? `<span class="chip">${esc(p.cats)} on 13 Nov</span>` : ''}<span class="tag" data-flag></span></div>
+        <div class="pc-h"><span class="rk">${p.rank}</span><b>${esc(p.surname)}</b><span>${esc(p.first)}</span>${p.cats ? `<span class="chip">${esc(p.cats)} on ${esc(LIST_DAY)}</span>` : ''}<span class="tag" data-flag></span></div>
         <p class="pc-job"><span class="code">${esc(p.perm || '—')}</span> ${esc(p.permDesc || 'no current job')}</p>
         <div class="pc-f">
           <label class="f">Status<select name="st">${STATUS_OPTS.map(([v, t]) => `<option value="${v}"${(x.status || 'available') === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
@@ -784,6 +791,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     } catch { /* names are a nicety */ }
   }
   async function connect() {
+    if (CONFIG.mode === 'site') { goLocal('On the test site, checks and rules are kept on this device only.'); return; }
     const c = window.claude;
     if (!c || typeof c.use !== 'function') { goLocal('This page is open outside Claude, so examples and rules are kept on this device only.'); return; }
     let db = null; let user = null;
@@ -855,7 +863,51 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       try { window.claude.hot.snapshot(() => ({ sc: state.sc, check })); /* never the rules: a new version brings its own */ } catch { /* optional */ }
     }
   }
+  // --- Loading the list ----------------------------------------------------------
+  function notice(text) {
+    $('main').innerHTML = `<section class="panel"><p class="sub">${esc(text)}</p><p class="note"><a href="./">Back to the board</a></p></section>`;
+  }
+  const dayWords = (iso, year) => { try { return new Date(iso).toLocaleDateString('en-GB', { timeZone: 'America/Toronto', day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) }).replace(/\./g, '').replace(/,/g, ''); } catch { return ''; } };
+  async function loadPeople() {
+    if (CONFIG.mode !== 'site') return JSON.parse(document.getElementById('people-data').textContent);
+    $('#back-link').hidden = false;
+    const key = (() => { try { return localStorage.getItem('boardOwnerKey') || ''; } catch { return ''; } })();
+    // The test site only, with the owner key: as every test-site piece on the board.
+    if (!/^board-test\./.test(location.hostname) || !key) { notice('This page is on the test site only, for now.'); return null; }
+    const headers = { 'x-owner-key': key };
+    let data = null;
+    try { const r = await fetch('data/ym-list.json', { cache: 'no-store', headers }); if (r.ok) data = await r.json(); } catch { /* said below */ }
+    if (!data || !Array.isArray(data.list) || !data.list.length) {
+      notice("The yardmaster list is not on the site yet. It comes with the laptop's next publish once the laptop has the newest code (pull, then restart the checker).");
+      return null;
+    }
+    let names = null;
+    if (data.names && window.BoardNames) {
+      try {
+        const k = await fetch('api/crewkey', { cache: 'no-store', headers });
+        if (k.ok) names = await window.BoardNames.unlockNames(data.names, (await k.json()).pass);
+      } catch { /* the page works by rank without them */ }
+    }
+    const by = (names && names.byRank) || {};
+    if (data.read) { LIST_DAY = dayWords(data.read, false) || LIST_DAY; for (const el of document.querySelectorAll('[data-listlong]')) el.textContent = dayWords(data.read, true); }
+    for (const el of document.querySelectorAll('[data-listday]')) el.textContent = LIST_DAY;
+    for (const el of document.querySelectorAll('[data-listcount]')) el.textContent = String(data.list.length);
+    if (!names && data.names) say('#copy-msg', 'The names did not open, so people show by rank.', '');
+    return data.list.map((x) => {
+      const n = by[x.rank] || '';
+      const cut = n.lastIndexOf(', ');
+      return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
+        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', hint: '' };
+    });
+  }
+  async function boot(hot) {
+    const list = await loadPeople();
+    if (!list) return;
+    PEOPLE = list;
+    byRank = new Map(PEOPLE.map((p) => [p.rank, p]));
+    start(hot);
+  }
   const hot = window.claude && window.claude.hot;
-  if (hot && typeof hot.ready === 'function') hot.ready(start); else start((hot && hot.data) || {});
+  if (hot && typeof hot.ready === 'function') hot.ready(boot); else boot((hot && hot.data) || {});
 })();
 </script>

@@ -2,7 +2,7 @@
 // for who gets a yardmaster job going spare. Made-up people only; the real list stays off the repo.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Y = require('../../docs/board-checker/yardmaster/call-order-logic');
+const Y = require('../../public/board-ym');
 
 const P = (rank, surname, perm, cats = '') => ({ rank, surname, first: 'Test', perm, cats });
 const PEOPLE = [
@@ -137,4 +137,27 @@ test('yardmaster call order: a saved check (Yes / No beside the order) agrees or
   // The search fixes it.
   const fit = Y.fit([{ ...ex, sc: { ...JOB, facts: Y.catsFacts(PEOPLE) } }], PEOPLE, RULES);
   assert.deepEqual([fit.current, fit.best[0].score], [0, 1]);
+});
+
+test('yardmaster call order: the test site\'s page is the template built, test site only, no names in it', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const Build = require('../../docs/board-checker/yardmaster/build');
+  const page = fs.readFileSync(Build.SITE_OUT, 'utf8');
+  assert.equal(page, Build.site(), 'public/ym.html is out of date: node docs/board-checker/yardmaster/build.js site');
+  assert.match(page, /<script src="board-ym\.js"><\/script>/);
+  assert.match(page, /<script src="board-names\.js"><\/script>/);
+  assert.match(page, /id="people-data">null</);
+  assert.doesNotMatch(page, /fonts\.googleapis/);
+  assert.ok(page.includes('/^board-test\\./.test(location.hostname)')); // the test site only
+  assert.match(page, /boardOwnerKey/); // and the owner key, as every test-site piece
+  const list = JSON.parse(fs.readFileSync(path.join(__dirname, '../../docs/board-checker/yardmaster/seniority-2026-11-13.json'), 'utf8'));
+  assert.equal(list.list.length, 34);
+  assert.doesNotMatch(JSON.stringify(list) + page, /"(name|short|surname)"/);
+  // The test site links to it from its Yardmaster jobs section only.
+  const board = fs.readFileSync(path.join(__dirname, '../../public/board.html'), 'utf8');
+  const links = board.match(/href="ym\.html"/g) || [];
+  assert.equal(links.length, 1);
+  assert.ok(board.indexOf('href="ym.html"') > board.indexOf('function anaYardmaster('));
+  assert.ok(board.indexOf('href="ym.html"') < board.indexOf('function anaSpare('));
 });

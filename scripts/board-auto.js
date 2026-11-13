@@ -1163,7 +1163,7 @@ async function publishSite(changed) {
     const dir = path.join(OUT_DIR, 'site');
     // On Cloudflare the site also carries the key phones subscribe to turn alerts with.
     const push = settings.r2 ? { publicKey: loadOrCreateKeys(PUSH_KEYS_FILE).publicKey } : null;
-    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, splits: CODE_SPLITS_FILE, postings: POSTINGS_FILE });
+    buildSite({ historyDir: HISTORY_DIR, outDir: dir, days, names: { file: NAMES_FILE, key: namesKey }, push, splits: CODE_SPLITS_FILE, postings: POSTINGS_FILE, ym: YM_SENIORITY_FILE });
     // The owner's health line: on Cloudflare only, where the Worker keeps it
     // to the owner's email (status/ is never served as a file).
     const healthFile = path.join(dir, 'status', 'health.json');
