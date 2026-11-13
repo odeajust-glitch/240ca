@@ -70,7 +70,22 @@ a few minutes before 8 h: YFLS60 / YMPS60 2359 jobs off about 0740 to 0752; a bl
 **Next:** his look on board-test (a yard worker's My stats through the owner lookup once `b329d94` is pasted; the
 board colours from `resets-test.json`). The main site only at his word.
 
-## Job Aids: "Due out of Sarnia", the pools' rotation by day and as a calendar file (.ics) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
+## Job Aids: "Days out of Sarnia: add each pool to your calendar" — a calendar file (.ics) for each pool from the pools' rotation — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
+
+**Owner, 13 Nov, latest:** "I dont want a calendar of what jobs were worked for pools in job aids, I want there to be a
+way to add the days out for each pool rto your calendar". **Done:** the record of trips worked (the "Days out of
+Sarnia, a calendar for each turn" section built earlier the same day: `tripsOut`, `daysOut`, `outBox`, `.outcal`)
+is gone from the page and the code. The section left is the rotation one, renamed and re-ordered: **a download
+button for each pool** (1st Manifest (S1), 3rd Manifest (S3), A pool (SA), B pool (SB), 501/502, each with its
+colour) and **All pools**, each file naming its own calendar (`X-WR-CALNAME:Days out: A pool (SA)`; file
+`days-out-SA-from-2026-11-13.ics`); **one turn only** (a select, then "Download SA05's days out"; a turn typed in
+the search is put there); **starting** (a date, today by default) and **for** 1, 3, 6 or 12 months (3); how to
+import; then "Due out, the week from …" (the seven days) and "The rotation" (the fit lines). Seen in a browser
+over the real board-test as him: S1 276 events (3 months), A pool 276, all pools 1,012, SA05 for 1 month 10, 501/502
+from 1 Dec for 1 month 31; no sideways scroll, no errors; members on both sites and him on the main site: no section.
+Suite **563 of 563**. The old section's notes (below, "first built as") are kept for the history only.
+
+### First built as "Due out of Sarnia" (13 Nov, earlier); what still holds
 
 **Owner, 13 Nov, with a photo of his own Google Calendar** (October, an all-day event per turn per day,
 S1 turns in green, SA turns in yellow): "I want you to be able to export something like this so you can see
@@ -79,8 +94,8 @@ what pool jobs are due out of Sarnia on a particular day".
 **Found:** the pools go out in a strict rotation: each day the same number of turns, in turn-number order,
 round and round. S1 3 a day of S101–S110, A pool 3 of SA01–SA09, S3 2 of S301–S306, B pool 2 of SB01–SB06,
 501/502 1 of 2. **Every trip out in the trains file (16 Oct to 13 Nov) fits it: 284 of 284.** His calendar
-fits it too (8 Oct S104 S105 S106 / SA02 SA03; 10 Oct S101 S102 S110 / SA01 SA08). So the "Days out" section's
-footnote, which said these turns have no set days, was wrong and is reworded.
+fits it too (8 Oct S104 S105 S106 / SA02 SA03; 10 Oct S101 S102 S110 / SA01 SA08). (The trips-worked calendar
+built first had said these pools have no set days: wrong; that calendar is gone now at his word.)
 
 **What he sees on board-test (owner key, `PREVIEW`).** Job Aids → **"Due out of Sarnia: S1, S3, A pool, B pool,
 501/502 by day"** (after the yard jobs): a date (today by default) and the seven days from it, each with the
@@ -96,7 +111,9 @@ calendar per pool for its colour; iPhone: open the file, Add All; a newer file i
 trips out of Sarnia in the last 21 days of the file (a turn once a day), the turns seen twice or more (a
 stray turn is left out, and its trips), trips a day = trips ÷ days with trips, then the place in the order
 that fits the most trips. So it follows the pools if a turn is added or the order moves; it can't foresee
-it. Turns as `crewTurns` (the Call Board's; see the Days out section below).
+it. Turns as `crewTurns`: the Call Board's engineer and conductor (EN / CO / LE; a trainee riding is not
+the turn, nor the trainee slots 98/99); the bunkhouse pairing (`awayCo` / `awayEn`) only where the Call Board
+had no conductor / engineer (it guessed wrong once: RM39491 10 named SA05, who went out on M30241 09).
 
 **Where.** `public/board-ref.js`: `EPOCH`, `dayNo`, `fitRotation`, `fitsOf` (cached on the state),
 `icsFor`, `dueBox`, `wireDue`, `paintLive` (both live boxes; `paintOut` in the API), the section in `render`.
@@ -111,82 +128,6 @@ S102 S103 S104 / SA02 SA03 SA04, the board's own S102 + SA02 that morning), the 
 42, 58 of 58, 42 of 42, 17 of 17), 8 Oct picked (his calendar's days), the file downloaded (1,012 events for
 3 months), SA05 alone (every third day). Members on both sites and him on the main site: no section. **Not
 checked:** a real import into Google Calendar or an iPhone; a real phone.
-
-## Job Aids: days out of Sarnia, a calendar for each turn (S1, S3, A pool, B pool, 501/502) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look
-
-**Owner, 13 Nov:** "Also can you add a thing that will add a calendar showing each turns days out of sarnia, So
-s1, s2, A pool, B pool and 502/501 turns", then "s3*" (S2 does not exist: no S2xx turn on any board).
-
-**What he sees on board-test (owner key, `PREVIEW`).** Job Aids → a folded section after the yard jobs, **"Days
-out of Sarnia: S1, S3, A pool, B pool, 501/502"**: pool buttons, then a button per turn (the turns that left
-Sarnia in the file; trainee slots 98/99 left out), a line ("SA01: out 14 of 29 days · 8 trips · last out Nov 12
-0945, still away") and a Mon–Sun calendar from the file's first day to today: a day out shaded, "↑0705" on duty
-in Sarnia (leaving), "↓0245" on duty in Toronto (home about 8 h later), today outlined. The search box: a
-turn (SB04) opens its calendar. A member on either site, and his own view of the main site: nothing new.
-
-**How a day counts (told to him in the page's footnote).** From `data/trains.json` (the site's own, ~30 days;
-`src.trains()`, loaded once when the tab opens on the test site): out from going on duty in Sarnia to going on
-duty in Toronto for the trip home. The trip home: the train's `back` when its crew has this turn, else the
-first train from Toronto with the turn before its next trip out (the conductor and engineer can come home on
-different trains). Turns are the Call Board's (EN / CO / LE; a trainee riding is not the turn); the bunkhouse
-pairing (`awayCo` / `awayEn`) only where the Call Board had no conductor / engineer (it guessed wrong once:
-RM39491 10 named SA05, who went out ten minutes before on M30241 09). A second trip out within 8 h is dropped.
-**501/502:** L501 home from Garnet is not in that file, so a day out is the day it took L502 (alternate days).
-No trip home seen: the last trip, 4 days back at most, is "still away" (shaded to today); an older one shades
-only its day out and is counted as "not seen" in the footnote. **A record of what each turn worked** (the
-footnote first said the pools had no set days: wrong, they rotate; see "Due out of Sarnia" above). On the real file: 33 turns, no trip home before its trip out or after the next trip out; 0 to 2
-trips home not seen per turn.
-
-**Where.** `public/board-ref.js`: `OUT_POOLS`, `crewTurns`, `tripsOut`, `daysOut`, `outBox`, `wireOut`
-(exported as `paintOut`), the section in `render` behind `state.preview` (`outTurnQ` for the search).
-`public/board.html`: `renderRef` loads the trains on the test site and paints the box; styles `.refpick`,
-`.outcal` after `.refout`. **To promote:** drop `state.preview ?` on the section and `PREVIEW &&` in
-`renderRef`, change the test, quoting him.
-
-**Checked.** Suite **557 of 557** (`test/board/ref.test.js`, 2 new: each rule above on made-up trains, the
-calendar's shading and times, the gating, the search; broken on purpose five ways, a test fails every time; at
-first three breaks went uncaught, the fixtures were made to catch them). In a browser at 390 px over the real
-board-test as him: A pool, S3 → S305, 501/502, the search SB04 and R013; the section stays open while picking;
-no sideways scroll, no page errors. Board-test and board as a member, board as him: no section. **Not
-checked:** a real phone; page styles other than light (`color-mix` on `--accent` for the shading).
-
-## 501/502: L502 now goes one day each (S501, S502, S501…), never by option 29 position — 13 Nov 2026, about 06:20 Toronto (laptop engine). ON `claude/vigilant-planck-zawrj4` (his "Yes" to this work going there). WAITING ON ONE LAPTOP PULL + RESTART
-
-**Owner, 13 Nov about 06:09 Toronto, photos of L50231 14 and the 501/502 board:** the site had L50231 14 for
-**S502** ("L502 follows regular 501/502 board position (option 29): S502 (home in Sarnia, position 001)",
-both crafts spare), the day after S502's L50231 13. His words: "This is still getting the order wrong for
-501/502. If one turn is out on 502 it's impossible for them to work it. Since ⟨S502's CO⟩ wasn't available he should
-be skipped and follow his turn order. They rotate every day. If he's on rest and his job goes out he waits till
-the next time his turn goes out in two days. It's a very simple rule that keeps getting messed up." Then:
-"Whatever turn worked 502 this morning can not work it next. The rotation goes s501, then s502, then s501."
-(S502's CO was at 001 on a hold turn because his job on the 13th had gone to MU01.)
-
-**Checked against the saved checks first (live day files, turn ids only):** every L502 18 Oct–13 Nov
-alternated by day; the days crewed all by MU (17, 24, 31 Oct; 6, 7 Nov) were still that crew's day. Replayed:
-**one day each from the last L502 seen: 21 of 21 right; the site's prediction at the last check before each
-went on duty: 8 of 17** (wrong: 25, 26, 30 Oct; 1, 2, 5, 8, 9, 11 Nov). So the 2026-11-07 "first regular turn
-on option 29" rule (and the 2026-10-25 "first crew up on 29") was the bug; section 5 now has his rule.
-
-**Built (engine only):** `lib/board/engine.js` `s5TurnOn`: an L502's crew is its service day counted from the
-last L502 a 501/502 turn worked: the Call Board now, else the 36 h road-day memory (`departed`), else
-`config.s5Anchor` (S501 on 4 Nov, from the history). Each craft that can't go is spare as before (`why`);
-option 29's position, rest and MU never change whose day it is. The reason reads "L502 goes to S501 and S502
-one day each: the 14th is S501's (L50231 13 went with S502). S501: next: they bring L501 home …". The 501/502
-board's order (`s5Order`) follows it. Alerts follow the prediction (S502 no longer lined up for the 14th).
-**Tests:** `s5-rotation.test.js` rewritten (his 13/14 Nov case, the memory, an all-MU day, a trainee, the
-last-seen day beating the stored one, a crew's trip around); four older tests that encoded board position
-changed (engine.test.js ×4, screens-extra, s5-review), two of them because the real history contradicted
-them (L50231 26 went to S502's jobs; the 9th was S502's). Suite **557 of 557**; each piece broken on purpose.
-**Answered the same morning (about 06:30):** a cancelled L502 still uses up its day ("it goes by the day, if they
-cancel it the crew that is supposed to work gets paid to stay at home"), as built. He also said: show the crew
-coming home on L501 on the next L502 (as built) and "make sure not to show it spare untill the crew ties up
-and then you can see if they booked rest past it". Before, only a crew on duty on L501 waited; one resting at
-Garnet could show spare for a status or a long rest there. Now `notTiedUp` (engine.js): a craft at Garnet or
-on L501 is never spare ("known once off duty in Sarnia"); tied up, its booked rest decides; each craft on its
-own. Tests: "the crew coming home on L501 …" and "a cancelled L502 …" (s5-rotation.test.js). Suite **559
-of 559**. He also said his tie-up "corrected" the order on the old code (board position moved), and the
-501/502 board still named the bunkhouse's MU01: the laptop has not pulled yet.
-**After his pull + restart:** L50231 14 should show S501 (pending until they're off duty from L50131).
 
 ## Job Aids: yard jobs, their days off and the relief rotations — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, one line in `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look and his answer on YEBS03's weekends
 

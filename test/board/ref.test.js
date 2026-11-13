@@ -84,60 +84,15 @@ test('yard jobs: only on the test site (preview), and the search finds them', ()
   assert.ok(job.includes('XSAS03') && job.includes('XSAS05'));
 });
 
-// Days out of Sarnia, a calendar for each turn (owner, 2026-11-13: "add a thing that will add a
-// calendar showing each turns days out of sarnia, So s1, s3, A pool, B pool and 502/501 turns").
-const TRAINS = [
-  // SA05 + S106 out on the 9th, home on the 10th (the trip's own `back`).
-  { id: 'M30241 09', from: 'sarnia', onDuty: '2026-11-09 0545', crew: 'EN S106 · CO SA05', back: { id: 'E27531 10', onDuty: '2026-11-10 0145', crew: 'EN S106 · CO SA05' } },
-  // The same trip seen again under another id ten minutes later: the first is kept.
-  { id: 'M30241 09B', from: 'sarnia', onDuty: '2026-11-09 0555', crew: 'EN S106 · CO SA05' },
-  // A bunkhouse guess naming SA05 on a train whose Call Board had a conductor: not SA05's.
-  { id: 'RM39491 11', from: 'sarnia', onDuty: '2026-11-11 0555', crew: 'EN SD04 · CO SR08', awayCo: 'SA05', awayEn: 'SD04' },
-  // A trainee slot named as a conductor is not a turn of its own.
-  { id: 'X27861 07', from: 'sarnia', onDuty: '2026-11-07 0800', crew: 'EN S108 · CO SA98' },
-  // SA02 on a train whose Call Board had only the engineer: the bunkhouse's conductor counts.
-  { id: 'M39491 09', from: 'sarnia', onDuty: '2026-11-10 0500', crew: 'EN S103', awayCo: 'SA02', awayEn: 'S103' },
-  // SB03 + S303 out on the 6th; the trip's `back` is the engineer's only, so SB03's is found
-  // among the trains from Toronto (two days later).
-  { id: 'A42431 06', from: 'sarnia', onDuty: '2026-11-06 1045', crew: 'EN S303 · CO SB03 · TT SB99', back: { id: 'M30131 07', onDuty: '2026-11-07 1030', crew: 'EN S303 · CO SB01' } },
-  { id: 'M30131 08', from: 'mac', onDuty: '2026-11-08 2200', crew: 'EN S305 · CO SB03' },
-  // SB03 out again on the 12th, not home yet.
-  { id: 'A42431 12', from: 'sarnia', onDuty: '2026-11-12 1015', crew: 'EN S303 · CO SB03' },
-  // 501/502: L502 out, home from Garnet the same day; a trainee alone is not the turn.
-  { id: 'L50231 10', from: 'sarnia', onDuty: '2026-11-10 0245', crew: 'EN S501 · CO S501' },
-  { id: 'L50231 11', from: 'sarnia', onDuty: '2026-11-11 0245', crew: 'EN MU01 · CO MU01 · TT S502' },
-];
-
-test('days out: each turn from going on duty in Sarnia to going on duty in Toronto for home', () => {
-  const out = (turn) => { const d = R.daysOut(TRAINS, turn, '2026-11-13'); return Object.keys(d.days).filter((k) => d.days[k].isOut).sort().join(' '); };
-  assert.strictEqual(out('SA05'), '2026-11-09 2026-11-10');
-  assert.deepStrictEqual(R.tripsOut(TRAINS, 'SA05', '2026-11-13').map((t) => t.id), ['M30241 09']); // not M30241 09B, not RM39491 11
-  assert.strictEqual(out('SA98'), '');
-  assert.strictEqual(out('SA02'), '2026-11-10 2026-11-11 2026-11-12 2026-11-13'); // its last trip, three days ago: still away
-  assert.strictEqual(out('SB03'), '2026-11-06 2026-11-07 2026-11-08 2026-11-12 2026-11-13'); // home on the 8th; out again, still away
-  assert.strictEqual(R.tripsOut(TRAINS, 'SB03', '2026-11-13')[1].away, true);
-  assert.strictEqual(out('S303'), '2026-11-06 2026-11-07 2026-11-12 2026-11-13');
-  assert.strictEqual(out('S501'), '2026-11-10');
-  assert.strictEqual(out('S502'), '');
-  assert.strictEqual(out('SB99'), ''); // a trainee slot
-  const d = R.daysOut(TRAINS, 'SA05', '2026-11-13');
-  assert.deepStrictEqual([d.days['2026-11-09'].out, d.days['2026-11-10'].home], [['0545'], ['0145']]);
-  // Last out a week ago with no trip home seen: only that day, counted as not seen.
-  const old = R.daysOut([{ id: 'Z14891 05', from: 'sarnia', onDuty: '2026-11-06 0930', crew: 'EN S101 · CO SA01' }], 'SA01', '2026-11-13');
-  assert.deepStrictEqual([old.count, old.unseen], [1, 1]);
-});
-
-test('days out: the calendar, only on the test site, a turn typed in the search opens it', () => {
-  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
-  const page = (state) => { let box = ''; const view = { innerHTML: '', querySelector: (s) => (s === '#outbox' ? { set innerHTML(v) { box = v; }, get innerHTML() { return box; }, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + box; };
-  assert.ok(!/Days out of Sarnia/.test(page({ trains: TRAINS })));
-  const html = page({ preview: true, today: '2026-11-13', trains: TRAINS, q: 'sb03' });
-  assert.ok(html.includes('Days out of Sarnia'));
-  assert.ok(/data-outpool="SB" aria-pressed="true"/.test(html) && /data-outturn="SB03" aria-pressed="true"/.test(html));
-  assert.strictEqual((html.match(/<td class="out/g) || []).length, 5);
-  assert.ok(html.includes('↑1045') && html.includes('↓2200') && /out <b>5<\/b> of 8 days/.test(html));
-  // Before the trains arrive.
-  assert.ok(page({ preview: true, today: '2026-11-13' }).includes('Loading the trains'));
+// A train's turns, for the pools' rotation: the Call Board's engineer and conductor; the Toronto
+// bunkhouse's pairing only where the Call Board had none; a trainee is not a turn.
+test('days out: the turns of a train out of Sarnia', () => {
+  const t = (r) => R.crewTurns(r).sort().join(' ');
+  assert.strictEqual(t({ crew: 'EN S106 · CO SA05' }), 'S106 SA05');
+  assert.strictEqual(t({ crew: 'EN SD04 · CO SR08', awayCo: 'SA05', awayEn: 'SD04' }), 'SD04 SR08'); // the guess is not taken over the Call Board
+  assert.strictEqual(t({ crew: 'EN S103', awayCo: 'SA02', awayEn: 'S103' }), 'S103 SA02'); // the Call Board had no conductor
+  assert.strictEqual(t({ crew: 'EN S102 · ET S102 · CO SA01 · TT SA99' }), 'S102 SA01');
+  assert.strictEqual(t({ crew: 'EN S108 · CO SA98' }), 'S108'); // a trainee slot
 });
 
 // Due out of Sarnia (owner, 2026-11-13, with a photo of his own Google Calendar: "I want you to be
@@ -196,14 +151,24 @@ test('due out: the calendar file, an all-day event a turn a day', () => {
   assert.strictEqual((one.match(/SUMMARY:/g) || []).length, 1);
 });
 
-test('due out: on the test site only; seven days from the day picked', () => {
+test('days out: on the test site only; a download a pool, then the week from the day picked', () => {
   const trains = rotationTrains('2026-10-17', 28);
   let boxes = {};
   const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
-  const page = (state) => { boxes = {}; const view = { innerHTML: '', querySelector: (s) => (/^#(due|out)box$/.test(s) ? { set innerHTML(v) { boxes[s] = v; }, get innerHTML() { return boxes[s]; }, querySelector: () => null, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + Object.values(boxes).join(''); };
-  assert.ok(!/Due out of Sarnia/.test(page({ trains })));
+  const page = (state) => { boxes = {}; const view = { innerHTML: '', querySelector: (s) => (s === '#duebox' ? { set innerHTML(v) { boxes[s] = v; }, get innerHTML() { return boxes[s]; }, querySelector: () => null, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + Object.values(boxes).join(''); };
+  assert.ok(!/Days out of Sarnia/.test(page({ trains })));
   const html = page({ preview: true, today: '2026-11-13', trains });
+  assert.ok(html.includes('Days out of Sarnia: add each pool to your calendar'));
+  // The record of trips worked is gone (owner: "I dont want a calendar of what jobs were worked").
+  assert.ok(!/outcal|data-outturn|trips home not seen/.test(html));
+  assert.deepStrictEqual([...html.matchAll(/data-icspool="(\w+)"/g)].map((m) => m[1]), ['S1', 'S3', 'SA', 'SB', 'S5', 'all']);
+  assert.ok(html.indexOf('data-icspool') < html.indexOf('class="reft duet"')); // the calendar files come first
   assert.strictEqual((html.match(/<tr( class="hit")?><td class="nw"><b>/g) || []).length, 7);
   assert.ok(html.includes('<tr class="hit"><td class="nw"><b>Fri, Nov 13</b>'));
-  assert.ok(/matched <b>78 of 78<\/b>|matched <b>\d+ of \d+<\/b>/.test(html) && html.includes('Download the calendar file (.ics)'));
+  // A turn typed in the search is the one turn to download.
+  const one = page({ preview: true, today: '2026-11-13', trains, q: 'sa05' });
+  assert.ok(one.includes('data-icsturn="SA05"') && one.includes('<option selected>SA05</option>'));
+  // Each file names its calendar.
+  const fits = Object.fromEntries(R.OUT_POOLS.map(([k, , re]) => [k, R.fitRotation(trains, re)]));
+  assert.ok(R.icsFor(fits, { from: '2026-11-14', days: 1, pools: ['SA'], name: 'Days out: A pool (SA)' }).includes('X-WR-CALNAME:Days out: A pool (SA)\r\n'));
 });
