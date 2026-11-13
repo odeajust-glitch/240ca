@@ -31,7 +31,7 @@ browser, this branch's page over the live board-test files as him: 390 and 340 p
 px; rows open and shut, Show all; no page errors, no sideways scroll. Note for a fresh container: `npm
 ci` first, or 15 tests fail on missing packages (jszip and the like), not on the code.
 **Not checked.** A real phone.
-## Tab review round 3: Members — 12 Nov 2026, 19:15 to 20:40 Toronto. His two asks (`71a4fa0`) and his picks 1, 3, 4, 5, 6 of the eight (`f57b390`) BUILT FOR THE TEST SITE ONLY (page only), WAITING ON ONE LAPTOP PULL; then his look. The Worker (copy page, `e3e7936`) PASTED INTO BOTH, seen 12 Nov about 20:55
+## Tab review round 3: Members — 12 Nov 2026, 19:15 to 19:55 Toronto. His two asks (`71a4fa0`) and his picks 1, 3, 4, 5, 6 of the eight (`f57b390`) BUILT FOR THE TEST SITE ONLY (page only), WAITING ON ONE LAPTOP PULL; then his look. The Worker (copy page, `e3e7936`) PASTED INTO BOTH, seen 12 Nov about 20:55
 
 **Owner, 12 Nov about 19:15 Toronto:** "Start members, I would like to clean up the members tab, move the
 'whos getting alerts' to members from page health. The list of turns being tracks that don't have an
@@ -100,10 +100,10 @@ the cut-off (only phones following his name code are), and SR03 now shows anothe
 that phone was his, it stops on the 18th. And: where should Who gets alerts sit (bottom, beside the phones
 with no account, as built; or top)?
 
-**His picks, 12 Nov about 20:00 Toronto: "1, 3, 4, 5 and 6, and give me the updated worker to post".** Not
+**His picks, 12 Nov about 19:36 Toronto: "1, 3, 4, 5 and 6, and give me the updated worker to post".** Not
 picked: 2 (the Worker paste, which is what the second half of his message asks for), 7 (naming the code a
 member follows: a Worker change) and 8 (the Approved date). Where Who gets alerts sits: **his answer, 12 Nov
-about 21:05 Toronto: "leave it at the bottom"** (beside the phones with no account, with the jump to it at the
+about 19:54 Toronto: "leave it at the bottom"** (beside the phones with no account, with the jump to it at the
 top). Not to be asked again.
 
 **BUILT, `f57b390`, behind `PREVIEW` like the two asks (`review` = `PREVIEW && membersOwner`, now decided
@@ -147,7 +147,7 @@ without it loses the route). No Worker change of this session. He pastes it into
 **(13 Nov 00:55: the copy page is now `3f24ee2`, 2079 lines: this same Worker plus the screenshot mark's
 numbers, so one paste covers both. See "Screenshot mark" below; checked byte for byte, the route kept.)**
 
-**Worker pasted into both, 12 Nov about 20:50 Toronto ("I pasted both workers"); seen from here at 20:55, read
+**Worker pasted into both, 12 Nov about 19:50 Toronto ("I pasted both workers"); seen from here at 19:52, read
 only:** on `board` and `board-test`, `/health/accounts` carries `unverified` (3 on each: the accounts are
 shared), `GET /health/test-alert` answers 405 "POST only" (the route is there; nothing was sent), and
 `/account` has the new sign-up wording ("Next: email me my code", "Step 2 of 3"). So the Members tab on both
@@ -159,10 +159,11 @@ counts at 635 px, Waiting at 635, "email not confirmed" at 711, Admins 1,442, Me
 everything after it down by 228 px shut. Recommended to him: leave it where it is (beside the phones with no
 account, the same subject; the top kept for what needs his action), or move the two together to the top.
 
-**Seen again 12 Nov about 21:05 Toronto (read only, field names and counts):** the two Workers are NOT on the
+**Seen again 12 Nov at 19:55 Toronto (read only, field names and counts):** the two Workers are NOT on the
 same version. `board-test` runs `3f24ee2` (the screenshot mark session's: `ownerMark`, and a `mark` on all 35
-accounts); **`board` runs `e3e7936`** (no `mark`, no `ownerMark`). He most likely pasted `board` from the copy
-page before it was rebuilt for `3f24ee2` (13 Nov 00:55 UTC) and `board-test` after. Both have the unverified
+accounts); **`board` runs `e3e7936`** (no `mark`, no `ownerMark`). Either he pasted `board` before the copy page
+was rebuilt for `3f24ee2` (about 19:52) and `board-test` after, or he is part-way through pasting the new one
+for the other session. Both have the unverified
 list, the sign-up wording and the test alert route. **Told him: paste the copy page (now version `3f24ee2`)
 into `board` once more**; that is the screenshot mark's (another session's), nothing of this round.
 
@@ -172,7 +173,7 @@ Next in the tab review: round 4, Turn History, on his word.
 
 ## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone
 
-**Seen 12 Nov about 21:05 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
+**Seen 12 Nov at 19:55 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
 a `mark` on all 35 accounts); `board` still runs `e3e7936` (no marks). The main Worker needs the `3f24ee2` copy
 page pasted once more: told him.
 
@@ -1330,7 +1331,7 @@ new sections to every member?~~ answered 00:10: "Push it"; (3) should the reset 
 History take the same corrections; (4) still open from before: a notice to members, Admins
 confirming codes, the person search; the Worker paste of `881e02d` into both Workers.
 
-## Test alert route on the Worker — November 11, 2026, 22:50 Toronto. ON `claude/vigilant-planck-zawrj4` SINCE 12 Nov EVENING (cherry-picked as `e439cbc`, by the Members session); PASTED INTO BOTH 12 Nov about 20:50 (the route answers; no test alert sent)
+## Test alert route on the Worker — November 11, 2026, 22:50 Toronto. ON `claude/vigilant-planck-zawrj4` SINCE 12 Nov EVENING (cherry-picked as `e439cbc`, by the Members session); PASTED INTO BOTH 12 Nov about 19:50 (the route answers; no test alert sent)
 
 Owner asked to send a test notification to SD02 from a cloud session; that could only be
 done on the laptop (`node scripts/alert-check.js SD02`; the push key and the phone list are
@@ -1360,7 +1361,7 @@ when it is missing). Answers `{ following, skipped, sent, failed, dropped }`. St
   following it at 22:30). After the paste: `{ "to": "SD02", "dry": true }` first, then
   without `dry`, at Justin's word.
 
-## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WORKER PASTED INTO BOTH 12 Nov about 20:50; `unverified` seen on both (3)
+## Unconfirmed sign-ups on the Members tab — November 11, 2026, 22:10 Toronto. WORKER PASTED INTO BOTH 12 Nov about 19:50; `unverified` seen on both (3)
 
 Owner (someone was sent the email code but never showed for approval): "add the section for
 people who haven't confirmed their email". **Worker:** `GET /health/accounts` also returns
@@ -1375,7 +1376,7 @@ confirmed (N)" under Waiting for approval, each with Email, PIN, Hire date, Star
 Suite 397 of 397 (a new test in accounts.test.js). **The copy page is rebuilt (version on
 the page).** Not seen on the real site; the Members tab section not opened in a browser.
 
-## Sign-up page wording — November 11, 2026, 21:00 Toronto. PASTED INTO BOTH WORKERS 12 Nov about 20:50; seen on both `/account` pages
+## Sign-up page wording — November 11, 2026, 21:00 Toronto. PASTED INTO BOTH WORKERS 12 Nov about 19:50; seen on both `/account` pages
 
 Owner: "Can you make the instructions at the sign up site clearer. A lot of people are not
 understanding they need to verify with a code from their email." In the Worker's
