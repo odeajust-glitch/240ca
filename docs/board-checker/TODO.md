@@ -131,6 +131,13 @@ Small decisions parked for a housekeeping pass; ask, don't build.
     person and whether they have tied up, it can. It decides how item 7 (real yard hours)
     and the Current review's item 4 (the Yard jobs box listing shifts that ended long ago:
     HANDOFF, "Tab-by-tab review") get built. Neither is built.
+12. **Regular yardmasters on their rest days: how many hours "won't interfere with their own
+    job"** (owner, 2026-11-13: "add to house keeping"). The calling manual's step 3 takes a
+    regular yardmaster at time and a half "provided such call will not interfere with the
+    employees regular assignment". Is that a set number of hours between their own shift and
+    the spare one, either side, and how many? The Yardmaster Call Order page assumes 8 (its
+    "Hours needed between their own shift and this one", marked "not decided yet"), and its
+    "Find rules that fit the examples" tries 0, 4, 8, 10 and 12 against his examples.
 
 
 - **Call timeline, new layout**: on the regular page since 2026-11-10 (owner approved). Both

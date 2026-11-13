@@ -28,7 +28,8 @@ h1 { margin: 2px 0 6px; font: 700 clamp(28px, 5vw, 40px)/1.05 var(--f-head); let
 h2 { margin: 0; font: 600 21px/1.2 var(--f-head); text-wrap: balance; }
 h3 { margin: 0; font: 600 16px/1.3 var(--f-head); }
 .lede { margin: 0; max-width: 68ch; color: var(--muted); }
-.rules-state { margin: 10px 0 0; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.rules-state { margin: 10px 0 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.rules-state .chip { white-space: normal; }
 main { display: grid; gap: 16px; padding-block: 16px 40px; }
 .row2 { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 860px) { .row2 { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
@@ -99,6 +100,10 @@ table.walk .no { color: var(--muted); }
 .pc-f input, .pc-f select { font-size: 14px; padding: 5px 7px; }
 .hint { margin: 0; font-size: 12px; color: var(--warn); }
 .tag { font-size: 12px; color: var(--muted); }
+.sched { margin: 0; font-size: 12px; color: var(--muted); }
+.srow.canvass { grid-template-columns: auto auto minmax(0, 1fr); }
+.srow.canvass .clabel { font-size: 14px; }
+@media (max-width: 720px) { .srow.canvass .clabel { grid-column: 3 / -1; } }
 /* Examples */
 .score { margin: 0; font-size: 15px; }
 .score b { font-family: var(--f-head); font-size: 20px; }
@@ -184,7 +189,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 
   <section class="panel" id="people" aria-labelledby="h-people">
     <header><h2 id="h-people">Who's available at call time</h2></header>
-    <p class="sub">Everyone on the list, in seniority order. Statuses start as CATS showed them on 13 Nov. For a real case, set each person as they were then: off, on rest until a time, or working another job (a temporary vacancy changes how they are called).</p>
+    <p class="sub">Everyone on the list, in seniority order. Statuses start as CATS showed them on 13 Nov. For a real case, set each person as they were then: off, on rest until a time (rest booked past the call: skipped), and, for overtime, when their last yard shift ended and how many yard shifts they had worked since Monday. The grey line under each person comes from their job's own schedule; fill the boxes in when you know better.</p>
     <div class="peoplebar">
       <span id="people-sum" class="chip"></span>
       <button class="small" id="people-cats">Use CATS statuses (13 Nov)</button>
@@ -205,11 +210,17 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     <p class="sub">Each step takes the most senior person who fits it. A step can be switched off, moved or changed; the answer and the examples' score update as you go. Changes are a draft until saved.</p>
     <div class="steplist" id="steplist"></div>
     <div class="actions"><button class="small" id="step-add">Add a step</button></div>
+    <p class="note">Engineers (qualified yardmasters working as locomotive engineers) are reached only in the canvass, after everyone else. That is a hard rule, so no step can be set to them.</p>
     <div class="settings">
+      <label class="check"><input type="checkbox" id="r-rest"><span>Anyone on rest when the call is made is skipped (rest is booked)</span></label>
+      <label class="check"><input type="checkbox" id="r-ot"><span>Straight-time steps pass over anyone who would be on overtime</span></label>
+      <label class="f">Overtime: hours from the end of their last yard shift<input type="number" id="r-otgap" min="0" max="16" step="1"></label>
+      <label class="f">Overtime: straight-time yard shifts a week (from Monday 0001)<input type="number" id="r-otweek" min="1" max="7" step="1"></label>
+      <label class="f">The 4.16 time-and-a-half step takes<select id="r-c416"><option value="all">conductors in the yard and on the road</option><option value="yard">conductors in the yard only</option></select></label>
       <label class="f">Call goes out this many hours before the start<input type="number" id="r-lead" min="0" max="6" step="0.5"></label>
-      <label class="f">Hours needed between their own shift and this one<input type="number" id="r-gap" min="0" max="16" step="1"></label>
-      <label class="f">Call people by<select id="r-groupby"><option value="now">the job they work at call time</option><option value="perm">their permanent job</option></select></label>
       <label class="check"><input type="checkbox" id="r-own"><span>Check their own shifts (the tower rotation, yard jobs' days off)</span></label>
+      <label class="f">Hours needed between their own shift and this one (not decided yet)<input type="number" id="r-gap" min="0" max="16" step="1"></label>
+      <label class="f">Call people by<select id="r-groupby"><option value="now">the job they work at call time</option><option value="perm">their permanent job</option></select></label>
     </div>
     <details class="box" id="ovr-box"><summary id="ovr-sum">People called in a different group</summary>
       <p class="note">By default each person's group comes from their job (YA job: regular yardmaster; EXYA01: the spare; conductor or yard job: 4.16; engineer job: canvass only). Change one here if it is wrong.</p>
@@ -219,11 +230,11 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       <input type="text" id="rules-note" placeholder="What changed and why" aria-label="What changed and why" style="flex:1 1 220px">
       <button class="primary" id="rules-save">Save rules for everyone</button>
       <button id="rules-revert">Back to saved</button>
-      <button class="ghost" id="rules-manual">Back to the manual's steps</button>
+      <button class="ghost" id="rules-manual">Back to the starting rules</button>
     </div>
     <p class="msg" id="rules-msg" hidden></p>
     <div class="fit">
-      <div class="actions"><button id="fit-run">Find rules that fit the examples</button><span class="note">Tries the steps in every order, with and without the own-shift check, call lead and hours between shifts.</span></div>
+      <div class="actions"><button id="fit-run">Find rules that fit the examples</button><span class="note">Tries the groups in every order, both call layouts, the own-shift check and its hours, and the 4.16 step with and without road conductors. The rest, overtime, engineer and call-lead rules stay as they are.</span></div>
       <div id="fit-out"></div>
     </div>
     <details class="box" id="hist-box"><summary>Saved versions</summary><div class="hist" id="hist"></div></details>
@@ -231,8 +242,8 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 </main>
 
 <footer><div class="wrap">
-  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read 13 Nov 2026 (34 people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
-  <p><b>Not handled yet.</b> Where road and spare turns are at call time (set them by hand), overtime and the 8-hour rule between yard shifts, someone declining or missing the call, and two yardmaster jobs going spare at once.</p>
+  <p><b>Where this comes from.</b> The list: CATS Train Service 3 → 1, list code 3G YA, district 45 SA, read 13 Nov 2026 (34 people; names as CATS shows them). The starting rules: the Sarnia calling procedures (TCRC-CTY, 2011), "Relief – Yardmasters", with four rules confirmed 13 Nov 2026: anyone on rest when the call is made is skipped; straight-time steps pass over anyone on overtime; after the spare, someone in the yard at straight time comes before anyone on overtime; engineers only in the canvass, last. The rest is not yet confirmed. Shifts: the yardmaster and yard jobs' start times, the crews' days off and the tower's 2-on 2-off 3-on rotation, as worked out from the board checks of 24 Oct to 12 Nov 2026, not from a posted sheet.</p>
+  <p><b>Set by hand for now.</b> Where road and spare turns are at call time, their rest, and the spare yardmaster's last yard shift and shifts this week. Temporary vacancies are still to come; the "Working at call time" box is there until then.</p>
 </div></footer>
 
 <datalist id="codes"></datalist>
@@ -250,6 +261,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   const permOf = (p) => (p.perm ? `${p.perm} ${p.permDesc}`.trim() : 'no current job');
   const clone = Y.clone;
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const startRules = () => Y.normalize(Y.startingRules());
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* not kept */ } },
@@ -266,7 +278,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   }
 
   const state = {
-    sc: null, rules: Y.manualRules(), saved: null, savedMeta: null, examples: [], history: [], db: null, user: null, me: null,
+    sc: null, rules: startRules(), saved: null, savedMeta: null, examples: [], history: [], db: null, user: null, me: null,
     canWrite: null, names: {}, mode: 'connecting', teach: null, openEx: null, fit: null, armed: null, sync: '',
   };
 
@@ -345,7 +357,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
         const win = res.pick && res.pick.r === x.r && res.pick.i === s.i;
         const earlier = !x.why && !win && res.order.findIndex((o) => o.r === x.r) > -1 && res.order.find((o) => o.r === x.r).i !== s.i;
         const what = x.why ? `<span class="no">${esc(x.why)}</span>` : win ? '<span class="yes">gets the call</span>' : earlier ? '<span class="no">counted at an earlier step</span>' : '<span class="yes">could take it (next in line)</span>';
-        return `<tr class="${win ? 'win' : ''}"><td class="rk">${x.r.p.rank}</td><td>${esc(nameOf(x.r.p))}${x.r.moved ? ` <span class="tag">(on ${esc(x.r.now)})</span>` : ''}</td><td>${what}</td></tr>`;
+        return `<tr class="${win ? 'win' : ''}"><td class="rk">${x.r.p.rank}</td><td>${esc(nameOf(x.r.p))}${x.r.moved ? ` <span class="tag">(on ${esc(x.r.now)})</span>` : ''}${s.st.group === 'any' && x.group === 'engineer' ? ' <span class="tag">engineer</span>' : ''}</td><td>${what}</td></tr>`;
       }).join('') : '<tr><td colspan="3" class="no">Nobody on the list is in this group.</td></tr>';
       return `<div class="step"><h3><span class="n">${s.i + 1}</span>${esc(Y.stepLabel(s.st, state.rules))}</h3><div class="tablewrap"><table class="walk"><tbody>${rows}</tbody></table></div></div>`;
     }).join('');
@@ -368,7 +380,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     for (const [r] of Y.RELIEF) { codes.add(`${r}FO`); codes.add(`${r}S1`); }
     $('#codes').innerHTML = [...codes].sort().map((c) => `<option value="${c}"></option>`).join('');
   }
-  const STATUS_OPTS = [['available', 'Available'], ['off', 'Off'], ['vacation', 'Vacation'], ['busy', 'Not available (working, on rest, booked off)']];
+  const STATUS_OPTS = [['available', 'Available'], ['off', 'Off'], ['vacation', 'Vacation'], ['busy', 'Not available (working, booked off)']];
   function renderPeopleGrid() {
     const f = state.sc.facts;
     $('#pgrid').innerHTML = PEOPLE.map((p) => {
@@ -378,7 +390,10 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
         <p class="pc-job"><span class="code">${esc(p.perm || '—')}</span> ${esc(p.permDesc || 'no current job')}</p>
         <div class="pc-f">
           <label class="f">Status<select name="st">${STATUS_OPTS.map(([v, t]) => `<option value="${v}"${(x.status || 'available') === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-          <label class="f">Free from<input type="datetime-local" name="free" value="${esc(x.freeAt || '')}"></label>
+          <label class="f">On rest until<input type="datetime-local" name="free" value="${esc(x.freeAt || '')}"></label>
+          <label class="f">Last yard shift ended<input type="datetime-local" name="lastYard" value="${esc(x.lastYard || '')}"></label>
+          <label class="f">Yard shifts since Monday<input type="number" name="week" min="0" max="7" step="1" inputmode="numeric" value="${esc(x.week == null ? '' : x.week)}"></label>
+          <p class="sched wide" data-sched></p>
           <label class="f wide">Working at call time<input type="text" name="now" list="codes" autocomplete="off" placeholder="${esc(p.perm || 'no job')} (own job)" value="${esc(x.now || '')}"></label>
         </div>
         ${p.hint ? `<p class="hint">${esc(p.hint)}</p>` : ''}
@@ -397,7 +412,15 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       card.classList.toggle('holder', r.holder);
       const flag = card.querySelector('[data-flag]');
       const g = (state.rules.groupOverride && state.rules.groupOverride[r.p.rank]) || (state.rules.groupBy === 'perm' ? r.gPerm : r.gNow);
-      flag.textContent = r.holder ? 'holds this job' : GROUP_SHORT[g] || '';
+      const inYard = state.rules.groupBy === 'perm' ? r.yardPerm : r.yardNow;
+      flag.textContent = r.holder ? 'holds this job' : g === 'c416' ? (inYard ? '4.16 · yard' : '4.16 · road') : GROUP_SHORT[g] || '';
+      const sched = card.querySelector('[data-sched]');
+      const job = (Y.parseCode(r.now) || {}).turn || '';
+      if (sched) sched.textContent = r.weekSched == null
+        ? `No schedule known for ${job || 'no job'}: fill in the last yard shift and shifts since Monday if they matter.`
+        : `From ${job}'s schedule: last yard shift ended ${r.lastSched != null ? Y.fmt(r.lastSched) : 'over a week before'}; ${r.weekSched} yard shift${r.weekSched === 1 ? '' : 's'} since Monday.`;
+      const wk = card.querySelector('[name=week]');
+      if (wk) wk.placeholder = r.weekSched == null ? '' : String(r.weekSched);
     }
     $('#people-sum').textContent = `${PEOPLE.length} people · ${out} not available${moved ? ` · ${moved} on another job` : ''}`;
   }
@@ -406,14 +429,16 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       const card = e.target.closest('.pc');
       if (!card) return;
       const rank = +card.dataset.rank;
-      const f = state.sc.facts[rank] || (state.sc.facts[rank] = { status: 'available', now: '', freeAt: '' });
+      const f = state.sc.facts[rank] || (state.sc.facts[rank] = { status: 'available', now: '', freeAt: '', lastYard: '', week: '' });
       if (e.target.name === 'st') f.status = e.target.value;
       else if (e.target.name === 'free') f.freeAt = e.target.value;
+      else if (e.target.name === 'lastYard') f.lastYard = e.target.value;
+      else if (e.target.name === 'week') { f.week = e.target.value === '' ? '' : String(Math.max(0, Math.min(7, Math.round(+e.target.value) || 0))); e.target.value = f.week; }
       else if (e.target.name === 'now') { f.now = e.target.value.toUpperCase().replace(/\s+/g, ''); e.target.value = f.now; }
       update();
     });
     $('#people-cats').addEventListener('click', () => { state.sc.facts = Y.catsFacts(PEOPLE); renderPeopleGrid(); update(); });
-    $('#people-all').addEventListener('click', () => { const f = {}; for (const p of PEOPLE) f[p.rank] = { status: 'available', now: '', freeAt: '' }; state.sc.facts = f; renderPeopleGrid(); update(); });
+    $('#people-all').addEventListener('click', () => { const f = {}; for (const p of PEOPLE) f[p.rank] = { status: 'available', now: '', freeAt: '', lastYard: '', week: '' }; state.sc.facts = f; renderPeopleGrid(); update(); });
   }
 
   // --- Teach -----------------------------------------------------------------
@@ -475,7 +500,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   function renderExamples() {
     const n = state.examples.length;
     const draft = scoreOf(state.rules);
-    const saved = state.saved || Y.manualRules();
+    const saved = state.saved || startRules();
     const dirty = !same(state.rules, saved);
     $('#ex-score').innerHTML = n ? `<b>${draft} of ${n}</b> examples right with ${dirty ? 'these draft rules' : 'the saved rules'}${dirty ? ` · saved rules: ${scoreOf(saved)} of ${n}` : ''}` : 'No examples yet. Set up a job above, then use "Teach it" to save the first one.';
     $('#ex-sync').textContent = state.sync;
@@ -512,28 +537,41 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   }
 
   // --- Rules -----------------------------------------------------------------
-  const GROUP_OPTS = [['spare', 'Spare yardmaster'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16'], ['other', 'Another agreement (5.1)'], ['engineer', 'Working as an engineer'], ['any', 'Canvass: anyone on the list']];
+  const GROUP_OPTS = [['spare', 'Spare yardmaster'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)'], ['engineer', 'Working as an engineer (canvass only)']];
+  // A step can't be set to engineers (a hard rule: the canvass only, last).
+  const STEP_GROUPS = [['spare', 'Spare yardmaster'], ['yard', 'Working in the yard (4.16)'], ['regular', 'Regular yardmaster'], ['c416', 'Working under 4.16 (conductor)'], ['other', 'Another agreement (5.1)']];
+  const canvassRow = (s, i) => `<div class="srow canvass${s.on ? '' : ' off'}" data-i="${i}">
+      <input type="checkbox" data-k="on" aria-label="Canvass on"${s.on ? ' checked' : ''}>
+      <span class="n">${i + 1}</span>
+      <span class="clabel">Canvass: anyone on the list, in seniority order, engineers last. Always the last step.</span>
+    </div>`;
   function renderRules() {
     const R = state.rules;
-    const saved = state.saved || Y.manualRules();
+    const saved = state.saved || startRules();
     const dirty = !same(R, saved);
-    $('#rules-chip').innerHTML = dirty ? '<span class="chip draft">Draft, not saved</span>' : `<span class="chip saved">${state.saved ? 'Saved' : "The manual's steps"}</span>`;
+    $('#rules-chip').innerHTML = dirty ? '<span class="chip draft">Draft, not saved</span>' : `<span class="chip saved">${state.saved ? 'Saved' : 'The starting rules'}</span>`;
     $('#rulesState').innerHTML = state.saved
       ? `<span class="chip ${dirty ? 'draft' : 'saved'}">${dirty ? 'Using draft rules' : 'Using the saved rules'}</span><span class="note">${state.savedMeta && state.savedMeta.at ? `last saved ${esc(shortDate(state.savedMeta.at))}${state.savedMeta.by && state.names[state.savedMeta.by] ? ` by ${esc(state.names[state.savedMeta.by])}` : ''}` : ''}</span>`
-      : `<span class="chip ${dirty ? 'draft' : 'acc'}">${dirty ? 'Using draft rules' : "Rules: the 2011 calling manual's steps, not yet confirmed"}</span>`;
-    $('#steplist').innerHTML = R.steps.map((s, i) => `<div class="srow${s.on ? '' : ' off'}" data-i="${i}">
+      : `<span class="chip ${dirty ? 'draft' : 'acc'}">${dirty ? 'Using draft rules' : 'Starting rules: the 2011 calling manual plus the rules confirmed 13 Nov'}</span>`;
+    $('#steplist').innerHTML = R.steps.map((s, i) => (s.group === 'any' ? canvassRow(s, i) : `<div class="srow${s.on ? '' : ' off'}" data-i="${i}">
       <input type="checkbox" data-k="on" aria-label="Step ${i + 1} on"${s.on ? ' checked' : ''}>
       <span class="n">${i + 1}</span>
-      <select data-k="group" aria-label="Step ${i + 1} group">${GROUP_OPTS.map(([v, t]) => `<option value="${v}"${s.group === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <select data-k="group" aria-label="Step ${i + 1} group">${STEP_GROUPS.map(([v, t]) => `<option value="${v}"${s.group === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
       <select data-k="need" class="need" aria-label="Step ${i + 1} call">${[['call', `${R.leadMin / 60}-hour call`], ['start', 'On-time relief']].map(([v, t]) => `<option value="${v}"${s.need === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
       <select data-k="pay" class="pay" aria-label="Step ${i + 1} pay">${[['straight', 'Straight time'], ['ot', 'Time and a half']].map(([v, t]) => `<option value="${v}"${s.pay === v ? ' selected' : ''}>${t}</option>`).join('')}</select>
-      <span class="mv"><button class="small" data-mv="-1" aria-label="Move step ${i + 1} up"${i === 0 ? ' disabled' : ''}>▲</button><button class="small" data-mv="1" aria-label="Move step ${i + 1} down"${i === R.steps.length - 1 ? ' disabled' : ''}>▼</button><button class="small ghost" data-rm aria-label="Remove step ${i + 1}">✕</button></span>
-    </div>`).join('');
+      <span class="mv"><button class="small" data-mv="-1" aria-label="Move step ${i + 1} up"${i === 0 ? ' disabled' : ''}>▲</button><button class="small" data-mv="1" aria-label="Move step ${i + 1} down"${i >= R.steps.length - 2 ? ' disabled' : ''}>▼</button><button class="small ghost" data-rm aria-label="Remove step ${i + 1}">✕</button></span>
+    </div>`)).join('');
     $('#r-lead').value = R.leadMin / 60;
     $('#r-gap').value = R.gapH;
     $('#r-gap').disabled = !R.ownShifts;
     $('#r-own').checked = R.ownShifts;
     $('#r-groupby').value = R.groupBy;
+    $('#r-rest').checked = R.restSkips;
+    $('#r-ot').checked = R.otRule;
+    $('#r-otgap').value = R.otGapH;
+    $('#r-otweek').value = R.otWeek;
+    $('#r-otgap').disabled = $('#r-otweek').disabled = !R.otRule;
+    $('#r-c416').value = R.c416Scope;
     const ovr = R.groupOverride || {};
     $('#ovr-sum').textContent = `People called in a different group (${Object.keys(ovr).length})`;
     $('#ogrid').innerHTML = PEOPLE.map((p) => `<label><span>${p.rank} · ${esc(nameOf(p))}</span><select data-ovr="${p.rank}"><option value="">From their job</option>${GROUP_OPTS.filter(([v]) => v !== 'any').map(([v, t]) => `<option value="${v}"${ovr[p.rank] === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
@@ -555,22 +593,27 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       const row = e.target.closest('.srow'); if (!row) return;
       const i = +row.dataset.i; const steps = state.rules.steps;
       const mv = e.target.closest('[data-mv]');
-      if (mv) { const j = i + +mv.dataset.mv; if (j >= 0 && j < steps.length) { [steps[i], steps[j]] = [steps[j], steps[i]]; update(); } }
-      if (e.target.closest('[data-rm]')) { steps.splice(i, 1); update(); }
+      if (mv) { const j = i + +mv.dataset.mv; if (steps[i].group !== 'any' && j >= 0 && j < steps.length - 1) { [steps[i], steps[j]] = [steps[j], steps[i]]; update(); } }
+      if (e.target.closest('[data-rm]') && steps[i].group !== 'any') { steps.splice(i, 1); update(); }
     });
-    $('#step-add').addEventListener('click', () => { state.rules.steps.push({ group: 'c416', need: 'call', pay: 'ot', on: true }); update(); });
+    $('#step-add').addEventListener('click', () => { state.rules.steps.splice(state.rules.steps.length - 1, 0, { group: 'c416', need: 'call', pay: 'ot', on: true }); update(); });
     $('#r-lead').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 6) state.rules.leadMin = Math.round(v * 60); update(); });
     $('#r-gap').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 16) state.rules.gapH = v; update(); });
     $('#r-own').addEventListener('change', (e) => { state.rules.ownShifts = e.target.checked; update(); });
     $('#r-groupby').addEventListener('change', (e) => { state.rules.groupBy = e.target.value; update(); });
+    $('#r-rest').addEventListener('change', (e) => { state.rules.restSkips = e.target.checked; update(); });
+    $('#r-ot').addEventListener('change', (e) => { state.rules.otRule = e.target.checked; update(); });
+    $('#r-otgap').addEventListener('change', (e) => { const v = +e.target.value; if (v >= 0 && v <= 16) state.rules.otGapH = v; update(); });
+    $('#r-otweek').addEventListener('change', (e) => { const v = Math.round(+e.target.value); if (v >= 1 && v <= 7) state.rules.otWeek = v; update(); });
+    $('#r-c416').addEventListener('change', (e) => { state.rules.c416Scope = e.target.value; update(); });
     $('#ogrid').addEventListener('change', (e) => {
       const rank = e.target.dataset.ovr; if (!rank) return;
       const o = state.rules.groupOverride || (state.rules.groupOverride = {});
       if (e.target.value) o[rank] = e.target.value; else delete o[rank];
       update();
     });
-    $('#rules-revert').addEventListener('click', () => { state.rules = clone(state.saved || Y.manualRules()); state.fit = null; update(); });
-    $('#rules-manual').addEventListener('click', () => { state.rules = Y.manualRules(); state.fit = null; update(); });
+    $('#rules-revert').addEventListener('click', () => { state.rules = clone(state.saved || startRules()); state.fit = null; update(); });
+    $('#rules-manual').addEventListener('click', () => { state.rules = startRules(); state.fit = null; update(); });
     $('#rules-save').addEventListener('click', async () => {
       const note = $('#rules-note').value.trim();
       $('#rules-save').disabled = true;
@@ -584,7 +627,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     $('#hist').addEventListener('click', (e) => {
       const b = e.target.closest('[data-hist]'); if (!b) return;
       const h = state.history.find((x) => x.id === b.dataset.hist);
-      if (h && h.rules) { state.rules = clone(h.rules); update(); $('#rules').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (h && h.rules) { state.rules = Y.normalize(clone(h.rules)); update(); $('#rules').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
     $('#fit-run').addEventListener('click', () => {
       if (!state.examples.length) { state.fit = { msg: 'Save a few examples first: the search needs cases to fit.' }; renderFit(); return; }
@@ -598,8 +641,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     $('#fit-out').addEventListener('click', (e) => {
       const b = e.target.closest('[data-cand]'); if (!b || !state.fit || !state.fit.best) return;
       const c = state.fit.best[+b.dataset.cand];
-      const r = clone(c.rules); delete r._v;
-      state.rules = r; update();
+      state.rules = Y.normalize(clone(c.rules)); update();
       say('#rules-msg', 'Trying these rules (a draft). Save them if they look right.', 'ok');
     });
   }
@@ -609,7 +651,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     if (f.msg) { $('#fit-out').innerHTML = `<p class="note">${esc(f.msg)}</p>`; return; }
     const now = Y.describe(state.rules);
     const head = `<p class="note">Tried ${f.tried} rule sets. The current rules get ${f.current} of ${f.total} right.</p>`;
-    if (!f.best.length || f.best[0].score <= f.current) { $('#fit-out').innerHTML = `${head}<p class="note">No change to the steps, the call lead or the hours between shifts gets more right. The examples' reasons may need a new kind of rule: tell Claude what they say.</p>`; return; }
+    if (!f.best.length || f.best[0].score <= f.current) { $('#fit-out').innerHTML = `${head}<p class="note">No change to the order, the call layout, the own-shift hours or the 4.16 step gets more right. The examples' reasons may need a new kind of rule: tell Claude what they say.</p>`; return; }
     $('#fit-out').innerHTML = head + f.best.filter((c) => c.score > f.current).map((c, i) => {
       const d = Y.describe(c.rules);
       return `<div class="cand"><p class="msg"><b>${c.score} of ${f.total} right</b> · ${c.distance} change${c.distance === 1 ? '' : 's'}</p><ul>${d.map((line, k) => `<li class="${line !== now[k] ? 'chg' : ''}">${esc(line)}</li>`).join('')}</ul><div class="actions"><button class="small" data-cand="${f.best.indexOf(c)}">Try these</button></div></div>`;
@@ -621,7 +663,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     state.mode = 'local';
     state.examples = (store.get('ym-examples') || []);
     const r = store.get('ym-rules');
-    if (r && r.rules) { state.saved = r.rules; state.savedMeta = r; state.rules = clone(r.rules); }
+    if (r && r.rules) { state.saved = Y.normalize(r.rules); state.savedMeta = r; state.rules = clone(state.saved); }
     state.history = store.get('ym-history') || [];
     state.sync = why;
     $('#sync-chip').textContent = 'On this device only';
@@ -680,11 +722,11 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     const timer = setTimeout(() => { if (!heard) { state.sync = 'The shared examples did not load. Reload the page to try again.'; renderExamples(); } }, 10000);
     const fail = (err) => { clearTimeout(timer); state.sync = err && err.code === 'revoked' ? 'Your access to this page changed. Reload it.' : 'The shared examples stopped updating. Reload the page.'; renderExamples(); };
     db.doc('settings/rules').onSnapshot((snap) => {
-      const wasClean = same(state.rules, state.saved || Y.manualRules());
+      const wasClean = same(state.rules, state.saved || startRules());
       const d = snap.exists ? snap.data() : null;
-      state.saved = d && d.rules ? d.rules : null;
+      state.saved = d && d.rules ? Y.normalize(d.rules) : null;
       state.savedMeta = d;
-      if (wasClean) state.rules = clone(state.saved || Y.manualRules());
+      if (wasClean) state.rules = clone(state.saved || startRules());
       loadNames(); update();
     }, fail);
     db.collection('examples').orderBy('at', 'desc').limit(300).onSnapshot((qs) => {
@@ -701,6 +743,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 
   // --- Everything that follows a change ----------------------------------------
   function update() {
+    state.rules = Y.normalize(state.rules);
     const prep = Y.prepare(state.sc, PEOPLE);
     const res = Y.evaluate(prep, state.rules);
     state.last = { prep, res };
@@ -717,7 +760,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   function start(hot) {
     const kept = (hot && hot.sc) || store.get('ym-scenario');
     state.sc = kept && kept.job && kept.date && kept.facts ? kept : defaultScenario();
-    if (hot && hot.rules) state.rules = hot.rules;
+    if (hot && hot.rules) state.rules = Y.normalize(hot.rules);
     fillJobSelect(); fillWho(); codeList();
     showScenario(); renderPeopleGrid();
     wireJob(); wirePeople(); wireTeach(); wireExamples(); wireRules();

@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact, his to share). Nothing predicts YA jobs on the site yet
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 3 has his rules of 13 Nov; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -84,7 +84,34 @@ to save examples or rules; view-only sees them).
 - **Starting rules (to confirm):** the 2011 manual's ladder: spare YM (2 h call, then on-time), regular YM (time and
   a half), 4.16, 5.1, engineers off (canvass only), then the canvass; call 2 h before; 8 h needed between their own
   shift and this one (my assumption: told to him); grouped by the job at call time.
-- **Teaching:** "Is this right?" saves an example (the job, the time, everyone's situation, who should get it, and
+- **His rules, 13 Nov evening, built into version 3** (asked to "add a few more rules in first, then Im going to
+  share it with a yard master"):
+  - **Rest:** "We book our rest so if someone is on rest when the call it made they are skipped. You should be
+    able to see rest times." Anyone on rest at the call is skipped at every step (no on-time relief). On the page
+    the rest is typed in ("On rest until"); the laptop version should read it from CATS (boards and crews in town).
+  - **Overtime:** "this is correct": at straight-time steps, anyone who would be on overtime is passed over:
+    under 8 h from the end of their last yard shift (34.3), or past 5 yard shifts in the work week from Monday
+    0001 (56.15). Each person's last yard shift and shifts since Monday come from their job's schedule (YA, yard
+    and relief jobs), or are typed in (the spare's are not known: "No schedule known").
+  - **Straight time in the yard before overtime:** on his test (YSBY02 Sat 14th 1900; next in line were three
+    regular yardmasters on their rest day): "these 3 wouldnt get it first sicne they will get paid overtime, it
+    will goto someone in the yard making straight time first". A step "Working in the yard (4.16) · straight
+    time" now follows the spare, before the regular yardmasters. That case now gives the spare, then rank 490
+    (YPRS60 S1: Saturday is his rest day but only his 5th yard shift since Monday), then the regulars.
+  - **Engineers:** "this is a hard rule so it only goes to the conductors in the yard first". No step can be set
+    to engineers (`normalize` drops one), the canvass is pinned last, and within it engineers come after everyone.
+  - **Not to do:** missed calls ("dont worry about this"); two YA jobs at once ("i dont believe they have 2 yard
+    jobs that start at the same time"). **Later, at his word:** the temporary vacancy check ("ill show you how to
+    add this check in after but lets ignore it for now"); the "Working at call time" box stays as it was. **On the
+    Housekeeping list (item 12):** the hours "won't interfere with their own job" means for a regular yardmaster.
+  - **Asked him, not answered yet:** (1) is someone in the yard set up to the yardmaster job **instead of their own
+    shift that day** (their own job then goes to the spareboard)? The page now leaves out anyone whose own shift is
+    within 8 h (rank 290's YMPS60 2359, for a 1900 job); (2) does the 4.16 time-and-a-half step take road
+    conductors (Chain Gang, A and B pools), or only the yard? A setting on the page ("The 4.16 time-and-a-half step
+    takes"), default the manual's (both).
+- **Teaching (fit now 576 sets: the spare stays first; the order of the other four groups, the layout, the own-shift
+  hours and the 4.16 step's reach are tried; rest, overtime, engineers and the call lead stay as he set them):**
+  "Is this right?" saves an example (the job, the time, everyone's situation, who should get it, and
   why). Every example is re-run against the rules: "N of M right". The rules are edited on the page (steps on/off,
   order, group, call or on-time, pay; call lead; hours between shifts; own-shift check; group by job at call time or
   permanent job; per-person group); a draft until "Save rules for everyone"; every save kept ("Saved versions",
@@ -97,7 +124,10 @@ to save examples or rules; view-only sees them).
 - **The code:** the published page is the live copy (Artifact `read` on the URL gives the whole HTML). The repo
   keeps the names-free parts: `docs/board-checker/yardmaster/call-order-logic.js` (the pure logic, `YM`; runs in
   node) and `call-order-page.template.html` (the page; `/*__PEOPLE__*/` and `/*__LOGIC__*/` are filled at build).
-  The people data with names is only in the published page (and his 13 Nov file). Checked: the logic in node
+  The people data with names is only in the published page (and his 13 Nov file). `test/board/ym-call-order.test.js`
+  (5, made-up people): rotation and groups, spare → yard at straight time → regulars, rest, the 8 h edge and the
+  6th shift, engineers last, the fit; broken on purpose six ways, five caught (the sixth, the engineer guard in
+  `inStep`, can't be reached: `normalize` already removes engineer steps). Checked: the logic in node
   (sample cases; the fit runs 2,304 sets in about 0.2 s for two examples); the page at 390 px light and dark, no
   errors, no sideways scroll, teach / score / fit clicked through in a throwaway browser. Not checked: a real phone,
   and the page under his and a yardmaster's accounts (sharing, who-added names).
