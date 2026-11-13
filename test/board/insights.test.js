@@ -502,3 +502,31 @@ test('insights: a train off the line-up for a check and back is not a pulled job
   const z = Insights.finish(st).sleep.find((x) => x.turn === 'SR01');
   assert.ok(!z.timelineChanges.some((c) => c.dropped));
 });
+
+// Yardmaster jobs going spare (owner, 2026-11-13: "can you see YM jobs that go spare, if you have been
+// recording them can you show me what you know"): option 5's CC YA rows, kept apart from the jobs above.
+test('insights: yardmaster jobs going spare, one a job and start, and the shift on the Call Board', () => {
+  const snap = (taken, extra) => ({ taken, sequence: [], vacancies: [], onDuty: [], yardJobs: [], ...extra });
+  const ysty = { pos: '002', at: '15th 0630', status: 'PLANNED', train: 'YSTY01', pool: 'YD', cc: 'YA', st: '', returns: '', turn: 'YSTY01' };
+  const ysby = { pos: '004', at: '15th 1900', status: 'PLANNED', train: 'YSBY04', pool: 'YD', cc: 'YA', st: '', returns: '', turn: 'YSBY04' };
+  const f = Insights.finish(Insights.collect([
+    snap('2026-11-14 2200', { yardmasterJobs: [ysty] }),
+    snap('2026-11-15 0300', { yardmasterJobs: [ysty, ysby] }),
+    snap('2026-11-15 0600', { yardmasterJobs: [{ ...ysty, status: 'ORDERED' }, ysby] }),
+    // YSTY01 on duty with a turn named; YSBY01 (another job) is not YSBY04's shift.
+    snap('2026-11-15 0700', { yardmasterJobs: [ysby], yardJobs: [{ job: 'YSTY01', onDuty: '15th 0630', crew: 'YA SA01' }, { job: 'YSBY01', onDuty: '15th 0700', crew: 'YA B105' }] }),
+    // A later check whose Call Board names nobody on YSTY01 doesn't wipe SA01.
+    snap('2026-11-15 0900', { yardJobs: [{ job: 'YSTY01', onDuty: '15th 0630', crew: '' }] }),
+    // YSBY04 on duty at 1900 with nobody on a board: seen, no turn named.
+    snap('2026-11-15 1930', { yardJobs: [{ job: 'YSBY04', onDuty: '15th 1900', crew: '' }] }),
+    // The next day's YSTY01 is another one; a run 6 h off its start is not its shift.
+    snap('2026-11-16 0400', { yardmasterJobs: [{ ...ysty, at: '16th 0630' }], yardJobs: [{ job: 'YSTY01', onDuty: '16th 1230', crew: 'YA SB02' }] }),
+  ]));
+  assert.deepStrictEqual(f.yardmasterJobs.map((j) => [j.train, j.at, j.first, j.last, j.checks, j.status, j.onDuty || null, j.crew ?? null]), [
+    ['YSTY01', '2026-11-15 0630', '2026-11-14 2200', '2026-11-15 0600', 3, 'ORDERED', '2026-11-15 0630', 'YA SA01'],
+    ['YSBY04', '2026-11-15 1900', '2026-11-15 0300', '2026-11-15 0700', 3, 'PLANNED', '2026-11-15 1900', ''],
+    ['YSTY01', '2026-11-16 0630', '2026-11-16 0400', '2026-11-16 0400', 1, 'PLANNED', null, null],
+  ]);
+  // Never mixed into the jobs going spare.
+  assert.deepStrictEqual(f.spareJobs, []);
+});

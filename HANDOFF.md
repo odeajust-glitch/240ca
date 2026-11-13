@@ -1,5 +1,45 @@
 # HANDOFF — read this before doing anything
 
+## Yardmaster jobs going spare (CATS CC YA) kept and shown — BUILT 13 Nov 2026 (laptop `lib/board/site.js`, `lib/board/insights.js`; page `public/board.html`, test site only). WAITING ON ONE LAPTOP PULL + RESTART (the next publish redoes all 30 days: FORMAT 29 → 30, one slower publish); then his look at Analytics → Yardmaster jobs on board-test
+
+**Owner, 13 Nov:** "can you see YM jobs that go spare, if you have been recording them can you show me what
+you know". **What was found:** CATS's option 5 lists yardmaster jobs with CC **YA** (his own screen of 24 Oct,
+in `screens-extra.test.js`: "002 10/24 0630 … YSTY01 … YD YA … YSTY01"; "YM" appears nowhere in 29 saved days).
+`parseTerminalLineup` reads them every check, and the laptop's history (`BoardChecker\history`, 90 days) keeps
+the masked screens with them; but since 24 Oct, at his word ("Yardmaster jobs (CC YA) go to the yardmaster
+spareboard, not ours"), `snapshotOf` dropped them before anything was saved, so **no published file ever had
+them** (saved vacancy crafts: CO, EN, FO, S1 only). The laptop could not be reached from the session (no
+Remote Control folder), so the history was not read directly. **Seen in the published days (told to him):**
+the YA jobs are YSBY01–06 and YSTY01; YSBY02 "temporary vacancy (working another job for now)" 3–4 Nov (crews
+in town); the Call Board named the turn of who worked a YA job three times: YSBY04 24 Oct 1900 "YT SD10",
+YSBY04 28 Oct 1900 and YSBY06 31 Oct 1430 "YA SA01"; option 4 "OFF" on YSBY03 6 Nov and YSBY01 13 Nov.
+
+**Built.** (1) `snapshotOf` keeps option 5's CC YA rows as `yardmasterJobs` in each check (pos, at, status,
+train = the job, pool, cc, st, returns, turn; never the EMP column), **apart from every other list**: `ours`,
+`vacancies`, `vacanciesCats`, `vacanciesPredicted`, alerts and spares.js still leave YA out, unchanged.
+FORMAT 30 so the cached days are redone from the history at the next publish (the 30 days the site keeps;
+option 5 has been read since 24 Oct). (2) `insights.js` `yardmasterCheck`: one entry a job and start (`at`
+resolved), first / last listed, checks, status; the shift on the Call Board within 4 h of the start (`onDuty`,
+and the crew line: "YA SA01" when the person is on a board the checker reads, `''` when not; a later check
+naming nobody doesn't wipe a named turn); `finish()` → `analytics.json` `yardmasterJobs`. (3) Page: Analytics →
+**"Yardmaster jobs"** (`ANA_SECS` 'ym', pushed only when `PREVIEW`, like the likely-call test; `anaYardmaster`):
+a note, three tiles (going spare, shift seen, worked by someone on a board), by job / day of the week / worked
+by, and every one newest first (job, starts, first listed → last listed, worked by). Until the laptop runs
+this code the page says "No yardmaster jobs going spare in the dates picked."
+
+**Checked.** Suite **568 of 568** (`insights.test.js`: grouping by job and start, the next day's is another,
+the Call Board shift matched by job and within 4 h, a later blank crew doesn't wipe SA01, never in spareJobs;
+`screens-extra.test.js`: the YA row kept as `yardmasterJobs`, still not in the three vacancy lists; broken on
+purpose seven ways, all caught). `buildSite` run on a one-check history made from the test fixture with his
+24 Oct option 5 layout: the day file (format 30) has the row, `analytics.json` has YSTY01 with "YA SA01", the
+regular list only YPRS02. In a browser over real board-test as him: the tab, the real file → "No yardmaster
+jobs …"; with three **made-up** entries added to the real file → the page drawn at 390 px, no sideways scroll,
+no errors. Board-test and board as a member, board as him: no tab. **Not checked:** the real history on the
+laptop (the first real list appears after his pull + restart); the yardmaster spareboard itself is not read,
+so "worked by" is often blank.
+
+**Still his:** "YM": CATS writes YA; asked whether he meant something else.
+
 ## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. The `b329d94` Worker PASTED INTO BOTH ("pasted both workers, check it"), checked about 07:25. WAITING ON his look on board-test
 
 **Owner, 13 Nov:** "Do not use the call board to determine off duty since if they forget to tie up it will sit there.
