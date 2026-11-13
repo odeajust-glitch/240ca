@@ -1,5 +1,47 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids: "Due out of Sarnia", the pools' rotation by day and as a calendar file (.ics) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
+
+**Owner, 13 Nov, with a photo of his own Google Calendar** (October, an all-day event per turn per day,
+S1 turns in green, SA turns in yellow): "I want you to be able to export something like this so you can see
+what pool jobs are due out of Sarnia on a particular day".
+
+**Found:** the pools go out in a strict rotation: each day the same number of turns, in turn-number order,
+round and round. S1 3 a day of S101–S110, A pool 3 of SA01–SA09, S3 2 of S301–S306, B pool 2 of SB01–SB06,
+501/502 1 of 2. **Every trip out in the trains file (16 Oct to 13 Nov) fits it: 284 of 284.** His calendar
+fits it too (8 Oct S104 S105 S106 / SA02 SA03; 10 Oct S101 S102 S110 / SA01 SA08). So the "Days out" section's
+footnote, which said these turns have no set days, was wrong and is reworded.
+
+**What he sees on board-test (owner key, `PREVIEW`).** Job Aids → **"Due out of Sarnia: S1, S3, A pool, B pool,
+501/502 by day"** (after the yard jobs): a date (today by default) and the seven days from it, each with the
+turns due out, a colour a pool (S1 green, SA yellow as on his calendar; S3 blue, SB purple, 501/502 orange;
+today's row marked); "The rotation": each pool's turns a day, its turns and "matched N of N trips since …"
+(⚠ "not holding" under 90%); "Put it on your calendar": pool buttons (all on), a turn (every turn, or one),
+how far ahead (1, 3, 6, 12 months, default 3), **"Download the calendar file (.ics)"**: an all-day event per
+turn per day, named by the turn (SUMMARY `S104`, UID `S104-20261114@sarnia-board`, CATEGORIES the pool),
+from the date picked. How to import is on the page (Google: Settings → Import & export on a computer, a
+calendar per pool for its colour; iPhone: open the file, Add All; a newer file into a fresh calendar).
+
+**How the rotation is worked out (`fitRotation`).** Live, from `data/trains.json` each time the tab opens:
+trips out of Sarnia in the last 21 days of the file (a turn once a day), the turns seen twice or more (a
+stray turn is left out, and its trips), trips a day = trips ÷ days with trips, then the place in the order
+that fits the most trips. So it follows the pools if a turn is added or the order moves; it can't foresee
+it. Turns as `crewTurns` (the Call Board's; see the Days out section below).
+
+**Where.** `public/board-ref.js`: `EPOCH`, `dayNo`, `fitRotation`, `fitsOf` (cached on the state),
+`icsFor`, `dueBox`, `wireDue`, `paintLive` (both live boxes; `paintOut` in the API), the section in `render`.
+`public/board.html`: `.duegrp` and `.pS1`… colours, `.duet`, `.duefit`, the date and select rules.
+
+**Checked.** Suite **562 of 562** (`test/board/ref.test.js`, 3 new: the fit from a month of trains made
+from the rotation gives his calendar's 8 and 10 Oct, the board's own 11–13 Nov, 501/502 by day, a stray
+turn left out, too few trips → nothing; the file: VCALENDAR, 11 events a day, lines folded at 75, one turn
+every third day, one pool; the gating and the 7 rows; broken on purpose eight ways, seven caught, the eighth
+(the offset's sign) gives the same days). In a browser over the real board-test as him: the week (13 Nov:
+S102 S103 S104 / SA02 SA03 SA04, the board's own S102 + SA02 that morning), the fit lines (58 of 58, 42 of
+42, 58 of 58, 42 of 42, 17 of 17), 8 Oct picked (his calendar's days), the file downloaded (1,012 events for
+3 months), SA05 alone (every third day). Members on both sites and him on the main site: no section. **Not
+checked:** a real import into Google Calendar or an iPhone; a real phone.
+
 ## Job Aids: days out of Sarnia, a calendar for each turn (S1, S3, A pool, B pool, 501/502) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look
 
 **Owner, 13 Nov:** "Also can you add a thing that will add a calendar showing each turns days out of sarnia, So
@@ -21,8 +63,8 @@ pairing (`awayCo` / `awayEn`) only where the Call Board had no conductor / engin
 RM39491 10 named SA05, who went out ten minutes before on M30241 09). A second trip out within 8 h is dropped.
 **501/502:** L501 home from Garnet is not in that file, so a day out is the day it took L502 (alternate days).
 No trip home seen: the last trip, 4 days back at most, is "still away" (shaded to today); an older one shades
-only its day out and is counted as "not seen" in the footnote. **A record, not a schedule:** these pools have
-no set days. On the real file: 33 turns, no trip home before its trip out or after the next trip out; 0 to 2
+only its day out and is counted as "not seen" in the footnote. **A record of what each turn worked** (the
+footnote first said the pools had no set days: wrong, they rotate; see "Due out of Sarnia" above). On the real file: 33 turns, no trip home before its trip out or after the next trip out; 0 to 2
 trips home not seen per turn.
 
 **Where.** `public/board-ref.js`: `OUT_POOLS`, `crewTurns`, `tripsOut`, `daysOut`, `outBox`, `wireOut`

@@ -261,8 +261,139 @@
     const last = d.trips[d.trips.length - 1];
     html += `<p class="refout"><b class="num">${esc(turn)}</b>: out <b>${d.count}</b> of ${span} days · ${d.trips.length} trip${d.trips.length === 1 ? '' : 's'}${last ? ` · last out ${esc(label(last.out.slice(0, 10)))} ${esc(last.out.slice(11))}${last.away ? ', still away' : ''}` : ''}</p>
       <table class="outcal"><thead><tr>${DAYS.map((x) => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>
-      <p class="muted">Shaded: out of Sarnia. ↑ on duty in Sarnia, leaving · ↓ on duty in Toronto, coming home (home about 8 h later). ${pool[0] === 'S5' ? '501/502 come home from Garnet on L501 the same day. ' : ''}${d.unseen ? `${d.unseen} trip${d.unseen === 1 ? '' : 's'} home not seen: only the day out is shaded. ` : ''}From the site’s trains of the last ${span} days; these turns have no set days, so this is what they worked, not a schedule.</p>`;
+      <p class="muted">Shaded: out of Sarnia. ↑ on duty in Sarnia, leaving · ↓ on duty in Toronto, coming home (home about 8 h later). ${pool[0] === 'S5' ? '501/502 come home from Garnet on L501 the same day. ' : ''}${d.unseen ? `${d.unseen} trip${d.unseen === 1 ? '' : 's'} home not seen: only the day out is shaded. ` : ''}From the site’s trains of the last ${span} days: what the turn worked. The days each turn is due out next are under “Due out of Sarnia”.</p>`;
     return html;
+  }
+  // Due out of Sarnia: the pools' rotation, for any day, and as a calendar file (owner,
+  // 2026-11-13, with a photo of his own Google Calendar of the S1 and A pool turns by day:
+  // "I want you to be able to export something like this so you can see what pool jobs are
+  // due out of Sarnia on a particular day"). Each pool sends the same number of turns out a
+  // day, in turn-number order, round and round: S1 3 of 10, A pool 3 of 9, S3 2 of 6, B pool
+  // 2 of 6, 501/502 1 of 2 (every trip of 16 Oct to 13 Nov fitted it: 284 of 284). Worked out
+  // again from the trains file each time (the last 21 days: the turns seen twice or more, the
+  // trips a day, where the order stands), so it follows a pool that changes.
+  const EPOCH = '2026-01-05';
+  const dayNo = (day) => Math.round((Date.parse(`${day}T12:00:00Z`) - Date.parse(`${EPOCH}T12:00:00Z`)) / 864e5);
+  function fitRotation(trains, re) {
+    const seenDay = new Set();
+    const deps = [];
+    for (const r of trains || []) {
+      if (r.from !== 'sarnia' || !r.onDuty) continue;
+      for (const t of crewTurns(r)) {
+        const k = `${t}|${r.onDuty.slice(0, 10)}`;
+        if (re.test(t) && !seenDay.has(k)) { seenDay.add(k); deps.push({ turn: t, day: r.onDuty.slice(0, 10) }); }
+      }
+    }
+    if (!deps.length) return null;
+    const last = deps.map((d) => d.day).sort().pop();
+    const since = addDays(last, -20);
+    const win = deps.filter((d) => d.day >= since);
+    const count = {};
+    for (const d of win) count[d.turn] = (count[d.turn] || 0) + 1;
+    // A turn seen once (an old turn, a stray) is not one of the pool's, nor are its trips.
+    const turns = Object.keys(count).filter((t) => count[t] >= 2).sort();
+    const mine = win.filter((d) => turns.includes(d.turn));
+    const per = Math.max(1, Math.round(mine.length / new Set(mine.map((d) => d.day)).size));
+    if (turns.length < 2 || per >= turns.length) return null;
+    const n = turns.length;
+    const on = (off, day) => Array.from({ length: per }, (_, i) => turns[(((per * dayNo(day) + off + i) % n) + n) % n]);
+    let best = null;
+    for (let off = 0; off < n; off++) {
+      const hit = mine.filter((d) => on(off, d.day).includes(d.turn)).length;
+      if (!best || hit > best.hit) best = { off, hit };
+    }
+    return { turns, per, hit: best.hit, total: mine.length, since, last, due: (day) => on(best.off, day) };
+  }
+  const fitsOf = (state) => state.fits || (state.fits = Object.fromEntries(OUT_POOLS.map(([k, , re]) => [k, fitRotation(state.trains, re)])));
+  const dayLabel = (day, opts = { weekday: 'short', month: 'short', day: 'numeric' }) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-CA', { ...opts, timeZone: 'UTC' });
+  // The calendar file: an all-day event a turn, named by the turn (as on his own calendar).
+  function icsFor(fits, { from, days, pools = OUT_POOLS.map((p) => p[0]), turn = null, now = new Date() }) {
+    const ymd = (d) => d.replace(/-/g, '');
+    const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+    const text = (s) => String(s).replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const fold = (line) => { const out = []; let s = line; while (s.length > 74) { out.push(s.slice(0, 74)); s = ` ${s.slice(74)}`; } out.push(s); return out.join('\r\n'); };
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Sarnia Board//Due out of Sarnia//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Due out of Sarnia'];
+    for (let i = 0; i < days; i++) {
+      const day = addDays(from, i);
+      for (const [key, label] of OUT_POOLS) {
+        const f = fits[key];
+        if (!f || !pools.includes(key)) continue;
+        for (const t of f.due(day)) {
+          if (turn && t !== turn) continue;
+          lines.push('BEGIN:VEVENT', `UID:${t}-${ymd(day)}@sarnia-board`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${ymd(day)}`, `DTEND;VALUE=DATE:${ymd(addDays(day, 1))}`,
+            `SUMMARY:${text(t)}`, `CATEGORIES:${text(label)}`,
+            `DESCRIPTION:${text(`Due out of Sarnia: ${label}, ${f.per} a day in turn order. From the board's rotation, not CATS: a cancelled train or a turn added or taken off moves it.`)}`,
+            'TRANSP:TRANSPARENT', 'END:VEVENT');
+        }
+      }
+    }
+    lines.push('END:VCALENDAR');
+    return `${lines.map(fold).join('\r\n')}\r\n`;
+  }
+  function dueBox(state) {
+    const trains = state.trains;
+    if (trains === undefined) return '<p class="muted">Loading the trains…</p>';
+    if (!trains || !trains.length) return '<p class="muted">The trains aren’t available right now.</p>';
+    const today = state.today || new Date().toLocaleDateString('en-CA');
+    const fits = fitsOf(state);
+    const pick = state.dueDay || today;
+    const rows = [];
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(pick, i);
+      rows.push(`<tr${day === today ? ' class="hit"' : ''}><td class="nw"><b>${esc(dayLabel(day))}</b></td><td>${OUT_POOLS.map(([k]) => (fits[k] ? `<span class="duegrp p${k}">${fits[k].due(day).map((t) => `<b class="num">${esc(t)}</b>`).join(' ')}</span>` : '')).join('')}</td></tr>`);
+    }
+    const fitLine = OUT_POOLS.map(([k, label]) => {
+      const f = fits[k];
+      return f ? `<div><span class="duegrp p${k}">${esc(label)}</span> ${f.per} a day of ${f.turns.length} (${esc(f.turns[0])}–${esc(f.turns[f.turns.length - 1])}) · matched <b>${f.hit} of ${f.total}</b> trips since ${esc(dayLabel(f.since, { month: 'short', day: 'numeric' }))}${f.hit < f.total * 0.9 ? ' <b>⚠ not holding</b>' : ''}</div>` : `<div>${esc(label)}: not enough trips to tell.</div>`;
+    }).join('');
+    const pools = state.icsPools || OUT_POOLS.map((p) => p[0]);
+    const allTurns = OUT_POOLS.flatMap(([k]) => (fits[k] ? fits[k].turns : []));
+    return `<div class="refcalc"><label>From <input id="dueday" type="date" value="${esc(pick)}"></label></div>
+      <table class="reft duet"><tbody>${rows.join('')}</tbody></table>
+      <h4>The rotation</h4><div class="duefit">${fitLine}</div>
+      <h4>Put it on your calendar</h4>
+      <div class="refpick" role="group" aria-label="Pools">${OUT_POOLS.map(([k, label]) => `<button type="button" data-icspool="${k}" aria-pressed="${pools.includes(k)}">${esc(label)}</button>`).join('')}</div>
+      <div class="refcalc"><label>Turn <select id="icsturn"><option value="">Every turn</option>${allTurns.map((t) => `<option${t === state.icsTurn ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label>How far ahead <select id="icsmonths">${[1, 3, 6, 12].map((m) => `<option value="${m}"${m === (state.icsMonths || 3) ? ' selected' : ''}>${m} month${m === 1 ? '' : 's'}</option>`).join('')}</select></label>
+      <button type="button" class="chg-toggle" id="icsget">Download the calendar file (.ics)</button></div>
+      <p class="muted">An all-day event for each turn on each day it’s due out, named by the turn, from the day picked above. Google Calendar: on a computer, Settings → Import &amp; export → Import, and pick the calendar to put it in (one calendar a pool gives each pool its own colour). iPhone: open the downloaded file, then Add All. A newer file goes into a fresh calendar (or delete the old one first), so no day shows twice.</p>
+      <p class="muted">The days come from the pools’ rotation as the board has seen it, not from CATS. A cancelled train, an extra one, or a turn added or taken off moves the order: check here, and download it again after a change.</p>`;
+  }
+  function wireDue(view, state) {
+    const box = view.querySelector('#duebox');
+    if (!box) return;
+    box.innerHTML = dueBox(state);
+    const again = () => wireDue(view, state);
+    const day = box.querySelector('#dueday');
+    if (day) day.onchange = () => { if (/^\d{4}-\d{2}-\d{2}$/.test(day.value)) { state.dueDay = day.value; again(); } };
+    box.querySelectorAll('[data-icspool]').forEach((b) => {
+      b.onclick = () => {
+        const all = state.icsPools || OUT_POOLS.map((p) => p[0]);
+        const k = b.dataset.icspool;
+        state.icsPools = all.includes(k) ? all.filter((x) => x !== k) : [...all, k];
+        again();
+      };
+    });
+    const turn = box.querySelector('#icsturn');
+    if (turn) turn.onchange = () => { state.icsTurn = turn.value || null; };
+    const months = box.querySelector('#icsmonths');
+    if (months) months.onchange = () => { state.icsMonths = +months.value; };
+    const get = box.querySelector('#icsget');
+    if (get) {
+      get.onclick = () => {
+        const from = state.dueDay || state.today || new Date().toLocaleDateString('en-CA');
+        const m = state.icsMonths || 3;
+        const to = new Date(`${from}T12:00:00Z`); to.setUTCMonth(to.getUTCMonth() + m);
+        const days = Math.round((to - Date.parse(`${from}T12:00:00Z`)) / 864e5);
+        const body = icsFor(fitsOf(state), { from, days, pools: state.icsPools || OUT_POOLS.map((p) => p[0]), turn: state.icsTurn || null });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
+        a.download = `due-out-of-sarnia${state.icsTurn ? `-${state.icsTurn}` : ''}-${from}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      };
+    }
   }
   function wireOut(view, state) {
     const box = view.querySelector('#outbox');
@@ -271,6 +402,9 @@
     box.querySelectorAll('[data-outpool]').forEach((b) => { b.onclick = () => { state.outPool = b.dataset.outpool; state.outTurn = null; wireOut(view, state); }; });
     box.querySelectorAll('[data-outturn]').forEach((b) => { b.onclick = () => { state.outTurn = b.dataset.outturn; wireOut(view, state); }; });
   }
+
+  // Both boxes that need the trains, drawn once they are in (and on every full draw).
+  function paintLive(view, state) { wireDue(view, state); wireOut(view, state); }
 
   // Held-away penalty miles for the total time off duty, in minutes (the
   // posted "Held-Away Penalty" sheet): nothing to 10:00; 12.5 miles an hour
@@ -325,13 +459,14 @@
         <p class="muted">From the posted sheet (B-Force Timekeeping 1-888-878-1111). The times are total time off duty.</p>
         <details><summary>The whole table</summary><table class="reft"><thead><tr><th>Off duty</th><th>Miles</th></tr></thead><tbody>${penaltyRows.join('')}${steps}</tbody></table></details>`, true)}
       ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
+      ${state.preview ? sec('due', 'Due out of Sarnia: S1, S3, A pool, B pool, 501/502 by day', !q || outTurnQ || hit('due out of Sarnia', 'calendar', ...OUT_POOLS.map((p) => p[1])) ? '<div id="duebox"></div>' : '') : ''}
       ${state.preview ? sec('daysout', 'Days out of Sarnia: S1, S3, A pool, B pool, 501/502', !q || outTurnQ || hit('days out of Sarnia', ...OUT_POOLS.map((p) => p[1])) ? '<div id="outbox"></div>' : '') : ''}
       ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
       ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
       ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
-    if (state.preview) wireOut(view, state);
+    if (state.preview) paintLive(view, state);
     const box = view.querySelector('#refq');
     box.oninput =() => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
     const out = view.querySelector('#refout');
@@ -355,7 +490,7 @@
     calc();
   }
 
-  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, OUT_POOLS, crewTurns, tripsOut, daysOut, outBox, paintOut: wireOut, penalty, render };
+  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, OUT_POOLS, crewTurns, tripsOut, daysOut, outBox, fitRotation, icsFor, dueBox, paintOut: paintLive, penalty, render };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BoardRef = api;
 })(typeof window !== 'undefined' ? window : globalThis);

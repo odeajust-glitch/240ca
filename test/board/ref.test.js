@@ -67,7 +67,7 @@ test('yard jobs: the tower turn about matches every day the checks saw', () => {
 });
 
 test('yard jobs: only on the test site (preview), and the search finds them', () => {
-  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelectorAll: () => [] });
+  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
   const page = (state) => { const view = { innerHTML: '', querySelector: stub }; R.render(view, state); return view.innerHTML; };
   assert.ok(!/XSAS|Yard jobs: start/.test(page({})));
   const html = page({ preview: true, today: '2026-11-13' });
@@ -128,7 +128,7 @@ test('days out: each turn from going on duty in Sarnia to going on duty in Toron
 });
 
 test('days out: the calendar, only on the test site, a turn typed in the search opens it', () => {
-  const stub = () => ({ value: '', focus() {}, setSelectionRange() {} });
+  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
   const page = (state) => { let box = ''; const view = { innerHTML: '', querySelector: (s) => (s === '#outbox' ? { set innerHTML(v) { box = v; }, get innerHTML() { return box; }, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + box; };
   assert.ok(!/Days out of Sarnia/.test(page({ trains: TRAINS })));
   const html = page({ preview: true, today: '2026-11-13', trains: TRAINS, q: 'sb03' });
@@ -138,4 +138,72 @@ test('days out: the calendar, only on the test site, a turn typed in the search 
   assert.ok(html.includes('↑1045') && html.includes('↓2200') && /out <b>5<\/b> of 8 days/.test(html));
   // Before the trains arrive.
   assert.ok(page({ preview: true, today: '2026-11-13' }).includes('Loading the trains'));
+});
+
+// Due out of Sarnia (owner, 2026-11-13, with a photo of his own Google Calendar: "I want you to be
+// able to export something like this so you can see what pool jobs are due out of Sarnia on a
+// particular day"). Trains made from the rotation the board saw (16 Oct to 13 Nov: 284 of 284).
+function rotationTrains(from, days, skip = () => false) {
+  const add = (d, n) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const pools = [['S1', 10, 3, 0], ['SA', 9, 3, 1], ['S3', 6, 2, 4], ['SB', 6, 2, 4], ['S5', 2, 1, 0]];
+  const turn = (p, i) => ({ S1: `S1${String(i + 1).padStart(2, '0')}`, S3: `S3${String(i + 1).padStart(2, '0')}`, SA: `SA${String(i + 1).padStart(2, '0')}`, SB: `SB${String(i + 1).padStart(2, '0')}`, S5: `S50${i + 1}` }[p]);
+  const out = [];
+  for (let n = 0; n < days; n++) {
+    const day = add(from, n);
+    for (const [p, size, per, off] of pools) {
+      for (let i = 0; i < per; i++) {
+        const t = turn(p, (per * n + off + i) % size);
+        if (!skip(t, day)) out.push({ id: `X${p}${n}${i}`, from: 'sarnia', onDuty: `${day} 0${i + 5}00`, crew: `${p === 'SA' || p === 'SB' ? 'CO' : 'EN'} ${t}` });
+      }
+    }
+  }
+  return out;
+}
+
+test('due out: the rotation fitted from the trains gives his own calendar back', () => {
+  const trains = rotationTrains('2026-10-17', 28, (t, d) => t === 'SA04' && d === '2026-11-01'); // a trip not seen
+  trains.push({ id: 'Z1', from: 'sarnia', onDuty: '2026-11-02 0900', crew: 'EN S111 · CO SA10' }); // a stray turn, seen once: not in the pool
+  const fit = (re) => R.fitRotation(trains, re);
+  const s1 = fit(/^S1\d\d$/); const sa = fit(/^SA\d\d$/); const s5 = fit(/^S50[12]$/);
+  assert.deepStrictEqual([s1.per, s1.turns.length, s1.hit === s1.total], [3, 10, true]);
+  assert.deepStrictEqual([sa.per, sa.turns.length, sa.hit === sa.total], [3, 9, true]);
+  // His Google Calendar: 8 Oct S104 S105 S106, SA02 SA03 …; 10 Oct S101 S102 S110, SA01 SA08 …
+  assert.deepStrictEqual(s1.due('2026-10-08'), ['S104', 'S105', 'S106']);
+  assert.deepStrictEqual(sa.due('2026-10-08'), ['SA02', 'SA03', 'SA04']);
+  assert.deepStrictEqual(s1.due('2026-10-10').sort(), ['S101', 'S102', 'S110']);
+  assert.deepStrictEqual(sa.due('2026-10-10').sort(), ['SA01', 'SA08', 'SA09']);
+  assert.deepStrictEqual(s1.due('2026-11-07').includes('S104'), true); // his last row
+  assert.deepStrictEqual([s5.due('2026-11-12'), s5.due('2026-11-13')], [['S501'], ['S502']]);
+  // The board's own: SB03 and S303 left on 12 Nov; SA05 on 11 Nov.
+  assert.deepStrictEqual(fit(/^SB\d\d$/).due('2026-11-12'), ['SB03', 'SB04']);
+  assert.deepStrictEqual(fit(/^S3\d\d$/).due('2026-11-12'), ['S303', 'S304']);
+  assert.ok(sa.due('2026-11-11').includes('SA05'));
+  // Too few trips to tell: nothing projected.
+  assert.strictEqual(R.fitRotation(trains.slice(0, 3), /^SB\d\d$/), null);
+});
+
+test('due out: the calendar file, an all-day event a turn a day', () => {
+  const trains = rotationTrains('2026-10-17', 28);
+  const fits = Object.fromEntries(R.OUT_POOLS.map(([k, , re]) => [k, R.fitRotation(trains, re)]));
+  const ics = R.icsFor(fits, { from: '2026-11-14', days: 7, now: new Date('2026-11-13T12:00:00Z') });
+  assert.ok(ics.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\n') && ics.endsWith('END:VCALENDAR\r\n'));
+  assert.strictEqual((ics.match(/BEGIN:VEVENT/g) || []).length, 7 * (3 + 3 + 2 + 2 + 1));
+  assert.ok(!ics.split('\r\n').some((l) => l.length > 75), 'lines folded');
+  assert.ok(/\r\nBEGIN:VEVENT\r\nUID:S501-20261114@sarnia-board\r\nDTSTAMP:20261113T120000Z\r\nDTSTART;VALUE=DATE:20261114\r\nDTEND;VALUE=DATE:20261115\r\nSUMMARY:S501\r\n/.test(ics));
+  const mine = R.icsFor(fits, { from: '2026-11-14', days: 30, turn: 'SA05' });
+  assert.deepStrictEqual(mine.match(/DTSTART;VALUE=DATE:\d+/g).map((x) => x.slice(-4)), ['1114', '1117', '1120', '1123', '1126', '1129', '1202', '1205', '1208', '1211']);
+  const one = R.icsFor(fits, { from: '2026-11-14', days: 1, pools: ['S5'] });
+  assert.strictEqual((one.match(/SUMMARY:/g) || []).length, 1);
+});
+
+test('due out: on the test site only; seven days from the day picked', () => {
+  const trains = rotationTrains('2026-10-17', 28);
+  let boxes = {};
+  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
+  const page = (state) => { boxes = {}; const view = { innerHTML: '', querySelector: (s) => (/^#(due|out)box$/.test(s) ? { set innerHTML(v) { boxes[s] = v; }, get innerHTML() { return boxes[s]; }, querySelector: () => null, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + Object.values(boxes).join(''); };
+  assert.ok(!/Due out of Sarnia/.test(page({ trains })));
+  const html = page({ preview: true, today: '2026-11-13', trains });
+  assert.strictEqual((html.match(/<tr( class="hit")?><td class="nw"><b>/g) || []).length, 7);
+  assert.ok(html.includes('<tr class="hit"><td class="nw"><b>Fri, Nov 13</b>'));
+  assert.ok(/matched <b>78 of 78<\/b>|matched <b>\d+ of \d+<\/b>/.test(html) && html.includes('Download the calendar file (.ics)'));
 });
