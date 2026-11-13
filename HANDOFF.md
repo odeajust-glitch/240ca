@@ -1,5 +1,18 @@
 # HANDOFF — read this before doing anything
 
+## Home Screen icon with the Chrome badge — 13 Nov 2026 (owner's two phone screenshots). Nothing changed; steps given
+
+His Android home screen had the old installed app ("Line-up", 240 icon, opened with no address bar) and now
+a "Sarnia Board" icon **with the Chrome badge**: a shortcut, which opens in a Chrome tab. **The site is
+installable:** Chrome's own check (DevTools `Page.getInstallabilityErrors`, a normal profile, phone size)
+gives no errors on `board` or `board-test`; `manifest.webmanifest`, the 180/192/512 icons (right sizes) and
+`sw.js` (with a fetch handler) answer 200 through the lock (`OPEN_FILES` in the Worker). So it was added as a
+shortcut, most likely because the old app is still installed (Chrome offers no install then, and "Add to Home
+screen" makes a shortcut), or "Create shortcut" was picked. Told him: remove the badged icon; look in the app
+drawer for "Line-up" / "Sarnia Board" and add that; if none, ⋮ → Add to Home screen → **Install**; if Chrome
+offers no Install, uninstall the old app in Android Settings → Apps and try again. Offered (not built): the
+page's "How to get alerts" Android line could say to pick Install, not Create shortcut.
+
 ## My stats for yard workers: the eight items, and the owner's look at any name code's page — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026. WAITING ON (1) THE WORKER PASTE (copy page rebuilt; board-test at least) AND (2) ONE LAPTOP PULL + RESTART
 
 **Owner, 13 Nov,** shown the eight items (the review below): **"Let's do that. Push to the test site. Also build in
