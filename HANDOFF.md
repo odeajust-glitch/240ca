@@ -1,5 +1,46 @@
 # HANDOFF — read this before doing anything
 
+## Is the call prediction worth it? Read 13 Nov 2026 on all 28 saved days, at his asking. Nothing built; the decision stays the 25 Nov read
+
+**Owner, 13 Nov:** "Can you give me a summary on if the call prediction would be effective with the data you
+have now. Give me examples of when it was better than what was showing and give me examples of when it was
+not good at all, explain if it would be beneficial with the data collected now and give recommendations on
+how to proceed". Answered in chat (not a page); the figures below are what he was told.
+
+**How it was read.** `docs/board-checker/likely-call/per-train.js` (reads `data/trains.json`; replays every
+check as `Patterns.score` does, matching `score` to the check: test 79 / 68 held, before 896 / 698), then
+splits the totals by train, own history or not, and two plain yardsticks the page doesn't show: a window of
+the same width centred on the line-up's call, and "told later but came near or before the line-up's call".
+Files of 00:58 UTC 13 Nov: 239 Sarnia runs, 16 Oct to 12 Nov, 975 checks of 226 trains; each train's own
+window stood on a typical 15 past runs (6 to 26).
+
+**What he was told.**
+- Overall a small gain: the likely time within an hour of the real call 54% vs the line-up's call 49%
+  (typically 58 vs 63 min off); the window held 79%, about 4.3 h wide; the same width centred on the
+  line-up's call would have held 67%.
+- **Four trains carry all of it** (own history): Z148 (55% vs 26%; 50 vs 107 min; usually ~2 h after the
+  line-up), M382 (61% vs 43%), L502 (shows 0400 every day, usually on duty 0245: 30 vs 60 min typical),
+  M396 (43% vs 34%). Together 59% vs 48%, 47 vs 65 min. **No better:** A424 (the line-up is already right;
+  window 20–35 min wide, hence A42431 11's "0 of 4" on a 30-min-early call), M302 (level), M394 (worse:
+  40% vs 46%). E278: both bad, window 10.6 h wide (useless). Trains without 6 runs of their own (a third of
+  checks): level (48% vs 48%). Over a day out: no better.
+- The risk: told "an hour or more later than the line-up", 41 of 237 still came within 30 min of the
+  line-up's call or earlier (1 in 6); M382 19 of 55 (1 in 3).
+- Examples given: better: Z14891 09 (line-up 10th 0130, likely 0445, called 0505; also Z14891 01, 28),
+  M39671 10 (line-up 11th 1848, likely 2046, called 2100), M39671 09 (line-up 11th 0040, likely 10th 2331,
+  called 2330), E27861 12 (line-up 1055 a day ahead, likely 1630, called 1915). Not good: Z14891 03 (line-up
+  4th 0330 right, likely 0645, window 0450–0915, called 0345), Z14891 30 (called 0515, window from 0704),
+  M38261 24 (called 1115, window from 1255), E27861 11 (line-up right at 1655, likely 2230, window 18 h),
+  A42431 11, and the days neither could see (M38261 07 11 h late, M30241 28 10 h, X27691 06 28 h; 25 trains
+  6 h or more off the line-up in 28 days).
+- **Recommended:** finish the test and read it on the 25th (2 days in, 19 trains, is too early); then, if
+  anything goes to the main site, only the trains that beat the line-up (today Z148, M382, L502, maybe M396),
+  only under 16 h out, as a plain note beside the line-up's time, never in place of it, with the window never
+  starting after the line-up's call (held 80% vs 79%, 4.4 h vs 4.3 h wide; Z148 84% vs 76%); nothing for
+  E278, A424, M302, M394 or trains with few runs. Keep collecting and recheck per train each month.
+  **His answers: none yet.** At the 25th read, run the script on that day's `trains.json` and give him the
+  same split (the totals hide that four trains carry it).
+
 ## Likely-call test page made simpler — 13 Nov 2026 (`public/board.html`, page only; still TEST SITE ONLY). WAITING ON ONE LAPTOP PULL; then his look
 
 **Owner, 13 Nov:** "I want to review the likely call test in analytics to try and simplify it. It needs to
@@ -20,9 +61,8 @@ distance (`test.byAway`), "Before the test" (`before`, the replay of 207 trains)
 (`early`, `earlyCovered`), the closer / further counts, "(all trains)" (`own`) and "How it is scored".
 Their styles went too, and the table exception in `ana2Stack`.
 
-**Who sees it: unchanged.** Still only board-test with the owner key (`PREVIEW`); a member sees no such
-page on either site. "So guys seeing it will understand it" may mean he wants members to see it: **not
-done; ask.** Showing it to members is a change of who sees it and needs his word in so many words.
+**Who sees it: the test site only, at his word (13 Nov: "Leave it on the test site for now").** Board-test
+with the owner key (`PREVIEW`); a member sees no such page on either site. Don't ask again before the 25th.
 
 **Checked.** Suite **507 of 507** after rebasing on the Members work (`test/board/likely-test-page.test.js`, 3: the tiles, the verdict's
 three wordings and too early, the times on an opened check worked by hand, what came off, the three empty
