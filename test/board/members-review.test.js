@@ -27,7 +27,8 @@ const ACCOUNTS = [{ name: 'Jane Doe', code: 'JADO' }, { name: 'KIM MOE', code: n
 test('Who gets alerts is on the Members tab on the test site, and off Page Health there; as before on the main site', () => {
   // Page Health: the section unless PREVIEW.
   assert.ok(html.includes("const who = PREVIEW ? '' : whoGetsAlerts(L.subscribers, { stamp, expanded: view.querySelector('[data-health-followed]')?.open, stale: healthUnavailable });"));
-  assert.ok(html.includes('${PREVIEW ? traceSection() : \'\'}${who}'), 'still in the same place on Page Health');
+  // (The screenshot mark's trace box just before it is on Page Health on both sites since 2026-11-13: "push to the main page".)
+  assert.ok(html.includes('${traceSection()}${who}'), 'still in the same place on Page Health');
   // Members: only with the test site and the owner key (an Admin never has the health report).
   assert.ok(html.includes('    const review = PREVIEW && membersOwner;\n'));
   assert.ok(html.includes("const whoHtml = !review ? '' : alertsSub ? whoGetsAlerts(alertsSub, { stamp: agoStamp, expanded: whoOpen, stale: false, members: true })"));

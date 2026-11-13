@@ -641,3 +641,55 @@ test('a sign-up that never entered its email code is listed apart, and the owner
   await call('/health/accounts', { key: OWNER_KEY, body: { id: v.id, action: 'delete' } });
   assert.equal((await (await call('/health/accounts', { key: OWNER_KEY })).json()).unverified.length, 0);
 });
+
+// The screenshot mark (owner, 2026-11-13, after trying it on the test site: "works great, push to the main
+// page"): the Worker gives each signed-in account the number the page hides in its screens, made from a random
+// secret it keeps in the bucket; the owner's Page Health gets every account's number to trace a screenshot.
+test('screenshot mark: a number for each signed-in account, from a secret kept once; the owner can match them, no one else', async () => {
+  const { call, cookieOf, store, mails } = await setup({ LOCK: 'on' });
+  const join = async (n) => {
+    const body = person(n);
+    await call('/auth/signup', { body, ip: `4.4.4.${n.length}` });
+    const res = await call('/auth/verify', { body: { email: body.email, code: codeIn(mails) } });
+    const { users } = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+    return { cookie: cookieOf(res), id: users.find((u) => u.email === body.email).id };
+  };
+  const a = await join('m1');
+  const b = await join('m22');
+  // Waiting for approval: no number (they see no board).
+  let me = await (await call('/auth/me', { cookie: a.cookie })).json();
+  assert.equal(me.status, 'pending');
+  assert.equal(me.mark, undefined);
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: a.id, action: 'approve' } });
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: b.id, action: 'approve' } });
+  me = await (await call('/auth/me', { cookie: a.cookie })).json();
+  assert.ok(Number.isInteger(me.mark) && me.mark >= 0 && me.mark < 1 << 20, `a 20-bit number: ${me.mark}`);
+  // The secret is made once and kept where publishes never delete and the site never serves.
+  const kept = JSON.parse(store.get('accounts/shotmark.json'));
+  assert.ok(typeof kept.key === 'string' && kept.key.length >= 40);
+  assert.equal((await call('/accounts/shotmark.json', { cookie: a.cookie })).status, 404);
+  assert.ok(require('../../lib/board/r2').KEEP_PREFIXES.includes('accounts/'));
+  // Stable for the account, different for another, and not the email's plain hash the test-site trial used.
+  assert.equal((await (await call('/auth/me', { cookie: a.cookie })).json()).mark, me.mark);
+  const markB = (await (await call('/auth/me', { cookie: b.cookie })).json()).mark;
+  assert.ok(Number.isInteger(markB) && markB !== me.mark);
+  const trial = (id) => { const h = require('crypto').createHash('sha256').update(`mark:${id}`).digest(); return ((h[0] << 16) | (h[1] << 8) | h[2]) >>> 4; };
+  assert.notEqual(me.mark, trial(a.id));
+  // The same secret gives the same numbers after a restart of the Worker (a fresh copy of the code, same bucket).
+  const again = await setup({ LOCK: 'on' });
+  for (const [k, v] of store) again.store.set(k, v);
+  assert.equal((await (await again.call('/auth/me', { cookie: a.cookie })).json()).mark, me.mark);
+  // The owner key's own devices have a number too.
+  const res = await call('/auth/owner', { key: OWNER_KEY, body: {} });
+  const ownerMe = await (await call('/auth/me', { cookie: cookieOf(res) })).json();
+  assert.ok(Number.isInteger(ownerMe.mark) && ![me.mark, markB].includes(ownerMe.mark));
+  // The owner's list carries every account's number and the owner key's; an Admin's does not.
+  const list = await (await call('/health/accounts', { key: OWNER_KEY })).json();
+  assert.equal(list.users.find((u) => u.id === a.id).mark, me.mark);
+  assert.equal(list.users.find((u) => u.id === b.id).mark, markB);
+  assert.equal(list.ownerMark, ownerMe.mark);
+  await call('/health/accounts', { key: OWNER_KEY, body: { id: a.id, action: 'role', role: 'admin' } });
+  const asAdmin = await (await call('/health/accounts', { cookie: a.cookie })).json();
+  assert.equal(asAdmin.you, 'admin');
+  assert.ok(asAdmin.users.every((u) => u.mark === undefined) && asAdmin.ownerMark === undefined);
+});

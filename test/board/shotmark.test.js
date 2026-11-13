@@ -1,9 +1,9 @@
 // The screenshot mark (owner, 2026-11-12): "Would it be possible to bake a hidden id number in the backround
 // that is not visible to people but if I gave you a picture of a screen shot or a screen shot, you would be
 // able to know what account it came from", then, shown the test (docs/board-checker/screenshot-mark), "Build
-// it on the test site first". TEST SITE ONLY: drawn and read only behind PREVIEW (board-test with the owner
-// key). A member on either site gets neither. To promote: drop the PREVIEW tests in paintShotMark and
-// renderHealth and change the gating test below, quoting him.
+// it on the test site first"; and, 2026-11-13, having tried it: "works great, push to the main page". ON FOR
+// EVERY SIGNED-IN ACCOUNT, BOTH SITES, with the number the Worker gives the account from a secret it keeps
+// (test/board/accounts.test.js tests that side); read on the owner's Page Health on both sites.
 // No names here: made-up account ids and colours only.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -15,7 +15,7 @@ const worker = fs.readFileSync(require.resolve('../../cloudflare/board-worker.js
 const py = fs.readFileSync(require.resolve('../../docs/board-checker/screenshot-mark/wm.py'), 'utf8');
 const cut = (from, to) => { const a = html.indexOf(from); const b = html.indexOf(to, a + 1); assert.ok(a > 0 && b > a, `not found in the page: ${from}`); return html.slice(a, b); };
 
-const block = cut('  const ShotMark = (() => {', '  // The mark on the page and Page Health');
+const block = cut('  const ShotMark = (() => {', '  // The mark on the page (every signed-in account');
 // Run as the page runs it (plain globals: crypto, TextEncoder), not in a separate context: the reader does a
 // few million sums, and the arrays it returns should compare as ordinary arrays.
 const SM = new Function(`${block}\nreturn ShotMark;`)();
@@ -32,20 +32,16 @@ test('the layout is the one tested, and the same as the Python reader’s', () =
   assert.equal(SM.N * SM.CELL, 64, 'a 64 CSS px tile, as the style rule draws it');
 });
 
-test('the account’s number: the Worker’s own account id, then the number the Python reader gives it', async () => {
-  // The Worker: id = the first 32 hex of SHA-256("account:" + the email, trimmed, in small letters).
-  assert.ok(worker.includes('const uidOf = async (email) => (await shaHex(`account:${email}`)).slice(0, 32);'));
-  assert.ok(worker.includes("const email = String(b.email || '').trim().toLowerCase();"));
-  assert.ok(worker.includes("if (p.u === 'owner') return { id: 'owner', status: 'approved', name: 'Owner', role: 'member', t: p.t };"));
-  const email = 'some.one@example.com';
-  assert.equal(await SM.accountId({ signedIn: true, name: 'Some One', email: '  Some.One@Example.com ' }), nodeCrypto.createHash('sha256').update(`account:${email}`).digest('hex').slice(0, 32));
-  assert.equal(await SM.accountId({ signedIn: true, name: 'Owner', email: null }), 'owner');
-  assert.equal(await SM.accountId({ signedIn: false, name: null, email: null }), '');
-  assert.equal(await SM.accountId(null), '');
-  // The same numbers as docs/board-checker/screenshot-mark/wm.py's mark_of, worked out there.
+test('the number drawn is the Worker’s for the signed-in account; the trial’s hash is kept only to trace the trial', async () => {
+  // The Worker: /auth/me hands a signed-in account its number (shotmarkOf, from the kept secret).
+  assert.ok(worker.includes("...(s && s.status === 'approved' ? { ...(await profileOf(env, s)), mark: await shotmarkOf(env, s.id) } : {}) });"));
+  assert.ok(html.includes("const mark = SHOT_ME && SHOT_ME.signedIn ? SHOT_ME.mark : null;"));
+  assert.ok(!/accountId/.test(block), 'the page no longer works a number out for itself');
+  // The test-site trial's number for the owner key (the same as wm.py's mark_of), kept so his trial screenshots trace.
   assert.equal(await SM.markOf('owner'), 802536);
   assert.equal(await SM.markOf('0123456789abcdef0123456789abcdef'), 423516);
   assert.equal(await SM.markOf('ffffffffffffffffffffffffffffffff'), 250952);
+  assert.ok(html.includes("out.push({ id: 'owner-trial', mark: await ShotMark.markOf('owner'),"));
 });
 
 test('the tile: black at alpha 1 on a light page, white at alpha 2 on a dark one, only in the marked cells', () => {
@@ -115,16 +111,19 @@ test('reading: the right account from a light page, a dark page, a smaller pictu
   assert.equal(read(page(40, 40, { mark: who.mark }), 40, 40).found, false);
 });
 
-test('only on the test site: the layer, the trace box, and nothing sent anywhere', () => {
-  const paint = cut('  async function paintShotMark() {', '  // A change of page style');
-  assert.ok(paint.includes("if (!PREVIEW || !SHOT_ME || !SHOT_ME.signedIn) { if (old) old.remove(); shotMarkFor = ''; return; }"), 'drawn only on the test site, for a signed-in account');
-  assert.ok(paint.includes('if (!PREVIEW) return;'), 'and not if the test site went off meanwhile');
-  assert.ok(html.includes("${PREVIEW ? traceSection() : ''}") && html.includes('if (PREVIEW) wireTrace(view); // screenshot mark (test site)'));
+test('on for every signed-in account with a number from the Worker, both sites; the trace box on the owner’s Page Health; nothing sent anywhere', () => {
+  const paint = cut('  function paintShotMark() {', '  // A change of page style');
+  assert.ok(!paint.includes('PREVIEW'), 'not tied to the test site any more (owner, 2026-11-13: "push to the main page")');
+  assert.ok(paint.includes("if (!Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotMarkFor = ''; return; }"), 'nothing drawn without a number from the Worker, or signed out');
+  assert.ok(html.includes('${traceSection()}') && html.includes('    wireTrace(view); // screenshot mark\n'), 'the box is on Page Health on both sites (the page is the owner’s alone)');
+  assert.ok(!html.includes('${PREVIEW ? traceSection()') && !html.includes('if (PREVIEW) wireTrace'));
   assert.ok(html.includes('SHOT_ME = me; paintShotMark();'), 'the account is the one the sign-in check names');
-  assert.ok(html.includes('    paintShotMark(); // the screenshot mark (test site)\n  }'), 'drawn or taken off when the test site switches on or off');
   assert.ok(html.includes("window.dispatchEvent(new Event('board-theme'));") && html.includes("window.addEventListener('board-theme', () => { paintShotMark(); });"), 'follows the page from light to dark');
   const style = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
   assert.ok(style.includes('#shotmark { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }'));
+  assert.ok(!/body\.preview-site[^{]*#shotmark/.test(style));
+  // Before the Worker with the numbers is pasted, the box says so (only the trial can be traced then).
+  assert.ok(html.includes("out.ready = !!(d && Number.isInteger(d.ownerMark));") && html.includes("paste the new Worker code into both Workers"));
   // The trace reads the picture on the phone: the only request is the Members list it matches against.
   const trace = cut('  function traceSection() {', '  // ---------------------------------------------------------------------------------------------\n  modeCurrent.onclick');
   assert.deepEqual(trace.match(/fetch\([^,)]*/g), ["fetch('health/accounts'"]);

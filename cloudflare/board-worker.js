@@ -1475,7 +1475,11 @@ async function accountsAdmin(request, env, url, now = Date.now()) {
     // My stats: whether each member's name code counts as theirs yet.
     for (const u of users) if (u.status === 'approved') u.codeState = codeState(u);
     const mail = (await readJson(env, `${ACC}mail/${torontoDay(now)}.json`)) || { n: 0 };
-    return json({ you, users, unverified, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env) });
+    // The screenshot mark: each account's number, for Page Health's "Trace a screenshot". The owner only: an
+    // Admin is not given them (with one, a screenshot could be faked to point at someone else).
+    const marks = {};
+    if (you === 'owner') { for (const u of users) u.mark = await shotmarkOf(env, u.id); marks.ownerMark = await shotmarkOf(env, 'owner'); }
+    return json({ you, users, unverified, unknownPhones, lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), mailReady: mailReady(env), mailToday: mail.n, mailMax: mailDayMax(env), ...marks });
   }
   if (request.method !== 'POST') return json({ error: 'GET or POST' }, 405);
   const b = await bodyJson(request);
@@ -1566,6 +1570,35 @@ function cleanPostings(p, was) {
     if (/^\d{5,7}$/.test(k) && h >= 1 && h <= 168) remind[k] = h;
   }
   return { on: p.on === undefined ? base.on === true : p.on === true, remind };
+}
+// The screenshot mark (owner, 2026-11-13, after trying it on the test site: "works great, push to the main
+// page"). The number the page hides in every screen of a signed-in account (public/board.html, ShotMark), so
+// that a screenshot can be traced to its account on Page Health. Made from a random secret kept in the bucket
+// (accounts/shotmark.json, written on first use; publishes keep accounts/, and it is never served), so nobody
+// can work out another account's number from its email or fake it. 20 bits: what the page's tile carries.
+// THE SECRET MUST NEVER CHANGE OR BE DELETED: every screenshot taken before would then match no one.
+const SHOTMARK_KEY = `${ACC}shotmark.json`;
+let shotmarkCache = null;
+async function shotmarkSecret(env, now = Date.now()) {
+  if (shotmarkCache && shotmarkCache.env === env && now < shotmarkCache.until) return shotmarkCache.key;
+  let rec = await readJson(env, SHOTMARK_KEY);
+  let made = false;
+  if (!rec || typeof rec.key !== 'string' || rec.key.length < 40) {
+    await env.SITE.put(SHOTMARK_KEY, JSON.stringify({ key: b64(crypto.getRandomValues(new Uint8Array(32))), made: new Date(now).toISOString() }), { httpMetadata: { contentType: 'application/json' } });
+    // Read back: two first uses at once both go on with whichever was written last.
+    rec = await readJson(env, SHOTMARK_KEY);
+    made = true;
+  }
+  if (!rec || typeof rec.key !== 'string' || rec.key.length < 40) return null;
+  // Kept 10 minutes; a secret made just now is read again within seconds, in case another one landed after it.
+  shotmarkCache = { env, key: ub64(rec.key), until: now + (made ? 5000 : 600000) };
+  return shotmarkCache.key;
+}
+async function shotmarkOf(env, id) {
+  const key = id ? await shotmarkSecret(env) : null;
+  if (!key) return null;
+  const h = await hmac256(key, utf8(`shotmark:${id}`));
+  return ((h[0] << 16) | (h[1] << 8) | h[2]) >>> 4;
 }
 async function profileOf(env, who) {
   const rec = who.id === 'owner' ? await readJson(env, OWNER_PROFILE_KEY) : await userById(env, who.id, Date.now(), true);
@@ -1677,7 +1710,7 @@ async function accounts(request, env, url) {
       const u = await userById(env, s.id, Date.now(), true);
       if (u && u.status === 'approved' && !(Date.now() - u.seenAt < 3600000)) await saveUser(env, s.id, { ...u, seenAt: Date.now() });
     }
-    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null, ...(s && s.status === 'approved' ? await profileOf(env, s) : {}) });
+    const res = json({ ready: !!authSecret(env), mailReady: mailReady(env), lock: lockOn(env), notice: switchOn(env.SIGNUP_NOTICE), signedIn: !!s && s.status === 'approved', status: s ? s.status : null, name: (s && s.name) || null, email: (s && s.email) || null, role: s && s.status === 'approved' ? s.role || 'member' : null, ...(s && s.status === 'approved' ? { ...(await profileOf(env, s)), mark: await shotmarkOf(env, s.id) } : {}) });
     if (s && s.status === 'approved' && Date.now() - s.t > SESSION_RENEW_MS) res.headers.append('set-cookie', await sessionCookie(env, s.id === 'owner' ? { u: 'owner', t: Date.now() } : { u: s.id, k: s.key, t: Date.now() }));
     return res;
   }

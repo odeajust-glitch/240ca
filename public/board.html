@@ -1031,7 +1031,7 @@
     padding: 10px max(12px, env(safe-area-inset-right, 0px)) 12px max(12px, env(safe-area-inset-left, 0px)); }
   .pin .pinmenu .modes, body.nav-one-row .pin .pinmenu .modes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; width: 100%; }
   .pin .pinmenu .modes button { flex: 1 1 auto; min-height: 40px; padding: 8px 12px; white-space: nowrap; }
-  /* The screenshot mark (owner, 2026-11-12; test site only, drawn by paintShotMark): one see-through layer over
+  /* The screenshot mark (owner, 2026-11-12; every signed-in account since 11-13, drawn by paintShotMark): one see-through layer over
      everything, its 8 x 8 tile at 8 CSS px a cell, hard-edged (soft edges round the faint wash away). */
   #shotmark { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }
   /* What already sticks to the top keeps clear of the strip. */
@@ -6524,14 +6524,14 @@ source().then(async (src) => {
     const oldQ = Q.length > 0 && now - newestQ > 48 * 3600000;
     const questions = Q.length ? `<section class="sheet"><header><h2>CATS pages it asked you about</h2><span class="meta">"another assignment?" and others, newest first</span></header>${oldQ ? `<details class="moredet" style="margin:0 14px 12px"><summary>${Q.length} page${Q.length === 1 ? '' : 's'}, the newest from ${esc(healthClock(newestQ))}: nothing since</summary>` : ''}<ul class="sentlist">${Q.map((q) => `<li><div class="meta">${esc(new Date(q.at).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))} · <b>${esc(q.answer)}</b></div><pre class="qtext">${esc(q.text)}</pre></li>`).join('')}</ul>${oldQ ? '</details>' : ''}</section>` : '';
     view.innerHTML = `<div class="healthpage"><h1 class="hpt">Page Health <span class="muted">(only you see this)</span></h1>${notice}
-      <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${PREVIEW ? traceSection() : ''}${who}
+      <section class="sheet"><header><h2>The board checker</h2></header><div style="padding:0 14px 12px">${healthVerdict(rows)}</div>${healthTable(rows)}</section>${traceSection()}${who}
       <section class="sheet"><header><h2>Visitors</h2><span class="meta">last 30 days</span></header><div class="hbody" id="hvisits"><p class="muted">Loading…</p></div></section>
       <section class="sheet"><header><h2>Article 18.6(b) submissions</h2><span class="meta">where Submit sends them · how many were sent</span></header><div class="hbody" id="h186set"><p class="muted">Loading…</p></div></section><section class="sheet"><header><h2>Crew names on the board</h2><span class="meta">members only</span></header><div class="hbody"><p>${esc(CREW_NOTE)}</p></div></section>${questions}
       <section class="sheet"><header><h2>This phone</h2></header><div class="hbody">
         <label class="nocount"><input type="checkbox" id="nocount"${noCountSaved() ? ' checked' : ''}> Don't count this phone in Visitors</label>
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
     wireHealthRetry(view);
-    if (PREVIEW) wireTrace(view); // screenshot mark (test site)
+    wireTrace(view); // screenshot mark
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
@@ -8572,7 +8572,6 @@ source().then(async (src) => {
     if (lbl) lbl.textContent = PREVIEW ? 'Follow a turn (alerts)' : 'Find a turn';
     document.documentElement.style.scrollPaddingTop = PREVIEW ? '56px' : '';
     pinPaint();
-    paintShotMark(); // the screenshot mark (test site)
   }
   // 5. The tabs stay in reach: once the tab bar has scrolled off the top, a thin strip names the open tab
   // (tap it for all the tabs, drawn as full rows) and has a button back to the top.
@@ -8626,8 +8625,10 @@ source().then(async (src) => {
   // ---------------------------------------------------------------------------------------------
   // Screenshot mark (owner, 2026-11-12: "Would it be possible to bake a hidden id number in the backround that
   // is not visible to people but if I gave you a picture of a screen shot ... you would be able to know what
-  // account it came from", then "Build it on the test site first"). TEST SITE ONLY: drawn (paintShotMark) and
-  // read (Page Health's "Trace a screenshot") only under PREVIEW. A tile of 8 x 8 cells, 8 CSS px each, over
+  // account it came from", then "Build it on the test site first", then, 2026-11-13, "works great, push to the
+  // main page"). ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES: drawn (paintShotMark) with the number the Worker
+  // gives the account (/auth/me `mark`, from a secret it keeps), read on the owner's Page Health ("Trace a
+  // screenshot"). Without a number from the Worker nothing is drawn. A tile of 8 x 8 cells, 8 CSS px each, over
   // the whole screen: a marked cell is 1 level out of 255 darker on a light page (about 1 lighter on a dark
   // one). 24 cells find the tile; 40 carry the account's 20-bit number as 20 pairs. Tested before it was
   // built: docs/board-checker/screenshot-mark/README.md (and wm.py there, the same reader in Python).
@@ -8654,17 +8655,9 @@ source().then(async (src) => {
       }
       return px;
     }
-    const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     const sha = (t) => crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
-    // The Worker's own account id (uidOf: the email, trimmed and in small letters); 'owner' for the owner key.
-    async function accountId(me) {
-      if (!me || !me.signedIn) return '';
-      if (me.name === 'Owner' && !me.email) return 'owner';
-      const email = String(me.email || '').trim().toLowerCase();
-      return email ? hex(await sha(`account:${email}`)).slice(0, 32) : '';
-    }
-    // The account's number: 20 bits of a hash of its id. A trial: a build for members would take it from a
-    // secret on the Worker, so nobody could work out another member's number.
+    // The test-site trial of 12-13 Nov drew the owner key's number as 20 bits of a plain hash ('owner'): kept only
+    // so his trial screenshots still trace. Every number drawn since comes from the Worker's secret.
     async function markOf(id) {
       const b = new Uint8Array(await sha(`mark:${id}`));
       return ((b[0] << 16) | (b[1] << 8) | b[2]) >>> 4;
@@ -8893,11 +8886,10 @@ source().then(async (src) => {
       out.found = out.strength >= 3 && z >= 6 && ab >= 0.8 && ab - an >= 0.35;
       return out;
     }
-    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, accountId, markOf, decode };
+    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, decode };
   })();
-  // The mark on the page and Page Health's "Trace a screenshot" (TEST SITE ONLY: PREVIEW, board-test with the
-  // owner key). A member on either site gets neither. To promote: drop the PREVIEW tests in paintShotMark and
-  // renderHealth, and change test/board/shotmark.test.js, quoting him.
+  // The mark on the page (every signed-in account the Worker gives a number to, both sites) and Page Health's
+  // "Trace a screenshot" (the owner's own page, both sites).
   let SHOT_ME = null; // the sign-in check's answer (asked on every load, below)
   let shotMarkFor = '';
   let traceLast = ''; // the last trace's words, kept over Page Health's redraws
@@ -8906,18 +8898,16 @@ source().then(async (src) => {
     if (!m || (m[4] !== undefined && +m[4] === 0)) return true;
     return (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) / 255 >= 0.5;
   };
-  async function paintShotMark() {
+  function paintShotMark() {
     const old = document.getElementById('shotmark');
-    if (!PREVIEW || !SHOT_ME || !SHOT_ME.signedIn) { if (old) old.remove(); shotMarkFor = ''; return; }
-    const id = await ShotMark.accountId(SHOT_ME).catch(() => '');
+    const mark = SHOT_ME && SHOT_ME.signedIn ? SHOT_ME.mark : null;
+    if (!Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotMarkFor = ''; return; }
     const light = lightPage();
-    const key = `${id}|${light}`;
-    if (!id || (old && shotMarkFor === key)) return;
-    const mark = await ShotMark.markOf(id);
+    const key = `${mark}|${light}`;
+    if (old && shotMarkFor === key) return;
     const cv = document.createElement('canvas');
     cv.width = ShotMark.N; cv.height = ShotMark.N;
     cv.getContext('2d').putImageData(new ImageData(ShotMark.tileRGBA(mark, light), ShotMark.N, ShotMark.N), 0, 0);
-    if (!PREVIEW) return;
     let el = document.getElementById('shotmark');
     if (!el) { el = document.createElement('div'); el.id = 'shotmark'; el.setAttribute('aria-hidden', 'true'); document.body.appendChild(el); }
     el.style.backgroundImage = `url(${cv.toDataURL('image/png')})`;
@@ -8927,26 +8917,27 @@ source().then(async (src) => {
   window.addEventListener('board-theme', () => { paintShotMark(); });
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { paintShotMark(); }); } catch (e) { /* an older browser */ }
   function traceSection() {
-    return `<section class="sheet" id="htrace"><header><h2>Trace a screenshot</h2><span class="meta">test site only</span></header><div class="hbody">
+    return `<section class="sheet" id="htrace"><header><h2>Trace a screenshot</h2><span class="meta">only you see this</span></header><div class="hbody">
       <p>Pick a screenshot of this site. This phone reads the hidden mark in it and names the account it was taken on. The picture is not sent anywhere.</p>
-      <p class="muted">For now only your own view of the test site carries the mark, so a test picture should name your own account.</p>
+      <p class="muted">Every signed-in member’s screens carry the mark, on both sites. Screenshots from before it was switched on carry none.</p>
       <p><input type="file" accept="image/*" id="tracefile" aria-label="Pick a screenshot"></p>
       <div id="traceout" role="status" aria-live="polite">${traceLast}</div></div></section>`;
   }
-  // Who a mark could belong to: the owner key, and every account on the Members list (any status, so a
-  // removed member's older screenshot still names them).
+  // Who a mark could belong to: the owner key and every account on the Members list (any status, so a removed
+  // member's older screenshot still names them), each with the number the Worker gives it; and the test-site
+  // trial's number for the owner key. `ready`: the Worker hands out the numbers (the Worker with this is pasted).
   async function traceCandidates() {
-    const out = [{ id: 'owner', who: 'the owner key (your own devices)' }];
-    try {
-      const r = await fetch('health/accounts', { cache: 'no-store', headers: OwnerKey.headers() });
-      const d = r.ok ? await r.json() : null;
-      for (const u of (d && Array.isArray(d.users) ? d.users : [])) {
-        if (!u || !u.id) continue;
-        const state = u.status === 'approved' ? (u.role === 'admin' ? 'Admin' : 'Member') : u.status === 'pending' ? 'waiting for approval' : u.status || '';
-        out.push({ id: u.id, who: `${u.name || 'no name'}${u.email ? ` · ${u.email}` : ''}${state ? ` · ${state}` : ''}` });
-      }
-    } catch (e) { /* offline: the owner key only */ }
-    for (const c of out) c.mark = await ShotMark.markOf(c.id);
+    const out = [];
+    let d = null;
+    try { const r = await fetch('health/accounts', { cache: 'no-store', headers: OwnerKey.headers() }); d = r.ok ? await r.json() : null; } catch (e) { /* offline */ }
+    if (d && Number.isInteger(d.ownerMark)) out.push({ id: 'owner', mark: d.ownerMark, who: 'the owner key (your own devices)' });
+    for (const u of (d && Array.isArray(d.users) ? d.users : [])) {
+      if (!u || !u.id || !Number.isInteger(u.mark)) continue;
+      const state = u.status === 'approved' ? (u.role === 'admin' ? 'Admin' : 'Member') : u.status === 'pending' ? 'waiting for approval' : u.status || '';
+      out.push({ id: u.id, mark: u.mark, who: `${u.name || 'no name'}${u.email ? ` · ${u.email}` : ''}${state ? ` · ${state}` : ''}` });
+    }
+    out.push({ id: 'owner-trial', mark: await ShotMark.markOf('owner'), who: 'the owner key (your own devices: the test-site trial of 12–13 Nov)' });
+    out.ready = !!(d && Number.isInteger(d.ownerMark));
     return out;
   }
   async function pixelsOf(file) {
@@ -8965,10 +8956,13 @@ source().then(async (src) => {
     return { px: ctx.getImageData(0, 0, W, H).data, W, H };
   }
   function traceWords(r, cands, secs) {
+    return (cands.ready ? '' : '<p class="warn">This site’s Worker doesn’t give out the account numbers yet, so only your own test-site trial can be traced: paste the new Worker code into both Workers.</p>') + traceResult(r, cands, secs);
+  }
+  function traceResult(r, cands, secs) {
     const hit = r.found && cands.find((c) => c.id === r.best);
     if (hit) return `<p class="ok"><b>Taken on ${esc(hit.who)}</b></p><p class="muted">${r.cellsAgree} of 20 number cells match that account; the next closest account matches ${r.nextCellsAgree}. Read in ${secs} s.</p><p class="muted">A strong lead, not proof: it names the account whose screen it was, not who sent the picture on.</p>`;
     if (r.strength >= 3 && r.z >= 6) return `<p><b>A mark is there, but it matches no account on the list</b> (number ${r.read}).</p><p class="muted">The account may have been deleted, or the picture is too damaged to be sure.</p>`;
-    return '<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark, from the main site (it has none yet), photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.</p>';
+    return '<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark was switched on, photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.</p>';
   }
   function wireTrace(view) {
     const input = view.querySelector('#tracefile');
@@ -9006,7 +9000,7 @@ source().then(async (src) => {
   // hidden on a site whose Worker has no accounts.
   fetch('auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((me) => {
     if (!me || !me.ready) return;
-    SHOT_ME = me; paintShotMark(); // the screenshot mark (test site only: paintShotMark draws nothing elsewhere)
+    SHOT_ME = me; paintShotMark(); // the screenshot mark: the number the Worker gives this account (none: nothing drawn)
     if (me.role === 'admin') { membersAdmin = true; modeMembers.hidden = false; }
     // My stats: a signed-in member, on a site whose Worker has it.
     mineReady = !!me.signedIn && me.statsCode !== undefined; paintMine();
