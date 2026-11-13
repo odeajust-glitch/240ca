@@ -673,6 +673,34 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
+### Agreements tab: sample questions and how to ask — 13 Nov about 01:20 (12 Nov 20:20 Toronto). PROPOSED, NOTHING BUILT
+
+**Owner: "I want to improve the agreement tab, I would like to add some sample questions and explanations. Can
+you provide example of good questions to ask, and the type of questions to ask. Explain how AI can be more
+useful than a normal search engine and its limitations".** Looked at as a member on the main site (390 px) and
+read `public/board-ask.js` and the Worker's `ask`: a word search (BM25, `lib/search.js`) picks the passages (9
+a question, `TOP_K`; 24 for a deeper search or the owner, `TOP_K_DEEP`), then the model writes from only those,
+told to cite pages and say when it can't find it (`kimiMessages`). Each question stands alone (no memory).
+**The sample questions were tested without asking the site** (no POST to `api/ask`: it costs and lands in his
+Search Review): the six everyday PDFs fetched from `/docs/` and indexed with the repo's own `lib/indexer.js` and
+`SearchIndex` in a session's scratchpad, each question run against the craft's documents (top 9). The mileage
+guidelines are a text file the site does not serve (`/docs/mileage_guidelines.txt` 404), so no mileage sample.
+Everyday wording against the agreement's: "How long can they keep me in Toronto?" 0 of 9 useful passages (it
+found letters signed in Toronto); "What am I paid when I am held at the away-from-home terminal more than 14
+hours?" 7 to 8 of 9, Article 18.6 first. "What do I get if a junior guy gets called ahead of me?" 0 of 9;
+"What is a runaround and how is it paid?" 9 of 9.
+
+**Proposed (picture sent to him, drawn in a browser only):** under the question box, "Try one (it fills the box;
+then tap Ask)" with six questions for the craft picked (none picked: three of each); two folds below the notes,
+"How to ask a good question" and "What it does better than a search engine, and its limits". The texts are in
+the session's reply to him of 12 Nov about 20:20. Samples (each found the right part in the test):
+conductor: held away more than 14 hours (Article 18.6); runaround; called and then cancelled; book rest, how
+much; working a general holiday; how trains go to the A and B pools in Sarnia (crew calling, p. 14).
+engineer: held at the away-from-home terminal; deadheading; book rest; called off the spare board;
+bereavement leave; general holiday. Both: rest at the home terminal under the duty and rest rules.
+To build on his word (test site only): `board-ask.js` (the list, a tap fills `#askq` and does not send), its
+styles, and the craft buttons choose which six show.
+
 ### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 
 **Owner: "for the article 18.6 (b) can you add a reminder that an AD claim needs to be filed and to talk to
