@@ -1,5 +1,18 @@
 # HANDOFF — read this before doing anything
 
+## A yard FO's name questioned — 13 Nov 2026, about 23:30 Toronto. Checked read only, NOTHING CHANGED; asked him to look at CATS option 6
+
+**Owner, 13 Nov,** with a screenshot of Current's Chain Gang box (SR08's row): he thinks the surname the site
+shows for the FO of YPRS60 and YBHS31 "is supposed to be" SR08's (no names here: the three share the name code
+BRWA, split on 11 Nov into BRWA = SR08, BRW1 = YBHS31's FO, BRW2 = YPRS60's FO).
+**Checked (both sites, the 04:21 UTC check's crew.json, read only):** SR08 has its own name everywhere (Current, Turn
+History for SR08 and BRWA, the BRWA prompt). The other surname is only on `YBHS31-FO`, `YPRS60-FO` (and, with
+another initial, `YSBY06-YA`), and CATS gave it in two places: the Call Board's on-duty crew for YPRS60 at 12th
+2245 (`parseYardCrewNames`, crew.json `working`) and crews in town (`parseYardOwners`). Names are read as text,
+no OCR. **YPRS60's FO went on duty at 12th 2245 while SR08 was on rest until 13th 0135**, so they are different
+people, as the 11 Nov split already has them. Told him; asked him to look at YPRS60's FO on CATS 6: if CATS shows
+SR08's surname there, a photo, and find where the read goes wrong. Not answered yet.
+
 ## Toronto line-up named the wrong person on MU01 — fixed 12 Nov 2026, about 21:40 Toronto (laptop + page). ON `claude/vigilant-planck-zawrj4` SINCE ABOUT 22:05 at his word ("Yes", asked whether to put it there). WAITING ON ONE LAPTOP PULL + RESTART; then compare with CATS 28
 
 **Owner, 12 Nov about 21:11 Toronto, two photos:** CATS option 28 (Pool Maintenance Inquiry, POOL S1, TERM 1:
