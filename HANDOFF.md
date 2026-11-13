@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Is the call prediction worth it? Read 13 Nov 2026 on all 28 saved days, at his asking. Nothing built; the decision stays the 25 Nov read
+## Is the call prediction worth it? Read 13 Nov 2026 on all 28 saved days, at his asking. Nothing built. TABLED UNTIL 24 NOV at his word: review and plan then (check-in booked)
 
 **Owner, 13 Nov:** "Can you give me a summary on if the call prediction would be effective with the data you
 have now. Give me examples of when it was better than what was showing and give me examples of when it was
@@ -38,8 +38,14 @@ window stood on a typical 15 past runs (6 to 26).
   only under 16 h out, as a plain note beside the line-up's time, never in place of it, with the window never
   starting after the line-up's call (held 80% vs 79%, 4.4 h vs 4.3 h wide; Z148 84% vs 76%); nothing for
   E278, A424, M302, M394 or trains with few runs. Keep collecting and recheck per train each month.
-  **His answers: none yet.** At the 25th read, run the script on that day's `trains.json` and give him the
-  same split (the totals hide that four trains carry it).
+  **His answer: "set a reminder to come back and check it nov 24, we can review it and make a plan then.
+  Untill then lets table this".** Don't raise the prediction or the test page before then.
+- **The check-in:** booked into this session (`send_later`, `trig_01AtgyUENL3iCG9X8UUfmahx`) for **24 Nov
+  08:00 Toronto**: pull, run the script on that day's `trains.json`, a short summary in the 13 Nov shape
+  (what changed, examples from the test days, train by train; the 24th itself still running), a proposed
+  plan, then stop for his say. **The older check-in for 25 Nov 09:00** (`trig_011nxqHjHiKJRurCmD1Wx64i`, into
+  an older session, totals only, booked 10 Nov) **is switched off, not deleted,** so he isn't told twice:
+  turn it back on with `update_trigger` enabled true if he asks.
 
 ## Likely-call test page made simpler — 13 Nov 2026 (`public/board.html`, page only; still TEST SITE ONLY). WAITING ON ONE LAPTOP PULL; then his look
 
@@ -56,13 +62,13 @@ time" / "about even" (5 points either way, as before), or "Too early to tell" un
 **Trains so far**, one row a train ("5 of 6" = times in the window), opening to each check in plain times:
 how far out, line-up call, likely time (new: the window's middle, `mid`), window, and in window / called
 earlier / called later. On a phone the page is about 1,450 px with the rows shut (was 3,350).
-**Off the page (all still in data/patterns.json `score`, so the 25 Nov read is unaffected):** the table by
+**Off the page (all still in data/patterns.json `score`, so the 24 Nov read is unaffected):** the table by
 distance (`test.byAway`), "Before the test" (`before`, the replay of 207 trains), the early-calls tile
 (`early`, `earlyCovered`), the closer / further counts, "(all trains)" (`own`) and "How it is scored".
 Their styles went too, and the table exception in `ana2Stack`.
 
 **Who sees it: the test site only, at his word (13 Nov: "Leave it on the test site for now").** Board-test
-with the owner key (`PREVIEW`); a member sees no such page on either site. Don't ask again before the 25th.
+with the owner key (`PREVIEW`); a member sees no such page on either site. Don't ask again before the 24th.
 
 **Checked.** Suite **507 of 507** after rebasing on the Members work (`test/board/likely-test-page.test.js`, 3: the tiles, the verdict's
 three wordings and too early, the times on an opened check worked by hand, what came off, the three empty
@@ -600,7 +606,7 @@ against its box; the figures checked against `data/2026-11-12.json`, `whengo.jso
 
 **Noted, not put to him as picks.** L502 is planned for 0400 on every one of 27 runs kept and went on duty
 at 0245 on 15 of them (30 minutes or more before the plan on 17), so its "call 13th 0145" on the main site
-is usually an hour late: the likely-call test covers it and is his to decide on the 25th. The preview's
+is usually an hour late: the likely-call test covers it and is his to decide on the 24th (moved from the 25th). The preview's
 "likely call" line is 1.7 to 1 against the page in the light style (only he sees it): told him. A name
 with no first initial (SA07's): the crew names' own loose end.
 
@@ -1685,7 +1691,7 @@ prediction on a real listing; the `vacanciesWatch` record.
 Justin (show each code's turns and dates, he says which stretches move; manual moves need
 rules by turn *with a date range*, not built). Other sessions' reminders still standing:
 the email limit (13th), the alerts grace period (17th), Render (23rd), the likely-call
-test (25th). **The S5 swap watch has no one booked and found a swap on the new code on
+test (25th; moved to 24 Nov 08:00 into another session on 13 Nov, see the top of this file). **The S5 swap watch has no one booked and found a swap on the new code on
 the 11th: see "S5 swap watch" below; the engine fix is the next real piece of work.**
 
 **Waiting on Justin:** (MAR2 for YSBY02's YA stays: "Yes", 2026-11-11. **No notice to
@@ -2295,7 +2301,7 @@ note further down (search for the words in bold).**
   over 2 weeks maybe we can push it [to] the main site."
 - **Booked check-ins into this session:** the S5 swap watch (next: L50231 11, lined up for
   S502; four nights more to reach five clean) and 2026-11-25 09:00 Toronto to read the
-  likely-call test. Both can read the live files now (the saved owner key, above).
+  likely-call test (switched off 13 Nov; replaced by 24 Nov 08:00, see the top of this file). Both can read the live files now (the saved owner key, above).
 - **After any change to `setMode` or the tab bar: click every tab and read the page's
   heading.** Removing the Test tab broke every tab but Analytics on the live site for
   about half an hour because the check read the address, not the page.
