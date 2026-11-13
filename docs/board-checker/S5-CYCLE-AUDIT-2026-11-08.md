@@ -1,5 +1,10 @@
 # 501/502 cycle audit — 2026-11-08
 
+> **Superseded 2026-11-13.** This audit tested the "first regular turn on option 29" rule. The
+> owner's rule is one day each ("The rotation goes s501, then s502, then s501"; HANDOFF section 5), and
+> every L502 in the saved checks, 18 Oct–13 Nov, alternated by day: 21 of 21 right that way, against 8 of
+> 17 for the site's board-position prediction at the last check before each went on duty.
+
 Audited branch head: 664c40cabbffedfe2b72fa0d6326afcc5e3bae3b.
 Scope: existing engine selection, Current snapshot ordering, Why renderer and
 notification-state construction. No new railway rules, application changes,

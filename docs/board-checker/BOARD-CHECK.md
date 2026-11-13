@@ -31,7 +31,12 @@ Sarnia crew calling procedures, "Road Assignments", pp. 12–17).
 5. **Excluded: the L502 / L501 train.** Manifest numbers starting **`L502`** out
    of Sarnia (**`L501`** coming back from the away-from-home terminal) belong to
    neither A, B nor the Chain Gang. They are skipped when counting the sequence
-   (owner, 2026-10-14). They're crewed by the **S5** turns (owner).
+   (owner, 2026-10-14). They're crewed by the **S5** turns (owner): **S501 and
+   S502 take L502 one day each** (owner, 2026-11-13: "Whatever turn worked 502
+   this morning can not work it next. The rotation goes s501, then s502, then
+   s501"; "If he's on rest and his job goes out he waits till the next time his
+   turn goes out in two days"). A day crewed all by MU is still that crew's day;
+   option 29's position never decides it. Each craft that can't go is spare.
 6. **No trains run to Niagara Falls, Port Robinson or Fort Erie** today, so
    that line of the manual doesn't apply (owner, 2026-10-14).
 7. **Holes don't move the Chain Gang (owner, 2026-10-14).** If an SR turn shows

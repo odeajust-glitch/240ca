@@ -1,5 +1,36 @@
 # HANDOFF — read this before doing anything
 
+## 501/502: L502 now goes one day each (S501, S502, S501…), never by option 29 position — 13 Nov 2026, about 06:20 Toronto (laptop engine). ON `claude/vigilant-planck-zawrj4` (his "Yes" to this work going there). WAITING ON ONE LAPTOP PULL + RESTART
+
+**Owner, 13 Nov about 06:09 Toronto, photos of L50231 14 and the 501/502 board:** the site had L50231 14 for
+**S502** ("L502 follows regular 501/502 board position (option 29): S502 (home in Sarnia, position 001)",
+both crafts spare), the day after S502's L50231 13. His words: "This is still getting the order wrong for
+501/502. If one turn is out on 502 it's impossible for them to work it. Since ⟨S502's CO⟩ wasn't available he should
+be skipped and follow his turn order. They rotate every day. If he's on rest and his job goes out he waits till
+the next time his turn goes out in two days. It's a very simple rule that keeps getting messed up." Then:
+"Whatever turn worked 502 this morning can not work it next. The rotation goes s501, then s502, then s501."
+(S502's CO was at 001 on a hold turn because his job on the 13th had gone to MU01.)
+
+**Checked against the saved checks first (live day files, turn ids only):** every L502 18 Oct–13 Nov
+alternated by day; the days crewed all by MU (17, 24, 31 Oct; 6, 7 Nov) were still that crew's day. Replayed:
+**one day each from the last L502 seen: 21 of 21 right; the site's prediction at the last check before each
+went on duty: 8 of 17** (wrong: 25, 26, 30 Oct; 1, 2, 5, 8, 9, 11 Nov). So the 2026-11-07 "first regular turn
+on option 29" rule (and the 2026-10-25 "first crew up on 29") was the bug; section 5 now has his rule.
+
+**Built (engine only):** `lib/board/engine.js` `s5TurnOn`: an L502's crew is its service day counted from the
+last L502 a 501/502 turn worked: the Call Board now, else the 36 h road-day memory (`departed`), else
+`config.s5Anchor` (S501 on 4 Nov, from the history). Each craft that can't go is spare as before (`why`);
+option 29's position, rest and MU never change whose day it is. The reason reads "L502 goes to S501 and S502
+one day each: the 14th is S501's (L50231 13 went with S502). S501: next: they bring L501 home …". The 501/502
+board's order (`s5Order`) follows it. Alerts follow the prediction (S502 no longer lined up for the 14th).
+**Tests:** `s5-rotation.test.js` rewritten (his 13/14 Nov case, the memory, an all-MU day, a trainee, the
+last-seen day beating the stored one, a crew's trip around); four older tests that encoded board position
+changed (engine.test.js ×4, screens-extra, s5-review), two of them because the real history contradicted
+them (L50231 26 went to S502's jobs; the 9th was S502's). Suite **557 of 557**; each piece broken on purpose.
+**Not changed, worth asking:** if an L502 is ever cancelled for a day, does the next go by the day or to the
+other crew? Both read the same on every saved day; the code goes by the day.
+**After his pull + restart:** L50231 14 should show S501 (pending until they're off duty from L50131).
+
 ## Job Aids: yard jobs, their days off and the relief rotations — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, one line in `public/board.html`; page only, no Worker change). WAITING ON ONE LAPTOP PULL; then his look and his answer on YEBS03's weekends
 
 **Owner, 13 Nov:** "read the handoff, I want to add some information to the Job Aid section", then "I want to
@@ -3824,7 +3855,8 @@ calls/planning baseline, sample sizes, tracker coverage, unidentified spare-job
 fillers and ongoing/unknown holds labelled explicitly. Calculations, rules and
 alerts unchanged. Laptop publish/phone verification pending; no Worker change.
 
-**S5 correction, 2026-11-07 (supersedes earlier daily-anchor fix):** the first
+**S5 correction, 2026-11-07 (supersedes earlier daily-anchor fix) — ITSELF SUPERSEDED 2026-11-13 by the
+owner's one-day-each rule (section 5; top of this file):** the first
 regular turn on option 29 is next (owner). Use board position; MU is a system
 placeholder and never determines order. Remove inferred MU ownership and
 appended next/covered-trip status wording. PL/rest/hold remain per craft.
@@ -3915,6 +3947,14 @@ No Worker change. This completes the previously pending timeline implementation.
 The following rule block is retained verbatim from the original handoff. Exact examples,
 implementation notes and superseded wording remain in the snapshot; newer dated rules
 below qualify older notes. Do not resolve an uncertainty by inventing a railway rule.
+
+- **501/502: L502 goes to S501 and S502 one day each** (owner, 2026-11-13: "Whatever turn worked 502 this
+  morning can not work it next. The rotation goes s501, then s502, then s501"; "They rotate every day. If
+  he's on rest and his job goes out he waits till the next time his turn goes out in two days"; "It's a very
+  simple rule that keeps getting messed up"). A day whose L502 went all MU is still that crew's day. A crew
+  member who can't go (rest, hold, PL, away) is spare for his own craft only and waits for his turn's next
+  day. **Option 29's position, rest and MU never decide whose day it is.** Supersedes the 2026-11-07 "first
+  regular turn on option 29 is next" and the 2026-10-25 "first crew up on 29" readings (engine.js s5TurnOn).
 
 - **PL rules** (daysoff.js plFor / offAt / maybeOff), measured from going on
   duty (call + 2 h) to the PL's start: already on at the call → off; a **yard

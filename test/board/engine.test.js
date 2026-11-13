@@ -570,9 +570,11 @@ test('no SD engineer free: the train says so', () => {
   assert.equal(V.goesTo({ pool: 'SR', turn: 'SR06', engineer: 'SD01' }), 'Chain Gang: SR06 + SD01');
 });
 
-// Owner, 2026-10-25: L502 out of Sarnia goes to the first crew up on
-// 501/502 (option 29), conductor + engineer, each spare like A/B.
-test('L502: the first crew up on 501/502, each craft spare when it can\'t be called', () => {
+// Owner, 2026-10-25: L502's conductor + engineer, each spare like A/B. Which
+// crew: one day each (owner, 2026-11-13: "The rotation goes s501, then s502,
+// then s501"), not the first crew up on 501/502 (option 29) as first built:
+// the 26th was S502's, and CATS sent both its jobs to spares (EN09, B131).
+test('L502: its day\'s 501/502 crew, each craft spare when it can\'t be called', () => {
   const { at } = require('../../lib/board/time');
   const now = at(2026, 10, 25, 14, 0);
   const lineup = [{ symbol: 'L50231', trainNo: 'L502', originDay: '26', order: at(2026, 10, 26, 4, 0), status: 'PLN', deadhead: false, engCrew: '45SAS50', trnCrew: '45SAS50' }];
@@ -581,8 +583,11 @@ test('L502: the first crew up on 501/502, each craft spare when it can\'t be cal
   const s5 = [row('EN', 'S501', 1), row('CO', 'S501', 1, { st: 'TV' }), row('EN', 'S502', 2, { st: '**', rn: '**' }), row('CO', 'S502', 2, { st: '**', rn: '**' }),
     row('EN', 'MU01', 1, { terminal: 1 }), row('CO', 'MU01', 1, { terminal: 1 })];
   const p = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup, s5 }).predictions.find((x) => x.symbol === 'L50231');
-  assert.deepEqual([p.pool, p.turn, p.spare, p.engineer, p.engineerSpare], ['S5', 'S501', true, 'S501', false]);
-  assert.equal(require('../../lib/board/view').goesTo(p), 'S5: S501 (goes spare) + S501');
+  assert.deepEqual([p.pool, p.turn, p.spare, p.engineer, p.engineerSpare], ['S5', 'S502', true, 'S502', true]);
+  assert.equal(require('../../lib/board/view').goesTo(p), 'S5: S502 (goes spare) + S502 (goes spare)');
+  // On S501's day (the 27th) its engineer goes, its conductor (TV) is spare.
+  const next = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [{ ...lineup[0], originDay: '27', order: at(2026, 10, 27, 4, 0) }], s5 }).predictions.find((x) => x.symbol === 'L50231');
+  assert.equal(require('../../lib/board/view').goesTo(next), 'S5: S501 (goes spare) + S501');
   // The board not read: as before.
   assert.equal(runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup }).predictions[0].turn, undefined);
 });
@@ -608,7 +613,7 @@ test('L502 alternates: the crew bringing L501 home takes the next one', () => {
   const pb = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4)], s5: b0 }).predictions.find((x) => x.symbol === 'L50231');
   assert.deepEqual([pb.turn, pb.spare, pb.engineerSpare, pb.s5Pending], ['S501', false, false, true]);
   assert.equal(require('../../lib/board/view').goesTo(a), 'S5: S501 + S501');
-  assert.match(a.reason, /board position.*S501.*bring L501 home.*known once S501 is off duty/);
+  assert.match(a.reason, /one day each: the 4th is S501's.*S501: next: they bring L501 home.*known once S501 is off duty/);
   // Off duty in Sarnia, resting past the call: the conductor goes spare.
   const home = s5.map((x) => (x.turn === 'S501' ? { ...x, terminal: 0, working: false, workingOn: null, restUntil: x.craft === 'CO' ? at(2026, 11, 4, 3, 0) : null } : x));
   const h = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: [l502('04', 4)], s5: home }).predictions.find((x) => x.symbol === 'L50231');
@@ -686,10 +691,12 @@ test('L502: the L501 out of Garnet is named for the crew coming home (owner, 202
   const row = (craft, turn, o = {}) => ({ craft, turn, terminal: 0, pos: 999, working: false, st: null, rn: null, statusUntil: null, restUntil: null, ...o });
   const s5 = [row('EN', 'S501', { terminal: 1 }), row('CO', 'S501', { terminal: 1 }), row('EN', 'S502', { pos: 1 }), row('CO', 'S502', { pos: 1 })];
   const lineup = [{ symbol: 'L50231', trainNo: 'L502', originDay: '04', order: at(2026, 11, 4, 4, 0), status: 'PLN', deadhead: false }];
-  // S502 is home, so it takes this one; S501 (at Garnet) is next.
+  // A made-up day: S501 took the 3rd's L502 (so it is at Garnet) and S502 is home: the 4th is S502's,
+  // the 5th S501's (one day each, owner 2026-11-13).
+  const departed = [{ symbol: 'L50231', trainNo: 'L502', originDay: '03', station: 'SARNIA', onDuty: at(2026, 11, 3, 3, 45), crew: [{ craft: 'EN', turn: 'S501' }, { craft: 'CO', turn: 'S501' }] }];
   const two = [...lineup, { ...lineup[0], originDay: '05', order: at(2026, 11, 5, 4, 0) }];
   const garnetLineup = [{ symbol: 'L50131', originDay: '04', order: at(2026, 11, 4, 21, 0), status: 'ORD' }];
-  const ps = runBoardCheck({ now, callBoard: [], chainGangHome: [], lineup: two, s5, garnetLineup }).predictions.filter((x) => x.symbol === 'L50231');
+  const ps = runBoardCheck({ now, callBoard: [], departed, chainGangHome: [], lineup: two, s5, garnetLineup }).predictions.filter((x) => x.symbol === 'L50231');
   assert.deepEqual(ps.map((p) => p.turn), ['S502', 'S501']);
   assert.match(ps[1].reason, /L50131 04 ORD out of Garnet 4th 2100/);
 });
@@ -816,7 +823,9 @@ test('L502 equal terminal-local position: home crew stays first after Garnet tie
   for (const away of ['S501','S502']) {
     const home=away==='S501'?'S502':'S501';
     const s5=[row('EN',away,1,{restUntil:at(2026,11,8,20,30)}),row('CO',away,1,{restUntil:at(2026,11,8,20,30)}),row('EN',home,0),row('CO',home,0)];
-    const run=(rows)=>runBoardCheck({now,callBoard:[],chainGangHome:[],lineup:[train],s5:rows});
+    // The away crew took the 8th's L502 (the 36 h memory), so the 9th is the other's.
+    const departed=[{symbol:'L50231',trainNo:'L502',originDay:'08',station:'SARNIA',onDuty:at(2026,11,8,3,45),crew:[{craft:'EN',turn:away},{craft:'CO',turn:away}]}];
+    const run=(rows)=>runBoardCheck({now,callBoard:[],departed,chainGangHome:[],lineup:[train],s5:rows});
     const r=run(s5);assert.equal(r.predictions[0].turn,home);assert.equal(r.predictions[0].engineer,home);
     assert.equal(r.s5Order[0].turn,home);
     assert.equal(run([...s5].reverse()).predictions[0].turn,home);
@@ -826,9 +835,9 @@ test('L502 equal terminal-local position: home crew stays first after Garnet tie
     // Coverage is assessed separately after selecting the home turn.
     const covered=s5.map(x=>x.turn===home&&x.craft==='EN'?{...x,restUntil:at(2026,11,9,6,0)}:x);
     const p=run(covered).predictions[0];assert.equal(p.turn,home);assert.equal(p.spare,false);assert.equal(p.engineerSpare,true);
-    // Different actual board positions remain authoritative.
+    // Board positions never change whose day it is (owner, 2026-11-13; they did until then).
     const distinct=s5.map(x=>({...x,pos:x.turn===away?1:2}));
-    assert.equal(run(distinct).predictions[0].turn,away);
+    assert.equal(run(distinct).predictions[0].turn,home);
   }
 });
 

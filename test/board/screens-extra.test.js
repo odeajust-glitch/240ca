@@ -156,9 +156,10 @@ test('site snapshot and turn facts with the new screens', () => {
   assert.deepEqual(shown.yardJobs, [{ job: 'YPRS02', station: 'SARNIA', onDuty: '15th 0640', off: '15th 1440', hours: 8, crew: 'FO B138 · S1 B126' }]);
   assert.equal(shown.vacancies[0].turn, 'YPRS02');
   assert.ok(!shown.vacancies.some((v) => v.cc === 'YA')); // yardmaster jobs left off
-  // CATS lists L502's vacancy on S502; the line-up's turn (first crew up on 29) is shown (owner, 2026-10-26).
+  // CATS lists L502's vacancy on S502, and the 16th is S502's day (one day each, owner 2026-11-13; this
+  // showed the first crew up on 29, S501, with "CATS lists S502", owner 2026-10-26): no difference to show.
   const l502 = shown.vacancies.find((v) => v.train === 'L50231');
-  assert.deepEqual([l502.turn, l502.cats], ['S501', 'S502']);
+  assert.deepEqual([l502.turn, l502.cats], ['S502', undefined]);
   assert.ok(['coFast', 'terminal', 's5Pool', 'yardJobs'].every((k) => shown.screens.includes(k)));
   assert.deepEqual(BoardTurns.facts(shown, 'B126').map((f) => f.text), [
     'Conductor fast board position 002: rest until 16th 0600',

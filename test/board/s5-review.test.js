@@ -14,7 +14,12 @@ test('Current and notification states pick S502 for the future dated train', () 
 });
 
 test('working conductor leaves engineer TV coverage intact', () => {
-  const [p] = runBoardCheck(auditCases()[1].input).predictions;
+  // On the 10th, S501's day (one L502 a day each, owner 2026-11-13; the 9th was S502's).
+  const i = auditCases()[1].input;
+  const order = at(2026, 11, 10, 5);
+  i.lineup = [{ ...i.lineup[0], originDay: '10', order }];
+  i.now = order - 120;
+  const [p] = runBoardCheck(i).predictions;
   assert.deepEqual([p.turn,p.engineerSpare,!!p.known], ['S501',true,false]);
 });
 
