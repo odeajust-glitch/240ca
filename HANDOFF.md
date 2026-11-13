@@ -1,22 +1,59 @@
 # HANDOFF — read this before doing anything
 
-## Screenshot mark (a hidden account number in every screen) — asked 12 Nov 2026, evening. TESTED, NOTHING BUILT; waiting on his word
+## Screenshot mark (a hidden account number in every screen) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only), WAITING ON ONE LAPTOP PULL; then his look and his say. Nothing on the main site; no Worker change
 
-**Owner:** "can we make it so scren shots are blockable, or we would have a a way to track screen shots
-maybe. Would it be possible to bake a hidden id number in the backround that is not visible to people but
-if I gave you a picture of a screen shot or a screen shot, you would be able to know what account it came
-from". **Answered:** blocking or noticing a screenshot is not possible from a website; tracing one to the
-account is, and was tested on real pages of the main site (the mark drawn in a session's browser only,
-nothing changed on either site): read back as the right member through everything sharing normally does
-(as taken, email, Messenger/WhatsApp and text-message stand-ins, crops down to about 150 CSS px), not from
-a photo of the screen or a picture squashed very small; 752 reads, no false mark, no wrong member. At the
-strength chosen (1 level out of 255, grey) it was not seen on dark pages and barely on light ones in
-close-ups; his eye on a real phone is the test still owed. Everything, the prototype (`wm.py`, a decoder a
-session can run on a picture he sends as a file) and what a build would take, is in
-[screenshot-mark/README.md](docs/board-checker/screenshot-mark/README.md). **His to decide:** build it on
-the test site (his own view plus a "Trace a screenshot" box on Page Health); hidden only or also a faint
-visible number; whether members are told. The number is never the name code. For members it needs a
-Worker change (each account's number from a secret), pasted into both Workers.
+**Owner, 12 Nov evening:** "can we make it so scren shots are blockable, or we would have a a way to track
+screen shots maybe. Would it be possible to bake a hidden id number in the backround that is not visible to
+people but if I gave you a picture of a screen shot or a screen shot, you would be able to know what account
+it came from". Answered with a test (blocking: not possible from a website; tracing: yes, numbers below and
+in [screenshot-mark/README.md](docs/board-checker/screenshot-mark/README.md)), then asked: build it on the
+test site; hidden only or also a faint visible number; tell members. **His answer: "Build it on the test
+site first".** The other two are still his (not answered): built hidden only.
+
+**What he sees on board-test (with the owner key; `PREVIEW`).** Nothing new on the board itself: one
+see-through layer over every page (`#shotmark`, `position: fixed`, top z-index, taps go through), its 8 × 8
+tile marking his own account's number 1 shade out of 255 (darker on a light page, lighter on a dark one; it
+follows a change of page style). On Page Health, under "The board checker": **"Trace a screenshot"**: pick
+a picture, the phone reads it (nothing is sent anywhere; the only request is the Members list) and says
+"Taken on <account>", with how many of the 20 number cells match it and the next closest, or "No mark
+found". **To try it:** a screenshot of board-test (sent to himself through Messenger and saved, if he
+likes), then Page Health → Trace a screenshot. It should name "the owner key (your own devices)", or his
+own member account if his phone is signed in with his email. A member on either site gets neither, and
+his own view of the main site neither.
+
+**Where.** In `public/board.html`, just above `modeCurrent.onclick`: the `ShotMark` block (the fixed layout,
+`cells`, `tileRGBA`, `accountId` = the Worker's own account id from the email, `markOf` = 20 bits of
+SHA-256 of `mark:` + that id, and `decode`, the Python reader ported), then `paintShotMark`, `traceSection`,
+`traceCandidates`, `pixelsOf`, `traceWords`, `wireTrace`. Hooks: the load-time `auth/me` handler (`SHOT_ME`),
+`siteReviewPaint`, the Settings `apply` (a `board-theme` event), `renderHealth` (the section and its wiring),
+and the `#shotmark` style rule. **The layout must never change** once marks are out (older screenshots
+could no longer be read); the Python reader carries the same numbers and a test checks they agree.
+
+**Checked.** Suite **495 of 495** (`test/board/shotmark.test.js`, 5: the layout against the Python reader's,
+the account id against the Worker's own formula, the tile, reading made-up light and dark pages, a smaller
+noisy one and a crop with nothing from plain pages, and the test-site gating; each broken on purpose four
+ways, a test fails every time). In a browser, this branch's page over the real board-test data as him
+(phone size, 3×; nothing saved): the layer drawn; measured, light: half the pixels exactly 1 shade darker;
+dark: 1 lighter; taps reach every button under it; Page Health's box read his screenshot as taken (light
+and dark), Messenger-style, text-message size and cropped to one box: all "Taken on the owner key", 20 of
+20 cells, 2 to 4 s each in that browser; the same screen without the mark and a member's screenshot of the
+main site: "No mark found". **A member's view on both sites is the same to the letter with the old page and
+the new** (nine tabs), and his own view of the main site has neither piece. The JavaScript reader and the
+Python one give the same answers on the same pictures.
+**Fixed on the way (both readers):** two fill colours a few shades apart were read as one, which drowned the
+mark on a made-up dark page; each pixel now goes to its nearest fill within 3 shades. Re-run on the real
+screenshots: the same results as before (normal sharing all read; no false mark, no wrong member).
+
+**Not checked.** A real phone: how faint it looks to him (the first thing to ask), how long the box takes,
+an iPhone's own screenshots (Safari draws with WebKit; iPhone screenshots are Display P3 PNGs), Safari's
+private browsing (it can add noise to what a page reads from a picture). Page styles other than light,
+dark and the Departure Board. Real Messenger, WhatsApp and text messages (stand-ins only).
+
+**To put it on for members (only at his word):** his answers to the two open questions (a faint visible
+number as well? tell members, recommended?), and a Worker change: each account's number from a secret
+(`/auth/me` hands it to the page; `/health/accounts` lists them for the trace), so nobody could work out
+another member's number from their email and fake a screenshot. Then drop the `PREVIEW` tests in
+`paintShotMark` and `renderHealth` and change the gating test, quoting him.
 
 ## Whole-site layout and structure review — November 12, 2026, afternoon (a separate session). His picks 1, 3, 5, 6 and 7 are BUILT FOR THE TEST SITE ONLY (`79fc425`, page only), WAITING ON ONE LAPTOP PULL; then his look on board-test. 2 and 11 TURNED DOWN ("2 leave it and leave 11"): do not raise them again. Nothing is on the main site. The tab-by-tab review below carries on as it was
 

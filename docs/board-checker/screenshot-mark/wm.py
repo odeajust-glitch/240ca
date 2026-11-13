@@ -19,13 +19,12 @@ N = 8                      # cells per side
 CELLS = N * N
 NSYNC = 24
 NBITS = 20
-_rng = np.random.default_rng(240)          # fixed for good: the layout must never change once marks are out
-PERM = _rng.permutation(CELLS)
-SYNC_POS = PERM[:NSYNC]
-_sv = np.array([1] * (NSYNC // 2) + [-1] * (NSYNC // 2))
-_rng.shuffle(_sv)
-SYNC_VAL = _sv
-PAIRS = PERM[NSYNC:NSYNC + 2 * NBITS].reshape(NBITS, 2)
+# The layout, fixed for good (it must never change once marks are out). Drawn once from
+# numpy.random.default_rng(240): a permutation of the 64 cells (24 sync, then 20 pairs) and the sync signs.
+# The page (public/board.html, ShotMark) carries the same numbers; test/board/shotmark.test.js checks they agree.
+SYNC_POS = np.array([54, 19, 12, 40, 37, 5, 34, 18, 14, 58, 27, 23, 52, 30, 8, 31, 51, 28, 63, 9, 46, 4, 41, 17])
+SYNC_VAL = np.array([-1, -1, -1, -1, -1, 1, -1, -1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1])
+PAIRS = np.array([[44, 48], [2, 0], [3, 42], [55, 33], [38, 49], [35, 43], [25, 57], [6, 62], [15, 39], [16, 10], [13, 47], [56, 24], [20, 60], [29, 53], [59, 32], [50, 1], [36, 22], [26, 61], [7, 11], [21, 45]])
 
 
 def cells_for(mark):
@@ -159,34 +158,44 @@ def _energy(r, w, P, B):
 
 
 def residual(Y, flat, P):
-    """Each flat pixel against the mean of the same fill colour around it (about 7 x 7 cells), so the
-    mark stands out by about half its strength in every cell, whatever its neighbours, and a card's
-    edge does not leak into the page background beside it."""
+    """Each flat pixel against the mean of its own fill colour around it (about 7 x 7 cells), so the mark
+    stands out by about half its strength in every cell, whatever its neighbours. Fills are the peaks of the
+    flat pixels' values; each pixel goes to its nearest peak within 3 levels, so two fills a few levels
+    apart are never mixed (12 Nov: mixing two fills 7 levels apart drowned the mark)."""
     v = Y[flat]
     hist = np.bincount(np.clip(np.round(v), 0, 255).astype(int), minlength=256).astype(float)
-    sm = np.convolve(hist, np.ones(7), 'same')
+    sm = np.convolve(hist, np.ones(3), 'same')
+    peaks = [L for L in range(256) if sm[L] >= 0.01 * len(v) and all(sm[L] >= sm[min(255, max(0, L + d))] for d in (-2, -1, 1, 2))]
+    peaks.sort(key=lambda L: -sm[L])
     levels = []
-    order = np.argsort(-sm)
-    for L in order:
-        if sm[L] < 0.01 * len(v) or len(levels) >= 10:
+    for L in peaks:
+        if len(levels) >= 12:
             break
-        if all(abs(L - x) > 6 for x in levels):
+        if all(abs(L - x) >= 3 for x in levels):
             levels.append(int(L))
+    lut = np.full(256, -1)
+    for val in range(256):
+        d = [abs(val - L) for L in levels]
+        if d and min(d) <= 3:
+            lut[val] = int(np.argmin(d))
+    idx = np.where(flat, lut[np.clip(np.round(Y), 0, 255).astype(int)], -1)
     R = max(3, int(round(3 * P / N)))
     r = np.zeros_like(Y, dtype=np.float32)
     w = np.zeros_like(Y, dtype=np.float32)
-    for L in levels:
-        mk = flat & (np.abs(Y - L) <= 4.5)
+    for j in range(len(levels)):
+        mk = idx == j
         m = mk.astype(np.float32)
         cnt = _boxsum(m, R)
         ref = _boxsum(Y * m, R) / np.maximum(cnt, 1)
-        ok = mk & (cnt >= 0.25 * (2 * R + 1) ** 2) & (w == 0)
+        ok = mk & (cnt >= 0.25 * (2 * R + 1) ** 2)
         r[ok] = (Y - ref)[ok]
         w[ok] = 1.0
+    w[np.abs(r) > 6] = 0
     return r, w
 
 
 def opp(img):
+    """Blue against red and green (the blue/yellow tint tried on 12 Nov; not used by the page)."""
     a = np.asarray(img.convert('RGB'), dtype=np.float32)
     return a[..., 2] - 0.5 * (a[..., 0] + a[..., 1])
 

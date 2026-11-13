@@ -1,8 +1,10 @@
 # A hidden account mark for screenshots: feasibility test, 12 Nov 2026
 
-**Nothing here is used by the site, the Worker or the laptop. Nothing was built.** A test of whether
-it can be done, kept so a build (or a session asked to trace a screenshot) starts from what was
-measured.
+**13 Nov 2026: built for the test site only, at his word ("Build it on the test site first").** The page
+(`public/board.html`, `ShotMark` and `paintShotMark`) draws the mark on his own view of board-test and Page
+Health there has a "Trace a screenshot" box that reads a picture in the browser; see HANDOFF. `wm.py` here
+is the same reader in Python (a test checks the layout matches), for a session asked to trace a picture.
+The rest of this page is the test of 12 Nov that the build rests on.
 
 **The owner, 12 Nov 2026 (evening):** "can we make it so scren shots are blockable, or we would have a
 a way to track screen shots maybe. Would it be possible to bake a hidden id number in the backround that
@@ -30,7 +32,9 @@ older screenshots can no longer be read.
 **Reading it** (`wm.py`, Python 3 with numpy and Pillow). Knows nothing of the scale or the crop: finds
 how far apart the copies of the tile are from the picture itself (small steps between neighbouring
 pixels, autocorrelated), folds the whole picture onto one tile so every copy adds up, compares each pixel
-only with the same background colour around it (text and edges left out), finds the sync, and matches the
+only with its own background colour around it (each pixel goes to its nearest fill within 3 shades, so two
+fills a few shades apart are never mixed; fixed 13 Nov, re-run with the same results; text and edges left
+out), finds the sync, and matches the
 40 number cells against every member's pattern. "Found" needs all four: the fold far stronger than at a
 wrong spacing, the sync standing out from every other alignment, at least 80% of the number cells agreeing
 with the best member, and that member 35 points clear of the next.
