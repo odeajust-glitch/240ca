@@ -1,5 +1,67 @@
 # HANDOFF — read this before doing anything
 
+## Displacement alerts — BUILT 13 Nov 2026, ON FOR EVERY MEMBER at his word, WAITING ON ONE LAPTOP PULL + RESTART (laptop code; the Notifications tab label goes out with the next check). No Worker change
+
+**Owner, 13 Nov evening:** "I want to add a feature that will notify you if you have been displaced … Joe
+Haugh has displaced me so I need to place. If you look the board now you might be able to make a
+determination on how to setup the rule". **His case, from the live data:** S501 CO was JUOD's at the 1212
+check (on rest until 14th 0530); at 1220 the same row showed JOHA (Joe Haugh) as its own holder,
+"available", and JUOD on no board since. JOHA had lost SR10 on the 11th (0814) and was on no board for two
+days: he was placing. **His answers (asked once, all three tapped):** the alert names who took it: **"Full
+name"**; it goes to **"Only their account"** (not to phones following the person); **"On for everyone now"**
+(not owner copies first).
+
+**The rule (`lib/board/displaced.js`, `update`), per check that read names.** A turn of someone's own
+(their craft's on 501/502: `S501-CO`) shows exactly one other person as its own holder; they were its holder
+at a check in the last hour (`RECENT_MIN`); and they are on **no board at all** this check (on a turn of their
+own already = placed or moved; seen not-own = still working it or filling in: nothing sent). Left out: yard
+and relief jobs (Y…, X…: holders rotate every night at 0005), trainee slots, MU, a 501/502 sighting with no
+craft; a new holder with TV or TEMP VCNY on another turn this check (`summary.tempAway`, new: hashes only;
+25 Oct the owner took SR03 on a TV and its holder came back on the 30th); and **nothing at all when more
+than 6 turns change holder in one check** (`MAX_CHANGES`: the 25 Oct change of card moved 18 to 30 at once;
+otherwise never more than 2). First run only learns the board. Memory: BoardChecker\displaced.json
+(each turn's holder by hash and when), saved only once the alerts are out, so a check that can't reach
+Cloudflare leaves them for the next (still inside the hour).
+
+**The message:** title "Displaced", "Looks like Joe Haugh has displaced you off S501 CO (13th 1220 check).
+Check CATS: you may need to place." The name is the one the pool or spareboard screen showed on that turn
+in this check (`names.boardNameNow`, BoardChecker\names.json, laptop only), else the name code, else
+"Someone else". Tapping opens Current at the pools box on that turn. Logged with its why (codes) in Board
+alerts.txt and the Notifications tab (new kind "Displaced", label and rule added there).
+
+**Who gets it (`devicesFor`):** every device signed in to an account whose saved name code is the
+displaced person's (accounts read from R2 only when a check finds one: `r2.listCodeAccounts`, approved
+accounts under accounts/users/ plus accounts/owner.json). **So a member gets it only if their name code is
+saved on their account (⚙ Settings / Job postings) and a device of theirs has alerts saved while signed in.**
+His own phones carry no account (owner key): for him, phones with no account that follow JUOD count, plus
+any device registered for his account's alerts (as in `Health.membersOnly`). Never a phone following
+someone else's code. A device that fails (not gone) gets it with the next check (`alerts-pending.json`;
+the owed loop now honours an event's own `title` / `tag`).
+
+**Tried on the real history** (the live people.json through `update`, scratchpad only): from 2 Nov on, 10
+alerts: SR03 2nd 2303 (JUOD off SR03, as the 9 Nov note says), SR03 9th 0008, SB01 10th 1215, SB03 10th
+1658, SR10 11th 0814 (JOHA), SD05 12th 0440, S301 12th 2222, SD01 13th 0557, **S501 CO 13th 1220
+(JUOD)**, SD05 13th 1358 (a chain: S108's holder placed on SD05 in the same check and was not told). Each
+holder was then off every board until they showed up on another turn, or not since; none went back to the
+turn they lost. The change of card on 25 Oct 1216: held back. Before 3 Nov the history has no 501/502
+crafts and no TV hashes, so older alerts there are not a fair test.
+
+**Checked.** Suite **592 of 592** after rebasing on the yardmaster session's work (`test/board/displaced.test.js`, 9: his case word for word, crafts on
+501/502, the 1358 chain, still-on-a-board / TV / two holders, change of card / an hour / no names / the
+retry, yard and trainee and MU left out, the name lookup, the accounts read, who is told;
+`health-review.test.js` now counts 5 places that note a failed send). Broken on purpose 8 ways, a test fails
+for 7; the 8th was a redundant check, removed.
+**Not checked.** A real run on the laptop: listing accounts/users/ with the laptop's R2 key (it already
+reads those files for job postings, so it should), the name read from the real names.json, the alert on a
+phone, a real TV fill-in, a real change of card. **The first real one is the test:** ask him whether it came
+and what it said, or look in the Notifications tab for kind "Displaced" (a row with 0 phones = found but
+nobody's account had that code).
+
+**Not built, could be next (his say):** a line in "How to get alerts on this phone" telling members to save
+their name code to get these; phones following a person by code (he said only their account); alerts when a
+turn is abolished or a board is cut with nobody new on it (that looks like "not seen" today); Person
+search's "Someone else has been on …" for 501/502 by craft (it skips 501/502 today).
+
 ## The site's name: "Herding CATS" — TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only). WAITING ON ONE LAPTOP PULL; then his look, and his word for the main site and the Home Screen name
 
 **Owner, 13 Nov:** asked for a "good/funny name" (the site was "built on spite": the company's system should
