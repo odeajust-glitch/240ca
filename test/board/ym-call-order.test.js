@@ -273,3 +273,50 @@ test('YM seniority list tab: on the test site only, beside Yardmaster jobs, load
   assert.ok(html.includes('ymlist: PREVIEW ? anaYmList : anaHome'));
   assert.ok(html.includes("const ymList = PREVIEW && ana.sec === 'ymlist' ? await loadYmList() : null;"));
 });
+
+// Shared by the test site's pages (owner, 13 Nov: "if a yard job went spare now"; the Job Aids "Next Yard Job"
+// and "If it was spare, who would work it", two answers): the site's list as people, each person's facts from
+// the newest check, each job's next shift, and who would work one with and without someone on the spareboard.
+test('yardmaster call order: the site\'s list as people, facts from the newest check, the next shifts, the two answers', () => {
+  const data = {
+    list: [
+      { rank: 10, date: '930421', marks: '*+', status: '', assignment: 'YSTY01YA', description: '0630 TOWER S/S JT60' },
+      { rank: 30, status: '', assignment: 'EXYA01YA', description: 'TRAFFIC COORDINATORS SPARE' },
+      { rank: 60, status: 'OFF', assignment: 'YPRS60S1', description: '2245 PLANK F2/S2' },
+      { rank: 75, status: '', assignment: '', temp: { assignment: 'SDSD05EN', turn: 'SD05', craft: 'EN' } },
+    ],
+    live: { taken: '2026-11-13 1754', byRank: {
+      10: { status: 'available', freeAt: '2026-11-14T00:30', text: 'YSTY01 YA: on rest until 14th 0030', src: 'crews in town' },
+      30: { status: 'busy', freeAt: '', text: 'YA01 YA: on duty', src: 'Call Board' },
+      60: { status: 'available', freeAt: '', text: 'YPRS60 S1: rested', src: 'crews in town' } } },
+  };
+  const people = Y.peopleFrom(data, { 10: 'Alder, T', 30: 'Dogwood, M', 60: "O'Gum, P" });
+  assert.deepEqual(people.map((p) => `${p.rank} ${p.surname}|${p.first}|${p.perm}|${p.cats}`), ['10 Alder|T|YSTY01YA|', '30 Dogwood|M|EXYA01YA|', "60 O'Gum|P|YPRS60S1|OFF", '75 Rank 75|||']);
+  assert.equal(people[0].hint, 'At the check of 1754: YSTY01 YA: on rest until 14th 0030');
+  assert.equal(people[2].hint, 'At the check of 1754: OFF on the list · YPRS60 S1: rested');
+  assert.equal(people[3].hint, '');
+  assert.equal(Y.peopleFrom(data, null)[0].surname, 'Rank 10'); // the names not opened: by rank
+  const f = Y.liveFacts(people);
+  assert.deepEqual([f[10].status, f[10].freeAt, f[30].status, f[60].status, f[75].now], ['available', '2026-11-14T00:30', 'busy', 'off', 'SDSD05EN']); // CATS's OFF first
+  // The next shifts whose call is still ahead: at Fri 13 Nov 1754 YSBY02's 1900 (called 1700) has gone.
+  assert.deepEqual(Y.upcoming(Y.toMin('2026-11-13', '1754')).map((j) => `${j.job} ${j.date} ${j.start} ${j.hours}`),
+    ['YSBY01 2026-11-14 0700 12', 'YSBY02 2026-11-14 1900 12', 'YSTY01 2026-11-16 0630 8', 'YSBY03 2026-11-16 0700 12', 'YSBY06 2026-11-16 1430 12', 'YSBY04 2026-11-16 1900 12']);
+  assert.equal(Y.upcoming(Y.toMin('2026-11-13', '1700'))[0].date + ' ' + Y.upcoming(Y.toMin('2026-11-13', '1700'))[0].job, '2026-11-13 YSBY02'); // its call is now
+  assert.equal(Y.upcoming(Y.toMin('2026-11-13', '1754'), 60)[0].job, 'YSBY02'); // a one-hour call: still ahead
+  // If it was spare: with someone on the yardmaster spareboard, and with nobody (the same as the page's own steps).
+  const a = Y.ifSpare(JOB, PEOPLE, RULES, Y.catsFacts(PEOPLE));
+  assert.equal(`${a.yes.p.surname} ${a.yes.rank} ${a.yes.step} ${a.yes.label}`, 'DOGWOOD 30 1 Spare yardmaster · 2-hour call · straight time');
+  assert.equal(`${a.no.p.surname} ${a.no.step} ${a.no.label}`, 'HAZEL 3 Working in the yard that day, not called yet · 2-hour call · straight time');
+  assert.equal(who(run((x) => { x[30].status = 'busy'; })), `${a.no.p.surname} ${a.no.step}`);
+  const alone = Y.ifSpare(JOB, [P(20, 'BIRCH', 'YSBY02YA')], RULES); // only its holder on the list
+  assert.deepEqual(alone, { yes: null, no: null });
+});
+
+test('yardmaster call order: the Job Aids box loads the logic only on the test site, with the rules saved on this phone', () => {
+  const html = require('fs').readFileSync(require('path').join(__dirname, '../../public/board.html'), 'utf8');
+  assert.doesNotMatch(html, /<script src="board-ym\.js">/); // the main site never fetches it
+  assert.ok(html.includes("refState.ymNext = PREVIEW ? paintYmNext : null;"));
+  assert.ok(html.includes("el.src = 'board-ym.js';"));
+  assert.ok(html.includes("JSON.parse(localStorage.getItem('ym-rules') || 'null')")); // the call order page's own key
+  assert.ok(html.includes("window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null })"));
+});

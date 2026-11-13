@@ -108,6 +108,18 @@
   // The tower (YSBY, 12 h): YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 and
   // YSBY04 the others, 2-2-3 over two weeks. Week A started Monday 26 Oct 2026 (and 9 Nov).
   const TOWER = { anchor: '2026-10-26', a: ['YSBY01', 'YSBY02'], b: ['YSBY03', 'YSBY04'], weekA: 'AABBAAA' };
+  // The yardmaster jobs (craft YA; owner, 2026-11-13: "in the job aid test section add the YM Schedule like
+  // the other yard jobs"), with their own table: [job, on duty, hours, the days it runs ('week': Mon to Fri; 'a'
+  // or 'b': its side of the tower), what it is]. The same schedule the call order works from (public/board-ym.js
+  // YA_JOBS); YSTY01 and YSBY06 moved here from the yard jobs' table.
+  const YM_JOBS = [
+    ['YSTY01', '0630', 8, 'week', 'Tower S/S'],
+    ['YSBY01', '0700', 12, 'a', 'YDM Block 1'],
+    ['YSBY02', '1900', 12, 'a', 'YDM Block 2'],
+    ['YSBY03', '0700', 12, 'b', 'YDM Block 3'],
+    ['YSBY04', '1900', 12, 'b', 'YDM Block 4'],
+    ['YSBY06', '1430', 12, 'week', 'S/S Temp YA'],
+  ];
   const EXTRAS = [['YFXS01', '1600', '7 times, mostly Thu and Fri'], ['YFXS03', '0900', 'once'], ['YHXS01', '0700', 'once'],
     ['YMXS01', '2359 or 0800', 'twice'], ['YMXS02', '1700', 'once'], ['YSBY05', '0700, 12 h', 'once']];
 
@@ -150,7 +162,7 @@
   }
   function yardSection(q, hit, today) {
     const dash = (ds) => (ds.length > 2 ? `${ds[0]}–${ds[ds.length - 1]}` : ds.join(', '));
-    const jobs = YARD_JOBS.filter(([job, start]) => hit(job, start, ...yardCover(job).off)).map(([job, start, hours]) => {
+    const jobs = YARD_JOBS.filter(([job, start]) => !YM_JOBS.some((y) => y[0] === job) && hit(job, start, ...yardCover(job).off)).map(([job, start, hours]) => {
       const c = yardCover(job);
       return `<tr><td class="num"><b>${esc(job)}</b>${hours !== 8 ? ` <span class="chip">${hours} h</span>` : ''}${c.note ? `<div class="crew">${esc(c.note)}</div>` : ''}</td><td class="num">${esc(start)}</td><td>${esc(c.off.join(', '))}</td></tr>`;
     }).join('');
@@ -166,15 +178,58 @@
       for (const x of days) { const r = runs[runs.length - 1]; if (r && r.side === x.side) r.days.push(x.d); else runs.push({ side: x.side, days: [x.d] }); }
       return `<tr><td class="nw">${add ? 'Next week' : 'This week'}<div class="crew">from ${esc(label(start))}</div></td><td>${runs.map((r) => `<div class="nw">${esc(dash(r.days))}: <b class="num">${esc(TOWER[r.side].join(' / '))}</b></div>`).join('')}</td></tr>`;
     }).join('');
-    const towerHit = hit('tower', 'YSBY', ...TOWER.a, ...TOWER.b);
+    const towerHit = hit('tower', 'YSBY', 'yardmaster', ...TOWER.a, ...TOWER.b);
     const extras = EXTRAS.filter(([job, start]) => hit(job, start, 'extra')).map(([job, start, seen]) => `<tr><td class="num"><b>${esc(job)}</b></td><td class="num">${esc(start)}</td><td class="muted">${esc(seen)}</td></tr>`).join('');
-    if (q && !jobs && !relief && !towerHit && !extras) return '';
+    // A tower job's days off, this week or next: the days the other side works ("Mon, Tue, Fri–Sun").
+    const towerOff = (side, add) => {
+      const off = DAYS.filter((d, i) => { const x = new Date(monday); x.setUTCDate(x.getUTCDate() + add + i); return towerOn(iso(x)) !== side; });
+      const runs = [];
+      for (const d of off) { const r = runs[runs.length - 1]; if (r && DAYS.indexOf(d) === DAYS.indexOf(r[r.length - 1]) + 1) r.push(d); else runs.push([d]); }
+      return runs.map(dash).join(', ');
+    };
+    const ym = YM_JOBS.filter(([job, start, , days, what]) => hit(job, start, what, 'yardmaster', 'YM', days === 'week' ? 'Sat' : 'tower')).map(([job, start, hours, days, what]) => {
+      const off = days === 'week' ? 'Sat, Sun' : [0, 7].map((add) => `<div class="nw">${add ? 'Next' : 'This'} week: ${esc(towerOff(days, add))}</div>`).join('');
+      return `<tr><td class="num"><b>${esc(job)}</b>${hours !== 8 ? ` <span class="chip">${hours} h</span>` : ''}<div class="crew">${esc(what)}</div></td><td class="num">${esc(start)}</td><td>${off}</td></tr>`;
+    }).join('');
+    const ymHit = ym || towerHit || hit('next yard job', 'spare', 'YM SB', 'spareboard');
+    if (q && !jobs && !relief && !towerHit && !extras && !ymHit) return '';
     return `${jobs ? `<h4>Each job</h4><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Crew off</th></tr></thead><tbody>${jobs}</tbody></table>` : ''}
       ${relief ? `<h4>Relief jobs: their week</h4><table class="reft"><thead><tr><th>Relief</th><th>Off</th><th>Works</th></tr></thead><tbody>${relief}</tbody></table>` : ''}
-      ${towerHit ? `<h4>Tower (YSBY, 12 h)</h4><p class="muted" style="margin:0 0 6px">YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 (0700) and YSBY04 (1900) the others: 2 on, 2 off, 3 on, then the other way round the next week. YSBY06 (1430) is in the table above.</p><table class="reft"><tbody>${towerWeeks}</tbody></table>` : ''}
       ${extras ? `<h4>Extra jobs</h4><p class="muted" style="margin:0 0 6px">Called now and then and filled from the spareboard. Seen in the checks:</p><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Seen</th></tr></thead><tbody>${extras}</tbody></table>` : ''}
+      ${ym ? `<h4>Yardmaster jobs (YA)</h4><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Crew off</th></tr></thead><tbody>${ym}</tbody></table>` : ''}
+      ${towerHit ? `<h4>Tower (YSBY, 12 h)</h4><p class="muted" style="margin:0 0 6px">YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 (0700) and YSBY04 (1900) the others: 2 on, 2 off, 3 on, then the other way round the next week. YSBY06 (1430) is in the table above.</p><table class="reft"><tbody>${towerWeeks}</tbody></table>` : ''}
+      ${ymHit ? '<div id="ymnext" class="ymnext"></div>' : ''}
       <p class="muted">Worked out from the board checks of 24 Oct to 12 Nov 2026 (which jobs went on duty each day, and who held and worked them), not from a posted sheet: a bulletin or a change of card changes it. Days are the day a job goes on duty (a 2359 start is the night into the next day). 8 h unless marked.</p>`;
   }
+
+  // "Next Yard Job" and "If it was spare, who would work it" (owner, 2026-11-13: "then have a line that says 'Next
+  // Yard Job' and show the job, then have a line that says 'If it was spare, who would work it' then have 2 answers,
+  // one with someone on the YM SB and one without"). Drawn into the yard jobs once the page has them (board.html):
+  // Y the call order's logic (public/board-ym.js), L the site's list (data/ym-list.json, its names opened), now
+  // (railway minutes) and the rules saved on the call order page on this phone (null: its starting rules).
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function ymNextHtml({ Y, L, now, rules = null }) {
+    const head = '<h4>Next Yard Job</h4>';
+    if (!L || L.error) return `${head}<p class="muted">${L && L.error === 'none' ? 'The yardmaster seniority list isn’t on the site yet, so who would work it can’t be worked out.' : 'The yardmaster seniority list didn’t load. Try again in a minute.'}</p>`;
+    const r = Y.normalize(rules || Y.startingRules());
+    const j = Y.upcoming(now, r.leadMin)[0];
+    if (!j) return `${head}<p class="muted">No yardmaster job in the next week.</p>`;
+    const people = Y.peopleFrom(L, L.byRank);
+    const name = (p) => (p.first ? `${p.surname}, ${p.first}` : p.surname); // "Rank N" without the names
+    const holder = people.find((p) => { const c = Y.parseCode(p.perm); return c && c.craft === 'YA' && c.turn === j.job; });
+    const a = Y.ifSpare(j, people, r);
+    const who = (x) => (x ? `<b>${esc(name(x.p))}</b>${x.p.first ? ` <span class="muted">rank ${esc(x.rank)}</span>` : ''}<div class="crew">Step ${x.step}: ${esc(x.label)}</div>` : '<span class="muted">Nobody on the list</span>');
+    const live = L.live && L.live.taken ? L.live.taken : '';
+    const day = (iso) => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]}`;
+    const read = L.read ? new Date(L.read).toLocaleString('en-GB', { timeZone: 'America/Toronto', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+    return `${head}<p class="ymjob"><b class="num">${esc(j.job)}</b> ${esc(Y.YA_JOBS[j.job].label)} · <b>${esc(Y.fmt(j.s))}</b>, ${j.hours} h · call ${esc(Y.fmt(j.s - r.leadMin))}${holder ? ` · its holder ${esc(name(holder))}` : ''}</p>
+      <h4>If it was spare, who would work it</h4>
+      <table class="reft"><thead><tr><th>YM spareboard</th><th>Who would work it</th></tr></thead><tbody>
+        <tr><td>Someone on it</td><td>${who(a.yes)}</td></tr>
+        <tr><td>Nobody on it</td><td>${who(a.no)}</td></tr></tbody></table>
+      <p class="muted" style="margin:0 0 12px">${live ? `Everyone as the board check of ${esc(live.slice(11))} on ${esc(day(live))} showed them (on rest, on duty, away, days off)` : 'Everyone by their status on the seniority list only (no board check with them yet)'}, the seniority list as read ${esc(read)}, by ${rules ? 'the rules saved on the call order page on this phone' : 'the call order page’s starting rules'}. The whole order and why: <a href="ym.html">the call order test →</a></p>`;
+  }
+  const paintYmNext = (box, o) => { if (box) box.innerHTML = ymNextHtml(o); };
 
   // The road pools whose days out of Sarnia go on a calendar (owner, 2026-11-13: "S1, s3, A
   // pool, B pool and 502/501 turns"; then "I dont want a calendar of what jobs were worked for
@@ -381,6 +436,7 @@
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
     if (state.preview) wireDue(view, state);
+    if (state.preview && typeof state.ymNext === 'function') state.ymNext(view);
     const box = view.querySelector('#refq');
     box.oninput =() => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
     const out = view.querySelector('#refout');
@@ -404,7 +460,7 @@
     calc();
   }
 
-  const api = { STATUS, JOBS, YARDS, YARD_JOBS, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, OUT_POOLS, crewTurns, fitRotation, icsFor, dueBox, paintOut: wireDue, penalty, render };
+  const api = { STATUS, JOBS, YARDS, YARD_JOBS, YM_JOBS, ymNextHtml, paintYmNext, RELIEF, RUNS_AS, TOWER, EXTRAS, yardCover, towerOn, reliefWeek, OUT_POOLS, crewTurns, fitRotation, icsFor, dueBox, paintOut: wireDue, penalty, render };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.BoardRef = api;
 })(typeof window !== 'undefined' ? window : globalThis);

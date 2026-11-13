@@ -854,33 +854,9 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   // have the exact order and why. So I can verify") ----------------------------------------------------
   // Each yardmaster job's next shift a 2-hour call can still go out for, everyone as the newest board
   // check showed them, and the rules as set below: the order and, person by person, why.
-  function liveFactsFor() {
-    const f = Y.catsFacts(PEOPLE);
-    for (const p of PEOPLE) {
-      const x = p.live;
-      if (!x || f[p.rank].status !== 'available') continue;
-      if (x.status !== 'available') f[p.rank].status = x.status;
-      if (x.freeAt) f[p.rank].freeAt = x.freeAt;
-    }
-    return f;
-  }
-  function nowJobs() {
-    if (!LIVE) return [];
-    const day = LIVE.taken.slice(0, 10);
-    const at = Y.toMin(day, LIVE.taken.slice(11).replace(':', ''));
-    const out = [];
-    for (const [job, j] of Object.entries(Y.YA_JOBS)) {
-      for (let k = 0; k < 9; k++) {
-        const d = Y.addDays(day, k);
-        if (!j.runs(d)) continue;
-        const s = Y.toMin(d, j.start);
-        if (s - state.rules.leadMin < at) continue;
-        out.push({ job, date: d, start: j.start, hours: j.hours, s });
-        break;
-      }
-    }
-    return out.sort((a, b) => a.s - b.s);
-  }
+  const liveFactsFor = () => Y.liveFacts(PEOPLE);
+  // Each job's next shift with its call still ahead of the check (board-ym.js upcoming, as the Job Aids box).
+  const nowJobs = () => (LIVE ? Y.upcoming(Y.toMin(LIVE.taken.slice(0, 10), LIVE.taken.slice(11).replace(':', '')), state.rules.leadMin) : []);
   function outcomeOf(res, r) {
     const k = res.order.findIndex((o) => o.r === r);
     if (k >= 0) return `${k + 1}${k === 0 ? 'st' : k === 1 ? 'nd' : k === 2 ? 'rd' : 'th'} in line · step ${res.order[k].i + 1}`;
@@ -990,13 +966,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     for (const el of document.querySelectorAll('[data-listday]')) el.textContent = LIST_DAY;
     for (const el of document.querySelectorAll('[data-listcount]')) el.textContent = String(data.list.length);
     if (!names && data.names) say('#copy-msg', 'The names did not open, so people show by rank.', '');
-    return data.list.map((x) => {
-      const n = by[x.rank] || '';
-      const cut = n.lastIndexOf(', ');
-      return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
-        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', temp: x.temp || null,
-        live: (LIVE && LIVE.byRank[x.rank]) || null, hint: LIVE && LIVE.byRank[x.rank] ? `At the check of ${LIVE.taken.slice(11)}: ${x.status ? `${x.status} on the list · ` : ''}${LIVE.byRank[x.rank].text}` : '' };
-    });
+    return Y.peopleFrom(data, by);
   }
   async function boot(hot) {
     const list = await loadPeople();

@@ -648,6 +648,7 @@
   .refsec { border-bottom: 1px solid var(--rule-soft); padding: 0 14px; }
   .refsec > summary { cursor: pointer; padding: 14px 0; font: 600 15px/1.3 var(--body); }
   .refsec h4 { margin: 14px 0 6px; font-size: 13px; color: var(--soft); text-transform: uppercase; letter-spacing: 0.08em; }
+  .refsec .ymjob { margin: 0 0 4px; font-size: 14px; line-height: 1.45; }
   .reft { width: 100%; margin-bottom: 12px; }
   .reft td, .reft th { padding: 5px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule-soft); font-size: 14px; }
   .refcalc { display: grid; gap: 8px; margin-bottom: 8px; }
@@ -7596,10 +7597,45 @@ source().then(async (src) => {
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
     // Yard jobs, their days off and the relief rotations: the test site only for now (owner, 2026-11-13).
     refState.preview = PREVIEW;
+    refState.ymNext = PREVIEW ? paintYmNext : null; // the next yardmaster job and who would work it (below)
     window.BoardRef.render(view, refState);
     // Days out of Sarnia for a calendar (owner, 2026-11-13; test site): the site's trains, once, then only its box is drawn again.
     if (PREVIEW && refState.trains === undefined && src && src.trains) {
       src.trains().then((t) => t, () => null).then((t) => { refState.trains = t; if (mode === 'ref' && window.BoardRef.paintOut) window.BoardRef.paintOut(document.getElementById('view'), refState); });
+    }
+  }
+  // Job Aids, test site: "Next Yard Job" and "If it was spare, who would work it" (owner, 2026-11-13), worked
+  // out with the call order's logic (board-ym.js, loaded here only when it's wanted, so the main site never
+  // fetches it), the site's yardmaster list with its names opened (loadYmList, kept a minute so typing in the
+  // search doesn't fetch it again), the time now, and the rules saved on the call order page on this phone.
+  let ymLogic = null;
+  let ymKept = null; // { at: ms, L }
+  function loadYmLogic() {
+    if (window.YM) return Promise.resolve(window.YM);
+    if (!ymLogic) {
+      ymLogic = new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = 'board-ym.js';
+        el.onload = () => (window.YM ? resolve(window.YM) : reject(new Error('the call order logic didn’t load')));
+        el.onerror = () => { ymLogic = null; reject(new Error('the call order logic didn’t load')); };
+        document.head.appendChild(el);
+      });
+    }
+    return ymLogic;
+  }
+  async function paintYmNext(view) {
+    const box = view.querySelector('#ymnext');
+    if (!box || !window.BoardRef.paintYmNext) return;
+    const fresh = ymKept && Date.now() - ymKept.at < 60000;
+    if (!fresh) box.innerHTML = '<h4>Next Yard Job</h4><p class="muted">Working it out…</p>';
+    try {
+      const [Y, L] = await Promise.all([loadYmLogic(), fresh ? ymKept.L : loadYmList()]);
+      if (!fresh && L && !L.error) ymKept = { at: Date.now(), L };
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('ym-rules') || 'null'); } catch (e) { /* its starting rules */ }
+      if (box.isConnected) window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null });
+    } catch (e) {
+      if (box.isConnected) box.innerHTML = `<h4>Next Yard Job</h4><p class="muted">It couldn’t be worked out (${esc(e.message)}). Try again in a minute.</p>`;
     }
   }
   // Job postings tab (owner, 2026-11-11: "can this information be put on a

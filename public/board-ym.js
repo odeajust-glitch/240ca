@@ -381,9 +381,67 @@
     ];
   }
 
+  // --- The site's pages (owner, 13 Nov 2026: the call order "into the test site", "if a yard job went spare
+  // now", and the Job Aids "Next Yard Job" / "If it was spare, who would work it") --------------------------
+  // The site's list (data/ym-list.json) as the pages' people, names by rank once opened ("Last, F"; without
+  // them "Rank N"): CATS's statuses, temporary jobs, and each person as the newest board check showed them
+  // (`live`, with a line for the page).
+  function peopleFrom(data, byRank) {
+    const by = byRank || {};
+    const live = data && data.live && data.live.byRank ? data.live : null;
+    return ((data && data.list) || []).map((x) => {
+      const n = by[x.rank] || '';
+      const cut = n.lastIndexOf(', ');
+      const l = (live && live.byRank[x.rank]) || null;
+      return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
+        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', temp: x.temp || null,
+        live: l, hint: l ? `At the check of ${live.taken.slice(11)}: ${x.status ? `${x.status} on the list · ` : ''}${l.text}` : '' };
+    });
+  }
+  // Each person's facts at call time from the newest check: CATS's statuses and temporary jobs first
+  // (catsFacts), then the board's (off or busy; free from the end of their rest).
+  function liveFacts(people) {
+    const f = catsFacts(people);
+    for (const p of people) {
+      const x = p.live;
+      if (!x || f[p.rank].status !== 'available') continue;
+      if (x.status !== 'available') f[p.rank].status = x.status;
+      if (x.freeAt) f[p.rank].freeAt = x.freeAt;
+    }
+    return f;
+  }
+  // Each yardmaster job's next shift whose call is still ahead of a moment (railway minutes), soonest
+  // first: [{ job, date, start, hours, s (its start, railway minutes) }].
+  function upcoming(fromMin, leadMin = 120) {
+    const day = isoOf(fromMin);
+    const out = [];
+    for (const [job, j] of Object.entries(YA_JOBS)) {
+      for (let k = 0; k < 9; k++) {
+        const d = addDays(day, k);
+        if (!j.runs(d)) continue;
+        const s = toMin(d, j.start);
+        if (s - leadMin < fromMin) continue;
+        out.push({ job, date: d, start: j.start, hours: j.hours, s });
+        break;
+      }
+    }
+    return out.sort((a, b) => a.s - b.s || (a.job < b.job ? -1 : 1));
+  }
+  // Who would work a shift if it went spare, by the rules: with someone on the yardmaster spareboard and
+  // with nobody on it. -> { yes, no }: each the first in line { p, rank, step (1-based), label }, or null.
+  function ifSpare(j, people, rulesIn, facts = liveFacts(people)) {
+    const rules = normalize(rulesIn);
+    const one = (spareboard) => {
+      const o = decide({ job: j.job, date: j.date, start: j.start, hours: j.hours, spareboard, facts }, rules, people).order[0];
+      return o ? { p: o.r.p, rank: o.r.p.rank, step: o.i + 1, label: stepLabel(o.st, rules) } : null;
+    };
+    return { yes: one('yes'), no: one('no') };
+  }
+
   const api = {
     DAYS, toMin, fmt, hhmmOf, dowOf, addDays, fromLocal, weekStartOf, towerOn, YA_JOBS, YARD, RELIEF, parseCode, groupOf, inYard, scheduled, workOn, shiftsAround,
     GROUPS, STATUS, startingRules, manualRules: startingRules, normalize, stepLabel, catsFacts, prepare, evaluate, decide, agrees, fit, describe, distance, shape, clone,
+    peopleFrom, liveFacts, upcoming, ifSpare,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.YM = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

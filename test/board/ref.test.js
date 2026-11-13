@@ -172,3 +172,68 @@ test('days out: on the test site only; a download a pool, then the week from the
   const fits = Object.fromEntries(R.OUT_POOLS.map(([k, , re]) => [k, R.fitRotation(trains, re)]));
   assert.ok(R.icsFor(fits, { from: '2026-11-14', days: 1, pools: ['SA'], name: 'Days out: A pool (SA)' }).includes('X-WR-CALNAME:Days out: A pool (SA)\r\n'));
 });
+
+// The yardmaster jobs (owner, 2026-11-13: "in the job aid test section add the YM Schedule like the other yard
+// jobs, then have a line that says 'Next Yard Job' and show the job, then have a line that says 'If it was spare,
+// who would work it' then have 2 answers, one with someone on the YM SB and one without"). Made-up people.
+test('yard jobs: the yardmaster jobs in their own table, on the schedule the call order works from', () => {
+  const Y = require('../../public/board-ym');
+  assert.deepStrictEqual(R.YM_JOBS.map((j) => j[0]).sort(), Object.keys(Y.YA_JOBS).sort());
+  for (const [job, start, hours, days] of R.YM_JOBS) {
+    const ya = Y.YA_JOBS[job];
+    assert.strictEqual(`${ya.start} ${ya.hours}`, `${start} ${hours}`, job);
+    for (let k = 0; k < 28; k++) {
+      const d = Y.addDays('2026-11-09', k);
+      assert.strictEqual(ya.runs(d), days === 'week' ? !['Sat', 'Sun'].includes(Y.dowOf(d)) : R.towerOn(d) === days, `${job} ${d}`);
+    }
+  }
+  const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
+  const page = (state) => { const view = { innerHTML: '', querySelector: stub }; R.render(view, state); return view.innerHTML; };
+  const html = page({ preview: true, today: '2026-11-13' });
+  const each = html.slice(html.indexOf('<h4>Each job</h4>'), html.indexOf('<h4>Relief jobs'));
+  assert.ok(each.includes('YEBS03') && !/YSTY01|YSBY06/.test(each)); // moved to their own table
+  const ym = html.slice(html.indexOf('<h4>Yardmaster jobs (YA)</h4>'), html.indexOf('<h4>Tower'));
+  assert.ok(ym.includes('<th>Job</th><th>On duty</th><th>Crew off</th>'));
+  assert.ok(ym.includes('<b>YSTY01</b><div class="crew">Tower S/S</div></td><td class="num">0630</td><td>Sat, Sun</td>'));
+  assert.ok(ym.includes('<b>YSBY01</b> <span class="chip">12 h</span><div class="crew">YDM Block 1</div></td><td class="num">0700</td><td><div class="nw">This week: Wed, Thu</div><div class="nw">Next week: Mon, Tue, Fri–Sun</div>'));
+  assert.ok(ym.includes('<b>YSBY04</b> <span class="chip">12 h</span><div class="crew">YDM Block 4</div></td><td class="num">1900</td><td><div class="nw">This week: Mon, Tue, Fri–Sun</div><div class="nw">Next week: Wed, Thu</div>'));
+  assert.ok(html.indexOf('<div id="ymnext" class="ymnext"></div>') > html.indexOf('<h4>Tower'));
+  assert.ok(!/ymnext|Yardmaster jobs/.test(page({}))); // the main site: none of the yard jobs
+  assert.ok(page({ preview: true, today: '2026-11-13', q: 'ysby04' }).includes('<b>YSBY04</b>'));
+  let drawn = 0;
+  page({ preview: true, today: '2026-11-13', ymNext: () => { drawn++; } }); // the page's hook draws the box
+  assert.strictEqual(drawn, 1);
+});
+
+test('yard jobs: "Next Yard Job" and "If it was spare, who would work it", with and without the YM spareboard', () => {
+  const Y = require('../../public/board-ym');
+  const L = {
+    read: '2026-11-13T20:46:29.689Z', source: 'cats',
+    list: [{ rank: 10, assignment: 'YSBY01YA', status: '' }, { rank: 30, assignment: 'EXYA01YA', status: '' }, { rank: 65, assignment: 'XSAS01FO', status: '' }, { rank: 70, assignment: 'SRSR10CO', status: '' }],
+    live: { taken: '2026-11-13 1754', byRank: { 10: { status: 'available', freeAt: '', text: 'YSBY01 YA: rested', src: 'crews in town' } } },
+    byRank: { 10: 'Alder, T', 30: 'Dogwood, M', 65: 'Ivy, R', 70: 'Fir, K' },
+  };
+  const now = Y.toMin('2026-11-13', '1830');
+  const html = R.ymNextHtml({ Y, L, now });
+  assert.ok(html.startsWith('<h4>Next Yard Job</h4><p class="ymjob"><b class="num">YSBY01</b> YDM Block 1 · <b>Sat 14th 0700</b>, 12 h · call Sat 14th 0500 · its holder Alder, T</p>'));
+  assert.ok(html.includes('<h4>If it was spare, who would work it</h4>'));
+  // Someone on the spareboard: the spare. Nobody: XSAS01, on YBHS01 at 0800 that Saturday, moved up (not called yet).
+  assert.ok(html.includes('<tr><td>Someone on it</td><td><b>Dogwood, M</b> <span class="muted">rank 30</span><div class="crew">Step 1: Spare yardmaster · 2-hour call · straight time</div></td></tr>'));
+  assert.ok(html.includes('<tr><td>Nobody on it</td><td><b>Ivy, R</b> <span class="muted">rank 65</span><div class="crew">Step 3: Working in the yard that day, not called yet · 2-hour call · straight time</div></td></tr>'));
+  assert.ok(html.includes('Everyone as the board check of 1754 on 13 Nov showed them'));
+  assert.ok(html.includes('the seniority list as read 13 Nov, 15:46, by the call order page’s starting rules'));
+  assert.ok(html.includes('<a href="ym.html">the call order test →</a>'));
+  // The rules saved on the call order page on this phone, when there are some: a one-hour call.
+  const saved = R.ymNextHtml({ Y, L, now, rules: { ...Y.startingRules(), leadMin: 60 } });
+  assert.ok(saved.includes('call Sat 14th 0600') && saved.includes('by the rules saved on the call order page on this phone') && saved.includes('1-hour call'));
+  // The names not opened: by rank, once. No list on the site yet, or it didn't load.
+  assert.ok(R.ymNextHtml({ Y, L: { ...L, byRank: null }, now }).includes('<td><b>Rank 30</b><div class="crew">Step 1'));
+  assert.ok(R.ymNextHtml({ Y, L: { error: 'none' }, now }).includes('isn’t on the site yet'));
+  assert.ok(R.ymNextHtml({ Y, L: { error: 'data/ym-list.json: 500' }, now }).includes('didn’t load'));
+  // Nothing from the board yet: by the list only, and said so.
+  assert.ok(R.ymNextHtml({ Y, L: { ...L, live: null }, now }).includes('by their status on the seniority list only'));
+  // The box is filled in place.
+  const box = { innerHTML: '' };
+  R.paintYmNext(box, { Y, L, now });
+  assert.ok(box.innerHTML.includes('Dogwood, M'));
+});

@@ -123,7 +123,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT AND SEEN LIVE (check 1754).** **A "YM seniority list" tab in the test site's Analytics (the list as last read) BUILT, WAITING ON ONE LAPTOP PULL (no restart needed).** **His questions are on hold until the yardmaster has looked** (his word)
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT AND SEEN LIVE (check 1754).** **A "YM seniority list" tab in the test site's Analytics (the list as last read) BUILT, WAITING ON ONE LAPTOP PULL (no restart needed).** **Job Aids (test site): the yardmaster jobs' schedule, "Next Yard Job" and "If it was spare, who would work it" (with and without someone on the YM spareboard) BUILT, WAITING ON THE SAME PULL.** **His questions are on hold until the yardmaster has looked** (his word)
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -271,6 +271,31 @@ cards stop at 10 otherwise: `data-ana2-paged`). Before the laptop's first read: 
 suite 602 of 602 (`ym-call-order.test.js`, 3 more: the page's own functions run with made-up people; broken on purpose
 eight ways, each caught). In a browser, this branch's `board.html` over the real board-test (GET only): the tab, the 34
 people with names as read at 15:46, 390 px (cards) and 1280 px (table), no page errors.
+
+**Job Aids: the yardmaster jobs, "Next Yard Job", "If it was spare, who would work it", 13 Nov evening** (owner: "in the job
+aid test section add the YM Schedule like the other yard jobs , then have a line that says "Next Yard Job" and show the
+job, then have a line that says "If it was spare, who would work it" then have 2 answers, one with someone on the YM SB
+and one without"). **BUILT, WAITING ON ONE LAPTOP PULL** (page files only: `buildSite` copies board.html, board-ref.js,
+board-ym.js and ym.html at every check; no restart). In Job Aids → "Yard jobs: start times, days off and relief" (test
+site only, as that section): a **"Yardmaster jobs (YA)"** table like "Each job" (job, on duty, crew off; the tower jobs'
+days off this week and next from the 2-2-3; `board-ref.js YM_JOBS`, a test keeps it the same as `board-ym.js YA_JOBS`).
+**YSTY01 and YSBY06 moved there from "Each job"** (they are YA jobs). The Tower table follows it, then **"Next Yard
+Job"**: the first YA shift whose 2-hour call is still ahead of now (job, start, call, its holder), and **"If it was
+spare, who would work it"**: two rows, YM spareboard "Someone on it" / "Nobody on it", each the first in line with their
+step (`YM.ifSpare`). The facts are those of ym.html's box (the newest check's `live`, CATS's statuses first); the
+rules are the ones saved on the call order page on this phone (localStorage `ym-rules`), else its starting rules; a link
+to `ym.html` for the whole order and why. **The logic is shared now:** `board-ym.js` `peopleFrom`, `liveFacts`,
+`upcoming`, `ifSpare` (ym.html uses the first three; what it shows is unchanged). board.html loads `board-ym.js` only
+when Job Aids draws the yard jobs on the test site (`loadYmLogic`; the main site never fetches it), and the list with
+`loadYmList`, kept a minute (`ymKept`) so typing in the search doesn't fetch it again; `board-ref.js` draws the box
+(`ymNextHtml` / `paintYmNext`, through `refState.ymNext`). **Checked:** suite 606 of 606 (`ym-call-order.test.js` +2,
+`ref.test.js` +2: the schedule the same as the call order's over four weeks, the table, the two answers with made-up
+people; broken on purpose nine ways, each caught). In a browser, this branch's files over the real board-test (GET
+only): Job Aids → Yard jobs → the YM table; Next Yard Job YSBY01 Sat 14th 0700 (call 0500), someone on the YM
+spareboard: rank 140 (step 1), nobody: rank 410 (step 3), the same as ym.html's box; 390 px, no errors; a search
+keystroke draws it again without fetching the list. ym.html with the shared code over the real board-test: the same
+six jobs and orders, no errors. The Claude page: not republished (nothing it shows changed; built from the new
+template it gives the same answers).
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
