@@ -2605,6 +2605,9 @@ function poolChip(rules) {
 let CREW = null;
 // Who is on each yard job now, from the Call Board's own crew lines: { "<job>|<on duty>": [[craft, "Last, F"], …] }.
 let CREW_WORK = null;
+// Who the Toronto bunkhouse (28) shows at each position, read in the newest check:
+// { taken: that check's snapshot, rows: [[pos, "EN" | "CO", turn, "Last, F"], …] } (bunkName).
+let CREW_BUNK = null;
 let CREW_NOTE = 'Not asked for yet.';
 let crewAsked = false;
 const crewTag = (key) => (CREW && CREW[key] ? ` <span class="crewnm">${esc(CREW[key])}</span>` : '');
@@ -2837,6 +2840,38 @@ function torontoRestWarning(s, t, rested) {
   return end && call && stampMin(end) > stampMin(call)
     ? '<div class="crew spare">⚠ ' + (t.crewExpected ? 'Estimated rest' : 'Rest') + ' extends past planned call. Assignment remains a prediction.</div>' : '';
 }
+// A bunkhouse crew's names are the ones the bunkhouse (28) itself shows at
+// that position (owner, 2026-11-13, his photo of 28 beside the site: "This is
+// showing the wrong crew on the train"; MU01 had someone else's name). CREW
+// goes by turn, and a make-up turn (MU01) is a placeholder: the name read
+// last for that number anywhere is not who is in the bunkhouse, and a spare
+// covering a turn shows there under the turn. CREW_BUNK is the newest check's
+// read, { taken: the snapshot that check's board is, rows }, so it names that
+// board only; on any other (an older snapshot, or a newer board while this
+// page stays open) a turn takes its turn's name as before and a placeholder
+// none, rather than the wrong person's. craft: 'EN' or 'CO'.
+function bunkName(s, pos, craft, turn) {
+  if (!CREW || !turn) return '';
+  const here = CREW_BUNK && s && s.taken === CREW_BUNK.taken && CREW_BUNK.rows.find((r) => r[0] === pos && r[1] === craft && r[2] === turn);
+  if (here) return here[3];
+  return BoardTurns.PLACEHOLDER.test(turn) ? '' : CREW[turn] || '';
+}
+// "SD08 Last, F + MU01 Last, F": engineer + conductor, as the page has always
+// written a bunkhouse crew, the followed turns marked the same way.
+function bunkCrew(s, c) {
+  const parts = [['EN', c.en], ['CO', c.co]].filter(([, t]) => t);
+  if (!parts.length) return '';
+  const shown = markTurn(parts.map(([, t]) => t).join(' + ')).replace(/ <span class="crewnm">[^<]*<\/span>/g, '').split(' + ');
+  return shown.map((h, i) => {
+    const n = bunkName(s, c.pos, parts[i][0], parts[i][1]);
+    return h + (n ? ` <span class="crewnm">${esc(n)}</span>` : '');
+  }).join(' + ');
+}
+// Toronto South's "first in line": "001 SD08 + MU01" for a bunkhouse crew, or on the way.
+function southCrew(s, x) {
+  const m = /^(\d{3}) /.exec(x.crew || '');
+  return m && (x.en || x.co) ? `${esc(m[1])} ${bunkCrew(s, { pos: m[1], en: x.en, co: x.co })}` : markTurn(x.crew);
+}
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
@@ -2855,11 +2890,11 @@ function toronto(s) {
     const skip = t.skipped && t.skipped.length ? `<div class="crew chg">skipped, on rest at the call: ${t.skipped.map(esc).join(' · ')}</div>` : '';
     // Ordered out of the bunkhouse with no crew rested by the call: it doesn't
     // go spare like in Sarnia; a Toronto South crew may get it (owner, 2026-10-25).
-    if (!c && t.status === 'ORD' && !t.deadhead) return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew in the bunkhouse by the call${t.south ? `; first in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}` : ''}</div>`;
+    if (!c && t.status === 'ORD' && !t.deadhead) return `<span class="spare">possible Toronto South crew</span><div class="crew">no rested crew in the bunkhouse by the call${t.south ? `; first in line: <b>${southCrew(s, t.south)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}` : ''}</div>`;
     if (!c) return `<span class="muted">${t.skipped && t.skipped.length ? 'no rested crew in the bunkhouse by the call' : 'no crew in the bunkhouse yet'}</span>${skip}`;
     // Planned and still on rest at the call (owner, 2026-10-25): when they're rested, in yellow.
     const when = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
-    return `<b class="num">${markTurn([c.en, c.co].filter(Boolean).join(' + '))}</b>
+    return `<b class="num">${bunkCrew(s, c)}</b>
       <div class="crew">pos ${esc(c.pos)} · ${when}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>${torontoRestWarning(s, t, c.rested)}${skip}`;
   };
   // A crew not in the bunkhouse yet (owner, 2026-10-22): an estimate from
@@ -2883,7 +2918,7 @@ function toronto(s) {
   }).join('');
   const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
   const extra = crews.filter((c) => !taken.has(c.pos));
-  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${bunkCrew(s, c)}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
   const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
   const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
@@ -2951,13 +2986,13 @@ function toronto2(s) {
       detail = `<p>An estimate. On duty at Sarnia ${esc(x.onDuty)} on ${esc(x.train)} · in Toronto ~${esc(x.offDuty)} · rested ~${esc(x.rested)}.</p>`;
     } else if (c) {
       hit = marked(c.en) || marked(c.co);
-      crew = markTurn([c.en, c.co].filter(Boolean).join(' + '));
+      crew = bunkCrew(s, c);
       state = c.ready ? '<span class="ok">rested</span>' : t.restedLate ? `<span class="spare">rested ${esc(t.restedLate)}</span>` : `rest until ${esc(c.rested)}`;
       detail = `<p>Bunkhouse position ${esc(c.pos)}${c.offDuty ? ` · off duty ${esc(c.offDuty)}` : ''}.</p>`;
     } else if (t.status === 'ORD' && !t.deadhead) {
       crew = '<span class="spare">possible Toronto South crew</span>';
       state = 'no rested crew by the call';
-      detail = t.south ? `<p>First in line: <b>${markTurn(t.south.crew)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}.</p>` : '';
+      detail = t.south ? `<p>First in line: <b>${southCrew(s, t.south)}</b>${t.south.rested ? ` (rest until ${esc(t.south.rested)})` : ''}.</p>` : '';
     } else {
       crew = '<span class="muted">no crew yet</span>';
       state = t.skipped && t.skipped.length ? 'no rested crew by the call' : 'none in the bunkhouse yet';
@@ -2970,7 +3005,7 @@ function toronto2(s) {
   }).join('');
   const taken = new Set(trains.map((t) => t.crewPos).filter(Boolean));
   const extra = crews.filter((c) => !taken.has(c.pos));
-  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${markTurn([c.en, c.co].filter(Boolean).join(' + '))}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
+  const left = extra.length ? `<div class="foot">Also in the bunkhouse, no train yet: ${extra.map((c) => `${esc(c.pos)} ${bunkCrew(s, c)}${c.ready ? ' (rested)' : ` (rest until ${esc(c.rested)})`}`).join(' · ')}</div>` : '';
   const placed = new Set(trains.filter((t) => t.crewExpected).map((t) => t.crew));
   const coming = (s.onTheWay || []).filter((c) => !placed.has(c.crew));
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${markTurn(c.crew)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
@@ -5656,6 +5691,7 @@ source().then(async (src) => {
       const n = Object.keys(got.turns).length;
       CREW = got.turns;
       CREW_WORK = got.working || null;
+      CREW_BUNK = got.bunk && got.bunk.taken && Array.isArray(got.bunk.rows) ? got.bunk : null;
       setMode(mode);
       say(n ? `Showing ${n} name${n === 1 ? '' : 's'}, from Call Boards read in the last 14 days (file made ${got.at ? new Date(got.at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : 'at an unknown time'}).` : 'The names file opened but it is empty: the laptop has read no Call Board names in the last 14 days.');
     } catch (e) { say(`Could not load the names (${e.message}).`); }

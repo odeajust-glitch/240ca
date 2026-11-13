@@ -115,6 +115,16 @@ in CATS.
   `BOARD_NAMES_KEY` like the 18.6(b) names. A 501/502 turn is two people:
   keys `S501-CO` / `S501-EN`. A spare who filled a turn is the name shown
   until the regular is seen on it again.
+- **The Toronto bunkhouse names its own crews** (owner, 2026-11-13: "This is
+  showing the wrong crew on the train"; MU01 in the bunkhouse showed the name
+  of whoever had MU01 last elsewhere). `crew.json` also carries `bunk`:
+  `{ taken, rows: [[pos, "EN" | "CO", turn, "Last, F"], …] }`, who option 28
+  shows at each position, read in the newest check (`recordBunkhouse` /
+  `bunkhouseNames`, stamped with the check's `probedAt`), with `taken` = the
+  snapshot that check's board is. The page's Toronto box (`bunkName`,
+  `bunkCrew`, `southCrew`) uses it on that snapshot only; on any other, a turn
+  takes its turn's name as before and a make-up (MU) turn none, never someone
+  else's. The turns' names never come from the bunkhouse.
 - **Worker** `GET /api/crewkey`: the passcode (the "Crew names passcode"
   saved on Page Health) to an approved signed-in member or the owner key,
   and only where the variable `CREW_NAMES` = `on`. Not tied to `LOCK`.

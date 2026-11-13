@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, listPostingAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordYardCrew, recordYardWork, saveNames } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -581,6 +581,10 @@ async function runRoute(page, opts = {}) {
       // memory only, never learned from (a spare there shows under the job).
       const rows = await unmaskedRows();
       if (rows) bunkNames.push(...S.parseBoardNames(rows));
+      // Crew names on the board: who 28 shows at each position, for the
+      // Toronto box (owner, 2026-11-13: MU01 showed someone else's name).
+      // Kept apart from the turns' names (names.js recordBunkhouse).
+      if (rows && opts.names) { try { (opts.names.bunk = opts.names.bunk || []).push(...S.parseBoardCrew(rows).filter((c) => c.pos)); } catch { /* the board can do without */ } }
       let crews = 0;
       try { crews = S.parseChainGang(parseGrid(grid), Date.now() / 60000).turns.length; } catch { /* no heading: no crews */ }
       if (!crews) break;
@@ -1948,7 +1952,7 @@ async function main() {
         console.log(`  (snapshot not saved: ${err.message})`);
       }
       try {
-        saveNames(NAMES_FILE, recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []));
+        saveNames(NAMES_FILE, recordBunkhouse(recordYardWork(recordYardCrew(recordBoardCrew(recordNames(loadNames(NAMES_FILE), names), names.board || []), names.yard || []), names.yardWork || []), names.bunk, summary.probedAt));
       } catch (err) {
         console.log(`  (crew names not saved: ${err.message})`);
       }
