@@ -673,7 +673,7 @@
   .gform { padding: 14px; border-top: 2px solid var(--accent); background: var(--accent-tint); }
   .gform h3 { margin: 0 0 8px; font: 700 17px/1.1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
   .gform .gnote { font-size: 12.5px; color: var(--soft); margin: 0 0 12px; max-width: 80ch; }
-  /* Engineers held 14 h+: the AD claim reminder (owner, 2026-11-13; drawn on the test site only). */
+  /* Engineers held 14 h+: the AD claim reminder (owner, 2026-11-13; every member). */
   .enad { font-size: 13.5px; color: var(--ink); margin: 0 0 12px; padding: 6px 0 6px 10px; border-left: 3px solid var(--amber); max-width: 80ch; }
   .enad[hidden] { display: none; }
   .gform .ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 14px; max-width: 980px; }
@@ -5256,7 +5256,7 @@ function heldView(all, openKey, lastTaken, names, namesState, openCraft = 'CO', 
     : namesState === 'unlocked'
       ? `<div class="unlock">Crew names unlocked on this device. <button type="button" id="nforget">Forget the passcode</button></div>`
       : '';
-  // Engineers held 14 h+: the AD claim reminder, once at the top (test site only; nothing at all elsewhere).
+  // Engineers held 14 h+: the AD claim reminder, once at the top.
   const adTop = enAdNote(true, 'Engineers held 14 h+');
   // Two tiles (owner, 2026-11-03): crews held 14 h+ in the last 7 days
   // (going off duty in Toronto then; still held counts), and that out of
@@ -5308,12 +5308,13 @@ function homeOffOf(r) {
   return r.back.offDuty ? { at: r.back.offDuty, exact: false } : null;
 }
 // Engineers held 14 h+ (owner, 2026-11-13: "for the article 18.6 (b) can you add a reminder that an AD claim needs
-// to be filed and to talk to their Local Chair person. This applies to engineers only"). Test site only (PREVIEW)
-// until he says otherwise. "Local Chairperson" is what the site calls that officer elsewhere (the search's notes).
+// to be filed and to talk to their Local Chair person. This applies to engineers only"). On for every member, both
+// sites, since the same night at his word ("push the AD reminder to main"). "Local Chairperson" is what the site
+// calls that officer elsewhere (the search's notes).
 // Shown in the form while Engineer is the craft picked, on an engineer's held trip in a turn or name-code search,
 // and once at the top of the 18.6(b) tab. Nothing else changes: the form still goes to the engineers' rep.
 const EN_AD = 'an AD claim needs to be filed. Talk to your Local Chairperson.';
-const enAdNote = (shown, lead = 'Engineer') => (PREVIEW ? `<p class="enad"${shown ? '' : ' hidden'}><b>${lead}:</b> ${EN_AD}</p>` : '');
+const enAdNote = (shown, lead = 'Engineer') => `<p class="enad"${shown ? '' : ' hidden'}><b>${lead}:</b> ${EN_AD}</p>`;
 function claimForm(r, craft, pre = {}) {
   const v = (x) => `value="${esc(x || '')}"`;
   const homeOff = homeOffOf(r);

@@ -673,7 +673,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
-### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). BUILT FOR THE TEST SITE ONLY
+### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 
 **Owner: "for the article 18.6 (b) can you add a reminder that an AD claim needs to be filed and to talk to
 their Local Chair person. This applies to engineers only".** Built behind `PREVIEW` (his view on board-test):
@@ -688,6 +688,11 @@ held trips in Turn History each with it; a member's 18.6(b) tab and an engineer'
 as before on both sites. **Not done, put to him:** the "held 14 h+" phone alert (laptop, every member who
 follows a crew member) still says only "Open the board's Article 18.6(b) tab to send it to your rep" for an
 engineer too. To promote: drop `PREVIEW` in `enAdNote` and change the test, quoting him.
+**Promoted, 12 Nov about 19:45 Toronto: "push the AD reminder to main".** `enAdNote` no longer asks `PREVIEW`;
+the test pins it the same on both sites. Checked in a browser as a member on both sites with the new page: the
+line at the top of the tab, the form hiding and showing it (Conductor → Engineer → Conductor), S302 typed into
+Turn History: 3 held trips, each with it (the published page: none). Suite 501 of 501. The alert question is
+still open.
 
 ### The four menus at the top of Current (Trains, Pools, Spareboards, Other) — 12 Nov evening. REMOVED ON THE TEST SITE at his word; members keep them
 

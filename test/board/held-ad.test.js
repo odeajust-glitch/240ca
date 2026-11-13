@@ -1,7 +1,7 @@
 // Engineers held 14 h+ at the away terminal: a reminder that an AD claim needs to be filed and to talk to the
 // Local Chairperson. Owner, 2026-11-13: "for the article 18.6 (b) can you add a reminder that an AD claim needs
-// to be filed and to talk to their Local Chair person. This applies to engineers only". Test site only
-// (PREVIEW) until he says otherwise. Turn ids and train ids only.
+// to be filed and to talk to their Local Chair person. This applies to engineers only". Tried on the test site,
+// then the same night: "push the AD reminder to main". So every member, both sites. Turn ids and train ids only.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -24,7 +24,7 @@ function page(preview) {
 const r = { id: 'M39931 13', month: '2026-11', co: 'SR03', en: 'SD03', onDuty: '2026-11-12 0145', offDuty: '2026-11-12 0944', heldMin: 900, back: { id: 'E27121 12', onDuty: '2026-11-13 0044' } };
 const NOTE = 'an AD claim needs to be filed. Talk to your Local Chairperson.';
 
-test('the form: the reminder shows while Engineer is the craft picked, and only on the test site', () => {
+test('the form: the reminder shows while Engineer is the craft picked, on both sites', () => {
   const on = page(true);
   const en = on('claimForm')(r, 'EN');
   assert.ok(en.includes(`<p class="enad"><b>Engineer:</b> ${NOTE}</p>`));
@@ -33,9 +33,9 @@ test('the form: the reminder shows while Engineer is the craft picked, and only 
   // Switching the craft in the form shows or hides it (wireClaim's update).
   assert.ok(html.includes("    const ad = form.querySelector('.enad');\n    if (ad) ad.hidden = d.craft !== 'EN';"));
   assert.ok(html.includes('.enad[hidden] { display: none; }'));
-  // Off the test site the form is as it was.
-  const off = page(false);
-  assert.ok(!off('claimForm')(r, 'EN').includes('enad') && !off('claimForm')(r, 'EN').includes('AD claim'));
+  // The main site the same as the test site.
+  assert.equal(page(false)('claimForm')(r, 'EN'), en);
+  assert.equal(page(false)('claimForm')(r, 'CO'), co);
 });
 
 test('a turn or name-code search: on an engineer’s held trip, not a conductor’s', () => {
@@ -44,14 +44,16 @@ test('a turn or name-code search: on an engineer’s held trip, not a conductor�
   const [co, en] = on.split('<div class="h186">').slice(1);
   assert.ok(!co.includes('AD claim'));
   assert.ok(text(en).includes(`Engineer: ${NOTE} File it (SD03, engineer)`));
-  assert.ok(!page(false)('held186')(rows).includes('AD claim'));
+  assert.equal(page(false)('held186')(rows), on, 'the main site the same');
 });
 
-test('the 18.6(b) tab: once at the top, for engineers, on the test site only', () => {
+test('the 18.6(b) tab: once at the top, for engineers, on both sites', () => {
   assert.ok(html.includes("  const adTop = enAdNote(true, 'Engineers held 14 h+');"));
   assert.ok(html.includes("    </div>${adTop ? '\\n    ' + adTop : ''}\n    ${unlock}"));
   assert.equal(page(true)('enAdNote')(true, 'Engineers held 14 h+'), `<p class="enad"><b>Engineers held 14 h+:</b> ${NOTE}</p>`);
-  assert.equal(page(false)('enAdNote')(true, 'Engineers held 14 h+'), '');
+  assert.equal(page(false)('enAdNote')(true, 'Engineers held 14 h+'), page(true)('enAdNote')(true, 'Engineers held 14 h+'));
+  assert.ok(html.includes('"push the AD reminder to main"'));
+  assert.ok(!/\bPREVIEW\b/.test(cut('const EN_AD = ', 'function claimForm(')), 'nothing about the reminder waits on the test site');
   // His words are kept with it, and the claim's text sent to the rep is not changed.
   assert.ok(html.includes('"for the article 18.6 (b) can you add a reminder that an AD claim needs\n// to be filed and to talk to their Local Chair person. This applies to engineers only"'));
   assert.ok(!cut('function claimText(r, d) {', '// names: unlocked names').includes('AD claim'));
