@@ -1,5 +1,6 @@
 // Agreements tab, the answer tools. Owner, 2026-11-12 evening, to the suggestions put to him: "Go with your pick:
-// 3, 2, 1, 4 and 5". Test site only (board.html passes preview: PREVIEW to board-ask.js) until he says otherwise.
+// 3, 2, 1, 4 and 5". Built for the test site; on for every member since later that evening, to the list of what
+// the test site had: "1-8. 10, 11, 12, 13, 14, 15, 16" (this is 11; board.html passes preview: true to board-ask.js).
 //   3. the answer drawn with its formatting; a [n] opens that passage
 //   2. "the documents below" said where they are
 //   1. a question naming a document the search leaves out is offered it
@@ -102,9 +103,10 @@ test('5: Copy answer: the question, the answer without its marks, the pages it c
   assert.ok(ask.includes('    if (copy) copy.hidden = true;') && cut('  function answerDone(ans) {', '\n  }').includes('if (copy) copy.hidden = notFound(run._raw);'));
 });
 
-test('members: the tab is built as before, and the test site’s pieces come off again', () => {
+test('every member gets the pieces; without preview the tab is built as before', () => {
   const built = cut('  function build() {', '\n  }\n');
   for (const cls of ['asksugg', 'asktry', 'askhow', 'askcopy', 'asknf', 'askmd']) assert.ok(!built.includes(cls), cls);
   assert.ok(ask.includes("} else box.querySelectorAll('.asksugg, .asktry, .askhow, .askcopy').forEach((x) => x.remove());"));
-  assert.ok(html.includes('window.BoardAsk.render(view, { simple: true, preview: PREVIEW });'));
+  // Owner, 2026-11-12 evening, to the test-site list: "1-8. 10, 11, 12, 13, 14, 15, 16".
+  assert.ok(html.includes('window.BoardAsk.render(view, { simple: true, preview: true });'));
 });

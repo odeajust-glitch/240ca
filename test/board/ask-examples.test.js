@@ -1,7 +1,8 @@
 // Agreements tab: example questions and how to ask. Owner, 2026-11-12 evening: "add some sample questions and
 // explanations ... example of good questions to ask, and the type of questions to ask. Explain how AI can be more
 // useful than a normal search engine and its limitations"; shown a picture of it: "Push these changes to the test
-// site". Test site only (board.html passes preview: PREVIEW) until he says otherwise.
+// site"; then, to the list of what the test site had, "1-8. 10, 11, 12, 13, 14, 15, 16" (this is 10): on for
+// every member since 2026-11-12 evening (board.html passes preview: true).
 // Every example is run through the site's own word search (lib/search.js, the top 9 passages the answer is
 // written from) over the repository's own copies of the agreements, with that craft's everyday documents, and
 // must find the part of the agreement it is about. A new example needs its own line in TOPIC.
@@ -65,8 +66,10 @@ test('every example finds the part of the agreement it is about, in that craftâ€
   assert.ok(held.slice(0, 2).some((h) => /18\.6|After 14 hours/.test(h.text)), 'the held-away question finds Article 18.6 at the top');
 });
 
-test('on the test site only; a tap fills the box and never sends', () => {
-  assert.ok(html.includes('window.BoardAsk.render(view, { simple: true, preview: PREVIEW });'));
+test('on for every member; a tap fills the box and never sends', () => {
+  // Owner, 2026-11-12 evening, to the test-site list: "1-8. 10, 11, 12, 13, 14, 15, 16".
+  assert.ok(html.includes('window.BoardAsk.render(view, { simple: true, preview: true });'));
+  assert.ok(!/BoardAsk\.render\([^)]*PREVIEW/.test(html), 'not tied to the test site any more');
   assert.ok(ask.includes('      setPreview(!!(opts && opts.preview));'));
   // Off: nothing added (and anything added is taken away again).
   assert.ok(ask.includes("} else box.querySelectorAll('.asksugg, .asktry, .askhow, .askcopy').forEach((x) => x.remove());"));

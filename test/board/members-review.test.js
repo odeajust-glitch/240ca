@@ -1,9 +1,10 @@
 // The Members tab, round 3 of the tab-by-tab review (owner, 2026-11-12: "Start members, I would like to clean
 // up the members tab, move the 'whos getting alerts' to members from page health. The list of turns being
 // tracks that don't have an account, i want to see the owner of the turn/name code").
-// Both pieces are TEST SITE ONLY: behind PREVIEW (board-test with the owner key) in public/board.html. Page
-// Health on the main site, and the Members tab on either site for anyone else, are as before. To promote,
-// drop the PREVIEW tests named below and change these tests, quoting him.
+// Built for the test site first; on both sites since 2026-11-12 evening, to the list of what the test site had:
+// "1-8. 10, 11, 12, 13, 14, 15, 16" (13 is the two asks, 14 the cleanup picks 1, 3, 4, 5 and 6). For him (the
+// owner key): the names and Who gets alerts come from his own Page Health data. An Admin keeps the tab's cards,
+// with the heading of pick 1.
 // Turn ids, made-up name codes and made-up names only.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -24,20 +25,22 @@ const load = (names) => {
 const NAMES = { SB02: 'Doe, J', SD05: 'Roe, R', B138: 'Moe, K', 'S502-CO': 'Poe, A', 'S502-EN': 'Loe, B', 'YSBY04-CO': 'Zoe, C', 'YSBY04-EN': 'Coe, D' };
 const ACCOUNTS = [{ name: 'Jane Doe', code: 'JADO' }, { name: 'KIM MOE', code: null }, { name: 'Amy Beth Poe', code: '' }, { name: 'Ray Roe', code: 'RARO' }, { name: 'Rob Roe', code: 'RORO' }];
 
-test('Who gets alerts is on the Members tab on the test site, and off Page Health there; as before on the main site', () => {
-  // Page Health: the section unless PREVIEW.
-  assert.ok(html.includes("const who = PREVIEW ? '' : whoGetsAlerts(L.subscribers, { stamp, expanded: view.querySelector('[data-health-followed]')?.open, stale: healthUnavailable });"));
+test('Who gets alerts is on the Members tab and off Page Health, on both sites', () => {
+  // Page Health: the section is no longer drawn there.
+  assert.ok(html.includes("    const who = '';\n"));
+  assert.ok(!html.includes('whoGetsAlerts(L.subscribers'), 'Page Health does not draw it');
   // (The screenshot mark's trace box just before it is on Page Health on both sites since 2026-11-13: "push to the main page".)
   assert.ok(html.includes('${traceSection()}${who}'), 'still in the same place on Page Health');
-  // Members: only with the test site and the owner key (an Admin never has the health report).
-  assert.ok(html.includes('    const review = PREVIEW && membersOwner;\n'));
+  // Members: with the owner key, on either site (an Admin never has the health report).
+  assert.ok(html.includes('    const review = membersOwner;\n'));
   assert.ok(html.includes("const whoHtml = !review ? '' : alertsSub ? whoGetsAlerts(alertsSub, { stamp: agoStamp, expanded: whoOpen, stale: false, members: true })"));
   assert.ok(html.includes("Delete from list</button>')).join('')}` : ''}${whoHtml}\n"), 'after the member lists, before the phones with no account');
   // The Notifications link works wherever the section is drawn; Page Health no longer assumes it is there.
   assert.ok(html.includes("    const toNotes = document.getElementById('tonotes');\n    if (toNotes) toNotes.onclick = () => setMode('notes');\n"));
   assert.ok(html.includes("    const toNotes = view.querySelector('.members #tonotes');\n    if (toNotes) toNotes.onclick = () => setMode('notes');\n"));
-  // Names that arrive while Members is open draw it again, on the test site only.
-  assert.ok(html.includes("if (mode === 'health') renderHealth(); else if (mode === 'members' && PREVIEW) renderMembers(); }"));
+  // Names that arrive while Members is open draw it again (loadHealthCrew needs the owner key).
+  assert.ok(html.includes("if (mode === 'health') renderHealth(); else if (mode === 'members') renderMembers(); }"));
+  assert.ok(html.includes('if (CREW || healthCrew || healthCrewAsked || !window.BoardNames || !OwnerKey.has()) return;'));
 });
 
 test('Who gets alerts: the same section either way, in each tab’s own style', () => {
@@ -98,7 +101,7 @@ test('phones with no account: whose turn or name code it is, and whether they al
 // "1, 3, 4, 5 and 6" (owner, 2026-11-12, of the eight put to him): the heading says who sees the tab; one line
 // per member opening to the card, with the counts at the top as jumps; the two lines about phones with no
 // account made one; Remove access at the foot of the opened card; who has no name code saved, folded at the top.
-// Test site only, like the rest of this file: the tab drawn three ways below, with made-up members.
+// The tab drawn as him on both sites and as an Admin below, with made-up members.
 const DAY = 86400000;
 const NOW = Date.UTC(2026, 10, 13, 17, 0);
 const USERS = [
@@ -123,8 +126,9 @@ async function drawMembers({ preview, owner, admin }) {
   return { html: view.innerHTML, ctx };
 }
 
-test('1, 3, 4, 5, 6: the Members tab cleaned up, for him on the test site', async () => {
-  const { html: tab, ctx } = await drawMembers({ preview: true, owner: true, admin: false });
+test('1, 3, 4, 5, 6: the Members tab cleaned up, for him, on both sites', async () => {
+  const { html: tab, ctx } = await drawMembers({ preview: false, owner: true, admin: false });
+  assert.equal((await drawMembers({ preview: true, owner: true, admin: false })).html, tab, 'the main site and the test site alike');
   // 1. Who sees the tab, said to each.
   assert.ok(tab.includes('<h1 class="hpt">Members <span class="muted">(you and your Admins see this)</span></h1>'));
   assert.equal(ctx.membersHead(false), '<h1 class="hpt">Members <span class="muted">(the owner and Admins see this)</span></h1>');
@@ -159,10 +163,11 @@ test('1, 3, 4, 5, 6: the Members tab cleaned up, for him on the test site', asyn
   assert.ok(html.includes("view.querySelectorAll('.members [data-jump]').forEach((b) => { b.onclick = () => document.getElementById(b.dataset.jump)?.scrollIntoView({ block: 'start' }); });"));
 });
 
-test('1, 3, 4, 5, 6: the main site, and an Admin anywhere, keep the tab as it was', async () => {
-  for (const who of [{ preview: false, owner: true, admin: false }, { preview: true, owner: false, admin: true }, { preview: false, owner: false, admin: true }]) {
+test('1: an Admin, on either site, gets the heading said to them and keeps the cards', async () => {
+  for (const who of [{ preview: true, owner: false, admin: true }, { preview: false, owner: false, admin: true }]) {
     const { html: tab } = await drawMembers(who);
-    assert.ok(tab.includes('<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>'), JSON.stringify(who));
+    assert.ok(tab.includes('<h1 class="hpt">Members <span class="muted">(the owner and Admins see this)</span></h1>'), JSON.stringify(who));
+    assert.ok(!tab.includes('only you see this'));
     assert.ok(!tab.includes('class="mline"') && !tab.includes('class="mjumps"') && !tab.includes('class="mnocode"') && !tab.includes('class="mact mrm"') && !tab.includes(' id="m-'));
     assert.ok(tab.includes('<h2>Admins (1)</h2>') && tab.includes('<div class="mrow"><b>Bob Member</b>'));
     assert.ok(tab.includes('<button type="button" data-act="remove">Remove access</button></div></div>'), 'Remove access beside Access, as before');

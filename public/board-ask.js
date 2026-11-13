@@ -12,8 +12,9 @@
   let last = null;
   let citesNow = []; // the passages of the answer being written (the last citations event)
 
-  // --- Answer tools, reviewed with the owner 2026-11-12 evening ("Go with your pick: 3, 2, 1, 4 and 5"). TEST
-  // SITE ONLY: used when board.html passes preview (PREVIEW). Pure functions, so the tests can run them.
+  // --- Answer tools, reviewed with the owner 2026-11-12 evening ("Go with your pick: 3, 2, 1, 4 and 5"). Built for
+  // the test site; every member since later that evening (his pick 11 of the test-site list: board.html passes
+  // preview: true). Pure functions, so the tests can run them.
   // 3. The answer as the model writes it, drawn as HTML. In his Search Review (4 to 12 Nov) every answer had
   // Markdown marks the tab showed as typed characters: **bold** (25 of 28), *italics* (9), # headings (7), - or *
   // bullets (22, some indented), a > quote, a --- line, and [n] for the passages (237; [1][2] and [1, 2] too).
@@ -110,7 +111,7 @@
     const $ = (s) => box.querySelector(s);
     $('#askgo').onclick = ask;
     $('#askq').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } };
-    // The test site's answer tools (inert elsewhere: nothing they look for is drawn there).
+    // The answer tools (opts.preview; inert without it: nothing they look for is drawn).
     $('#askq').addEventListener('input', () => { if (preview) paintMentions(); });
     $('.askanswer').addEventListener('click', (e) => { const b = e.target.closest('.askref'); if (b) showPassage(b); });
     $('.askdeep').onclick = deeper;
@@ -211,7 +212,7 @@
   // --- Example questions and how to ask (owner, 2026-11-12 evening: "add some sample questions and
   // explanations ... example of good questions to ask, and the type of questions to ask. Explain how AI can be
   // more useful than a normal search engine and its limitations"; then, shown a picture: "Push these changes
-  // to the test site"). Test site only: board.html passes opts.preview = PREVIEW. Each example was run
+  // to the test site"). Every member since later that evening (his pick 10: board.html passes preview: true). Each example was run
   // through the site's own search over the agreements (top 9, that craft's documents) and finds the part it
   // is about (test/board/ask-examples.test.js). A tap fills the box and never sends: the member presses Ask.
   const EXAMPLES = {
@@ -253,8 +254,8 @@
     <li>It only knows the versions on this site (Conductors 4.16 revised July 2020, Engineers 1.1 2018, and the other documents listed). Anything agreed since may not be in them.</li>
     <li>Agreements 4.3 and 1.2 are for Western Canada, not Sarnia.</li>
     <li>It's a search aid, not legal advice. For a grievance or claim, confirm with your Local Chairperson.</li></ul></div></details>`;
-  // The test site's pieces: added when preview turns on and taken away when it turns off, so a member's tab is
-  // drawn exactly as before.
+  // The pieces reviewed on the test site (opts.preview, on for every member since 2026-11-12 evening): added when
+  // preview turns on and taken away when it turns off, so without it the tab is drawn exactly as before.
   let preview = false;
   function setPreview(on) {
     if (!box) return;
@@ -326,7 +327,7 @@
     const list = craft ? EXAMPLES[craft].slice(0, 3) : [EXAMPLES.conductor[0], EXAMPLES.engineer[0], EXAMPLES.conductor[1]];
     return `<div class="asknf"><b>Didn’t find it?</b> The search goes by the words in your question. Try the agreement’s own words (“held at the away-from-home terminal”, not “kept in Toronto”)${craft ? '' : ', pick Conductor or Engineer'}, or start from one of these:${exampleList(list)}</div>`;
   }
-  // When an answer is finished (test site): Copy answer, and the "Didn't find it?" box if it couldn't.
+  // When an answer is finished (opts.preview): Copy answer, and the "Didn't find it?" box if it couldn't.
   function answerDone(ans) {
     const runs = ans.querySelectorAll('.askmd');
     const run = runs[runs.length - 1];
@@ -394,7 +395,7 @@
     const ans = box.querySelector('.askanswer');
     const deep = box.querySelector('.askdeep');
     const copy = box.querySelector('.askcopy');
-    // The test site draws the answer with its formatting, and its [n] open the passages (answerHtml).
+    // With opts.preview the answer is drawn with its formatting, and its [n] open the passages (answerHtml).
     const md = preview;
     deep.hidden = true;
     if (copy) copy.hidden = true;
@@ -498,8 +499,8 @@
   }
 
   root.BoardAsk = {
-    // opts.simple: the craft buttons and document chips. opts.preview: the test site's pieces (the example
-    // questions, the two explanations, the answer tools).
+    // opts.simple: the craft buttons and document chips. opts.preview: the pieces reviewed on the test site (the
+    // example questions, the two explanations, the answer tools; every member since 2026-11-12 evening).
     render(view, opts) {
       if (!box) build();
       setSimple(!!(opts && opts.simple));

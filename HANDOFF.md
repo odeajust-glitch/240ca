@@ -1,6 +1,86 @@
 # HANDOFF — read this before doing anything
 
-## What is on the test site and not the main site — listed for him 12 Nov 2026, about 20:35 Toronto. NOTHING BUILT OR PROMOTED; waiting on his picks
+## The test site's pieces on to the main site — 12 Nov 2026, about 21:00 Toronto, at his word ("1-8. 10, 11, 12, 13, 14, 15, 16"). ON FOR EVERY MEMBER, BOTH SITES, in the code (page only). WAITING ON ONE LAPTOP PULL. 9 not picked; 16 HELD BACK (it cannot show as built: told him)
+
+**His answer** to the sixteen-item list below ("Reply with the numbers to push"): **"1-8. 10, 11, 12, 13, 14, 15,
+16"**, read as every item but 9 (the "." a typo for a comma). Page only (`public/board.html`, `public/board-ask.js`
+comments): no laptop code, no Worker, no paste.
+
+**On for every member, both sites, now:**
+1. Current: the four menus (Trains, Pools, Spareboards, Other) gone; the "No change until" chip stays. The menus'
+   code went with them (`screenGroups`, the `[data-jump]` wiring, `JUMPS`, `SCREENS`).
+2. The box is "Follow a turn (alerts)" in the page itself (the label; `siteReviewPaint` is gone); a followed
+   turn's card has "Turn History →"; on Snapshots the box, its label and the alert instructions are left off and
+   the card comes after the hours. **Also changed, told him:** My week's empty line said "(Find a turn, on
+   Current)"; it now says "(the Follow a turn box, on Current)".
+3. The pinned strip with ▲ Top (`pinPaint`); `html { scroll-padding-top: 56px; }` in the styles in place of the
+   inline style the test site set.
+4. Back = the tab before (`setMode`'s `pushState`, the `popstate` handler).
+5. Turn History's layout of 10 Nov: `turnPanel` and `workHistory` have one layout each (the older ones deleted),
+   person search folds, "Looked up lately" (the list was already kept on every phone, name codes never in it).
+6. My stats' jump list. 7. Article 18.6(b) as rows (`ana2Stack` in `renderHeld`). 8. Analytics' Overview as
+   "Analytics pages" (`compact: true`) and the section row wrapping on a phone.
+10, 11. Agreements: `renderAsk` passes `preview: true` (the name of the option in board-ask.js is unchanged).
+12. Snapshots drawn like Current (`sectionsGrid` draws the `NEW` boxes whatever the tab; Snapshots' counts tiles
+   and `strip()` deleted; its boxes wired by `wireCurrentBoxes`).
+13, 14. Members: `review = membersOwner` (him, either site); Page Health has no Who gets alerts on either site.
+   **An Admin** keeps the cards as before but gets pick 1's heading "(the owner and Admins see this)"
+   (`membersHead` for everyone who sees the tab): the rest was built and checked for him only (Who gets alerts and
+   the names need his Page Health data; "N name codes are waiting for your OK" would be wrong for an Admin). Told
+   him; his to say if Admins should get the one-line layout.
+15. The compact header on a phone (smaller title, no second line, tighter sign-up banner). The TEST SITE badge
+   stays the test site's.
+
+**How the styles moved:** every rule that was under `body.preview-site` is now under `body.everyone`, and
+`<body class="everyone">` is in the page, so each rule keeps the same weight against the page styles' own rules
+as it had on the test site (dropping the prefix would have let e.g. the k- styles' `.rail .turnpick button`
+rules repaint the "Turn History →" link). The badge is the only rule left under `body.preview-site`.
+
+**Still the test site's:** 9 (My week's "Sleep this week", not picked); the TEST SITE badge; the purple pieces
+(habit tag, "How this train has gone"; the likely-call line and spareboard odds are off everywhere); Analytics →
+Likely-call test (tabled to 24 Nov).
+
+**16 held back, told him:** the "newer version" bar has never been able to show, the test site included.
+`checkSiteVersion` HEADs the page and needs an ETag, Last-Modified or Content-Length; Cloudflare compresses the
+page (text/html, br/zstd) and drops all three (seen with curl and in a browser, 12 Nov): `tag` is empty and it
+returns. The Worker sets `etag` (`head.httpEtag`); JSON and JS files keep theirs. Offered: the laptop writes the
+page's fingerprint into `data/index.json` at each publish (`buildSite`, lib/board/site.js) and the page compares
+it on the poll it already makes (a laptop change: pull and restart), or drop it.
+
+**Checked.** Suite **523 of 523** (4 new in `test/board/test-site-promoted.test.js`; `site-review`, `current-review`,
+`members-review`, `ask-review`, `ask-examples` changed to the promoted state, quoting him). 20 breaks on purpose
+(each piece gated again, the body class gone, the badge for everyone, the sleep box, the newer-version bar or the
+purple ungated, the menus back, the Days off rule back on the test site only, ...): a test failed every time.
+In a browser: the live sites' answers recorded once (the 21:00 check of 12 Nov) and replayed to every look, the
+clock held, every request that is not a GET stopped but the owner sign-in, the page's own HEAD answered without
+a version tag as the live sites do, `data/patterns.json` held back from every look (no purple) and the badge hidden
+in every look (the same header height on both sites); scripts and pictures in the session's scratchpad only:
+- **Him on the main site with the new page = him on the test site with the old page, every tab, text and layout**
+  (each element's place, size, font, colours, white-space, position): the same but Analytics' row ("Likely-call
+  test", the test site's). The old page was looked at twice: the first look fetched live and caught Search Review
+  before its day list came; the second, from the recording, matches. The pinned strip, its list of tabs, Back (3
+  steps, Back opens the tab before) and a stand-in Agreements answer the same.
+- **Him on the test site, old page and new: the same on every tab** (his view did not move).
+- **A member on the main site, old page and new:** the header's second line off; "Follow a turn (alerts)" and
+  "Turn History →"; the menus gone; Turn History for SR03 3,603 → 2,129 px with "Looked up lately"; My stats' jump
+  list; 18.6(b) as rows (1,722 → 3,468 px); Analytics 2,826 → 1,163 px; Agreements' examples and folds, the
+  stand-in answer drawn (3 passage buttons, Copy answer; before: plain text); Snapshots 9,161 → 7,216 px; the
+  strip; Back 3 steps (before: Back left the site). Nothing else differs. No page errors, nothing wider than the
+  screen.
+- **An Admin** (stand-in: that session with role admin, the owner's list as the Worker gives an Admin): Members
+  differs by its heading only; no Who gets alerts, no phones-with-no-account list, no errors.
+- **360 px dark (a member), 1280 px (a member and him):** every tab, no page errors, nothing wider than the
+  screen; the strip, Back and the stand-in answer work.
+- **Item 16 in a browser on both live sites:** a HEAD of `/` and `/index.html` comes back with no ETag,
+  Last-Modified or Content-Length (zstd); `data/index.json` and `board-turns.js` keep a weak ETag.
+- **Not checked:** a real phone; an iPhone (from its Home Screen icon there is no Back button; an older iPhone may
+  count a tab opened from the address as a step, the known edge); page styles other than light and dark; a real
+  Agreements answer (none sent on purpose); an Admin's real account; the published page (needs his pull).
+
+**What he must do:** one laptop `git pull` (the page is copied on the next check; a restart is not needed for
+the page, but Page Health will say "Restart needed" until he restarts, as after any pull).
+
+## What is on the test site and not the main site — listed for him 12 Nov 2026, about 20:35 Toronto. HIS PICKS ("1-8. 10, 11, 12, 13, 14, 15, 16") ARE ON FOR EVERY MEMBER: the section above
 
 **Owner:** "review the test site, list what needs to be pushed to the main so I can review". Read as: everything
 behind `PREVIEW` that a member does not get, as a numbered list for him to pick from. Nothing changed.
@@ -932,9 +1012,9 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 |---|---|---|---|---|
 | 1 Current | 10 | 1, 2, 3, 5, 6, 7, 10 ("Go") | 1, 2, 3, 5, 7, 10 on for every member (`6403bde`, after his pull) | **6 turned down after seeing it: the counts line is taken out** ("it does but take it out"). 4 waits on his "crew info" photo (Housekeeping 11). 8 (first screen) his taste, not asked again. 9 (crew order) "doesn't really matter" |
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
-| 3 Members | 8 (and his two asks) | his two asks (Who gets alerts moved here, names beside the phones with no account); then 1, 3, 4, 5, 6 | all built for the test site only (`71a4fa0`, `f57b390`), after his pull (the section at the top of this file) | 2 is the Worker paste (copy page given; pasted). 7 (name the followed code: a Worker change) and 8 (Approved date) not picked. Who gets alerts stays at the bottom ("leave it at the bottom") |
+| 3 Members | 8 (and his two asks) | his two asks (Who gets alerts moved here, names beside the phones with no account); then 1, 3, 4, 5, 6 | on both sites since 12 Nov evening at his word (his picks 13 and 14 of the test-site list), for him; an Admin gets pick 1's heading only (the section at the top of this file) | 2 is the Worker paste (copy page given; pasted). 7 (name the followed code: a Worker change) and 8 (Approved date) not picked. Who gets alerts stays at the bottom ("leave it at the bottom") |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
-| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | built for the test site only (`79fc425`), after his pull; his look still to come (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
+| Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | on for every member since 12 Nov evening at his word (picks 2, 3, 4, 6, 8 of the test-site list; the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
 
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).

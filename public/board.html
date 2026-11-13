@@ -591,7 +591,7 @@
   .asksrc { background: var(--sheet); border: 1px solid var(--rule); margin-top: 14px; }
   .askpicker { margin: 12px 0 2px; display: grid; gap: 10px; }
   .askpicker[hidden], .asktip[hidden] { display: none; }
-  /* Agreements: example questions and how to ask (owner, 2026-11-12 evening; drawn on the test site only). */
+  /* Agreements: example questions and how to ask (owner, 2026-11-12 evening; test site first, every member since later that evening). */
   .asktry { margin: 12px 0 2px; }
   .asktry .asklbl2 { display: block; margin-bottom: 2px; }
   .asktry ul { list-style: none; margin: 0; padding: 0; }
@@ -600,7 +600,7 @@
   .askhow ul { padding-left: 18px; margin: 6px 0 10px; }
   .askhow li { margin: 0 0 6px; }
   .askhow p { margin: 0 0 10px; }
-  /* Agreements, the answer tools (owner, 2026-11-12 evening: "Go with your pick: 3, 2, 1, 4 and 5"; test site only). */
+  /* Agreements, the answer tools (owner, 2026-11-12 evening: "Go with your pick: 3, 2, 1, 4 and 5"; test site first, every member since later that evening). */
   .askanswer .askmd, .askanswer .asknf { white-space: normal; }
   .askmd p { margin: 0 0 10px; }
   .askmd h4 { margin: 14px 0 6px; font: 600 15px/1.3 var(--body); color: var(--ink); }
@@ -747,7 +747,7 @@
   .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
-  /* Members, round 3 of the tab review (test site): Who gets alerts moved here; "has an account" in the no-account list. */
+  /* Members, round 3 of the tab review (test site first; both sites since 2026-11-12 evening): Who gets alerts moved here; "has an account" in the no-account list. */
   .members .mwho > p { margin: 6px 0; font-size: 14px; }
   .members .mwho details > summary { cursor: pointer; font-size: 14px; margin: 6px 0; }
   .members .mjumps { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
@@ -954,20 +954,18 @@
   details.cur2 .fold .os2-all > summary { cursor: pointer; color: var(--accent); padding: 8px 0; }
   details.cur2[hidden] { display: none; }
   /* Current, reviewed with the owner 2026-11-12; on for every member since that day at his word. whysaid and
-     vac2 are drawn only in the short-row layout. The Days off and Yard rules are under body.current (the
-     Current tab) and body.preview-site (the test site, where Snapshots draws the same way): Snapshots keeps
-     its older layout for members. */
+     vac2 are drawn only in the short-row layout, which Snapshots draws too since 2026-11-12 evening (his
+     pick 12 of the test-site list). The Days off and Yard rules are under body.everyone (see "Every member"
+     further down): they were body.current and body.preview-site, the same weight. */
   details.cur2 .fold p.whysaid { color: var(--ink); font-size: 13.5px; line-height: 1.45; margin: 2px 0 8px; }
   details.vac2.catswrong > summary { opacity: .75; box-shadow: inset 3px 0 0 #b3261e; }
   details.vac2.untied > summary { opacity: .6; }
   details.vac2 .fold .crew { margin: 4px 0; font-size: 13px; }
   /* Days off: a long name wraps under its turn where it ran off a phone's edge (19 px at 390, 49 px at 360). */
-  body.current #sec-daysoff td:last-child .num, body.current #sec-daysoff td:last-child .crewnm,
-  body.preview-site #sec-daysoff td:last-child .num, body.preview-site #sec-daysoff td:last-child .crewnm { white-space: normal; }
+  body.everyone #sec-daysoff td:last-child .num, body.everyone #sec-daysoff td:last-child .crewnm { white-space: normal; }
   @media (max-width: 420px) {
-    body.current #sec-daysoff th, body.current #sec-daysoff td, body.current #sec-yard th, body.current #sec-yard td,
-    body.preview-site #sec-daysoff th, body.preview-site #sec-daysoff td, body.preview-site #sec-yard th, body.preview-site #sec-yard td { padding-left: 10px; padding-right: 10px; }
-    body.current #sec-yard .crew span, body.preview-site #sec-yard .crew span { white-space: normal !important; }
+    body.everyone #sec-daysoff th, body.everyone #sec-daysoff td, body.everyone #sec-yard th, body.everyone #sec-yard td { padding-left: 10px; padding-right: 10px; }
+    body.everyone #sec-yard .crew span { white-space: normal !important; }
   }
   /* Analytics, new layout (Test preview): everything under #view.ana2. */
   .ana2 .ana2-about { margin: 0 0 14px; }
@@ -1045,10 +1043,18 @@
   body.preview-site .top h1::after { content: 'TEST SITE'; margin-left: 10px; padding: 2px 7px; border-radius: 4px; background: var(--amber-tint); color: var(--amber); font: 700 11px/1.6 var(--body); letter-spacing: .08em; vertical-align: middle; }
   .newversion { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 18px rgba(0, 0, 0, .35); font-size: 14px; font-weight: 600; }
   .newversion button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 6px; padding: 7px 14px; font: inherit; cursor: pointer; }
-  @media (max-width: 700px) { body.preview-site .top h1 { font-size: 22px; } body.preview-site .top .where { display: none; } body.preview-site .signnote { padding: 8px 14px; font-size: 13px; } }
-  /* Whole site, reviewed with the owner 2026-11-12 (his picks: 1, 3, 5, 6, 7). TEST SITE ONLY: every rule
-     here is under body.preview-site, or dresses something only the test site draws (.pin, .msjump, .ov2). */
-  /* 5. The tabs stay in reach: a thin strip pinned to the top once the tab bar has scrolled away. */
+  /* Every member (owner, 2026-11-12 evening, to the list of what the test site had: "1-8. 10, 11, 12, 13, 14,
+     15, 16"). These rules were under body.preview-site while they were on the test site; <body> carries the
+     class "everyone" on every page, so each rule keeps the weight it had when he looked at it there (a page
+     style's own rules win or lose against it exactly as they did). The TEST SITE badge above stays the test
+     site's. */
+  /* 15. The compact header on a phone: a smaller title, no second line, a tighter sign-up banner. */
+  @media (max-width: 700px) { body.everyone .top h1 { font-size: 22px; } body.everyone .top .where { display: none; } body.everyone .signnote { padding: 8px 14px; font-size: 13px; } }
+  /* Whole site, reviewed with the owner 2026-11-12 (his picks: 1, 3, 5, 6, 7), built for the test site and on
+     for every member since that evening (above). */
+  /* 5. The tabs stay in reach: a thin strip pinned to the top once the tab bar has scrolled away; a box that is
+     jumped to stops below it. */
+  html { scroll-padding-top: 56px; }
   .pin { position: fixed; top: 0; left: 0; right: 0; z-index: 45; display: flex; align-items: center; gap: 8px; background: var(--bg); border-bottom: 2px solid var(--ink); box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
     padding: calc(env(safe-area-inset-top, 0px) + 6px) max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px)); }
   .pin[hidden], .pin .pinmenu[hidden] { display: none; }
@@ -1064,16 +1070,16 @@
      everything, its 8 x 8 tile at 8 CSS px a cell, hard-edged (soft edges round the faint wash away). */
   #shotmark { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }
   /* What already sticks to the top keeps clear of the strip. */
-  body.preview-site .rail { top: 64px; }
-  body.preview-site .arrangebar.on { top: 50px; }
+  body.everyone .rail { top: 64px; }
+  body.everyone .arrangebar.on { top: 50px; }
   /* 3. Snapshots is a past check: the box that sets up alerts and its instructions are left off it, and the
      followed turns' card (where each stood in that check) comes after the day and the hours. */
-  body.preview-site:not(.current):not(.orders):not(.turns) .rail { display: flex; flex-direction: column; }
-  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick { order: 9; margin: 10px 0 0; }
-  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > label,
-  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > .row,
-  body.preview-site:not(.current):not(.orders):not(.turns) .rail .turnpick > .turnhelp { display: none; }
-  body.preview-site .rail .tracked .tsum button.hist { display: inline; border: 0; background: none; padding: 2px 0; margin: 2px 0 0; color: var(--accent); font: 600 13px/1.3 var(--body); text-decoration: underline; cursor: pointer; }
+  body.everyone:not(.current):not(.orders):not(.turns) .rail { display: flex; flex-direction: column; }
+  body.everyone:not(.current):not(.orders):not(.turns) .rail .turnpick { order: 9; margin: 10px 0 0; }
+  body.everyone:not(.current):not(.orders):not(.turns) .rail .turnpick > label,
+  body.everyone:not(.current):not(.orders):not(.turns) .rail .turnpick > .row,
+  body.everyone:not(.current):not(.orders):not(.turns) .rail .turnpick > .turnhelp { display: none; }
+  body.everyone .rail .tracked .tsum button.hist { display: inline; border: 0; background: none; padding: 2px 0; margin: 2px 0 0; color: var(--accent); font: 600 13px/1.3 var(--body); text-decoration: underline; cursor: pointer; }
   /* 6. My stats: a folded list of its sections, each a button that jumps to it. */
   .msjump { background: var(--sheet); border: 1px solid var(--rule-soft); border-radius: 10px; }
   .msjump > summary { padding: 12px 14px; font: 600 14.5px/1.3 var(--body); cursor: pointer; }
@@ -1081,8 +1087,8 @@
   /* 7. Analytics on a phone: the section row wraps into full rows (nothing off the edge), and Overview is a
      line for each section with its descriptions folded underneath. */
   @media (max-width: 700px) {
-    body.preview-site .ana2 .anatabs { flex-wrap: wrap; overflow-x: visible; padding-bottom: 6px; border-bottom: 0; }
-    body.preview-site .ana2 .anatabs button { flex: 1 1 auto; min-height: 38px; }
+    body.everyone .ana2 .anatabs { flex-wrap: wrap; overflow-x: visible; padding-bottom: 6px; border-bottom: 0; }
+    body.everyone .ana2 .anatabs button { flex: 1 1 auto; min-height: 38px; }
   }
   .ov2 { display: grid; }
   .ov2 button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; min-height: 52px; padding: 10px 14px; border: 0; border-top: 1px solid var(--rule); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
@@ -2263,7 +2269,7 @@
   :root[data-theme="iphone"] .rail button { border-radius: 10px; }
 </style>
 </head>
-<body>
+<body class="everyone">
 <div class="top">
   <h1>Line-up Snapshots</h1>
   <span class="where">Sarnia road · what CATS showed when each check ran</span>
@@ -2392,7 +2398,7 @@
 <div class="wrap">
   <nav class="rail" aria-label="Snapshots">
     <div class="turnpick">
-      <label for="turn">Find a turn</label>
+      <label for="turn">Follow a turn (alerts)</label>
       <div class="row"><input id="turn" list="turnlist" placeholder="e.g. SR03" autocomplete="off" spellcheck="false" maxlength="6"><button id="turnclear" type="button" aria-label="Clear turn" hidden>✕</button></div>
       <datalist id="turnlist"></datalist>
       <div id="tracked" class="tracked"></div>
@@ -2528,20 +2534,6 @@ const marked = (turn, craft) => !!turn && (marks.includes(turn)
   || (SHARED5.test(turn) && (craft ? marks.includes(`${turn}-${crOf(craft)}`) : marks.some((m) => markBase(m) === turn))));
 const markedIn = (text) => marks.some((m) => BoardTurns.turnIn(text, markBase(m)));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-// Tapping a screen chip jumps to where that screen shows (owner, 2026-10-23):
-// the section's id, and for a pool screen which pool tab to open.
-const JUMPS = { callBoard: { id: 'sec-callboard' }, chainGang: { id: 'sec-pools', pool: 'Chain Gang' }, aPool: { id: 'sec-pools', pool: 'A pool' },
-  bPool: { id: 'sec-pools', pool: 'B pool' }, sdPool: { id: 'sec-pools', pool: 'SD' }, s1Pool: { id: 'sec-pools', pool: 'S1' }, s3Pool: { id: 'sec-pools', pool: 'S3' },
-  lineup: { id: 'sec-lineup' }, bunkhouse: { id: 'sec-toronto' }, macLineup: { id: 'sec-toronto' },
-  coFast: { id: 'sec-pools', pool: 'Conductor fast' }, coSlow: { id: 'sec-pools', pool: 'Conductor slow' }, enFast: { id: 'sec-pools', pool: 'Engineer fast' },
-  enSlow: { id: 'sec-pools', pool: 'Engineer slow' }, s5Pool: { id: 'sec-pools', pool: '501/502' }, garnet: { id: 'sec-pools', pool: 'Garnet' },
-  yardJobs: { id: 'sec-yard' }, terminal: { id: 'sec-vacancies' }, daysOff: { id: 'sec-daysoff' },
-  // Owner, 2026-11-05: these were dead links. Crews in town is read at the end of the Call Board.
-  garnetLineup: { id: 'sec-garnet' }, crewsInTown: { id: 'sec-callboard' } };
-const SCREENS = { chainGang: 'Chain Gang 23', aPool: 'A pool 19', bPool: 'B pool 21', sdPool: 'SD 27', s1Pool: 'S1 25', s3Pool: 'S3 26', lineup: 'Line-up 41', bunkhouse: 'Bunkhouse 28', macLineup: 'Toronto line-up 41', garnetLineup: 'Garnet line-up 41',
-  coFast: 'Conductor fast 13', coSlow: 'Conductor slow 9', enFast: 'Engineer fast 19', enSlow: 'Engineer slow 17', terminal: 'Jobs going spare 5',
-  s5Pool: '501/502 29', garnet: 'Garnet 31', yardJobs: 'Yard jobs', daysOff: 'Days off 4', crewsInTown: 'Road jobs' }; // owner, 2026-11-05: "Crews in town should be called road jobs"
-
 // "2026-10-15 0815" → parts for display.
 function when(taken) {
   const [d, t] = taken.split(' ');
@@ -2756,7 +2748,7 @@ function s5CrewWhy(s, t) {
     '</ul>' : '<p>Other crew status is not available in this saved check.</p>') +
     '<p class="muted">' + (t.s5OnDuty ? 'Crew recorded on the dated Call Board.' : 'Lined-up crew is a prediction until confirmed by CATS.') + '</p>';
 }
-// fresh: drawn for the short-row line-up (Current; Snapshots too on the test site). There the caller puts the
+// fresh: drawn for the short-row line-up (Current and Snapshots). There the caller puts the
 // checker's own sentence first (whySaid), the cover's call reads "call ~" and the line that said no spare cover
 // was "saved" on a train with nobody going spare is left out (owner, 2026-11-12, reviewing Current; on for
 // every member that day: "You can push all this to the main"). Snapshots' older layout keeps its own wording.
@@ -3473,26 +3465,6 @@ function flags(s) {
     <ul class="flags">${s.flags.map((f) => `<li>${esc(f)}</li>`).join('')}</ul></section>`;
 }
 
-function strip(s, preview = false) {
-  const ord = s.lineup.filter((t) => t.status === 'ORD').length;
-  // From the spareboards, fast and slow together (owner, 2026-10-24):
-  // available to work now / on the board. — when the boards weren't read.
-  const spare = (craft) => {
-    const turns = new Map();
-    for (const p of s.pools.filter((q) => q.name.startsWith(`${craft} fast board`) || q.name.startsWith(`${craft} slow board`))) {
-      for (const t of p.turns) turns.set(t.turn, t);
-    }
-    if (!turns.size) return '—';
-    const free = [...turns.values()].filter((t) => t.status === 'available').length;
-    return `${free} <small>/ ${turns.size}</small>`;
-  };
-  return `<div class="strip three">
-    <div class="stat"><div class="v">${s.lineup.length} <small>${preview ? (s.lineup.length === 1 ? 'train' : 'trains') + ' · ' + ord + ' ordered' : '/ ' + ord + ' ORD'}</small></div><div class="l">${preview ? 'Sarnia line-up' : 'Trains on the line-up'}</div></div>
-    <div class="stat"><div class="v">${spare('Conductor')}</div><div class="l">Conductors available (spareboard)</div></div>
-    <div class="stat"><div class="v">${spare('Engineer')}</div><div class="l">Engineers available (spareboard)</div></div>
-  </div>`;
-}
-
 // 401: the site is locked and this device is signed out (owner, 2026-11-09,
 // accounts): off to the sign-in page, which comes back here afterwards.
 const getJSON = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (r.status === 401) location.replace('account?next=' + encodeURIComponent(location.pathname)); if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
@@ -3531,9 +3503,10 @@ function turnPanel(s) {
   const here = f.length
     ? `<ul>${f.map((x) => `<li><span class="kind">${KIND[x.kind]}</span><span>${markTurn(x.text)}</span></li>`).join('')}</ul>`
     : '<p class="empty" style="padding:0">Not on any screen in this check.</p>';
-  // The test site (owner, 2026-11-10: "improvements to the turn history tab"): where the turn
-  // stands now comes first, under its name; the board's notes fold away under the work history.
-  if (PREVIEW) return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus) || yardTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
+  // Where the turn stands now comes first, under its name; the board's notes fold away under the work
+  // history (owner, 2026-11-10: "improvements to the turn history tab", built for the test site; every member
+  // since 2026-11-12 evening, his pick 5 of the test-site list).
+  return `<section class="sheet turnpanel tn2"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus) || yardTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
     <div class="tn2-now"><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
     <div id="held186top" class="heldtop" hidden></div>
     <div id="whengo" class="whengo" hidden></div>
@@ -3541,15 +3514,6 @@ function turnPanel(s) {
     <div id="worklog" class="work"></div>
     <div id="held186" class="work"></div>
     <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></details>
-    <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
-  return `<section class="sheet turnpanel"><header><h2>Turn <span class="num">${esc(focus)}</span>${crewTag(focus) || yardTag(focus)}</h2><div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div></header>
-    <div id="held186top" class="heldtop" hidden></div>
-    <div id="whengo" class="whengo" hidden></div>
-    <div id="alertnote" class="alertnote" hidden></div>
-    <div id="worklog" class="work"></div>
-    <div id="held186" class="work"></div>
-    <div class="tp"><div><h3>Now <span class="muted">(${esc(when(s.taken).time)} check)</span></h3>${here}${related}</div>
-    <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div id="turnhist" class="hist"><p class="empty" style="padding:0">Loading…</p></div></div></div>
     <details class="moredet" id="turnmorebox" hidden><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3" id="turnmore"></div></details></section>`;
 }
 // A time that opens that snapshot.
@@ -3676,21 +3640,18 @@ function workHistory(rec, turnIn, resets = [], offs = {}) {
     const from = before.length > 1 ? before[before.length - 2].at : '';
     return restLine(from, rows[i].onDutySeen, 'Rest before it:');
   };
-  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, '')).replace(' (', PREVIEW ? ' (' : '<br>(')}</div>` : ''}</td>
+  const body = restLine(rows[0].onDutySeen, '', 'Since then:') + rows.map((o, i) => `<tr class="wrow" data-w="${i}"><td class="num">${esc(dt(callBefore(o.at, 120)))}<div class="crew">on duty ${esc(dt(o.at).split(' ')[1] || '')}</div>${offLine(o, offs) ? `<div class="crew">${esc(offLine(o, offs).replace(/^ · /, ''))}</div>` : ''}</td>
     <td><b class="num">${esc(o.train)}</b><div class="crew call-result" data-call-result="${i}">Loading call stability…</div>${o.yard ? ' <span class="chip">yard</span>' : ''}${o.trainee ? ` <span class="chip">${esc(o.trainee)} trainee</span>` : ''}${o.job ? `<div class="crew">working ${esc(o.job)}</div>` : ''}${o.station && !/^SARNIA$/i.test(o.station) ? `<div class="crew">at ${esc(o.station.charAt(0) + o.station.slice(1).toLowerCase())}</div>` : ''}</td>
     <td class="num">${partners(o).map((c) => markTurn(c)).join('<br>') || '—'}</td></tr>` + restBefore(i)).join('');
-  if (PREVIEW) {
-    // The test site: each trip a short row (train and how the call went, then the times), the
-    // newest WORK2_SHOW first with the rest behind a button, and one line adding the calls up.
-    let n = -1;
-    const paged = body.replace(/<tr class="(wrow|wrest)/g, (m, c) => { if (c === 'wrow') n++; return n >= WORK2_SHOW ? `<tr hidden class="${c}` : m; });
-    const yard = rows.filter((o) => o.yard).length;
-    return `<h3>Work history</h3><p class="work2-sum" data-work-sum data-trips="${rows.length}">${plural(rows.length, 'trip')} in the saved checks${yard ? ` (${plural(yard, 'yard job')})` : ''}, since ${esc(dt(rows[rows.length - 1].at))}. Tap one for its call history.</p>
-      <div class="work2"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${paged}</tbody></table></div>
-      ${rows.length > WORK2_SHOW ? `<button type="button" class="work2-more" data-work-more>Show all ${rows.length} trips</button>` : ''}`;
-  }
-  return `<h3>Work history <span class="muted">(tap a train for call history and call stability)</span></h3>
-    <div class="scroll"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  // Each trip a short row (train and how the call went, then the times), the newest WORK2_SHOW first with the
+  // rest behind a button, and one line adding the calls up (the test site's layout of 2026-11-10; every member
+  // since 2026-11-12 evening, the owner's pick 5 of the test-site list).
+  let n = -1;
+  const paged = body.replace(/<tr class="(wrow|wrest)/g, (m, c) => { if (c === 'wrow') n++; return n >= WORK2_SHOW ? `<tr hidden class="${c}` : m; });
+  const yard = rows.filter((o) => o.yard).length;
+  return `<h3>Work history</h3><p class="work2-sum" data-work-sum data-trips="${rows.length}">${plural(rows.length, 'trip')} in the saved checks${yard ? ` (${plural(yard, 'yard job')})` : ''}, since ${esc(dt(rows[rows.length - 1].at))}. Tap one for its call history.</p>
+    <div class="work2"><table><thead><tr><th>Call</th><th>Train</th><th>Worked with</th></tr></thead><tbody>${paged}</tbody></table></div>
+    ${rows.length > WORK2_SHOW ? `<button type="button" class="work2-more" data-work-more>Show all ${rows.length} trips</button>` : ''}`;
 }
 const WORK2_SHOW = 6;
 // What happened to the turn from the train before (exclusive) up to this one.
@@ -4258,7 +4219,8 @@ function analyticsOverviewGuide({ preview = false, callCount = '', numbers = nul
     assignments: ['Check assignments', 'Did the assignment match the rules?', 'Wrong pool, wrong spare-job turn and missing spare job findings, grouped by train. An observed mismatch clearing does not prove that the final crew call was correct.']
   };
   const groups = ['Start here', 'Your work', 'Compare work', 'Calling and waiting', 'Check assignments'];
-  // Whole site, reviewed with the owner 2026-11-12, item 7: TEST SITE ONLY (anaHome asks for it under PREVIEW).
+  // Whole site, reviewed with the owner 2026-11-12, item 7 (test site first; every member since that evening, his
+  // pick 8 of the test-site list): anaHome asks for it.
   // A line for each page with its figure (or its question); the full guide he approved on 2026-11-08 is folded under it.
   if (compact) return '<section class="sheet overview-guide"><header><h2>Analytics pages</h2><span class="meta">tap one to open it</span></header><div class="ov2">' +
     ANA_SECS.filter(([key]) => descriptions[key] && key !== 'overview').map(([key, label]) => '<button type="button" data-overview-open="' + esc(key) + '"><b>' + esc(label) + '</b><span>' + esc((numbers && numbers[key]) || descriptions[key][1]) + '</span><i aria-hidden="true">›</i></button>').join('') +
@@ -4293,7 +4255,7 @@ function anaHome(o) {
   const ran = (o.runs || []).filter((r) => r.ran).length;
   const waiting = (o.stale || []).length;
   const open = (o.runarounds || []).filter((r) => !r.fixed).length + (o.catsErrors || []).filter((r) => !r.fixed).length + (o.catsMissing || []).filter((r) => !r.listedAt).length;
-  return analyticsOverviewGuide({ compact: PREVIEW, numbers: {
+  return analyticsOverviewGuide({ compact: true, numbers: {
     trains: `${ran} train${ran === 1 ? '' : 's'} on duty in these dates`,
     sleep: callCardOn() ? (() => { const s = BoardAnalytics.callSummary(sleep, callRule()); return s.n ? `${Math.round((100 * s.ok) / s.n)}% called when expected (${s.ok} of ${plural(s.n, 'call')})` : 'No calls in this date range.'; })() : callReviewData(sleep).headline,
     stale: `${waiting} train${waiting === 1 ? '' : 's'} left waiting past the call`,
@@ -4554,7 +4516,7 @@ let weekPick = 'last';
 function anaMyWeek({ weeks = [] }) {
   const picks = [['last', 'Last week'], ['this', 'This week'], ['before', 'Week before']];
   const tabs = `<div class="tabs" role="tablist">${picks.map(([k, l]) => `<button type="button" role="tab" data-weekpick="${k}" aria-selected="${weekPick === k}">${l}</button>`).join('')}</div>`;
-  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (Find a turn, on Current) and its week shows here.</p>`;
+  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (the Follow a turn box, on Current) and its week shows here.</p>`;
   const hm = (m) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m`;
   const one = ({ name, sum: x }) => {
     const trips = x.runs.length ? `<div class="scroll"><table class="orders"><thead><tr><th>On duty</th><th>Train</th><th>Crew</th><th>To Toronto</th><th>Held</th></tr></thead><tbody>${x.runs.map((r) => `<tr class="nolink">
@@ -4583,7 +4545,7 @@ function anaMyWeek({ weeks = [] }) {
 function anaMyWeek2({ weeks = [] }) {
   const picks = [['this', 'This week'], ['last', 'Last week'], ['before', 'Week before']];
   const tabs = `<div class="tabs" role="tablist">${picks.map(([k, l]) => `<button type="button" role="tab" data-weekpick="${k}" aria-selected="${weekPick === k}">${l}</button>`).join('')}</div>`;
-  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (Find a turn, on Current) and its week shows here.</p>`;
+  if (!weeks.length) return `<p class="anote">Follow a turn or a name code on this phone (the Follow a turn box, on Current) and its week shows here.</p>`;
   const hm = (m) => `${Math.floor(m / 60)} h ${String(Math.round(m) % 60).padStart(2, '0')} m`;
   const offs = (RESETS && RESETS.offs) || {};
   const one = ({ name, sum: x, resetKey }) => {
@@ -5709,7 +5671,7 @@ source().then(async (src) => {
       const pass = r.ok ? (await r.json()).namesPass : null;
       if (!pass) return;
       const got = await BoardNames.unlockNames(await getJSON('data/crew.json'), pass);
-      if (got && got.turns) { healthCrew = got.turns; if (mode === 'health') renderHealth(); else if (mode === 'members' && PREVIEW) renderMembers(); }
+      if (got && got.turns) { healthCrew = got.turns; if (mode === 'health') renderHealth(); else if (mode === 'members') renderMembers(); }
     } catch (e) { /* the tables show without names */ }
   }
   async function showHealth(after, refreshIndex = false) {
@@ -5748,7 +5710,6 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
-      siteReviewPaint(); // whole-site review 2026-11-12: the follow box's name, room for the pinned strip (test site)
       paintMine();
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
       const at = ANA_SECS.findIndex((x) => x[0] === 'likely');
@@ -5889,7 +5850,7 @@ source().then(async (src) => {
     const draw = () => {
       view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now });
       BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); }, csv);
-      if (PREVIEW) mineJump(view); // whole-site review 2026-11-12, item 6 (test site)
+      mineJump(view); // whole-site review 2026-11-12, item 6 (every member since that evening, his pick 6)
     };
     draw();
   }
@@ -5969,7 +5930,8 @@ source().then(async (src) => {
     if (o.members) return `<h2 id="m-who">Who gets alerts</h2><div class="mwho">${body}<p class="muted">This shows what phones follow, not whose they are. Each member's card above shows what their phones follow (for phones that saved their alerts while signed in); phones with no account are listed below. A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div>`;
     return `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">${body}<p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
   }
-  // Members, reviewed with the owner 2026-11-12 (round 3 of the tab review): TEST SITE ONLY (PREVIEW).
+  // Members, reviewed with the owner 2026-11-12 (round 3 of the tab review): built for the test site; on both sites
+  // since that evening (his picks 13 and 14 of the test-site list). His own view only: the names come from his data.
   // "The list of turns being tracks that don't have an account, i want to see the owner of the turn/name
   // code": beside each turn a phone with no account follows, whose turn it is by the crew names file (while
   // it is out on a trip, whoever is working it: the same name as Who gets alerts), and beside each name
@@ -6024,9 +5986,12 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#members'); } catch (e) { /* not allowed in some frames */ }
     if (!membersOwner && !membersAdmin) { view.innerHTML = '<p class="empty">Members is only for the owner.</p>'; return; }
-    // Round 3 of the tab review (owner, 2026-11-12), TEST SITE ONLY: everything under `review` below.
-    const review = PREVIEW && membersOwner;
-    const head = review ? membersHead(membersOwner) : '<h1 class="hpt">Members <span class="muted">(only you see this)</span></h1>';
+    // Round 3 of the tab review (owner, 2026-11-12): everything under `review` below, built for the test site and
+    // on both sites since that evening (his picks 13 and 14 of the test-site list), for him: Who gets alerts and the
+    // names beside phones with no account come from his own Page Health data. An Admin keeps the tab as it was,
+    // with the heading of item 1 ("(the owner and Admins see this)").
+    const review = membersOwner;
+    const head = membersHead(membersOwner);
     if (!view.querySelector('.members')) view.innerHTML = `<div class="healthpage members">${head}<p class="muted">Loading…</p></div>`;
     let d = null;
     let status = 0;
@@ -6036,7 +6001,7 @@ source().then(async (src) => {
     let loose = null;
     let looseAt = null;
     let looseCut = null;
-    let alertsSub = null; // Who gets alerts, on this tab on the test site (round 3, below)
+    let alertsSub = null; // Who gets alerts, on this tab (round 3, below)
     if (membersOwner) { try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); const h = r.ok ? await r.json() : null; const sub = h && h.laptop && h.laptop.subscribers; if (sub) alertsSub = sub; if (sub && Array.isArray(sub.noAccount)) { loose = sub.noAccount; looseAt = sub.checkedAt || null; looseCut = sub.noAccountCutoff || null; } } catch (e) { /* the count below still shows */ } }
     if (mode !== 'members') return;
     if (!d || !Array.isArray(d.users)) {
@@ -6069,7 +6034,7 @@ source().then(async (src) => {
     // My stats (owner, 2026-11-11): a member only sees their own once their name code is known to be theirs.
     // It counts by itself when it matches their name; otherwise the owner says so here.
     const codeFact = (u) => (u.codeState === undefined ? [] : [['Name code', !u.code ? 'None saved' : u.codeState === 'wait' ? `${u.code} · does not match their name, or is a shared code: My stats waits for your OK` : u.codeState === 'no' ? `${u.code} · marked not theirs (no My stats)` : `${u.code} · theirs (My stats on)`]]);
-    // Round 3 of the tab review (owner, 2026-11-12), TEST SITE ONLY: Who gets alerts moved here from Page
+    // Round 3 of the tab review (owner, 2026-11-12; both sites since that evening): Who gets alerts moved here from Page
     // Health, and names beside what each phone with no account follows (looseRowHtml, above this function).
     const whoOpen = view.querySelector('[data-health-followed]')?.open;
     const NAMES = review ? CREW || healthCrew : null;
@@ -6523,10 +6488,10 @@ source().then(async (src) => {
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
     const rows = healthRows(h, now, true, accountsWaiting());
     ownAddress('#pagehealth');
-    // Who gets alerts: whoGetsAlerts, above renderMembers. On the test site it is on the Members tab
-    // instead (round 3 of the tab review, owner 2026-11-12: "move the 'whos getting alerts' to members
-    // from page health").
-    const who = PREVIEW ? '' : whoGetsAlerts(L.subscribers, { stamp, expanded: view.querySelector('[data-health-followed]')?.open, stale: healthUnavailable });
+    // Who gets alerts (whoGetsAlerts, above renderMembers) is on the Members tab: round 3 of the tab review, owner
+    // 2026-11-12, "move the 'whos getting alerts' to members from page health" (test site first; both sites since
+    // that evening, his pick 13).
+    const who = '';
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
     // Item 4 (owner, 2026-11-12): the "Alerts sent" box held one link; it is the line under Who gets alerts above.
@@ -6694,8 +6659,9 @@ source().then(async (src) => {
       const lines = cardLines(s, turn, built);
       const cands = isPerson(entry) ? personCands[entry] || [] : [];
       const pick = cands.length > 1 ? `<div class="pickturn">${esc(codes()[entry] || 'This code')} matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pick="${esc(entry)}|${esc(c)}" aria-pressed="${c === turn}">${esc(c)}</button>`).join('')}</div>` : '';
-      // Whole-site review 2026-11-12, item 3 (TEST SITE ONLY): the chip opens the alert choices; this opens the turn's history.
-      const hist = PREVIEW ? `<div><button type="button" class="hist" data-hist="${esc(entry)}">Turn History →</button></div>` : '';
+      // Whole-site review 2026-11-12, item 3 (every member since that evening, his pick 2): the chip opens the alert
+      // choices; this opens the turn's history.
+      const hist = `<div><button type="button" class="hist" data-hist="${esc(entry)}">Turn History →</button></div>`;
       return `<li data-sum="${esc(turn)}"><b class="num">${esc(label(entry))}</b> <span class="go"></span>${pick}${lines.length ? lines.map((l) => `<div data-kind="${l.kind}">${esc(l.text)}</div>`).join('') : '<div class="muted">Not on any screen in this check.</div>'}${hist}</li>`;
     }).join('');
     return `<ul class="tsum">${rows}</ul>`;
@@ -6969,12 +6935,12 @@ source().then(async (src) => {
     // A person search isn't remembered on the phone.
     if (isCode(focus)) return;
     try { focus ? localStorage.setItem('boardTurn', focus) : localStorage.removeItem('boardTurn'); } catch (e) { /* storage off */ }
-    // The last few turns looked up, for one-tap return (test site).
+    // The last few turns looked up, for one-tap return ("Looked up lately" on Turn History).
     if (focus && !BoardTurns.PLACEHOLDER.test(focus)) local.set('boardTurnsRecent', [focus, ...recentTurns().filter((x) => x !== focus)].slice(0, 6));
   }
   function recentTurns() { const r = local.get('boardTurnsRecent'); return Array.isArray(r) ? r.filter((x) => typeof x === 'string' && !isCode(x)) : []; }
   const recentChips = () => {
-    const r = PREVIEW ? recentTurns().filter((x) => x !== focus && !tracked().includes(x)) : [];
+    const r = recentTurns().filter((x) => x !== focus && !tracked().includes(x));
     return r.length ? `<div class="tracked tn2-recent"><span class="lbl">Looked up lately:</span>${r.map((x) => `<button type="button" data-recent="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : '';
   };
   try { setFocus(localStorage.getItem('boardTurn') || ''); } catch (e) { /* storage off */ }
@@ -7132,7 +7098,7 @@ source().then(async (src) => {
     const prev = focus;
     focus = live ? cur.turn : '';
     setMarks();
-    box.innerHTML = `<section class="sheet turnpanel${PREVIEW ? ' tn2' : ''}"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
+    box.innerHTML = `<section class="sheet turnpanel tn2"><header><h2>Person search</h2>${live ? '<div class="hbtns"><button id="turnalert" type="button">🔔 Track / alerts</button></div>' : ''}</header>
       ${others}
       ${cands.length > 1 ? `<div class="alertnote"><div class="pickturn">This code matches more than one turn right now. Which is yours? ${cands.map((c) => `<button type="button" data-pickp="${esc(c)}" aria-pressed="${c === cur.turn}">${esc(c)}</button>`).join('')}</div></div>` : ''}
       <div class="pstat"><div><h3>Home turn</h3><p>${home ? `<b class="num">${esc(slotLabel(home.turn))}</b> <span class="muted">· ${homeLive ? 'since' : 'last seen'} ${esc(dt(homeLive ? home.from : home.to))}</span>` : '<span class="muted">Not seen on a turn of their own yet.</span>'}</p></div>
@@ -7141,10 +7107,8 @@ source().then(async (src) => {
       <div id="whengo" class="whengo" hidden></div>
       <div id="worklog" class="work">${workHistory(rec, cur.turn, ((RESETS && RESETS.people) || {})[hash] || [], (RESETS && RESETS.offs) || {})}</div>
       <div id="held186" class="work"></div>
-      ${PREVIEW ? `<details class="moredet tn2-notes"><summary>Turns seen on (${homes.length})</summary><div class="hist">${homeList}</div></details>
-      <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div class="hist">${h.changes}</div></details>`
-    : `<div class="tp"><div><h3>Turns seen on <span class="muted">(on a board as their own turn)</span></h3>${homeList}</div>
-      <div><h3>Changes <span class="muted">(expand a note for full detail)</span></h3><div class="hist">${h.changes}</div></div></div>`}
+      <details class="moredet tn2-notes"><summary>Turns seen on (${homes.length})</summary><div class="hist">${homeList}</div></details>
+      <details class="moredet tn2-notes"><summary>Board notes: every change the checks saw</summary><div class="hist">${h.changes}</div></details>
       ${h.more ? `<details class="moredet"><summary>More detail: orders, rest, goes spare</summary><div class="tp tp3">${h.more}</div></details>` : ''}</section>`;
     focus = prev;
     box.querySelectorAll('[data-pickp]').forEach((b) => { b.onclick = () => { Person.setPick(hash, b.dataset.pickp); showPerson(code, s); }; });
@@ -7246,12 +7210,12 @@ source().then(async (src) => {
   function sectionsGrid(s, arrange = arranging, previewS5 = false) {
     const byK = Object.fromEntries(SECTIONS.map((x) => [x.k, x]));
     const order = sectionOrder();
-    // Current (owner, 2026-11-10, approved in Test): the short rows. Snapshots keep the older layout.
-    const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too
-    // The boxes both layouts share draw their reviewed form here (owner, 2026-11-12: "You can push all this to the main").
+    // The short rows (owner, 2026-11-10, approved in Test), on Current and, since 2026-11-12 evening, on
+    // Snapshots too (his pick 12 of the test-site list: Snapshots drawn like Current, for every member).
+    // The boxes draw their reviewed form here (owner, 2026-11-12: "You can push all this to the main").
     const NEW = { lineup: lineup2, toronto: toronto2, garnet: garnet2, changes: changes2, vacancies: (x) => vacancies(x, true).replace('Jobs going spare · 5', 'Jobs going spare'),
       pools: (x) => pools(x, poolPicks || [], true), daysoff: (x) => daysOff(x, true), callboard: (x) => onDuty(x, true) };
-    const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === 'lineup' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);
+    const built = order.map((k) => ({ ...byK[k], body: NEW[k] ? NEW[k](s) : byK[k].html(s) })).filter((x) => x.body);
     const wrap = (x, i, all) => `<div class="secwrap" data-sec="${x.k}">${arrange ? `<div class="arrange"><b>${esc(x.name)}</b><span><button type="button" data-move="-1" aria-label="Move ${esc(x.name)} up"${i === 0 ? ' disabled' : ''}>▲</button><button type="button" data-move="1" aria-label="Move ${esc(x.name)} down"${i === all.length - 1 ? ' disabled' : ''}>▼</button></span></div>` : x.body}</div>`;
     // Arranging: just the names, a short list to move around.
     if (arrange) return `<div class="grid"><div class="col arrlist">${built.map(wrap).join('')}</div></div>`;
@@ -7326,38 +7290,22 @@ source().then(async (src) => {
     const agebar = latest
       ? `<div class="agebar" data-live="1"><span class="age" data-age="${esc(lastSeen)}" data-prefix="Last checked "></span>${s.sameUntil ? `<span class="sub">no change since ${esc(w.time)}</span>` : ''}${mode === 'current' ? '' : '<span class="sub">This is the current board.</span>'}</div>`
       : `<div class="agebar old"><span class="age" data-age="${esc(s.taken)}" data-prefix="Taken "></span><span class="sub">Not the current board.</span><button type="button" class="tocurrent" id="tocurrent">Go to current</button></div>`;
-    const availableScreens = [...new Set(['callBoard', ...(s.screens || [])])];
-    const screenGroups = [
-      ['Trains', ['callBoard', 'lineup', 'macLineup', 'garnetLineup']],
-      ['Pools', ['chainGang', 'aPool', 'bPool', 'sdPool', 's1Pool', 's3Pool', 's5Pool', 'garnet', 'bunkhouse']],
-      ['Spareboards', ['coFast', 'coSlow', 'enFast', 'enSlow']],
-      ['Other', availableScreens.filter((k) => !['callBoard', 'lineup', 'macLineup', 'garnetLineup', 'chainGang', 'aPool', 'bPool', 'sdPool', 's1Pool', 's3Pool', 's5Pool', 'garnet', 'bunkhouse', 'coFast', 'coSlow', 'enFast', 'enSlow'].includes(k))]
-    ];
-    const screens = screenGroups.map(([title, keys]) => {
-      const links = keys.filter((k) => availableScreens.includes(k)).map((k) => {
-        const name = k === 'callBoard' ? 'Call board' : SCREENS[k] || k;
-        return JUMPS[k] ? '<button type="button" class="chip" data-jump="' + esc(k) + '">' + esc(name) + '</button>' : '<span class="chip">' + esc(name) + '</span>';
-      }).join('');
-      return links ? '<details class="screen-group"><summary>' + title + '</summary><div class="screen-links">' + links + '</div></details>' : '';
-    }).join('');
     const same = s.sameUntil ? `<span class="chip">No change until ${esc(when(s.sameUntil).time)}</span>` : '';
-    // The four menus above the boxes (Trains, Pools, Spareboards, Other): off on the test site. Owner,
-    // 2026-11-12, shown them now and cleaned up: "I want them removed not fixed". The "No change until"
-    // chip that shared their row stays. Off the test site they are as they were.
-    const menusOff = PREVIEW;
+    // The four menus above the boxes (Trains, Pools, Spareboards, Other) are gone. Owner, 2026-11-12, shown
+    // them now and cleaned up: "I want them removed not fixed" (test site first; every member since that
+    // evening, his pick 1). The "No change until" chip that shared their row stays.
     document.getElementById('view').innerHTML = `
       <div class="head">
         <div><div class="when">${esc(w.long)}<span class="num">${esc(w.time)}</span></div>
           ${agebar}
-          ${menusOff ? (same ? `<div class="screens" style="margin-top:8px">${same}</div>` : '') : `<div class="screens" style="margin-top:8px">${screens}${same}</div>`}</div>
+          ${same ? `<div class="screens" style="margin-top:8px">${same}</div>` : ''}</div>
         ${mode === 'current' ? '' : `<div class="steps"><button id="older" ${atOldest ? 'disabled' : ''}>◀ Earlier</button><button id="newer" ${atNewest ? 'disabled' : ''}>Later ▶</button></div>`}
       </div>
       ${newerBar}
-      ${mode === 'current' || PREVIEW ? '' : strip(s, false)}
       ${arrangeBar()}
       ${sectionsGrid(s, arranging, mode === 'current')}
       <p class="note">Times are railway (Toronto) time, as CATS shows them. The pool chips and "rules say" come from the board checker's reading of the crew-calling rules, not from CATS.</p>`;
-    if ((mode === 'current' || PREVIEW) && !arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
+    if (!arranging) wireCurrentBoxes(document.getElementById('view'), currentBoxOpen);
     tickAges();
     paintTracked(s);
     wireArrange();
@@ -7378,24 +7326,6 @@ source().then(async (src) => {
     }; });
     document.querySelectorAll('[data-poolall]').forEach((b) => { b.onclick = () => { poolPicks = b.dataset.poolall === 'all' ? s.pools.map(poolShort) : []; savePools(); show(cur, true); }; });
     document.querySelectorAll('[data-vactab]').forEach((b) => { b.onclick = () => { vacTab = b.dataset.vactab; show(cur, true); }; });
-    // A chip whose section isn't on the page this check (nothing to show) isn't a link.
-    document.querySelectorAll('[data-jump]').forEach((b) => {
-      const j = JUMPS[b.dataset.jump];
-      if (j && !document.getElementById(j.id)) { b.disabled = true; b.title = 'Nothing to show for this screen on this check'; }
-    });
-    document.querySelectorAll('[data-jump]').forEach((b) => { b.onclick = () => {
-      const j = JUMPS[b.dataset.jump];
-      // A pool's chip: switch that pool on and go to its board in the list.
-      const q = j.pool ? s.pools.find((x) => x.name.startsWith(j.pool)) : null;
-      if (q && !(poolPicks || []).includes(poolShort(q))) { poolOn(q); show(cur, true); }
-      const box = document.getElementById(j.id);
-      if (!box) return;
-      if (box.matches('details.test-current-box')) box.open = true;
-      const el = (q && [...box.querySelectorAll('.poolhead')].find((x) => x.dataset.poolname === poolShort(q))) || box;
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      el.classList.add('jumped');
-      setTimeout(() => el.classList.remove('jumped'), 1500);
-    }; });
   }
 
   // Snapshots ⇄ Order summary ⇄ 14h. setMode(true) is the order summary.
@@ -7418,7 +7348,7 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#agreements'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardAsk) { view.innerHTML = '<p class="empty">The agreement search isn\'t available right now.</p>'; return; }
-    window.BoardAsk.render(view, { simple: true, preview: PREVIEW }); // the craft buttons and document chips (owner, 2026-11-11; on both sites that evening: "push it to the main page"); the test site: example questions, how to ask, and the answer tools (owner, 2026-11-12 evening)
+    window.BoardAsk.render(view, { simple: true, preview: true }); // the craft buttons and document chips (owner, 2026-11-11; on both sites that evening: "push it to the main page"); preview: the example questions, how to ask, and the answer tools (owner, 2026-11-12 evening, built for the test site; every member since later that evening, his picks 10 and 11)
   }
   const refState = {};
   // Job Aids tab, first called Reference (owner, 2026-11-03; renamed 2026-11-11: "can we
@@ -7773,9 +7703,10 @@ source().then(async (src) => {
 
   function setMode(m) {
     if (mode === 'current') flushCurrentBoxes();
-    // Whole site, reviewed with the owner 2026-11-12, item 1: TEST SITE ONLY. A change of tab is a step the
-    // phone's Back button remembers (every tab only rewrote the address in place, so Back left the board).
-    if (PREVIEW && tabStepWanted(mode, m, firstTabOpen, tabQuiet || !tabTapped())) { try { history.pushState(null, '', location.href); } catch (e) { /* not allowed in some frames */ } }
+    // Whole site, reviewed with the owner 2026-11-12, item 1 (every member since that evening, his pick 4). A change
+    // of tab is a step the phone's Back button remembers (every tab only rewrote the address in place, so Back left
+    // the board).
+    if (tabStepWanted(mode, m, firstTabOpen, tabQuiet || !tabTapped())) { try { history.pushState(null, '', location.href); } catch (e) { /* not allowed in some frames */ } }
     mode = m === true ? 'orders' : m === false ? 'snap' : m;
     document.body.classList.toggle('orders', mode === 'test' || mode === 'mine' || mode === 'members' || mode === 'orders' || mode === 'held' || mode === 'analytics' || mode === 'health' || mode === 'review' || mode === 'notes' || mode === 'ref' || mode === 'ask' || mode === 'postings');
     document.body.classList.toggle('current', mode === 'current');
@@ -7796,7 +7727,7 @@ source().then(async (src) => {
     modePost.setAttribute('aria-pressed', mode === 'postings');
     paintNewPostings();
     modeAsk.setAttribute('aria-pressed', mode === 'ask');
-    pinPaint(); // the pinned strip names the open tab (test site)
+    pinPaint(); // the pinned strip names the open tab
     // The layout reviewed in Test is the Analytics tab now, on both sites (owner, 2026-11-10: "push the test tab on the main site to the main site").
     ANA2 = mode === 'analytics'; ana2.mode = 'analytics';
     if (!ANA2) document.getElementById('view').classList.remove('ana2');
@@ -7862,7 +7793,7 @@ source().then(async (src) => {
     const selected = heldOpen && heldRows(all).find(row => heldKey(row) === heldOpen);
     if (selected && (!selected.offDuty || selected.offDuty < callBefore(latest, 7 * 24 * 60))) heldPeriod = 'all';
     view.innerHTML = heldView(all, heldOpen, latest, names, state, heldCraft, heldPeriod);
-    if (PREVIEW) { view.classList.add('ana2'); ana2Stack(view, { all: true }); } // the test site: rows in place of the sideways table
+    view.classList.add('ana2'); ana2Stack(view, { all: true }); // rows in place of the sideways table (test site 2026-11-10; every member since 2026-11-12 evening, the owner's pick 7)
     view.querySelector('[data-held-period]').onclick = () => {
       heldOpen = null;
       heldPeriod = heldPeriod === 'week' ? 'all' : 'week';
@@ -8540,9 +8471,9 @@ source().then(async (src) => {
   // ---------------------------------------------------------------------------------------------
   // Whole site, reviewed with the owner 2026-11-12 ("Review the entire site, suggestion improvements to the
   // layout or structure"; of twelve items he picked 1, 3, 5, 6 and 7, and said "2 leave it and leave 11").
-  // TEST SITE ONLY: every piece is behind PREVIEW (board-test with the owner key). A member on either site
-  // sees the page as before. To promote a piece, drop its PREVIEW test (and the body.preview-site prefix of
-  // its styles) and change the test in test/board/site-review.test.js that pins it, quoting him.
+  // Built for the test site that afternoon; ON FOR EVERY MEMBER, both sites, since that evening (to the list of
+  // what the test site had: "1-8. 10, 11, 12, 13, 14, 15, 16"; these were 4, 2, 3, 6 and 8 on that list).
+  // test/board/site-review.test.js pins each piece.
   // 1. Which tab an address is for, so Back and Forward can open it again.
   function tabOfAddress(hash, days) {
     const h = String(hash || '');
@@ -8567,7 +8498,7 @@ source().then(async (src) => {
   }
   const TAB_BUTTON = { current: 'modeCurrent', turns: 'modeTurns', mine: 'modeMine', orders: 'modeOrders', held: 'modeHeld', analytics: 'modeAna', ask: 'modeAsk', ref: 'modeRef', postings: 'modePost', snap: 'modeSnap', health: 'modeHealth', review: 'modeReview', notes: 'modeNotes', members: 'modeMembers' };
   window.addEventListener('popstate', () => {
-    if (!PREVIEW || !firstTabOpen) return;
+    if (!firstTabOpen) return;
     let to = tabOfAddress(location.hash, src.days);
     const btn = document.getElementById(TAB_BUTTON[to.mode]);
     if (!btn || btn.hidden) to = { mode: 'current' }; // a tab this viewer does not have
@@ -8579,14 +8510,9 @@ source().then(async (src) => {
       else setMode(to.mode);
     } finally { tabQuiet = false; }
   });
-  // 3. The box on Current sets up alerts for a turn; finding one is Turn History's. And 5: room above a
-  // box that is jumped to, so the pinned strip does not sit on its heading.
-  function siteReviewPaint() {
-    const lbl = document.querySelector('label[for="turn"]');
-    if (lbl) lbl.textContent = PREVIEW ? 'Follow a turn (alerts)' : 'Find a turn';
-    document.documentElement.style.scrollPaddingTop = PREVIEW ? '56px' : '';
-    pinPaint();
-  }
+  // 3. The box on Current sets up alerts for a turn, so it is named "Follow a turn (alerts)" (in the page itself);
+  // finding one is Turn History's. And 5: room above a box that is jumped to, so the pinned strip does not sit on
+  // its heading (html's scroll-padding-top in the styles).
   // 5. The tabs stay in reach: once the tab bar has scrolled off the top, a thin strip names the open tab
   // (tap it for all the tabs, drawn as full rows) and has a button back to the top.
   function pinClose() {
@@ -8599,7 +8525,7 @@ source().then(async (src) => {
   function pinPaint() {
     const top = document.querySelector('.top');
     let el = document.getElementById('pin');
-    const show = PREVIEW && !!top && top.getBoundingClientRect().bottom < 0;
+    const show = !!top && top.getBoundingClientRect().bottom < 0;
     if (!el) {
       if (!show) return;
       el = document.createElement('div');

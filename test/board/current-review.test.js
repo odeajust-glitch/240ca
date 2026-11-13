@@ -116,20 +116,29 @@ test('the review’s pieces are on for every member, at the owner’s word', () 
   // PREVIEW itself is still the test site's address with the owner key, for the previews that remain.
   assert.ok(html.includes("const PREVIEW_HOST = /^board-test\\./.test(location.hostname);"));
   assert.ok(html.includes('const preview = PREVIEW_HOST && !!(h && OwnerKey.has());'));
-  // The Days off and Yard rules reach the Current tab for everyone, and Snapshots only on the test site.
-  assert.ok(html.includes("document.body.classList.toggle('current', mode === 'current');"));
-  const rules = html.match(/\n {2}(?: {2})?body\.current #sec-(?:daysoff|yard)[^{]*\{[^}]*\}/g) || [];
+  // The Days off and Yard rules reach Current and Snapshots for everyone (Snapshots drawn like Current since
+  // 2026-11-12 evening, the owner's pick 12): under body.everyone, which the page's <body> always carries, the
+  // same weight as the body.current and body.preview-site they were under.
+  assert.ok(html.includes('<body class="everyone">'));
+  assert.ok(!/classList\.(remove|toggle)\('everyone'/.test(html) && !/body\.className\s*=/.test(html), 'nothing takes the class off');
+  const rules = html.match(/\n {2}(?: {2})?body\.everyone #sec-(?:daysoff|yard)[^{]*\{[^}]*\}/g) || [];
   assert.equal(rules.length, 3);
-  for (const rule of rules) assert.ok(rule.split('{')[0].split(',').every((sel) => /body\.(current|preview-site) #sec-(daysoff|yard)/.test(sel)), rule);
+  for (const rule of rules) assert.ok(rule.split('{')[0].split(',').every((sel) => /^\s*body\.everyone #sec-(daysoff|yard)/.test(sel)), rule);
+  assert.ok(!/body\.(current|preview-site) #sec-(daysoff|yard)/.test(html));
 });
 
-test('the short-row layout draws the reviewed boxes; Snapshots’ older layout draws them as before', () => {
-  // Current for everyone; on the test site Snapshots draws the same way (an earlier preview, not his yet).
-  assert.ok(html.includes("const fresh = mode === 'current' || PREVIEW; // the test site: Snapshots too"));
+test('the short-row layout draws the reviewed boxes, on Current and Snapshots alike', () => {
+  // Snapshots drawn like Current, for every member: the owner, 2026-11-12 evening, to the list of what the test
+  // site had: "1-8. 10, 11, 12, 13, 14, 15, 16" (this is 12; it had been a test-site preview since 11-10).
+  const grid = cut('  function sectionsGrid(s, arrange = arranging, previewS5 = false) {', '    const wrap = (x, i, all) =>');
+  assert.ok(!/\bPREVIEW\b|\bfresh\b|mode === 'current'/.test(grid), 'the same boxes whichever tab draws them');
   assert.ok(html.includes("vacancies: (x) => vacancies(x, true).replace('Jobs going spare · 5', 'Jobs going spare'),"));
   assert.ok(html.includes('pools: (x) => pools(x, poolPicks || [], true), daysoff: (x) => daysOff(x, true), callboard: (x) => onDuty(x, true) };'));
-  assert.ok(html.includes('const built = order.map((k) => ({ ...byK[k], body: fresh && NEW[k] ? NEW[k](s) : k === \'lineup\' ? lineup(s, previewS5) : byK[k].html(s) })).filter((x) => x.body);'));
-  // The older layout's own calls carry no such word.
+  assert.ok(html.includes('const built = order.map((k) => ({ ...byK[k], body: NEW[k] ? NEW[k](s) : byK[k].html(s) })).filter((x) => x.body);'));
+  // Snapshots' counts tiles are gone with its older layout, and its boxes are wired the way Current's are.
+  assert.ok(!html.includes('function strip(') && !html.includes('strip(s, false)'));
+  assert.ok(html.includes('    if (!arranging) wireCurrentBoxes(document.getElementById(\'view\'), currentBoxOpen);'));
+  // The older layout's own calls (left in place, nothing draws them now) carry no such word.
   for (const line of ["html: (s) => pools(s, poolPicks || []) },", "html: (s) => vacancies(s) },", "html: (s) => daysOff(s) },", "html: (s) => onDuty(s) },"]) assert.ok(html.includes(line), line);
   assert.ok(html.includes("'<details class=\"why\"><summary>Why</summary>' + lineupWhy(s, t, previewS5) +"));
   // The test site's key changes none of them now.
@@ -146,10 +155,10 @@ test('item 6: no counts line on Current; he had it taken out', () => {
   // Owner, 2026-11-12, looking at it there: "it does but take it out".
   assert.ok(!html.includes('function strip2('));
   assert.ok(!/strip2\(s\)/.test(html));
-  assert.ok(html.includes("${mode === 'current' || PREVIEW ? '' : strip(s, false)}"));
-  // The train count is still in the line-up's own heading, and Snapshots' older layout keeps its counts.
+  // Snapshots' older counts tiles went with its older layout (his pick 12, 2026-11-12 evening).
+  assert.ok(!html.includes('Conductors available (spareboard)'));
+  // The train count is still in the line-up's own heading.
   assert.ok(text(page().run('lineup2')(s)).startsWith('Train line-up 3 trains · 1 ordered'));
-  assert.ok(html.includes('<div class="l">Conductors available (spareboard)</div>'));
 });
 
 test('item 3: the note under the line-up says what the big time is; calls read "~" like every other box', () => {
@@ -338,12 +347,12 @@ test('item 10: the small wording', () => {
   assert.ok(g(unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
 });
 
-test('the four menus above the boxes are off on the test site; members keep them', () => {
+test('the four menus above the boxes are gone, for every member', () => {
   // Owner, 2026-11-12, shown the Trains, Pools, Spareboards and Other menus now and cleaned up:
-  // "I want them removed not fixed". Test site only (PREVIEW) until he says otherwise.
+  // "I want them removed not fixed" (the test site first); then, to the list of what the test site had,
+  // "1-8. 10, 11, 12, 13, 14, 15, 16" (this is 1).
   assert.ok(html.includes('"I want them removed not fixed"'));
-  assert.ok(html.includes('    const menusOff = PREVIEW;'));
-  assert.ok(html.includes('${menusOff ? (same ? `<div class="screens" style="margin-top:8px">${same}</div>` : \'\') : `<div class="screens" style="margin-top:8px">${screens}${same}</div>`}</div>'));
-  // The menus are still built for everyone else, as they were.
-  assert.ok(html.includes("['Trains', ['callBoard', 'lineup', 'macLineup', 'garnetLineup']],"));
+  // The "No change until" chip that shared their row stays.
+  assert.ok(html.includes('${same ? `<div class="screens" style="margin-top:8px">${same}</div>` : \'\'}</div>'));
+  for (const gone of ['menusOff', 'screenGroups', "['Trains', ['callBoard'", 'class="screen-group"', 'data-jump="\' + esc(k)', 'const JUMPS = ', 'const SCREENS = ']) assert.ok(!html.includes(gone), gone);
 });
