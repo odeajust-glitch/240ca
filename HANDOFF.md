@@ -55,8 +55,9 @@ file asked for.
 the board checker or did we add it in already"; answered: already in, nothing to add):** every check also saves each
 yard job's crew status by craft (snapshot `town`, pool "YARD <job>": "status not known" while working, then "on rest
 until …", then "rested"). Over the 29 published days, the check where a craft went from working to "on rest until"
-was the same check the job left the Call Board in **173 of 175** regular yard shifts (the other 2 within 30 min)
-and **18 of 18** YSBY shifts: CATS's own book-off. So the YSBY yardmaster shifts of 12 h 40 to 15 h 50 are real,
+was the same check the job left the Call Board in **173 of 175** regular yard shifts (the other 2: one job's S1 booked
+off 51 min and 2 h 45 before the rest of the crew: someone going early, which a crew-status end would catch per
+craft) and **18 of 18** YSBY shifts: CATS's own book-off. So the YSBY yardmaster shifts of 12 h 40 to 15 h 50 are real,
 not a listing left up. Not used yet: the "on rest until" time itself (the rest each person booked after a yard
 shift); offered to him.
 **Not checked:** the Call Board ends against a real time sheet (they match CATS's book-off; a time sheet can still
