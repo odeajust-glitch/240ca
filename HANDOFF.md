@@ -23,6 +23,13 @@ are correct before pushing it as a feature". **Built:**
   board checker finds comes to this phone …" → Follow TEST → the usual Track box (its choices don't matter;
   the job posting tick is not offered for TEST) → OK. Its card on Current: "Owner test: every bump the
   checker finds comes to this phone." Without the key TEST is "Not found", as before.
+- **Fixed after his first try (16:54):** his TEST phone was saved under an account, not the owner key's "no
+  account" (not in Page Health's no-account list), most likely his own member account (it follows one code
+  on one phone). `testDevices` now also takes the approved account whose **sign-up name** makes his code
+  (`r2.listCodeAccounts` returns every approved account's `nameCodes`, the Worker's `codesOfName`, no
+  name or email; checked live: his account's name makes JUOD, no other approved account's does). A
+  member who saved JUOD as their code, or fakes the key on their page, still gets nothing. Needs one more
+  laptop pull + restart (laptop code only).
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a

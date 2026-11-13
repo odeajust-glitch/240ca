@@ -114,9 +114,9 @@ test('displaced: the name the board shows on the turn now', () => {
 test('displaced: the accounts with a name code, read from the bucket (approved ones and the owner)', async () => {
   const objects = {
     'accounts/owner.json': { code: 'JUOD' },
-    [`accounts/users/${'a'.repeat(32)}.json`]: { status: 'approved', code: 'JOHA', email: 'never@returned' },
+    [`accounts/users/${'a'.repeat(32)}.json`]: { status: 'approved', code: 'JOHA', name: 'Joe Haugh', email: 'never@returned' },
     [`accounts/users/${'b'.repeat(32)}.json`]: { status: 'pending', code: 'PEND' },
-    [`accounts/users/${'c'.repeat(32)}.json`]: { status: 'approved' },
+    [`accounts/users/${'c'.repeat(32)}.json`]: { status: 'approved', name: "O'Dea, Justin" },
     'accounts/postings.json': { [`${'a'.repeat(32)}`]: 1 },
   };
   const fetchImpl = async (url) => {
@@ -130,7 +130,12 @@ test('displaced: the accounts with a name code, read from the bucket (approved o
     return key in objects ? { ok: true, status: 200, text: async () => JSON.stringify(objects[key]) } : { ok: false, status: 404 };
   };
   const r2 = { accountId: 'acct', bucket: 'board-site', keyId: 'KEY', secret: 'SECRET' };
-  assert.deepEqual(await listCodeAccounts(r2, fetchImpl), [{ id: 'owner', code: 'JUOD' }, { id: 'a'.repeat(32), code: 'JOHA' }]);
+  // Approved accounts only; the code their sign-up name makes, never the name or email.
+  assert.deepEqual(await listCodeAccounts(r2, fetchImpl), [
+    { id: 'owner', code: 'JUOD', nameCodes: [] },
+    { id: 'a'.repeat(32), code: 'JOHA', nameCodes: ['JOHA'] },
+    { id: 'c'.repeat(32), code: '', nameCodes: ['JUOD'] },
+  ]);
 });
 
 test('displaced: only the displaced member\'s own devices are told (owner: "Only their account")', () => {
@@ -194,6 +199,13 @@ test('displaced, owner test: only phones saved with the owner key that follow TE
     { key: 'owner-other', turns: ['@cccccccccccccccc'], updated: after },
   ];
   assert.deepEqual(D.testDevices(subs, t).map((x) => x.key), ['owner-phone', 'owner-device']);
+  // His own member account (13 Nov: his TEST phone was saved under one): the
+  // approved account whose sign-up name makes his code. Not a member who
+  // saved his code as theirs, nor one whose name makes another code.
+  const accounts = [{ id: 'owner', code: 'JUOD', nameCodes: [] }, { id: 'his', code: '', nameCodes: ['JUOD'] }, { id: 'a'.repeat(32), code: 'JUOD', nameCodes: ['JOHA'] }];
+  const withHis = [...subs, { key: 'his-member-phone', account: 'his', turns: [`@${t}`], updated: after }];
+  assert.deepEqual(D.testDevices(withHis, t, accounts, 'JUOD').map((x) => x.key), ['owner-phone', 'owner-device', 'his-member-phone']);
+  assert.deepEqual(D.testDevices(withHis, t, accounts, '').map((x) => x.key), ['owner-phone', 'owner-device']);
   assert.equal(new Date(D.LOCKED_AT).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }), '2026-11-10 19:00:00');
   // The page follows TEST straight away only with the owner key, and never offers
   // it as a job posting code.

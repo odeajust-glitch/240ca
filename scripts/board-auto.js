@@ -1431,8 +1431,8 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
     // A device that can't be reached now gets it next check.
     if (displaced.events.length || displaced.boardChange) try {
       const live = subs.filter((x) => nextBases[x.key] !== undefined);
-      const testers = Displaced.testDevices(live, People.personHash(Displaced.TEST_CODE));
-      const accounts = displaced.events.length ? await listCodeAccounts(settings.r2, retryingFetch(fetch)) : [];
+      const accounts = await listCodeAccounts(settings.r2, retryingFetch(fetch));
+      const testers = Displaced.testDevices(live, People.personHash(Displaced.TEST_CODE), accounts, ownerCode());
       const store = loadNames(NAMES_FILE);
       const before = namesBefore || {};
       const owner = ownerHash();
@@ -1531,7 +1531,8 @@ try {
 } catch { /* first run or unreadable cache: show unavailable */ }
 // The phones alerts go to: every phone until a week after the lock, then only
 // members' (and the owner's own). See Health.membersOnly.
-const ownerHash = () => People.personHash(((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase());
+const ownerCode = () => ((process.env.BOARD_OWNER_CODE || '').trim() || String(process.env.BOARD_WEEKLY_CODES || 'JUOD').split(',')[0]).trim().toUpperCase();
+const ownerHash = () => People.personHash(ownerCode());
 const alertPhones = async (...args) => Health.membersOnly(await listSubscriptions(...args), Date.now(), [ownerHash(), People.personHash(Displaced.TEST_CODE)]);
 async function refreshSubscriberHealth(r2) {
   const checkedAt = Date.now();
