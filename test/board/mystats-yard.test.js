@@ -185,7 +185,7 @@ function yardRec() {
   return { v: MyStats.V, from: '2026-11-03', to: '2026-11-10', turns: [{ turn: 'YQQS01', own: true, from: '2026-11-03', to: '2026-11-10' }], trips, rests: [], spares: [{ seen: '2026-11-08 0600', turn: 'YQQS01', text: 'job YQQS01 on the vacancy list' }], pos: [], resets: [], due: null, passed: [], stale: [],
     yoff: [{ d: '2026-11-08', why: 'booked', job: 'YQQS01', cc: 'FO' }, { d: '2026-11-09', why: 'spare', job: 'YQQS01', cc: 'FO' }] };
 }
-const strip = (rec) => JSON.parse(JSON.stringify(rec, (k, v) => (['cb', 'cc', 'yw', 'yoff'].includes(k) ? undefined : v)));
+const strip = (rec) => JSON.parse(JSON.stringify(rec, (k, v) => (['cb', 'cc', 'yw', 'yoff', 'ob', 'ru'].includes(k) ? undefined : v)));
 const JOBS = { from: '2026-11-03', to: '2026-11-10', jobs: [{ job: 'YQQS01', start: '0800', length: 480, runs: 7, timed: 6, median: 500, over: 3, early: 0, longest: 630 }, { job: 'YQQS09', start: '1600', length: 480, runs: 7, timed: 7, median: 485, over: 1, early: 0, longest: 520 }] };
 
 test('yard: without the yard view every page is drawn exactly as before, whatever the record carries', () => {
@@ -252,4 +252,90 @@ test('yard: the reset tracker keeps the craft someone was on a yard job as', () 
   R.merge(into, { trips: { [ME]: { [key]: { ...acc.trips[ME][key], cc: undefined } } } });
   R.merge(into, acc);
   assert.equal(into.trips[ME][key].cc, 'FO', 'kept when a later day file has it');
+});
+
+// Each person's own end and the rest they booked (owner, 2026-11-13: "Yes", offered "time each crew member's own end
+// from their status, so one person going home early shows up for them" and "show the rest each person booked after
+// a yard shift").
+function townDay(day, lines) {
+  // lines: { 'FO': [[from, to, text]], … } → a check every 8 minutes with the crews in town for job YQQS01.
+  const snaps = [];
+  for (let t = m(`${day} 0600`); t <= m(`${day} 2352`); t += 8) {
+    const hhmm = T.fromMin(t).slice(11);
+    const town = [];
+    for (const [line, spans] of Object.entries(lines)) {
+      const sp = spans.find(([a, b]) => hhmm >= a && hhmm <= b);
+      if (sp) town.push({ turn: 'YQQS01', craft: line.slice(0, 2), pool: 'YARD YQQS01', text: `${line}: ${sp[2]}` });
+    }
+    snaps.push({ taken: T.fromMin(t), town, yardJobs: hhmm >= '0600' && hhmm <= '1712' ? [{ job: 'YQQS01', station: 'SARNIA', onDuty: dayOn(day, '0800'), hours: 8, crew: 'S1 B901' }] : [] });
+  }
+  return snaps;
+}
+
+test('yard: the collector keeps each crew line going from working to "on rest until", and nothing else', () => {
+  const y = {};
+  Files.collectYard(y, townDay('2026-11-04', {
+    FO: [['0600', '0752', 'rested'], ['0800', '1712', 'status not known'], ['1720', '2352', 'on rest until 5th 0300']],
+    'S1 (temporary)': [['0800', '1352', 'status not known'], ['1400', '2352', 'on rest until 5th 0000']], // went home at 1356
+    'TT trainee': [['0800', '1712', 'status not known'], ['1720', '2352', 'rested']], // no rest booked: no event
+  }));
+  assert.deepEqual(y.bookoff.YQQS01, [
+    { line: 'S1 (temporary)', w: m('2026-11-04 1352'), at: m('2026-11-04 1400'), until: m('2026-11-05 0000') },
+    { line: 'FO', w: m('2026-11-04 1712'), at: m('2026-11-04 1720'), until: m('2026-11-05 0300') },
+  ]);
+});
+
+test('yard: a shift ends when their own crew line went on rest, with the rest they booked; someone filling in by the temporary line', () => {
+  const y = {};
+  Files.collectYard(y, townDay('2026-11-04', {
+    FO: [['0800', '1712', 'status not known'], ['1720', '2352', 'on rest until 5th 0300']],
+    S1: [['0800', '1712', 'status not known'], ['1720', '2352', 'on rest until 5th 0230']],
+    'S1 (temporary)': [['0800', '1352', 'status not known'], ['1400', '2352', 'on rest until 5th 0000']],
+  }));
+  const acc = tracker0('2026-11-05 2352');
+  const holder = [{ turn: 'YQQS01', own: true, from: '2026-11-04 0000', to: '2026-11-05 2352' }];
+  // The holder, craft read: their own line.
+  named(acc, ME, 'YQQS01', '2026-11-04', '0600', '1712', { cc: 'FO' });
+  let t = build(holder, acc, y).trips[0];
+  assert.deepEqual([t.cb, t.ob, t.ru, t.off], ['2026-11-04 1716', '2026-11-04 1716', '2026-11-05 0300', '2026-11-04 1600']);
+  // The holder, craft not read on the shift: the craft they are on their job as now.
+  const acc2 = tracker0('2026-11-05 2352');
+  named(acc2, ME, 'YQQS01', '2026-11-04', '0600', '1712');
+  t = build(holder, acc2, y, { yardCraft: () => 'S1' }).trips[0];
+  assert.deepEqual([t.ob, t.ru], ['2026-11-04 1716', '2026-11-05 0230']);
+  // No craft at all: an end when every own line went off together, and no rest (they booked different ones).
+  t = build(holder, acc2, y).trips[0];
+  assert.deepEqual([t.ob, t.ru], ['2026-11-04 1716', undefined]);
+  // No craft, and the own lines went off at different times: no end of their own (the job's stays).
+  const y2 = {};
+  Files.collectYard(y2, townDay('2026-11-04', {
+    FO: [['0800', '1712', 'status not known'], ['1720', '2352', 'on rest until 5th 0300']],
+    S1: [['0800', '1352', 'status not known'], ['1400', '2352', 'on rest until 5th 0000']],
+  }));
+  t = build(holder, acc2, y2).trips[0];
+  assert.deepEqual([t.cb, t.ob], ['2026-11-04 1716', undefined]);
+  // A spare filling the S1 in (their own turn B901 beside the craft): the temporary line, home at 1356.
+  const acc3 = tracker0('2026-11-05 2352');
+  named(acc3, ME, 'YQQS01', '2026-11-04', '0600', '1352', { cc: 'S1' });
+  const spare = [{ turn: 'B901', own: true, from: '2026-11-04 0000', to: '2026-11-05 2352' }];
+  t = build(spare, acc3, y).trips[0];
+  assert.deepEqual([t.turn, t.ob, t.ru], ['B901', '2026-11-04 1356', '2026-11-05 0000']);
+  // The yard view takes their own end before the job's, and the page says the rest booked.
+  assert.equal(MyStats.yardView({ trips: [{ id: 'YQQS01', at: '2026-11-04 0800', yard: true, off: '2026-11-04 1600', cb: '2026-11-04 1716', ob: '2026-11-04 1500' }] }).trips[0].off, '2026-11-04 1500');
+  const rec = build(holder, acc, y);
+  const h = MyStats.html(rec, { more: true, yard: true, code: 'ABCD' });
+  assert.match(h, /Rest you booked after a shift<\/dt><dd>usually 9 h 44/);
+  assert.match(h, /rest booked to 5 Nov 0300/);
+  assert.match(h, /1 when you booked off/);
+  assert.match(MyStats.csv(rec, 'all', { yard: true }), /"Rest booked until"\r\n.*"2026-11-05 0300"$/s);
+  assert.doesNotMatch(MyStats.csv(rec, 'all'), /Rest booked until/);
+  assert.doesNotMatch(MyStats.html(rec, { more: true }), /rest booked to|Rest you booked/);
+});
+
+test('yard: back on duty before the rest they booked was up is said, with a check mark', () => {
+  const day = (d, ru) => ({ id: 'YQQS01', at: `${d} 0800`, turn: 'YQQS01', st: 'SARNIA', yard: true, off: `${d} 1600`, est: true, nm: 1, cb: `${d} 1600`, ob: `${d} 1600`, ru });
+  const rec = { ...yardRec(), trips: [day('2026-11-04', '2026-11-05 0900'), day('2026-11-05', '2026-11-06 0200')], yoff: [] };
+  const h = MyStats.html(rec, { more: true, yard: true, code: 'ABCD' });
+  assert.match(h, /Back on duty before your booked rest was up<\/dt><dd>1 of 2 <span class="ms-pill ms-bad">check<\/span>/);
+  assert.match(h, /YQQS01, on duty 5 Nov 0800, rest booked to 5 Nov 0900 \(1 h 00 early\)/);
 });

@@ -314,6 +314,23 @@
       // cb: when the shift ended by the Call Board (boardEnd), kept beside the 8 / 12 h the rest of the site
       // goes by; cc: the craft they worked it as, when read; yw: the turns on its crew lines besides their own
       // (spares filling in). The three are for the test site's yard pieces (owner, 2026-11-13).
+      // Their own end and the rest they booked (owner, 2026-11-13: "Yes", offered each person's own end and the rest
+      // booked after a yard shift), from their crew line in the crews in town (collectYard bookoff): the first time in
+      // the shift it went from working to "on rest until". The job's own line for its holder, the "(temporary)" one
+      // for someone filling in. Craft not read: an end only when every one of the job's own lines went off within
+      // 10 min of each other, and the rest only when they all booked the same.
+      const ownOff = (job, on, cc, holder) => {
+        const evs = (((yard || {}).bookoff || {})[job] || []).filter((e) => e.w >= on + 60 && e.w <= on + yardMinutes(job) + 240 && e.at - e.w <= 30);
+        const first = (line) => evs.filter((e) => e.line === line).sort((a, b) => a.w - b.w)[0] || null;
+        if (cc) {
+          const e = holder ? first(cc) || first(`${cc} (temporary)`) : first(`${cc} (temporary)`) || first(cc);
+          return e ? { end: Math.round((e.w + e.at) / 2), until: e.until } : null;
+        }
+        const lines = [...new Set(evs.map((x) => x.line))].filter((l) => !/\(temporary\)|trainee/.test(l)).map(first);
+        if (!lines.length || Math.max(...lines.map((x) => x.at)) - Math.min(...lines.map((x) => x.at)) > 10) return null;
+        const e = lines.sort((a, b) => a.w - b.w)[0];
+        return { end: Math.round((e.w + e.at) / 2), until: lines.every((x) => x.until === e.until) ? e.until : null };
+      };
       const yardTrip = (job, on, last, own, cc = '') => {
         const run = (((yard || {}).runs || {})[job] || {})[on];
         const full = on + yardMinutes(job);
@@ -322,8 +339,12 @@
         const mine = own && !TRAINEE.test(own.turn) ? own.turn : job;
         const cb = early ? null : boardEnd(run, on, job);
         const yw = run && run.crew ? run.crew.filter((x) => x.split(' ').pop() !== mine) : [];
+        // A holder's craft not read on the shift: the one they are on their own job as at the newest check.
+        const mineOff = ownOff(job, on, cc || (mine === job && yardCraft ? yardCraft(job) || '' : ''), mine === job);
+        const ob = mineOff && mineOff.end - on >= 60 ? mineOff.end : null; // ob, ru: for the test site's yard pieces
         return { on, last, key: job, id: job, at: T.fromMin(on), turn: mine, st: 'SARNIA', ...(mine !== job ? { job } : {}), yard: true, off: T.fromMin(early ? last : full), est: true, ...callFields(callOf(job, mine, '', on)), nm: 1,
-          ...(cb != null ? { cb: T.fromMin(cb) } : {}), ...(cc ? { cc } : {}), ...(yw.length ? { yw } : {}) };
+          ...(cb != null ? { cb: T.fromMin(cb) } : {}), ...(cc ? { cc } : {}), ...(yw.length ? { yw } : {}),
+          ...(ob != null ? { ob: T.fromMin(ob) } : {}), ...(ob != null && mineOff.until != null && mineOff.until > ob ? { ru: T.fromMin(mineOff.until) } : {}) };
       };
       const addYard = (t) => { if (t) list.push(t); };
       for (const y of (tracker.named || []).filter((x) => x.yard)) {
@@ -368,7 +389,7 @@
       } else if (prev && prev.yard && t.yard && t.on < min(prev.off)) {
         // Moved from one yard job to another in the same shift: one shift, from the first to the end of the second.
         const aka = [...new Set([...(prev.aka || []), t.id])].filter((x) => x !== prev.id);
-        merged[merged.length - 1] = { ...prev, off: t.off > prev.off ? t.off : prev.off, last: Math.max(prev.last, t.last), ...(aka.length ? { aka } : {}), ...(t.cb && (!prev.cb || t.cb > prev.cb) ? { cb: t.cb } : {}) };
+        merged[merged.length - 1] = { ...prev, off: t.off > prev.off ? t.off : prev.off, last: Math.max(prev.last, t.last), ...(aka.length ? { aka } : {}), ...(t.cb && (!prev.cb || t.cb > prev.cb) ? { cb: t.cb } : {}), ...(t.ob && (!prev.ob || t.ob > prev.ob) ? { ob: t.ob, ...(t.ru ? { ru: t.ru } : {}) } : {}) };
       } else merged.push(t);
     }
     // Nobody is on two trains at once: a trip read off the turn gives way to one read by name; otherwise the earlier one ended when the next began.
@@ -380,7 +401,7 @@
       else if (b.nm && !a.nm) { merged.splice(i, 1); if (i > 0) i--; } else { merged[i] = { ...a, off: T.fromMin(b.on), est: true, ...(a.cb && min(a.cb) > b.on ? { cb: T.fromMin(b.on) } : {}) }; i++; }
     }
     // A shift's end by the Call Board never runs into the next trip.
-    for (let i = 0; i < merged.length - 1; i++) if (merged[i].cb && min(merged[i].cb) > merged[i + 1].on) merged[i] = { ...merged[i], cb: T.fromMin(merged[i + 1].on) };
+    for (let i = 0; i < merged.length - 1; i++) for (const k of ['cb', 'ob']) if (merged[i][k] && min(merged[i][k]) > merged[i + 1].on) merged[i] = { ...merged[i], [k]: T.fromMin(merged[i + 1].on) };
     const trips = merged.map(({ on, last, key, ...t }) => t);
 
     // Days off on a turn of their own, said only where the board says why (owner, 2026-11-13: the yard workers'
@@ -868,9 +889,10 @@
   // page is drawn exactly as before.
 
   // The record with each yard shift ending when its job left the Call Board, where that was seen (build: cb).
+  // Their own end (ob: their crew line went on rest) first, else the job's (cb).
   function yardView(rec) {
-    if (!rec || !Array.isArray(rec.trips) || !rec.trips.some((t) => t.yard && t.cb)) return rec;
-    return { ...rec, trips: rec.trips.map((t) => (t.yard && t.cb ? { ...t, off: t.cb, est: true, rb: 1 } : t)) };
+    if (!rec || !Array.isArray(rec.trips) || !rec.trips.some((t) => t.yard && (t.ob || t.cb))) return rec;
+    return { ...rec, trips: rec.trips.map((t) => (t.yard && (t.ob || t.cb) ? { ...t, off: t.ob || t.cb, est: true, rb: 1 } : t)) };
   }
   // A yard worker beside the yard: per 7 days, over the window, for the unbroken run of days they have been on
   // yard jobs or the yard spareboard (the YD group) since any day the board could not say who came in. null:
@@ -942,7 +964,12 @@
       return { job, cc, start, n: on.length, timed: tm.length, median: median(tm) };
     });
     const ownJobs = new Set(own.map((x) => x.job));
-    return { timed: timed.length, untimed: yardTrips.length - timed.length, over: { n: over.length, total: sum(over.map(past)), worst: over.reduce((m, t) => (!m || past(t) > past(m) ? t : m), null) },
+    // The rest they booked after each yard shift (ru), from their own end; and coming back before it was up.
+    const rests = yardTrips.filter((t) => t.ru && t.rb).map((t) => ({ t, rest: min(t.ru) - t.end })).filter((x) => x.rest >= 120 && x.rest <= 72 * 60);
+    const backEarly = [];
+    for (const x of rests) { const next = s.trips[s.trips.indexOf(x.t) + 1]; if (next && next.on < min(x.t.ru) - 1) backEarly.push({ id: next.id, at: next.at, until: x.t.ru, by: min(x.t.ru) - next.on }); }
+    return { timed: timed.length, untimed: yardTrips.length - timed.length, byOwn: timed.filter((t) => t.ob).length,
+      rest: { n: rests.length, median: median(rests.map((x) => x.rest)), least: rests.length ? Math.min(...rests.map((x) => x.rest)) : null, most: rests.length ? Math.max(...rests.map((x) => x.rest)) : null }, backEarly, over: { n: over.length, total: sum(over.map(past)), worst: over.reduce((m, t) => (!m || past(t) > past(m) ? t : m), null) },
       early: { n: early.length, worst: early.reduce((m, t) => (!m || past(t) < past(m) ? t : m), null) }, timedList: timed, past, own,
       elsewhere: yardTrips.filter((t) => !ownJobs.has(t.id)).length, offs, offBy: { booked: offs.filter((x) => x.why === 'booked').length, spare: offs.filter((x) => x.why === 'spare').length, norun: offs.filter((x) => x.why === 'norun').length },
       crew: top(yardTrips.flatMap((t) => t.yw || [])) };
@@ -1275,7 +1302,7 @@
       const p = t.prev;
       const gap = p && t.on > p.end && t.on - p.end <= 6 * DAY ? t.on - p.end : null;
       return { at: t.at, id: t.id, aka: t.aka || [], from: t.yard ? 'yard' : t.st || '', turn: t.turn + (t.craft ? ` ${t.craft}` : '') + (t.tt ? ` ${t.tt}` : ''), job: t.job || '', off: T.fromMin(t.end), est: !!t.durEst, dur: t.dur, gap,
-        call: t.call || null, named: !!t.nm };
+        call: t.call || null, named: !!t.nm, ru: t.yard && t.rb && t.ru ? t.ru : '' };
     });
   }
   // The same as a spreadsheet (comma-separated, one line a trip).
@@ -1286,8 +1313,9 @@
     const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
     const clock = (m) => (m == null ? '' : `${Math.floor(m / 60)}:${pad(Math.round(m) % 60)}`);
     const head = ['On duty', 'Train or job', 'Also shown as', 'From', 'Turn', 'Working (job)', 'Off duty', 'Off duty estimated', 'On duty for (h:mm)', 'Time off before (h:mm)', 'Call you slept on', 'Call you got', 'Call off by (min)', 'Name read on it'];
-    const lines = logRows(s).map((r) => [r.at, r.id, r.aka.join(' '), r.from, r.turn, r.job, r.off, r.est ? 'yes' : '', clock(r.dur), clock(r.gap), r.call ? r.call.exp : '', r.call ? r.call.got : '', r.call ? r.call.off : '', r.named ? 'yes' : ''].map(q).join(','));
-    return [head.map(q).join(','), ...lines].join('\r\n');
+    // The test site's yard view: the rest booked after each yard shift, as a last column.
+    const lines = logRows(s).map((r) => [r.at, r.id, r.aka.join(' '), r.from, r.turn, r.job, r.off, r.est ? 'yes' : '', clock(r.dur), clock(r.gap), r.call ? r.call.exp : '', r.call ? r.call.got : '', r.call ? r.call.off : '', r.named ? 'yes' : '', ...(opts.yard ? [r.ru] : [])].map(q).join(','));
+    return [[...head, ...(opts.yard ? ['Rest booked until'] : [])].map(q).join(','), ...lines].join('\r\n');
   }
 
   // The whole tab. opts: { range: '30' | '90' | 'all', code, more, pools, now }.
@@ -1482,9 +1510,9 @@
     // Every trip, newest first: the duty and rest log.
     const log = more ? section('log', `Every ${w.one}`, table(['On duty', w.job, 'Off duty', 'On duty for', 'Time off before', 'Call'],
       logRows(s).reverse().map((x) => [esc(dt(x.at)), `<b>${esc(x.id)}</b><small>${esc(x.from === 'yard' ? 'yard' : title(x.from))}${x.job && x.job !== x.id ? ` · working ${esc(x.job)}` : ''} · ${esc(x.turn)}</small>${x.aka.length ? `<small>also shown as ${x.aka.map(esc).join(', ')}</small>` : ''}`,
-        `${x.est ? '~' : ''}${esc(dt(x.off))}`, `${x.est ? '~' : ''}${hm(x.dur)}`, x.gap == null ? '—' : hm(x.gap), x.call ? `<span class="ms-pill ${Math.abs(x.call.off) <= 30 ? 'ms-ok' : Math.abs(x.call.off) <= 60 ? 'ms-warn' : 'ms-bad'}">${esc(off(x.call.off))}</span>` : '—']))
+        `${x.est ? '~' : ''}${esc(dt(x.off))}${Y && x.ru ? `<small>rest booked to ${esc(dt(x.ru))}</small>` : ''}`, `${x.est ? '~' : ''}${hm(x.dur)}`, x.gap == null ? '—' : hm(x.gap), x.call ? `<span class="ms-pill ${Math.abs(x.call.off) <= 30 ? 'ms-ok' : Math.abs(x.call.off) <= 60 ? 'ms-warn' : 'ms-bad'}">${esc(off(x.call.off))}</span>` : '—']))
       + `<p><button type="button" class="ms-btn" data-ms-csv>⬇ Spreadsheet of these ${w.many}</button></p>`,
-    Y ? 'Every train and yard shift in the dates picked, newest first. ~ marks an off duty time that is an estimate: a yard shift\'s is when its job left the Call Board (good to about 5 minutes), or 8 h (12 h on a YSBY job) where that was not seen.'
+    Y ? 'Every train and yard shift in the dates picked, newest first. ~ marks an off duty time that is an estimate: a yard shift\'s is when you booked off (your crew line went on rest) or else when its job left the Call Board, good to about 5 minutes, or 8 h (12 h on a YSBY job) where neither was seen.'
       : 'Every train and yard shift in the dates picked, newest first. ~ marks an off duty time that is an estimate (a yard shift is taken as 8 h, 12 h on a YSBY job).') : '';
 
     // The test site's yard pieces (opts.yard).
@@ -1518,18 +1546,20 @@
       return table(['Job', 'Shifts', 'Usual start', 'A shift', 'Ran 15 min+ over', 'Nights'], rows);
     }
     const yardJobSec = Y && (yf.own.length || s.yard) ? section('yardjob', yf.own.length > 1 ? 'Your yard jobs' : yf.own.length ? 'Your yard job' : 'Your yard shifts', `<dl class="ms-facts">
-      ${yf.own.map((j) => fact(`${esc(j.job)}${j.cc ? ` · ${esc(j.cc)}` : ''}`, j.n ? plural(j.n, 'shift') : 'no shifts in these dates', [j.start ? `usually on duty ${esc(j.start)}` : '', j.median != null ? `usually ~${hm(j.median)} by the Call Board` : ''].filter(Boolean).join(' · '))).join('')}
+      ${yf.own.map((j) => fact(`${esc(j.job)}${j.cc ? ` · ${esc(j.cc)}` : ''}`, j.n ? plural(j.n, 'shift') : 'no shifts in these dates', [j.start ? `usually on duty ${esc(j.start)}` : '', j.median != null ? `usually ~${hm(j.median)} a shift` : ''].filter(Boolean).join(' · '))).join('')}
       ${s.yard ? fact('Shifts on jobs not your own', String(yf.elsewhere), yf.own.length ? 'filling in' : 'you held no yard job of your own in these dates') : ''}
       ${yf.offs.length ? fact('Days off the board gave a reason for', String(yf.offs.length), [yf.offBy.booked ? `${yf.offBy.booked} booked off` : '', yf.offBy.spare ? `${yf.offBy.spare} your job went spare for your craft` : '', yf.offBy.norun ? `${yf.offBy.norun} your job did not go on duty` : ''].filter(Boolean).join(' · ')) : ''}
-      ${s.yard ? fact('Shifts timed by the Call Board', `${yf.timed} of ${s.yard}`, yf.untimed ? `${yf.untimed} taken as 8 h (12 h on a YSBY job): no end seen` : 'every one') : ''}</dl>`,
-    'From your name on the job\'s crew lines. A shift ends when its job left the Call Board, which the checks look at about every 8 minutes.') : '';
+      ${yf.rest.n ? fact('Rest you booked after a shift', `usually ${hm(yf.rest.median)}`, `shortest ${hm(yf.rest.least)} · longest ${hm(yf.rest.most)} · ${plural(yf.rest.n, 'shift')}`) : ''}
+      ${yf.rest.n ? fact('Back on duty before your booked rest was up', `${yf.backEarly.length} of ${yf.rest.n}${yf.backEarly.length ? ' <span class="ms-pill ms-bad">check</span>' : ''}`, yf.backEarly.length ? yf.backEarly.slice(-3).map((e) => `${esc(e.id)}, on duty ${esc(dt(e.at))}, rest booked to ${esc(dt(e.until))} (${hm(e.by)} early)`).join(' · ') : 'against the rest you booked after each shift') : ''}
+      ${s.yard ? fact('Shifts with an end from CATS', `${yf.timed} of ${s.yard}`, [yf.byOwn ? `${yf.byOwn} when you booked off` : '', yf.timed - yf.byOwn ? `${yf.timed - yf.byOwn} when the job left the Call Board` : '', yf.untimed ? `${yf.untimed} taken as 8 h (12 h on a YSBY job): no end seen` : ''].filter(Boolean).join(' · ')) : ''}</dl>`,
+    'From your name on the job\'s crew lines. A shift ends when your crew line in the crews in town went on rest (you booked off), or else when the job left the Call Board; the checks look about every 8 minutes.') : '';
     const overSec = Y && yf.timed ? section('overtime', 'Yard shifts that ran over, and early finishes', `<dl class="ms-facts">
       ${fact('Ran 15 min or more past its length', `${yf.over.n} of ${yf.timed}`, yf.over.n ? `${hm(yf.over.total)} past in all · most ${hm(yf.past(yf.over.worst))} (${esc(yf.over.worst.id)}, ${esc(dm(yf.over.worst.at))})` : '')}
       ${fact('Ended 30 min or more early', `${yf.early.n} of ${yf.timed}`, yf.early.n ? `most ${hm(-yf.past(yf.early.worst))} early (${esc(yf.early.worst.id)}, ${esc(dm(yf.early.worst.at))})` : '')}
       ${yf.untimed ? fact('Not timed', String(yf.untimed), 'no end seen on the Call Board (still on, a gap in the checks, or listed far too long): taken as 8 h, 12 h on a YSBY job') : ''}</dl>`
       + (more ? pic('Each bar is one shift, newest first: how far it ended from its job\'s own length (8 h, or 12 h for a job that usually runs 12). The shaded strip is 15 minutes either way. Bars stop at 3 hours.',
         divergeChart(yf.timedList.slice(-20).reverse().map((t) => ({ label: dm(t.at), v: yf.past(t), tip: `${t.id}, on duty ${dt(t.at)}, off ~${dt(T.fromMin(t.end))}: ~${hm(t.dur)}` })), { band: 15, aria: 'How far each yard shift ended from its own length', sign: ['early', 'over'] })) : ''),
-    'By when the job left the Call Board, which the checks look at about every 8 minutes: good to about 5 minutes. The board\'s times, not your time sheet.') : '';
+    'By when you booked off in CATS (your crew line went on rest), or else when the job left the Call Board; the checks look about every 8 minutes, so good to about 5 minutes. The board\'s times, not your time sheet.') : '';
     const jobsSec = (() => {
       const yj = opts.yardJobs;
       if (!Y || !more || !yj || !Array.isArray(yj.jobs) || !yj.jobs.length || !(s.yard || yf.own.length)) return '';

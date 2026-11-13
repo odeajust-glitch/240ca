@@ -12,6 +12,29 @@ screen" makes a shortcut), or "Create shortcut" was picked. Told him: remove the
 drawer for "Line-up" / "Sarnia Board" and add that; if none, ⋮ → Add to Home screen → **Install**; if Chrome
 offers no Install, uninstall the old app in Android Settings → Apps and try again. Offered (not built): the
 page's "How to get alerts" Android line could say to pick Install, not Create shortcut.
+## Yard shifts: each person's own end and the rest they booked — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-mystats.js`, `lib/board/mystats.js`; no Worker change). WAITING ON ONE LAPTOP PULL + RESTART
+
+**Owner, 13 Nov:** asked "Can we add a check in for the end of yard shifts for the board checker or did we add it in
+already" (answered: already in, see the section below), then offered "time each crew member's own end from their
+status, so one person going home early shows up for them" and "show the rest each person booked after a yard
+shift": **"Yes"**.
+- **Laptop:** `collectYard` keeps `bookoff[job]`: each crew line of a yard job in the crews in town (snapshot `town`,
+  "YARD <job>") going from "status not known" (working) to "on rest until …": `{ line ("FO", "S1 (temporary)"),
+  w (last working check), at (first on rest), until }`. `build` (`ownOff`): a yard shift gets `ob` (halfway between
+  w and at; the first in the shift, a check within 30 min, 1 h to the job's length + 4 h) and `ru` (the rest booked)
+  from **their** line: the job's own line for its holder, the "(temporary)" one for someone filling in; craft from
+  the shift (`cc`) or, for a holder, the craft they are on it as at the newest check; no craft: an end only when all
+  the job's own lines went off within 10 min, a rest only when all booked the same. Capped at the next trip.
+- **Page (yard view only):** a shift's end is `ob`, else `cb` (the job left the Call Board), else 8 / 12 h. "Your yard
+  job" adds "Rest you booked after a shift" (usually, shortest, longest) and "Back on duty before your booked rest
+  was up" (a check mark when it happened) and says how each shift was timed; "Every shift" shows "rest booked to …";
+  the spreadsheet gets a "Rest booked until" column. Without the yard view: the same to the byte (1008 drawings).
+**Checked.** Suite **544 of 544** (`mystats-yard.test.js` 13: the collector, own line / temporary line / craft from
+now / no craft (agree, disagree), the view's order, the page, the spreadsheet, back early); 10 breaks on purpose,
+a test failed every time. On the 29 published days: 61 of 595 yard shifts get their own end and rest (own crew lines
+in town exist from 3 Nov; crafts are mostly unread before the restart); where a job end exists too, all 45 agree
+within 10 min; rests booked: 8.7 h to 10 h (p10 to p90). JAM1's 3 Nov shift: their own line went on rest at 1556
+(the old rule had them leaving at 0917). **Not checked:** a spare's "(temporary)" line in real use; a real phone.
 
 ## My stats for yard workers: the eight items, and the owner's look at any name code's page — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026. WAITING ON (1) THE WORKER PASTE (copy page rebuilt; board-test at least) AND (2) ONE LAPTOP PULL + RESTART
 
