@@ -1,5 +1,77 @@
 # HANDOFF — read this before doing anything
 
+## Tab review round 3: Members — 12 Nov 2026, 19:15 to 19:55 Toronto. His two asks BUILT FOR THE TEST SITE ONLY (`71a4fa0`, page only), WAITING ON ONE LAPTOP PULL; then his look. A cleanup list of eight put to him: nothing else built, waiting on his picks
+
+**Owner, 12 Nov about 19:15 Toronto:** "Start members, I would like to clean up the members tab, move the
+'whos getting alerts' to members from page health. The list of turns being tracks that don't have an
+account, i want to see the owner of the turn/name code". Read as two picks to build now (test site only,
+his review rules: see the tab-by-tab section) and a round 3 look for the cleanup, to put to him and wait.
+
+**BUILT, `71a4fa0`, all in `public/board.html` behind `PREVIEW` (board-test with the owner key). No laptop
+code, no Worker change, no paste.** New test file `test/board/members-review.test.js` (3); one line of
+`health-review.test.js` changed (the Notifications button is now written twice in the page, one drawn at a
+time). Suite **501 of 501** after rebasing on the other session's 18.6(b) commit (`6b56377`).
+- **Where.** Just above `renderMembers`: Page Health's Who gets alerts block taken out of `renderHealth` into
+  `whoGetsAlerts(S, o)` (with `crewFits`, `crewOnTurn`, `crewNameOf`; `o.members` draws it in the Members
+  tab's own style), then `accountFor`, `looseNamed`, `looseRowHtml`, `agoStamp`. In `renderHealth`:
+  `const who = PREVIEW ? '' : whoGetsAlerts(…)`, and the Notifications button wired only if it is there. In
+  `renderMembers`: `const review = PREVIEW && membersOwner`, `whoHtml` after the member lists, the
+  no-account rows through `looseRowHtml`, a sentence added to that list's note, the Notifications button
+  wired. `loadHealthCrew` draws Members again when the names arrive (test site only). Styles: `.members
+  .mwho`, `.members .mhas`.
+- **What he sees on board-test.** Page Health: no Who gets alerts (nothing else changed: the text of the
+  page differs by that section only). Members, after the Members list and before the phones with no
+  account: "Who gets alerts" (the phone count, "Followed turns and people" folded, the same tables and names
+  as Page Health had, the Notifications tab link). **Phones with no account:** beside each turn, whose turn
+  it is from the crew names file (while it is out on a trip, whoever is working it: the same name Who gets
+  alerts shows); beside each name code, the person it belongs to; a code not known yet but on a turn, the
+  name on that turn. **My addition, told to him: "has an account: <member>"** when that person already has
+  an account (their saved name code, else exactly one approved member whose name fits "Last, F"): that
+  phone only needs signing in. On the 12 Nov 19:23 report, 5 of the 8 phones were people with accounts
+  (his own JUOD phone, an Admin's two older ones, two others); 3 were people with none.
+- **Checked.** The suite; each piece broken on purpose seven ways, a test failed every time. In a browser,
+  this branch's page over the live data (in the browser only; every non-GET stopped; `boardNoCount` set;
+  the answers recorded once and replayed, the clock held, for old against new): **on the main site as him,
+  Page Health, Members and Current are the same to the letter (HTML) with the old page and the new**, at
+  390 px, before and after the rebase. On board-test as him: 390 light and 1280 dark, the fold opened (no
+  table wider than its box, no sideways scroll), the tab drawn again (the fold stays open), the
+  Notifications link opens Notifications, no page errors. Every name matched by hand against the member
+  list (not written here).
+- **Not checked.** A real phone. An Admin's view (the code gives them neither piece: `membersOwner` only;
+  the test pins it). Page styles other than light and dark. The published page (needs his pull).
+- **To promote:** drop `PREVIEW` from `const who = …` in `renderHealth` and from `const review = …` in
+  `renderMembers`, and from the `loadHealthCrew` line; change `members-review.test.js`, quoting him.
+
+**Round 3: the Members tab looked at** (board-test and the main site as him, 390 px; both Workers' answers
+to `/health/accounts` read for counts and field names only). The tab is the same page on both sites and
+both Workers answered 35 approved accounts. Put to him in his order:
+1. **"(only you see this)" in the heading shows to Admins too** (two Admins see the tab). Idea: "(you and
+   your Admins see this)", and for an Admin "(the owner and Admins see this)".
+2. **"Started signing up, email not confirmed" never shows:** neither Worker has the 11 Nov code
+   (`unverified` is missing from `/health/accounts` on both sites). Not a page change: the Worker paste
+   waiting since 11 Nov (section "Unconfirmed sign-ups" below), both Workers.
+3. **8,482 px on a phone** (8,899 with Who gets alerts on the test site): 35 cards of about 190 px each, all
+   facts and buttons open; Who gets alerts and the phones with no account sit under all 35. Idea: one short
+   line per member (name · name code · last seen) that opens to the full card and its buttons, with the
+   counts at the top.
+4. **The same thing said twice:** "8 phones get alerts without a known member…" (the Worker's count) right
+   above "Phones with no account (8)" (the laptop's list). Idea: one heading, one explanation.
+5. **Remove access sits beside Access on every card** (it asks first). Idea: inside the opened card only
+   (goes with 3).
+6. **18 of 35 have no name code saved**, so My stats does not work for them; only seen card by card. Idea:
+   the count at the top and who they are, folded. No message to them (his rule).
+7. **"Follows: 1 name code (1 phone)" does not say which code** (16 of 35 cards). The Worker knows a
+   follow only by its hidden number; the laptop knows the code. Naming it needs a Worker change: asked
+   whether he wants it.
+8. **"Approved" reads Nov 10 on every card** (the day accounts began). Idea: off, or inside the opened card.
+Also told him, not an item: the phone that follows only **SR03** (last changed 22 Oct) is not kept after
+the cut-off (only phones following his name code are), and SR03 now shows another person on the boards: if
+that phone was his, it stops on the 18th. And: where should Who gets alerts sit (bottom, beside the phones
+with no account, as built; or top)?
+
+**Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at the two
+pieces on board-test, and his picks from the eight.
+
 ## Screenshot mark (a hidden account number in every screen) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only), WAITING ON ONE LAPTOP PULL; then his look and his say. Nothing on the main site; no Worker change
 
 **Owner, 12 Nov evening:** "can we make it so scren shots are blockable, or we would have a a way to track
@@ -212,7 +284,7 @@ The session's scripts and pictures were in its scratchpad only (not kept); the p
 fast-forwarded to GitHub before anything was read (`git fetch --deepen=120`, then `merge --ff-only`; the
 shallow clone first said "unrelated histories").
 
-## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Rounds 1 (Current) and 2 (Page Health): his picks are ON FOR EVERY MEMBER, BOTH SITES, in the code since 12 Nov 13:45 Toronto at his word (`6403bde`), WAITING ON ONE LAPTOP PULL (page only). The counts line is off Current at his word. The purple pieces stay on the test site. Next: Members (round 3), on his word
+## Tab-by-tab review — started November 12, 2026. ONE TAB PER ROUND. Rounds 1 (Current) and 2 (Page Health): his picks are ON FOR EVERY MEMBER, BOTH SITES, in the code since 12 Nov 13:45 Toronto at his word (`6403bde`), WAITING ON ONE LAPTOP PULL (page only). The counts line is off Current at his word. The purple pieces stay on the test site. Round 3 (Members) started 12 Nov evening: its section is at the top of this file
 
 **Owner, 12 Nov (max effort):** "review the Sarnia board site one tab at a time, looking for improvements
 worth trying on the test site", then "Start with the current, page health then members tab". **His rules
@@ -594,7 +666,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 |---|---|---|---|---|
 | 1 Current | 10 | 1, 2, 3, 5, 6, 7, 10 ("Go") | 1, 2, 3, 5, 7, 10 on for every member (`6403bde`, after his pull) | **6 turned down after seeing it: the counts line is taken out** ("it does but take it out"). 4 waits on his "crew info" photo (Housekeeping 11). 8 (first screen) his taste, not asked again. 9 (crew order) "doesn't really matter" |
 | 2 Page Health | 7 | 1 to 5 ("Go") | on both sites (`6403bde`, after his pull); the laptop half running since 11:46 | 6 (members seen today), 7 (fold the quiet rows) |
-| 3 Members | — | — | next, on his word | — |
+| 3 Members | 8 (and his two asks) | his two asks: Who gets alerts moved here, names beside the phones with no account | the two asks built for the test site only (`71a4fa0`), after his pull; the eight put to him, nothing else built (the section at the top of this file) | — |
 | 4 to 15 | — | — | not started (order at the top of this section) | — |
 | Whole site (layout and structure; another session, 12 Nov afternoon) | 12 | 1, 3, 5, 6, 7 | built for the test site only (`79fc425`), after his pull; his look still to come (the section at the top of this file) | **2 (the site's name) and 11 (Settings' order) turned down: "2 leave it and leave 11"**. 4, 8, 9, 10, 12 not picked |
 
