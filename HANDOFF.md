@@ -51,11 +51,17 @@ his own page, JAM1 (a split code: a yard job holder), CLLE (a yard spare), CRSC,
 "ab" (not a code), ZZZZ (nothing kept), Back to mine; light, dark, Departure Board, Retro, Mario; no page errors,
 no sideways scroll. A member stand-in on board-test and him on the main site: no box, no yard pieces, no jobs
 file asked for.
-**Not checked:** the Call Board ends against a real time sheet (ask one yard member to compare a week before this
-goes to members: about half of 8 h runs end within 15 min of 8 h, a quarter run 30 min to 4 h over); the YSBY
-(yardmaster) runs listed 12 h 40 to 15 h 50: real, or CATS keeping the job up until its relief? (ask him); crafts
-before the restart (most yard holders' craft comes only from new checks, so "spare for your craft" waits on that);
-a real phone.
+**Checked against the crews' own status, 13 Nov (his question: "Can we add a check in for the end of yard shifts for
+the board checker or did we add it in already"; answered: already in, nothing to add):** every check also saves each
+yard job's crew status by craft (snapshot `town`, pool "YARD <job>": "status not known" while working, then "on rest
+until …", then "rested"). Over the 29 published days, the check where a craft went from working to "on rest until"
+was the same check the job left the Call Board in **173 of 175** regular yard shifts (the other 2 within 30 min)
+and **18 of 18** YSBY shifts: CATS's own book-off. So the YSBY yardmaster shifts of 12 h 40 to 15 h 50 are real,
+not a listing left up. Not used yet: the "on rest until" time itself (the rest each person booked after a yard
+shift); offered to him.
+**Not checked:** the Call Board ends against a real time sheet (they match CATS's book-off; a time sheet can still
+differ); crafts before the restart (most yard holders' craft comes only from new checks, so "spare for your craft"
+waits on that); a real phone.
 **For members (only at his word):** drop `PREVIEW` from the three places in `renderMine` (`yard`, `yardJobs`,
 `csv`), keep the box owner-only; change `mystats-yard.test.js`'s gating test, quoting him.
 
