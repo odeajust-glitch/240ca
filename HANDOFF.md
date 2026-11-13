@@ -1,5 +1,37 @@
 # HANDOFF — read this before doing anything
 
+## The faint visible code made much fainter, with a "sharpen the photo" step and a strength picker — BUILT FOR THE TEST SITE ONLY (his own screens, as before), 13 Nov 2026 about 18:40 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL (no restart); then his eye test, then a camera test
+
+**Owner, 13 Nov:** "is there anyway to make it less visible", then "make it as faint as you think is possbile, Ill
+test it and tell you if i can see it, then we can test with a camera".
+- **Tried first (read only, drawn in a test browser over the real board-test as the owner key):** the code at 1.5
+  to 5% on light pages and 2 to 7% on dark, through the same photo stand-in as before made harsh (`treatments.photo`,
+  1 px more blur, 1100 px, JPEG 70; `scratchpad/faint` in that session). Read by eye straight off the photo it took
+  about 3% light and 5 to 7% dark. **Sharpened** (the slow light and dark taken away, the small differences
+  stretched) it read at **1.5% light** and **3% dark** (2% dark only in part).
+- **Built:** the default is now **2% black on light pages, 3% white on dark** (was 5% / 7%), and **12 codes** in the
+  400 x 880 tile (was 40): at least 139 px apart, no spot more than 143 px from one, about 11 on a phone screen.
+  `SHOTCODE_LEVELS` / `shotCodeLevel`: in Page Health → Trace a screenshot → "A photo of a screen?", **"How faint
+  your code is on this phone"**: 1/2, 1.5/2.5, 2/3 (default), 3/4, 5/7 (as at first), kept in that phone's
+  `localStorage` (`shotCodeLevel`), the layer redrawn at once. **The same box takes a photo** (`#tracephoto`): the
+  phone sharpens it (`ShotMark.sharpen`: two box-blur sets, about 1.4 px and 16 px, difference × gain + 128, grey;
+  "Stronger" slider 4 to 30, default 10) and shows it to pinch-zoom; then type the code as before. Nothing is sent
+  anywhere. "No mark found" on the test site now points to that box. Members on either site and him on the main
+  site: no code, no box, as before.
+- **Checked.** Suite **569 of 569** (`shotmark.test.js` 9: the default and every picked strength, kept on the phone,
+  a bad or blocked value → default, 12 codes ≥ 130 px apart, gap ≤ 150, redrawn on a new strength; a made-up photo
+  with a 5-level mark and a glow: the mark stands out by more than 25 levels, the glow flattened; the box test site
+  only; nothing sent). 8 breaks on purpose (default back to 5/7, strength ignored, no redraw, no glow removal, gain
+  ignored, box for everyone, the photo sent, two codes too close): a test failed every time. **The hidden mark**
+  (Python reader, his real mark under the trial code, 7 sharing stand-ins, light and dark): 6 of 7 with the code at
+  the new strengths, the old ones and none alike (the squashed one never read). **In a browser, this branch's page
+  over the real board-test:** as him, 2% black / 3% white, 12 codes; the picker redraws at 1% and keeps it; a photo
+  stand-in sharpened in the box (the code shows; pinch to zoom); no key: no layer; no errors.
+- **Not checked:** a real camera (his next test), how faint it looks on his phone (his first test).
+**Next:** he looks at board-test on his phone and says whether he can see it. Then a photo of the screen with
+another phone → Page Health → Trace a screenshot → the photo box → read the code → Look up. If he can see it, the
+picker goes fainter on his phone (no pull); whatever he settles on can become the default.
+
 ## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
 
 **Owner, 13 Nov:** "Test Site Clean up . This will be the chat to clean up the things on the test site". Read as:
@@ -519,7 +551,7 @@ so "worked by" is often blank.
 
 **Still his:** "YM": CATS writes YA; asked whether he meant something else.
 
-## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. The `b329d94` Worker PASTED INTO BOTH ("pasted both workers, check it"), checked about 07:25. WAITING ON his look on board-test
+## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). LIVE: the laptop runs `64e328b` since 07:12 Toronto (he pulled and restarted); the backfill from 26 Oct ran at 07:08 and matches his photo. The `b329d94` Worker PASTED INTO BOTH ("pasted both workers, check it"), checked about 12:35. WAITING ON his look on board-test
 
 **Owner, 13 Nov:** "Do not use the call board to determine off duty since if they forget to tie up it will sit there.
 We have to manually close our ticket in the computer, untill we do the job will stay on the call board", then "We
@@ -586,7 +618,7 @@ are the Call Board's 23 to 25 Oct (before the backfill's start) and today's stil
 of the 71 shifts with a rest booked (all now have O-T), rest until − (8 h + O-T) is a whole number of hours in 60 (46
 from the old 8 / 12 h), within 2 min in 3 more; the other 8 are blank-O-T shifts 5 to 19 min short of 10 h (crews off
 a few minutes before 8 h: YFLS60 / YMPS60 2359 jobs off about 0740 to 0752; a blank O-T cannot show it).
-**The Worker paste, checked 13 Nov about 07:25 Toronto (his word: "pasted both workers, check it"; read only,
+**The Worker paste, checked 13 Nov about 12:35 Toronto (his word: "pasted both workers, check it"; read only,
 counts only):** both `board-test` and `board` answer the owner key's `GET /auth/stats?code=`: a bad code 400 with
 the name-code message, a code with no record `{ state: ok, other: true, stats: null }`, a yard worker's code their
 record (14 yard shifts, 11 with `oe`, 1 `ru`, no `cb` / `ob`; the 3 without an end are 23 to 25 Oct, before the

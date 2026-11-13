@@ -29,6 +29,13 @@ account's mark number in Crockford base 32, **scattered** (40 codes in a 400 x 8
 mock-up's even grid: the grid gave emailed screenshots of dark pages a spacing the reader took for the hidden
 mark's (6 of 8 read, 8 of 8 without it); scattered, 8 of 8, and no read anywhere worse than without the code.
 
+**Made much fainter, 13 Nov** (owner: "make it as faint as you think is possbile, Ill test it and tell you if i can see
+it, then we can test with a camera"). Through the harsh photo stand-in the code read by eye at about 3% on light pages
+and 5 to 7% on dark; **sharpened** (slow light and dark taken away, small differences stretched: `ShotMark.sharpen` in
+the page, the trace box's photo step) at 1.5% light and 3% dark. Now 2% light / 3% dark by default, 12 codes in the
+tile instead of 40, and a strength picker for the owner's own phone in the trace box. The hidden mark reads the same
+under it (6 of 7 stand-ins, light and dark, as with no code). A real camera is the owner's next test. See HANDOFF.
+
 ## Blocking or noticing a screenshot: no
 
 A web page is not told when the phone takes a screenshot and cannot stop one (iPhone or Android, Safari
