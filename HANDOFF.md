@@ -17,8 +17,10 @@ the ability to search other name codes so I can see other My Stats pages so I ca
 **How:**
 - **Worker** (`myStats`): `GET /auth/stats?code=XXXX` for the owner key only (owner session or key header): that
   code's record, `{ state: 'ok', code, other: true, stats }` (`stats: null` if none); a bad code is 400. **A
-  member's or an Admin's `?code` is ignored, as it always was** (they get their own). Copy page rebuilt (see the
-  link in the "Screenshot mark" section; version line names this commit).
+  member's or an Admin's `?code` is ignored, as it always was** (they get their own). **Copy page rebuilt at
+  `b329d94`** (https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu, 2087 lines; read back after publishing and decoded:
+  byte for byte the file). It is the `3f24ee2` copy page plus this route only. **A session that rebuilds the copy
+  page from a branch without `b329d94` takes the owner's look out.**
 - **Laptop** (all new fields; every old field byte for byte the same: checked on all 168 records):
   `lib/board/mystats.js collectYard` keeps per run `gone` (the first check without it) and `crew` (turns on its
   crew lines), per job and run the vacancy list's crafts (`spare`), Train Service 4's days off lines (`booked`),
