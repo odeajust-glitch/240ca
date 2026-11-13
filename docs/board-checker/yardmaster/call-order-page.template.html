@@ -840,7 +840,6 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   function start(hot) {
     const kept = (hot && hot.sc) || store.get('ym-scenario');
     state.sc = kept && kept.job && kept.date && kept.facts ? kept : defaultScenario();
-    if (hot && hot.rules) state.rules = Y.normalize(hot.rules);
     fillJobSelect(); fillCheckSelects(); codeList();
     if (hot && hot.check) Object.assign(check, hot.check);
     showScenario(); renderPeopleGrid();
@@ -853,7 +852,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     update();
     connect();
     if (window.claude && window.claude.hot && typeof window.claude.hot.snapshot === 'function') {
-      try { window.claude.hot.snapshot(() => ({ sc: state.sc, rules: state.rules, check })); } catch { /* optional */ }
+      try { window.claude.hot.snapshot(() => ({ sc: state.sc, check })); /* never the rules: a new version brings its own */ } catch { /* optional */ }
     }
   }
   const hot = window.claude && window.claude.hot;

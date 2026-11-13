@@ -132,6 +132,10 @@ to save examples or rules; view-only sees them).
     every No is no longer in the same spot (the people ahead of them changed, or they drop out); anyone missing
     is now called; and the first is the one chosen. Examples show the marks and, when it doesn't agree, what
     doesn't; "Find rules that fit the examples" counts checks that agree. Opening a check brings its marks back.
+  - **Fixed, version 5:** a page left open kept the rules it had when the page was updated (the hot-reload
+    snapshot carried `rules`), so his open page had no yard step through versions 3 and 4 and gave the regular
+    yardmasters at step 3 (his "are these giuys making overtime": yes, all four on their rest day). The snapshot
+    now carries only the scenario and the marks; a new version always brings the saved or starting rules.
   - **"Anyone available on the yardmaster spareboard? Yes / No"** with the job (`sc.spareboard`): No and the spare
     steps find nobody ("nobody available on the spareboard"). **My reading: the yardmaster spareboard (EXYA01);
     asked him whether he meant the conductor spareboard** (covering the yard job of someone moved up).
