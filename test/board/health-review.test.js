@@ -216,7 +216,9 @@ test('items 4 and 5 are on the page, on both sites', () => {
   assert.ok(!html.includes('<h2>Alerts sent</h2></header><div class="hbody"><p>Every alert, by turn'), 'the box that held one link is gone');
   assert.equal(html.split('<h2>Alerts sent</h2>').length - 1, 1, 'the Notifications tab keeps its own heading');
   assert.ok(html.includes('A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;'));
-  assert.equal(html.split('id="tonotes"').length - 1, 1);
+  // Twice: Page Health's Who gets alerts, and the same section drawn on the Members tab on the test site
+  // (members-review.test.js). One at a time on the page.
+  assert.equal(html.split('id="tonotes"').length - 1, 2);
   // An address of their own, kept until the report that says who is looking has come: only the owner's key gets one.
   assert.ok(html.includes("let ownerTabWanted = { '#pagehealth': 'health', '#searchreview': 'review' }[location.hash] || '';"));
   assert.ok(html.includes("const ownAddress = (hash) => { try { history.replaceState(null, '', location.pathname + location.search + hash); }"));

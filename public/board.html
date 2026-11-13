@@ -718,6 +718,10 @@
   .members .mact button.go { background: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
   .members .mmsg { padding: 8px 12px; border-radius: 8px; background: var(--accent-tint, #dcebec); margin: 8px 0; font-size: 13.5px; }
   .members .mmsg.bad { color: #b3261e; }
+  /* Members, round 3 of the tab review (test site): Who gets alerts moved here; "has an account" in the no-account list. */
+  .members .mwho > p { margin: 6px 0; font-size: 14px; }
+  .members .mwho details > summary { cursor: pointer; font-size: 14px; margin: 6px 0; }
+  .members .mhas { display: inline-block; font-size: 12px; padding: 0 6px; margin-left: 2px; border-radius: 6px; border: 1px solid var(--accent); color: var(--accent); }
   .heldlog { list-style: none; margin: 0 0 8px; padding: 0; } .heldlog li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; } .heldlog li > div { margin: 1px 0; }
   .infoline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
   .infoline > label { flex: 1 1 0; min-width: 10em; }
@@ -5671,7 +5675,7 @@ source().then(async (src) => {
       const pass = r.ok ? (await r.json()).namesPass : null;
       if (!pass) return;
       const got = await BoardNames.unlockNames(await getJSON('data/crew.json'), pass);
-      if (got && got.turns) { healthCrew = got.turns; if (mode === 'health') renderHealth(); }
+      if (got && got.turns) { healthCrew = got.turns; if (mode === 'health') renderHealth(); else if (mode === 'members' && PREVIEW) renderMembers(); }
     } catch (e) { /* the tables show without names */ }
   }
   async function showHealth(after, refreshIndex = false) {
@@ -5855,6 +5859,124 @@ source().then(async (src) => {
     };
     draw();
   }
+  // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
+  // name code (known once they're seen on a board) and their turn now. Page Health's section; on
+  // the test site it is on the Members tab instead (round 3 of the tab review, owner 2026-11-12:
+  // "move the 'whos getting alerts' to members from page health"). o: stamp (a time and how long
+  // ago), expanded (the fold was open), stale (the report could not be refreshed), members (drawn
+  // on the Members tab, in its own style).
+  // Names beside them (owner, 2026-11-10: "put their names beside the turn. So the name
+  // code put their name, and just the turns put whos currently on that turn"). From the
+  // locked crew names file, opened in this browser with the owner key; nothing new is
+  // published and no name goes into the health report. A turn shows who the boards have
+  // on it now. A name code shows the name on that person's turn when it fits the code
+  // (first initial, first two letters of the surname); when the turn shows someone else,
+  // the one name on the boards that fits, or nothing rather than the wrong person.
+  // A code given by hand where two names made the same one (lib/board/people.js OWN_CODES).
+  const crewFits = (code0, name) => { const code = (codeGroup(code0) || [code0])[0]; const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
+  // Who the names file has on a turn, as [craft, name] pairs (craft '' for a plain turn); [] when no
+  // name was read, null when there are no names on this device.
+  function crewOnTurn(NAMES, t) {
+    if (!NAMES) return null;
+    if (NAMES[t]) return [['', NAMES[t]]];
+    const both = [['CO', NAMES[`${t}-CO`]], ['EN', NAMES[`${t}-EN`]]].filter(([, n]) => n);
+    if (both.length) return both;
+    return Object.keys(NAMES).filter((k) => k.startsWith(`${t}-`)).sort().map((k) => [k.slice(t.length + 1), NAMES[k]]); // a yard job: its people by craft
+  }
+  // The name a name code belongs to ({ name }), or why there is none ({ why }).
+  function crewNameOf(NAMES, p) {
+    const own = p.turn && NAMES[p.turn.replace(/-(TT|ET)$/, '')];
+    if (crewFits(p.code, own)) return { name: own };
+    const hits = [...new Set(Object.values(NAMES).filter((n) => crewFits(p.code, n)))];
+    return hits.length === 1 ? { name: hits[0] } : { why: hits.length ? 'more than one fits' : 'not on the names list' };
+  }
+  function whoGetsAlerts(S, o) {
+    const known = S && typeof S.phones === 'number';
+    const turns = Array.isArray(S?.turns) ? S.turns : [];
+    const people = Array.isArray(S?.people) ? S.people : [];
+    const retained = o.stale || S?.stale || !!S?.error;
+    const count = known ? (retained ? 'Last known: ' : '') + S.phones + (S.phones === 1 ? ' phone' : ' phones') : 'Count unavailable';
+    const lookup = S?.error ? 'latest lookup failed' : S?.stale ? 'last known lookup' : '';
+    const subscriberSummary = [count, lookup, S?.confirmedAt ? 'last confirmed ' + o.stamp(S.confirmedAt) : 'confirmation time unavailable'].filter(Boolean).join(' · ');
+    const expanded = o.expanded;
+    // Tidied (owner, 2026-11-10: "can we clean up this"): one table of turns
+    // and one of people instead of two run-on lists; people the checker has
+    // not seen on a board yet are one counted line, not "not seen yet" each.
+    const phonesOf = (n) => `${n} phone${n === 1 ? '' : 's'}`;
+    const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+    const turnRows = [...turns].sort((x, y) => byName(x[0], y[0]));
+    const named = people.filter(p => p.code).sort((x, y) => byName(x.code, y.code));
+    const unnamed = people.filter(p => !p.code);
+    const unnamedOn = unnamed.filter(p => p.turn).map(p => p.turn).sort(byName);
+    const NAMES = CREW || healthCrew;
+    if (!NAMES) loadHealthCrew();
+    const onTurn = (t) => {
+      const on = crewOnTurn(NAMES, t);
+      if (!on) return '';
+      return on.length ? on.map(([c, n]) => (c ? `${esc(c)} ${esc(n)}` : esc(n))).join(' · ') : '<span class="muted">no name read</span>';
+    };
+    const nameOf = (p) => {
+      if (!NAMES) return '';
+      const r = crewNameOf(NAMES, p);
+      return r.name ? esc(r.name) : `<span class="muted">${r.why}</span>`;
+    };
+    const followed = `${NAMES ? '' : `<p class="muted">Names are not loaded on this device yet, so only turns and codes show. They need the crew names passcode saved under Article 18.6(b) submissions on ${o.members ? 'Page Health' : 'this page'}, and the laptop on its newest code.</p>`}
+      ${turnRows.length ? `<h3 class="hsub">Turns followed (${turnRows.length})</h3>
+        <table class="htable hhist"><thead><tr><th>Turn</th>${NAMES ? '<th>On it now</th>' : ''}<th>Phones</th></tr></thead><tbody>${turnRows.map(([t, n]) => `<tr><td>${esc(t)}</td>${NAMES ? `<td>${onTurn(t)}</td>` : ''}<td>${n}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${people.length ? `<h3 class="hsub">People followed (${people.length})</h3>
+        ${named.length ? `<table class="htable hhist"><thead><tr><th>Name code</th>${NAMES ? '<th>Name</th>' : ''}<th>On turn now</th><th>Phones</th></tr></thead><tbody>${named.map(p => `<tr><td>${esc(p.code)}</td>${NAMES ? `<td>${nameOf(p)}</td>` : ''}<td>${p.turn ? esc(p.turn) : '<span class="muted">not on a turn</span>'}</td><td>${p.phones}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${unnamed.length ? `<p class="muted">${unnamed.length} more ${unnamed.length === 1 ? 'person' : 'people'} followed by ${phonesOf(unnamed.reduce((n, p) => n + p.phones, 0))}: name code not known yet (not seen on a board since they were followed)${unnamedOn.length ? `; on ${esc(unnamedOn.join(', '))}` : ''}.</p>` : ''}` : ''}`;
+    const body = `
+      <p>${esc(subscriberSummary)}</p>
+      ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
+      ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
+      ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
+      `;
+    if (o.members) return `<h2>Who gets alerts</h2><div class="mwho">${body}<p class="muted">This shows what phones follow, not whose they are. Each member's card above shows what their phones follow (for phones that saved their alerts while signed in); phones with no account are listed below. A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div>`;
+    return `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">${body}<p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
+  }
+  // Members, reviewed with the owner 2026-11-12 (round 3 of the tab review): TEST SITE ONLY (PREVIEW).
+  // "The list of turns being tracks that don't have an account, i want to see the owner of the turn/name
+  // code": beside each turn a phone with no account follows, whose turn it is by the crew names file (while
+  // it is out on a trip, whoever is working it: the same name as Who gets alerts), and beside each name
+  // code the person it belongs to. When that person already has an account here (their saved name code,
+  // else exactly one approved member whose name fits "Last, F"), it says so: that phone only needs
+  // signing in, not a new account.
+  function accountFor(name, code, accounts) {
+    if (code) { const mine = accounts.filter((u) => u.code === code); if (mine.length === 1) return mine[0].name; }
+    const m = /^(.*),\s*([A-Za-z])/.exec(name || '');
+    if (!m) return '';
+    const flat = (x) => String(x).toLowerCase().replace(/[^a-z]/g, '');
+    const last = flat(m[1]);
+    const hits = accounts.filter((u) => {
+      const w = String(u.name || '').trim().split(/\s+/);
+      return w.length > 1 && w[0][0].toUpperCase() === m[2].toUpperCase() && (flat(w.slice(1).join('')) === last || flat(w[w.length - 1]) === last);
+    });
+    return hits.length === 1 ? hits[0].name : '';
+  }
+  // A phone with no account, its turns and people with names: { turns: [{ turn, on: [[craft, name, account]] | null }],
+  // people: [{ code, turn, name, why, account }] }. NAMES null: no names on this device (turns and codes only).
+  function looseNamed(p, NAMES, accounts) {
+    const turns = (p.turns || []).map((turn) => {
+      const on = crewOnTurn(NAMES, turn);
+      return { turn, on: on && on.map(([c, n]) => [c, n, accountFor(n, '', accounts)]) };
+    });
+    const people = (p.people || []).map((x) => {
+      if (!NAMES) return { code: x.code, turn: x.turn, account: x.code ? accountFor('', x.code, accounts) : '' };
+      // A code not known yet: the name on the turn they are on, when there is one.
+      const r = x.code ? crewNameOf(NAMES, x) : x.turn ? { name: (crewOnTurn(NAMES, x.turn.replace(/-(TT|ET)$/, '')) || [])[0]?.[1] } : {};
+      return { code: x.code, turn: x.turn, name: r.name || '', why: r.name ? '' : (r.why || ''), account: accountFor(r.name, x.code, accounts) };
+    });
+    return { turns, people };
+  }
+  function looseRowHtml(p, NAMES, accounts, day) {
+    const n = looseNamed(p, NAMES, accounts);
+    const has = (a) => (a ? ` <span class="mhas">has an account: ${esc(a)}</span>` : '');
+    const turnLine = (t) => `<span class="mono">${esc(t.turn)}</span>${!t.on ? '' : t.on.length ? ' ' + t.on.map(([c, nm, a]) => `${c ? `${esc(c)} ` : ''}${esc(nm)}${has(a)}`).join(' · ') : ' <span class="muted">no name read</span>'}`;
+    const personLine = (x) => `<span class="mono">${esc(x.code || 'not seen yet')}</span>${x.name ? ` ${esc(x.name)}` : x.why ? ` <span class="muted">${esc(x.why)}</span>` : ''}${x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : ''}${has(x.account)}`;
+    return `<div class="mrow"><dl><dt>Turns</dt><dd>${n.turns.length ? n.turns.map(turnLine).join('<br>') : 'none'}</dd><dt>People</dt><dd>${n.people.length ? n.people.map(personLine).join('<br>') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`;
+  }
+  const agoStamp = (ms, now = Date.now()) => { if (!ms) return 'Unavailable'; const m = Math.max(0, Math.round((now - ms) / 60000)); return healthClock(ms) + ' (' + (m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m ago`) + ')'; };
   async function renderMembers(said) {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#members'); } catch (e) { /* not allowed in some frames */ }
@@ -5869,7 +5991,8 @@ source().then(async (src) => {
     let loose = null;
     let looseAt = null;
     let looseCut = null;
-    if (membersOwner) { try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); const h = r.ok ? await r.json() : null; const sub = h && h.laptop && h.laptop.subscribers; if (sub && Array.isArray(sub.noAccount)) { loose = sub.noAccount; looseAt = sub.checkedAt || null; looseCut = sub.noAccountCutoff || null; } } catch (e) { /* the count below still shows */ } }
+    let alertsSub = null; // Who gets alerts, on this tab on the test site (round 3, below)
+    if (membersOwner) { try { const r = await fetch('health', { cache: 'no-store', headers: OwnerKey.headers() }); const h = r.ok ? await r.json() : null; const sub = h && h.laptop && h.laptop.subscribers; if (sub) alertsSub = sub; if (sub && Array.isArray(sub.noAccount)) { loose = sub.noAccount; looseAt = sub.checkedAt || null; looseCut = sub.noAccountCutoff || null; } } catch (e) { /* the count below still shows */ } }
     if (mode !== 'members') return;
     if (!d || !Array.isArray(d.users)) {
       view.innerHTML = `<div class="healthpage members">${head}<p class="mmsg bad">${status === 404 ? 'Members isn’t switched on for this site yet (the Worker needs the accounts code), or this device isn’t allowed to see it.' : 'Couldn’t load the list. Check the connection and open the tab again.'}</p></div>`;
@@ -5901,6 +6024,12 @@ source().then(async (src) => {
     // My stats (owner, 2026-11-11): a member only sees their own once their name code is known to be theirs.
     // It counts by itself when it matches their name; otherwise the owner says so here.
     const codeFact = (u) => (u.codeState === undefined ? [] : [['Name code', !u.code ? 'None saved' : u.codeState === 'wait' ? `${u.code} · does not match their name, or is a shared code: My stats waits for your OK` : u.codeState === 'no' ? `${u.code} · marked not theirs (no My stats)` : `${u.code} · theirs (My stats on)`]]);
+    // Round 3 of the tab review (owner, 2026-11-12), TEST SITE ONLY: Who gets alerts moved here from Page
+    // Health, and names beside what each phone with no account follows (looseRowHtml, above this function).
+    const review = PREVIEW && membersOwner;
+    const whoOpen = view.querySelector('[data-health-followed]')?.open;
+    const NAMES = review ? CREW || healthCrew : null;
+    const whoHtml = !review ? '' : alertsSub ? whoGetsAlerts(alertsSub, { stamp: agoStamp, expanded: whoOpen, stale: false, members: true }) : '<h2>Who gets alerts</h2><p class="muted">Couldn’t load who gets alerts. Open the tab again.</p>';
     const codeBtns = (u) => (!owner || !u.code || (u.codeState !== 'wait' && u.codeState !== 'no') ? '' : `<button type="button" data-act="codeok">${esc(u.code)} is theirs</button>${u.codeState === 'wait' ? '<button type="button" data-act="codeno">Not theirs</button>' : ''}`);
     const approvedRow = (u) => row(u, [['Email', u.email], ['Approved', day(u.approvedAt)], ['Last seen', seen(u.seenAt)], ['Follows', followsOf(u)], ...codeFact(u)],
       codeBtns(u) + (owner ? `<label>Access <select data-role aria-label="Access for ${esc(u.name)}"><option value="member"${u.role === 'admin' ? '' : ' selected'}>Member</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select></label>` : `<span class="muted">Access: ${u.role === 'admin' ? 'Admin' : 'Member'}</span>`)
@@ -5917,11 +6046,11 @@ source().then(async (src) => {
       ${admins.map(approvedRow).join('') || '<p class="muted">No Admins. Pick Admin under Access on a member to make one.</p>'}
       <h2>Members (${plain.length})</h2>
       ${plain.map(approvedRow).join('') || '<p class="muted">Nobody yet.</p>'}
-      ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}
+      ${other.length ? `<h2>Declined or removed (${other.length})</h2>${other.map((u) => row(u, [['Email', u.email], ['Status', u.status === 'declined' ? `Declined ${day(u.declinedAt)}` : `Removed ${day(u.removedAt)}`]], '<button type="button" data-act="delete">Delete from list</button>')).join('')}` : ''}${whoHtml}
       ${d.unknownPhones ? `<p class="muted" style="margin-top:18px">${esc(d.unknownPhones)} phone${d.unknownPhones === 1 ? ' gets' : 's get'} alerts without a known member: set up before accounts, or not signed in. Each is matched to its member the next time it changes its alerts while signed in.</p>` : ''}
       ${loose && loose.length ? `<h2>Phones with no account (${loose.length})</h2>
-      <p class="muted">What each one follows, newest change first${looseAt ? `; as of ${esc(new Date(looseAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}` : ''}. The phone's owner isn't known, only what it follows: usually their own turn or name code.${looseCut ? ` <b>${Date.now() < looseCut ? 'Alerts to these phones stop' : 'Alerts to these phones stopped'} ${esc(new Date(looseCut).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}</b>, until the phone is signed in to an account and its alerts are saved again. A phone that follows your own name code is kept.` : ''}</p>
-      ${loose.map((p) => `<div class="mrow"><dl><dt>Turns</dt><dd class="mono">${esc(p.turns.join(', ') || 'none')}</dd><dt>People</dt><dd class="mono">${p.people.length ? p.people.map((x) => esc(x.code || 'not seen yet') + (x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : '')).join(', ') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`).join('')}` : ''}
+      <p class="muted">What each one follows, newest change first${looseAt ? `; as of ${esc(new Date(looseAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}` : ''}. The phone's owner isn't known, only what it follows: usually their own turn or name code.${!review ? '' : NAMES ? ' Beside a turn is whose turn it is (while it is out on a trip, whoever is working it); beside a name code, the person it belongs to. <b>Has an account</b> means that person has already signed up here: the phone only needs signing in, then its alerts saved again.' : ' Names are not loaded on this device yet, so only turns and codes show (they need the crew names passcode saved on Page Health).'}${looseCut ? ` <b>${Date.now() < looseCut ? 'Alerts to these phones stop' : 'Alerts to these phones stopped'} ${esc(new Date(looseCut).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }))}</b>, until the phone is signed in to an account and its alerts are saved again. A phone that follows your own name code is kept.` : ''}</p>
+      ${review ? loose.map((p) => looseRowHtml(p, NAMES, approved, day)).join('') : loose.map((p) => `<div class="mrow"><dl><dt>Turns</dt><dd class="mono">${esc(p.turns.join(', ') || 'none')}</dd><dt>People</dt><dd class="mono">${p.people.length ? p.people.map((x) => esc(x.code || 'not seen yet') + (x.turn ? ` <span class="muted">(${esc(x.turn)})</span>` : '')).join(', ') : 'none'}</dd><dt>Last changed</dt><dd>${p.updated ? esc(day(Date.parse(p.updated))) : 'unknown'}</dd></dl></div>`).join('')}` : ''}
       ${owner ? '<p class="muted" style="margin-top:18px">An Admin sees this tab and can approve, decline and remove members. Only you can make or remove an Admin.</p>' : ''}</div>`;
     const send = async (box, action, extra) => {
       const name = box.dataset.name;
@@ -5941,6 +6070,8 @@ source().then(async (src) => {
     };
     view.querySelectorAll('.members [data-act]').forEach((b) => { b.onclick = () => (/^code(ok|no)$/.test(b.dataset.act) ? send(b.parentElement, 'code', { ok: b.dataset.act === 'codeok' }) : send(b.parentElement, b.dataset.act, b.dataset.early ? { early: true } : undefined)); });
     view.querySelectorAll('.members [data-role]').forEach((sel) => { sel.onchange = () => send(sel.closest('.mact'), 'role', { role: sel.value }); });
+    const toNotes = view.querySelector('.members #tonotes');
+    if (toNotes) toNotes.onclick = () => setMode('notes');
   }
   async function renderNotes() {
     const view = document.getElementById('view');
@@ -6321,64 +6452,10 @@ source().then(async (src) => {
     const stamp = ms => ms ? healthClock(ms) + ' (' + ago(ms) + ')' : 'Unavailable';
     const rows = healthRows(h, now, true, accountsWaiting());
     ownAddress('#pagehealth');
-    // Who gets alerts (owner, 2026-11-02): per turn, and followed people by
-    // name code (known once they're seen on a board) and their turn now.
-    const S = L.subscribers;
-    const known = S && typeof S.phones === 'number';
-    const turns = Array.isArray(S?.turns) ? S.turns : [];
-    const people = Array.isArray(S?.people) ? S.people : [];
-    const retained = healthUnavailable || S?.stale || !!S?.error;
-    const count = known ? (retained ? 'Last known: ' : '') + S.phones + (S.phones === 1 ? ' phone' : ' phones') : 'Count unavailable';
-    const lookup = S?.error ? 'latest lookup failed' : S?.stale ? 'last known lookup' : '';
-    const subscriberSummary = [count, lookup, S?.confirmedAt ? 'last confirmed ' + stamp(S.confirmedAt) : 'confirmation time unavailable'].filter(Boolean).join(' · ');
-    const expanded = view.querySelector('[data-health-followed]')?.open;
-    // Tidied (owner, 2026-11-10: "can we clean up this"): one table of turns
-    // and one of people instead of two run-on lists; people the checker has
-    // not seen on a board yet are one counted line, not "not seen yet" each.
-    const phonesOf = (n) => `${n} phone${n === 1 ? '' : 's'}`;
-    const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-    const turnRows = [...turns].sort((x, y) => byName(x[0], y[0]));
-    const named = people.filter(p => p.code).sort((x, y) => byName(x.code, y.code));
-    const unnamed = people.filter(p => !p.code);
-    const unnamedOn = unnamed.filter(p => p.turn).map(p => p.turn).sort(byName);
-    // Names beside them (owner, 2026-11-10: "put their names beside the turn. So the name
-    // code put their name, and just the turns put whos currently on that turn"). From the
-    // locked crew names file, opened in this browser with the owner key; nothing new is
-    // published and no name goes into the health report. A turn shows who the boards have
-    // on it now. A name code shows the name on that person's turn when it fits the code
-    // (first initial, first two letters of the surname); when the turn shows someone else,
-    // the one name on the boards that fits, or nothing rather than the wrong person.
-    const NAMES = CREW || healthCrew;
-    if (!NAMES) loadHealthCrew();
-    // A code given by hand where two names made the same one (lib/board/people.js OWN_CODES).
-    const fits = (code0, name) => { const code = (codeGroup(code0) || [code0])[0]; const m = /^(.*),\s*([A-Za-z])/.exec(name || ''); return !!m && !!code && m[2].toUpperCase() === code[0] && m[1].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) === code.slice(2, 4); };
-    const onTurn = (t) => {
-      if (!NAMES) return '';
-      if (NAMES[t]) return esc(NAMES[t]);
-      const both = [['CO', NAMES[`${t}-CO`]], ['EN', NAMES[`${t}-EN`]]].filter(([, n]) => n);
-      if (both.length) return both.map(([c, n]) => `${c} ${esc(n)}`).join(' · ');
-      const yard = Object.keys(NAMES).filter((k) => k.startsWith(`${t}-`)).sort(); // a yard job: its people by craft
-      return yard.length ? yard.map((k) => `${esc(k.slice(t.length + 1))} ${esc(NAMES[k])}`).join(' · ') : '<span class="muted">no name read</span>';
-    };
-    const nameOf = (p) => {
-      if (!NAMES) return '';
-      const own = p.turn && NAMES[p.turn.replace(/-(TT|ET)$/, '')];
-      if (fits(p.code, own)) return esc(own);
-      const hits = [...new Set(Object.values(NAMES).filter((n) => fits(p.code, n)))];
-      return hits.length === 1 ? esc(hits[0]) : `<span class="muted">${hits.length ? 'more than one fits' : 'not on the names list'}</span>`;
-    };
-    const followed = `${NAMES ? '' : '<p class="muted">Names are not loaded on this device yet, so only turns and codes show. They need the crew names passcode saved under Article 18.6(b) submissions on this page, and the laptop on its newest code.</p>'}
-      ${turnRows.length ? `<h3 class="hsub">Turns followed (${turnRows.length})</h3>
-        <table class="htable hhist"><thead><tr><th>Turn</th>${NAMES ? '<th>On it now</th>' : ''}<th>Phones</th></tr></thead><tbody>${turnRows.map(([t, n]) => `<tr><td>${esc(t)}</td>${NAMES ? `<td>${onTurn(t)}</td>` : ''}<td>${n}</td></tr>`).join('')}</tbody></table>` : ''}
-      ${people.length ? `<h3 class="hsub">People followed (${people.length})</h3>
-        ${named.length ? `<table class="htable hhist"><thead><tr><th>Name code</th>${NAMES ? '<th>Name</th>' : ''}<th>On turn now</th><th>Phones</th></tr></thead><tbody>${named.map(p => `<tr><td>${esc(p.code)}</td>${NAMES ? `<td>${nameOf(p)}</td>` : ''}<td>${p.turn ? esc(p.turn) : '<span class="muted">not on a turn</span>'}</td><td>${p.phones}</td></tr>`).join('')}</tbody></table>` : ''}
-        ${unnamed.length ? `<p class="muted">${unnamed.length} more ${unnamed.length === 1 ? 'person' : 'people'} followed by ${phonesOf(unnamed.reduce((n, p) => n + p.phones, 0))}: name code not known yet (not seen on a board since they were followed)${unnamedOn.length ? `; on ${esc(unnamedOn.join(', '))}` : ''}.</p>` : ''}` : ''}`;
-    const who = `<section class="sheet"><header><h2>Who gets alerts</h2></header><div class="hbody">
-      <p>${esc(subscriberSummary)}</p>
-      ${known && S.phones > 0 && (turns.length || people.length) ? `<details data-health-followed${expanded ? ' open' : ''}><summary>Followed turns and people</summary>${followed}</details>` : ''}
-      ${known && S.phones > 0 && !turns.length && !people.length ? '<p>Phones are subscribed, but their followed turns and people were not included in this report.</p>' : ''}
-      ${S?.stale || S?.error ? `<p class="anote">${S?.stale ? 'Showing last known information. ' : ''}${S?.error ? esc(S.error) : ''}</p>` : ''}
-      <p class="muted">This shows what phones follow, not whose they are (the Members tab shows each member's follows, for phones that saved their alerts while signed in). A phone can follow several.</p><p>Every alert sent, by turn, with the logic behind it: <button type="button" class="linkbtn" id="tonotes">Notifications tab</button></p></div></section>`;
+    // Who gets alerts: whoGetsAlerts, above renderMembers. On the test site it is on the Members tab
+    // instead (round 3 of the tab review, owner 2026-11-12: "move the 'whos getting alerts' to members
+    // from page health").
+    const who = PREVIEW ? '' : whoGetsAlerts(L.subscribers, { stamp, expanded: view.querySelector('[data-health-followed]')?.open, stale: healthUnavailable });
     // What was sent, for whom (the laptop's alerts log, newest first).
     // Moved to its own tab (owner, 2026-11-05): search by turn, with the logic.
     // Item 4 (owner, 2026-11-12): the "Alerts sent" box held one link; it is the line under Who gets alerts above.
@@ -6401,7 +6478,8 @@ source().then(async (src) => {
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
-    document.getElementById('tonotes').onclick = () => setMode('notes');
+    const toNotes = document.getElementById('tonotes');
+    if (toNotes) toNotes.onclick = () => setMode('notes');
     const toMembers = document.getElementById('tomembers');
     if (toMembers) toMembers.onclick = () => setMode('members');
     paintHeldSettings();
