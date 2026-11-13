@@ -10,6 +10,78 @@
   let sources = [];
   let names = {};
   let last = null;
+  let citesNow = []; // the passages of the answer being written (the last citations event)
+
+  // --- Answer tools, reviewed with the owner 2026-11-12 evening ("Go with your pick: 3, 2, 1, 4 and 5"). TEST
+  // SITE ONLY: used when board.html passes preview (PREVIEW). Pure functions, so the tests can run them.
+  // 3. The answer as the model writes it, drawn as HTML. In his Search Review (4 to 12 Nov) every answer had
+  // Markdown marks the tab showed as typed characters: **bold** (25 of 28), *italics* (9), # headings (7), - or *
+  // bullets (22, some indented), a > quote, a --- line, and [n] for the passages (237; [1][2] and [1, 2] too).
+  // Everything is escaped first; only those marks become tags. A [n] up to the passage count is a button that
+  // opens that passage under the paragraph. n: how many passages the answer was written from.
+  function answerHtml(raw, n) {
+    const ref = (d) => (+d >= 1 && +d <= n ? `<button type="button" class="askref" data-ref="${d}">${d}</button>` : d);
+    const inline = (s) => esc(s)
+      .replace(/\*\*((?:[^*\n]|\*[^*\n]+\*)+?)\*\*/g, '<b>$1</b>') // bold, an *italic* word inside it too
+      .replace(/(^|[\s(>])\*([^*\s][^*\n]*?)\*(?=[\s).,;:!?<]|$)/g, '$1<i>$2</i>')
+      .replace(/\[(\d+(?:\s*[,–-]\s*\d+)*)\]/g, (m, inner) => `[${inner.replace(/\d+/g, ref)}]`);
+    const out = [];
+    let para = [];
+    let list = null; // { tag, start, items: [{ text, sub }] }
+    let quote = [];
+    const flushPara = () => { if (para.length) out.push(`<p>${para.map(inline).join('<br>')}</p>`); para = []; };
+    const flushList = () => { if (list) out.push(`<${list.tag}${list.start > 1 ? ` start="${list.start}"` : ''}>${list.items.map((x) => `<li${x.sub ? ' class="sub"' : ''}>${inline(x.text)}</li>`).join('')}</${list.tag}>`); list = null; };
+    const flushQuote = () => { if (quote.length) out.push(`<blockquote>${quote.map(inline).join('<br>')}</blockquote>`); quote = []; };
+    const flush = () => { flushPara(); flushList(); flushQuote(); };
+    for (const line of String(raw).replace(/\r/g, '').split('\n')) {
+      const t = line.trim();
+      let m;
+      if (!t) { flush(); continue; }
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) { flush(); continue; } // a dividing line: the gap is enough
+      if ((m = /^#{1,6}\s+(.*?)\s*#*$/.exec(t))) { flush(); out.push(`<h4>${inline(m[1])}</h4>`); continue; }
+      if ((m = /^>\s?(.*)$/.exec(t))) { flushPara(); flushList(); quote.push(m[1]); continue; }
+      if ((m = /^[-*•]\s+(.*)$/.exec(t))) {
+        flushPara(); flushQuote();
+        const sub = /^\s{2,}/.test(line) && !!list;
+        if (!list || (list.tag !== 'ul' && !sub)) { flushList(); list = { tag: 'ul', start: 1, items: [] }; }
+        list.items.push({ text: m[1], sub });
+        continue;
+      }
+      if ((m = /^(\d+)[.)]\s+(.*)$/.exec(t))) {
+        flushPara(); flushQuote();
+        if (!list || list.tag !== 'ol') { flushList(); list = { tag: 'ol', start: +m[1], items: [] }; }
+        list.items.push({ text: m[2], sub: false });
+        continue;
+      }
+      if (list && /^\s{2,}\S/.test(line)) { list.items[list.items.length - 1].text += ` ${t}`; continue; } // a list item's next line
+      flushList(); flushQuote();
+      para.push(t);
+    }
+    flush();
+    return out.join('');
+  }
+  // 4. An answer that says it could not find it. The Worker asks for a deeper search on "could not find" by
+  // itself; this is the last answer's own words (and the Worker's "No matching passages were found").
+  const notFound = (text) => /could not find|couldn['’]t find|could not locate|unable to find|not able to find|no matching passages|do(?:es)? not contain/i.test(String(text || ''));
+  // 5. The answer as plain text, for copying: the marks taken off, the bullets kept as "- ".
+  const plainText = (raw) => String(raw || '').replace(/\r/g, '')
+    .replace(/\*\*((?:[^*\n]|\*[^*\n]+\*)+?)\*\*/g, '$1').replace(/(^|[\s(])\*([^*\s][^*\n]*?)\*(?=[\s).,;:!?]|$)/gm, '$1$2')
+    .replace(/^[ \t]*#{1,6}[ \t]+(.*?)[ \t]*#*[ \t]*$/gm, '$1').replace(/^[ \t]*(-{3,}|\*{3,}|_{3,})[ \t]*$/gm, '').replace(/^([ \t]*)[*•][ \t]+/gm, '$1- ')
+    .replace(/\n{3,}/g, '\n\n').trim();
+  // The passage numbers an answer uses, in order, each once (up to n).
+  const refsIn = (raw, n) => [...new Set([...String(raw || '').matchAll(/\[(\d+(?:\s*[,–-]\s*\d+)*)\]/g)].flatMap((m) => m[1].match(/\d+/g).map(Number)))].filter((x) => x >= 1 && x <= n);
+  // 1. The box promises "the rules or CROA awards", but a craft's everyday set leaves them out. A question that
+  // names one of these documents, while it isn't searched, gets a line offering to add it.
+  const MENTIONS = [
+    ['cror', /\bCROR\b|\brules?\s+\d{1,3}\b|\boperating rules?\b/i, 'The CROR isn’t being searched.'],
+    ['goi', /\bGOIs?\b|general operating instructions?/i, 'The GOI isn’t being searched.'],
+    ['dangerous_goods', /dangerous goods|\bTDG\b|placard|hazardous material/i, 'Dangerous goods isn’t being searched.'],
+    ['disciplinary_grid', /disciplin|demerit|suspension/i, 'The discipline grid isn’t being searched.'],
+    ['croa', /\bCROA\b|arbitrat/i, 'CROA awards aren’t being searched.'],
+    ['le_operating_manual', /operating manual|\b8960\b/i, 'The engineer operating manual isn’t being searched.'],
+  ];
+  const mentioned = (question) => MENTIONS.filter(([, rx]) => rx.test(String(question || ''))).map(([id]) => id);
+  // --- end of the answer tools ---
 
   function build() {
     box = document.createElement('div');
@@ -38,6 +110,9 @@
     const $ = (s) => box.querySelector(s);
     $('#askgo').onclick = ask;
     $('#askq').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } };
+    // The test site's answer tools (inert elsewhere: nothing they look for is drawn there).
+    $('#askq').addEventListener('input', () => { if (preview) paintMentions(); });
+    $('.askanswer').addEventListener('click', (e) => { const b = e.target.closest('.askref'); if (b) showPassage(b); });
     $('.askdeep').onclick = deeper;
     // The tip's link opens the document list and brings it into view.
     $('.askpick').onclick = () => { const d = $('.asksrc'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -80,6 +155,7 @@
     const n = on.size;
     box.querySelector('.askcount').textContent = `(${n} of ${sources.length})`;
     paintChips();
+    if (preview) paintMentions();
   }
 
   // --- The simpler picker (owner, 2026-11-11: "Could have it auto select a few
@@ -135,7 +211,7 @@
   // --- Example questions and how to ask (owner, 2026-11-12 evening: "add some sample questions and
   // explanations ... example of good questions to ask, and the type of questions to ask. Explain how AI can be
   // more useful than a normal search engine and its limitations"; then, shown a picture: "Push these changes
-  // to the test site"). Test site only: board.html passes opts.examples = PREVIEW. Each example was run
+  // to the test site"). Test site only: board.html passes opts.preview = PREVIEW. Each example was run
   // through the site's own search over the agreements (top 9, that craft's documents) and finds the part it
   // is about (test/board/ask-examples.test.js). A tap fills the box and never sends: the member presses Ask.
   const EXAMPLES = {
@@ -177,26 +253,108 @@
     <li>It only knows the versions on this site (Conductors 4.16 revised July 2020, Engineers 1.1 2018, and the other documents listed). Anything agreed since may not be in them.</li>
     <li>Agreements 4.3 and 1.2 are for Western Canada, not Sarnia.</li>
     <li>It's a search aid, not legal advice. For a grievance or claim, confirm with your Local Chairperson.</li></ul></div></details>`;
-  let examples = false;
-  function setExamples(on) {
+  // The test site's pieces: added when preview turns on and taken away when it turns off, so a member's tab is
+  // drawn exactly as before.
+  let preview = false;
+  function setPreview(on) {
     if (!box) return;
-    if (examples !== !!on) {
-      examples = !!on;
-      if (examples) {
-        box.querySelector('.askrow').insertAdjacentHTML('afterend', '<div class="asktry"><span class="asklbl2">Try one: it fills the box, then tap Ask</span><ul></ul></div>');
+    if (preview !== !!on) {
+      preview = !!on;
+      if (preview) {
+        box.querySelector('.askrow').insertAdjacentHTML('afterend', '<div class="asksugg" hidden></div><div class="asktry"><span class="asklbl2">Try one: it fills the box, then tap Ask</span><ul></ul></div>');
         box.querySelector('.asksrc').insertAdjacentHTML('beforebegin', HOW + WHY);
-      } else box.querySelectorAll('.asktry, .askhow').forEach((x) => x.remove());
+        box.querySelector('.askdeep').insertAdjacentHTML('afterend', '<button type="button" class="askcopy" hidden>Copy answer</button>');
+        box.querySelector('.askcopy').onclick = (e) => copyAnswer(e.currentTarget);
+      } else box.querySelectorAll('.asksugg, .asktry, .askhow, .askcopy').forEach((x) => x.remove());
     }
+    // 2. With the craft buttons, the documents searched are the chips above this note, not a list below it.
+    // (Three notes share the class: this is the one that says where the answers come from.)
+    const hint = [...box.querySelectorAll('.askhint')].find((p) => /the documents (?:picked above|below)/.test(p.textContent));
+    if (hint) hint.textContent = hint.textContent.replace(/the documents (?:picked above|below)/, preview && simple ? 'the documents picked above' : 'the documents below');
     paintExamples();
+    paintMentions();
   }
+  // Fill the question box (an example, or one offered after "couldn't find it"). Never sends: the member taps Ask.
+  function fillBox(q) {
+    const t = box.querySelector('#askq');
+    t.value = q;
+    t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    paintMentions();
+  }
+  const exampleList = (qs) => `<ul>${qs.map((q) => `<li><button type="button">${esc(q)}</button></li>`).join('')}</ul>`;
+  const wireFill = (el) => el.querySelectorAll('li > button').forEach((b) => { b.onclick = () => fillBox(b.textContent); });
   // Six for the craft picked; three of each until one is picked.
   function paintExamples() {
     const ul = box && box.querySelector('.asktry ul');
     if (!ul) return;
     const craft = savedCraft();
     const list = craft ? EXAMPLES[craft] : [...EXAMPLES.conductor.slice(0, 3), ...EXAMPLES.engineer.slice(0, 3)];
-    ul.innerHTML = list.map((q) => `<li><button type="button">${esc(q)}</button></li>`).join('');
-    ul.querySelectorAll('button').forEach((b) => { b.onclick = () => { const t = box.querySelector('#askq'); t.value = b.textContent; t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+    ul.outerHTML = exampleList(list);
+    wireFill(box.querySelector('.asktry'));
+  }
+  // 1. A document the question names that the search leaves out: a line offering to add it.
+  function paintMentions() {
+    const el = box && box.querySelector('.asksugg');
+    if (!el) return;
+    const offer = mentioned(box.querySelector('#askq').value).filter((id) => {
+      const i = box.querySelector(`#ai-${CSS.escape(id)} input`);
+      return i && !i.checked && !i.disabled;
+    });
+    el.hidden = !offer.length;
+    el.innerHTML = offer.map((id) => `<div>${esc(MENTIONS.find((x) => x[0] === id)[2])} <button type="button" class="askchip" data-add="${esc(id)}">+ Add ${esc(SHORT[id] || names[id] || id)}</button></div>`).join('');
+    el.querySelectorAll('[data-add]').forEach((b) => { b.onclick = () => { const i = box.querySelector(`#ai-${CSS.escape(b.dataset.add)} input`); if (i && !i.disabled) { i.checked = true; refresh(); } }; });
+  }
+  // 3. A [n] in the answer: that passage under its paragraph, with the link to its page. Tap again to close.
+  function showPassage(b) {
+    const run = b.closest('.askmd');
+    const k = +b.dataset.ref;
+    const c = run && (run._cites || [])[k - 1];
+    if (!c) return;
+    const block = b.closest('li, p, h4, blockquote') || b;
+    const inside = block.tagName === 'LI';
+    const next = block.nextElementSibling;
+    const open = inside ? block.querySelector(':scope > .askpass') : (next && next.classList.contains('askpass') ? next : null);
+    const same = open && open.dataset.ref === String(k);
+    if (open) open.remove();
+    if (same) return;
+    const href = citeHref(c);
+    block.insertAdjacentHTML(inside ? 'beforeend' : 'afterend', `<div class="askpass" data-ref="${k}"><div class="askcl"><b>[${k}]</b> ${esc(names[c.source] || c.source)} · ${esc(citeWhere(c))}</div><div class="asktx">${esc(c.fullText || c.snippet)}</div>${href ? `<div class="askln"><a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${c.source === 'croa' ? 'Open the award ↗' : `Open at page ${esc(c.page)} ↗`}</a></div>` : ''}</div>`);
+  }
+  // 4. After an answer that could not find it: the wording tip, and three examples to start from.
+  function notFoundBox() {
+    const craft = savedCraft();
+    const list = craft ? EXAMPLES[craft].slice(0, 3) : [EXAMPLES.conductor[0], EXAMPLES.engineer[0], EXAMPLES.conductor[1]];
+    return `<div class="asknf"><b>Didn’t find it?</b> The search goes by the words in your question. Try the agreement’s own words (“held at the away-from-home terminal”, not “kept in Toronto”)${craft ? '' : ', pick Conductor or Engineer'}, or start from one of these:${exampleList(list)}</div>`;
+  }
+  // When an answer is finished (test site): Copy answer, and the "Didn't find it?" box if it couldn't.
+  function answerDone(ans) {
+    const runs = ans.querySelectorAll('.askmd');
+    const run = runs[runs.length - 1];
+    if (!run || !run._raw.trim()) return;
+    const copy = box.querySelector('.askcopy');
+    if (copy) copy.hidden = notFound(run._raw); // nothing to copy from "couldn't find it"
+    if (notFound(run._raw) && !ans.querySelector('.asknf')) { ans.insertAdjacentHTML('beforeend', notFoundBox()); wireFill(ans.querySelector('.asknf')); }
+  }
+  // 5. The last answer with the pages it cites, as text to paste to a Local Chairperson or a coworker.
+  async function copyAnswer(b) {
+    const runs = box.querySelectorAll('.askanswer .askmd');
+    const run = runs[runs.length - 1];
+    if (!run || !last) return;
+    const list = run._cites || [];
+    const used = refsIn(run._raw, list.length);
+    const text = [`Question: ${last.question}`, '', plainText(run._raw),
+      ...(used.length ? ['', 'Where it comes from:', ...used.map((k) => `[${k}] ${names[list[k - 1].source] || list[k - 1].source}, ${citeWhere(list[k - 1])}`)] : []),
+      '', 'From the Sarnia board site’s agreement search. A search aid, not legal advice: confirm with your Local Chairperson.'].join('\n');
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+      const t = document.createElement('textarea');
+      t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { ok = document.execCommand('copy'); } catch (x) { ok = false; }
+      t.remove();
+    }
+    b.textContent = ok ? '✓ Copied' : 'Could not copy';
+    setTimeout(() => { b.textContent = 'Copy answer'; }, 2500);
   }
   function pick(what) {
     box.querySelectorAll('.asklist input').forEach((i) => {
@@ -206,14 +364,16 @@
     refresh();
   }
 
+  const citeWhere = (c) => (/^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page);
+  // Android's PDF viewer drops #page=, so agreement PDFs open in ours there.
+  const citeHref = (c) => (c.url ? (/Android/i.test(navigator.userAgent) && c.url.startsWith('/docs/') ? `viewer.html?doc=${encodeURIComponent(c.source)}&page=${encodeURIComponent(c.page)}` : c.url.replace(/^\//, '')) : '');
   function cites(list) {
+    citesNow = list;
     const ul = box.querySelector('.askcitelist');
-    const android = /Android/i.test(navigator.userAgent);
     ul.innerHTML = list.map((c, i) => {
-      const where = /^\d+$/.test(String(c.page)) ? `page ${c.page}` : c.page;
+      const where = citeWhere(c);
       const more = c.fullText && c.fullText.length > c.snippet.length;
-      // Android's PDF viewer drops #page=, so agreement PDFs open in ours there.
-      const href = c.url ? (android && c.url.startsWith('/docs/') ? `viewer.html?doc=${encodeURIComponent(c.source)}&page=${encodeURIComponent(c.page)}` : c.url.replace(/^\//, '')) : '';
+      const href = citeHref(c);
       return `<li data-i="${i}"><div class="askcl"><b>[${i + 1}]</b> ${esc(names[c.source] || c.source)} · ${esc(where)}</div>
         <div class="asktx">${esc(c.snippet)}${more ? '…' : ''}</div>
         <div class="askln">${more ? '<button type="button" class="askmore">Show more</button>' : ''}${href ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${c.source === 'croa' ? 'Open the award ↗' : `Open at page ${esc(c.page)} ↗`}</a>` : ''}</div></li>`;
@@ -233,13 +393,21 @@
   async function stream(q, { tier, append, waiting }) {
     const ans = box.querySelector('.askanswer');
     const deep = box.querySelector('.askdeep');
+    const copy = box.querySelector('.askcopy');
+    // The test site draws the answer with its formatting, and its [n] open the passages (answerHtml).
+    const md = preview;
     deep.hidden = true;
+    if (copy) copy.hidden = true;
     if (!append) { ans.innerHTML = ''; box.querySelector('.askcites').hidden = true; }
     let note = waiting ? addNote(waiting) : null;
     let run = null;
     const text = (t) => {
-      if (!run) { run = document.createElement('span'); ans.appendChild(run); }
-      run.textContent += t;
+      if (!run) {
+        run = document.createElement(md ? 'div' : 'span');
+        if (md) { run.className = 'askmd'; run._raw = ''; run._cites = citesNow; }
+        ans.appendChild(run);
+      }
+      if (md) { run._raw += t; run.innerHTML = answerHtml(run._raw, run._cites.length); } else run.textContent += t;
     };
     try {
       // The owner key (board.html OwnerKey) gets the owner's questions answered by Claude Opus.
@@ -284,7 +452,7 @@
           } else if (e.type === 'escalating') {
             run = null;
             note = addNote('That didn\'t find it: searching more thoroughly, this takes a bit longer…');
-          } else if (e.type === 'done') { if (e.canEscalate) deep.hidden = false; }
+          } else if (e.type === 'done') { if (e.canEscalate) deep.hidden = false; if (md) answerDone(ans); }
           else if (e.type === 'error') { if (note) { note.remove(); note = null; } run = null; error(e.error); }
         }
       }
@@ -330,12 +498,12 @@
   }
 
   root.BoardAsk = {
-    // opts.simple: the craft buttons and document chips. opts.examples: the example questions and the two
-    // explanations (the test site, for now).
+    // opts.simple: the craft buttons and document chips. opts.preview: the test site's pieces (the example
+    // questions, the two explanations, the answer tools).
     render(view, opts) {
       if (!box) build();
       setSimple(!!(opts && opts.simple));
-      setExamples(!!(opts && opts.examples));
+      setPreview(!!(opts && opts.preview));
       view.innerHTML = '';
       view.appendChild(box);
     },

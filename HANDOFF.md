@@ -943,6 +943,40 @@ with "could not find". Put to him as suggestions, nothing built.
    held away 5, vacation and leave 5, discipline or grievance 2; counted, not read). 8. The grey example in
    the empty box repeats the first example: "Type a question, or tap one below".
 
+**His pick, 12 Nov about 21:20 Toronto: "Go with your pick: 3, 2, 1, 4 and 5". BUILT FOR THE TEST SITE ONLY about
+22:10, waiting on one laptop pull; nothing to the main site.** All in `public/board-ask.js` behind `opts.preview`
+(`renderAsk` passes `preview: PREVIEW`; the switch was `examples` before) plus styles in `board.html`. A block of
+pure functions near the top ("Answer tools ... TEST SITE ONLY"): `answerHtml(raw, n)`, `notFound`, `plainText`,
+`refsIn`, `MENTIONS` / `mentioned`. `setPreview(on)` adds and removes the pieces (`.asksugg`, `.asktry`, `.askhow`,
+`.askcopy`), so a member's tab is built exactly as before.
+- **3.** On the test site an answer is drawn from its Markdown (`stream`: `md = preview`; each answer keeps its own
+  passages in `run._cites`, so after a deeper search an earlier answer's [n] still opens its own). Bold (an
+  italic word inside it too), italics, `#` headings, `-` / `*` bullets with indented sub-points, numbered lists, a
+  `>` quote, a `---` line; each [n] (also [1][2], [1, 2]) up to the passage count is a button: the passage opens
+  under its paragraph with "Open at page N", tap again to close (`showPassage`). Run over all 28 answers kept in
+  Search Review (counts only): no `**` or `#` left, 239 of 239 passage numbers drawn as buttons, tags balanced,
+  nothing unescaped.
+- **2.** The note reads "Answers come only from the documents picked above" (three notes share `.askhint`; the
+  first is "Tap one to add it", which a browser look caught: the test pins it).
+- **1.** Typing a question that names the CROR (or "rule 42"), the GOI, dangerous goods, discipline, CROA or the
+  engineer operating manual, while that document is not searched: "The CROR isn’t being searched. + Add CROR".
+- **4.** After an answer (the last one, after any deeper search) that says it could not find it: "Didn’t find it?"
+  with the wording tip and three examples that fill the box.
+- **5.** "Copy answer" beside "Try a deeper search" once an answer is done (not on "couldn't find it"): the
+  question, the answer without its marks, only the pages it cites, and "A search aid, not legal advice: confirm
+  with your Local Chairperson".
+- **Checked.** New test `test/board/ask-review.test.js` (7); suite 519 of 519; eight breaks on purpose all caught.
+  In a browser over the live sites with both files put in place, every "Ask" answered by a stand-in stream built
+  from the repository's own agreement passages in the Worker's event shapes (`route.fulfill` in that browser:
+  nothing sent, nothing spent, nothing in Search Review): him on board-test at 390 light and 360 dark, the CROR
+  offer and "+ Add", a found answer (no marks, 7 passage buttons, [2] opened and closed, Copy read back from
+  the clipboard), a not-found answer after a deeper search (the box, an example filling the box), "No matching
+  passages" (the box, no Copy); no sideways scroll, no page errors. **A member on both sites: the tab, and the
+  tab after an answer, the same to the letter as before.** Not checked: a real answer from the Worker (not sent
+  on purpose), a real phone, iPhone.
+- **To promote:** `preview: true` in `renderAsk` (it carries the examples and the folds too), and the tests that
+  pin `preview: PREVIEW`.
+
 ### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 
 **Owner: "for the article 18.6 (b) can you add a reminder that an AD claim needs to be filed and to talk to
