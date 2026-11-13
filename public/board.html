@@ -1098,21 +1098,16 @@
   .tn2-recent button { padding: 4px 9px; border: 1px solid var(--rule); border-radius: 4px; background: none; color: var(--ink); font: 13px/1.3 var(--mono); cursor: pointer; }
   .lt2 { max-width: 760px; }
   .lt2 h2.lt2-h { margin: 0 0 4px; font: 800 26px/1.15 var(--display); }
-  .lt2-when { margin: 0 0 14px; color: var(--soft); font-size: 14px; }
+  .lt2-when { margin: 0 0 6px; color: var(--soft); font-size: 14px; }
+  .lt2-what { margin: 0 0 14px; font-size: 14.5px; }
   .lt2-when b { color: var(--ink); }
   .lt2-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 10px; }
-  .lt2-before .lt2-tiles { margin: 0 14px 10px; }
   .lt2-tiles > div { border: 1px solid var(--rule); background: var(--sheet); padding: 10px 12px; display: grid; gap: 3px; align-content: start; }
   .lt2-tiles b { font: 800 22px/1.15 var(--mono); }
-  .lt2-tiles b i { font: 400 12px/1 var(--body); color: var(--soft); }
   .lt2-tiles span { font-size: 13.5px; }
   .lt2-tiles small { font-size: 12px; color: var(--soft); }
   @media (max-width: 560px) { .lt2-tiles { grid-template-columns: 1fr; } .lt2-tiles > div { grid-template-columns: minmax(0, 118px) minmax(0, 1fr); column-gap: 12px; } .lt2-tiles b { grid-row: span 2; font-size: 20px; } }
   .lt2-verdict { margin: 0 0 16px; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--sheet); font-size: 14.5px; }
-  .lt2-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .lt2-table th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--soft); padding: 8px 6px; vertical-align: bottom; }
-  .lt2-table th:first-child, .lt2-table td:first-child { padding-left: 14px; }
-  .lt2-table td { padding: 8px 6px; border-top: 1px solid var(--rule-soft); }
   details.lt2-run { border-top: 1px solid var(--rule-soft); }
   details.lt2-run > summary { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 14px; cursor: pointer; list-style: none; }
   details.lt2-run > summary::-webkit-details-marker { display: none; }
@@ -1127,8 +1122,6 @@
   .lt2-check em { grid-column: 2; grid-row: 1; font-style: normal; font-weight: 600; }
   .lt2-check.ok em { color: var(--go); } .lt2-check.miss em { color: var(--stop); }
   .lt2-more { margin: 10px 14px; }
-  .lt2-how { margin: 14px 0; font-size: 13.5px; color: var(--soft); }
-  .lt2-how summary { cursor: pointer; color: var(--accent); padding: 6px 0; }
   .ae2-count { margin: 0 0 10px; font-size: 13.5px; color: var(--soft); }
   .ae2-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
   .ae2-chips button { border: 1px solid var(--rule); background: none; color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 13px/1.2 var(--body); cursor: pointer; }
@@ -4140,59 +4133,51 @@ function spareCall(s, p, t) {
 // came off both sites the same day). Owner, 2026-11-10: "track it for 2 weeks ...
 // test to see how accurate the predictions are. If its more beneficial than
 // the time it shows over 2 weeks maybe we can push it [to] the main site").
-// patterns.json score: every train since the test began, checked once at each
-// distance it was seen planned, against the window the page had at the time.
+// Simplified, owner 2026-11-13: "It needs to be simple with minimal explanation so guys seeing it will
+// understand it". Three numbers, one line saying which is ahead, and the trains. Off the page (still in
+// patterns.json score): the table by distance (test.byAway), the replay of the days before the test
+// (before), the early calls covered (test.early, earlyCovered) and "How it is scored".
 function likelyTest() {
   const S = PATTERNS && PATTERNS.score;
-  if (!S) return '<div class="lt2"><h2 class="lt2-h">Likely-call test</h2><p class="empty">The test figures arrive with the next publish from the laptop.</p></div>';
-  const AWAYS = { past: 'Past its shown time', '0-3': 'Under 3 h away', '3-6': '3 to 6 h away', '6-10': '6 to 10 h away', '10-16': '10 to 16 h away', '16-24': '16 to 24 h away', '24+': 'Over a day away' };
-  const pct = (n, d) => (d ? `${Math.round((100 * n) / d)}%` : '—');
+  const head = '<h2 class="lt2-h">Likely-call test</h2>';
+  if (!S) return `<div class="lt2">${head}<p class="empty">The test figures arrive with the next publish from the laptop.</p></div>`;
+  const OUT = { '24+': 'A day or more out', '16-24': '16–24 h out', '10-16': '10–16 h out', '6-10': '6–10 h out', '3-6': '3–6 h out', '0-3': 'Under 3 h out', past: 'Past the line-up time' };
   const start = stampMin(S.from);
   const day = (m) => new Date(m * 60000).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   // When the figures were built, on the Toronto clock, in the same minutes as the stamps.
   const made = PATTERNS.generatedAt ? stampMin(new Date(PATTERNS.generatedAt).toLocaleString('sv-SE', { timeZone: 'America/Toronto' }).slice(0, 16).replace(':', '')) : start;
   const dayNo = Math.floor((made - start) / 1440) + 1;
   const when = dayNo < 1 ? `Starts ${day(start)}` : dayNo > S.days ? `The ${S.days} days are up` : `Day ${dayNo} of ${S.days}`;
-  const tiles = (x) => `<div class="lt2-tiles">
-      <div><b>${pct(x.held, x.checks)}</b><span>the window held</span><small>${x.held} of ${x.checks} checks · typically ${hrs(x.width)} wide</small></div>
-      <div><b>${x.likely.within60}% <i>vs</i> ${x.shown.within60}%</b><span>within an hour of the real call</span><small>"most often" time vs the shown call</small></div>
-      <div><b>${x.early ? `${x.earlyCovered} of ${x.early}` : '—'}</b><span>early calls the window covered</span><small>called over 30 min before the shown call</small></div></div>`;
-  const verdict = (x) => {
-    if (x.checks < 40) return `Too early to say: ${plural(x.checks, 'check')} so far. It needs about 40 before the numbers mean much.`;
-    const d = x.likely.within60 - x.shown.within60;
-    const one = d >= 5 ? `The "most often" time has been closer than the shown call (${x.closer} checks closer, ${x.further} further).` : d <= -5 ? `The shown call has been closer than the "most often" time (${x.further} checks further, ${x.closer} closer).` : `As a single time it is about level with the shown call (${x.closer} checks closer, ${x.further} further).`;
-    const h = (100 * x.held) / x.checks;
-    const two = h >= 75 ? `The window is holding (${Math.round(h)}%).` : h >= 60 ? `The window is holding less often than hoped (${Math.round(h)}%).` : `The window is not holding (${Math.round(h)}%).`;
-    return `${two} ${one}`;
+  const intro = `<p class="lt2-when"><b>${when}</b> · ${day(start)} to ${day(start + (S.days - 1) * 1440)}</p>
+    <p class="lt2-what">Each planned Sarnia train is checked a few times before it is called: did the real call land inside the likely window?</p>`;
+  const T = S.test;
+  if (!T.checks) return `<div class="lt2">${head}${intro}<p class="lt2-verdict">No trains yet. Results show once the first planned train is called.</p></div>`;
+  const ahead = T.likely.within60 - T.shown.within60;
+  const verdict = T.checks < 40 ? `Too early to tell: ${plural(T.checks, 'check')} so far.`
+    : ahead >= 5 ? 'So far the likely time is beating the line-up.' : ahead <= -5 ? 'So far the line-up is beating the likely time.' : 'So far the likely time and the line-up are about even.';
+  const span = (a, z) => {
+    const A = BoardTrains.fromMin(a); const Z = BoardTrains.fromMin(z);
+    return A === Z ? dt(A) : A.slice(0, 10) === Z.slice(0, 10) ? `${dt(A)}–${Z.slice(11)}` : `${dt(A)} – ${dt(Z)}`;
   };
-  const table = (x) => `<table class="lt2-table"><thead><tr><th>Shown time was</th><th>Checks</th><th>Window held</th><th>Within 1 h: likely / shown</th></tr></thead><tbody>${x.byAway.map((b) => `<tr><td>${AWAYS[b.away] || esc(b.away)}</td><td class="num">${b.checks}</td><td class="num">${pct(b.held, b.checks)}</td><td class="num">${b.likely.within60}% / ${b.shown.within60}%</td></tr>`).join('')}</tbody></table>`;
-  const callAt = (od, gap) => dt(BoardTrains.fromMin(od - gap - 120));
   const runRow = (r, i) => {
     const od = stampMin(r.onDuty);
-    const held = r.checks.filter((c) => c.held).length;
-    const order = ['24+', '16-24', '10-16', '6-10', '3-6', '0-3', 'past'];
+    const inside = r.checks.filter((c) => c.held).length;
+    const order = Object.keys(OUT);
     const lines = [...r.checks].sort((a, b) => order.indexOf(a.away) - order.indexOf(b.away)).map((c) => {
-      // The order time shown at that distance (its call is 2 h 15 before it), and the window the page gave from it.
-      const shown = od - c.miss; const A = BoardTrains.fromMin(shown + c.lo - 120); const Z = BoardTrains.fromMin(shown + c.hi - 120);
-      const win = A === Z ? dt(A) : A.slice(0, 10) === Z.slice(0, 10) ? `${dt(A)}–${Z.slice(11)}` : `${dt(A)} – ${dt(Z)}`;
-      return `<div class="lt2-check ${c.held ? 'ok' : 'miss'}"><b>${AWAYS[c.away] || esc(c.away)}</b><span>shown call ${esc(dt(BoardTrains.fromMin(shown - 135)))}</span><span>window ${esc(win)}${c.own ? '' : ' (all trains)'}</span><em>${c.held ? 'held' : c.miss < c.lo ? 'called earlier' : 'called later'}</em></div>`;
+      // The order time the line-up showed at that distance (its call is 2 h 15 before it); the window is built from it.
+      const shown = od - c.miss;
+      return `<div class="lt2-check ${c.held ? 'ok' : 'miss'}"><b>${OUT[c.away] || esc(c.away)}</b><em>${c.held ? 'in window' : c.miss < c.lo ? 'called earlier' : 'called later'}</em><span>line-up call ${esc(dt(BoardTrains.fromMin(shown - 135)))}</span><span>likely time ${esc(dt(BoardTrains.fromMin(shown + c.mid - 120)))}</span><span>window ${esc(span(shown + c.lo - 120, shown + c.hi - 120))}</span></div>`;
     }).join('');
-    return `<details class="lt2-run"${i >= 15 ? ' hidden' : ''}><summary><span class="sym"><b>${esc(r.id)}</b> <span class="od">called ${esc(dt(BoardTrains.fromMin(od - 120)))}</span></span><span class="res ${held === r.checks.length ? 'ok' : held ? 'part' : 'miss'}">held ${held} of ${r.checks.length}</span></summary><div class="lt2-checks">${lines}</div></details>`;
+    return `<details class="lt2-run"${i >= 15 ? ' hidden' : ''}><summary><span class="sym"><b>${esc(r.id)}</b> <span class="od">called ${esc(dt(BoardTrains.fromMin(od - 120)))}</span></span><span class="res ${inside === r.checks.length ? 'ok' : inside ? 'part' : 'miss'}">${inside} of ${r.checks.length}</span></summary><div class="lt2-checks">${lines}</div></details>`;
   };
-  const T = S.test; const B = S.before;
   const runs = S.runs || [];
-  return `<div class="lt2"><h2 class="lt2-h">Likely-call test</h2>
-    <p class="lt2-when"><b>${when}</b> · ${day(start)} to ${day(start + (S.days - 1) * 1440)} · planned Sarnia trains</p>
-    ${T.checks ? `${tiles(T)}<p class="lt2-verdict">${esc(verdict(T))}</p>
-      <section class="sheet"><header><h2>By how far away the train was</h2><span class="meta">${plural(T.trains, 'train')}</span></header>${table(T)}</section>
-      <section class="sheet"><header><h2>Trains so far</h2><span class="meta">newest first</span></header>${runs.map(runRow).join('')}${runs.length > 15 ? `<button type="button" class="lt2-more" data-lt2-more>Show all ${runs.length}</button>` : ''}</section>`
-    : '<p class="lt2-verdict">No train has gone yet in the test dates. The first results show after the first planned train goes on duty and the laptop publishes.</p>'}
-    ${B.checks ? `<section class="sheet lt2-before"><header><h2>Before the test</h2><span class="meta">${plural(B.trains, 'train')}, replayed</span></header>
-      <p class="anote" style="margin:10px 14px">The same scoring run over the days saved before the test began: each train against a window built only from trains that had already gone.</p>${tiles(B)}<p class="lt2-verdict" style="margin:0 14px 12px">${esc(verdict(B))}</p>${table(B)}</section>` : ''}
-    <details class="lt2-how"><summary>How it is scored</summary>
-      <p>Each planned Sarnia train is checked once at each distance it was seen at (over a day away, 16 to 24 h, and so on down to under 3 h). At each one the page's window is rebuilt from only the trains that had gone on duty before that moment, so nothing is scored with hindsight.</p>
-      <p><b>The window held</b>: the real call fell inside the "likely call" window. <b>Within an hour</b>: how often the real call was within an hour of the window's "most often" time, beside how often it was within an hour of the call the line-up showed. <b>Early calls covered</b>: of the calls that came more than 30 minutes before the shown call, how many the window's early edge had allowed for.</p>
-      <p>Ordered trains, deadheads and Toronto trains are not in it; the page shows no window for them.</p></details></div>`;
+  return `<div class="lt2">${head}${intro}
+    <div class="lt2-tiles">
+      <div><b>${Math.round((100 * T.held) / T.checks)}%</b><span>called inside the likely window</span><small>${T.held} of ${T.checks} checks · the window is usually ${hrs(T.width)} wide</small></div>
+      <div><b>${T.likely.within60}%</b><span>called within an hour of the likely time</span></div>
+      <div><b>${T.shown.within60}%</b><span>called within an hour of the line-up's call</span></div></div>
+    <p class="lt2-verdict">${esc(verdict)}</p>
+    <section class="sheet"><header><h2>Trains so far</h2><span class="meta">times in the window</span></header>${runs.map(runRow).join('')}${runs.length > 15 ? `<button type="button" class="lt2-more" data-lt2-more>Show all ${runs.length}</button>` : ''}</section></div>`;
 }
 function planTrust(s, t) {
   const od = BoardTrains.resolve(t.order, s.taken);
@@ -8051,7 +8036,7 @@ source().then(async (src) => {
     const LIST = opts.all ? Infinity : 10; // rows of a summary list before "show more"
     root.querySelectorAll('table').forEach((table) => {
       const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' '));
-      if (!heads.length || table.classList.contains('lt2-table')) return; // the test's small table fits a phone as it is
+      if (!heads.length) return;
       table.classList.add('ana2-stack');
       if (table.closest('.scroll')) table.closest('.scroll').classList.add('ana2-open');
       table.querySelectorAll('tbody > tr').forEach((tr) => {

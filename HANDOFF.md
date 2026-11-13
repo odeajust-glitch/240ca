@@ -1,5 +1,36 @@
 # HANDOFF — read this before doing anything
 
+## Likely-call test page made simpler — 13 Nov 2026 (`public/board.html`, page only; still TEST SITE ONLY). WAITING ON ONE LAPTOP PULL; then his look
+
+**Owner, 13 Nov:** "I want to review the likely call test in analytics to try and simplify it. It needs to
+be simple with minimal explanation so guys seeing it will understand it." Built and pushed without a pick
+list (he asked for the result, not options); told him what came off and that any piece can come back.
+
+**Now (Analytics → Likely-call test, `likelyTest`).** The heading and "Day N of 14 · dates"; one sentence
+("Each planned Sarnia train is checked a few times before it is called: did the real call land inside the
+likely window?"); three tiles: **called inside the likely window** (with "N of N checks · the window is
+usually X h wide"), **called within an hour of the likely time**, **called within an hour of the line-up's
+call**; one line: "So far the likely time is beating the line-up" / "the line-up is beating the likely
+time" / "about even" (5 points either way, as before), or "Too early to tell" under 40 checks; then
+**Trains so far**, one row a train ("5 of 6" = times in the window), opening to each check in plain times:
+how far out, line-up call, likely time (new: the window's middle, `mid`), window, and in window / called
+earlier / called later. On a phone the page is about 1,450 px with the rows shut (was 3,350).
+**Off the page (all still in data/patterns.json `score`, so the 25 Nov read is unaffected):** the table by
+distance (`test.byAway`), "Before the test" (`before`, the replay of 207 trains), the early-calls tile
+(`early`, `earlyCovered`), the closer / further counts, "(all trains)" (`own`) and "How it is scored".
+Their styles went too, and the table exception in `ana2Stack`.
+
+**Who sees it: unchanged.** Still only board-test with the owner key (`PREVIEW`); a member sees no such
+page on either site. "So guys seeing it will understand it" may mean he wants members to see it: **not
+done; ask.** Showing it to members is a change of who sees it and needs his word in so many words.
+
+**Checked.** Suite **507 of 507** after rebasing on the Members work (`test/board/likely-test-page.test.js`, 3: the tiles, the verdict's
+three wordings and too early, the times on an opened check worked by hand, what came off, the three empty
+states; run against the old page all 3 fail, and with the verdict's threshold broken one fails). In a
+browser, this branch's page over the live board-test files as him: 390 and 340 px, light and dark, 1280
+px; rows open and shut, Show all; no page errors, no sideways scroll. Note for a fresh container: `npm
+ci` first, or 15 tests fail on missing packages (jszip and the like), not on the code.
+**Not checked.** A real phone.
 ## Tab review round 3: Members — 12 Nov 2026, 19:15 to 20:40 Toronto. His two asks (`71a4fa0`) and his picks 1, 3, 4, 5, 6 of the eight (`f57b390`) BUILT FOR THE TEST SITE ONLY (page only), WAITING ON ONE LAPTOP PULL; then his look. The Worker (copy page, `e3e7936`) WAITING ON HIS PASTE INTO BOTH
 
 **Owner, 12 Nov about 19:15 Toronto:** "Start members, I would like to clean up the members tab, move the
