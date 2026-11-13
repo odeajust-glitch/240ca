@@ -265,7 +265,23 @@ sessions' `3f24ee2` and `fe570e8` came after `adb089b`).
 **Waiting on him:** his look at board-test's Members and Page Health and his say on each piece (keep, change,
 drop or promote). Next in the tab review: round 4, Turn History, on his word.
 
-## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone
+## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone. **13 Nov: he reports screenshots trace, photos of the screen do not; a faint VISIBLE code mocked up (nothing built), waiting on his word**
+
+**13 Nov, the owner, having tried it:** "The screenshot reviewer, it works great for direct screen shots, but
+doesnt work for pictures of screen shots, is there anyway to fix this" ("pictures" taken as a photo of the screen
+with another phone). **Answered: not the hidden mark.** It is 1 shade out of 255; a camera's blur, noise, moire and
+processing wipe it out (the 12 Nov test's photo stand-in: 0 of 16), and anything strong enough for a camera to
+read is strong enough for people to see. **The fix offered: a faint visible code as well** (the open "faint
+visible number" question below, now raised by him). Mocked up in a test browser only (`visible-capture.js` under
+screenshot-mark; board-test as the owner key, read only, nothing on the site): a 4-character stand-in code (the
+account's same 20-bit number would fit exactly: Crockford base 32, 32^4 = 2^20), tiled at a slant over the whole
+screen in the same see-through top layer, 15 px bold, at 4%, 6% and 9%. Through the 12 Nov photo stand-in made
+harsher (`treatments.photo`, then 1 px more blur, 1100 px, JPEG 70) the code read by eye at all three on light
+pages, and at 6% and 9% on dark (4% barely). Shown to him as pictures, recommended: about 5% on light pages, 7% on
+dark; keep the hidden mark (invisible, read by the phone; every screenshot so far still traces); the Trace box
+gets "or type the code you see". It would show members their pages are marked (the other open question).
+**Asked: build it on the test site first, his own view only?** Not checked: a real camera, how it looks on his
+phone.
 
 **Seen 12 Nov at 19:55 Toronto by the Members session (read only):** `board-test` runs `3f24ee2` (`ownerMark`,
 a `mark` on all 35 accounts); `board` still runs `e3e7936` (no marks). The main Worker needs the `3f24ee2` copy

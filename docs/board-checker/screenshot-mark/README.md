@@ -14,6 +14,16 @@ a way to track screen shots maybe. Would it be possible to bake a hidden id numb
 is not visible to people but if I gave you a picture of a screen shot or a screen shot, you would be able
 to know what account it came from"
 
+## Photos of the screen: 13 Nov 2026
+
+The owner tried the mark: screenshots trace, photos of the screen with another phone do not (as the table below
+expected). The hidden mark cannot be made to survive a camera without becoming visible. A faint **visible** code
+was mocked up instead (`visible-capture.js`: board-test as the owner key, read only, drawn in that browser only):
+a 4-character stand-in (the same 20-bit number fits exactly in Crockford base 32), tiled at a slant over the
+screen, 15 px bold, at 4%, 6% and 9% opacity. After the photo stand-in made harsher (`treatments.photo`, 1 px more
+blur, 1100 px, JPEG 70) it read by eye at all three on light pages and at 6% and 9% on dark (4% barely). Not built:
+waiting on the owner. Not checked: a real camera, how it looks on his phone.
+
 ## Blocking or noticing a screenshot: no
 
 A web page is not told when the phone takes a screenshot and cannot stop one (iPhone or Android, Safari
