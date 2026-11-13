@@ -886,6 +886,16 @@ member's Agreements tab the same to the letter as before on both sites.** To pro
 members.** Every one of the 21 answers has Markdown marks (`**`, `#` headings, `- ` bullets) that the tab
 shows as typed characters (`.askanswer` is plain text). 4 of the 11 members' questions and 7 of his 10 ended
 with "could not find". Put to him as suggestions, nothing built.
+**Suggestions put to him, 12 Nov about 21:15 Toronto (his order; nothing built, waiting for his picks):**
+1. The box promises "the rules or CROA awards", but the CROR, GOI and CROA awards are not searched unless
+   added: offer "Add the CROR to this search?" when a question names them. 2. "the documents below" are the
+   chips above: reword. 3. Draw the answers' bold, headings and lists, and make each [n] open its passage.
+4. When it can't find it: the wording tip and the examples right there; and (a Worker change, checked against
+   Search Review first) railway words the search reads as the agreement's ("PL" → personal leave, "DH" →
+   deadhead, "kept in Toronto" → held at the away-from-home terminal). 5. Copy an answer with its pages.
+6. Keep the last answer on the phone. 7. Pick the examples from what members ask (so far: crew calling 6,
+   held away 5, vacation and leave 5, discipline or grievance 2; counted, not read). 8. The grey example in
+   the empty box repeats the first example: "Type a question, or tap one below".
 
 ### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 
@@ -902,6 +912,8 @@ held trips in Turn History each with it; a member's 18.6(b) tab and an engineer'
 as before on both sites. **Not done, put to him:** the "held 14 h+" phone alert (laptop, every member who
 follows a crew member) still says only "Open the board's Article 18.6(b) tab to send it to your rep" for an
 engineer too. To promote: drop `PREVIEW` in `enAdNote` and change the test, quoting him.
+**LIVE FOR MEMBERS on both sites, seen 12 Nov about 21:10 Toronto** (the laptop on `9319053`, which holds
+`8511d2e`): a member on the main site, the real published page, reads it at the top of the 18.6(b) tab.
 **Promoted, 12 Nov about 19:45 Toronto: "push the AD reminder to main".** `enAdNote` no longer asks `PREVIEW`;
 the test pins it the same on both sites. Checked in a browser as a member on both sites with the new page: the
 line at the top of the tab, the form hiding and showing it (Conductor → Engineer → Conductor), S302 typed into
