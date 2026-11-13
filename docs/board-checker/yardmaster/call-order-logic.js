@@ -211,7 +211,8 @@
       };
     });
     const ya = YA_JOBS[jobTurn];
-    return { sc, start, end, job: jobTurn, rows, runs: ya ? ya.runs(sc.date) : null };
+    // "is anyone avaiable on the spareboard" yes or no (owner, 13 Nov): no, and the spare steps find nobody.
+    return { sc, start, end, job: jobTurn, rows, runs: ya ? ya.runs(sc.date) : null, spareOff: String(sc.spareboard || 'yes') === 'no' };
   }
 
   // Down the list, step by step: who could take it at each step and, for everyone else, why not.
@@ -233,6 +234,7 @@
     };
     const why = (r, st) => {
       if (r.holder) return 'holds this job';
+      if (prep.spareOff && groupOfRow(r) === 'spare') return 'nobody available on the spareboard';
       if (r.status !== 'available') return STATUS[r.status].toLowerCase();
       if (rules.restSkips && r.freeAt != null && r.freeAt > call) return `on rest until ${fmt(r.freeAt)} when the call is made`;
       if (rules.ownShifts) {
@@ -293,9 +295,36 @@
     };
   }
   function distance(a, b) { const x = shape(a); const y = shape(b); return Object.keys(x).filter((k) => x[k] !== y[k]).length; }
-  const expectedOf = (ex) => (ex.expected ? +ex.expected : 0);
-  const picked = (res) => (res.pick ? res.pick.r.p.rank : 0);
-  function score(rules, preps) { let ok = 0; for (const { prep, ex } of preps) if (picked(evaluate(prep, rules)) === expectedOf(ex)) ok++; return ok; }
+  // Whether a saved check still agrees with what the rules say now. A check holds the call order
+  // as it was (`order`, ranks), the owner's or a yardmaster's Yes / No beside the people in it
+  // (`marks`), anyone missing from it (`missing`) and who should get it first (`expected`: a
+  // rank, 0 for nobody, null when not said). It agrees when everyone marked Yes is still called,
+  // in the same order among themselves; everyone marked No is no longer in the same spot (the
+  // people ahead of them changed, or they drop out); anyone missing is now called; and the first
+  // is the one chosen. -> { ok, fails: [{ kind, rank | got, want }] }
+  function agrees(ex, res) {
+    const now = res.order.map((o) => o.r.p.rank);
+    const at = (rk) => now.indexOf(+rk);
+    const was = (ex.order || []).map(Number);
+    const markOf = (rk) => (ex.marks || {})[rk];
+    const yes = was.filter((rk) => markOf(rk) === 'yes');
+    const fails = [];
+    for (const rk of yes) if (at(rk) < 0) fails.push({ kind: 'gone', rank: rk });
+    const kept = yes.filter((rk) => at(rk) >= 0);
+    if ([...kept].sort((a, b) => at(a) - at(b)).join() !== kept.join()) fails.push({ kind: 'order' });
+    const setOf = (list) => [...list].sort((a, b) => a - b).join();
+    for (const rk of was.filter((r) => markOf(r) === 'no')) {
+      if (at(rk) < 0) continue;
+      if (setOf(was.slice(0, was.indexOf(rk))) === setOf(now.slice(0, at(rk)))) fails.push({ kind: 'still', rank: rk });
+    }
+    for (const m of ex.missing || []) if (m && at(m.rank) < 0) fails.push({ kind: 'missing', rank: +m.rank });
+    if (ex.expected != null && ex.expected !== '') {
+      const got = now.length ? now[0] : 0;
+      if (got !== +ex.expected) fails.push({ kind: 'first', got, want: +ex.expected });
+    }
+    return { ok: fails.length === 0, fails };
+  }
+  function score(rules, preps) { let ok = 0; for (const { prep, ex } of preps) if (agrees(ex, evaluate(prep, rules)).ok) ok++; return ok; }
   function fit(examples, people, current, { top = 3 } = {}) {
     const preps = examples.map((ex) => ({ ex, prep: prepare(ex.sc, people) }));
     const seen = new Set();
@@ -336,7 +365,7 @@
 
   const api = {
     DAYS, toMin, fmt, hhmmOf, dowOf, addDays, fromLocal, weekStartOf, towerOn, YA_JOBS, YARD, RELIEF, parseCode, groupOf, inYard, scheduled, workOn, shiftsAround,
-    GROUPS, STATUS, startingRules, manualRules: startingRules, normalize, stepLabel, catsFacts, prepare, evaluate, decide, fit, describe, distance, shape, clone,
+    GROUPS, STATUS, startingRules, manualRules: startingRules, normalize, stepLabel, catsFacts, prepare, evaluate, decide, agrees, fit, describe, distance, shape, clone,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.YM = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

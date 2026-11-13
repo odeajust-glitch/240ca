@@ -84,6 +84,22 @@ table.walk td.rk { width: 3.2em; font-family: var(--f-mono); color: var(--muted)
 table.walk tr.win td { background: var(--accent-soft); }
 table.walk .yes { color: var(--ok); font-weight: 600; }
 table.walk .no { color: var(--muted); }
+.yn-field { border: 0; padding: 0; margin: 0; display: flex; gap: 6px 16px; align-items: center; flex-wrap: wrap; font-size: 15px; min-width: 0; }
+.yn-field legend { font-size: 13px; color: var(--muted); padding: 0; margin-bottom: 4px; }
+.yn-field label { display: inline-flex; gap: 6px; align-items: center; }
+ol.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.crow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+.crow.yes { border-color: var(--ok); background: var(--ok-soft); }
+.crow.no { border-color: var(--bad); background: var(--bad-soft); }
+.crow-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.crow .pos { font-family: var(--f-mono); color: var(--muted); min-width: 1.4em; text-align: right; }
+.crow-who b { font-family: var(--f-head); font-size: 16px; }
+.crow-who .tag { display: block; }
+.yn { display: flex; gap: 6px; }
+.yn button[aria-pressed="true"][data-yn="yes"] { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.yn button[aria-pressed="true"][data-yn="no"] { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+@media (max-width: 520px) { .crow-main { grid-template-columns: auto minmax(0, 1fr); } .yn { grid-column: 2; } }
+.ex .fails { color: var(--bad); }
 /* People */
 .peoplebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); margin-top: 10px; }
@@ -157,6 +173,10 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
         <label class="f">Date<input type="date" id="job-date"></label>
         <label class="f">Starts<input type="text" id="job-start" inputmode="numeric" maxlength="4" placeholder="0700"></label>
         <label class="f">Hours<input type="number" id="job-hours" min="1" max="16" step="0.5"></label>
+        <fieldset class="f wide yn-field"><legend>Anyone available on the yardmaster spareboard?</legend>
+          <label><input type="radio" name="spareboard" id="sb-yes" value="yes"> Yes</label>
+          <label><input type="radio" name="spareboard" id="sb-no" value="no"> No</label>
+        </fieldset>
       </div>
       <div id="job-note"></div>
     </section>
@@ -170,21 +190,19 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   </div>
 
   <section class="panel" id="teach" aria-labelledby="h-teach">
-    <header><h2 id="h-teach">Teach it</h2><span class="chip" id="sync-chip">Connecting…</span></header>
-    <p class="sub" id="teach-q"></p>
-    <div class="actions">
-      <button id="teach-yes">Yes, that's right</button>
-      <button id="teach-no">No, someone else gets it</button>
+    <header><h2 id="h-teach">Check the call order</h2><span class="chip" id="sync-chip">Connecting…</span></header>
+    <p class="sub">The order the page would call people in, each one if those ahead of them can't take it. Mark the people you're sure of: <b>Yes</b> if they'd be called at that point, <b>No</b> if not, and say why under a No. Leave the rest blank.</p>
+    <ol class="checklist" id="check-list"></ol>
+    <div class="actions"><button class="small" id="check-more" hidden></button></div>
+    <div class="fields">
+      <label class="f">Who should get it first?<select id="check-first"></select></label>
+      <label class="f">Someone missing from the order?<select id="miss-who"></select></label>
+      <label class="f wide" id="miss-note-wrap" hidden>Why should they be called?<input type="text" id="miss-note" placeholder="Not on overtime; his rest ended at 1600" autocomplete="off"></label>
+      <label class="f wide">Anything else the rules should know<textarea id="check-note" placeholder="Optional"></textarea></label>
     </div>
-    <div id="teach-form" hidden>
-      <div class="fields">
-        <label class="f">Who gets it<select id="teach-who"></select></label>
-        <label class="f wide">Why (what the rules should know)<textarea id="teach-why" placeholder="The spare was working YSBY02 that night, so it went to the senior regular yardmaster on his rest day."></textarea></label>
-      </div>
-      <div class="actions"><button class="primary" id="teach-save">Save this example</button><button class="ghost" id="teach-cancel">Cancel</button></div>
-    </div>
+    <div class="actions"><button class="primary" id="check-save">Save this check</button><button class="ghost" id="check-clear">Clear my marks</button></div>
     <p class="msg" id="teach-msg" hidden></p>
-    <p class="note">Saving keeps the job, the time and everyone's situation as set under "Who's available at call time" below. Set who was off, resting or on another job first.</p>
+    <p class="note">Saving keeps the job, the time, the spareboard answer, everyone's situation as set under "Who's available at call time" below, and your marks. Every saved check is run again whenever the rules change.</p>
   </section>
 
   <section class="panel" id="people" aria-labelledby="h-people">
@@ -274,7 +292,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   function defaultScenario() {
     const tomorrow = Y.addDays(todayISO(), 1);
     const job = Y.towerOn(tomorrow) === 'a' ? 'YSBY01' : 'YSBY03';
-    return { job, date: tomorrow, start: Y.YA_JOBS[job].start, hours: Y.YA_JOBS[job].hours, facts: Y.catsFacts(PEOPLE) };
+    return { job, date: tomorrow, start: Y.YA_JOBS[job].start, hours: Y.YA_JOBS[job].hours, spareboard: 'yes', facts: Y.catsFacts(PEOPLE) };
   }
 
   const state = {
@@ -297,22 +315,25 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     $('#job-date').value = sc.date;
     $('#job-start').value = sc.start;
     $('#job-hours').value = sc.hours;
+    $('#sb-yes').checked = (sc.spareboard || 'yes') !== 'no';
+    $('#sb-no').checked = sc.spareboard === 'no';
   }
   function wireJob() {
     $('#job-sel').addEventListener('change', (e) => {
       const v = e.target.value;
       if (v === 'OTHER') { state.sc.job = ($('#job-other').value || '').toUpperCase(); $('#job-other-wrap').hidden = false; }
       else { state.sc.job = v; state.sc.start = Y.YA_JOBS[v].start; state.sc.hours = Y.YA_JOBS[v].hours; }
-      showScenario(); update();
+      clearCheck(); showScenario(); update();
     });
-    $('#job-other').addEventListener('change', (e) => { state.sc.job = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); update(); });
-    $('#job-date').addEventListener('change', (e) => { if (e.target.value) { state.sc.date = e.target.value; update(); } });
+    $('#job-other').addEventListener('change', (e) => { state.sc.job = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); clearCheck(); update(); });
+    $('#job-date').addEventListener('change', (e) => { if (e.target.value) { state.sc.date = e.target.value; clearCheck(); update(); } });
+    for (const el of document.querySelectorAll('input[name=spareboard]')) el.addEventListener('change', (e) => { state.sc.spareboard = e.target.value; update(); });
     $('#job-start').addEventListener('change', (e) => {
       const v = e.target.value.replace(/\D/g, '').padStart(4, '0').slice(-4);
       if (+v.slice(0, 2) < 24 && +v.slice(2) < 60) state.sc.start = v;
-      e.target.value = state.sc.start; update();
+      e.target.value = state.sc.start; clearCheck(); update();
     });
-    $('#job-hours').addEventListener('change', (e) => { const v = +e.target.value; if (v > 0 && v <= 16) state.sc.hours = v; e.target.value = state.sc.hours; update(); });
+    $('#job-hours').addEventListener('change', (e) => { const v = +e.target.value; if (v > 0 && v <= 16) state.sc.hours = v; e.target.value = state.sc.hours; clearCheck(); update(); });
   }
   function renderJobNote(prep, res) {
     const sc = state.sc;
@@ -320,6 +341,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     const h = holderOf(prep.job);
     const parts = [`<p class="note">Call goes out <b class="mono">${esc(Y.fmt(res.call))}</b> for <b class="mono">${esc(Y.fmt(res.start))}</b>, off <b class="mono">${esc(Y.fmt(res.end))}</b>.</p>`];
     parts.push(`<p class="note">${h ? `Its holder: <b>${esc(nameOf(h))}</b> (rank ${h.rank}).` : 'Nobody on the list holds this job.'}${ya ? ` ${prep.job} works ${esc(ya.rota)}.` : ''}</p>`);
+    if (prep.spareOff) parts.push('<p class="note">Nobody available on the yardmaster spareboard: the spare steps find nobody.</p>');
     if (ya && prep.runs === false) parts.push(`<p class="warn">By the ${esc(ya.rota.includes('tower') ? 'tower rotation' : 'schedule')}, ${prep.job} does not run on ${esc(Y.dowOf(sc.date))} ${esc(sc.date)}. Check the date, or carry on if it really ran.</p>`);
     $('#job-note').innerHTML = parts.join('');
   }
@@ -333,7 +355,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   }
   function renderAnswer(prep, res) {
     const ex = state.openEx && state.examples.find((x) => x.id === state.openEx);
-    const banner = ex ? `<p class="ex-banner">Showing a saved example${same(ex.sc, state.sc) ? '' : ' (changed since)'}: it should go to <b>${esc(expectedName(ex))}</b>. <button class="small ghost" id="close-ex">Close</button></p>` : '';
+    const banner = ex ? `<p class="ex-banner">Showing a saved check${same(ex.sc, state.sc) ? '' : ' (changed since)'}${ex.expected != null ? `: first should be <b>${esc(expectedName(ex))}</b>` : ''}. Its marks are under "Check the call order". <button class="small ghost" id="close-ex">Close</button></p>` : '';
     let html = banner;
     if (!res.pick) {
       html += '<div class="pick none"><p class="label">Gets the call</p><p class="pick-name">Nobody on the list</p><p class="pick-why">No one on the yardmaster list fits any step of these rules. It would go off the list, or stay open.</p></div>';
@@ -441,44 +463,78 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     $('#people-all').addEventListener('click', () => { const f = {}; for (const p of PEOPLE) f[p.rank] = { status: 'available', now: '', freeAt: '', lastYard: '', week: '' }; state.sc.facts = f; renderPeopleGrid(); update(); });
   }
 
-  // --- Teach -----------------------------------------------------------------
-  function fillWho() {
-    $('#teach-who').innerHTML = '<option value="">Choose…</option>' + PEOPLE.map((p) => `<option value="${p.rank}">${p.rank} · ${esc(nameOf(p))}</option>`).join('') + '<option value="0">Nobody on this list</option>';
+  // --- Check the call order (owner, 13 Nov: "beside each person its supposed to call add
+  // 'yes/no' for the order. if that is off from the prediction allow us to make a comment") ------
+  const SHOW = 8;
+  const check = { marks: {}, notes: {}, first: '', miss: '', showAll: false };
+  function fillCheckSelects() {
+    const opts = PEOPLE.map((p) => `<option value="${p.rank}">${p.rank} · ${esc(nameOf(p))}</option>`).join('');
+    $('#check-first').innerHTML = `<option value="">Not sure</option>${opts}<option value="0">Nobody on this list</option>`;
+    $('#miss-who').innerHTML = `<option value="">No</option>${opts}`;
   }
-  function renderTeachQ(res) {
-    $('#teach-q').textContent = res.pick ? `Is ${nameOf(res.pick.r.p)} right for this one?` : 'Is it right that nobody on the list gets this one?';
+  function clearCheck() {
+    check.marks = {}; check.notes = {}; check.first = ''; check.miss = '';
+    $('#check-note').value = ''; $('#miss-note').value = ''; $('#miss-who').value = ''; $('#miss-note-wrap').hidden = true;
   }
-  function openTeach(kind) {
-    state.teach = kind;
-    $('#teach-form').hidden = false;
-    $('#teach-msg').hidden = true;
-    const res = state.last.res;
-    $('#teach-who').value = kind === 'yes' ? String(res.pick ? res.pick.r.p.rank : 0) : '';
-    $('#teach-who').focus();
+  function firstValue(res) {
+    if (check.first !== '') return check.first;
+    const top = res.order[0];
+    return top && check.marks[top.r.p.rank] === 'yes' ? String(top.r.p.rank) : '';
   }
-  function wireTeach() {
-    $('#teach-yes').addEventListener('click', () => openTeach('yes'));
-    $('#teach-no').addEventListener('click', () => openTeach('no'));
-    $('#teach-cancel').addEventListener('click', () => { state.teach = null; $('#teach-form').hidden = true; });
-    $('#teach-save').addEventListener('click', async () => {
-      const who = $('#teach-who').value;
-      if (who === '') { say('#teach-msg', 'Choose who gets it first.', 'bad'); return; }
+  function renderCheck(res) {
+    const order = res.order;
+    const shown = check.showAll ? order : order.slice(0, SHOW);
+    $('#check-list').innerHTML = shown.length ? shown.map((o, k) => {
+      const p = o.r.p; const m = check.marks[p.rank] || '';
+      return `<li class="crow ${m}" data-rank="${p.rank}"><div class="crow-main"><span class="pos">${k + 1}</span>
+        <div class="crow-who"><b>${esc(p.surname)}</b> ${esc(p.first)}<span class="tag">rank ${p.rank} · step ${o.i + 1}: ${esc(Y.stepLabel(o.st, state.rules))}${o.r.moved ? ` · on ${esc(o.r.now)}` : ''}</span></div>
+        <div class="yn" role="group" aria-label="${esc(p.surname)} called at ${k + 1}?"><button class="small" data-yn="yes" aria-pressed="${m === 'yes'}">Yes</button><button class="small" data-yn="no" aria-pressed="${m === 'no'}">No</button></div></div>
+        ${m === 'no' ? `<input type="text" class="crow-note" data-note="${p.rank}" autocomplete="off" placeholder="Why not? (on overtime, on rest, should come after …)" aria-label="Why not ${esc(p.surname)}" value="${esc(check.notes[p.rank] || '')}">` : ''}</li>`;
+    }).join('') : '<li class="note">Nobody on the list can be called under these rules.</li>';
+    $('#check-more').hidden = order.length <= SHOW;
+    $('#check-more').textContent = check.showAll ? `Show the first ${SHOW}` : `Show all ${order.length}`;
+    $('#check-first').value = firstValue(res);
+    $('#check-save').disabled = state.mode === 'readonly' || state.mode === 'connecting';
+  }
+  function wireCheck() {
+    $('#check-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-yn]');
+      if (!b) return;
+      const rank = +b.closest('.crow').dataset.rank;
+      if (check.marks[rank] === b.dataset.yn) delete check.marks[rank]; else check.marks[rank] = b.dataset.yn;
+      renderCheck(state.last.res);
+      if (check.marks[rank] === 'no') { const n = document.querySelector(`[data-note="${rank}"]`); if (n) n.focus(); }
+    });
+    $('#check-list').addEventListener('input', (e) => { const n = e.target.closest('[data-note]'); if (n) check.notes[+n.dataset.note] = n.value; });
+    $('#check-more').addEventListener('click', () => { check.showAll = !check.showAll; renderCheck(state.last.res); });
+    $('#check-first').addEventListener('change', (e) => { check.first = e.target.value; });
+    $('#miss-who').addEventListener('change', (e) => { check.miss = e.target.value; $('#miss-note-wrap').hidden = !check.miss; });
+    $('#check-clear').addEventListener('click', () => { clearCheck(); renderCheck(state.last.res); say('#teach-msg', '', ''); });
+    $('#check-save').addEventListener('click', async () => {
       const res = state.last.res;
-      const ex = {
-        sc: clone(state.sc), expected: +who, reason: $('#teach-why').value.trim(), picked: res.pick ? res.pick.r.p.rank : 0,
-        at: new Date().toISOString(), by: state.me || null, rules: Y.describe(state.rules).join('; '),
-      };
-      $('#teach-save').disabled = true;
+      const order = res.order.map((o) => o.r.p.rank);
+      const marks = {}; const notes = {};
+      for (const rk of order) {
+        if (!check.marks[rk]) continue;
+        marks[rk] = check.marks[rk];
+        const t = (check.notes[rk] || '').trim();
+        if (marks[rk] === 'no' && t) notes[rk] = t;
+      }
+      const fv = $('#check-first').value;
+      const expected = fv === '' ? null : +fv;
+      const missing = check.miss ? [{ rank: +check.miss, note: $('#miss-note').value.trim() }] : [];
+      const reason = $('#check-note').value.trim();
+      if (!Object.keys(marks).length && expected == null && !missing.length) { say('#teach-msg', 'Mark at least one person Yes or No, or choose who should get it first.', 'bad'); return; }
+      const ex = { sc: clone(state.sc), order, marks, notes, missing, expected, reason, picked: order[0] || 0, at: new Date().toISOString(), by: state.me || null, rules: Y.describe(state.rules).join('; ') };
+      const verdict = Y.agrees(ex, res);
+      $('#check-save').disabled = true;
       try {
         await addExample(ex);
-        $('#teach-why').value = '';
-        $('#teach-form').hidden = true;
-        state.teach = null;
-        const right = (+who) === ex.picked;
-        say('#teach-msg', right ? 'Saved. The rules get this one right.' : 'Saved. The rules get this one wrong for now: see Rules below, or "Find rules that fit the examples".', right ? 'ok' : 'bad');
+        clearCheck(); renderCheck(state.last.res);
+        say('#teach-msg', verdict.ok ? 'Saved. The rules agree with your marks.' : 'Saved. The rules don\'t agree with your marks yet. It is listed under Examples, and "Find rules that fit the examples" will try to fix it.', verdict.ok ? 'ok' : 'bad');
       } catch (err) {
         say('#teach-msg', saveError(err), 'bad');
-      } finally { $('#teach-save').disabled = false; }
+      } finally { $('#check-save').disabled = state.mode === 'readonly'; }
     });
   }
   function say(sel, text, kind) { const el = $(sel); el.textContent = text; el.className = `msg ${kind || ''}`; el.hidden = !text; }
@@ -493,25 +549,44 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   // --- Examples --------------------------------------------------------------
   const prepCache = new Map();
   const prepOf = (ex) => { const k = ex.id || JSON.stringify(ex.sc); if (!prepCache.has(k)) prepCache.set(k, Y.prepare(ex.sc, PEOPLE)); return prepCache.get(k); };
-  const pickOf = (ex, rules) => { const r = Y.evaluate(prepOf(ex), rules); return r.pick ? r.pick.r.p.rank : 0; };
+  const verdictOf = (ex, rules) => Y.agrees(ex, Y.evaluate(prepOf(ex), rules));
   const rankName = (rank) => (rank ? (byRank.get(+rank) ? `${nameOf(byRank.get(+rank))} (${rank})` : `rank ${rank}`) : 'nobody on the list');
   const expectedName = (ex) => rankName(ex.expected);
-  function scoreOf(rules) { let ok = 0; for (const ex of state.examples) if (pickOf(ex, rules) === +ex.expected) ok++; return ok; }
+  function scoreOf(rules) { let ok = 0; for (const ex of state.examples) if (verdictOf(ex, rules).ok) ok++; return ok; }
+  const failText = (f) => (f.kind === 'gone' ? `${rankName(f.rank)} is no longer called` : f.kind === 'order' ? 'the people marked Yes come in a different order'
+    : f.kind === 'still' ? `${rankName(f.rank)} is still in the same spot` : f.kind === 'missing' ? `${rankName(f.rank)} is still not called` : `${rankName(f.got)} gets it, not ${rankName(f.want)}`);
+  function marksText(ex) {
+    const out = [];
+    for (const rk of ex.order || []) {
+      const m = (ex.marks || {})[rk];
+      if (!m) continue;
+      const p = byRank.get(+rk); const n = p ? p.surname : `rank ${rk}`;
+      const note = (ex.notes || {})[rk];
+      out.push(m === 'yes' ? `✓ ${n}` : `✗ ${n}${note ? ` (“${note}”)` : ''}`);
+    }
+    return out.join(' · ');
+  }
   function renderExamples() {
     const n = state.examples.length;
     const draft = scoreOf(state.rules);
     const saved = state.saved || startRules();
     const dirty = !same(state.rules, saved);
-    $('#ex-score').innerHTML = n ? `<b>${draft} of ${n}</b> examples right with ${dirty ? 'these draft rules' : 'the saved rules'}${dirty ? ` · saved rules: ${scoreOf(saved)} of ${n}` : ''}` : 'No examples yet. Set up a job above, then use "Teach it" to save the first one.';
+    $('#ex-score').innerHTML = n ? `<b>${draft} of ${n}</b> saved checks agree with ${dirty ? 'these draft rules' : 'the saved rules'}${dirty ? ` · saved rules: ${scoreOf(saved)} of ${n}` : ''}` : 'No examples yet. Set up a job above, mark the call order, and save the first check.';
     $('#ex-sync').textContent = state.sync;
     $('#ex-list').innerHTML = state.examples.map((ex) => {
-      const got = pickOf(ex, state.rules);
-      const ok = got === +ex.expected;
+      const v = verdictOf(ex, state.rules);
+      const ok = v.ok;
+      const marks = marksText(ex);
+      const miss = (ex.missing || [])[0];
       const job = ex.sc.job; let when = '';
       try { when = Y.fmt(Y.toMin(ex.sc.date, ex.sc.start)); } catch { /* bad date */ }
       const who = ex.by && state.names[ex.by] ? state.names[ex.by] : (ex.by ? 'Someone' : '');
       return `<li class="ex ${ok ? 'ok' : 'bad'}"><span class="mark" aria-label="${ok ? 'right' : 'wrong'}">${ok ? '✓' : '✗'}</span>
-        <div><b>${esc(job)} ${esc(when)}</b><p>Should go to <b>${esc(expectedName(ex))}</b>${ok ? '' : ` · the rules say ${esc(rankName(got))}`}</p>
+        <div><b>${esc(job)} ${esc(when)}</b>${ex.sc.spareboard === 'no' ? ' <span class="tag">· nobody on the spareboard</span>' : ''}
+        ${ex.expected != null ? `<p>First: <b>${esc(expectedName(ex))}</b></p>` : ''}
+        ${marks ? `<p>${esc(marks)}</p>` : ''}
+        ${miss ? `<p>Missing: ${esc(rankName(miss.rank))}${miss.note ? ` (“${esc(miss.note)}”)` : ''}</p>` : ''}
+        ${ok ? '' : `<p class="fails">With these rules: ${esc(v.fails.map(failText).join('; '))}.</p>`}
         ${ex.reason ? `<p class="why">“${esc(ex.reason)}”</p>` : ''}<p class="by">${who ? `${esc(who)}, ` : ''}${esc(shortDate(ex.at))}</p></div>
         <div class="ex-act"><button class="small" data-open="${esc(ex.id)}">Open</button>${state.mode !== 'readonly' ? `<button class="small ghost" data-del="${esc(ex.id)}">${state.armed === ex.id ? 'Delete for everyone?' : 'Delete'}</button>` : ''}</div></li>`;
     }).join('');
@@ -524,6 +599,12 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
         const ex = state.examples.find((x) => x.id === open.dataset.open);
         if (!ex) return;
         state.sc = clone(ex.sc); state.openEx = ex.id;
+        clearCheck();
+        check.marks = { ...(ex.marks || {}) }; check.notes = { ...(ex.notes || {}) };
+        check.first = ex.expected == null ? '' : String(ex.expected);
+        const m = (ex.missing || [])[0];
+        check.miss = m ? String(m.rank) : ''; $('#miss-who').value = check.miss; $('#miss-note').value = m ? m.note || '' : ''; $('#miss-note-wrap').hidden = !check.miss;
+        $('#check-note').value = ex.reason || '';
         showScenario(); renderPeopleGrid(); update();
         $('#answer').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -749,11 +830,10 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     state.last = { prep, res };
     renderJobNote(prep, res);
     renderAnswer(prep, res);
-    renderTeachQ(res);
+    renderCheck(res);
     refreshPeople(prep);
     renderExamples();
     renderRules();
-    $('#teach-yes').disabled = $('#teach-no').disabled = state.mode === 'readonly' || state.mode === 'connecting';
     store.set('ym-scenario', state.sc);
   }
 
@@ -761,9 +841,10 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     const kept = (hot && hot.sc) || store.get('ym-scenario');
     state.sc = kept && kept.job && kept.date && kept.facts ? kept : defaultScenario();
     if (hot && hot.rules) state.rules = Y.normalize(hot.rules);
-    fillJobSelect(); fillWho(); codeList();
+    fillJobSelect(); fillCheckSelects(); codeList();
+    if (hot && hot.check) Object.assign(check, hot.check);
     showScenario(); renderPeopleGrid();
-    wireJob(); wirePeople(); wireTeach(); wireExamples(); wireRules();
+    wireJob(); wirePeople(); wireCheck(); wireExamples(); wireRules();
     $('#copy').addEventListener('click', () => {
       const text = answerText(state.last.res);
       const done = (ok) => say('#copy-msg', ok ? 'Copied.' : text, ok ? 'ok' : '');
@@ -772,7 +853,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     update();
     connect();
     if (window.claude && window.claude.hot && typeof window.claude.hot.snapshot === 'function') {
-      try { window.claude.hot.snapshot(() => ({ sc: state.sc, rules: state.rules })); } catch { /* optional */ }
+      try { window.claude.hot.snapshot(() => ({ sc: state.sc, rules: state.rules, check })); } catch { /* optional */ }
     }
   }
   const hot = window.claude && window.claude.hot;

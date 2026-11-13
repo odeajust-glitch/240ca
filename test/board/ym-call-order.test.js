@@ -88,3 +88,30 @@ test('yardmaster call order: fitting the rules to examples keeps the spare first
   assert.ok(best.steps.findIndex((s) => s.group === 'regular') < best.steps.findIndex((s) => s.group === 'yard'));
   assert.deepEqual([best.restSkips, best.otRule, best.leadMin], [true, true, 120]);
 });
+
+test('yardmaster call order: "is anyone available on the spareboard" no skips the spare', () => {
+  const res = run(null, RULES, { job: 'YSBY02', date: '2026-11-14', start: '1900', hours: 12, spareboard: 'no' });
+  assert.match(reason(res, 30, 'spare'), /nobody available on the spareboard/);
+  assert.equal(who(res), 'GUM 3');
+  assert.equal(who(run(null, RULES, { job: 'YSBY02', date: '2026-11-14', start: '1900', hours: 12, spareboard: 'yes' })), 'DOGWOOD 1');
+});
+
+test('yardmaster call order: a saved check (Yes / No beside the order) agrees or says what does not', () => {
+  const res = run();
+  const order = res.order.map((o) => o.r.p.rank);
+  assert.deepEqual(order.slice(0, 3), [30, 60, 10]); // spare, the yard at straight time, the senior regular
+  // Spare right, the yard helper wrong where he is, the regular right.
+  const ex = { order, marks: { 30: 'yes', 60: 'no', 10: 'yes' }, notes: { 60: 'should come after the regulars' }, expected: 30 };
+  assert.deepEqual(Y.agrees(ex, res), { ok: false, fails: [{ kind: 'still', rank: 60 }] });
+  // Rules with the regulars ahead of the yard: the No has moved, the Yes people keep their order.
+  const steps = RULES.steps.filter((s) => s.group !== 'yard');
+  steps.splice(steps.findIndex((s) => s.group === 'c416'), 0, { group: 'yard', need: 'call', pay: 'straight', on: true });
+  const moved = run(null, Y.normalize({ ...RULES, steps }));
+  assert.deepEqual(Y.agrees(ex, moved), { ok: true, fails: [] });
+  // Who should be first, and someone missing from the order.
+  assert.deepEqual(Y.agrees({ order, marks: {}, expected: 10 }, res).fails, [{ kind: 'first', got: 30, want: 10 }]);
+  assert.deepEqual(Y.agrees({ order, marks: {}, missing: [{ rank: 70, note: '' }] }, res).fails, [{ kind: 'missing', rank: 70 }]);
+  // The search fixes it.
+  const fit = Y.fit([{ ...ex, sc: { job: 'YSBY02', date: '2026-11-14', start: '1900', hours: 12, facts: Y.catsFacts(PEOPLE) } }], PEOPLE, RULES);
+  assert.deepEqual([fit.current, fit.best[0].score], [0, 1]);
+});

@@ -15,7 +15,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 3 has his rules of 13 Nov; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 4: his rules of 13 Nov, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -119,6 +119,25 @@ to save examples or rules; view-only sees them).
     jobs that start at the same time"). **Later, at his word:** the temporary vacancy check ("ill show you how to
     add this check in after but lets ignore it for now"); the "Working at call time" box stays as it was. **On the
     Housekeeping list (item 12):** the hours "won't interfere with their own job" means for a regular yardmaster.
+- **Version 4, 13 Nov evening** (owner: "can you add something in so we can manually update each so beside each
+  person its supposed to call add "yes/no' for the order. if that is off from the prediction allow us to make a
+  comment so the rule can be adjusted. Also make an option that says 'is anyone avaiable on the spareboard" yes or
+  no so it can work thru the logioc"):
+  - **"Check the call order"** replaces "Teach it": the whole call order (each person if those ahead can't take
+    it; the first 8, "Show all"), Yes / No beside each, a note under every No, "Who should get it first?",
+    "Someone missing from the order?" with a note, and a general note. "Save this check" keeps the scenario and
+    the marks (`examples` docs now: `order` (ranks), `marks` {rank: yes|no}, `notes` {rank: text}, `missing`
+    [{rank, note}], `expected` (rank, 0 or null), `reason`, `picked`, `at`, `by`, `rules`). A check **agrees**
+    with the rules (`agrees` in the logic) when every Yes is still called, in the same order among themselves;
+    every No is no longer in the same spot (the people ahead of them changed, or they drop out); anyone missing
+    is now called; and the first is the one chosen. Examples show the marks and, when it doesn't agree, what
+    doesn't; "Find rules that fit the examples" counts checks that agree. Opening a check brings its marks back.
+  - **"Anyone available on the yardmaster spareboard? Yes / No"** with the job (`sc.spareboard`): No and the spare
+    steps find nobody ("nobody available on the spareboard"). **My reading: the yardmaster spareboard (EXYA01);
+    asked him whether he meant the conductor spareboard** (covering the yard job of someone moved up).
+  - Checked: suite with `ym-call-order.test.js` 7 (two new: the spareboard answer; a check's Yes / No agreeing or
+    not, who first, someone missing, the fit fixing it); broken on purpose four ways, all caught. The page at
+    360 px: marked, noted, saved, spareboard No, reopened; no errors, no sideways scroll.
   - **Asked him, not answered yet:** (1) is someone in the yard set up to the yardmaster job **instead of their own
     shift that day** (their own job then goes to the spareboard)? The page now leaves out anyone whose own shift is
     within 8 h (rank 290's YMPS60 2359, for a 1900 job); (2) does the 4.16 time-and-a-half step take road
