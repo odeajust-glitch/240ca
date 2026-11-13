@@ -1,5 +1,20 @@
 # HANDOFF — read this before doing anything
 
+## The site's name: "Herding CATS" — TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only). WAITING ON ONE LAPTOP PULL; then his look, and his word for the main site and the Home Screen name
+
+**Owner, 13 Nov:** asked for a "good/funny name" (the site was "built on spite": the company's system should
+do this itself), was given a list, then: **"Can we change the name of the site to Hearding CATS"**, spelled
+"Herding" (told him; one word to change if he meant it). This replaces his 12 Nov "2 leave it" on the name.
+**Built:** `SITE_NAME` and `paintSiteName()` (just above `source()`), called where `PREVIEW` is switched: the
+heading (shown in capitals, "HERDING CATS" + the TEST SITE tag) and the browser tab's title on board-test
+with the owner key. The page's own `<title>` / `<h1>` still say Line-up Snapshots, so members on both sites
+and the main site are unchanged (`site-review.test.js` pins both). The second line ("Sarnia road · what CATS
+showed when each check ran") is kept. **Not changed:** the Home Screen name (`board.webmanifest` "Sarnia
+Board" / "Board", and `apple-mobile-web-app-title` "Board"): one file for both sites, so only at his word for
+both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`/`paintSiteName`, the manifest's
+`name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
+in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
+
 ## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 3 has his rules of 13 Nov; he is about to share it with a yardmaster). Nothing predicts YA jobs on the site yet
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
