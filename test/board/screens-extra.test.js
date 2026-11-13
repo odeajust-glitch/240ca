@@ -705,3 +705,46 @@ test('a stretch placed by hand: the second COBR on SR01 only before the 25 Oct b
   assert.deepEqual(P.retie(seen, rules, 1, '2026-10-25 1216').map((p) => p.h), [cobr, cobr]);
   assert.notEqual(P.splitsSig(rules), P.splitsSig({ map: rules.map }));
 });
+
+// The yard's assignment history (3 → 7 with YD; owner's photo, 12 Nov 09:11;
+// docs/board-checker/SCREENS.md): each yard job's on duty and its O-T, the
+// overtime on top of 8 hours, blank until the ticket is closed or when there
+// was none (owner, 2026-11-13: "Do not use the call board to determine off
+// duty … We have to manually close our ticket in the computer").
+const yardHistPage = [
+  '45 SA                    ASSIGNMENT HISTORY                         PSTS17A',
+  '  POOL OR YD/LO: YD   HOME/AWAY:      START DATE: 261111   ASSIGNMENT:',
+  'X   ASSIGNMENT   ODT-DATE/TIME     DESCRIPTION                  O-T',
+  '[]  YEBS03       261111   0600     0600 EASTBD BP T/F',
+  '[]  YSTY01       261111   0630     0630 TOWER S/S JT60',
+  '[]  YSBY03       261111   0700     0700 YDM BLOCK 3             0400',
+  '[]  YBHS01       261111   0800     0800 BNKHSE S1/S1',
+  '[]  YFXS01       261111   1600     DAY XTRA FRT LD F/CW',
+  '[]  YSBY04       261111   1900     1900 YDM BLOCK 4             0400',
+  '[]  YBHS60       261111   2300     2300 BNKHSE F3/S5            0130',
+  'VALID HOME AWAY CODES ==> 0 =HOME, 1=>5 =AWAY',
+  'ENTER=INQ/DISPLAY CREW INFO   PF1=HELP   PF3=EXIT   PF8=PAGEDN   PF11=PREV MENU',
+];
+
+test('yard assignment history: each job\'s on duty and O-T, masked as saved', () => {
+  const rows = grid(yardHistPage);
+  const text = rows.map((r) => r.text).join('\n');
+  assert.equal(S.isYardHistory(text), true);
+  assert.equal(S.isAssignHistory(text), false); // not a train list
+  assert.equal(S.isYardHistory(grid(assignPage).map((r) => r.text).join('\n')), false);
+  // The description is masked (BLOCK → AAAAA); job, date, times and O-T are kept.
+  assert.match(text, /YSBY03 261111 0700 0700 AAA AAAAA 3 0400/);
+  assert.deepEqual(S.parseYardHistory(rows).map((r) => `${r.job} ${fmt(r.on)} ${r.ot}`), [
+    'YEBS03 11th 0600 null', 'YSTY01 11th 0630 null', 'YSBY03 11th 0700 240', 'YBHS01 11th 0800 null',
+    'YFXS01 11th 1600 null', 'YSBY04 11th 1900 240', 'YBHS60 11th 2300 90',
+  ]);
+});
+
+test('yard assignment history: no heading on the page, O-T still read off the end', () => {
+  const rows = grid(yardHistPage.slice(3, 10));
+  assert.deepEqual(S.parseYardHistory(rows).map((r) => `${r.job} ${r.ot}`), [
+    'YEBS03 null', 'YSTY01 null', 'YSBY03 240', 'YBHS01 null', 'YFXS01 null', 'YSBY04 240', 'YBHS60 90',
+  ]);
+  // A description that is only the job's start time is not an O-T.
+  assert.deepEqual(S.parseYardHistory([{ text: '[] YPRS02 261111 0645 0645', cells: [] }]).map((r) => r.ot), [null]);
+});

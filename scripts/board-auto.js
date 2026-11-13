@@ -436,6 +436,8 @@ async function chooseFromMenus(page, option, menu = 3) {
 // turns of the same kind is left unmatched.
 let holders = null;
 let assignReadAt = 0; // the assignment history (3 → 7) is read about once an hour
+let yardHistReadAt = 0; // and with YD, for the yard jobs' O-T (tried about once an hour, read or not)
+let yardAskedTried = ''; // a yard backfill asked with scripts/assign-backfill.js: tried on the next check, once
 let postingsReadAt = 0; // the jobs up for bid (3 → 8, 1 → 8) are read about once an hour
 const knownPeople = {
   get: (key) => Holders.turnOf(holders || (holders = Holders.loadHolders(HOLDERS_FILE)), key),
@@ -679,6 +681,65 @@ async function runRoute(page, opts = {}) {
       const uniq = new Map(rows.map((r) => [`${r.train}/${r.on}`, r]));
       console.log(`  Assignment history${assignFill ? ` backfill from ${assignFill.start}` : ''} (3 → 7): ${uniq.size} trains read, ${[...uniq.values()].filter((r) => r.off != null).length} with their off duty.`);
       if (assignFill) { try { fs.rmSync(path.join(DATA_DIR, 'assign-backfill.json')); } catch { /* gone */ } }
+    }
+  }
+
+  // Yard jobs' O-T (owner, 2026-11-13: "We wont need to assume yard off duty
+  // times building 3 - 7 YD read, we can also scrap info going back to Oct
+  // 26th to get off duty times"). The same screen with YD in POOL OR YD/LO,
+  // HOME/AWAY blank (owner's photos, 2026-11-12): each yard job's on duty and
+  // its O-T, the overtime on top of 8 hours, filled in when the crew closes
+  // the ticket. START DATE three days back, so a ticket closed a day or two
+  // late is read again. About once an hour, after the trains: whatever START
+  // DATE CATS keeps from here for their next read is only three days back.
+  // The first time, a one-time backfill from 26 October paged to the end;
+  // BoardChecker\yard-backfill-done.json says it was done. Another start:
+  // node scripts/assign-backfill.js 2026-10-26 yard.
+  const yardDone = path.join(DATA_DIR, 'yard-backfill-done.json');
+  let yardFill = null;
+  try { yardFill = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'yard-backfill.json'), 'utf8')); } catch { /* none asked */ }
+  const askedNow = !!(yardFill && yardFill.asked && yardFill.asked !== yardAskedTried);
+  if (!yardFill && !fs.existsSync(yardDone)) yardFill = { start: '261026' };
+  if (askedNow || Date.now() - yardHistReadAt > 55 * 60000) {
+    // Tried: the next try is in an hour, read or not (a screen that will not read is not tried every check).
+    yardHistReadAt = Date.now();
+    if (askedNow) yardAskedTried = yardFill.asked;
+    let read = 0;
+    let whole = false; // paged to the end without trouble: only then is a backfill done
+    try {
+      const start = yardFill ? yardFill.start
+        : new Date(Date.now() - 3 * 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' }).replace(/-/g, '').slice(2);
+      let a = await chooseFromMenus(page, 7);
+      const missing = await fillByLabel(page, { 'POOL OR YD/LO': 'YD', 'HOME/AWAY': '', 'START DATE': start });
+      if (missing.length) throw new Error(`no box for ${missing.join(', ')}`);
+      a = await press(page, 'Enter');
+      if (!S.isYardHistory(a.text)) throw new Error('not the yard assignment history (no O-T heading)');
+      const had = new Set();
+      for (let pageNo = 0; pageNo < (yardFill ? 150 : 10); pageNo++) {
+        const rows = S.parseYardHistory(parseGrid(await capture('yardHistory')));
+        if (yardFill) heartbeat('checking'); // a long backfill isn't "stuck" to the watchdog
+        read++;
+        // The last page shown again (with a message on it, say): nothing new, the end.
+        if (pageNo > 0 && rows.length && rows.every((r) => had.has(`${r.job}/${r.on}`))) break;
+        for (const r of rows) had.add(`${r.job}/${r.on}`);
+        const next = await press(page, 'F8').catch(() => null);
+        if (!next || !S.isYardHistory(next.text) || next.text === a.text) break;
+        a = next;
+      }
+      whole = true;
+    } catch (err) {
+      if (err instanceof NeedSignIn) throw err;
+      console.log(`  (skipped yard assignment history (3 → 7, YD)${read ? ` after ${read} page(s)` : ''}: ${err.message})`);
+    }
+    if (read) {
+      const rows = screens.filter((x) => x.label === 'yardHistory').flatMap((x) => S.parseYardHistory(parseGrid(x.screenGrid || [])));
+      const uniq = new Map(rows.map((r) => [`${r.job}/${r.on}`, r]));
+      const days = new Set([...uniq.values()].map((r) => Math.floor(r.on / 1440)));
+      console.log(`  Yard assignment history${yardFill ? ` backfill from ${yardFill.start}` : ''} (3 → 7, YD): ${read} page(s), ${uniq.size} yard shifts over ${days.size} day(s), ${[...uniq.values()].filter((r) => r.ot != null).length} with O-T.`);
+      if (yardFill && whole && uniq.size) {
+        try { fs.writeFileSync(yardDone, JSON.stringify({ start: yardFill.start, at: new Date().toISOString(), pages: read, shifts: uniq.size })); } catch (err) { console.log(`  (yard backfill not marked done: ${err.message})`); }
+        try { fs.rmSync(path.join(DATA_DIR, 'yard-backfill.json')); } catch { /* none asked */ }
+      }
     }
   }
 

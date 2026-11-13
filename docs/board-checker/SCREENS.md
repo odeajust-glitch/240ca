@@ -403,5 +403,9 @@ ENTER=INQ/DISPLAY CREW INFO   PF1=HELP   PF3=EXIT   PF8=PAGEDN   PF11=PREV MENU
   worked. Confirm with him before building on it.
 - An X beside a line and Enter shows "crew info": not seen yet. On the Housekeeping list
   (TODO, item 11) at his word: a photo when he gets to it.
-- Not built. `parseAssignHistory` (lib/board/screens.js) only matches a train's line.
+- **Built 13 Nov** (owner: "We wont need to assume yard off duty times building 3 - 7 YD read, we can also scrap
+  info going back to Oct 26th"): `isYardHistory` / `parseYardHistory` (lib/board/screens.js) → `{ job, on, ot }`; the
+  checker reads it hourly from three days back, and once from 261026 (scripts/board-auto.js). A blank O-T counts as
+  no overtime once the run has left the Call Board (the ticket closed: owner, 2026-11-13, "untill we do the job will
+  stay on the call board"). `parseAssignHistory` still only matches a train's line.
 

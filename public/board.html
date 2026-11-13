@@ -3218,13 +3218,16 @@ function paintResets() {
     if (cell) cell.textContent = r && r.level ? resetText(r) : '';
   });
 }
+// The test site's reset tracker (owner, 2026-11-13): yard shifts by their O-T in CATS, data/resets-test.json
+// (lib/board/site.js); resets.json where that is not there yet. Every other page reads resets.json.
+const resetsFile = () => (PREVIEW ? getJSON('data/resets-test.json').then((r) => (r && r.turns ? r : getJSON('data/resets.json'))).catch(() => getJSON('data/resets.json')) : getJSON('data/resets.json'));
 // The resets file for Person search (each person's resets), loaded once.
-const loadResets = () => (RESETS ? Promise.resolve(RESETS) : getJSON('data/resets.json').then((r) => { if (r && r.turns) RESETS = r; return RESETS; }).catch(() => null));
+const loadResets = () => (RESETS ? Promise.resolve(RESETS) : resetsFile().then((r) => { if (r && r.turns) RESETS = r; return RESETS; }).catch(() => null));
 function askResets(s) {
   if (RESETS && RESETS.taken >= s.taken) return;
   if (resetsAsked === s.taken) return;
   resetsAsked = s.taken;
-  getJSON('data/resets.json').then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
+  resetsFile().then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
 }
 // One pool's board: its table and the notes under it. reviewed: the short-row layout, where a day off
 // that was not taken is left off the turn's status (statusShown; owner, 2026-11-12).
@@ -5804,6 +5807,8 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
+      // The boards were coloured from resets.json before the owner key was known: the test site's tracker instead.
+      if (RESETS) resetsFile().then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
       paintMine();
       paintShotCode(); // the faint visible code (test site only)
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
@@ -8479,7 +8484,7 @@ source().then(async (src) => {
         let codes = {};
         try { followed = JSON.parse(localStorage.getItem('trackTurns')) || []; codes = JSON.parse(localStorage.getItem('personCodes')) || {}; } catch (e) { /* nothing kept */ }
         // Test preview: calls unfiltered by the Call stability page's filters, the reset tracker's times, this week first.
-        if (ANA2 && !RESETS) { try { const r = await getJSON('data/resets.json'); if (r && r.turns) RESETS = r; } catch (e) { /* hours and reset left out */ } }
+        if (ANA2 && !RESETS) { try { const r = await resetsFile(); if (r && r.turns) RESETS = r; } catch (e) { /* hours and reset left out */ } }
         const lists = { trains: all, sleep: ANA2 ? sleepInDates : sleep, runLog, stale, catsErrors, runarounds };
         for (const t of followed) {
           if (/^@[0-9a-f]{16}$/.test(t)) {

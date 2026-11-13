@@ -1,5 +1,64 @@
 # HANDOFF — read this before doing anything
 
+## Yard off duty from CATS's own O-T (3 → 7 with YD), never the Call Board — BUILT 13 Nov 2026. The read feeds both sites' data (laptop); what the page does with it is TEST SITE ONLY (My stats' yard view, and a test-site reset tracker). WAITING ON ONE LAPTOP PULL + RESTART; the backfill from 26 Oct runs by itself on the first check
+
+**Owner, 13 Nov:** "Do not use the call board to determine off duty since if they forget to tie up it will sit there.
+We have to manually close our ticket in the computer, untill we do the job will stay on the call board", then "We
+wont need to assume yard off duty times building 3 - 7 YD read, we can also scrap info going back to Oct 26th to get
+off duty times and you can match them to the people who worked it if we have enough data". Earlier that day: yes to
+the reset tracker going by real yard ends (the ⚠ section below: now built this way instead).
+- **The read (`scripts/board-auto.js`).** After the hourly train read: 3 → 7, POOL OR YD/LO `YD`, HOME/AWAY blank,
+  START DATE three days back (so a ticket closed a day or two late is read again), F8 to the end (10 pages at most;
+  stops when a page brings nothing new). Saved as `yardHistory`, masked like every screen (the description reads
+  AAAA; job, date, times and O-T kept; no names on this list). **The first check after the restart does a one-time
+  backfill from 261026**, to the end (150 pages at most); `BoardChecker\yard-backfill-done.json` marks it done, only
+  when it paged to the end. To read it again: delete that file, or `node scripts/assign-backfill.js 2026-10-26 yard`
+  for another start. Trouble skips it (logged) and it tries again an hour later. Window line: "Yard assignment
+  history (backfill from 261026) (3 → 7, YD): N page(s), N yard shifts over N day(s), N with O-T."
+- **Reader.** `screens.js` `isYardHistory` (ASSIGNMENT HISTORY and an O-T heading: the train list has none) and
+  `parseYardHistory` → `{ job, on, ot }` (minutes; null when blank; the O-T cell by the heading's place, else four
+  figures at the end after a description of two words or more). `summary.js` → `yardHistory`. `resets.js` →
+  `acc.yardOT[job/on] = { ot, seen }`, the latest read winning (`collect`, `merge`).
+- **When a yard shift ended (`MyStats.otOf`):** 8 h + O-T. A blank is no overtime only when it was read after the
+  run had left the Call Board (the ticket closed, as he says); read while it was still listed, not known yet. The
+  Call Board only tells those two apart, never gives the time. A run is matched by job and on-duty time (30 min).
+- **Matched to who worked it:** by job and on duty, to each person's named yard shifts (the names read off the Call
+  Board, as before): their record's shift gets `oe`, the end by CATS. Not when they came off the job's crew lines
+  more than 30 min before that while it was still on (someone took over: their own last stays), nor when it would
+  run into their next trip. Days a job's list could not say who came in (`unk`) stay unmatched; the crew info page
+  (Housekeeping item 11, his photo pending) would be the way.
+- **My stats, the test site's yard view:** a shift ends at `oe` (exact, no ~) where CATS has it, else 8 / 12 h (~).
+  **Gone:** `cb` / `ob` (the Call Board's and the crew line's ends) and `boardEnd`; `merge` drops them from kept
+  records. **Kept:** `ru`, the "on rest until" their crew line went to after the shift (now looked for from an hour
+  in to 12 h past the end, any gap in the checks), so "Rest you booked" = rest until − the CATS end. Reworded: "N of M
+  yard timed by CATS", "Shifts with their end from CATS", "Yard shifts that ran over" ("Shorter than its job's
+  length" only when a 12 h job had under 4 h of O-T), the captions and footnote ("8 hours after it went on duty plus
+  the O-T CATS shows for it, never by the Call Board"). `data/yardjobs.json` (`yardJobs(yard, { ot })`): the runs on
+  the Call Board and on the list joined; length, middle, over and longest by O-T; the "early" figure gone.
+- **Reset tracker for the test site: `data/resets-test.json`.** The same tracker, with each named yard shift ending
+  8 h + O-T where CATS has it (`MyStatsFiles.yardEnds` → `acc.yardEnds`, `resets.js offDuty` how `yard O-T`), else
+  8 / 12 h. The page reads it only under `PREVIEW` (`resetsFile`; falls back to resets.json; read again when the owner
+  key turns PREVIEW on). **The main site, the alerts and My stats' own resets go on by resets.json (8 / 12 h).**
+  The same as resets.json until O-T is read.
+
+**Checked.** Suite **568 of 568**. New tests: the reader on his photo's page masked as saved, and with no heading;
+the summary; `yardOT` collect / merge; `otOf` (filled in; blank read after / before the closing; still listed; never
+seen; 30-min match; another job); a shift's `oe` (1 h 16 of O-T; one that would run into the next shift; a blank once
+closed; someone gone early); the per-job figures by O-T; the test-site tracker's ends and the page's choice of file;
+the site build writing `resets-test.json`. **The 29 published days rebuilt: 2016 of 2016 main-site My stats drawings
+and spreadsheets the same as before, all 168 people.** With made-up O-T (no real read yet): 555 of 595 yard shifts
+get an end; the page drawn in a browser over the real board-test with the owner key: `resets-test.json` asked (404
+for now), resets.json used, no errors, no sideways scroll. **On real data, the rest-until theory holds:** of 71
+shifts with a rest booked, rest until − the 8 / 12 h end is a whole number of hours in 46 (43 of them exactly 10 h),
+most of the rest within a minute or two. So "on rest until" counts from the off-duty time the crew enters, which is
+8 h + O-T for most shifts. A few are 5 to 15 min short: crews off a little before 8 h, which a blank O-T can't show.
+**Not checked:** the real screen (his laptop's first read is the test): the box labels with YD, where the O-T cell
+sits, the last page's F8, how far back CATS keeps the yard list, and whether CATS carries the yard read's START
+DATE into the next train read (that read leaves START DATE as CATS has it; three days back is within its 8 pages).
+**Next:** after the pull and restart, the window line; a few shifts against his photo of the 11th (YSBY03 / YSBY04
+0400, the rest blank). Then his look on board-test: a yard worker's My stats (owner lookup), the board colours.
+The main site only at his word.
+
 ## Job Aids: "Due out of Sarnia", the pools' rotation by day and as a calendar file (.ics) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-ref.js`, `public/board.html`; page only). WAITING ON ONE LAPTOP PULL; then his look and a real import into his Google Calendar
 
 **Owner, 13 Nov, with a photo of his own Google Calendar** (October, an all-day event per turn per day,
@@ -219,7 +278,7 @@ screen" makes a shortcut), or "Create shortcut" was picked. Told him: remove the
 drawer for "Line-up" / "Sarnia Board" and add that; if none, ⋮ → Add to Home screen → **Install**; if Chrome
 offers no Install, uninstall the old app in Android Settings → Apps and try again. Offered (not built): the
 page's "How to get alerts" Android line could say to pick Install, not Create shortcut.
-## ⚠ Yard shift ends from 3 → 6 are when the tie-up was ENTERED in CATS, often late — found 13 Nov 2026. The test site's yard overtime OVERSTATES; the reset-tracker switch he said yes to is ON HOLD; proposed reading 3 → 7 (YD) for CATS's own O-T
+## ⚠ Yard shift ends from 3 → 6 are when the tie-up was ENTERED in CATS, often late — found 13 Nov 2026. SETTLED: he said read 3 → 7 YD and never the Call Board; BUILT (the section at the top). The Call Board ends below are gone from the code
 
 **Owner, 13 Nov:** said yes to switching the reset tracker to the real yard end times, and asked "What screen are you
 seeing, option 3, then option 7 ?". **Answer:** 3 → 6 (the Call Board report: the yard jobs list and the crews in
@@ -238,7 +297,7 @@ checker (hourly, like the trains; skipped if it fails; a laptop pull + restart),
 the crew is on rest = 8 h), rest booked from that end; then My stats' yard view and the reset tracker on it (test
 site first). **Waiting on his yes.** Until then nothing more is switched.
 
-## Yard shifts: each person's own end and the rest they booked — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board-mystats.js`, `lib/board/mystats.js`; no Worker change). WAITING ON ONE LAPTOP PULL + RESTART
+## Yard shifts: each person's own end and the rest they booked — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026. THE OWN END (`ob`) IS WITHDRAWN (it was the tie-up entered, see ⚠); the rest booked (`ru`) stays, measured from CATS's end (the section at the top)
 
 **Owner, 13 Nov:** asked "Can we add a check in for the end of yard shifts for the board checker or did we add it in
 already" (answered: already in, see the section below), then offered "time each crew member's own end from their
