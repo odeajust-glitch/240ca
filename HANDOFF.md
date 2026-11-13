@@ -143,12 +143,58 @@ session. **That route's two commits were not on this branch: cherry-picked here 
 the branch's Worker is now exactly the copy page's** (their warning: a copy page rebuilt from a branch
 without it loses the route). No Worker change of this session. He pastes it into both Workers; afterwards
 `/health/accounts` should carry `unverified` on both (look, counts only).
+**(13 Nov 00:55: the copy page is now `3f24ee2`, 2079 lines: this same Worker plus the screenshot mark's
+numbers, so one paste covers both. See "Screenshot mark" below; checked byte for byte, the route kept.)**
 
 **Waiting on him:** one laptop `git pull` (page only: the next check publishes it), his look at board-test's
 Members and Page Health, the Worker paste into both, and where Who gets alerts should sit.
 
-## Screenshot mark (a hidden account number in every screen) — BUILT FOR THE TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only), WAITING ON ONE LAPTOP PULL; then his look and his say. Nothing on the main site; no Worker change
+## Screenshot mark (a hidden account number in every screen) — ON FOR EVERY SIGNED-IN ACCOUNT, BOTH SITES, in the code since 13 Nov 2026 00:51 at his word (`3f24ee2`). WAITING ON (1) THE WORKER PASTE INTO BOTH (copy page `3f24ee2`) AND (2) ONE LAPTOP PULL. Until the paste nothing is drawn for anyone
 
+**Owner, 13 Nov, having tried the test-site version on his phone: "I pulled it, trying it now, works
+great, push to the main page".** Done as he had been told it would be for members: the number now comes from
+a secret the Worker keeps, so nobody can work out another account's number from an email or fake one.
+- **Worker (`cloudflare/board-worker.js`, just above `profileOf`):** `shotmarkSecret` makes a random 32-byte
+  secret on first use and keeps it in **`accounts/shotmark.json`** (publishes keep `accounts/`; never
+  served). **It must never be changed or deleted: every screenshot taken before would then match no one.**
+  `shotmarkOf(env, id)` = 20 bits of HMAC-SHA-256(secret, `shotmark:` + account id). `/auth/me` adds `mark`
+  for a signed-in (approved) account, the owner key's session included (id `owner`); `/health/accounts`
+  adds each account's `mark` and `ownerMark` **for the owner only** (an Admin gets none: with them a
+  screenshot could be faked to point at someone else).
+- **Page (`public/board.html`):** `paintShotMark` draws the layer for any signed-in account whose `/auth/me`
+  has a number, on both sites (no `PREVIEW` test now); none, nothing drawn. Page Health's "Trace a
+  screenshot" is on both sites (the page is his alone); it matches against every account's number from
+  `/health/accounts`, plus the test-site trial's number for the owner key (the plain hash, `markOf`), so his
+  trial screenshots still trace. Before the paste it says so: "This site's Worker doesn't give out the
+  account numbers yet ... paste the new Worker code into both Workers."
+- **Copy page rebuilt** (https://claude.ai/artifact/Ko95qHHnGfvW9r1m7suiNu, version `3f24ee2`, 2079 lines):
+  the branch's Worker, which is the `e3e7936` copy page's (unconfirmed sign-ups, sign-up wording, the
+  owner-only test alert route) plus this. Read back after publishing and decoded: byte for byte the file.
+  **A session that rebuilds the copy page from a branch without `3f24ee2` takes the mark's numbers out.**
+- **Checked.** Suite **505 of 505** (`test/board/accounts.test.js` "screenshot mark": the number for an
+  approved account and the owner key, none while waiting for approval, stable, different per account, not
+  the trial's hash, the same after a fresh copy of the Worker on the same bucket, the secret kept under
+  `accounts/` and not served, the owner's list carries the numbers and an Admin's does not;
+  `test/board/shotmark.test.js` changed to the promoted state, quoting him; one pinned line of
+  `test/board/members-review.test.js` moved with the trace box). Each piece broken on purpose three ways
+  (drawn without a valid number, the Worker giving no number, Admins given the numbers): a test fails each
+  time. In a browser, this branch's page over the main site's real data (nothing saved): **with today's
+  Worker** a member and the owner get no layer, Page Health has the box, and the trial screenshot traces
+  with the "paste the Worker" line; **with the new Worker's answers stood in** (a number in `/auth/me`, the
+  numbers in the owner's list, in that browser only) a member's screenshot (light, dark, Messenger-style,
+  text-message size, cropped) named that member's account 20 of 20, the owner's named the owner key, the
+  trial's the trial, a pre-mark screenshot "No mark found". **A member's view on both sites is the same to
+  the letter with the old page and the new while the Worker gives no numbers.**
+- **Not checked:** the Worker itself on Cloudflare (only Node with a stand-in bucket); a real member's phone;
+  an iPhone's own screenshots.
+- **After his paste, look (read only, counts only):** `/auth/me` as the owner session carries `mark`;
+  `/health/accounts` carries `ownerMark` and a `mark` on every user; then, after the pull, the layer on
+  both sites (as the owner, `#shotmark` present) and a trace of a fresh screenshot.
+- **Still his (asked 12 Nov, not answered; not raised again unless he does):** a faint visible number as
+  well; telling members that pages are marked to their account (recommended to him). Members have not been
+  told. The number is never the name code.
+
+**History: the test-site build (12-13 Nov), now superseded by the above.**
 **Owner, 12 Nov evening:** "can we make it so scren shots are blockable, or we would have a a way to track
 screen shots maybe. Would it be possible to bake a hidden id number in the backround that is not visible to
 people but if I gave you a picture of a screen shot or a screen shot, you would be able to know what account

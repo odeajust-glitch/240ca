@@ -1,9 +1,12 @@
 # A hidden account mark for screenshots: feasibility test, 12 Nov 2026
 
-**13 Nov 2026: built for the test site only, at his word ("Build it on the test site first").** The page
-(`public/board.html`, `ShotMark` and `paintShotMark`) draws the mark on his own view of board-test and Page
-Health there has a "Trace a screenshot" box that reads a picture in the browser; see HANDOFF. `wm.py` here
-is the same reader in Python (a test checks the layout matches), for a session asked to trace a picture.
+**13 Nov 2026: on for every signed-in account, both sites, at his word ("works great, push to the main
+page").** The page (`public/board.html`, `ShotMark`, `paintShotMark`) draws the mark with the number the
+Worker gives each account (`/auth/me` `mark`: 20 bits of an HMAC of the account id with a secret kept in
+`accounts/shotmark.json`), and his Page Health has "Trace a screenshot", reading a picture in the browser
+against every account's number. See HANDOFF. `wm.py` here is the same reader in Python (a test checks the
+layout matches); its `mark_of` is only the test-site trial's plain hash, so a session tracing a members'
+screenshot needs the numbers from `/health/accounts` (the owner key), not `mark_of`.
 The rest of this page is the test of 12 Nov that the build rests on.
 
 **The owner, 12 Nov 2026 (evening):** "can we make it so scren shots are blockable, or we would have a

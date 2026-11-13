@@ -79,6 +79,9 @@ stops at 50 people. The accounts are built into the Worker
   Followed name codes are shown as a count only (the Worker can't turn the
   hash back into a code).
 - Account files are in R2 under `accounts/` and are never served.
+- `accounts/shotmark.json` (owner, 2026-11-13): the screenshot mark's secret, random, made on first use.
+  Each account's hidden number comes from it. **Never change or delete it**: every screenshot taken
+  before would then match no one. See docs/board-checker/screenshot-mark/README.md.
 - Only the owner key opens the list (not the Cloudflare Access email).
 
 ## Crew names on the board
