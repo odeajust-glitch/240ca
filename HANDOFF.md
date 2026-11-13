@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## A yard FO's name questioned — 13 Nov 2026, about 23:30 Toronto. Checked read only, NOTHING CHANGED; asked him to look at CATS option 6
+## A yard FO's name questioned — 12 Nov 2026, about 23:30 Toronto. CLOSED: his CATS photos match the site; NOTHING CHANGED
 
 **Owner, 13 Nov,** with a screenshot of Current's Chain Gang box (SR08's row): he thinks the surname the site
 shows for the FO of YPRS60 and YBHS31 "is supposed to be" SR08's (no names here: the three share the name code
@@ -11,7 +11,13 @@ another initial, `YSBY06-YA`), and CATS gave it in two places: the Call Board's 
 2245 (`parseYardCrewNames`, crew.json `working`) and crews in town (`parseYardOwners`). Names are read as text,
 no OCR. **YPRS60's FO went on duty at 12th 2245 while SR08 was on rest until 13th 0135**, so they are different
 people, as the 11 Nov split already has them. Told him; asked him to look at YPRS60's FO on CATS 6: if CATS shows
-SR08's surname there, a photo, and find where the read goes wrong. Not answered yet.
+SR08's surname there, a photo, and find where the read goes wrong.
+**His photos, 12 Nov 23:44 to 23:46:** CATS 28 (POOL SR, TERM 0) has SR08 at POS 005 with the same name as the site;
+CATS 6 has YPRS60 (2245, ON DUTY 26/11/12 2245) with the FO the site shows, both on the Call Board part and under
+crews in town ("<< WORKING >>"). So the site is right: two people. Their codes check out with lib/board/people.js:
+SR08's name gives BRWA; YPRS60's FO's gives BRW2 (the code + surname hash; the first-three-letters hash is BRW1's,
+another person, YBHS31's FO), as the page's BRWA prompt shows. Every tab scanned as him on the main site: the
+other surname only in Yard jobs on duty (Current, Snapshots). Told him.
 
 ## Toronto line-up named the wrong person on MU01 — fixed 12 Nov 2026, about 21:40 Toronto (laptop + page). ON `claude/vigilant-planck-zawrj4` SINCE ABOUT 22:05 at his word ("Yes", asked whether to put it there). WAITING ON ONE LAPTOP PULL + RESTART; then compare with CATS 28
 
