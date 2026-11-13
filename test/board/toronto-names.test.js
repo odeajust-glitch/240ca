@@ -166,7 +166,8 @@ test('Toronto line-up: on any other board, or without the bunkhouse names, a pla
   assert.match(rowOf(off, 'E27331'), /SD08 \+ MU01 rest until/);
 });
 
-test('Toronto line-up (Snapshots layout): the same names', () => {
+// The older table layout (toronto()): Snapshots drew it until 12 Nov evening, when they took the short rows too.
+test('Toronto line-up (the older table layout): the same names', () => {
   const out = text(page({ crew: CREW, bunk: BUNKED }).toronto(SNAP));
   assert.match(out, /E27331 13 X · from 41975 SD08 Hill, C \+ MU01 Lake, B pos 001/);
   assert.match(out, /first in line: 001 SD08 Hill, C \+ MU01 Lake, B \(rest until 12th 2109\)/);

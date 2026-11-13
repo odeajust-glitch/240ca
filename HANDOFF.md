@@ -1,5 +1,49 @@
 # HANDOFF — read this before doing anything
 
+## Toronto line-up named the wrong person on MU01 — fixed 12 Nov 2026, about 21:40 Toronto (laptop + page). ON BRANCH `claude/wrong-crew-train-dzel7q` ONLY until he says to put it on `claude/vigilant-planck-zawrj4`; then ONE LAPTOP PULL + RESTART, and compare with CATS 28
+
+**Owner, 12 Nov about 21:11 Toronto, two photos:** CATS option 28 (Pool Maintenance Inquiry, POOL S1, TERM 1:
+the bunkhouse) beside the site's "Toronto line-up · Mac yard" (the 20:51 check): "This is showing the wrong
+crew on the train". E27331 13 (PLN 2359) had **SD08 + MU01**: SD08's name was right, but MU01 showed a
+different person from the one 28 had at POS 001. The other three crews matched 28.
+
+**Why.** The page names a turn from one turn → name list (`namesByTurn`, crew.json `turns`), built from the
+Call Board and the Sarnia pool and spareboard screens. Option 28 was read by name only for the people search
+and fill-ins, never for the names on the board. **MU01 is a placeholder (make-up) turn that many people get**,
+so the list had whoever held "MU01" last somewhere else. A spare covering a regular turn in the bunkhouse
+had the same problem. Also found: pool-row names kept two-letter initials as part of the surname ("DG" →
+"Grove Dg, D"); 28 has one (S109's), and the fix would have shown it.
+
+**Built (`f6c8e32` before this note; no Worker change, no paste):**
+- **Laptop** (`scripts/board-auto.js`): each page of 28 read by name goes to `names.bunk` (`parseBoardCrew`,
+  which now gives `pos`). `lib/board/names.js` `recordBunkhouse` keeps it in names.json as `@bunk`, stamped
+  with the check's `probedAt`. `namesByTurn` skips it, so the turns' names are unchanged. `boardPersonName`
+  drops one- or two-letter initials (as `nameParts` does).
+- **Site** (`lib/board/site.js`): crew.json gets `bunk: { taken, rows: [[pos, "EN" | "CO", turn, "Last, F"]] }`
+  only when 28's names were read in the newest check (`bunkhouseNames`). `taken` is the snapshot that check's
+  board is (index `latest`), not the check's own time.
+- **Page** (`bunkName`, `bunkCrew`, `southCrew` above `toronto()` in `public/board.html`): the Toronto box's
+  bunkhouse crews, Toronto South's "First in line" and "Also in the bunkhouse, no train yet" take the
+  bunkhouse's name at that position **on that snapshot only**. Anywhere else (an older snapshot, a newer board
+  while the page stays open, a names file from before this change), a regular turn takes its turn's name as
+  before and **an MU turn gets no name, never someone else's**. Crews still on the way keep the turn names (from
+  the Call Board). docs/board-checker/ACCOUNTS.md has the crew.json format.
+- **Until the laptop has this code**, nothing changes on the site: the page and crew.json come from the laptop.
+
+**Checked.** Suite **528 of 528** after rebasing on the alert change above (`test/board/toronto-names.test.js`,
+5 tests: 28's rows in the layout of his photo with made-up names, the site build with two checks, the box with
+and without the names, the older table layout). Each piece was broken on purpose six ways, and a test failed every
+time. In Chromium at 390 and 1280 px, the page was loaded over a site built from the 15 Oct fixture, with a
+stand-in bunkhouse, Mac yard line-up and a locked crew.json (made-up names; sign-in and `api/crewkey` stubbed).
+On Current and Snapshots, E27331's row reads "SD08 ⟨name⟩ + MU01 ⟨28's name⟩". Without `bunk`, MU01 has no
+name. No page errors, no sideways scroll.
+**Not checked:** real CATS (28's unmasked read on the laptop), the published site, a real phone.
+**After his pull + restart:** compare the Toronto box with CATS 28 (each POS, EN and CO).
+
+**Not changed, could come up:** an MU turn elsewhere (a Sarnia train on the Call Board, a crew on its way to
+Toronto) is still named by the turn list. That is right when only one MU01 is on the Call Board, and wrong
+if two are (a conductor and an engineer both on MU01). Not raised with him yet.
+
 ## The "a Toronto South crew may get it" alert taken off — 13 Nov 2026, at his word. WAITING ON ONE LAPTOP PULL + RESTART (the checker's own code)
 
 **Owner, 13 Nov:** "can we remove the notification for possible toronto south crew on train". It was the
