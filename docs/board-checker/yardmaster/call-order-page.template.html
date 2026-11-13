@@ -100,6 +100,11 @@ ol.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
 .yn button[aria-pressed="true"][data-yn="no"] { background: var(--bad); border-color: var(--bad); color: var(--surface); }
 @media (max-width: 520px) { .crow-main { grid-template-columns: auto minmax(0, 1fr); } .yn { grid-column: 2; } }
 .ex .fails { color: var(--bad); }
+.nowjobs { display: grid; gap: 10px; }
+.nowjob { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; display: grid; gap: 6px; }
+.nowjob h3 { font-size: 16px; }
+.nowjob ol { margin: 0; padding-left: 22px; display: grid; gap: 2px; font-size: 14px; }
+.nowjob td.at { color: var(--muted); }
 /* People */
 .peoplebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); margin-top: 10px; }
@@ -165,6 +170,11 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
 </div></header>
 
 <main class="wrap">
+  <section class="panel" id="now" hidden aria-labelledby="h-now">
+    <header><h2 id="h-now">If a yardmaster job went spare now</h2></header>
+    <p class="sub" id="now-sub"></p>
+    <div class="nowjobs" id="now-list"></div>
+  </section>
   <div class="row2">
     <section class="panel" id="job" aria-labelledby="h-job">
       <header><h2 id="h-job">The job going spare</h2></header>
@@ -280,6 +290,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
   let PEOPLE = [];
   let byRank = new Map();
   let LIST_DAY = '13 Nov';
+  let LIVE = null; // the site's newest check, by rank (data/ym-list.json "live")
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const nameOf = (p) => (p.first ? `${p.surname}, ${p.first}` : p.surname);
@@ -831,6 +842,81 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     }, fail);
   }
 
+  // --- If a yardmaster job went spare now (owner, 13 Nov: "if a yard job went spare now, and it would
+  // have the exact order and why. So I can verify") ----------------------------------------------------
+  // Each yardmaster job's next shift a 2-hour call can still go out for, everyone as the newest board
+  // check showed them, and the rules as set below: the order and, person by person, why.
+  function liveFactsFor() {
+    const f = Y.catsFacts(PEOPLE);
+    for (const p of PEOPLE) {
+      const x = p.live;
+      if (!x || f[p.rank].status !== 'available') continue;
+      if (x.status !== 'available') f[p.rank].status = x.status;
+      if (x.freeAt) f[p.rank].freeAt = x.freeAt;
+    }
+    return f;
+  }
+  function nowJobs() {
+    if (!LIVE) return [];
+    const day = LIVE.taken.slice(0, 10);
+    const at = Y.toMin(day, LIVE.taken.slice(11).replace(':', ''));
+    const out = [];
+    for (const [job, j] of Object.entries(Y.YA_JOBS)) {
+      for (let k = 0; k < 9; k++) {
+        const d = Y.addDays(day, k);
+        if (!j.runs(d)) continue;
+        const s = Y.toMin(d, j.start);
+        if (s - state.rules.leadMin < at) continue;
+        out.push({ job, date: d, start: j.start, hours: j.hours, s });
+        break;
+      }
+    }
+    return out.sort((a, b) => a.s - b.s);
+  }
+  function outcomeOf(res, r) {
+    const k = res.order.findIndex((o) => o.r === r);
+    if (k >= 0) return `${k + 1}${k === 0 ? 'st' : k === 1 ? 'nd' : k === 2 ? 'rd' : 'th'} in line · step ${res.order[k].i + 1}`;
+    const why = [...new Set(res.steps.flatMap((st) => st.rows.filter((x) => x.r === r && x.why).map((x) => x.why)))];
+    return why.length ? why.join('; ') : 'not looked at';
+  }
+  function renderNow() {
+    const box = $('#now');
+    if (!box) return;
+    box.hidden = !LIVE;
+    if (!LIVE) return;
+    const unknown = PEOPLE.filter((p) => p.live && !p.live.src && p.perm).map((p) => p.perm);
+    $('#now-sub').textContent = `At the board check of ${LIVE.taken.slice(11)} on ${dayWords(LIVE.taken.slice(0, 10) + 'T12:00:00Z', true)}: each person as the board showed them then (rest, on duty, away, days off, temporary jobs) and the rules as set below.${unknown.length ? ` Not on a board the checker reads, so taken as available: ${unknown.join(', ')}.` : ''}`;
+    const facts = liveFactsFor();
+    $('#now-list').innerHTML = nowJobs().map((j) => {
+      const sc = { job: j.job, date: j.date, start: j.start, hours: j.hours, spareboard: 'yes', facts };
+      const res = Y.decide(sc, state.rules, PEOPLE);
+      const h = holderOf(j.job);
+      const top = res.order.slice(0, 3).map((o) => `<li><b>${esc(nameOf(o.r.p))}</b> <span class="tag">rank ${o.r.p.rank} · step ${o.i + 1}: ${esc(Y.stepLabel(o.st, state.rules))}</span></li>`).join('');
+      const rows = res.steps.length ? PEOPLE.map((p) => {
+        const r = (res.steps[0].rows.find((x) => x.r.p === p) || res.steps.flatMap((st) => st.rows).find((x) => x.r.p === p) || {}).r;
+        if (!r) return '';
+        const k = res.order.findIndex((o) => o.r === r);
+        return `<tr class="${k === 0 ? 'win' : ''}"><td class="rk">${p.rank}</td><td>${esc(nameOf(p))}</td><td class="at">${esc(`${p.cats ? `${p.cats} on the list · ` : ''}${p.live ? p.live.text : ''}`)}</td><td>${k >= 0 ? `<span class="yes">${esc(outcomeOf(res, r))}</span>` : `<span class="no">${esc(outcomeOf(res, r))}</span>`}</td></tr>`;
+      }).join('') : '';
+      return `<article class="nowjob"><h3>${esc(j.job)} · ${esc(Y.fmt(j.s))} <span class="tag">call ${esc(Y.fmt(j.s - state.rules.leadMin))}${h ? ` · its holder ${esc(nameOf(h))}` : ''}</span></h3>
+        ${top ? `<ol>${top}</ol>` : '<p class="note">Nobody on the list fits these rules.</p>'}
+        <details><summary>Why, person by person</summary><div class="tablewrap"><table class="walk"><thead><tr><td class="rk">Rank</td><td>Name</td><td>At the check</td><td>For this job</td></tr></thead><tbody>${rows}</tbody></table></div></details>
+        <div class="actions"><button class="small" data-now-open="${esc(j.job)}|${esc(j.date)}">Open this in the tool below</button></div></article>`;
+    }).join('');
+  }
+  function wireNow() {
+    $('#now-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-now-open]');
+      if (!b) return;
+      const [job, date] = b.dataset.nowOpen.split('|');
+      const j = Y.YA_JOBS[job];
+      state.sc = { job, date, start: j.start, hours: j.hours, spareboard: 'yes', facts: liveFactsFor() };
+      state.openEx = null;
+      clearCheck(); showScenario(); renderPeopleGrid(); update();
+      $('#answer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   // --- Everything that follows a change ----------------------------------------
   function update() {
     state.rules = Y.normalize(state.rules);
@@ -843,6 +929,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     refreshPeople(prep);
     renderExamples();
     renderRules();
+    renderNow();
     store.set('ym-scenario', state.sc);
   }
 
@@ -852,7 +939,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
     fillJobSelect(); fillCheckSelects(); codeList();
     if (hot && hot.check) Object.assign(check, hot.check);
     showScenario(); renderPeopleGrid();
-    wireJob(); wirePeople(); wireCheck(); wireExamples(); wireRules();
+    wireJob(); wirePeople(); wireCheck(); wireExamples(); wireRules(); wireNow();
     $('#copy').addEventListener('click', () => {
       const text = answerText(state.last.res);
       const done = (ok) => say('#copy-msg', ok ? 'Copied.' : text, ok ? 'ok' : '');
@@ -890,6 +977,7 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       } catch { /* the page works by rank without them */ }
     }
     const by = (names && names.byRank) || {};
+    LIVE = data.live && data.live.byRank ? data.live : null;
     if (data.read) { LIST_DAY = dayWords(data.read, false) || LIST_DAY; for (const el of document.querySelectorAll('[data-listlong]')) el.textContent = dayWords(data.read, true); }
     for (const el of document.querySelectorAll('[data-listday]')) el.textContent = LIST_DAY;
     for (const el of document.querySelectorAll('[data-listcount]')) el.textContent = String(data.list.length);
@@ -898,7 +986,8 @@ footer p { margin: 0 0 6px; max-width: 80ch; }
       const n = by[x.rank] || '';
       const cut = n.lastIndexOf(', ');
       return { rank: x.rank, date: x.date, surname: n ? n.slice(0, cut > 0 ? cut : n.length) : `Rank ${x.rank}`, first: n && cut > 0 ? n.slice(cut + 2) : '',
-        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', temp: x.temp || null, hint: '' };
+        marks: x.marks || '', cats: x.status || '', awarded: x.awarded || '', move: x.move || '', perm: x.assignment || '', permDesc: x.description || '', temp: x.temp || null,
+        live: (LIVE && LIVE.byRank[x.rank]) || null, hint: LIVE && LIVE.byRank[x.rank] ? `At the check of ${LIVE.taken.slice(11)}: ${x.status ? `${x.status} on the list · ` : ''}${LIVE.byRank[x.rank].text}` : '' };
     });
   }
   async function boot(hot) {

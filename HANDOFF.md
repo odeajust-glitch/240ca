@@ -118,7 +118,7 @@ both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
 in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **His questions are on hold until the yardmaster has looked** (his word)
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT, WAITING ON THE SAME PULL + RESTART.** **His questions are on hold until the yardmaster has looked** (his word)
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -226,6 +226,27 @@ version is kept so far). Tests: `seniority.test.js` (a second line kept; the mer
 site's list with `temp` and `tempRead`, no names; the route's second pass with Y) and `ym-call-order.test.js` (a
 temporary job is the job at call time); broken on purpose five ways, all caught. In a browser over a stand-in list
 with one temporary job: the card shows it, the call-time box starts on it, no errors. Suite 597 of 597.
+
+**"If a yardmaster job went spare now", 13 Nov evening** (owner: "On the test site can you add something that is titled
+'if a yard job went spare now, and it would have the the exact order and why. So I can verify ur"). **BUILT, WAITING ON
+ONE LAPTOP PULL + RESTART.** A box at the top of `ym.html` (test site only; hidden until `data/ym-list.json` has `live`,
+and always on the Claude page, which has no board checks). For each YA job, its next shift whose 2-hour call is still
+ahead of the newest check (six jobs, soonest first): the call order by the page's rules (spareboard Yes), the first
+three with their step, and **"Why, person by person"**: rank, name, their status on the list and on the board at that
+check, and why each is in line or passed over (on rest, off, working that shift, holds the job …). "Open this in the
+tool below" puts that job in the tool, to change or to teach. **Its facts:** `Seniority.liveFacts(list, snapshot)`
+(lib/board/seniority.js), which `buildSite` writes into `data/ym-list.json` as `live` { taken, byRank: { rank: { status
+available | off | busy, freeAt, text, src } } }, **no names**. It goes from each person's job at the check (the temporary
+one first): on duty on the Call Board, coming home, at the Toronto bunkhouse, away or returning (busy); else the crews
+in town line for that job and craft ("(temporary)" lines only for a temporary holder); else the pool and spare boards;
+days off running at the check: off; "rest until" / "hold turn until": free from then (the later). The page uses them
+as each person's facts at call time (`liveFactsFor`), the same as setting them by hand in the tool. **Taken as
+available, named on the box:** EXYA01YA (the yardmaster spare) and EXEN08EN, which are on no board the checker reads.
+A YA holder showing "status not known" is taken as available, their own shift deciding (as the tool does). **Checked:**
+suite 599 of 599 (`seniority.test.js`: each kind of status from a made-up snapshot; `ym-call-order.test.js`: the box is
+in `ym.html`, hidden without `live`). In a browser over a stand-in list made from the real 17:16 check: six jobs, the
+spare (rank 140) first and then the yard that day, the why table, the open button, 390 px, no errors. **Not checked:**
+the real `data/ym-list.json` with `live` (after the pull + restart).
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at

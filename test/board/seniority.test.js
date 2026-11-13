@@ -229,3 +229,48 @@ test('yardmaster seniority: with TEMP ASGN Y, each temporary assignment put besi
   assert.match(auto, /await readList\(true\)/);
   assert.match(auto, /Seniority\.withTemp\(/);
 });
+
+test('yardmaster seniority: each person as the newest check showed them, by rank (the test site\'s "went spare now")', () => {
+  // Made-up list rows (no names), and a snapshot in the day files' shape with each kind of status.
+  const row = (rank, assignment, turn, craft, extra = {}) => ({ rank, assignment, turn, craft, yard: /^[YX]/.test(assignment), ...extra });
+  const list = [
+    row(30, 'YSTY01YA', 'YSTY01', 'YA'), row(40, 'YSBY06YA', 'YSBY06', 'YA'), row(60, 'YSBY01YA', 'YSBY01', 'YA'),
+    row(140, 'EXYA01YA', 'YA01', 'YA'), row(150, 'S1S102EN', 'S102', 'EN'), row(200, 'SDSD07EN', 'SD07', 'EN'),
+    row(280, 'SRSR10CO', 'SR10', 'CO'), row(300, 'SASA07CO', 'SA07', 'CO'), row(310, 'SRSR01CO', 'SR01', 'CO'),
+    row(320, '', '', '', { temp: { assignment: 'SDSD05EN', turn: 'SD05', craft: 'EN' } }), row(390, 'YBHS01S1', 'YBHS01', 'S1'),
+    row(460, 'SBSB04CO', 'SB04', 'CO'), row(487, 'YBHS31FO', 'YBHS31', 'FO'), row(295, '', '', ''),
+  ];
+  const snap = {
+    taken: '2026-11-13 1716',
+    pools: [{ name: 'SD · engineers', turns: [{ pos: '001', turn: 'SD07', status: 'hold turn until 14th 2259 (**); rest until 14th 0159' }, { pos: '002', turn: 'SD05', status: 'out working on M38261' }] },
+      { name: 'Chain Gang (SR) · conductors', turns: [{ pos: '001', turn: 'SR10', status: 'available' }] }],
+    town: [
+      { turn: 'YSTY01', craft: 'YA', text: 'YA: on rest until 14th 0030' }, { turn: 'YSBY06', craft: 'YA', text: 'YA: status not known' },
+      { turn: 'YSBY01', craft: 'YA', text: 'YA: status not known' }, { turn: 'SA07', craft: 'CO', text: 'CO: rested' },
+      { turn: 'YBHS01', craft: 'S1', text: 'S1: day off' }, { turn: 'YBHS01', craft: 'S1', text: 'S1 (temporary): on rest until 14th 0200' },
+      { turn: 'YBHS31', craft: 'FO', text: 'FO: status not known' },
+    ],
+    onDuty: [{ onDuty: '13th 1635', train: 'Z14931 13', crew: 'EN S304 · CO SB04' }],
+    onTheWay: [],
+    bunkhouse: [{ pos: '002', en: 'S102', co: 'SA02', rested: '13th 2249' }],
+    away: ['SR01'], returning: [],
+    daysOff: [{ from: '13th 0001', until: '14th 0001', on: true, turn: 'YSBY01', craft: 'YA' }],
+  };
+  const L = Sen.liveFacts(list, snap);
+  assert.equal(L.taken, '2026-11-13 1716');
+  const got = (rank) => { const x = L.byRank[rank]; return `${x.status}|${x.freeAt}|${x.text}|${x.src}`; };
+  assert.equal(got(30), 'available|2026-11-14T00:30|YSTY01 YA: on rest until 14th 0030|crews in town');
+  assert.equal(got(40), 'available||YSBY06 YA: status not known|crews in town'); // on duty: their own shift decides
+  assert.equal(got(60), 'off||YSBY01 YA: status not known; days off 13th 0001 to 14th 0001|crews in town');
+  assert.equal(got(140), 'available||YA01 YA: not on a board the checker reads|');
+  assert.equal(got(150), 'busy||S102 EN: at the Toronto bunkhouse, rested 13th 2249|Toronto bunkhouse');
+  assert.equal(got(200), 'available|2026-11-14T22:59|SD07 EN: hold turn until 14th 2259 (**); rest until 14th 0159|SD · engineers');
+  assert.equal(got(280), 'available||SR10 CO: available|Chain Gang (SR) · conductors');
+  assert.equal(got(300), 'available||SA07 CO: rested|crews in town');
+  assert.equal(got(310), 'busy||SR01 CO: away from Sarnia|away');
+  assert.equal(got(320), 'busy||SD05 EN (temporary): out working on M38261|SD · engineers'); // the temporary job decides
+  assert.equal(got(390), 'off||YBHS01 S1: day off|crews in town'); // the "(temporary)" line is someone else's
+  assert.equal(got(460), 'busy||SB04 CO: on duty on Z14931 13 from 13th 1635|Call Board');
+  assert.equal(got(295), 'available||no current job|');
+  assert.equal(Sen.liveFacts(list, { taken: '' }), null);
+});

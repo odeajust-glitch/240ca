@@ -173,3 +173,12 @@ test('yardmaster call order: someone on a temporary assignment works that job at
   assert.equal(row.group, 'engineer');
   assert.equal(row.r.moved, true);
 });
+
+test('yardmaster call order: the test site page has "If a yardmaster job went spare now", hidden without live data', () => {
+  const fs = require('fs');
+  const Build = require('../../docs/board-checker/yardmaster/build');
+  const page = fs.readFileSync(Build.SITE_OUT, 'utf8');
+  assert.match(page, /<section class="panel" id="now" hidden[^>]*>\s*<header><h2 id="h-now">If a yardmaster job went spare now<\/h2>/);
+  assert.match(page, /box\.hidden = !LIVE;/);
+  assert.match(page, /LIVE = data\.live && data\.live\.byRank \? data\.live : null;/);
+});
