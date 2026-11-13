@@ -1,5 +1,36 @@
 # HANDOFF — read this before doing anything
 
+## My stats for someone working only yard jobs — reviewed 13 Nov 2026 at his asking. NOTHING BUILT; eight items put to him, waiting on his picks
+
+**Owner:** "Review my stats tab for someone working just yard jobs and see if we need more data points so they have a
+more complete picture there".
+**How (read only, nothing saved on the sites):** the main site's 29 published days (16 Oct to 13 Nov 0134) downloaded
+to the scratchpad; every record rebuilt the way `lib/board/site.js` does (`collectYard`, `People.mergeStretches`,
+`Resets.merge`, `MyStatsFiles.update`): 168 people, **58 yard-only** (no road trips; 36 hold a yard job, 16 are
+spares, 6 both). `BoardMyStats.html` run on every record; two real yard-only pages (a night yard job holder, a
+yard spare) drawn in the real main-site page as the owner with `/auth/stats` stood in, in that browser only.
+**Found:**
+- Every yard shift's off duty is assumed (411 of 411: 8 h, 12 h on YSBY), so hours, longest duty, time off between
+  shifts and the 7-day totals are guesses. **The Call Board says more:** checks are about 8 min apart; of 311 runs of
+  8 h jobs, 165 left the Call Board within 15 min of 8 h, 83 (27%) 30 min to 4 h over, 6 over 30 min early; of 62
+  YSBY runs, 19 left 30 min or more early. 14 + 2 runs stayed listed far too long (up to 3 days: ignore). `yardRuns`
+  (`collectYard`: first / last per run) already holds this; `yardTrip` ignores it. Not checked against a time sheet.
+- Road pieces show empty for them: held away 0 h, the turn table's road columns ("—"), call miss columns, "called
+  under 8 h" for their own job (no call), held 14 h. No round trips or line-up sections (hidden, fine).
+- "You and your pool" says "Not enough to compare yet ... 10 days in a row on one pool" and never can (yard is no pool).
+- 42 of the 58 have days left out (3 to 10 Nov, before the checker change; recorded again since 12 Nov 0010,
+  `yardFrom`). Next reset due shown for 1 of 58 (hidden next to the left-out days; should come back from about 14 Nov).
+- No yard shift has "worked with" (0 of 411).
+- "Goes-spare notes on your turn" counts the job on the vacancy list for any craft: a holder's 30 Oct note was the S1
+  going spare on a night the holder worked; the vacancies carry `cc`, the note does not.
+- Booked days off (Train Service 4, `daysOff`, since 5 Nov) are not used by My stats: 28 lines in all, 7 on yard jobs.
+**Put to him (numbers as sent):** 1 real shift ends from the Call Board (check a week against one member's own times
+first); 2 overtime and early finishes; 3 a "Your yard job" summary; 4 "You and the yard" in place of the pool message
+(same privacy rules); 5 yard wording ("shift") and no road-only rows for someone with no road trips; 6 days off on
+the calendar (booked off, and the job spare for their own craft) and the goes-spare count by craft; 7 worked with on
+yard shifts (crafts, a spare's turn); 8 how each yard job really runs (job level, for bidding). All from the checks
+already saved; no checker change for 1-8. Test site first as usual.
+
 ## A yard FO's name questioned — 12 Nov 2026, about 23:30 Toronto. CLOSED: his CATS photos match the site; NOTHING CHANGED
 
 **Owner, 13 Nov,** with a screenshot of Current's Chain Gang box (SR08's row): he thinks the surname the site
