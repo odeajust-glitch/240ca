@@ -1,6 +1,6 @@
 # HANDOFF — read this before doing anything
 
-## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). Step 1, THE YARDMASTER SENIORITY LIST, BUILT (laptop only), WAITING ON ONE LAPTOP PULL + RESTART. No calling rules built: his to confirm next
+## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact, his to share). Nothing predicts YA jobs on the site yet
 
 **Owner, 13 Nov:** "how to determine who gets yard spare jobs", then, correcting me: "not yard spare jobs,
 yard master spare jobs. There is no logic built in yet and there are a few more screens to work thru".
@@ -55,6 +55,52 @@ touched); the first read is the first check after his pull + restart.
 
 **Next, his:** the rules for who gets called (the manual's ladder below, to confirm), and what CATS's marks
 (`*`, `+`, `(NET)`, `(NODP)`) and MOVE TYPE (B, F) mean if they matter.
+
+**Temporary vacancies, checked 13 Nov at his asking** ("can you see if anyone on that yard master seinoirty list is
+showing on a different home turn, if they are they are on a temporary vacancy. We can add that check in after but
+some of the determination for who works will be made from what job they are working at call time"). Read from the
+main site's locked crew names (the owner key's `/api/crewkey`, unlocked in the session's scratchpad only, nothing
+kept; names given to him in chat, **never written here: this repository is public, so people are named by their
+rank on the list**). Rank 320 (no permanent job, OFF) shows as SD05's holder (engineers): most likely a temporary
+vacancy. Rank 487 (YBHS31 FO) also shows on YPRS60 FO: a temp vacancy or an older name (the same question is
+further down this file). Working another job that day, not a home turn: the YA spare (rank 140) on YSBY01 0700
+while its holder (rank 60) was OFF; ranks 400 and 430 as FO on their own S1 jobs. One same-surname, same-initial
+pair: the board's "Last, F" can't tell rank 180 from another person on XSAS05 S1 (the checker's own key,
+SURNAME/I/FIR, can). **Not built: the check itself** ("we can add that check in after"): on the laptop, match the
+seniority list's `key` to the boards' names (names.json) at each read and record each yardmaster's job at call time.
+
+**The test page: "Yardmaster Call Order", https://claude.ai/artifact/CdWMndMCZyoMY3DauAWL4B** (owner: "lets make an
+artifact that you can enter a 'fake' ym job going spare ... it works thru the list ... tells you who would get the
+job ... ill share the artifact with a yardmaster so we can check the work"; then "we need to put a bunch of examples
+in and it will need a few adjustment so build a way to 'teach' into the artifact"). **Private; it holds the 34
+names and their 13 Nov statuses**; he shares it from the page's Share menu (a yardmaster needs Contributor access
+to save examples or rules; view-only sees them).
+- **What it does:** pick a YA job (YSTY01, YSBY01–04, 06 or another code), a date, start and hours. It walks the
+  list by the rules' steps, each step taking the most senior person who fits, and shows who gets the call, the next
+  three, and every person's reason at each step (holds the job, off, vacation, not free until, works their own job
+  too close). Each person's situation at call time can be set: status, free from, and **the job they work at call
+  time** (a temporary vacancy changes their group). Own shifts come from the Job Aids data (the tower's 2-2-3, yard
+  jobs' days off, the relief jobs' weeks).
+- **Starting rules (to confirm):** the 2011 manual's ladder: spare YM (2 h call, then on-time), regular YM (time and
+  a half), 4.16, 5.1, engineers off (canvass only), then the canvass; call 2 h before; 8 h needed between their own
+  shift and this one (my assumption: told to him); grouped by the job at call time.
+- **Teaching:** "Is this right?" saves an example (the job, the time, everyone's situation, who should get it, and
+  why). Every example is re-run against the rules: "N of M right". The rules are edited on the page (steps on/off,
+  order, group, call or on-time, pay; call lead; hours between shifts; own-shift check; group by job at call time or
+  permanent job; per-person group); a draft until "Save rules for everyone"; every save kept ("Saved versions",
+  "Use these"). "Find rules that fit the examples" tries 2,304 rule sets (group orders, layouts, gap, lead,
+  own-shift check, engineers, grouping) and offers the best ones that get more right.
+- **Where its data is:** the artifact's shared database: `examples` (sc: job/date/start/hours/facts by rank,
+  expected rank or 0 = nobody, reason, picked, by, at), `settings/rules` (the saved rules), `rulesHistory`. **Read
+  the examples with `ArtifactData` list `examples` on that URL** before changing the logic: the reasons are what
+  he and the yardmaster want it to learn. Checked after publishing: the store answers (empty).
+- **The code:** the published page is the live copy (Artifact `read` on the URL gives the whole HTML). The repo
+  keeps the names-free parts: `docs/board-checker/yardmaster/call-order-logic.js` (the pure logic, `YM`; runs in
+  node) and `call-order-page.template.html` (the page; `/*__PEOPLE__*/` and `/*__LOGIC__*/` are filled at build).
+  The people data with names is only in the published page (and his 13 Nov file). Checked: the logic in node
+  (sample cases; the fit runs 2,304 sets in about 0.2 s for two examples); the page at 390 px light and dark, no
+  errors, no sideways scroll, teach / score / fit clicked through in a throwaway browser. Not checked: a real phone,
+  and the page under his and a yardmaster's accounts (sharing, who-added names).
 
 **What the Sarnia calling manual says** (`data/crew_calling_cty.pdf`, "Relief – Yardmasters", p. 20, dated
 2011): by **seniority**, not first in first out like the fast and slow boards: (1) senior qualified
