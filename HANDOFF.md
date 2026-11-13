@@ -838,7 +838,7 @@ prediction). His screenshot showed round 1's Why and the "~" call working on his
 Open with him: whether Days off should name whose turn it is; whether a day off that was worked should stay
 "not taken" after the person ties up away from home; what to do with the purple "usually" tag (below).
 
-### Agreements tab: sample questions and how to ask — 13 Nov about 01:20 (12 Nov 20:20 Toronto). PROPOSED, NOTHING BUILT
+### Agreements tab: sample questions and how to ask — 13 Nov about 01:20 (12 Nov 20:20 Toronto). BUILT FOR THE TEST SITE ONLY 12 Nov about 21:00 Toronto ("Push these changes to the test site"); waiting on one laptop pull, then his look
 
 **Owner: "I want to improve the agreement tab, I would like to add some sample questions and explanations. Can
 you provide example of good questions to ask, and the type of questions to ask. Explain how AI can be more
@@ -865,6 +865,27 @@ engineer: held at the away-from-home terminal; deadheading; book rest; called of
 bereavement leave; general holiday. Both: rest at the home terminal under the duty and rest rules.
 To build on his word (test site only): `board-ask.js` (the list, a tap fills `#askq` and does not send), its
 styles, and the craft buttons choose which six show.
+
+**BUILT, 12 Nov about 21:00 Toronto. Owner, shown the picture: "Do you have any suggestions for this or ways to
+improve it. Push these changes to the test site, then get back to me".** `public/board-ask.js`: `EXAMPLES` (six a
+craft; the engineer list has "What is the most mileage an engineer can run in a month?" in place of the general
+holiday one: it finds the mileage guidelines' monthly limit in the top three), `HOW` and `WHY` (the two folds,
+shut by default), `setExamples(on)` (adds them, or takes them away), `paintExamples()` (the craft picked, else
+three of each; also called from `setCraft`); `render` takes `opts.examples`. `public/board.html`: `renderAsk`
+passes `examples: PREVIEW`; styles `.asktry`, `.askhow`. The laptop publishes `board-ask.js` with the page on
+every check (`site.js`), so a pull is enough. New test `test/board/ask-examples.test.js` (4): every example
+run through `SearchIndex` over the repository's own `data/` agreements (about 5 s), the "keep me in Toronto"
+claim, the tap never sending, test site only. Suite 512 of 512; four breaks on purpose all caught. Browser,
+both files put in place over the live data (in the browser only; every non-GET stopped and none attempted):
+him on board-test at 390 light and 360 dark (three of each with no craft, the lists change with the craft
+buttons, a tap fills the box and sends nothing, folds shut then open, no sideways scroll, no errors); **a
+member's Agreements tab the same to the letter as before on both sites.** To promote: `examples: true` in
+`renderAsk` and the test that pins it.
+
+**Search Review, counted (questions and answers not copied anywhere), 4 to 12 Nov: 21 questions, 11 from
+members.** Every one of the 21 answers has Markdown marks (`**`, `#` headings, `- ` bullets) that the tab
+shows as typed characters (`.askanswer` is plain text). 4 of the 11 members' questions and 7 of his 10 ended
+with "could not find". Put to him as suggestions, nothing built.
 
 ### Engineers held 14 h+: the AD claim reminder — 13 Nov about 00:15 (12 Nov 19:15 Toronto). ON FOR EVERY MEMBER, BOTH SITES, since 12 Nov about 19:45 Toronto at his word ("push the AD reminder to main"); waiting on one laptop pull
 

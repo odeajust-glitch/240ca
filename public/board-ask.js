@@ -119,6 +119,7 @@
     const want = new Set(craft ? COMMON[craft] : [...COMMON.conductor, ...COMMON.engineer]);
     box.querySelectorAll('.asklist input').forEach((i) => { i.checked = want.has(i.value); });
     refresh();
+    paintExamples();
   }
   function setSimple(on) {
     if (!box || simple === !!on) return;
@@ -130,6 +131,72 @@
     (simple ? box.querySelector('.askpicker') : box.querySelector('.asksrc')).appendChild(box.querySelector('.askdates'));
     if (!sources.length) return;
     if (simple) setCraft(savedCraft(), true); else pick('all');
+  }
+  // --- Example questions and how to ask (owner, 2026-11-12 evening: "add some sample questions and
+  // explanations ... example of good questions to ask, and the type of questions to ask. Explain how AI can be
+  // more useful than a normal search engine and its limitations"; then, shown a picture: "Push these changes
+  // to the test site"). Test site only: board.html passes opts.examples = PREVIEW. Each example was run
+  // through the site's own search over the agreements (top 9, that craft's documents) and finds the part it
+  // is about (test/board/ask-examples.test.js). A tap fills the box and never sends: the member presses Ask.
+  const EXAMPLES = {
+    conductor: [
+      'What am I paid when I am held at the away-from-home terminal more than 14 hours?',
+      'What is a runaround and how is it paid?',
+      'What am I paid if I am called and then cancelled?',
+      'When can I book rest, and how much rest can I book?',
+      'How am I paid if I work on a general holiday?',
+      'How are trains assigned to the A pool and B pool in Sarnia?',
+    ],
+    engineer: [
+      'How long can a locomotive engineer be held at the away-from-home terminal?',
+      'How is an engineer paid for deadheading?',
+      'When can an engineer book rest, and how much rest?',
+      'How are engineers called off the spare board?',
+      'What is the most mileage an engineer can run in a month?',
+      'How much bereavement leave does an engineer get?',
+    ],
+  };
+  // The two results quoted were run through the site's own search on 2026-11-12 (top 9 passages).
+  const HOW = `<details class="refsec askhow"><summary>How to ask a good question</summary><div class="askhowb">
+    <p><b>Use the agreement's own words.</b> The search finds passages by the words in your question, then the AI reads them. "How long can they keep me in Toronto?" found nothing useful. "Held at the away-from-home terminal more than 14 hours" found Article 18.6 first.</p>
+    <ul><li><b>One question at a time.</b> Each question starts fresh: it doesn't remember the last one.</li>
+    <li><b>Pick Conductor or Engineer</b> so it searches your agreement. For the CROR, GOI, dangerous goods or the discipline grid, add that document first (Add more documents).</li>
+    <li><b>Name the article if you know it:</b> "What does Article 18.6 say?"</li>
+    <li><b>No good answer?</b> Tap "Try a deeper search", or ask again in the agreement's words.</li></ul>
+    <p><b>Good for:</b> pay (held away, deadheading, runarounds, called and cancelled, general holidays), time off (vacation, personal leave days, bereavement), booking rest and the duty and rest rules, crew calling at Sarnia, and what an article says.</p>
+    <p><b>Not for:</b> your own pay or trips ("Was I paid right yesterday?"). It can't see your time slips, CATS or your seniority. No names or personal details.</p></div></details>`;
+  const WHY = `<details class="refsec askhow"><summary>What it does better than a search engine, and its limits</summary><div class="askhowb">
+    <p><b>Better than a search engine:</b></p>
+    <ul><li>You ask in a sentence and get an answer in plain words, not a list of links to read through.</li>
+    <li>It works only from our agreements and rules, not the internet, so it isn't quoting another railway or another union's contract.</li>
+    <li>It puts several articles together and gives the page for every point, with a link to that page.</li>
+    <li>It's told to say when the documents don't answer the question, not to guess.</li></ul>
+    <p><b>Its limits:</b></p>
+    <ul><li>It reads only the passages the search found (about 9 a question, 24 in a deeper search), picked by matching words. If your words aren't the agreement's, it can miss the right article.</li>
+    <li>It can misread, mix up two articles or leave out an exception. Open the page and read it before you rely on it.</li>
+    <li>It only knows the versions on this site (Conductors 4.16 revised July 2020, Engineers 1.1 2018, and the other documents listed). Anything agreed since may not be in them.</li>
+    <li>Agreements 4.3 and 1.2 are for Western Canada, not Sarnia.</li>
+    <li>It's a search aid, not legal advice. For a grievance or claim, confirm with your Local Chairperson.</li></ul></div></details>`;
+  let examples = false;
+  function setExamples(on) {
+    if (!box) return;
+    if (examples !== !!on) {
+      examples = !!on;
+      if (examples) {
+        box.querySelector('.askrow').insertAdjacentHTML('afterend', '<div class="asktry"><span class="asklbl2">Try one: it fills the box, then tap Ask</span><ul></ul></div>');
+        box.querySelector('.asksrc').insertAdjacentHTML('beforebegin', HOW + WHY);
+      } else box.querySelectorAll('.asktry, .askhow').forEach((x) => x.remove());
+    }
+    paintExamples();
+  }
+  // Six for the craft picked; three of each until one is picked.
+  function paintExamples() {
+    const ul = box && box.querySelector('.asktry ul');
+    if (!ul) return;
+    const craft = savedCraft();
+    const list = craft ? EXAMPLES[craft] : [...EXAMPLES.conductor.slice(0, 3), ...EXAMPLES.engineer.slice(0, 3)];
+    ul.innerHTML = list.map((q) => `<li><button type="button">${esc(q)}</button></li>`).join('');
+    ul.querySelectorAll('button').forEach((b) => { b.onclick = () => { const t = box.querySelector('#askq'); t.value = b.textContent; t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
   }
   function pick(what) {
     box.querySelectorAll('.asklist input').forEach((i) => {
@@ -263,10 +330,12 @@
   }
 
   root.BoardAsk = {
-    // opts.simple: the craft buttons and document chips.
+    // opts.simple: the craft buttons and document chips. opts.examples: the example questions and the two
+    // explanations (the test site, for now).
     render(view, opts) {
       if (!box) build();
       setSimple(!!(opts && opts.simple));
+      setExamples(!!(opts && opts.examples));
       view.innerHTML = '';
       view.appendChild(box);
     },
