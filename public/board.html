@@ -4700,7 +4700,7 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], l
   const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
   const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
   const line = (label, html) => `<div><dt>${label}</dt><dd>${html}</dd></div>`;
-  const went = (r) => line('Crew that went', r.onDuty ? `${esc(r.crew || 'not shown')} <span class="muted">· on duty ${esc(dt(r.onDuty))}</span>` : '<span class="muted">not on duty yet</span>');
+  const went = (r) => line('Crew that went', r.onDuty ? `${esc(r.crew || 'not shown')} <span class="muted">· on duty ${esc(dt(r.onDuty))}</span>${PREVIEW ? chargedLines(r) : ''}` : '<span class="muted">not on duty yet</span>');
   const span = (a, b) => `${stampBtn(a)}${b && b !== a ? ` – ${stampBtn(b)}` : ''}`;
   const card = (title, sub, st, lines, end) => `<div class="ae2-card"><h4>${title}${sub ? ` <small>${esc(sub)}</small>` : ''} ${ae2Chip(st)}</h4><dl>${lines.join('')}</dl><p class="ae2-end">${end}</p></div>`;
   const pool = (r) => {
@@ -4760,6 +4760,11 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], l
     ${items.length ? `<p class="ae2-count">${plural(items.length, 'train')} with something flagged in these dates. Tap a train for what was wrong and how it ended.</p>
     <div class="ae2-chips">${chips}</div><section class="sheet ae2-list">${rows}<p class="empty" data-ae2-empty hidden>No trains with that outcome.</p></section>` : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
 }
+// The board's turn against the turn charged (owner, 2026-11-14, E27861 13; test site): "Board had SR05
+// (going spare → B139). B139 went, on SB01's job: same spare, wrong turn charged."
+function chargedLines(r) {
+  return (r.charged || []).map((c) => `<div class="crew${c.sameSpare ? ' bad' : ''}">${c.craft === 'EN' ? 'Engineer' : 'Conductor'}: board had <b>${esc(c.board)}</b>${c.boardSpare ? ` (going spare → ${esc(c.boardSpare)})` : ''}. ${c.by ? `${esc(c.by)} went, on ${esc(c.went)}'s job` : `${esc(c.went)} went`}${c.sameSpare ? ': same spare, wrong turn charged' : ''}.</div>`).join('');
+}
 function anaRunarounds({ runarounds }) {
   runarounds = runarounds.map(r => ({ ...r, statusUncertain: !!(r.onDuty && r.last && r.last > r.onDuty) }));
   const st = BoardAnalytics.runaroundStats(runarounds.filter(r => r.poolOutcome !== 'Final pool sequence correct'));
@@ -4779,7 +4784,7 @@ function anaRunarounds({ runarounds }) {
       <td class="num">${shown(r)}</td>
       <td>${poolName(r.actual)}${r.turn ? ` <button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : ''}</td>
       <td>${poolName(r.expected)}</td>
-      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>` : '<span class="muted">not on duty yet</span>'}</td>
+      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>${PREVIEW ? chargedLines(r) : ''}` : '<span class="muted">not on duty yet</span>'}</td>
       <td>${r.poolOutcome ? esc(r.poolOutcome) : seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No trains out of sequence in the dates picked.</p>';
   return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. Observations after on-duty remain evidence but cannot confirm the pre-departure outcome. <b>Runaround</b>: still out of sequence the last time it showed. <b>Mismatch cleared</b>: observed pool equality; this alone does not prove a correct crew call. Tap a time to open that snapshot.</p>

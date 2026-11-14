@@ -1,5 +1,33 @@
 # HANDOFF — read this before doing anything
 
+## Runarounds: the board's turn against the turn charged ("same spare, wrong turn charged") — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`; page `public/board.html`, the line on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt each publish from the day files: no FORMAT bump)
+
+**Owner, 14 Nov**, on the To check lines for **E27861 13** ("went to B (SB01) but the sequence says SR"; "conductor
+SB01 paired with engineer SD01; expected an S3 turn"): "this is a really good catch. How will this get logged",
+then "can you see the conductor that should have got it", then **"yes to both"** (both offered: this record, and a
+written summary to hand to someone).
+**What happened (13–14 Nov, checks to 01:42):** a Chain Gang train (A and B used up for the road day). First out
+SR05, going spare; the slow board's first spare B139 was lined into it 00:56–01:26. CATS listed E27861's
+conductor job on SB01 from 00:15 (the "CATS listed the wrong turn" record, 9 checks) and SR05 on the 05:00
+deadhead DHT027 (since 18:02 on the 13th, ordered 19:13). 01:20 ordered for A; 01:34 Call Board: on duty 03:30,
+EN SD01 · CO SB01, B139 working SB01's job. ❓ **Open, his to say:** if SR05 was held for the 05:00 deadhead, the
+next Chain Gang conductor, SR10 (available), was owed it; if not, B139 on SR05 (same person, wrong turn). The
+pairing flag (rule `pairing`, engine.js) is only in the checks' `flags` (To check, Snapshots), not collected
+anywhere: offered as its own record, not built. Nobody is alerted for either.
+**Summary written for him:** a private page, https://claude.ai/artifact/GjdPxeDRNVAorLNyujFTFv (turn numbers
+only; both readings; what to check in CATS). Only he can open it until he shares it.
+**Built.** `insights.js` `collect`: for a train already shown out of sequence, the line-up's `pred` crew at each
+check before it goes (`r.board`: co, en, the spare for a turn marked "(goes spare" from `vacancies` /
+`vacanciesPredicted` by turn and symbol, seen); on the Call Board the crew as last shown (`crewLast`) and its
+`backfill` (`workedBy`). `chargedOf` in `finish`: by craft, when the turn that went differs from the board's,
+`charged: [{ craft, board, boardSpare, went, by, sameSpare }]`; nothing for a train that ended in sequence
+(`fixed`). Page (`PREVIEW`): `chargedLines(r)` under "Crew that went" in Assignment errors (cards and the older
+table). **Real check:** the 13–14 Nov day files through the new code: 4 runarounds, only E27861 13 charged (CO,
+SR05 → B139, went SB01 by B139, sameSpare); M39671 12 (CO SB01 by B139 at 23:58, put right to SR02 at 00:06,
+ended in sequence) nothing. In a browser with those records put into the real file: the card on board-test as
+him, nothing new on board as a member. Suite 640 of 640 (insights.test.js: board crew and spare, the last Call
+Board crew counts, cleared trains nothing; broken on purpose four ways, all caught).
+
 ## Toronto South check — BUILT 14 Nov 2026, about 01:45 Toronto (laptop + page). The Sarnia-crew rule ON FOR EVERY MEMBER, BOTH SITES (page + the Toronto lined-up alerts); the watch list runs on the laptop and shows on the TEST SITE ONLY. WAITING ON ONE LAPTOP PULL + RESTART, and the looks themselves WAIT ON HIM: the Toronto South Call Board's codes and two photos (asked)
 
 **Owner, 14 Nov about 01:00 Toronto:** "I want to add a check for a Toronto South crew to confirm. if the checker

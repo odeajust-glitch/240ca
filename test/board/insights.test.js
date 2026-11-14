@@ -530,3 +530,43 @@ test('insights: yardmaster jobs going spare, one a job and start, and the shift 
   // Never mixed into the jobs going spare.
   assert.deepStrictEqual(f.spareJobs, []);
 });
+
+// The board's turn against the turn charged (owner, 2026-11-14: E27861 13, "this is a really good catch",
+// then "can you see the conductor that should have got it"): the board had SR05 going spare → B139; B139
+// went on SB01's job.
+test('insights: a runaround keeps the board crew and its spare, and the turn the spare was charged to', () => {
+  const snap = (taken, extra) => ({ taken, sequence: [], vacancies: [], onDuty: [], lineup: [], ...extra });
+  const row = { train: 'E27861 13', order: '14th 0345', rules: 'Chain Gang: SR05 (goes spare → spareboard) + SD01', pred: { co: 'SR05', en: 'SD01' } };
+  const vac = { train: 'E27861', cc: 'CO', turn: 'SR05', at: '14th 0345', fill: { turn: 'B139', board: 'Conductor slow board' } };
+  const f = Insights.finish(Insights.collect([
+    snap('2026-11-14 0056', { lineup: [row], vacancies: [vac] }), // in sequence: no record yet
+    snap('2026-11-14 0120', { lineup: [row], vacancies: [vac], sequence: [{ order: '14th 0345', train: 'E27861 13', expected: 'SR', actual: 'A', turn: 'SR05' }] }),
+    snap('2026-11-14 0134', { lineup: [{ ...row, rules: 'B pool: SB01 + SD01', pred: null }], sequence: [{ order: '14th 0345', train: 'E27861 13', expected: 'SR', actual: 'B', turn: 'SB01' }],
+      onDuty: [{ train: 'E27861 13', onDuty: '14th 0330', station: 'SARNIA', crew: 'EN SD01 · CO SB01', backfill: [{ craft: 'CO', job: 'SB01', turn: 'B139' }] }] }),
+  ]));
+  const r = f.runarounds[0];
+  assert.deepStrictEqual(r.board, { co: 'SR05', en: 'SD01', coSpare: 'B139', enSpare: '', seen: '2026-11-14 0120' });
+  assert.deepStrictEqual(r.workedBy, [{ craft: 'CO', job: 'SB01', turn: 'B139' }]);
+  assert.deepStrictEqual(r.charged, [{ craft: 'CO', board: 'SR05', boardSpare: 'B139', went: 'SB01', by: 'B139', sameSpare: true }]);
+  // The engineer the board had went: nothing to say. A different spare: not the same spare.
+  const other = Insights.finish(Insights.collect([
+    snap('2026-11-14 0120', { lineup: [row], vacancies: [vac], sequence: [{ train: 'E27861 13', expected: 'SR', actual: 'B', turn: 'SB01' }] }),
+    snap('2026-11-14 0134', { onDuty: [{ train: 'E27861 13', onDuty: '14th 0330', crew: 'EN SD01 · CO SB01', backfill: [{ craft: 'CO', job: 'SB01', turn: 'B134' }] }] }),
+  ])).runarounds[0];
+  assert.deepStrictEqual(other.charged, [{ craft: 'CO', board: 'SR05', boardSpare: 'B139', went: 'SB01', by: 'B134', sameSpare: false }]);
+  // Put right on the Call Board after it first showed (M39671 12, 13 Nov: CO SB01 by B139, then CO SR02):
+  // the last crew counts, and a train that ended in sequence has nothing charged.
+  const putRight = Insights.finish(Insights.collect([
+    snap('2026-11-13 2350', { lineup: [row], vacancies: [vac], sequence: [{ train: 'E27861 13', expected: 'SR', actual: 'B', turn: 'SB01' }] }),
+    snap('2026-11-13 2358', { onDuty: [{ train: 'E27861 13', onDuty: '14th 0155', crew: 'EN SD04 · CO SB01', backfill: [{ craft: 'CO', job: 'SB01', turn: 'B139' }] }] }),
+    snap('2026-11-14 0006', { sequence: [{ train: 'E27861 13', expected: 'SR', actual: 'SR', turn: 'SR02' }], onDuty: [{ train: 'E27861 13', onDuty: '14th 0155', crew: 'EN SD04 · CO SR02', backfill: [] }] }),
+  ])).runarounds[0];
+  assert.deepStrictEqual([putRight.fixed, putRight.crewLast, putRight.workedBy, putRight.charged], [true, 'EN SD04 · CO SR02', [], undefined]);
+  // The other way round: the Call Board first shows the board's turn, then changes it and it goes wrong.
+  const changed = Insights.finish(Insights.collect([
+    snap('2026-11-14 0120', { lineup: [row], vacancies: [vac], sequence: [{ train: 'E27861 13', expected: 'SR', actual: 'A', turn: 'SR05' }] }),
+    snap('2026-11-14 0126', { lineup: [row], vacancies: [vac], onDuty: [{ train: 'E27861 13', onDuty: '14th 0330', crew: 'EN SD01 · CO SR05', backfill: [{ craft: 'CO', job: 'SR05', turn: 'B139' }] }] }),
+    snap('2026-11-14 0134', { sequence: [{ train: 'E27861 13', expected: 'SR', actual: 'B', turn: 'SB01' }], onDuty: [{ train: 'E27861 13', onDuty: '14th 0330', crew: 'EN SD01 · CO SB01', backfill: [{ craft: 'CO', job: 'SB01', turn: 'B139' }] }] }),
+  ])).runarounds[0];
+  assert.deepStrictEqual(changed.charged, [{ craft: 'CO', board: 'SR05', boardSpare: 'B139', went: 'SB01', by: 'B139', sameSpare: true }]);
+});
