@@ -117,7 +117,9 @@
     border-bottom: 3px solid var(--ink);
   }
   .top h1 { margin: 0; font: 700 30px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
-  .top .where { color: var(--soft); font-size: 13.5px; }
+  /* The second line ("Sarnia road · what CATS showed when each check ran", .where) is gone from the header on every
+     screen, both sites (owner, 2026-11-14: "Can take this off both the main and branch test"); it was already off on
+     a phone (the compact header). The page styles' .top .where rules below have nothing left to colour. */
   .top .updated { margin-left: auto; font-size: 12.5px; color: var(--soft); }
   /* ⚙ Settings (owner, 2026-10-26) */
   .top { position: relative; padding-right: max(64px, calc(env(safe-area-inset-right, 0px) + 48px)); }
@@ -2299,7 +2301,6 @@
 <body class="everyone">
 <div class="top">
   <h1>Line-up Snapshots</h1>
-  <span class="where">Sarnia road · what CATS showed when each check ran</span>
   <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeMine" type="button" aria-pressed="false" hidden>My stats</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>

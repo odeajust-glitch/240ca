@@ -51,6 +51,11 @@ test('7. Article 18.6(b): rows in place of the sideways table, for every member'
 test('15. the compact header on a phone, for every member; the TEST SITE badge stays the test site’s', () => {
   assert.ok(style.includes('@media (max-width: 700px) { body.everyone .top h1 { font-size: 22px; } body.everyone .top .where { display: none; } body.everyone .signnote { padding: 8px 14px; font-size: 13px; } }'));
   assert.ok(style.includes("body.preview-site .top h1::after { content: 'TEST SITE';"));
+  // The second line is off on every screen now, both sites (owner, 2026-11-14: "Sarnia road · what CATS showed when
+  // each check ran . Can take this off both the main and branch test. Its on the desktop and tablet layout it seems").
+  const body = html.slice(html.indexOf('<body'));
+  assert.ok(!body.includes('class="where"') && !body.includes('what CATS showed when each check ran'));
+  assert.ok(html.includes('<div class="top">\n  <h1>Line-up Snapshots</h1>\n  <div class="modes"'));
   // The badge is the one rule left under the test site's class (comments aside).
   const rules = style.replace(/\/\*[\s\S]*?\*\//g, '');
   assert.deepEqual(rules.match(/body\.preview-site[^{,]*(?=[{,])/g), ['body.preview-site .top h1::after ']);

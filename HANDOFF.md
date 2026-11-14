@@ -1,5 +1,16 @@
 # HANDOFF — read this before doing anything
 
+## The header's second line taken off, every screen, both sites — 14 Nov 2026 (`public/board.html`, page only). WAITING ON ONE LAPTOP PULL
+
+**Owner:** "Sarnia road · what CATS showed when each check ran . Can take this off both the main and branch test. Its
+on the desktop and tablet layout it seems, not the phone" ("branch test" read as the test site). **Done:** the
+`<span class="where">` is gone from the page (it was already hidden on a phone by the compact header, 12 Nov pick 15).
+The `.top .where` style rules are left with nothing to colour (a comment says so). **This replaces his 12 Nov "2 leave
+it" for the second line only:** the title stays ("Line-up Snapshots"; "Herding CATS" on the test site with his key),
+and the Home Screen name is unchanged. Test: `test-site-promoted.test.js` (fails on the old page). Suite 610 of 610.
+In a browser with this branch's page at 1280 and 820 px: the main site as a member and the test site as him, the
+header is the title then the tabs, no second line, no page errors.
+
 ## "Next Yard Job" moved from Job Aids to Page Health — 14 Nov 2026 (`public/board.html`, `public/board-ref.js`, page only). Still TEST SITE ONLY (board-test with the owner key). WAITING ON ONE LAPTOP PULL
 
 **Owner:** quoted the box ("Next Yard Job … YSBY01 YDM Block 1 … If it was spare, who would work it …"), then "take
@@ -244,7 +255,7 @@ do this itself), was given a list, then: **"Can we change the name of the site t
 heading (shown in capitals, "HERDING CATS" + the TEST SITE tag) and the browser tab's title on board-test
 with the owner key. The page's own `<title>` / `<h1>` still say Line-up Snapshots, so members on both sites
 and the main site are unchanged (`site-review.test.js` pins both). The second line ("Sarnia road · what CATS
-showed when each check ran") is kept. **Not changed:** the Home Screen name (`board.webmanifest` "Sarnia
+showed when each check ran") is kept. **(Taken off everywhere 14 Nov at his word: the section at the top.)** **Not changed:** the Home Screen name (`board.webmanifest` "Sarnia
 Board" / "Board", and `apple-mobile-web-app-title` "Board"): one file for both sites, so only at his word for
 both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`/`paintSiteName`, the manifest's
 `name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
