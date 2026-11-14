@@ -1,5 +1,15 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids in the owner's order — 14 Nov 2026 (`public/board-ref.js`, page only, both sites). WAITING ON ONE LAPTOP PULL
+
+**Owner:** the six titles, then "in Job Aids, make this the correct order": Yard jobs · Days out of Sarnia · Track
+lengths · CATS status and ECC codes · Job types for Eastern Canada · Held-away penalty. **Done:** the held-away
+penalty moved from the top to the bottom (the rest were already in his order). It still opens by itself (it was
+the open one at the top) and still hides while searching. The first two stay the test site's (clean-up item 5
+and 6); the main site shows the last four in the same order. Test: `ref.test.js` (fails on the old order). Suite
+610 of 610. In a browser with this branch's page: board-test as him, the six in his order; the main site, the
+four; no page errors.
+
 ## Garnet card named the turn's new holder at home, not who was at Garnet — FIXED 13 Nov 2026, about 20:10 Toronto (page + laptop), for everyone, both sites. WAITING ON ONE LAPTOP PULL (the page; + a RESTART for the alerts part)
 
 **Owner, 13 Nov 19:39 (his phone's screenshot of Current, Garnet line-up · L501 home: "S502 CO O'Dea, J · EN

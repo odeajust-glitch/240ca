@@ -419,20 +419,22 @@
     const penaltyRows = [];
     for (let m = 600; m <= 960; m += 1) penaltyRows.push(`<tr><td class="num">${hm(m)}</td><td class="num">${penalty(m).toFixed(2)}</td></tr>`);
     const steps = [[961, 1020], [1021, 1080], [1081, 1140], [1141, 1200], [1201, 1260], [1261, 1320]].map(([a, b]) => `<tr><td class="num">${hm(a)} – ${hm(b)}</td><td class="num">${penalty(b).toFixed(2)}</td></tr>`).join('');
+    // The sections' order (owner, 2026-11-14): yard jobs, days out of Sarnia, track lengths, CATS status and ECC
+    // codes, job types, then the held-away penalty last.
     view.innerHTML = `<div class="thead"><div class="when">Job Aids</div>
         <div class="turnpick"><label for="refq">Search (a track, a code, a word)</label><div class="row"><input id="refq" placeholder="e.g. R013, 33, vacation" autocomplete="off" spellcheck="false" value="${esc(state.q || '')}"></div></div></div>
       <section class="sheet refpage">
+      ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
+      ${state.preview ? sec('due', 'Days out of Sarnia: add each pool to your calendar', !q || outTurnQ || hit('days out of Sarnia', 'due out', 'calendar', ...OUT_POOLS.map((p) => p[1])) ? '<div id="duebox"></div>' : '') : ''}
+      ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
+      ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
+      ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
       ${q ? '' : sec('held', 'Held-away penalty (time off duty → penalty miles)', `<div class="refcalc">
           <label>Held for (h:mm) <input id="refheld" inputmode="numeric" placeholder="e.g. 13:25" value="${esc(state.held || '')}"></label>
           <span>or off duty <input id="refoff" type="time" value="${esc(state.off || '')}"> to on duty <input id="refon" type="time" value="${esc(state.on || '')}"></span>
           <p id="refout" class="refout"></p></div>
         <p class="muted">From the posted sheet (B-Force Timekeeping 1-888-878-1111). The times are total time off duty.</p>
         <details><summary>The whole table</summary><table class="reft"><thead><tr><th>Off duty</th><th>Miles</th></tr></thead><tbody>${penaltyRows.join('')}${steps}</tbody></table></details>`, true)}
-      ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
-      ${state.preview ? sec('due', 'Days out of Sarnia: add each pool to your calendar', !q || outTurnQ || hit('days out of Sarnia', 'due out', 'calendar', ...OUT_POOLS.map((p) => p[1])) ? '<div id="duebox"></div>' : '') : ''}
-      ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
-      ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
-      ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
     if (state.preview) wireDue(view, state);

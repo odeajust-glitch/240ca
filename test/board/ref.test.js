@@ -237,3 +237,17 @@ test('yard jobs: "Next Yard Job" and "If it was spare, who would work it", with 
   R.paintYmNext(box, { Y, L, now });
   assert.ok(box.innerHTML.includes('Dogwood, M'));
 });
+
+// Owner, 2026-11-14: "Yard jobs: start times, days off and relief / Days out of Sarnia: add each pool to your
+// calendar / Track lengths: Mac Yard, B.I.T. Yard, Malport / CATS status and ECC codes / Job types for Eastern
+// Canada / Held-away penalty (time off duty → penalty miles) — in Job Aids, make this the correct order".
+// The first two are the test site's for now (state.preview); the rest keep the same order on the main site.
+test('Job Aids: the sections in the owner\'s order, the held-away penalty last', () => {
+  const draw = (preview) => {
+    const view = { innerHTML: '', querySelector: (sel) => (sel === '#refq' ? {} : null) };
+    R.render(view, { preview, today: '2026-11-14' });
+    return [...view.innerHTML.matchAll(/<details class="refsec" id="ref-([a-z]+)"/g)].map((m) => m[1]);
+  };
+  assert.deepStrictEqual(draw(true), ['yardjobs', 'due', 'tracks', 'status', 'jobs', 'held']);
+  assert.deepStrictEqual(draw(false), ['tracks', 'status', 'jobs', 'held']);
+});
