@@ -1,5 +1,17 @@
 # HANDOFF — read this before doing anything
 
+## "Yardmaster jobs going spare": the note under its heading taken off — 14 Nov 2026 at his word (`public/board.html`, page only, both sites). WAITING ON ONE LAPTOP PULL
+
+**Owner** (with a screenshot of the main page's Jobs going spare): "For the YM jobs going spare remove the description".
+**Done:** the heading "Yardmaster jobs going spare · N" goes straight to its rows, both layouts (`ymHead`): no note for a
+member ("Yardmaster jobs (YA) on CATS's option 5. They go to the yardmaster spareboard first …") and none with the owner's
+predictions either ("Only you see the cover …"; it also said who was on the yardmaster spareboard at the check, `yp.sb`,
+still worked out and tested in `ymPredFrom`, not shown: a line again if he asks). Each row's own Details are unchanged.
+**Checked:** suite 640 of 640 (`current-review.test.js`: no note for a member nor the owner; each note put back on purpose
+fails a test). In a browser, this branch's page over the real main site and test site (GET only, the owner key): the
+heading, then the 14th's rows with the owner's covers (YSTY01 rank 330, YSBY01 rank 140 tie, YSBY06 rank 290); 390 px;
+no page errors.
+
 ## A photo of a screen read by its squares (the hidden mark's own), not a typed code — BUILT FOR THE TEST SITE ONLY, 14 Nov 02:33 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL; then his eye test and camera test
 
 **Owner, 14 Nov ~01:50:** "on the light page its hard. Instead of a number would you be able to do squares or diamonds.

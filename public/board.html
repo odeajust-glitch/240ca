@@ -3662,9 +3662,10 @@ function vacancies(s, reviewed = false) {
   // in both views: no expected cover, since the yardmaster spareboard and the call order are not read for them yet.
   const ym = s.yardmasterJobs || [];
   if (!list.length && !(cats || []).length && !predicted.length && !ym.length) return '';
-  const ymHead = !ym.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Yardmaster jobs going spare · ${ym.length}</h3>
-    <p class="anote" style="margin:4px 14px 10px">${yp ? `Only you see the cover (owner key, to check it): the yardmaster call order's ${yp.rules ? 'rules saved on this phone' : 'starting rules'}, earliest call first, one person each, everyone as this check showed them; a rest ending right at the call counts as free (marked "tie" where that decides it). ${esc(yp.sb)} A yard job someone is moved up from is under Predicted jobs going spare.`
-    : 'Yardmaster jobs (YA) on CATS\'s option 5. They go to the yardmaster spareboard first, then down the yardmaster seniority list, so no cover is shown.'}</p>`;
+  // Its heading only (owner, 2026-11-14, of the note under it, with a screenshot of the main page: "For the YM jobs going
+  // spare remove the description"): no note for a member nor for the owner's predictions (yp.sb, who was on the
+  // yardmaster spareboard at the check, is still worked out, for Details or a line again if he wants it).
+  const ymHead = !ym.length ? '' : `<h3 style="margin:14px 14px 10px;font-size:15px">Yardmaster jobs going spare · ${ym.length}</h3>`;
   // A yardmaster row's cover for the owner: who, when they're called, and in Details the step and who was passed over.
   const ymFor = (v) => (yp ? yp.jobs[`${v.train}|${v.at}`] || null : null);
   const ymCover = (x) => (!x ? '' : x.who ? `<span class="crew-craft">cover <b>${esc(x.who)}</b></span><span class="call">call ~${esc(x.call)}</span>` : '<span class="crew-craft"><strong class="spare">NOBODY BY THE CALL ORDER</strong></span>');

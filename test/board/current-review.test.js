@@ -302,6 +302,9 @@ test('Jobs going spare: the yardmaster jobs CATS lists, as their own rows, both 
   const now = p.run('vacancies')(both, true);
   assert.ok(now.includes('+ 2 yardmaster</span>'), 'counted in the heading');
   assert.ok(text(now).includes('Yardmaster jobs going spare · 2'));
+  // No note under the heading (owner, 2026-11-14: "For the YM jobs going spare remove the description").
+  assert.ok(!/They go to the yardmaster spareboard first|so no cover is shown/.test(text(now)), text(now)); // each row's Details keep theirs
+  assert.ok(now.includes('Yardmaster jobs going spare · 2</h3>') && !/Yardmaster jobs going spare · 2<\/h3>\s*<p class="anote"/.test(now));
   assert.ok(text(now).includes('0630 YSTY01 YD YA PLN (spare)'), text(now));
   assert.ok(text(now).includes('0700 YSBY01 YD YA PLN (spare) returns 16th 0001'));
   assert.ok(now.indexOf('Yardmaster jobs going spare') > now.indexOf('YINS30') && now.indexOf('Yardmaster jobs going spare') < now.indexOf('Predicted jobs going spare'));
@@ -363,7 +366,8 @@ test('Jobs going spare: the yardmaster predictions, owner key only, both layouts
   assert.ok(text(owner).includes('Passed over: Dogwood, M (rank 30): on rest until Sat 14th 0500 when the call is made. Their YPRS02 FO 14th 0645 goes spare'));
   assert.ok(text(owner).includes('0645 YPRS02 YD FO PLN predicted from YM cover B112 call ~14th 0445'), text(owner));
   assert.ok(text(owner).includes('Predicted (only you see this): Birch, R (rank 50), its FO that day, would be moved up to YSTY01 (yardmaster) at its 0430 call.'));
-  assert.ok(text(owner).includes('Yardmaster spareboard at the check of 0056: YA01 Dogwood, M · rest until 14th 0500.'));
+  // No note under the heading for the owner either (owner, 2026-11-14: "For the YM jobs going spare remove the description").
+  assert.ok(!/Only you see the cover|Yardmaster spareboard at the check of/.test(text(owner)), text(owner));
   assert.ok(owner.includes('+ 1 predicted + 2 yardmaster</span>'));
   // The older table too; and another check's answer is not used.
   assert.ok(text(p.run('vacancies')(snap, false)).includes('Expected cover Birch, R estimate · call ~14th 0430'));
