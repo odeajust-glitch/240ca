@@ -642,11 +642,12 @@ test('review: the new sections are on for every signed-in member, and the page h
   assert.match(html, /\n  const MINE_MORE = true;\n/);
   assert.match(html, /const more = MINE_MORE \|\| PREVIEW;/);
   assert.match(html, /const poolsAsked = more \? getJSON\('data\/pools\.json'\)/); // the pool averages are only fetched for the comparison
-  // The test site's yard pieces and the owner's look at another code (owner, 2026-11-13: "Push to the test site.
-  // Also build in the ability to search other name codes so I can see other My Stats pages"): only under PREVIEW.
-  assert.match(html, /BoardMyStats\.html\(d\.stats, \{ range: mineRange, code: d\.code, more, pools, now, \.\.\.\(PREVIEW \? \{ yard: true, yardJobs, other: !!d\.other \} : \{\}\) \}\)/);
-  // Still the member's own record and nothing else: no code or hash goes in the request, but the owner's on the test site.
-  assert.match(html, /const look = PREVIEW \? mineLook : '';/);
+  // The yard pieces and the owner's look at another code (owner, 2026-11-13: "Push to the test site. Also build in the
+  // ability to search other name codes so I can see other My Stats pages"; then 2026-11-14, "do 1-3 5"): the yard
+  // pieces for every member, the look for the owner key, both sites.
+  assert.match(html, /BoardMyStats\.html\(d\.stats, \{ range: mineRange, code: d\.code, more, pools, now, yard: true, yardJobs, other: !!d\.other \}\)/);
+  // Still the member's own record and nothing else: no code or hash goes in the request, but the owner's.
+  assert.match(html, /const look = membersOwner \? mineLook : '';/);
   assert.match(html, /fetch\(look \? `auth\/stats\?code=\$\{encodeURIComponent\(look\)\}` : 'auth\/stats'/);
   assert.doesNotMatch(html.slice(html.indexOf('async function renderMine()'), html.indexOf('async function renderMembers(')), /accounts\/stats|people\.json/);
 });

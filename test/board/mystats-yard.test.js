@@ -275,13 +275,17 @@ test('yard: with the yard view a yard worker reads shifts, their job, the ends, 
   assert.match(r, /<h3>Every trip<\/h3>/);
 });
 
-test('yard: only the test site asks for the yard view and the yard jobs, and only the owner there can open another code', () => {
+// Owner, 2026-11-14, shown what was still on the test site: "do 1-3 5" (1 the yard pieces, 2 the owner's look at
+// another code's page, 3 the reset tracker by CATS's O-T, 5 the wrong-turn log).
+test('yard: every member gets the yard view and the yard jobs, both sites; the owner key opens another code, either site', () => {
   const tab = page.slice(page.indexOf('async function renderMine()'), page.indexOf('// Who gets alerts (owner, 2026-11-02)'));
-  assert.match(tab, /const yardJobsAsked = PREVIEW \? getJSON\('data\/yardjobs\.json'\)/);
-  assert.match(tab, /\.\.\.\(PREVIEW \? \{ yard: true, yardJobs, other: !!d\.other \} : \{\}\)/);
-  assert.match(tab, /BoardMyStats\.csv\(d\.stats, mineRange, \{ yard: PREVIEW \}\)/);
-  assert.match(tab, /const lookBox = \(\) => \{\n      if \(!PREVIEW\) return;/);
-  assert.match(tab, /const look = PREVIEW \? mineLook : '';/);
+  assert.match(tab, /const yardJobsAsked = getJSON\('data\/yardjobs\.json'\)\.catch/);
+  assert.match(tab, /now, yard: true, yardJobs, other: !!d\.other \}\);/);
+  assert.match(tab, /BoardMyStats\.csv\(d\.stats, mineRange, \{ yard: true \}\)/);
+  assert.match(tab, /const lookBox = \(\) => \{\n      if \(!membersOwner\) return;/);
+  assert.match(tab, /const look = membersOwner \? mineLook : '';/);
+  assert.doesNotMatch(tab.replace('const more = MINE_MORE || PREVIEW;', ''), /\bPREVIEW\b/); // that one: on for everyone already (MINE_MORE)
+  assert.match(page, /\n    membersOwner = !!\(h && OwnerKey\.has\(\)\);\n/, 'the owner key the Worker accepted');
   assert.equal((tab.match(/fetch\(/g) || []).length, 1, 'one request for the record: the code goes in only when look is set');
   // The site build writes the jobs file and the yard figures.
   const check = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/board/2026-10-15.json'), 'utf8'));
@@ -292,11 +296,10 @@ test('yard: only the test site asks for the yard view and the yard jobs, and onl
   const jobs = JSON.parse(fs.readFileSync(path.join(root, 'site', 'data', 'yardjobs.json'), 'utf8'));
   assert.ok(Array.isArray(jobs.jobs));
   assert.ok('yard' in JSON.parse(fs.readFileSync(path.join(root, 'site', 'data', 'pools.json'), 'utf8')));
-  // The test site's reset tracker beside the main one, the same shape.
+  // One reset tracker, by the yard O-T ends (none read in this fixture), and no test-site copy beside it.
   const main = JSON.parse(fs.readFileSync(path.join(root, 'site', 'data', 'resets.json'), 'utf8'));
-  const beside = JSON.parse(fs.readFileSync(path.join(root, 'site', 'data', 'resets-test.json'), 'utf8'));
-  assert.deepEqual(Object.keys(beside).filter((k) => k !== 'yardEnds').sort(), Object.keys(main).sort());
-  assert.deepEqual(beside.turns, main.turns, 'no O-T read yet: the same');
+  assert.ok('turns' in main && 'people' in main && 'offs' in main && main.yardEnds === 0);
+  assert.ok(!fs.existsSync(path.join(root, 'site', 'data', 'resets-test.json')));
 });
 
 test('yard: the reset tracker keeps the craft someone was on a yard job as', () => {
@@ -394,8 +397,9 @@ test('yard: back on duty before the rest they booked was up is said, with a chec
 });
 
 // Owner, 2026-11-13: yes to the reset tracker going by real yard ends, then "We wont need to assume yard off duty
-// times building 3 - 7 YD read". The test site's tracker first (data/resets-test.json); resets.json as it was.
-test('yard: the test site\'s reset tracker ends a yard shift 8 h and its O-T after on duty, where CATS has it', () => {
+// times building 3 - 7 YD read". The test site's tracker first (data/resets-test.json); both sites since 2026-11-14
+// ("do 1-3 5"): resets.json itself, which the boards, the reset alerts and My stats all go by.
+test('yard: the reset tracker ends a yard shift 8 h and its O-T after on duty, where CATS has it', () => {
   const on = m('2026-11-04 0800');
   const acc = R.empty();
   acc.trips[ME] = { [`YQQS01/${on}`]: { train: 'YQQS01', on, job: 'YQQS01', first: on - 120, last: on + 600, yard: true, sure: true },
@@ -407,11 +411,16 @@ test('yard: the test site\'s reset tracker ends a yard shift 8 h and its O-T aft
   assert.deepEqual(ends, { [`YQQS01/${on}`]: on + 480 + 130 });
   const trip = { train: 'YQQS01', on, last: on + 600, job: 'YQQS01', yard: true };
   assert.deepEqual(R.offDuty(trip, null, { ...acc, yardEnds: ends }), { off: on + 610, how: 'yard O-T' });
-  assert.deepEqual(R.offDuty(trip, null, acc), { off: on + 480, how: 'yard' }, 'the main site\'s tracker: 8 h as before');
+  assert.deepEqual(R.offDuty(trip, null, acc), { off: on + 480, how: 'yard' }, 'no O-T read: 8 h');
   assert.deepEqual(R.offDuty({ ...trip, train: 'YSBY03', job: 'YSBY03', on: on + 1440 }, null, { ...acc, yardEnds: ends }).off, on + 1440 + 720, 'no O-T yet: 12 h on a YSBY job');
-  // The page reads the test site's file only on the test site.
+  // The page reads one tracker, on both sites; the laptop builds it with the yard ends and hands My stats the same.
   const loader = page.slice(page.indexOf('const resetsFile = '), page.indexOf('// The resets file for Person search'));
-  assert.match(loader, /PREVIEW \? getJSON\('data\/resets-test\.json'\)/);
-  assert.match(loader, /: getJSON\('data\/resets\.json'\)\);/);
+  assert.match(loader, /^const resetsFile = \(\) => getJSON\('data\/resets\.json'\);/);
+  assert.doesNotMatch(page, /resets-test\.json'\)/);
+  const site = fs.readFileSync(path.join(__dirname, '../../lib/board/site.js'), 'utf8');
+  assert.ok(site.includes("  try { accT = { ...resets, yardEnds: MyStatsFiles.yardEnds(resets, yardRuns) }; }"));
+  assert.ok(site.includes("resetsOut = { turns: Resets.byTurn(accT, people, resets.last), people: Resets.personResets(accT, people, resets.last), offs: Resets.trainOffs(accT) };"));
+  assert.ok(site.includes('nowSeen, acc: accT, yard: yardRuns }'));
+  assert.ok(!site.includes("'resets-test.json'"));
   assert.doesNotMatch(page, /getJSON\('data\/resets\.json'\)\.then/, 'every other read goes through resetsFile');
 });

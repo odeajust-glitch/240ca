@@ -82,3 +82,12 @@ test('still the test site’s: 9, 16, the purple pieces and the Likely-call test
   assert.ok(html.includes("if (PREVIEW && at < 0) ANA_SECS.push(['likely', 'Likely-call test']);"));
   assert.ok(html.includes('likely: PREVIEW ? likelyTest : anaHome'));
 });
+
+// Owner, 2026-11-14, shown what was still on the test site: "do 1-3 5". Item 5: Assignment errors' log of a conductor on
+// another pool's turn (its cards and the table switch) and the turn charged under "Crew that went", for every member.
+test('14 Nov, 5: the wrong-turn log and the turn charged, for every member, both sites', () => {
+  assert.ok(html.includes("    const crewWrong = (() => { try { return joinOld('crewWrong', arch.crewWrong || [], found.crewWrong || []); }"));
+  assert.ok(html.includes('    ${crewWrong.length ? `<div class="ae2-chips" role="group" aria-label="How to show it">'));
+  assert.equal((html.match(/\$\{chargedLines\(r\)\}/g) || []).length, 2, 'the cards and the older table');
+  assert.doesNotMatch(html, /PREVIEW \? chargedLines|PREVIEW && crewWrong|crewWrong = PREVIEW/);
+});

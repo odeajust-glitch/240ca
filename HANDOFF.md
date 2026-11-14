@@ -1,6 +1,30 @@
 # HANDOFF — read this before doing anything
 
-## Test site → main: what still needs his approval — LISTED FOR HIM 14 Nov 2026, about 05:10 Toronto (the clean-up chat). NOTHING CHANGED; waiting on his reply per item (P main site / K keep testing / X take off)
+## Items 1, 2, 3 and 5 of the 05:10 list on to the main site — 14 Nov 2026, about 05:40 Toronto, at his word ("do 1-3 5, where do I see 4"). Page + laptop. WAITING ON ONE LAPTOP PULL + RESTART (3 is laptop code)
+
+- **1 My stats' yard pieces, every member, both sites** (`renderMine`): `yard: true`, `data/yardjobs.json` always fetched,
+  the CSV with `{ yard: true }` (a road worker's spreadsheet gains an empty "Rest booked until" column; their page is
+  otherwise as before, as `mystats-yard.test.js` already pinned).
+- **2 "Open another name code's page", the owner key on either site**: `look` and `lookBox` by `membersOwner` (the key
+  the Worker accepted), not `PREVIEW`; the box's line "Test site, owner key only." now "Owner key only.". The Worker's
+  `/auth/stats?code=` already answers the owner key on both sites (checked 13 Nov).
+- **3 The reset tracker by CATS's yard O-T, everywhere** (`lib/board/site.js`): `resets.json` is built from `accT` =
+  the records plus `MyStatsFiles.yardEnds` (8 h and the O-T after on duty where CATS has it, else 8 / 12 h), with a
+  `yardEnds` count; `resets-test.json` is no longer written (the publish clears it); My stats gets `acc: accT`, so its
+  own resets agree; the reset alerts read `resets.json` (board-auto.js), so they agree too. The page reads
+  `resets.json` only (`resetsFile`), and no longer re-reads when the owner key turns the test site on.
+- **5 Assignment errors' wrong-turn log and the turn charged, every member, both sites**: `crewWrong` always joined,
+  the "By train / Conductor on the wrong turn: table N" switch, `chargedLines(r)` in the cards and the older table.
+- **4 (not picked) is in** Analytics → My week → a followed turn's card, "Sleep this week" (`anaMyWeek2`, `PREVIEW`),
+  only for a turn with calls that week; told him.
+- **Checked:** suite 642 of 642 (`mystats-yard.test.js`, `mystats-review.test.js` changed to the new state quoting him;
+  `test-site-promoted.test.js` +1 for 5); each item re-gated on purpose, a test failed every time. In a browser with this
+  branch's page over the live main site: as a member, Analytics → Assignment errors "Conductor on the wrong turn: table
+  7", the table drawn; as him, My stats' box "Owner key only." opened another code ("…'s page, opened with the owner
+  key"); no page errors. **Not seen live:** 3 (laptop code: after the pull + restart, the board colours, the reset
+  alerts and My stats move to the O-T ends for yard workers together).
+
+## Test site → main: what still needs his approval — LISTED FOR HIM 14 Nov 2026, about 05:10 Toronto (the clean-up chat). HIS ANSWER "do 1-3 5, where do I see 4": 1, 2, 3 and 5 ON BOTH SITES (the section above); 4 he was told where it is; 6 to 11 not picked
 
 **Owner:** "review things i need to approve to go from the test site to the main". From the code at `33a1cd0` (every
 `PREVIEW` test in `public/board.html`; Job Aids, Page Health's yardmaster box, Herding CATS and the header line are on both

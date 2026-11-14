@@ -3332,9 +3332,9 @@ function paintResets() {
     if (cell) cell.textContent = r && r.level ? resetText(r) : '';
   });
 }
-// The test site's reset tracker (owner, 2026-11-13): yard shifts by their O-T in CATS, data/resets-test.json
-// (lib/board/site.js); resets.json where that is not there yet. Every other page reads resets.json.
-const resetsFile = () => (PREVIEW ? getJSON('data/resets-test.json').then((r) => (r && r.turns ? r : getJSON('data/resets.json'))).catch(() => getJSON('data/resets.json')) : getJSON('data/resets.json'));
+// The reset tracker (lib/board/site.js): yard shifts end by their O-T in CATS where it is in (owner, 2026-11-13), on
+// both sites since 2026-11-14 (owner: "do 1-3 5"); the test site had it first as data/resets-test.json.
+const resetsFile = () => getJSON('data/resets.json');
 // The resets file for Person search (each person's resets), loaded once.
 const loadResets = () => (RESETS ? Promise.resolve(RESETS) : resetsFile().then((r) => { if (r && r.turns) RESETS = r; return RESETS; }).catch(() => null));
 function askResets(s) {
@@ -4698,7 +4698,7 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], c
   const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
   const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
   const line = (label, html) => `<div><dt>${label}</dt><dd>${html}</dd></div>`;
-  const went = (r) => line('Crew that went', r.onDuty ? `${esc(r.crew || 'not shown')} <span class="muted">· on duty ${esc(dt(r.onDuty))}</span>${PREVIEW ? chargedLines(r) : ''}` : '<span class="muted">not on duty yet</span>');
+  const went = (r) => line('Crew that went', r.onDuty ? `${esc(r.crew || 'not shown')} <span class="muted">· on duty ${esc(dt(r.onDuty))}</span>${chargedLines(r)}` : '<span class="muted">not on duty yet</span>');
   const span = (a, b) => `${stampBtn(a)}${b && b !== a ? ` – ${stampBtn(b)}` : ''}`;
   const card = (title, sub, st, lines, end) => `<div class="ae2-card"><h4>${title}${sub ? ` <small>${esc(sub)}</small>` : ''} ${ae2Chip(st)}</h4><dl>${lines.join('')}</dl><p class="ae2-end">${end}</p></div>`;
   const pool = (r) => {
@@ -4767,7 +4767,7 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], c
   }).join('');
   return `<p class="anote">Three checks on every train, kept apart. <b>Wrong pool</b>: the line-up showed the train for one pool when the calling sequence said another. <b>CATS listed the wrong turn</b>: CATS's jobs going spare (option 5) had a job under a turn the order doesn't have on that train; a one-check blip isn't counted. <b>Spare job missing from CATS</b>: the order says a job goes spare and CATS didn't list it for 30 minutes or more.</p>
     <p class="anote"><b>Showing now</b>: in the latest check. <b>Needs a look</b>: still wrong when the train went, or a pool crew went and the checks don't show it matching the sequence. <b>Stopped showing</b>: the mismatch went away before the train went; that is not proof the right crew was called. <b>Fine in the end</b>: the train went as the sequence said. <b>Can't tell</b>: the saved checks don't show how it ended. A train can carry more than one.</p>
-    ${PREVIEW && crewWrong.length ? `<div class="ae2-chips" role="group" aria-label="How to show it"><button type="button" data-ae2view="list" aria-pressed="true">By train</button><button type="button" data-ae2view="table" aria-pressed="false">Conductor on the wrong turn: table <b>${crewWrong.length}</b></button></div>
+    ${crewWrong.length ? `<div class="ae2-chips" role="group" aria-label="How to show it"><button type="button" data-ae2view="list" aria-pressed="true">By train</button><button type="button" data-ae2view="table" aria-pressed="false">Conductor on the wrong turn: table <b>${crewWrong.length}</b></button></div>
     <div data-ae2-table hidden>${wrongTurnTable(crewWrong)}</div>` : ''}<div data-ae2-listwrap>
     ${items.length ? `<p class="ae2-count">${plural(items.length, 'train')} with something flagged in these dates. Tap a train for what was wrong and how it ended.</p>
     <div class="ae2-chips">${chips}</div><section class="sheet ae2-list">${rows}<p class="empty" data-ae2-empty hidden>No trains with that outcome.</p></section>` : '<p class="empty">No assignment errors in the selected dates.</p>'}</div>`;
@@ -4823,7 +4823,7 @@ function anaRunarounds({ runarounds }) {
       <td class="num">${shown(r)}</td>
       <td>${poolName(r.actual)}${r.turn ? ` <button type="button" class="qbtn" data-q="${esc(r.turn)}" data-kind="turn">${esc(r.turn)}</button>` : ''}</td>
       <td>${poolName(r.expected)}</td>
-      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>${PREVIEW ? chargedLines(r) : ''}` : '<span class="muted">not on duty yet</span>'}</td>
+      <td class="num">${r.onDuty ? `${esc(r.crew || '—')}<div class="crew">on duty ${esc(dt(r.onDuty))}</div>${chargedLines(r)}` : '<span class="muted">not on duty yet</span>'}</td>
       <td>${r.poolOutcome ? esc(r.poolOutcome) : seqResult(r)}</td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">No trains out of sequence in the dates picked.</p>';
   return `<p class="anote">Every train the board showed out of sequence (the "To check" line: "ordered for A but the sequence says B", or a train that went to another pool). Each check it showed wrong is kept, then the crew the Call Board shows went. Observations after on-duty remain evidence but cannot confirm the pre-departure outcome. <b>Runaround</b>: still out of sequence the last time it showed. <b>Mismatch cleared</b>: observed pool equality; this alone does not prove a correct crew call. Tap a time to open that snapshot.</p>
@@ -6163,8 +6163,6 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
-      // The boards were coloured from resets.json before the owner key was known: the test site's tracker instead.
-      if (RESETS) resetsFile().then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
       paintMine();
       paintShotCode(); // the faint visible code (test site only)
       // The likely-call test is an Analytics page on the test site (it was in the Test tab until that went, 2026-11-10).
@@ -6285,20 +6283,21 @@ source().then(async (src) => {
     let d = null;
     let status = 0;
     const more = MINE_MORE || PREVIEW;
-    // The test site (board-test with the owner key): the yard pieces (owner, 2026-11-13: real yard shift ends,
-    // overtime, the yard job, the yard beside them, days off, the crew, how each yard job runs) and the box to open
-    // another name code's page. Members, and the main site, get neither.
-    const look = PREVIEW ? mineLook : '';
+    // The yard pieces (owner, 2026-11-13: real yard shift ends, overtime, the yard job, the yard beside them, days off,
+    // the crew, how each yard job runs): every member, both sites, since 2026-11-14 (owner, 2026-11-14: "do 1-3 5"); the test site's first.
+    // The box to open another name code's page: the owner key (checked by the Worker, membersOwner), either site, the
+    // same day. A road worker's page is drawn as before.
+    const look = membersOwner ? mineLook : '';
     // Each pool's average and middle half (no one's own figures), for the pool comparison.
     const poolsAsked = more ? getJSON('data/pools.json').catch(() => null) : Promise.resolve(null);
-    const yardJobsAsked = PREVIEW ? getJSON('data/yardjobs.json').catch(() => null) : Promise.resolve(null);
+    const yardJobsAsked = getJSON('data/yardjobs.json').catch(() => null);
     try { const r = await fetch(look ? `auth/stats?code=${encodeURIComponent(look)}` : 'auth/stats', { cache: 'no-store', headers: OwnerKey.headers() }); status = r.status; if (r.ok) d = await r.json(); } catch (e) { /* offline */ }
     const [pools, yardJobs] = await Promise.all([poolsAsked, yardJobsAsked]);
     if (mode !== 'mine') return;
     // The owner's box: open another name code's page, or go back to their own.
     const lookBox = () => {
-      if (!PREVIEW) return;
-      view.insertAdjacentHTML('afterbegin', `<form class="mslook" id="mslook"><label for="mslookcode">Open another name code's page</label><span><input id="mslookcode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. JUOD" value="${esc(look)}"><button type="submit" class="ms-btn">Open</button>${look ? '<button type="button" class="ms-btn" id="mslookback">Back to mine</button>' : ''}</span><small>Test site, owner key only.</small></form>`);
+      if (!membersOwner) return;
+      view.insertAdjacentHTML('afterbegin', `<form class="mslook" id="mslook"><label for="mslookcode">Open another name code's page</label><span><input id="mslookcode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. JUOD" value="${esc(look)}"><button type="submit" class="ms-btn">Open</button>${look ? '<button type="button" class="ms-btn" id="mslookback">Back to mine</button>' : ''}</span><small>Owner key only.</small></form>`);
       const form = document.getElementById('mslook');
       form.onsubmit = (e) => { e.preventDefault(); const v = String(document.getElementById('mslookcode').value || '').trim().toUpperCase(); if (v === look) return; mineLook = v; renderMine(); };
       const back = document.getElementById('mslookback');
@@ -6319,7 +6318,7 @@ source().then(async (src) => {
     // the home screen icon can leave an iPhone on a preview with no way back.
     const csv = async () => {
       const name = `${d.other ? `trips-${d.code}` : 'my-trips'}-${new Date(torontoNowMin() * 60000).toISOString().slice(0, 10)}.csv`;
-      const text = '\ufeff' + BoardMyStats.csv(d.stats, mineRange, { yard: PREVIEW });
+      const text = '\ufeff' + BoardMyStats.csv(d.stats, mineRange, { yard: true });
       try {
         const file = new File([text], name, { type: 'text/csv' });
         if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { await navigator.share({ files: [file], title: 'My trips' }); return; }
@@ -6333,7 +6332,7 @@ source().then(async (src) => {
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     };
     const draw = () => {
-      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now, ...(PREVIEW ? { yard: true, yardJobs, other: !!d.other } : {}) });
+      view.innerHTML = BoardMyStats.html(d.stats, { range: mineRange, code: d.code, more, pools, now, yard: true, yardJobs, other: !!d.other });
       BoardMyStats.wire(view.firstElementChild, (k) => { mineRange = k; draw(); }, csv);
       mineJump(view); // whole-site review 2026-11-12, item 6 (every member since that evening, his pick 6)
       lookBox();
@@ -8914,7 +8913,8 @@ source().then(async (src) => {
     const catsMissing = joinOld('catsMissing', arch.catsMissing || [], found.catsMissing).filter((r) => inDates(r.first));
     // A conductor on another pool's turn and when it was put right (owner, 2026-11-14): the test site's for now.
     // (An older board-analytics.js without this kind, from a phone's cache: the site's own list alone.)
-    const crewWrong = PREVIEW ? (() => { try { return joinOld('crewWrong', arch.crewWrong || [], found.crewWrong || []); } catch (e) { return found.crewWrong || []; } })().filter((r) => inDates(r.first)) : [];
+    // The conductor-on-the-wrong-turn log and the turn charged: every member, both sites, since 2026-11-14 (owner, 2026-11-14: "do 1-3 5").
+    const crewWrong = (() => { try { return joinOld('crewWrong', arch.crewWrong || [], found.crewWrong || []); } catch (e) { return found.crewWrong || []; } })().filter((r) => inDates(r.first));
     const runLog = joinOld('runLog', arch.runLog || [], found.runLog).filter((r) => inDates(r.seen));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
