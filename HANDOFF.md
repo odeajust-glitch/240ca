@@ -209,6 +209,16 @@ otherwise rank 410, YBHS01 0800 going spare). **To check after 0700:** who the C
 and YBHS01 (crew names in data/crew.json `working`, opened with /api/crewkey; turns in the day file's `yardJobs`); a
 check-in is booked in this session for 07:45 Toronto. A conflict = report it to him, rule unchanged until he says.
 
+**First real case, 14 Nov, read from the day file at 04:55 (another chat):** at 0421 the spare YA01 (rank 140) was on the YM
+spareboard, rest until 0500; option 5 had YSTY01 0630, YSBY01 0700, YSBY06 1430. At 0432 YA01 was off the YM spareboard; at
+0438 YSTY01 was off option 5 and the Call Board showed YSTY01 0630 with YA YA01. **So the spare got YSTY01, the earliest
+job, at about its 0430 call while his rest ran to 0500** (the site had predicted rank 330, skipping the spare as on rest at
+the call, and kept him for YSBY01 as the tie). YPRS02 0645 then ran with its own FO (helper B120). **The owner is asking
+the yardmasters why; no rule changed** ("So I will figure out what happened there when I talk to the yardmasters, so lets
+just make another check against our predictions as they stand now"). The site's predictions at 0448, to check: YSBY01 →
+rank 410 (step 3; YBHS01 FO 0800 would go spare), YSBY06 → rank 290 (step 3; YMPS60 FO 2359 would go spare); no tie left.
+That chat has check-ins at 05:20 (YSBY01) and 12:45 (YSBY06).
+
 ## YM predictions in Jobs going spare, OWNER KEY ONLY, both sites — BUILT 14 Nov 2026, about 01:15 Toronto (page + `public/board-ym.js`). WAITING ON ONE LAPTOP PULL (+ the restart already owed for the yardmaster spareboard read); then his checking them against what happens
 
 **Owner:** "So put the spare YM jobs in the jobs going spare tab. but only show the predictions to anyone with an owners
