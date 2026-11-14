@@ -6,7 +6,8 @@
 //   (site-review.test.js)   10, 11 Agreements (ask-examples, ask-review)   12 Snapshots drawn like Current
 //   (current-review)   13, 14 Members (members-review)   and, here: 5 Turn History's layout, 7 Article
 //   18.6(b) as rows, 15 the compact header.
-// Not picked: 9, My week's "Sleep this week" box: still the test site's. Picked but held back: 16, the "newer
+// Not picked: 9, My week's "Sleep this week" box (on both sites since 14 Nov: "PUSH 4, looks good", item 4 of that
+// morning's list). Picked but held back: 16, the "newer
 // version" bar, which cannot show on the live sites as built (the page's address answers without an ETag,
 // Last-Modified or Content-Length once Cloudflare compresses it): still the test site's, told to him.
 // Also still the test site's, at his word: the TEST SITE badge, the purple pieces, Analytics → Likely-call test.
@@ -68,9 +69,9 @@ test('15. the compact header on a phone, for every member; the TEST SITE badge s
   assert.ok(html.includes('<title>Herding CATS</title>') && html.includes('<h1>Herding CATS</h1>'));
 });
 
-test('still the test site’s: 9, 16, the purple pieces and the Likely-call test', () => {
-  // 9 (not picked): My week's "Sleep this week".
-  assert.ok(html.includes('    if (PREVIEW && trips.length) {') && html.includes('// Sleep (test site; owner, 2026-11-10)'));
+test('still the test site’s: 16, the purple pieces and the Likely-call test; 9 on both sites since 14 Nov', () => {
+  // 9 (not picked on 12 Nov): My week's "Sleep this week", every member since 14 Nov (owner: "PUSH 4, looks good").
+  assert.ok(html.includes('    if (trips.length) {') && html.includes('// Sleep (owner, 2026-11-10)') && !html.includes('if (PREVIEW && trips.length)'));
   // 16 (held back): the bar asks for the page's version tag, which the live sites do not send.
   const bar = cut('  async function checkSiteVersion() {', '  setInterval(checkSiteVersion');
   assert.ok(bar.includes("if (!PREVIEW || document.getElementById('newversion')) return;"));

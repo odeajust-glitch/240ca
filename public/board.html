@@ -4961,9 +4961,10 @@ function anaMyWeek2({ weeks = [] }) {
     ].join('');
     const reset = resetKey && RESETS && RESETS.turns ? RESETS.turns[resetKey] : null;
     const calls = band.ok + band.warn + band.bad;
-    // Sleep (test site; owner, 2026-11-10): what the week's calls cost.
+    // Sleep (owner, 2026-11-10): what the week's calls cost. The test site's first; every member, both sites, since
+    // 2026-11-14 (owner, shown where it was: "PUSH 4, looks good").
     let sleepBox = '';
-    if (PREVIEW && trips.length) {
+    if (trips.length) {
       const gapsNow = trips.map(({ r }) => gapOf(call(r))).filter((g) => g != null);
       const lost = gapsNow.filter((g) => g < 0).reduce((n, g) => n - g, 0);
       const waited = gapsNow.filter((g) => g > 0).reduce((n, g) => n + g, 0);

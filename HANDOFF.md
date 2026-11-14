@@ -1,5 +1,12 @@
 # HANDOFF — read this before doing anything
 
+## "Sleep this week" (My week) on to the main site — 14 Nov 2026, about 06:00 Toronto, at his word ("PUSH 4, looks good"). Page only. WAITING ON ONE LAPTOP PULL
+
+Item 4 of the 05:10 list (not picked on 12 Nov): `anaMyWeek2`'s `sleepBox` for every member, both sites (`if (trips.length)`,
+no `PREVIEW`). `test-site-promoted.test.js` changed to it, quoting him; re-gated on purpose, caught. Suite 642 of 642.
+In a browser with this branch's page over the live main site as a member following three turns (Analytics → My week):
+three "Sleep this week" boxes with their seven lines, no page errors.
+
 ## Items 1, 2, 3 and 5 of the 05:10 list on to the main site — 14 Nov 2026, about 05:40 Toronto, at his word ("do 1-3 5, where do I see 4"). Page + laptop. WAITING ON ONE LAPTOP PULL + RESTART (3 is laptop code)
 
 - **1 My stats' yard pieces, every member, both sites** (`renderMine`): `yard: true`, `data/yardjobs.json` always fetched,
@@ -24,7 +31,7 @@
   key"); no page errors. **Not seen live:** 3 (laptop code: after the pull + restart, the board colours, the reset
   alerts and My stats move to the O-T ends for yard workers together).
 
-## Test site → main: what still needs his approval — LISTED FOR HIM 14 Nov 2026, about 05:10 Toronto (the clean-up chat). HIS ANSWER "do 1-3 5, where do I see 4": 1, 2, 3 and 5 ON BOTH SITES (the section above); 4 he was told where it is; 6 to 11 not picked
+## Test site → main: what still needs his approval — LISTED FOR HIM 14 Nov 2026, about 05:10 Toronto (the clean-up chat). HIS ANSWER "do 1-3 5, where do I see 4": 1, 2, 3 and 5 ON BOTH SITES (the section above); then "PUSH 4, looks good": 4 ON BOTH SITES too; 6 to 11 not picked
 
 **Owner:** "review things i need to approve to go from the test site to the main". From the code at `33a1cd0` (every
 `PREVIEW` test in `public/board.html`; Job Aids, Page Health's yardmaster box, Herding CATS and the header line are on both
