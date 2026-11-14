@@ -237,6 +237,33 @@ endings aside). **His eye test, about 01:02: "I cant" (see it) at the default 2%
 test is next ("testing 2 now"): a photo of the screen with another phone → Page Health → Trace a screenshot → the
 photo box → read the code → Look up. If the camera can't read it at 2 / 3, the picker on his phone steps up (3 / 4)
 with no pull; whatever reads becomes the default.
+**His camera test, 14 Nov (14 Nov 01:17 Toronto): "I took a picture of a screen shot off my laptop, it didnt work for
+light or dark"; his four pictures (two phone screenshots, Search Review dark and Members light, at 2% / 3%; his
+phone's photos of them shown on the laptop's screen, 3000 x 4000).** Read here (scratchpad `photos`): in the
+screenshots the code is 5 levels darker on the light page and about 8 brighter on the near-black one (3% of white).
+In the photos: **dark, the code is there** (8MGZ faintly by eye beside "You", zoomed in); the first photo step's
+blur put glowing halos round the bright text that buried it; **light, nothing**: the laptop screen's fine vertical
+lines and dust are stronger than a 2% shade, whatever is done to the photo. The hidden mark reads from neither (z
+4 to 5), as expected.
+**Changed (`public/board.html`, test site only, WAITING ON ONE LAPTOP PULL):**
+- **The photo step is now `ShotMark.reveal`** (`sharpen` gone): dark or light page from the middle of the photo
+  (median under 110 = dark); the page's background followed from below on a dark page (the darkest within 3 cells
+  of a copy 8 times smaller, smoothed) or from above on a light one, so its text never pulls it; only the shades
+  just past it are stretched (x gain, default 10, slider 3 to 30). Nothing is blurred across the text: **no glow.**
+  On his dark photo it reads 8MGZ in six places (below the menu, beside "Updated", four in Questions Asked).
+- **Light pages start at 3% now** (dark stays 3%): 2% did not survive his laptop-screen photo. **Light and dark are
+  picked apart** on his phone: light 1, 1.5, 2, 3, 4, 5%; dark 2, 3, 4, 5, 7%; kept as `shotCodeLevel` "l/d" (the
+  first build's "2/3" still reads); a bad half falls back to its own default.
+- **Tap the brought-out photo for full size** (scroll round it in its box, 75% of the screen high; tap again to fit).
+**Checked:** suite 614 of 614 (`shotmark.test.js` 9: made-up dark and light photos with strong text 20 px from a
+faint mark: the mark stands out by more than 40, nothing beside the text by more than a third of that; each pick
+apart; the old stored value). 8 breaks (background blurred across the text, dark and light swapped, gain ignored,
+default 2/3, a dark strength gone, only light kept, box for everyone, a bad stored value kept): a test failed each
+time. In a browser over the real board-test as him: 3% black / 3% white, the pickers redraw and keep "1.5/5", his
+dark photo in the box (1600 x 2133), tapped to full size and scrolled: 8MGZ beside "You"; no errors, no sideways
+scroll.
+**Next:** after the pull: his eye test at light 3%, then the same photos again (and a phone's own screen if he can
+borrow a second phone: the real case, likely easier than a laptop screen).
 
 ## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
 

@@ -153,28 +153,32 @@ test('the visible code: the same number as 4 characters, one code per number, re
 
 // Owner, 2026-11-13: "is there anyway to make it less visible", then "make it as faint as you think is possbile, Ill
 // test it and tell you if i can see it, then we can test with a camera".
-test('the visible code: test site only, 2% black on a light page and 3% white on a dark one unless he picks another on his phone, 12 codes, the hidden mark untouched', () => {
+// 2026-11-14, his photos of a screenshot on his laptop's screen: the dark page's 3% read once brought out, the light
+// page's 2% did not, so light pages start at 3%, and light and dark are picked apart.
+test('the visible code: test site only, 3% black on a light page and 3% white on a dark one unless he picks others on his phone, 12 codes, the hidden mark untouched', () => {
   const code = cut('  let shotCodeFor = \'\';', '  function traceSection() {');
   assert.ok(code.includes("if (!PREVIEW || !Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotCodeFor = ''; return; }"), 'the test site with the owner key only, and only with a number from the Worker');
   assert.ok(code.includes("el.style.backgroundImage = shotCodeTile(ShotMark.codeOf(mark), light, level);"), 'the same number as the hidden mark, at the strength picked');
   assert.ok(code.includes("const key = `${mark}|${light}|${level}`;"), 'drawn again when the strength changes');
   // The tile, as the page builds it, at each strength he can pick.
-  const parts = new Function(`${cut('  const SHOTCODE_LEVELS = ', '  function paintShotCode() {')}\nreturn { tile: shotCodeTile, levels: SHOTCODE_LEVELS, level: SHOTCODE_LEVEL, levelNow: shotCodeLevel };`)();
+  const parts = new Function(`${cut('  const SHOTCODE_LIGHT = ', '  function paintShotCode() {')}\nreturn { tile: shotCodeTile, light: SHOTCODE_LIGHT, dark: SHOTCODE_DARK, level: SHOTCODE_LEVEL, levelNow: shotCodeLevel };`)();
   const svgOf = (u) => Buffer.from(/base64,([^"]+)"/.exec(u)[1], 'base64').toString('utf8');
   const light = svgOf(parts.tile('RFQ8', true)), dark = svgOf(parts.tile('RFQ8', false));
-  assert.equal(parts.level, '2/3');
-  assert.ok(light.includes('fill="#000" fill-opacity="0.02"') && dark.includes('fill="#fff" fill-opacity="0.03"'), 'the faintest the photo stand-in read once sharpened, with some room');
-  assert.deepEqual(parts.levels.map(([k]) => k), ['1/2', '1.5/2.5', '2/3', '3/4', '5/7']);
-  for (const [k] of parts.levels) {
-    const [l, dk] = k.split('/').map(Number);
-    assert.ok(svgOf(parts.tile('RFQ8', true, k)).includes(`fill-opacity="${l / 100}"`) && svgOf(parts.tile('RFQ8', false, k)).includes(`fill-opacity="${dk / 100}"`), k);
-  }
-  // Kept on his phone only; anything else there reads as the default.
+  assert.equal(parts.level, '3/3');
+  assert.ok(light.includes('fill="#000" fill-opacity="0.03"') && dark.includes('fill="#fff" fill-opacity="0.03"'), 'his photos: dark read at 3%, light not at 2%');
+  assert.deepEqual(parts.light, [1, 1.5, 2, 3, 4, 5]);
+  assert.deepEqual(parts.dark, [2, 3, 4, 5, 7]);
+  for (const l of parts.light) assert.ok(svgOf(parts.tile('RFQ8', true, `${l}/3`)).includes(`fill="#000" fill-opacity="${l / 100}"`), `light ${l}`);
+  for (const dk of parts.dark) assert.ok(svgOf(parts.tile('RFQ8', false, `3/${dk}`)).includes(`fill="#fff" fill-opacity="${dk / 100}"`), `dark ${dk}`);
+  // Kept on his phone only; light and dark each fall back to the default on their own.
   const keep = global.localStorage;
   try {
-    global.localStorage = { getItem: () => '1.5/2.5' }; assert.equal(parts.levelNow(), '1.5/2.5');
-    global.localStorage = { getItem: () => '9/9' }; assert.equal(parts.levelNow(), '2/3');
-    global.localStorage = { getItem: () => { throw new Error('blocked'); } }; assert.equal(parts.levelNow(), '2/3');
+    global.localStorage = { getItem: () => '1.5/2' }; assert.equal(parts.levelNow(), '1.5/2');
+    global.localStorage = { getItem: () => '4/9' }; assert.equal(parts.levelNow(), '4/3');
+    global.localStorage = { getItem: () => '9/7' }; assert.equal(parts.levelNow(), '3/7');
+    global.localStorage = { getItem: () => '2/3' }; assert.equal(parts.levelNow(), '2/3', 'what the first build kept still reads');
+    global.localStorage = { getItem: () => null }; assert.equal(parts.levelNow(), '3/3');
+    global.localStorage = { getItem: () => { throw new Error('blocked'); } }; assert.equal(parts.levelNow(), '3/3');
   } finally { global.localStorage = keep; }
   for (const s of [light, dark]) assert.ok(s.match(/>RFQ8</g).length >= 12);
   // Scattered, not in rows (an even grid of codes gave emailed dark screenshots a spacing the reader took for the
@@ -199,38 +203,47 @@ test('the visible code: test site only, 2% black on a light page and 3% white on
 
 test('a photo of a screen: the code box on the test site only, matched against the Worker’s numbers, nothing sent anywhere', () => {
   assert.ok(html.includes("${traceLast}</div>${PREVIEW ? traceCodeBox() : ''}</div></section>"), 'the main site’s Page Health is as it was');
-  assert.ok(html.includes("${PREVIEW ? ' For a photo of a screen, pick it in the box below: it sharpens the photo so the faint code shows.' : ''}"));
+  assert.ok(html.includes("${PREVIEW ? ' For a photo of a screen, pick it in the box below: it brings out the faint shades so the code shows.' : ''}"));
   const look = cut('  async function traceByCode(text) {', '  // Who a mark could belong to');
   assert.ok(look.includes("const hits = cands.filter((c) => c.id !== 'owner-trial' && c.mark === mark);"), 'the trial’s number was never drawn as a code');
   assert.ok(look.includes("if (!cands.ready) return"), 'before the Worker gives out numbers it says so');
   assert.ok(!look.includes('fetch('), 'the only request is the Members list traceCandidates already asks for');
 });
 
-// The trace box sharpens a photo of a screen so the faint code stands out (owner, 2026-11-13: "then we can test with a
-// camera"): on the phone, nothing sent anywhere, the test site only.
-test('a photo of a screen: the page sharpens it so a faint code stands out, on the phone, test site only', () => {
-  // A made-up photo: a light page (248) with a slow glow across it, noise, and a faint mark 5 levels darker.
-  const W = 240, H = 160, px = new Uint8ClampedArray(W * H * 4);
-  let seed = 7; const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  const inMark = (x, y) => x >= 100 && x < 140 && ((y >= 70 && y < 74) || (y >= 86 && y < 90) || (x < 104 && y >= 70 && y < 90));
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const v = 248 - 30 * (x / W) - 20 * (y / H) - (inMark(x, y) ? 5 : 0) + (rnd() - 0.5) * 4;
-    const p = (y * W + x) * 4; px[p] = px[p + 1] = px[p + 2] = v; px[p + 3] = 255;
+// The trace box brings out the faint shades in a photo of a screen so the code shows (owner, 2026-11-13: "then we can
+// test with a camera"; 2026-11-14, his photos: the first way's glow round bright text hid the code): on the phone,
+// nothing sent anywhere, the test site only.
+test('a photo of a screen: the faint shades next to the page are brought out, with no glow round its text, on the phone, test site only', () => {
+  // Made-up photos, 240 x 160: a slow glow across the page, noise, a block of strong text and a faint mark 20 px from it.
+  const photo = (bg, slope, text, markBy) => {
+    const W = 240, H = 160, px = new Uint8ClampedArray(W * H * 4);
+    let seed = 7; const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const inText = x >= 40 && x < 90 && y >= 60 && y < 100;
+      const inMark = x >= 110 && x < 150 && ((y >= 70 && y < 74) || (y >= 86 && y < 90) || (x < 114 && y >= 70 && y < 90));
+      const v = inText ? text : bg + slope * (x / W) + (inMark ? markBy : 0) + (rnd() - 0.5) * 3;
+      const p = (y * W + x) * 4; px[p] = px[p + 1] = px[p + 2] = v; px[p + 3] = 255;
+    }
+    return { px, W, H };
+  };
+  const inMark = (x, y) => x >= 112 && x < 148 && ((y >= 71 && y < 73) || (y >= 87 && y < 89) || (x < 113 && y >= 71 && y < 89));
+  for (const [name, ph] of [['dark page', photo(8, 14, 210, 6)], ['light page', photo(238, -20, 30, -5)]]) {
+    const r = SM.reveal(ph.px, ph.W, ph.H, { gain: 10 });
+    assert.equal(r.dark, name === 'dark page', name);
+    assert.equal(r.px.length, ph.px.length);
+    const at = (x, y) => r.px[(y * ph.W + x) * 4];
+    const avg = (f) => { let s2 = 0, n = 0; for (let y = 10; y < ph.H - 10; y++) for (let x = 10; x < ph.W - 10; x++) if (f(x, y)) { s2 += at(x, y); n++; } return s2 / n; };
+    const mark = avg(inMark);
+    const plain = avg((x, y) => x >= 160 && x < 200 && y >= 60 && y < 100);
+    const nearText = avg((x, y) => x >= 92 && x < 102 && y >= 60 && y < 100); // just right of the strong text
+    assert.ok(Math.abs(mark - plain) > 40, `${name}: the mark stands out (${mark.toFixed(0)} against ${plain.toFixed(0)})`);
+    assert.ok(Math.abs(nearText - plain) < Math.abs(mark - plain) / 3, `${name}: no glow beside the text (${nearText.toFixed(0)} against ${plain.toFixed(0)})`);
   }
-  const out = SM.sharpen(px, W, H, { gain: 10 });
-  assert.equal(out.length, px.length);
-  const at = (x, y) => out[(y * W + x) * 4];
-  const avg = (f) => { let s = 0, n = 0; for (let y = 20; y < H - 20; y++) for (let x = 20; x < W - 20; x++) if (f(x, y)) { s += at(x, y); n++; } return s / n; };
-  const mark = avg((x, y) => inMark(x, y) && inMark(x - 2, y) && inMark(x + 2, y));
-  const around = avg((x, y) => !inMark(x, y) && Math.abs(x - 120) < 40 && Math.abs(y - 80) < 30 && !inMark(x - 4, y) && !inMark(x + 4, y) && !inMark(x, y - 4) && !inMark(x, y + 4));
-  assert.ok(around - mark > 25, `the mark stands out: ${mark.toFixed(0)} against ${around.toFixed(0)}`);
-  // The glow is gone: the far corners of the plain page come out alike.
-  assert.ok(Math.abs(avg((x, y) => x < 60 && y < 50) - avg((x, y) => x > W - 60 && y > H - 50)) < 12);
   // On the page: in the photo box only (the test site), read on the phone.
   const box = cut('  function traceCodeBox() {', '  async function traceByCode(text) {');
-  assert.ok(box.includes('id="tracephoto"') && box.includes('id="shotlevel"'));
+  assert.ok(box.includes('id="tracephoto"') && box.includes('id="shotlight"') && box.includes('id="shotdark"'));
   assert.ok(html.includes("${traceLast}</div>${PREVIEW ? traceCodeBox() : ''}</div></section>"), 'the test site only');
-  const wire = cut('    // A photo of a screen, sharpened on this phone', "    const input = view.querySelector('#tracefile');");
-  assert.ok(wire.includes('ShotMark.sharpen(px, W, H, { gain })') && wire.includes("localStorage.setItem('shotCodeLevel', lvl.value)") && wire.includes('paintShotCode();'));
+  const wire = cut('    // A photo of a screen, the faint shades brought out on this phone', "    const input = view.querySelector('#tracefile');");
+  assert.ok(wire.includes('ShotMark.reveal(px, W, H, { gain }).px') && wire.includes("localStorage.setItem('shotCodeLevel', `${onLight.value}/${onDark.value}`)") && wire.includes('paintShotCode();'));
   assert.ok(!/fetch\(|FormData|sendBeacon|XMLHttpRequest/.test(wire), 'nothing sent anywhere');
 });
