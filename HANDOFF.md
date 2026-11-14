@@ -203,9 +203,11 @@ test it and tell you if i can see it, then we can test with a camera".
   stand-in sharpened in the box (the code shows; pinch to zoom); no key: no layer; no errors (again after the
   rebase, on the merged page).
 - **Not checked:** a real camera (his next test), how faint it looks on his phone (his first test).
-**Next:** he looks at board-test on his phone and says whether he can see it. Then a photo of the screen with
-another phone → Page Health → Trace a screenshot → the photo box → read the code → Look up. If he can see it, the
-picker goes fainter on his phone (no pull); whatever he settles on can become the default.
+**Live on board-test since 13 Nov 19:09 Toronto** (laptop `94fe874`; the served page is the branch's, Windows line
+endings aside). **His eye test, about 01:02: "I cant" (see it) at the default 2% light / 3% dark.** The camera
+test is next ("testing 2 now"): a photo of the screen with another phone → Page Health → Trace a screenshot → the
+photo box → read the code → Look up. If the camera can't read it at 2 / 3, the picker on his phone steps up (3 / 4)
+with no pull; whatever reads becomes the default.
 
 ## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
 
