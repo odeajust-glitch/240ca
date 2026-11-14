@@ -3531,7 +3531,14 @@ function vacancies(s, reviewed = false) {
   // Predicted (owner, 2026-11-07): the jobs the corrected line-up has going
   // spare that option 5 doesn't list yet. Shown under the corrected list.
   const predicted = showCats ? [] : s.vacanciesPredicted || [];
-  if (!list.length && !(cats || []).length && !predicted.length) return '';
+  // Yardmaster jobs (CC YA) CATS lists going spare (owner, 2026-11-14: "Current's 'Jobs going spare' leaves YA jobs
+  // out … Lets do this"; left out since 2026-10-24, "they go to the yardmaster spareboard, not ours"). Their own rows,
+  // in both views: no expected cover, since the yardmaster spareboard and the call order are not read for them yet.
+  const ym = s.yardmasterJobs || [];
+  if (!list.length && !(cats || []).length && !predicted.length && !ym.length) return '';
+  const ymHead = !ym.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Yardmaster jobs going spare · ${ym.length}</h3>
+    <p class="anote" style="margin:4px 14px 10px">Yardmaster jobs (YA) on CATS's option 5. They go to the yardmaster spareboard first, then down the yardmaster seniority list; the checker doesn't read those yet, so no cover is shown.</p>`;
+  const ymMeta = ym.length ? ` + ${ym.length} yardmaster` : '';
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
   const fill = (v) => (!v.fill ? ''
@@ -3587,15 +3594,31 @@ function vacancies(s, reviewed = false) {
     };
     const rows2 = list.map((v) => row2(v, false)).join('');
     day = null;
+    // A yardmaster job's row: the job, YD YA, planned or ordered, when it returns.
+    const ym2 = ym.map((v) => {
+      const [d, time] = split(v.at || '');
+      const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
+      day = d;
+      const ord = v.status === 'ORDERED';
+      const chips = `<span class="chip">${esc([v.pool, v.cc].filter(Boolean).join(' '))}</span> <span class="st ${ord ? 'ORD' : 'PLN'}">${ord ? 'ORD' : 'PLN'}</span>`;
+      const line2 = `<span class="crew-craft"><span class="spare">(spare)</span></span>${v.returns ? `<span class="call">returns ${esc(v.returns)}</span>` : ''}`;
+      const fold = `<p>${esc([v.pool, v.cc].filter(Boolean).join(' '))} · ${ord ? 'ordered' : 'planned'} ${esc(v.at)}, position ${esc(v.pos || '—')} on option 5.</p>${v.returns ? `<p>Returns ${esc(v.returns)}.</p>` : ''}<p>Filled from the yardmaster spareboard, then the yardmaster seniority list: not read by the checker yet.</p>`;
+      return bar + cur2Row({ hit: marked(v.train), time: time || v.at, train: v.train, od: '', chips, line2, fold, foldName: 'Details' })
+        .replace('<details class="cur2', '<details class="cur2 vac2 ymvac');
+    }).join('');
+    day = null;
     const pred2 = predicted.map((v) => row2(v, true)).join('');
     const predHead = !predicted.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Predicted jobs going spare · ${predicted.length}</h3>
     <p class="anote" style="margin:4px 14px 10px">On the corrected train line-up as going spare, or the rest of an extra yard job's crew, but not on CATS's option 5${s.option5Read === false ? ' (option 5 wasn\'t read this check)' : ' yet'}. A guess until CATS lists it.</p>`;
-    return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${whyTab}
-    ${rows2 || none}${predHead}${pred2}
+    return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}${ymMeta}</span></header>${tabs}${whyTab}
+    ${rows2 || none}${ymHead}${ym2}${predHead}${pred2}
     ${foot}</section>`;
   }
-  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}</span></header>${tabs}${whyTab}
-    ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>'}${predSection}
+  const ymRows = ym.map((v) => `<tr${marked(v.train) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td><td><b class="num">${markTurn(v.train)}</b><div class="crew">${esc([v.pool, v.cc].filter(Boolean).join(' '))} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div></td>
+    <td class="num"><span class="spare">(spare)</span>${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
+  const ymSection = !ym.length ? '' : `${ymHead}<div class="scroll"><table><thead><tr><th>Time</th><th>Job</th><th>Turn</th></tr></thead><tbody>${ymRows}</tbody></table></div>`;
+  return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}${ymMeta}</span></header>${tabs}${whyTab}
+    ${rows ? `<div class="scroll"><table><thead><tr><th>Time</th><th>Job · expected cover</th><th>Turn</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty" style="margin:10px 14px">' + (list.length || (cats || []).length ? 'No jobs going spare once CATS\'s errors are taken out.' : 'CATS\'s option 5 lists no jobs going spare.') + '</p>'}${ymSection}${predSection}
     <div class="foot">"Expected cover" is an estimate, not a confirmed crew call: yard jobs come off the fast board, road jobs off the slow board (engineer jobs off the engineer boards), in board order, earliest job first. A spare still on rest or a hold turn at the call, or B0 (working another job), is skipped and keeps its place. Calls: 2 h before a yard job or a deadhead; order − 2 h 15 m for a train.${predicted.length ? ' Listed and predicted jobs are filled together, earliest first.' : ''}</div></section>`;
 }
 

@@ -292,6 +292,29 @@ test('item 1: the page draws the card’s extra lines for every member', () => {
   assert.ok(html.includes("const built = [...where.map((text) => ({ kind: 'status', text })), ...lined];"));
 });
 
+// Owner, 2026-11-14, told the yardmaster jobs (CC YA) going spare were kept but left out of Jobs going spare (his word
+// of 24 Oct: they go to the yardmaster spareboard): "Lets do this". The 0038 check of 14 Nov: YSTY01 and YSBY01.
+test('Jobs going spare: the yardmaster jobs CATS lists, as their own rows, both layouts', () => {
+  const ya = [{ pos: '004', at: '14th 0630', status: 'PLANNED', train: 'YSTY01', pool: 'YD', cc: 'YA', st: '', returns: '', turn: 'YSTY01' },
+    { pos: '006', at: '14th 0700', status: 'PLANNED', train: 'YSBY01', pool: 'YD', cc: 'YA', st: '* **', returns: '16th 0001', turn: 'YSBY01' }];
+  const p = page();
+  const both = { ...s, yardmasterJobs: ya };
+  const now = p.run('vacancies')(both, true);
+  assert.ok(now.includes('+ 2 yardmaster</span>'), 'counted in the heading');
+  assert.ok(text(now).includes('Yardmaster jobs going spare · 2'));
+  assert.ok(text(now).includes('0630 YSTY01 YD YA PLN (spare)'), text(now));
+  assert.ok(text(now).includes('0700 YSBY01 YD YA PLN (spare) returns 16th 0001'));
+  assert.ok(now.indexOf('Yardmaster jobs going spare') > now.indexOf('YINS30') && now.indexOf('Yardmaster jobs going spare') < now.indexOf('Predicted jobs going spare'));
+  const old = p.run('vacancies')(both, false);
+  assert.ok(text(old).includes('14th 0700 YSBY01 YD YA · planned (spare) returns 16th 0001'), text(old));
+  // Only the yardmaster jobs on the list: the box is drawn for them.
+  const only = { ...s, vacancies: [], vacanciesCats: [], vacanciesPredicted: [], yardmasterJobs: ya };
+  assert.ok(text(p.run('vacancies')(only, true)).includes('Yardmaster jobs going spare · 2'));
+  // None: as before.
+  assert.equal(p.run('vacancies')({ ...s, yardmasterJobs: [] }, true), p.run('vacancies')(s, true));
+  assert.equal(p.run('vacancies')({ ...s, vacancies: [], vacanciesCats: [], vacanciesPredicted: [] }, true), '');
+});
+
 test('item 7: Jobs going spare as short rows on Current; the table as it was in Snapshots’ older layout', () => {
   // Owner, 2026-11-12, of "Jobs going spare is short rows that fit the screen" on the test site: "6 yes".
   const off = page().run('vacancies')(s);

@@ -1,5 +1,40 @@
 # HANDOFF — read this before doing anything
 
+## YM jobs going spare: in Jobs going spare (BUILT, both sites); alerts for the people a YM vacancy would move (EXAMPLE PUT TO HIM, nothing built) — 14 Nov 2026, about 01:30 Toronto. WAITING ON ONE LAPTOP PULL (page only) and his answers
+
+**Owner,** to "Main site: nowhere. Current's Jobs going spare leaves YA jobs out, at your word on 24 Oct": "Lets do
+this". **Built** (`public/board.html` `vacancies`, both layouts, every member, both sites): "Yardmaster jobs going spare
+· N" as their own rows after the listed jobs (time, job, YD YA, PLN/ORD, (spare), returns), a note that the yardmaster
+spareboard and seniority list aren't read so no cover is shown, "+ N yardmaster" in the heading; from the snapshot's
+`yardmasterJobs` (kept since `492a11f`). Alerts still leave YA out. Test: `current-review.test.js` (the 0038 check's two
+rows). Suite 611 of 611. Seen in a browser over the live main site as a member: YSTY01 0630 and YSBY01 0700 under their
+heading, no page errors.
+
+**Owner, the same message:** "We can setup notifications for people expected to get called to cover a spare YM job,
+since their yard job for the day would go spare, we need to show that in jobs going spare. I need a real example of the
+logic". **The example given (live, the 0038 check of 14 Nov; names to him in chat only, ranks here):** CATS lists YSTY01
+Sat 0630 (call 0430, listed since Fri 1845) and YSBY01 Sat 0700 (call 0500, since Fri 1913). By the 13 Nov rules
+(`board-ym.js decide`, `data/ym-list.json` with `live`), **taken in call order, each person used once** (the page's
+`ifSpare` takes each job alone, so with the spare yardmaster on the board it gives him both: wrong for a chain):
+- **Spare yardmaster (rank 140, EXYA01YA) on the YM spareboard:** YSTY01 → rank 140 (step 1). YSBY01 → rank 410
+  (XSAS01 FO, step 3 "working in the yard that day, not called yet": Saturday's XSAS01 works YBHS01 0800, call 0600,
+  after YSBY01's 0500). **Knock-on:** YBHS01 FO Sat 0800 goes spare → conductor fast board pos 001 **B112** (call 0600;
+  no yard job listed ahead of it).
+- **Nobody on it:** YSTY01 → rank 330 (YPRS02 FO, step 3: YPRS02 0645, call 0445, after YSTY01's 0430) → **YPRS02 FO
+  0645 goes spare → B112** (call 0445). YSBY01 → rank 410 (rank 330 is passed: YPRS02's call 0445 is before 0500,
+  "already called") → **YBHS01 FO 0800 → B120** (fast board 002).
+- Alerts that would go: rank 410's turn (XSAS01) "may be called for YSBY01 …, your YBHS01 0800 would go spare"; the
+  knock-on job in Jobs going spare as predicted ("its crew may be moved up to YSBY01"); B112 / B120 the usual "Lined up
+  for" alert.
+**Found while doing it (told him):** YSTY01 and YSBY06 go spare almost every Saturday and Sunday (YSTY01 6 of 9 entries,
+YSBY06 6 of 10, since 24 Oct), but `board-ym.js YA_JOBS` and Job Aids' YA table have both as Mon to Fri: Next Yard Job
+and the call order never see their weekend shifts. **Asked him:** (1) the yardmaster spareboard: is the spare
+yardmaster there or not (the checker can't read it; which screen shows it), or alert both ways; (2) confirm the chain
+(call order, one person per job, the moved-up person's own yard job goes spare, filled off the fast board like any
+yard job); (3) YSTY01 / YSBY06 run 7 days with no weekend regular (fix the schedule); (4) alerts test-site/owner first.
+**Also this session:** two members' names taken out of the Garnet section above (the repository is public); they
+remain in the git history of `224112c`.
+
 ## Are YM jobs going spare tracked? — 14 Nov 2026, about 00:40 Toronto. YES; shown on the test site only. Nothing changed; asked him where to show them
 
 **Owner:** "does either site show YM jobs going spare, or do we track that. I know we didn't but I want to make sure
@@ -76,22 +111,22 @@ four; no page errors.
 
 ## Garnet card named the turn's new holder at home, not who was at Garnet — FIXED 13 Nov 2026, about 20:10 Toronto (page + laptop), for everyone, both sites. WAITING ON ONE LAPTOP PULL (the page; + a RESTART for the alerts part)
 
-**Owner, 13 Nov 19:39 (his phone's screenshot of Current, Garnet line-up · L501 home: "S502 CO O'Dea, J · EN
-Street, K", rested, call ~13th 1930, highlighted as his):** "This is wrong. I moved to this turn today but I am
-still on rest at home. It should show Jacobson". **What happened (main site's 13 Nov day file):** L50231 13
+**Owner, 13 Nov 19:39 (his phone's screenshot of Current, Garnet line-up · L501 home: "S502 CO <his name> · EN
+<S502's engineer>", rested, call ~13th 1930, highlighted as his):** "This is wrong. I moved to this turn today but I am
+still on rest at home. It should show <the MU01 conductor's surname>". **What happened (main site's 13 Nov day file):** L50231 13
 went out at 0400 with **S502's engineer and MU01's conductor** (S502's conductor job was on a hold turn); he
 placed on S502's conductor job at home about 15:54 (rest until 14th 0530). From 13:25 the Garnet board (31)
 showed **S502 EN and MU01 CO, both at 001**. The laptop's `garnetHome` took only the first turn's rows (S502,
 EN), so `garnetHome.crew` = S502 / EN, and the page's `crewBoth('S502')` named both of S502's crafts, the
 conductor being his name now. The row was marked for him (`marked('S502')` ignores the craft), and **his
 followed-turn card also said "Home from Garnet on L50131 13 … call ~13th 1930"** (`cardLines` by turn only).
-MU01's conductor at Garnet was **"Jacobsen, N"** in the names file (CATS's spelling; `mu.boards`, Garnet row).
+MU01's conductor at Garnet was in the names file (`mu.boards`, Garnet row), spelled a little differently from his message.
 First mixed crew in the saved days (3 Nov on: S502, S501, MU01 and MU02 crews were each one turn).
 
 **Fixed.** Page (`public/board.html`): `garnetName` (beside `crewBoth`: an MU row by its own row's name,
 `muName`; a 501/502 turn by that craft's name), `garnetMembers` / `garnetSort` / `garnetBoard` / `garnetWho` /
-`garnetCrafts` (after `garnetCrew`): each person at Garnet by their row, conductor first ("MU01 CO Jacobsen, N +
-S502 EN Street, K"; one turn's whole crew drawn as before), marked only for a followed craft that is there;
+`garnetCrafts` (after `garnetCrew`): each person at Garnet by their row, conductor first ("MU01 CO Last, F +
+S502 EN Last, F"; one turn's whole crew drawn as before), marked only for a followed craft that is there;
 the members from the laptop's `crew.members`, else **the Garnet board's rows in that check** (so the page alone
 fixes it, and older checks), else the turn and its crafts. `garnetCrew` (Garnet board not read) takes a
 make-up turn away on the same trip as the missing craft. `cardLines`' "Home from Garnet" only for a craft at
@@ -105,8 +140,8 @@ their own turn, through `fillIns['MU01-CO']`; S502's conductor at home is not).
 (both crafts named again, marked by turn, the card by turn, the laptop's first turn only, the page's fallback
 without the mate): a test failed each time. In a browser (390 px, GET only, `boardNoCount`, following
 S502-CO), the live main site at the 1931 check: **the live page as his screenshot** (S502 CO O'Dea · EN Street,
-highlighted; his card "Home from Garnet on L50131 13 …"); **this branch's page: "MU01 CO Jacobsen, N + S502 EN
-Street, K", not highlighted, no Home from Garnet on his card**, no page errors.
+highlighted; his card "Home from Garnet on L50131 13 …"); **this branch's page: MU01's conductor and S502's engineer
+by name, not highlighted, no Home from Garnet on his card**, no page errors.
 **Not checked:** a real alert to the spare on MU01 (needs the restart and the next mixed crew).
 
 ## The faint visible code made much fainter, with a "sharpen the photo" step and a strength picker — BUILT FOR THE TEST SITE ONLY (his own screens, as before), 13 Nov 2026 about 18:40 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL (no restart); then his eye test, then a camera test
