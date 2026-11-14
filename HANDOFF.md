@@ -627,6 +627,19 @@ item 5 (Job Aids yard jobs) but belongs with item 10 (the yardmaster pieces): wh
 Yard Job and the two answers go with 10. **14 Nov: Next Yard Job and the two answers MOVED TO PAGE HEALTH at his word**
 (the section at the top); the YM table and the Tower table stay in Job Aids' yard jobs.
 
+**Seen live, 14 Nov 0124 Toronto (owner: "pulled, check the test site"; the laptop on `a0ec3ca`, every page file the
+same as that commit; GET only, nothing put over the site):** Job Aids → yard jobs: the Yardmaster jobs (YA) and Tower
+tables, no box (moved); Page Health → Yardmaster jobs: YSBY01 Sat 14th 0700, call 0500, someone on the YM spareboard
+rank 140 (step 1), nobody rank 410 (step 3), from the check of 0113 and the list read at 00:07; Analytics → YM
+seniority list: the 00:07 read, 34 rows, 11 OFF or VACATION; `ym.html`'s box: the six jobs from the 0113 check; 390 px,
+no page errors. **The first read with TEMP ASGN Y ran at 00:07:** `tempRead` { ok: true, rows: 34, pages: 5, temps: 0 }:
+the Y list read in full and showed every person's own job, so **nobody is shown on a temporary assignment**. Rank 320
+(OFF on the list, no job) was seen on 13 Nov as SD05's holder on the boards (the suspected temporary vacancy) and shows
+nothing with Y either. Either CATS doesn't count that as a temporary assignment, or the Y screen shows it some way the
+reader doesn't pick up (`parseSeniorityList` keeps a second assignment line as `extra`): **a photo of the Y screen with
+rank 320's page would settle it; asked him.** GitHub had 7 newer commits than the laptop at that time (the other chats':
+the YM spareboard read, the YM predictions on Jobs going spare, bump names, the faint code): another pull brings them.
+
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at
 punitive rates; (3) the senior qualified unassigned TC available at straight time in yard service, incl. a yard / joint
