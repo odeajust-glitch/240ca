@@ -463,8 +463,16 @@ are correct before pushing it as a feature". **Built:**
   and `parseTrainCrewNames` now also give `name` (whole), and board-auto keeps the fuller of the reads per
   name code (`names.fullerName`: same surname, one first name starting the other) in `nameByHash` (memory
   only). Both people in the alert come from it first (the bumper too, before the turn's board-row name).
-  The site's copy of the alert log had not refreshed past 01:08 when looked at, so the wording he got was
-  not seen here. Suite 620 of 620.
+  **What he got (log row 01:37, 2 phones):** "KOCU bumped MAGL off SB04 (14th 0134 check). No account has
+  their name code, so nobody would be told." Codes, no names. At 0126 SB04 was on the Call Board (Z14931 13
+  home from Toronto, MAGL on its crew line); at 0134 it was home on the B pool "available", crews in town
+  "CO: rested", KOCU (the one bumped off SB03 on the 10th, on no board since) its holder, MAGL on no board.
+  Read as a real bump landing when the turn got home (**ask him to confirm in CATS**). No names because the
+  B pool row's name for SB04 never reached names.json at 0134 or 0142 (the site's crew names, built at 0142,
+  still had "Glowa, M" from the Z14931 crew line; why the row was not recorded is not known from here),
+  and the running code took names only from board rows. The crews-in-town and Call Board names above cover
+  it. **Also fixed:** `personName` (Call Board crew lines) now uses `nameOfWords` too: SB01's "Chad T
+  Tyson, Q" was most likely from there (SB01 was out working). Suite 637 of 637.
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a

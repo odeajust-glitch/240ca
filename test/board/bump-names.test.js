@@ -93,3 +93,16 @@ test('full names: the whole first name wins over the boards\' cut one, for the s
   ]));
   assert.deepEqual(train.map((t) => [t.job, t.code, t.name]), [['SB01', 'TYCH', 'Tyson Chad']]);
 });
+
+// The Call Board's crew lines too (owner, 2026-11-14): SB01 out working showed
+// "Chad T Tyson, Q", the surname, initial and first name in one cell and
+// something after it in the next.
+test('names: a Call Board crew line with something after the first name', () => {
+  const trains = S.parseCallBoardNames(parseGrid([
+    '60 | 46:CALL BOARD | 300:PAGE 001 OF 004',
+    '100 | 46:E27861 | 109:13 | 154:ON DUTY AT: | 262:SARNIA | 451:26/11/14 | 532:0030',
+    '120 | 100:CO | 136:CHAD+ T TYSON | 300:Q | 388:SB01',
+    '140 | 100:EN | 136:WILSON*+ | 262:DW | 289:DON | 388:SD11',
+  ]));
+  assert.deepEqual(trains[0].crew.map((c) => `${c.craft} ${c.turn} ${c.name} → ${shortName(c.name)}`), ['CO SB01 Tyson Chad → Chad, T', 'EN SD11 Don Wilson → Wilson, D']);
+});
