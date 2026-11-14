@@ -1,5 +1,19 @@
 # HANDOFF — read this before doing anything
 
+## "Next Yard Job" moved from Job Aids to Page Health — 14 Nov 2026 (`public/board.html`, `public/board-ref.js`, page only). Still TEST SITE ONLY (board-test with the owner key). WAITING ON ONE LAPTOP PULL
+
+**Owner:** quoted the box ("Next Yard Job … YSBY01 YDM Block 1 … If it was spare, who would work it …"), then "take
+this out of the job aid section, move it to page health". **Done:** Job Aids' yard jobs no longer has the `#ymnext`
+box nor calls a hook for it (`refState.ymNext` gone); Page Health has a section **"Yardmaster jobs"** ("test site · the
+call order test") right after Trace a screenshot (`ymNextSection()`, `PREVIEW` only), painted by the same
+`paintYmNext` after each draw of Page Health (the list kept a minute, as before). The box itself (`ymNextHtml`) is
+unchanged, its h4 and line styles now also under `.ymnext`. **Left in Job Aids:** the "Yardmaster jobs (YA)" and Tower
+tables (he named only the box). Tests: `ref.test.js` (no box in Job Aids, the hook not called) and
+`ym-call-order.test.js` (on Page Health, `PREVIEW` only). Suite 610 of 610. In a browser with this branch's page:
+board-test as him, Page Health → Yardmaster jobs: YSBY01 Sat 14th 0700, call 0500, holder named; someone on the YM
+spareboard rank 140 (step 1), nobody rank 410 (step 3), as his message; Job Aids without it; the main site's Page
+Health without it; no page errors.
+
 ## Job Aids in the owner's order — 14 Nov 2026 (`public/board-ref.js`, page only, both sites). WAITING ON ONE LAPTOP PULL
 
 **Owner:** the six titles, then "in Job Aids, make this the correct order": Yard jobs · Days out of Sarnia · Track
@@ -410,7 +424,8 @@ keystroke draws it again without fetching the list. ym.html with the shared code
 six jobs and orders, no errors. The Claude page: not republished (nothing it shows changed; built from the new
 template it gives the same answers). **For the test site clean-up (its own section above):** this now sits inside its
 item 5 (Job Aids yard jobs) but belongs with item 10 (the yardmaster pieces): whatever he picks for 5, the YM table, Next
-Yard Job and the two answers go with 10.
+Yard Job and the two answers go with 10. **14 Nov: Next Yard Job and the two answers MOVED TO PAGE HEALTH at his word**
+(the section at the top); the YM table and the Tower table stay in Job Aids' yard jobs.
 
 **The Traffic Coordinators' agreement, Article 4.12 (his photo, 13 Nov evening: "Read this and tell me if it would change
 anything")**: vacancies of 5 days or less, day to day: (1) the TC spareboard, first up, straight time; (2) the same at

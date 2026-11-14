@@ -312,10 +312,17 @@ test('yardmaster call order: the site\'s list as people, facts from the newest c
   assert.deepEqual(alone, { yes: null, no: null });
 });
 
-test('yardmaster call order: the Job Aids box loads the logic only on the test site, with the rules saved on this phone', () => {
+test('yardmaster call order: the Page Health box loads the logic only on the test site, with the rules saved on this phone', () => {
   const html = require('fs').readFileSync(require('path').join(__dirname, '../../public/board.html'), 'utf8');
   assert.doesNotMatch(html, /<script src="board-ym\.js">/); // the main site never fetches it
-  assert.ok(html.includes("refState.ymNext = PREVIEW ? paintYmNext : null;"));
+  // On Page Health since 2026-11-14 (owner: "take this out of the job aid section, move it to page health"), the test
+  // site with the owner key only; Job Aids no longer draws it.
+  assert.ok(!html.includes('refState.ymNext'));
+  const health = html.slice(html.indexOf('  async function renderHealth() {'), html.indexOf('    paintHeldSettings();'));
+  assert.ok(health.includes('${traceSection()}${who}${ymNextSection()}'));
+  assert.ok(health.includes('if (PREVIEW) paintYmNext(view);'));
+  assert.ok(html.includes("    return PREVIEW ? '<section class=\"sheet\" id=\"hymnext\">"));
+  assert.ok(html.includes('<div class="hbody ymnext" id="ymnext"></div>'));
   assert.ok(html.includes("el.src = 'board-ym.js';"));
   assert.ok(html.includes("JSON.parse(localStorage.getItem('ym-rules') || 'null')")); // the call order page's own key
   assert.ok(html.includes("window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null })"));

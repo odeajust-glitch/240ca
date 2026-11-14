@@ -198,13 +198,13 @@
       ${extras ? `<h4>Extra jobs</h4><p class="muted" style="margin:0 0 6px">Called now and then and filled from the spareboard. Seen in the checks:</p><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Seen</th></tr></thead><tbody>${extras}</tbody></table>` : ''}
       ${ym ? `<h4>Yardmaster jobs (YA)</h4><table class="reft"><thead><tr><th>Job</th><th>On duty</th><th>Crew off</th></tr></thead><tbody>${ym}</tbody></table>` : ''}
       ${towerHit ? `<h4>Tower (YSBY, 12 h)</h4><p class="muted" style="margin:0 0 6px">YSBY01 (0700) and YSBY02 (1900) work the same days, YSBY03 (0700) and YSBY04 (1900) the others: 2 on, 2 off, 3 on, then the other way round the next week. YSBY06 (1430) is in the table above.</p><table class="reft"><tbody>${towerWeeks}</tbody></table>` : ''}
-      ${ymHit ? '<div id="ymnext" class="ymnext"></div>' : ''}
       <p class="muted">Worked out from the board checks of 24 Oct to 12 Nov 2026 (which jobs went on duty each day, and who held and worked them), not from a posted sheet: a bulletin or a change of card changes it. Days are the day a job goes on duty (a 2359 start is the night into the next day). 8 h unless marked.</p>`;
   }
 
   // "Next Yard Job" and "If it was spare, who would work it" (owner, 2026-11-13: "then have a line that says 'Next
   // Yard Job' and show the job, then have a line that says 'If it was spare, who would work it' then have 2 answers,
-  // one with someone on the YM SB and one without"). Drawn into the yard jobs once the page has them (board.html):
+  // one with someone on the YM SB and one without"). On Page Health since 2026-11-14 (owner: "take this out of the
+  // job aid section, move it to page health"); board.html draws it there (paintYmNext):
   // Y the call order's logic (public/board-ym.js), L the site's list (data/ym-list.json, its names opened), now
   // (railway minutes) and the rules saved on the call order page on this phone (null: its starting rules).
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -438,7 +438,6 @@
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
     if (state.preview) wireDue(view, state);
-    if (state.preview && typeof state.ymNext === 'function') state.ymNext(view);
     const box = view.querySelector('#refq');
     box.oninput =() => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
     const out = view.querySelector('#refout');

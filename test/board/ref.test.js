@@ -197,12 +197,14 @@ test('yard jobs: the yardmaster jobs in their own table, on the schedule the cal
   assert.ok(ym.includes('<b>YSTY01</b><div class="crew">Tower S/S</div></td><td class="num">0630</td><td>Sat, Sun</td>'));
   assert.ok(ym.includes('<b>YSBY01</b> <span class="chip">12 h</span><div class="crew">YDM Block 1</div></td><td class="num">0700</td><td><div class="nw">This week: Wed, Thu</div><div class="nw">Next week: Mon, Tue, Fri–Sun</div>'));
   assert.ok(ym.includes('<b>YSBY04</b> <span class="chip">12 h</span><div class="crew">YDM Block 4</div></td><td class="num">1900</td><td><div class="nw">This week: Mon, Tue, Fri–Sun</div><div class="nw">Next week: Wed, Thu</div>'));
-  assert.ok(html.indexOf('<div id="ymnext" class="ymnext"></div>') > html.indexOf('<h4>Tower'));
+  // "Next Yard Job" is on Page Health now (owner, 2026-11-14: "take this out of the job aid section, move it to
+  // page health"): Job Aids has no box for it and no longer calls the page's hook.
+  assert.ok(!html.includes('ymnext'));
   assert.ok(!/ymnext|Yardmaster jobs/.test(page({}))); // the main site: none of the yard jobs
   assert.ok(page({ preview: true, today: '2026-11-13', q: 'ysby04' }).includes('<b>YSBY04</b>'));
   let drawn = 0;
-  page({ preview: true, today: '2026-11-13', ymNext: () => { drawn++; } }); // the page's hook draws the box
-  assert.strictEqual(drawn, 1);
+  page({ preview: true, today: '2026-11-13', ymNext: () => { drawn++; } });
+  assert.strictEqual(drawn, 0);
 });
 
 test('yard jobs: "Next Yard Job" and "If it was spare, who would work it", with and without the YM spareboard', () => {
