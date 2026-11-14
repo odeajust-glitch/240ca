@@ -358,6 +358,21 @@ dark photo in the box (1600 x 2133), tapped to full size and scrolled: 8MGZ besi
 scroll.
 **Next:** after the pull: his eye test at light 3%, then the same photos again (and a phone's own screen if he can
 borrow a second phone: the real case, likely easier than a laptop screen).
+**His second photos, 14 Nov about 01:45 (read 14 Nov 01:51): the new defaults (screenshots: light page 237 with the code
+−7 to −8, the plain dark page 25 with it +7), Current light and Members dark, photographed off the laptop screen.**
+Lined up on their screenshots (OpenCV, SIFT + homography, `scratchpad/align.py`) and measured at the code's own
+pixels against the plain page next to it, smoothed 1.5 px:
+| photo | on the screenshot | in the photo | against the grain |
+|---|---|---|---|
+| first dark (retro black page, 3%) | +7.0 | +6.2 | 2.8 (4.6 with thin strokes kept) — reads |
+| first light (2%) | −5.0 | −1.7 | 0.8 — lost |
+| new dark (plain dark page, 3%) | +6.0 | +7.2 | 1.5 — not read: a grainy photo, and the hidden mark's checker comes up with it |
+| new light (3%) | −6.9 | −2.6 | 1.2 (1.5 thin strokes) — "8MG?" at the best spot only |
+**On a light page the laptop screen and camera keep about a third of the code's shade; on a dark page all of it.**
+Keeping thin strokes only (a top-hat, 13 to 17 px) helps the black page a lot and the light a little; nothing else
+tried did better. So at 3% a photo of a laptop screen traces on the retro black page, rarely on light, not on the
+plain dark page here. Put to him: raise to 4% and test again, keep 3% (photos trace only sometimes; screenshots
+always, by the hidden mark), or try a phone's screen with a second phone first. Also asked: can he see light 3%?
 
 ## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
 
