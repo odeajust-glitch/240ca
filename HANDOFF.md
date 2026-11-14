@@ -282,7 +282,10 @@ the call, and kept him for YSBY01 as the tie). YPRS02 0645 then ran with its own
 the yardmasters why; no rule changed** ("So I will figure out what happened there when I talk to the yardmasters, so lets
 just make another check against our predictions as they stand now"). The site's predictions at 0448, to check: YSBY01 →
 rank 410 (step 3; YBHS01 FO 0800 would go spare), YSBY06 → rank 290 (step 3; YMPS60 FO 2359 would go spare); no tie left.
-That chat has check-ins at 05:20 (YSBY01) and 12:45 (YSBY06).
+That chat has a check-in at 12:45 (YSBY06). **YSBY01: as predicted.** Still on option 5 at 0510 (its 2-hour call, 0500,
+had passed); off it at 0519, and the site showed rank 410 on it (the owner pasted "14th 0700 YSBY01 YA <rank 410> ~14th
+1900"). Rank 410's YBHS01 FO 0800 then went on option 5 at 0519, also as predicted (expected cover B134, fast board). So
+far: YSTY01 wrong (the spare used while on rest), YSBY01 right (person and knock-on).
 
 ## YM predictions in Jobs going spare, OWNER KEY ONLY, both sites — BUILT 14 Nov 2026, about 01:15 Toronto (page + `public/board-ym.js`). WAITING ON ONE LAPTOP PULL (+ the restart already owed for the yardmaster spareboard read); then his checking them against what happens
 
