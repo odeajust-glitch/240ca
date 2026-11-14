@@ -88,6 +88,15 @@ POS … REST heading); the parser handles any pool. ❓ Confirm on the first run
   (summary `leftBoard`), never predicted. The site shows each board once
   (owner, 2026-10-28): as it opens, plus those turns in their places with
   the view time beside them in yellow.
+- **Yardmaster spareboard** (owner, 2026-11-14, his photo): **2 → 16**. The same screen
+  (`SPAREBOARD INQUIRY`, PSTS02D), titled `YARDMASTER S/B- PSTN`, the same columns and VIEW
+  TIME box, `NBR ELIGIBLE: 999  NBR ASSIGNED: 001`, ends `END OF SPAREBOARD`. One row then:
+  the spare yardmaster's turn **YA01** (EXYA01YA, "TRAFFIC COORDINATORS SPARE", on the
+  yardmaster seniority list), POS 001, REST `0500 14` (rest until 14th 0500), MTPD 1200,
+  USHR 0500, PD 1200, #S 01, #O 00. Menu 2's own title is not seen yet: the checker types
+  45 / SA / 16 only on a menu with three boxes that says SERVICE or SELECTION (else it logs
+  the menu's first lines), and presses nothing under menu 2 but F8 and the VIEW TIME Enter.
+  Kept apart from the four boards above (summary `ymSpare`): never a spare for our jobs.
 - **Jobs going spare**: **3 → 5**, Enter (TERMINAL LINEUP, PSTS27P,
   vacancies only Y). POS, CALL (MM/DD), TIME, TZ, STATUS, TRAIN/DESC,
   ORGSTN, PL, CC, ST (`* **`), RETN (MM/DD), DTTM, TURN (pool + turn:

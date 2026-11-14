@@ -452,8 +452,12 @@ async function chooseFromMenus(page, option, menu = 3) {
     expect(m, is.trainService, 'Train Service menu');
     await fill(page, { 2: String(option) });
   } else {
-    // 1 = ENGINE SERVICE (owner's screenshot): 45 / SA / SELECTION, like 3.
-    expect(m, (x) => /ENGINE\s+SERVICE/.test(x.text) && x.textInputs.length >= 3, `menu ${menu}`);
+    // 1 = ENGINE SERVICE (owner's screenshot): 45 / SA / SELECTION, like 3. 2 = the yardmaster spareboard's menu (owner,
+    // 2026-11-14: "from the main screen its 2 then 16"; its title not seen yet): a menu with the same three boxes that
+    // is neither the main menu nor Train Service, else its first lines go in the log and nothing is typed there.
+    const ok = menu === 1 ? (x) => /ENGINE\s+SERVICE/.test(x.text) : (x) => !is.mainMenu(x) && !is.trainService(x) && /SERVICE|SELECTION/.test(x.text);
+    const said = m && m.text ? m.text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 2).join(' / ').slice(0, 120) : 'nothing';
+    expect(m, (x) => ok(x) && x.textInputs.length >= 3, menu === 1 ? `menu ${menu}` : `menu ${menu} (it showed: ${said})`);
     await fill(page, { 2: String(option) });
   }
   return press(page, 'Enter');
@@ -918,7 +922,9 @@ async function runRoute(page, opts = {}) {
   // "<board>-view" and isn't used for names.
   const spareboard = (menu, option, label, name, timeBox = false) => skip(`${name} ${menu} → ${option}`, async () => {
     let sb = await chooseFromMenus(page, option, menu);
-    if (sb && !/SPAREBOARD/.test(sb.text)) sb = await press(page, 'Enter'); // a prompt first
+    // A prompt first on the four older boards. Under menu 2 nothing is pressed on a screen that isn't the spareboard
+    // (owner, 2026-11-14: its other screens are not known): it is skipped and logged instead.
+    if (sb && !/SPAREBOARD/.test(sb.text) && menu !== 2) sb = await press(page, 'Enter');
     expect(sb, (x) => /SPAREBOARD/.test(x.text), name);
     const readPages = async (as, names, viewTime) => {
       for (let pageNo = 0; pageNo < 15; pageNo++) {
@@ -944,6 +950,10 @@ async function runRoute(page, opts = {}) {
   await spareboard(3, 9, 'co-slow', 'Conductor slow board', true);
   await spareboard(1, 19, 'en-fast', 'Engineer fast board', true);
   await spareboard(1, 17, 'en-slow', 'Engineer slow board', true);
+  // The yardmaster spareboard (owner, 2026-11-14: "from the main screen its 2 then 16", his photo: SPAREBOARD INQUIRY,
+  // YARDMASTER S/B- PSTN, PSTS02D, the same screen and VIEW TIME box as the four above). Kept apart from them in the
+  // summary (ymSpare): the yardmaster call order reads it; never a spare for our jobs.
+  await spareboard(2, 16, 'ym-sb', 'Yardmaster spareboard', true);
   // 5: the terminal line-up (vacancies only, as set), Enter, F8 to END OF FILE.
   await skip('Jobs going spare 5', async () => {
     expect(await chooseFromMenus(page, 5), (x) => /TERMINAL\s+LINEUP/.test(x.text), 'Terminal line-up (5)');

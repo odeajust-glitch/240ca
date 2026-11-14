@@ -236,6 +236,20 @@ test('yard jobs: "Next Yard Job" and "If it was spare, who would work it", with 
   assert.ok(R.ymNextHtml({ Y, L: { error: 'data/ym-list.json: 500' }, now }).includes('didn’t load'));
   // Nothing from the board yet: by the list only, and said so.
   assert.ok(R.ymNextHtml({ Y, L: { ...L, live: null }, now }).includes('by their status on the seniority list only'));
+  // The yardmaster spareboard read (owner, 2026-11-14: 2 → 16): the spare's turn on it, on rest until 0500 as in his
+  // photo, so free at YSBY01's 0500 call: "Someone on it" is now, and the board is said with the name.
+  const read = { ...L, live: { ...L.live, byRank: { ...L.live.byRank, 30: { status: 'available', freeAt: '2026-11-14T05:00', text: 'YA01 YA: rest until 14th 0500', src: 'Yardmaster spareboard' } },
+    spareboard: [{ pos: '001', turn: 'YA01', status: 'rest until 14th 0500' }] } };
+  const on = R.ymNextHtml({ Y, L: read, now });
+  assert.ok(on.includes('<p class="ymjob">Yardmaster spareboard at the check of 1754: <b class="num">YA01</b> Dogwood, M · rest until 14th 0500.</p>'));
+  assert.ok(on.includes('<tr><td>Someone on it <span class="chip">now</span></td><td><b>Dogwood, M</b>'));
+  assert.ok(on.includes('<tr><td>Nobody on it</td>'));
+  // On rest past the call (until 0501): skipped, so the next in line even with someone on the board.
+  const late = { ...read, live: { ...read.live, byRank: { ...read.live.byRank, 30: { ...read.live.byRank[30], freeAt: '2026-11-14T05:01', text: 'YA01 YA: rest until 14th 0501' } } } };
+  assert.ok(R.ymNextHtml({ Y, L: late, now }).includes('<tr><td>Someone on it <span class="chip">now</span></td><td><b>Ivy, R</b>'));
+  // Read and empty: "Nobody on it" is now.
+  const empty = R.ymNextHtml({ Y, L: { ...L, live: { ...L.live, spareboard: [] } }, now });
+  assert.ok(empty.includes('Yardmaster spareboard at the check of 1754: nobody on it.') && empty.includes('<tr><td>Nobody on it <span class="chip">now</span></td>'));
   // The box is filled in place.
   const box = { innerHTML: '' };
   R.paintYmNext(box, { Y, L, now });

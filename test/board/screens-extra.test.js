@@ -40,6 +40,24 @@ test('spareboard (13): turns, positions and rest, no names', () => {
   assert.ok(!JSON.stringify(rows).includes('CHOPRA'));
 });
 
+// The yardmaster spareboard (owner, 2026-11-14: "from the main screen its 2 then 16", and his photo): the same screen
+// as the other spareboards, one person on it, the spare yardmaster's turn YA01, on rest until 14th 0500.
+test('yardmaster spareboard (2 → 16): the same screen, YA01 and its rest, no names', () => {
+  const rows = grid([
+    '45 SA                    SPAREBOARD INQUIRY                PSTS02D',
+    '                         YARDMASTER S/B- PSTN             VIEW TIME(     )',
+    '                      NBR ELIGIBLE:   999  NBR  ASSIGNED:   001',
+    '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST    MTPD  USHR   PD    STT  #S  #O',
+    'BERDAN*+      M    MATH   YA01  001                   0500  14  1200  0500  1200       01  00',
+    '       ENTER=RESTART       F1=HELP      F3=EXIT      F8=PAGEDN      F11=PREV  MENU',
+    'END  OF  SPAREBOARD                                                 E010-1',
+  ]);
+  assert.ok(S.isSpareboard(rows.map((r) => r.text).join('\n')));
+  const { turns } = S.parseSpareboard(rows, at(2026, 11, 14, 1, 40));
+  assert.deepEqual(turns.map((t) => [t.turn, t.pos, t.st, t.rn, t.restUntil == null ? null : fmt(t.restUntil)]), [['YA01', 1, null, null, '14th 0500']]);
+  assert.ok(!JSON.stringify(rows).includes('BERDAN') && !JSON.stringify(rows).includes('MATH'));
+});
+
 test('terminal line-up (5): the jobs going spare, turn without its pool', () => {
   const rows = grid([
     '                              TERMINAL LINEUP                          PSTS27P',
@@ -173,6 +191,59 @@ test('site snapshot and turn facts with the new screens', () => {
   const h = BoardTurns.finish(BoardTurns.history([shown]));
   assert.equal(h.YPRS02.spares.length, 1);
   assert.equal(h.B126.orders[0].train, 'YPRS02');
+});
+
+// The yardmaster spareboard (owner, 2026-11-14: "there is a cats screen to read", 2 → 16): published on its own
+// (never one of the pools, never a spare for our jobs), and the yardmaster call order's facts read it.
+test('yardmaster spareboard: its own list in the check, the call order\'s facts from it, our spares unchanged', () => {
+  const { snapshotOf } = require('../../lib/board/site');
+  const Seniority = require('../../lib/board/seniority');
+  const base = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../fixtures/board/2026-10-15b.json'), 'utf8'));
+  const lines = (rows) => rows.map((line, row) => [String(row * 18), ...[...line.matchAll(/\S+/g)].map((m) => `${m.index * 9}:${maskTokenWith(m[0], BOARD_WORDS)}`)].join(' | '));
+  const head = ['45 SA                    SPAREBOARD INQUIRY                PSTS02D', '                         YARDMASTER S/B- PSTN             VIEW TIME(     )',
+    '    EMPLOYEE NAME         TURN  POS  ST  RN  RETN     REST    MTPD  USHR   PD    STT  #S  #O'];
+  const end = ['END  OF  SPAREBOARD                                                 E010-1'];
+  const fast = { label: 'co-fast', screenGrid: lines(['45 SA       SPAREBOARD INQUIRY', head[2], 'CHOPRA+       K    KARA   B138  001                                                   00  00']) };
+  const terminal = { label: 'terminal', screenGrid: lines(['           TERMINAL LINEUP', 'POS  CALL   TIME  TZ  STATUS     TRAIN/DESC   ORGSTN  PL  CC    ST     RETN   DTTM   TURN     EMP',
+    '001  10/15  0645  E   PLANNED    YPRS02       47130   YD  FO    * **   10/16  0001   YPRS02', '002  10/15  0700  E   PLANNED    YSTY01       47130   YD  YA                         YSTY01']) };
+  const ym = (rows) => ({ label: 'ym-sb', screenGrid: lines([...head, ...rows, ...end]) });
+  const ymView = (rows) => ({ label: 'ym-sb-view', viewTime: '1750', screenGrid: lines([...head, ...rows, ...end]) });
+  const berdan = 'BERDAN*+      M    MATH   YA01  001                   0500  16  1200  0500  1200       01  00';
+  const other = 'OTHER+        A    ANDY   YA02  002                                                   00  00';
+  const snap = (extra) => snapshotOf({ ...base, screens: [...base.screens, fast, terminal, ...extra] }).shown;
+  const without = snap([]);
+  const shown = snap([ym([berdan]), ymView([berdan, other])]);
+  assert.deepEqual(shown.ymSpare, { viewTime: '1750', turns: [{ pos: '001', turn: 'YA01', status: 'rest until 16th 0500' }, { pos: '002', turn: 'YA02', status: 'available', left: true, viewTime: '1750' }] });
+  assert.ok(shown.screens.includes('ymSpare') && !without.screens.includes('ymSpare') && without.ymSpare === undefined);
+  // Not a pool, not a spare for our jobs: the rest of the check is the same with it or without it.
+  assert.ok(!shown.pools.some((p) => /YARDMASTER/i.test(p.name) || p.turns.some((t) => /^YA0/.test(t.turn))));
+  const { ymSpare, screens, ...rest } = shown;
+  const { screens: screens0, ...rest0 } = without;
+  assert.deepEqual(rest, rest0);
+  assert.equal(shown.vacancies[0].fill.turn, 'B138');
+  // The call order's facts (made-up ranks): the spare yardmaster (EXYA01YA, turn YA01) by the board's rest.
+  const list = [{ rank: 140, assignment: 'EXYA01YA', pool: 'EX', turn: 'YA01', craft: 'YA' }, { rank: 330, assignment: 'YPRS02FO', pool: 'YD', turn: 'YPRS02', craft: 'FO' }];
+  const live = Seniority.liveFacts(list, shown);
+  assert.deepEqual(live.byRank[140], { status: 'available', freeAt: '2026-10-16T05:00', text: 'YA01 YA: rest until 16th 0500', src: 'Yardmaster spareboard' });
+  assert.deepEqual(live.spareboard, [{ pos: '001', turn: 'YA01', status: 'rest until 16th 0500' }, { pos: '002', turn: 'YA02', status: 'available', left: true, viewTime: '1750' }]);
+  // Read and not on it: not there to be called. Left it in the last 10 min: taken as called.
+  const gone = Seniority.liveFacts(list, snap([ym([other])]));
+  assert.deepEqual([gone.byRank[140].status, gone.byRank[140].text], ['busy', 'YA01 YA: not on the yardmaster spareboard']);
+  const left = Seniority.liveFacts(list, snap([ym([other]), ymView([berdan, other])]));
+  assert.equal(left.byRank[140].status, 'busy');
+  assert.match(left.byRank[140].text, /^YA01 YA: left the yardmaster spareboard after 1750 \(likely called\)$/);
+  // Not read: as before (taken as available, no board).
+  const unread = Seniority.liveFacts(list, without);
+  assert.deepEqual([unread.byRank[140].status, unread.byRank[140].text, unread.spareboard], ['available', 'YA01 YA: not on a board the checker reads', undefined]);
+});
+
+// The checker's route (owner, 2026-11-14): 2 → 16 with the other boards, and nothing pressed under menu 2 on a screen
+// that isn't the spareboard.
+test('yardmaster spareboard: read on the route, menu 2 guarded', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../scripts/board-auto.js'), 'utf8');
+  assert.ok(src.includes("await spareboard(2, 16, 'ym-sb', 'Yardmaster spareboard', true);"));
+  assert.ok(src.includes("if (sb && !/SPAREBOARD/.test(sb.text) && menu !== 2) sb = await press(page, 'Enter');"));
+  assert.ok(src.includes("const ok = menu === 1 ? (x) => /ENGINE\\s+SERVICE/.test(x.text) : (x) => !is.mainMenu(x) && !is.trainService(x) && /SERVICE|SELECTION/.test(x.text);"));
 });
 
 // Owner, 2026-10-24: a spare person filling in for someone absent shows on

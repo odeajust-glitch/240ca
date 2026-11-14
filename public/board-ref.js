@@ -222,12 +222,19 @@
     const who = (x) => (x ? `<b>${esc(name(x.p))}</b>${x.p.first ? ` <span class="muted">rank ${esc(x.rank)}</span>` : ''}<div class="crew">Step ${x.step}: ${esc(x.label)}</div>` : '<span class="muted">Nobody on the list</span>');
     const live = L.live && L.live.taken ? L.live.taken : '';
     const day = (iso) => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]}`;
+    // The yardmaster spareboard as the newest check read it (owner, 2026-11-14: 2 → 16), no names in the file: each
+    // turn named by whose job it is on the list. Read: the answer that applies now is marked.
+    const sb = L.live && Array.isArray(L.live.spareboard) ? L.live.spareboard : null;
+    const onSb = sb ? sb.filter((t) => !t.left) : [];
+    const whose = (turn) => { const p = people.find((x) => { const c = Y.parseCode(x.perm); return c && c.turn === turn; }); return p ? ` ${esc(name(p))}` : ''; };
+    const sbLine = !sb ? '' : `<p class="ymjob">Yardmaster spareboard at the check of ${esc(live.slice(11))}: ${onSb.length ? onSb.map((t) => `<b class="num">${esc(t.turn)}</b>${whose(t.turn)} · ${esc(t.status)}`).join('; ') : 'nobody on it'}${sb.filter((t) => t.left).map((t) => `; <b class="num">${esc(t.turn)}</b>${whose(t.turn)} left it after ${esc(t.viewTime || 'the view time')}`).join('')}.</p>`;
+    const nowTag = (someone) => (sb && (onSb.length > 0) === someone ? ' <span class="chip">now</span>' : '');
     const read = L.read ? new Date(L.read).toLocaleString('en-GB', { timeZone: 'America/Toronto', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
     return `${head}<p class="ymjob"><b class="num">${esc(j.job)}</b> ${esc(Y.YA_JOBS[j.job].label)} · <b>${esc(Y.fmt(j.s))}</b>, ${j.hours} h · call ${esc(Y.fmt(j.s - r.leadMin))}${holder ? ` · its holder ${esc(name(holder))}` : ''}</p>
-      <h4>If it was spare, who would work it</h4>
+      <h4>If it was spare, who would work it</h4>${sbLine}
       <table class="reft"><thead><tr><th>YM spareboard</th><th>Who would work it</th></tr></thead><tbody>
-        <tr><td>Someone on it</td><td>${who(a.yes)}</td></tr>
-        <tr><td>Nobody on it</td><td>${who(a.no)}</td></tr></tbody></table>
+        <tr><td>Someone on it${nowTag(true)}</td><td>${who(a.yes)}</td></tr>
+        <tr><td>Nobody on it${nowTag(false)}</td><td>${who(a.no)}</td></tr></tbody></table>
       <p class="muted" style="margin:0 0 12px">${live ? `Everyone as the board check of ${esc(live.slice(11))} on ${esc(day(live))} showed them (on rest, on duty, away, days off)` : 'Everyone by their status on the seniority list only (no board check with them yet)'}, the seniority list as read ${esc(read)}, by ${rules ? 'the rules saved on the call order page on this phone' : 'the call order page’s starting rules'}. The whole order and why: <a href="${esc(link)}">the call order test →</a></p>`;
   }
   const paintYmNext = (box, o) => { if (box) box.innerHTML = ymNextHtml(o); };

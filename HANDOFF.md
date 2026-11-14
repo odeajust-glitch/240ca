@@ -1,5 +1,35 @@
 # HANDOFF — read this before doing anything
 
+## The yardmaster spareboard (2 → 16) read every check — BUILT 14 Nov 2026, about 02:10 Toronto (laptop + page). WAITING ON ONE LAPTOP PULL + RESTART; then the first real read in the log
+
+**Owner:** "there is a cats screen to read", "from the main screen its 2 then 16", and a photo: SPAREBOARD INQUIRY,
+YARDMASTER S/B- PSTN, PSTS02D (the four spareboards' own program and columns), NBR ASSIGNED 001, one row: the spare
+yardmaster's turn YA01, pos 001, REST `0500 14` (written up in SCREENS.md, no names). This answers question 1 of the
+section below (is anyone on the YM spareboard).
+- **Read** (`scripts/board-auto.js`): `spareboard(2, 16, 'ym-sb', 'Yardmaster spareboard', true)` after the four boards,
+  the same reader (each page to END OF SPAREBOARD, then the VIEW TIME read, label `ym-sb-view`). `chooseFromMenus`
+  takes menu 2: a menu with three boxes that says SERVICE or SELECTION and is neither the main menu nor Train Service,
+  else it is skipped with the menu's first two lines in the log ("menu 2 (it showed: …)"). Under menu 2 nothing is
+  pressed on a screen that isn't the spareboard (the "prompt first" Enter is for the four older boards only).
+  Trouble skips it, logged, as for every board. Names: matched to turns in memory like the other boards, never kept.
+- **Kept apart** (`lib/board/summary.js` `ymSpare`, `ymSpareView`, `seen.ymSpare`): not in `spareboards`, so no spare
+  fills, alerts, reset tracker or days off change. `lib/board/site.js` publishes `ymSpare` { viewTime, turns [{ pos,
+  turn, status, left? }] } in each check, not as a pool (not on Current). A test checks the whole published check is
+  otherwise identical with and without it.
+- **The call order** (`lib/board/seniority.js liveFacts`): the yardmaster spareboard first (the spare's status, rest →
+  free at; left it in the last 10 min → busy, "likely called"); read and the spare's turn not on it → busy, "not on the
+  yardmaster spareboard"; not read → as before. `data/ym-list.json` `live.spareboard` (no names). Page Health's
+  Yardmaster jobs box says the board ("Yardmaster spareboard at the check of HHMM: YA01 <name> · rest until …") and
+  marks "now" on the answer that applies.
+- **Checked:** suite 614 of 614 + the box (`screens-extra.test.js` his photo's layout, names masked; the whole path;
+  the route source; `ref.test.js` the box with the board on, on rest past the call, and empty). **Not checked:** the
+  real menu 2 (its title, that its third box is SELECTION): the first check after the restart says in the log either
+  nothing (read) or "skipped Yardmaster spareboard 2 → 16: … (it showed: …)".
+**The example redone with his photo (the 0056 check; names to him in chat only):** YSTY01 Sat 0630 (call 0430): the spare
+(rank 140) is on rest until 0500 at the call → skipped (his rule: on rest at the call) → rank 330 (YPRS02 FO, step 3) →
+**YPRS02 FO 0645 goes spare → B112** (call 0445). YSBY01 Sat 0700 (call 0500): the spare's rest ends at 0500 → rank 140
+(step 1). **A tie, asked him:** rest until 0500 and a 0500 call taken as free. Still open: questions 2 to 4 below.
+
 ## YM jobs going spare: in Jobs going spare (BUILT, both sites); alerts for the people a YM vacancy would move (EXAMPLE PUT TO HIM, nothing built) — 14 Nov 2026, about 01:30 Toronto. WAITING ON ONE LAPTOP PULL (page only) and his answers
 
 **Owner,** to "Main site: nowhere. Current's Jobs going spare leaves YA jobs out, at your word on 24 Oct": "Lets do
