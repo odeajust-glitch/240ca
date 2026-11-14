@@ -436,7 +436,10 @@ test('item 7: Jobs going spare as short rows on Current; the table as it was in 
 
 test('item 10: the small wording', () => {
   // A fill-in line names the person once: the job's turn carries the same name while it is out working.
-  const names = (reviewed) => { const p = page(); p.ctx.markTurn = (t) => String(t).replace(/\b(EN06|SD04|EN02|S101)\b/g, '$1 <span class="crewnm">Person, A</span>'); return p.run('onDuty')(s, reviewed); };
+  // Each person's reset tag (owner, 2026-11-14: "show reset required on the Call board"), empty until the
+  // resets are in, is left out here: the wording is what this checks.
+  const noTags = (h) => h.replace(/<span class="rtag[^"]*" data-rkey="[^"]*" data-rtaken="[^"]*"><\/span>/g, '');
+  const names = (reviewed) => { const p = page(); p.ctx.markTurn = (t) => String(t).replace(/\b(EN06|SD04|EN02|S101)\b/g, '$1 <span class="crewnm">Person, A</span>'); return noTags(p.run('onDuty')(s, reviewed)); };
   assert.ok(names(false).includes('EN06 <span class="crewnm">Person, A</span> filling in on SD04 <span class="crewnm">Person, A</span>'), 'Snapshots’ older layout: as it was');
   assert.ok(names(true).includes('<div class="crew">EN06 <span class="crewnm">Person, A</span> filling in on SD04</div>'));
   assert.ok(names(true).includes('EN02 <span class="crewnm">Person, A</span> filling in on S101</div>'));

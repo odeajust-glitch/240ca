@@ -1,5 +1,29 @@
 # HANDOFF — read this before doing anything
 
+## Reset needed, beside the person on the line-up and the Call board — BUILT 14 Nov 2026, BOTH SITES (page only, `public/board.html`), at his ask. Goes out with the next check after the laptop pulls; no restart or Worker change needed for it
+
+**Owner, 14 Nov ~06:00, with a screenshot of Current** (L50231 15 lined up with "CO S502 O'Dea, J"; the
+501/502 table under it had his row red with "reset needed by 15th 0449"): **"Can you have it show reset
+required on the Call board a person needs it"**. Taken as both boxes that show who works a train: the
+**Train line-up** (his screenshot) and **Call board · on duty**. Small and asked for directly, so both sites,
+as before; said so to him.
+- **What shows:** the pools table's own words (`resetText`: "reset needed by 15th 0449", "reset overdue
+  (was …)", "on a reset break since …") and its rule (only turns the reset tracker marks yellow, within 2
+  days, or red, within 24 h; amber / red text). Line-up: on its own line under the craft's line, for whoever
+  works the train: the turn, or the spare covering a turn that goes spare (or an open turn), said as
+  "B130: reset needed …" since the line may not show that spare. Call board: in brackets after each crew
+  member; for a turn a spare is filling in, after the spare on the "filling in" line instead.
+- **Where:** `resetTag(s, turn, craft, inline, who)` just under `const MU_TURN` (beside `crewLine`), built
+  on `resetFor` / `resetKey` / `resetText`; `crewLine` takes the train's backfill; `onDuty` tags the
+  fill-ins; `lineupCrew` (`coverTurn` split out of `coverFor`, unchanged otherwise); `paintResets` fills
+  the tags once data/resets.json is in (the Pools box asks for it). Styles `.rtag` beside `.rdue`.
+- **Checked:** suite 645 of 645 (`test/board/reset-tags.test.js`, 3: his screenshot's train, the covering
+  spare's tag, the Call board with a fill-in, drawn empty then filled, another check's resets never;
+  `makeup-names` and `current-review` compare their lines without the empty tags). In a browser, this
+  page over the real main site at the 0600 check (390 px, nothing saved): 6 tags with text, S502 CO red
+  "reset needed by 15th 0449" under O'Dea, J on L50231 15; SR07 and SR03 amber on the line-up; SD02 and
+  SR10 amber in brackets on the Call board; no page errors. **Not checked:** a real phone, dark styles.
+
 ## "Sleep this week" (My week) on to the main site — 14 Nov 2026, about 06:00 Toronto, at his word ("PUSH 4, looks good"). Page only. WAITING ON ONE LAPTOP PULL
 
 Item 4 of the 05:10 list (not picked on 12 Nov): `anaMyWeek2`'s `sleepBox` for every member, both sites (`if (trips.length)`,

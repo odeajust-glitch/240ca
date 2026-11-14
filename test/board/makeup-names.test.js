@@ -133,7 +133,11 @@ test('Call Board: each train\'s MU01 named from its own line; other crews exactl
   assert.equal(rows[0], '13th 0045 Toronto E27331 13 EN SD08 Hill, C · CO MU01 Lake, B');
   assert.equal(rows[1], '13th 0400 Sarnia L50231 13 EN S502 Stone, K · CO MU01 Ford, N');
   assert.equal(rows[2], '13th 0400 Sarnia DHT048B 13 EN SD06 Wood, D · CO SR03 Reed, J');
-  assert.equal(p.crewLine(SNAP, 'DHT048B 13', 'EN SD06 · CO SR03'), p.markTurn('EN SD06 · CO SR03'), 'no MU: the line as it always was');
+  // No MU: the line as it always was, with each person's reset tag after them (owner, 2026-11-14: "show reset
+  // required on the Call board a person needs it"), empty until the resets are in.
+  const line = p.crewLine(SNAP, 'DHT048B 13', 'EN SD06 · CO SR03');
+  assert.equal(line.replace(/<span class="rtag[^"]*" data-rkey="[^"]*" data-rtaken="[^"]*"><\/span>/g, ''), p.markTurn('EN SD06 · CO SR03'), 'no MU: the line as it always was');
+  assert.deepEqual([...line.matchAll(/data-rkey="([^"]*)"/g)].map((m) => m[1]), ['SD06', 'SR03']);
   // The spare's own turn, when the checker matched it (crewShown), still comes first.
   const filled = rowsOf(p.onDuty({ ...SNAP, onDuty: [{ ...SNAP.onDuty[1], backfill: [{ craft: 'CO', job: 'MU01', turn: 'B130' }] }] }, true));
   assert.equal(filled[0], '13th 0400 Sarnia L50231 13 EN S502 Stone, K · CO B130');

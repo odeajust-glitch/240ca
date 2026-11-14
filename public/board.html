@@ -1272,6 +1272,15 @@
   .jobline .nw { white-space: nowrap; }
   .rdue:empty { display: none; }
   tr.reset-r .rdue { color: var(--stop); font-weight: 600; }
+  /* A person's reset beside them on the line-up and the Call board (owner, 2026-11-14: "Can you have it show
+     reset required on the Call board a person needs it"): the pools table's own words, amber within 2 days,
+     red within 24 h. Under the craft's line on the line-up; in brackets in a Call board crew line. */
+  .rtag { display: block; font: 600 12px/1.35 var(--body); color: var(--amber); }
+  .rtag.r { color: var(--stop); }
+  .rtag.inl { display: inline; }
+  .rtag.inl::before { content: " ("; }
+  .rtag.inl::after { content: ")"; }
+  .rtag:empty { display: none; }
   :root[data-theme="retro"] .vt { background: #ffff00; color: #000000; padding: 1px 3px; }
   .moves { margin: 4px 0 0; padding-left: 16px; font: 12.5px/1.5 var(--mono); }
   table.orders td details summary { cursor: pointer; }
@@ -2760,8 +2769,8 @@ function lineupCrew(t, s) {
     const named = (x) => markTurn(x) + (/^S5\d{2}$/.test(x) ? crewTag(`${x}-${cc}`) : '');
     // The spare likely to work it: the order's cover for this train and
     // craft, else the spare the boards show lined into this turn's job.
-    const coverFor = (x) => {
-      if (!CREW || !s) return '';
+    const coverTurn = (x) => {
+      if (!s) return '';
       const sym = String(t.train).split(' ')[0];
       const job = [...(s.vacancies || []), ...(s.vacanciesPredicted || [])].find((v) => (v.cc === 'EN' ? 'EN' : 'CO') === cc && v.fill && v.fill.turn
         && ((v.trainDay || v.train) === t.train || (v.train === sym && v.at === t.order)));
@@ -2772,6 +2781,11 @@ function lineupCrew(t, s) {
         const pick = rows.find(({ p }) => want.test(p.name)) || (rows.length === 1 ? rows[0] : null);
         by = pick ? pick.r.turn : '';
       }
+      return by;
+    };
+    const coverFor = (x) => {
+      if (!CREW || !s) return '';
+      const by = coverTurn(x);
       if (!by) return '';
       const m = markTurn(by);
       return ' · ' + m + (m.includes('crewnm') ? '' : crewTag(by));
@@ -2786,7 +2800,12 @@ function lineupCrew(t, s) {
       // "goes" dropped too (owner, 2026-11-11): "EN (SD04 Name spare) · EN05 Name".
       ? (cover && !/^(spareboard |spare$)/.test(turn) ? '' : '<span class="spare">spare</span>') + (/^(spareboard |spare$)/.test(turn) ? '' : ' (' + named(turn) + ' spare)') + cover
       : named(turn) + cover;
-    return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + '</span>';
+    // The reset of whoever works it (owner, 2026-11-14: "show reset required … a person needs it"): the turn,
+    // or the spare covering a turn that goes spare (or an open turn).
+    const general = /^(spareboard |spare$)/.test(turn);
+    const covered = spare || isOpen(turn);
+    const worker = covered ? coverTurn(turn) : general ? '' : turn;
+    return '<span class="crew-craft"><span class="muted">' + label + ':</span> ' + value + resetTag(s, worker, cc, false, covered ? worker : '') + '</span>';
   };
   return craft(parts[0], 'Conductor') + '<span class="crew-divider"> · </span>' + craft(parts[1], 'Engineer');
 }
@@ -3324,6 +3343,12 @@ function resetFor(s, t) {
   return r && r.level ? r : null;
 }
 function paintResets() {
+  document.querySelectorAll('.rtag[data-rkey]').forEach((el) => {
+    const r = RESETS && RESETS.taken === el.dataset.rtaken && RESETS.turns ? RESETS.turns[el.dataset.rkey] : null;
+    const on = !!r && !!r.level;
+    el.textContent = on ? `${el.dataset.rwho ? `${el.dataset.rwho}: ` : ''}${resetText(r)}` : '';
+    el.classList.toggle('r', on && r.level === 'red');
+  });
   document.querySelectorAll('tr[data-rturn]').forEach((tr) => {
     const r = RESETS && RESETS.taken === tr.dataset.rtaken && RESETS.turns ? RESETS.turns[tr.dataset.rturn] : null;
     tr.classList.toggle('reset-y', !!r && r.level === 'yellow');
@@ -3413,6 +3438,18 @@ function pools(s, picked, reviewed = false) {
 // A make-up turn (MU01) isn't a real turn (owner, 2026-11-06): the spare
 // working it is shown in its place, not "filling in on MU01".
 const MU_TURN = /^MU\d+$/;
+// A person's reset beside them where they work a train (owner, 2026-11-14: "Can you have it show reset required
+// on the Call board a person needs it"): the line-up (whoever works it: the turn, or the spare covering a turn
+// that goes spare) and the Call board (each crew member, or the spare filling in). The pools table's own words
+// (resetFor, resetText); drawn empty until data/resets.json is in (the Pools box asks for it, askResets), then
+// paintResets fills it in. craft: on a 501/502 turn, whose of the two. who: said first ("B130: reset needed …")
+// where the line doesn't show that turn (the spare covering a turn that goes spare).
+function resetTag(s, turn, craft = '', inline = false, who = '') {
+  if (!s || !turn) return '';
+  const t = { turn, craft };
+  const r = resetFor(s, t);
+  return `<span class="rtag${inline ? ' inl' : ''}${r && r.level === 'red' ? ' r' : ''}" data-rkey="${esc(resetKey(t))}" data-rtaken="${esc(s.taken)}"${who ? ` data-rwho="${esc(who)}"` : ''}>${r ? esc(`${who ? `${who}: ` : ''}${resetText(r)}`) : ''}</span>`;
+}
 function crewShown(t) {
   const mu = (t.backfill || []).filter((b) => MU_TURN.test(b.job));
   const crew = String(t.crew || '').split(' · ').map((c) => {
@@ -3428,17 +3465,23 @@ function crewShown(t) {
 const fillIn = (b) => `${markTurn(b.turn)} filling in on ${markTurn(b.job).replace(/ <span class="crewnm">[^<]*<\/span>/g, '')}`;
 // A train's crew line ("EN S502 · CO MU01"): each turn named as usual, a make-up turn the spare's own
 // turn didn't replace (crewShown) by the name on its own Call Board line (owner, 2026-11-13; muName).
-function crewLine(s, train, crew) {
-  if (!/(^|[^A-Z0-9])MU\d/.test(crew || '')) return markTurn(crew);
+function crewLine(s, train, crew, filled = []) {
+  // Each crew member's reset (owner, 2026-11-14), in brackets after them; not for a turn a spare is filling in
+  // (filled: the train's backfill), whose own line carries the spare's.
+  const tag = (craft, turn) => (BoardTurns.PLACEHOLDER.test(turn || '') || filled.some((b) => b.job === turn && b.craft === craft) ? '' : resetTag(s, turn, craft, true));
+  if (!/(^|[^A-Z0-9])MU\d/.test(crew || '')) {
+    const parts = String(crew || '').split(' · ');
+    return parts.length > 1 || /^(CO|EN|LE|ET|TT) /.test(parts[0]) ? parts.map((part) => { const [craft, turn] = part.split(' '); return markTurn(part) + tag(craft, turn); }).join(' · ') : markTurn(crew);
+  }
   return String(crew).split(' · ').map((part) => {
     const [craft, turn] = part.split(' ');
-    return markTurn(part) + (BoardTurns.PLACEHOLDER.test(turn || '') ? muTag(s, 'trains', train, craft, turn) : '');
+    return markTurn(part) + (BoardTurns.PLACEHOLDER.test(turn || '') ? muTag(s, 'trains', train, craft, turn) : '') + tag(craft, turn);
   }).join(' · ');
 }
 function onDuty(s, reviewed = false) {
   if (!s.onDuty.length) return '';
   const rows = s.onDuty.map((t0) => { const t = { ...t0, ...crewShown(t0) }; return `<tr${markedIn(t.crew) || (t.backfill || []).some((b) => marked(b.turn)) ? ' class="hit"' : ''}><td class="num">${esc(t.onDuty)}</td><td>${esc(t.station.charAt(0) + t.station.slice(1).toLowerCase())}</td>
-    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${crewLine(s, t.train, t.crew)}</div>${(t.backfill || []).length ? `<div class="crew">${reviewed ? t.backfill.map(fillIn).join(' · ') : markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · '))}</div>` : ''}</td></tr>`; }).join('');
+    <td><b class="num">${esc(t.train)}</b><div class="crew mono">${crewLine(s, t.train, t.crew, t.backfill || [])}</div>${(t.backfill || []).length ? `<div class="crew">${reviewed ? t.backfill.map((b) => fillIn(b) + resetTag(s, b.turn, b.craft, true)).join(' · ') : markTurn(t.backfill.map((b) => `${b.turn} filling in on ${b.job}`).join(' · ')) + t.backfill.map((b) => resetTag(s, b.turn, b.craft, true)).join('')}</div>` : ''}</td></tr>`; }).join('');
   return `<section class="sheet" id="sec-callboard"><header><h2>Call board · on duty</h2><span class="meta">${s.onDuty.length} trains</span></header>
     <div class="scroll"><table><thead><tr><th>On duty</th><th>At</th><th>Train · crew</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
