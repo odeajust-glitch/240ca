@@ -1,5 +1,34 @@
 # HANDOFF — read this before doing anything
 
+## YM predictions in Jobs going spare, OWNER KEY ONLY, both sites — BUILT 14 Nov 2026, about 02:45 Toronto (page + `public/board-ym.js`). WAITING ON ONE LAPTOP PULL (+ the restart already owed for the yardmaster spareboard read); then his checking them against what happens
+
+**Owner:** "So put the spare YM jobs in the jobs going spare tab. but only show the predictions to anyone with an owners
+key for now. Lets verify them. That can be puhsed to the main page". Read as: the YA rows stay for everyone (built
+earlier, no cover); the predictions are the owner's only, on both sites.
+- **`board-ym.js chain`** (shared, pure): the YA jobs CATS lists, earliest call first, one person each (a pick is busy
+  for later jobs; "taken for <job> first" in the passed list), `leaves` = the yard job a "working in the yard that day"
+  pick gives up.
+- **Page** (`public/board.html`, top level beside `vacancies`): `YM_OWNER` (= `membersOwner`, the Worker-checked owner
+  key), `YM_PRED`, `ymFastFill` (the conductor fast board's first spare for a yard job: not already lined, not B0, no hold
+  or rest past the call, no PL inside the shift, as `spares.js`), `ymPredFrom(Y, L, s, rules)` (the chain on
+  `data/ym-list.json`'s people and live facts, the yardmaster spareboard as read: none on it → spareboard 'no').
+  `ymPredict(s)` (in the closure, by `paintYmNext`) runs from `sectionsGrid` when `YM_OWNER`: once a check, only when the
+  list's `live.taken` is the check on screen (else asked again a minute later), then `setMode(mode)`. Uses the rules
+  saved on the call order page on this phone, else its starting rules.
+- **What he sees** (`vacancies`, both layouts): each YA row "cover <name> · call ~…", Details: rank, step, who was
+  passed over and why, the yard job it empties; the section note says only he sees it and states the yardmaster
+  spareboard ("isn't read yet, so the spare yardmaster is taken as available" until the laptop restarts); the emptied
+  yard job as a predicted row "from YM" with its fast-board cover. Members: the YA rows as before, nothing from YM.
+- **Checked:** suite 615 of 615 (`current-review.test.js`: the 0056 case made-up names, owner vs member, the older
+  table, another check's answer unused, nobody on the YM board, one spare not lined twice, one person each); broken on
+  purpose five ways (no owner gate, not one each, a spare lined twice, rest ignored, another check's answer), each
+  caught. In a browser over the live main site: as him (390 px), YSTY01 → Berdan (spare taken as available: the board
+  not read yet), YSBY01 → Leal (step 3), YBHS01 FO 0800 "from YM" → B112; as a member, no cover and no YM rows; no
+  page errors.
+- **To verify** (his words "Lets verify them"): the Call Board's crew line on a YA job names the turn that worked it
+  (Analytics → Yardmaster jobs on the test site keeps it, "worked by"), and the emptied yard job's crew shows who
+  covered it. Nothing keeps the predictions themselves yet: offered (the laptop logging each, for a score later).
+
 ## The yardmaster spareboard (2 → 16) read every check — BUILT 14 Nov 2026, about 02:10 Toronto (laptop + page). WAITING ON ONE LAPTOP PULL + RESTART; then the first real read in the log
 
 **Owner:** "there is a cats screen to read", "from the main screen its 2 then 16", and a photo: SPAREBOARD INQUIRY,

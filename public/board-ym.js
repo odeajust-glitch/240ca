@@ -438,10 +438,33 @@
     return { yes: one('yes'), no: one('no') };
   }
 
+  // Several yardmaster jobs going spare at once, down the call order together (owner, 2026-11-14: the YA jobs CATS
+  // lists, "only show the predictions to anyone with an owners key for now. Lets verify them"): earliest call first, one
+  // person each (whoever is picked is not available for a later one). A person moved up from their own yard job that
+  // day leaves it going spare (`leaves`). jobs: [{ job, date, start, hours }]; facts: liveFacts(people), not changed;
+  // spareboard: 'yes' | 'no'. -> [{ job, date, start, hours, s, call, pick: { p, rank, step, label } | null,
+  // passed: [{ p, why }] (the people ahead of the pick, once each), leaves: { job, s, craft } | null }]
+  function chain(jobs, people, rulesIn, facts = liveFacts(people), spareboard = 'yes') {
+    const rules = normalize(rulesIn);
+    const f = clone(facts);
+    const out = [];
+    const takenFor = {}; // rank -> the job they were picked for, earlier in the chain
+    for (const j of [...jobs].sort((a, b) => toMin(a.date, a.start) - toMin(b.date, b.start) || (a.job < b.job ? -1 : 1))) {
+      const res = decide({ ...j, spareboard, facts: f }, rules, people);
+      const o = res.order[0] || null;
+      const passed = [];
+      for (const st of o ? res.steps.filter((x) => x.i < o.i) : []) for (const x of st.rows) if (x.why && !passed.some((y) => y.p === x.r.p)) passed.push({ p: x.r.p, why: takenFor[x.r.p.rank] ? `taken for ${takenFor[x.r.p.rank]} first` : x.why });
+      if (o) { f[o.r.p.rank] = { ...(f[o.r.p.rank] || {}), status: 'busy' }; takenFor[o.r.p.rank] = `${j.job} ${fmt(res.start)}`; }
+      const leaves = o && o.st.group === 'yardday' && o.r.today ? { job: o.r.today.job, s: o.r.today.s, craft: (parseCode(o.r.now) || {}).craft || '' } : null;
+      out.push({ ...j, s: res.start, call: res.call, pick: o ? { p: o.r.p, rank: o.r.p.rank, step: o.i + 1, label: stepLabel(o.st, rules) } : null, passed, leaves });
+    }
+    return out;
+  }
+
   const api = {
     DAYS, toMin, fmt, hhmmOf, dowOf, addDays, fromLocal, weekStartOf, towerOn, YA_JOBS, YARD, RELIEF, parseCode, groupOf, inYard, scheduled, workOn, shiftsAround,
     GROUPS, STATUS, startingRules, manualRules: startingRules, normalize, stepLabel, catsFacts, prepare, evaluate, decide, agrees, fit, describe, distance, shape, clone,
-    peopleFrom, liveFacts, upcoming, ifSpare,
+    peopleFrom, liveFacts, upcoming, ifSpare, chain,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.YM = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

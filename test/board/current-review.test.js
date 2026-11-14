@@ -315,6 +315,73 @@ test('Jobs going spare: the yardmaster jobs CATS lists, as their own rows, both 
   assert.equal(p.run('vacancies')({ ...s, vacancies: [], vacanciesCats: [], vacanciesPredicted: [] }, true), '');
 });
 
+// Owner, 2026-11-14: "put the spare YM jobs in the jobs going spare tab. but only show the predictions to anyone with an
+// owners key for now. Lets verify them. That can be puhsed to the main page". The 0056 check of 14 Nov cut down, made-up
+// names: YSTY01 Sat 0630 and YSBY01 Sat 0700 on CATS's list; the spare yardmaster on the yardmaster spareboard on rest
+// until 0500 (his photo); a yard FO on YPRS02 0645 that day.
+test('Jobs going spare: the yardmaster predictions, owner key only, both layouts', () => {
+  const Y = require('../../public/board-ym');
+  const snap = { ...s, taken: '2026-11-14 0056', vacancies: [], vacanciesCats: [], vacanciesPredicted: [],
+    yardmasterJobs: [{ pos: '004', at: '14th 0630', status: 'PLANNED', train: 'YSTY01', pool: 'YD', cc: 'YA', st: '', returns: '', turn: 'YSTY01' },
+      { pos: '006', at: '14th 0700', status: 'PLANNED', train: 'YSBY01', pool: 'YD', cc: 'YA', st: '* **', returns: '16th 0001', turn: 'YSBY01' }],
+    pools: [{ name: 'Conductor fast board', turns: [{ pos: '001', turn: 'B108', status: 'rest until 14th 0500' }, { pos: '002', turn: 'B112', status: 'available' },
+      { pos: '003', turn: 'B120', status: 'B0: working another job' }] }] };
+  const L = {
+    list: [{ rank: 30, assignment: 'EXYA01YA', status: '' }, { rank: 40, assignment: 'YSTY01YA', status: '' }, { rank: 50, assignment: 'YPRS02FO', status: '' }, { rank: 60, assignment: 'XSAS01FO', status: '' }],
+    byRank: { 30: 'Dogwood, M', 40: 'Alder, T', 50: 'Birch, R', 60: 'Ivy, C' },
+    live: { taken: '2026-11-14 0056', byRank: { 30: { status: 'available', freeAt: '2026-11-14T05:00', text: 'YA01 YA: rest until 14th 0500', src: 'Yardmaster spareboard' } },
+      spareboard: [{ pos: '001', turn: 'YA01', status: 'rest until 14th 0500' }] },
+  };
+  const p = page();
+  const plain = (x) => JSON.parse(JSON.stringify(x)); // out of the sandbox's realm
+  const pred = plain(p.run('ymPredFrom')(Y, L, snap, null));
+  // Earliest call first, one each: YSTY01 (call 0430): the spare is on rest until 0500 at the call, so the yard FO working
+  // that day; YSBY01 (call 0500): the spare, free at 0500. The FO's YPRS02 0645 goes spare: B108 rests until 0500, past
+  // its 0445 call, so B112.
+  assert.deepEqual([pred.jobs['YSTY01|14th 0630'].who, pred.jobs['YSTY01|14th 0630'].step, pred.jobs['YSTY01|14th 0630'].call], ['Birch, R', 3, '14th 0430']);
+  assert.match(pred.jobs['YSTY01|14th 0630'].passed[0], /^Dogwood, M \(rank 30\): on rest until Sat 14th 0500 when the call is made$/);
+  assert.deepEqual([pred.jobs['YSBY01|14th 0700'].who, pred.jobs['YSBY01|14th 0700'].step, pred.jobs['YSBY01|14th 0700'].leaves], ['Dogwood, M', 1, '']);
+  assert.deepEqual(pred.knock.map((v) => [v.at, v.train, v.cc, v.fill.turn, v.fill.call, v.fill.skipped]), [['14th 0645', 'YPRS02', 'FO', 'B112', '14th 0445', ['B108 (rest until 14th 0500)']]]);
+  assert.equal(pred.sb, 'Yardmaster spareboard at the check of 0056: YA01 Dogwood, M · rest until 14th 0500.');
+  // A member, or the owner before it's worked out: the yardmaster rows without a cover, nothing from YM.
+  const member = p.run('vacancies')(snap, true);
+  assert.ok(!/cover <b>|from YM|Birch|Dogwood|only you see/.test(member) && text(member).includes('0630 YSTY01 YD YA PLN (spare)'), text(member));
+  // The owner, with the answer for this check: the cover on each row and the yard job left going spare.
+  p.run('(x) => { YM_PRED = x; }')(pred);
+  assert.equal(p.run('vacancies')(snap, true), member, 'not without the owner key');
+  p.run('YM_OWNER = true');
+  const owner = p.run('vacancies')(snap, true);
+  assert.ok(text(owner).includes('0630 YSTY01 YD YA PLN (spare) cover Birch, R call ~14th 0430'), text(owner));
+  assert.ok(text(owner).includes('0700 YSBY01 YD YA PLN (spare) cover Dogwood, M call ~14th 0500'));
+  assert.ok(text(owner).includes('Expected cover (only you see this): Birch, R , rank 50 · Step 3: Working in the yard that day, not called yet · 2-hour call · straight time. Called ~14th 0430.'), text(owner));
+  assert.ok(text(owner).includes('Passed over: Dogwood, M (rank 30): on rest until Sat 14th 0500 when the call is made. Their YPRS02 FO 14th 0645 goes spare'));
+  assert.ok(text(owner).includes('0645 YPRS02 YD FO PLN predicted from YM cover B112 call ~14th 0445'), text(owner));
+  assert.ok(text(owner).includes('Predicted (only you see this): Birch, R (rank 50), its FO that day, would be moved up to YSTY01 (yardmaster) at its 0430 call.'));
+  assert.ok(text(owner).includes('Yardmaster spareboard at the check of 0056: YA01 Dogwood, M · rest until 14th 0500.'));
+  assert.ok(owner.includes('+ 1 predicted + 2 yardmaster</span>'));
+  // The older table too; and another check's answer is not used.
+  assert.ok(text(p.run('vacancies')(snap, false)).includes('Expected cover Birch, R estimate · call ~14th 0430'));
+  assert.ok(!/from YM|Birch/.test(p.run('vacancies')({ ...snap, taken: '2026-11-14 0110' }, true)));
+  // Nobody on the yardmaster spareboard: the spare's step is skipped, and the FO on the yard job that day gets the first.
+  const empty = plain(p.run('ymPredFrom')(Y, { ...L, live: { ...L.live, spareboard: [] } }, snap, null));
+  assert.deepEqual([empty.jobs['YSTY01|14th 0630'].who, empty.jobs['YSBY01|14th 0700'].who], ['Birch, R', 'Ivy, C']);
+  // YBHS01 0800 (call 0600): B112 is taken by YPRS02, and B108's rest ends at 0500, before the call.
+  assert.deepEqual(empty.knock.map((v) => `${v.train} ${v.fill.turn}`), ['YPRS02 B112', 'YBHS01 B108']);
+  // A spare lined for one knock-on is not lined again: B112 first on the board takes YPRS02, so YBHS01 gets the next free.
+  const order = { ...snap, pools: [{ name: 'Conductor fast board', turns: [snap.pools[0].turns[1], snap.pools[0].turns[0], snap.pools[0].turns[2]] }] };
+  const once = plain(p.run('ymPredFrom')(Y, { ...L, live: { ...L.live, spareboard: [] } }, order, null));
+  assert.deepEqual(once.knock.map((v) => `${v.train} ${v.fill.turn}`), ['YPRS02 B112', 'YBHS01 B108']);
+  // The spare free for both (rest over at 0400): the first job takes him, so the second goes down the order (one each).
+  const both = plain(p.run('ymPredFrom')(Y, { ...L, live: { ...L.live, byRank: { 30: { ...L.live.byRank[30], freeAt: '2026-11-14T04:00' } } } }, snap, null));
+  assert.deepEqual([both.jobs['YSTY01|14th 0630'].who, both.jobs['YSBY01|14th 0700'].who], ['Dogwood, M', 'Ivy, C']);
+  assert.equal(both.jobs['YSBY01|14th 0700'].passed[0], 'Dogwood, M (rank 30): taken for YSTY01 Sat 14th 0630 first');
+  p.run('YM_OWNER = false; YM_PRED = null');
+  // On the page: the owner flag is the Worker-checked owner key, and Current works the answer out as it draws.
+  assert.ok(html.includes('    YM_OWNER = membersOwner; // the yardmaster predictions in Jobs going spare (owner, 2026-11-14)'));
+  assert.ok(html.includes('    if (YM_OWNER) ymPredict(s); // the owner\'s yardmaster predictions for this check, worked out once (below)'));
+  assert.ok(html.includes('      YM_PRED = ymPredFrom(Y, L, s, saved && saved.rules ? saved.rules : null);'));
+});
+
 test('item 7: Jobs going spare as short rows on Current; the table as it was in Snapshots’ older layout', () => {
   // Owner, 2026-11-12, of "Jobs going spare is short rows that fit the screen" on the test site: "6 yes".
   const off = page().run('vacancies')(s);
