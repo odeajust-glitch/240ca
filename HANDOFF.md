@@ -1,6 +1,22 @@
 # HANDOFF — read this before doing anything
 
-## YM predictions in Jobs going spare, OWNER KEY ONLY, both sites — BUILT 14 Nov 2026, about 02:45 Toronto (page + `public/board-ym.js`). WAITING ON ONE LAPTOP PULL (+ the restart already owed for the yardmaster spareboard read); then his checking them against what happens
+## The tie rule: a rest ending right at the call counts as free — SETTLED 14 Nov 2026, about 01:25 Toronto, at his word; WATCHED (owner view marks every tie). Laptop at 00:40's code (`a0ec3ca`): the three changes of tonight above still WAITING ON ONE PULL + RESTART
+
+**Asked him:** the spare yardmaster rests until 0500 and YSBY01's call is 0500: taken as free? **Owner:** "yes we will go
+with that, but we can watch that and check for conflicts if you see that". **Built (page only):** `ymPredFrom` runs the
+chain a second time with every rest a minute longer; a YA job whose pick differs gets `tie` { who, rank, step, leaves }:
+a "tie" chip on its row (both layouts) and in Details "Tie, worth checking: … If it weren't, <name>, rank, step, and their
+<job> would go spare." The section note says the rule. Test: `current-review.test.js` (the 0056 case: YSBY01 is the tie,
+Ivy and YBHS01 otherwise; YSTY01 not; no tie when no rest ends at a call); broken on purpose once, caught. Suite 619 of
+619. In a browser over the live main site as him: no errors; no tie shows yet (the YM spareboard isn't read until the
+restart, so the spare's rest isn't known).
+**This morning is the first real test of it:** YSBY01 Sat 0700 (call 0500), the spare yardmaster's rest ends 0500 (his
+photo). Predicted (with the photo's facts): YSTY01 → rank 330 (YPRS02 FO 0645 → B112), YSBY01 → rank 140 (the tie;
+otherwise rank 410, YBHS01 0800 going spare). **To check after 0700:** who the Call Board shows on YSTY01, YSBY01, YPRS02
+and YBHS01 (crew names in data/crew.json `working`, opened with /api/crewkey; turns in the day file's `yardJobs`); a
+check-in is booked in this session for 07:45 Toronto. A conflict = report it to him, rule unchanged until he says.
+
+## YM predictions in Jobs going spare, OWNER KEY ONLY, both sites — BUILT 14 Nov 2026, about 01:15 Toronto (page + `public/board-ym.js`). WAITING ON ONE LAPTOP PULL (+ the restart already owed for the yardmaster spareboard read); then his checking them against what happens
 
 **Owner:** "So put the spare YM jobs in the jobs going spare tab. but only show the predictions to anyone with an owners
 key for now. Lets verify them. That can be puhsed to the main page". Read as: the YA rows stay for everyone (built
@@ -29,7 +45,7 @@ earlier, no cover); the predictions are the owner's only, on both sites.
   (Analytics → Yardmaster jobs on the test site keeps it, "worked by"), and the emptied yard job's crew shows who
   covered it. Nothing keeps the predictions themselves yet: offered (the laptop logging each, for a score later).
 
-## The yardmaster spareboard (2 → 16) read every check — BUILT 14 Nov 2026, about 02:10 Toronto (laptop + page). WAITING ON ONE LAPTOP PULL + RESTART; then the first real read in the log
+## The yardmaster spareboard (2 → 16) read every check — BUILT 14 Nov 2026, about 01:00 Toronto (laptop + page). WAITING ON ONE LAPTOP PULL + RESTART; then the first real read in the log
 
 **Owner:** "there is a cats screen to read", "from the main screen its 2 then 16", and a photo: SPAREBOARD INQUIRY,
 YARDMASTER S/B- PSTN, PSTS02D (the four spareboards' own program and columns), NBR ASSIGNED 001, one row: the spare
@@ -59,7 +75,7 @@ section below (is anyone on the YM spareboard).
 **YPRS02 FO 0645 goes spare → B112** (call 0445). YSBY01 Sat 0700 (call 0500): the spare's rest ends at 0500 → rank 140
 (step 1). **A tie, asked him:** rest until 0500 and a 0500 call taken as free. Still open: questions 2 to 4 below.
 
-## YM jobs going spare: in Jobs going spare (BUILT, both sites); alerts for the people a YM vacancy would move (EXAMPLE PUT TO HIM, nothing built) — 14 Nov 2026, about 01:30 Toronto. WAITING ON ONE LAPTOP PULL (page only) and his answers
+## YM jobs going spare: in Jobs going spare (BUILT, both sites); alerts for the people a YM vacancy would move (EXAMPLE PUT TO HIM, nothing built) — 14 Nov 2026, about 00:50 Toronto. WAITING ON ONE LAPTOP PULL (page only) and his answers
 
 **Owner,** to "Main site: nowhere. Current's Jobs going spare leaves YA jobs out, at your word on 24 Oct": "Lets do
 this". **Built** (`public/board.html` `vacancies`, both layouts, every member, both sites): "Yardmaster jobs going spare

@@ -3576,7 +3576,13 @@ function ymPredFrom(Y, L, s, rules = null) {
   }).filter(Boolean);
   const used = new Set([...(s.vacancies || []), ...(s.vacanciesPredicted || [])].map((v) => v.fill && v.fill.turn).filter(Boolean));
   const out = { taken: s.taken, sb, rules: !!rules, jobs: {}, knock: [] };
-  for (const x of Y.chain(jobs, people, rules, facts, sbRows && !onSb.length ? 'no' : 'yes')) {
+  const sbMode = sbRows && !onSb.length ? 'no' : 'yes';
+  // A rest that ends right at the call counts as free (owner, 2026-11-14, asked about a 0500 rest and a 0500 call: "yes
+  // we will go with that, but we can watch that and check for conflicts if you see that"). Watched: the chain again with
+  // every rest a minute longer; a job whose pick differs is marked a tie, with who it would be otherwise.
+  const later = Object.fromEntries(Object.entries(facts).map(([k, f]) => [k, f && f.freeAt ? { ...f, freeAt: new Date((Y.fromLocal(f.freeAt) + 1) * 60000).toISOString().slice(0, 16) } : f]));
+  const alt = Object.fromEntries(Y.chain(jobs, people, rules, later, sbMode).map((x) => [x.key, x]));
+  for (const x of Y.chain(jobs, people, rules, facts, sbMode)) {
     const passed = x.passed.slice(0, 4).map((y) => `${name(y.p)} (rank ${y.p.rank}): ${y.why}`);
     if (!x.pick) { out.jobs[x.key] = { who: '', call: day(x.call), passed, leaves: '' }; continue; }
     const who = name(x.pick.p);
@@ -3590,7 +3596,10 @@ function ymPredFrom(Y, L, s, rules = null) {
       out.knock.push(knock);
       leaves = `${knock.train} ${knock.cc} ${knock.at}`;
     }
-    out.jobs[x.key] = { who, rank: x.pick.rank, step: x.pick.step, label: x.pick.label, call: day(x.call), passed, leaves };
+    const a = alt[x.key];
+    const tie = a && (a.pick ? a.pick.rank : null) !== x.pick.rank
+      ? { who: a.pick ? name(a.pick.p) : '', rank: a.pick ? a.pick.rank : null, step: a.pick ? a.pick.step : null, leaves: a.leaves ? `${a.leaves.job} ${a.leaves.craft} ${day(a.leaves.s)}` : '' } : null;
+    out.jobs[x.key] = { who, rank: x.pick.rank, step: x.pick.step, label: x.pick.label, call: day(x.call), passed, leaves, ...(tie ? { tie } : {}) };
   }
   return out;
 }
@@ -3613,12 +3622,14 @@ function vacancies(s, reviewed = false) {
   const ym = s.yardmasterJobs || [];
   if (!list.length && !(cats || []).length && !predicted.length && !ym.length) return '';
   const ymHead = !ym.length ? '' : `<h3 style="margin:14px 14px 4px;font-size:15px">Yardmaster jobs going spare · ${ym.length}</h3>
-    <p class="anote" style="margin:4px 14px 10px">${yp ? `Only you see the cover (owner key, to check it): the yardmaster call order's ${yp.rules ? 'rules saved on this phone' : 'starting rules'}, earliest call first, one person each, everyone as this check showed them. ${esc(yp.sb)} A yard job someone is moved up from is under Predicted jobs going spare.`
+    <p class="anote" style="margin:4px 14px 10px">${yp ? `Only you see the cover (owner key, to check it): the yardmaster call order's ${yp.rules ? 'rules saved on this phone' : 'starting rules'}, earliest call first, one person each, everyone as this check showed them; a rest ending right at the call counts as free (marked "tie" where that decides it). ${esc(yp.sb)} A yard job someone is moved up from is under Predicted jobs going spare.`
     : 'Yardmaster jobs (YA) on CATS\'s option 5. They go to the yardmaster spareboard first, then down the yardmaster seniority list, so no cover is shown.'}</p>`;
   // A yardmaster row's cover for the owner: who, when they're called, and in Details the step and who was passed over.
   const ymFor = (v) => (yp ? yp.jobs[`${v.train}|${v.at}`] || null : null);
   const ymCover = (x) => (!x ? '' : x.who ? `<span class="crew-craft">cover <b>${esc(x.who)}</b></span><span class="call">call ~${esc(x.call)}</span>` : '<span class="crew-craft"><strong class="spare">NOBODY BY THE CALL ORDER</strong></span>');
-  const ymWhy = (x) => (!x ? '' : `<p>${x.who ? `Expected cover (only you see this): <b>${esc(x.who)}</b>, rank ${esc(x.rank)} · Step ${esc(x.step)}: ${esc(x.label)}. Called ~${esc(x.call)}.` : 'Nobody by the call order.'}${x.passed.length ? ` Passed over: ${esc(x.passed.join(' · '))}.` : ''}${x.leaves ? ` Their ${esc(x.leaves)} goes spare (under Predicted jobs going spare).` : ''}</p>`);
+  const ymWhy = (x) => (!x ? '' : `<p>${x.who ? `Expected cover (only you see this): <b>${esc(x.who)}</b>, rank ${esc(x.rank)} · Step ${esc(x.step)}: ${esc(x.label)}. Called ~${esc(x.call)}.` : 'Nobody by the call order.'}${x.passed.length ? ` Passed over: ${esc(x.passed.join(' · '))}.` : ''}${x.leaves ? ` Their ${esc(x.leaves)} goes spare (under Predicted jobs going spare).` : ''}</p>${ymTie(x)}`);
+  // A tie (owner, 2026-11-14: "we can watch that and check for conflicts"): a rest ending right at the call decides it.
+  const ymTie = (x) => (!x || !x.tie ? '' : `<p><b>Tie, worth checking:</b> a rest ending right at the call is taken as free, at your word. If it weren't, ${x.tie.who ? `<b>${esc(x.tie.who)}</b>, rank ${esc(x.tie.rank)} (step ${esc(x.tie.step)})${x.tie.leaves ? `, and their ${esc(x.tie.leaves)} would go spare` : ''}` : 'nobody by the call order'}.</p>`);
   const ymMeta = ym.length ? ` + ${ym.length} yardmaster` : '';
   // The spare turn predicted to fill it (owner, 2026-10-24: yard jobs off
   // the fast board, road jobs off the slow board, in board order).
@@ -3681,8 +3692,8 @@ function vacancies(s, reviewed = false) {
       const bar = d !== day ? `<div class="daybar">${esc(d)}</div>` : '';
       day = d;
       const ord = v.status === 'ORDERED';
-      const chips = `<span class="chip">${esc([v.pool, v.cc].filter(Boolean).join(' '))}</span> <span class="st ${ord ? 'ORD' : 'PLN'}">${ord ? 'ORD' : 'PLN'}</span>`;
       const x = ymFor(v);
+      const chips = `<span class="chip">${esc([v.pool, v.cc].filter(Boolean).join(' '))}</span> <span class="st ${ord ? 'ORD' : 'PLN'}">${ord ? 'ORD' : 'PLN'}</span>${x && x.tie ? ' <span class="chip">tie</span>' : ''}`;
       const line2 = `<span class="crew-craft"><span class="spare">(spare)</span></span>${x ? ymCover(x) : v.returns ? `<span class="call">returns ${esc(v.returns)}</span>` : ''}`;
       const fold = `<p>${esc([v.pool, v.cc].filter(Boolean).join(' '))} · ${ord ? 'ordered' : 'planned'} ${esc(v.at)}, position ${esc(v.pos || '—')} on option 5.</p>${v.returns ? `<p>Returns ${esc(v.returns)}.</p>` : ''}${x ? ymWhy(x) : '<p>Filled from the yardmaster spareboard, then the yardmaster seniority list.</p>'}`;
       return bar + cur2Row({ hit: marked(v.train), time: time || v.at, train: v.train, od: '', chips, line2, fold, foldName: 'Details' })
@@ -3696,7 +3707,7 @@ function vacancies(s, reviewed = false) {
     ${rows2 || none}${ymHead}${ym2}${predHead}${pred2}
     ${foot}</section>`;
   }
-  const ymRows = ym.map((v) => `<tr${marked(v.train) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td><td><b class="num">${markTurn(v.train)}</b><div class="crew">${esc([v.pool, v.cc].filter(Boolean).join(' '))} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${ymFor(v) && ymFor(v).who ? `<div class="crew">Expected cover <b>${esc(ymFor(v).who)}</b> <span class="chip">estimate</span> · call ~${esc(ymFor(v).call)}</div>` : ''}</td>
+  const ymRows = ym.map((v) => `<tr${marked(v.train) ? ' class="hit"' : ''}><td class="num">${esc(v.at)}</td><td><b class="num">${markTurn(v.train)}</b><div class="crew">${esc([v.pool, v.cc].filter(Boolean).join(' '))} · ${v.status === 'ORDERED' ? 'ordered' : 'planned'}</div>${ymFor(v) && ymFor(v).who ? `<div class="crew">Expected cover <b>${esc(ymFor(v).who)}</b> <span class="chip">estimate</span>${ymFor(v).tie ? ' <span class="chip">tie</span>' : ''} · call ~${esc(ymFor(v).call)}</div>` : ''}</td>
     <td class="num"><span class="spare">(spare)</span>${v.returns ? `<div class="crew">returns ${esc(v.returns)}</div>` : ''}</td></tr>`).join('');
   const ymSection = !ym.length ? '' : `${ymHead}<div class="scroll"><table><thead><tr><th>Time</th><th>Job</th><th>Turn</th></tr></thead><tbody>${ymRows}</tbody></table></div>`;
   return `<section class="sheet" id="sec-vacancies"><header><h2>Jobs going spare · 5</h2><span class="meta">${list.length} job${list.length === 1 ? '' : 's'}${predicted.length ? ` + ${predicted.length} predicted` : ''}${ymMeta}</span></header>${tabs}${whyTab}

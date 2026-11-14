@@ -352,7 +352,13 @@ test('Jobs going spare: the yardmaster predictions, owner key only, both layouts
   p.run('YM_OWNER = true');
   const owner = p.run('vacancies')(snap, true);
   assert.ok(text(owner).includes('0630 YSTY01 YD YA PLN (spare) cover Birch, R call ~14th 0430'), text(owner));
-  assert.ok(text(owner).includes('0700 YSBY01 YD YA PLN (spare) cover Dogwood, M call ~14th 0500'));
+  assert.ok(text(owner).includes('0700 YSBY01 YD YA PLN tie (spare) cover Dogwood, M call ~14th 0500'), text(owner));
+  // The tie (owner, 2026-11-14, of a 0500 rest and a 0500 call: "yes we will go with that, but we can watch that and check
+  // for conflicts if you see that"): YSBY01's pick rests until its call; a minute later it would be the yard FO's relief.
+  assert.deepEqual(pred.jobs['YSBY01|14th 0700'].tie, { who: 'Ivy, C', rank: 60, step: 3, leaves: 'YBHS01 FO 14th 0800' });
+  assert.equal(pred.jobs['YSTY01|14th 0630'].tie, undefined);
+  assert.ok(text(owner).includes('Tie, worth checking: a rest ending right at the call is taken as free, at your word. If it weren\'t, Ivy, C , rank 60 (step 3), and their YBHS01 FO 14th 0800 would go spare.'), text(owner));
+  assert.ok(!/0630 YSTY01 YD YA PLN tie/.test(text(owner)));
   assert.ok(text(owner).includes('Expected cover (only you see this): Birch, R , rank 50 · Step 3: Working in the yard that day, not called yet · 2-hour call · straight time. Called ~14th 0430.'), text(owner));
   assert.ok(text(owner).includes('Passed over: Dogwood, M (rank 30): on rest until Sat 14th 0500 when the call is made. Their YPRS02 FO 14th 0645 goes spare'));
   assert.ok(text(owner).includes('0645 YPRS02 YD FO PLN predicted from YM cover B112 call ~14th 0445'), text(owner));
@@ -375,6 +381,7 @@ test('Jobs going spare: the yardmaster predictions, owner key only, both layouts
   const both = plain(p.run('ymPredFrom')(Y, { ...L, live: { ...L.live, byRank: { 30: { ...L.live.byRank[30], freeAt: '2026-11-14T04:00' } } } }, snap, null));
   assert.deepEqual([both.jobs['YSTY01|14th 0630'].who, both.jobs['YSBY01|14th 0700'].who], ['Dogwood, M', 'Ivy, C']);
   assert.equal(both.jobs['YSBY01|14th 0700'].passed[0], 'Dogwood, M (rank 30): taken for YSTY01 Sat 14th 0630 first');
+  assert.ok(!both.jobs['YSTY01|14th 0630'].tie && !both.jobs['YSBY01|14th 0700'].tie, 'no rest ends at a call: no tie');
   p.run('YM_OWNER = false; YM_PRED = null');
   // On the page: the owner flag is the Worker-checked owner key, and Current works the answer out as it draws.
   assert.ok(html.includes('    YM_OWNER = membersOwner; // the yardmaster predictions in Jobs going spare (owner, 2026-11-14)'));
