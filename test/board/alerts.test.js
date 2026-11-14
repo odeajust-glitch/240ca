@@ -742,6 +742,30 @@ test('Garnet: the crew there is lined up home on the next L501', () => {
   assert.ok(ev2.some((t) => /^EN07 lined up home from Garnet: L50131 04/.test(t)));
 });
 
+// Owner, 2026-11-13: L50231 13 went out with S502's engineer and MU01's conductor (S502's conductor job was
+// held; he then placed on it at home). The Garnet board showed both at position 001; only S502's engineer was
+// taken as the crew, so the page named S502's new conductor (at home) and MU01's conductor was never told.
+test('Garnet: a crew of two turns, each person by their own row', () => {
+  const { garnetHome } = require('../../lib/board/toronto');
+  const { turnStates } = require('../../lib/board/alerts');
+  const { updateFillIns } = require('../../lib/board/fillins');
+  const lineup = [{ symbol: 'L50131', originDay: '13', status: 'ORD', order: 2000 }];
+  const board = [{ turn: 'S502', craft: 'EN', pos: 1, restUntil: null }, { turn: 'MU01', craft: 'CO', pos: 1, restUntil: 1200 }];
+  const g = garnetHome(lineup, board);
+  assert.deepEqual(g.crew.members, [{ turn: 'S502', craft: 'EN' }, { turn: 'MU01', craft: 'CO' }]);
+  assert.deepEqual([g.crew.turn, g.crew.en, g.crew.co, g.crew.restUntil], ['S502', true, true, 1200]);
+  // One crew only: a second turn's rows at another position are not part of it, nor a second conductor.
+  assert.deepEqual(garnetHome(lineup, [...board, { turn: 'S501', craft: 'CO', pos: 2 }, { turn: 'S501', craft: 'EN', pos: 2 }]).crew.members.map((m) => m.turn), ['S502', 'MU01']);
+  assert.deepEqual(garnetHome(lineup, [{ turn: 'S501', craft: 'EN', pos: 1 }, { turn: 'S501', craft: 'CO', pos: 1 }, { turn: 'MU01', craft: 'CO', pos: 1 }]).crew.members.map((m) => `${m.turn} ${m.craft}`), ['S501 EN', 'S501 CO']);
+  // The spare working MU01's conductor job is told by their own turn; S502's conductor (at home) is not.
+  const fillIns = updateFillIns({}, { backfill: [{ train: 'L50231 13', craft: 'CO', job: 'MU01', turn: 'B133' }], now: 1000 });
+  const st = turnStates({ predictions: [], now: 1000 }, [], { garnetLineup: lineup, garnet: board, fillIns });
+  assert.equal(st['S502-EN'].lineup.home, 'Garnet');
+  assert.equal(st.B133.lineup.train, 'L50131 13');
+  assert.match(st.B133.lineup.why, /^S502's engineer and MU01's conductor are the crew at Garnet .* B133 is working MU01's conductor job/);
+  assert.ok(!st['S502-CO'] || !st['S502-CO'].lineup, 'S502\'s conductor is at home');
+});
+
 test('a trainee\'s slot gets the turn crew\'s train alerts, not the holder\'s reset', () => {
   const { addTrainees } = require('../../lib/board/alerts');
   const lineup = { train: 'L50231 04', status: 'PLN', order: 400, call: 145, spare: false };

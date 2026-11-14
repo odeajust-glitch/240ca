@@ -24,7 +24,7 @@ function page({ preview = false, marks = [] } = {}) {
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const ctx = { BoardTrains: T, BoardTurns: Turns, PREVIEW: preview, stampMin: T.toMin, esc, split: (s) => s.split(' '),
     marked: (t) => marks.includes(t), markedIn: (t) => marks.some((m) => Turns.turnIn(t, m)), markTurn: (t) => esc(t),
-    crewTag: () => '', crewBoth: () => '', yardTag: () => '', yardWorking: () => '', resetFor: () => null, resetKey: (t) => t.turn, resetText: () => '',
+    crewTag: () => '', crewBoth: () => '', garnetName: () => '', yardTag: () => '', yardWorking: () => '', resetFor: () => null, resetKey: (t) => t.turn, resetText: () => '',
     SPARE_PREDICT: false, spareCall: () => null, boardOdds: () => '', trainHabit: () => null, planTrust: () => '', poolChip: () => '', likelyCall: () => null, staleChip: () => '',
     // The crew of a row, as the page's lineupCrew words a job going spare when no cover is named.
     lineupCrew: (t) => (/goes spare/.test(t.rules || '') ? '<span class="crew-craft"><span class="muted">Conductor:</span> <span class="spare">spare</span> (S502 spare)</span>' : '<span class="crew-craft"><span class="muted">Conductor:</span> SR06</span>') };
@@ -345,6 +345,64 @@ test('item 10: the small wording', () => {
   assert.ok(g().includes('Nobody is shown at Garnet yet. S501 is shown away on the 501/502 board: CO out working on L50231 · EN out working on L50231.'));
   const unread = { ...s, screens: s.screens.filter((k) => k !== 'garnet') };
   assert.ok(g(unread).includes('The Garnet board wasn’t read in this check. S501 is shown away'));
+});
+
+// Owner, 2026-11-13, of the Garnet card on his phone ("S502 CO O'Dea, J · EN Street, K", highlighted as his):
+// "This is wrong. I moved to this turn today but I am still on rest at home. It should show Jacobson". The 1931
+// check of 13 Nov, cut down: L50231 13 went out with S502's engineer and MU01's conductor (S502's conductor job
+// was held); he placed on S502's conductor job at home that afternoon. The Garnet board shows S502 EN and MU01 CO.
+test('Garnet: each person at Garnet by their own row, not the turn\'s new holder at home', () => {
+  const at = {
+    taken: '2026-11-13 1931',
+    screens: ['s5Pool', 'garnet', 'garnetLineup'],
+    pools: [
+      { name: '501/502 (S5)', turns: [{ pos: '001', turn: 'S502', craft: 'CO', status: 'rest until 14th 0530' }, { pos: '001', turn: 'S502', craft: 'EN', status: 'away (term 1)' }, { pos: '001', turn: 'MU01', craft: 'CO', status: 'away (term 1)' }] },
+      { name: 'Garnet', turns: [{ pos: '001', turn: 'S502', craft: 'EN', status: 'available' }, { pos: '001', turn: 'MU01', craft: 'CO', status: 'available' }] },
+    ],
+    onDuty: [], lineup: [], macLineup: [], vacancies: [],
+    garnetHome: { train: 'L50131 13', status: 'ORD', order: '13th 2145', call: '13th 1930', crew: { turn: 'S502', crafts: 'EN', rested: '', late: false } },
+  };
+  // Names as the page's crew file has them: S502's conductor is the new holder at home; MU01's conductor at
+  // Garnet by the Garnet board's own row. Made-up names.
+  const names = { 'Garnet|MU01|CO': 'Spare, N', 'S502|EN': 'Engineer, K', 'S502|CO': 'Holder, J' };
+  const view = (snap, marks) => {
+    const p = page({ marks });
+    p.ctx.marked = (t, c) => marks.includes(t) || (!!c && marks.includes(`${t}-${c}`));
+    p.ctx.garnetName = (x, board, turn, craft) => names[/^MU/.test(turn) ? `${board}|${turn}|${craft}` : `${turn}|${craft}`] || '';
+    return p;
+  };
+  const html = (snap, marks = ['S502-CO']) => view(snap, marks).run('garnet2')(snap);
+  // A checker that has not pulled yet (no members): the Garnet board's rows in this check.
+  const old = html(at);
+  assert.ok(text(old).includes('MU01 CO Spare, N + S502 EN Engineer, K'), text(old));
+  assert.ok(!old.includes('Holder, J'), 'the conductor at home is not the one at Garnet');
+  assert.ok(!old.includes('<mark'), 'not marked for the conductor at home');
+  assert.ok(!/class="[^"]*hit/.test(old), 'not his row');
+  assert.ok(text(old).includes('MU01 CO + S502 EN · from the Garnet board.'));
+  // The laptop's own list once it has pulled: the same.
+  const now = { ...at, garnetHome: { ...at.garnetHome, crew: { ...at.garnetHome.crew, crafts: 'EN + CO', members: [{ turn: 'S502', craft: 'EN' }, { turn: 'MU01', craft: 'CO' }] } } };
+  assert.equal(text(html(now)), text(old));
+  // Following S502's engineer job: that one is marked.
+  assert.ok(html(now, ['S502-EN']).includes('<mark class="t">S502</mark>'));
+  // His card: no "Home from Garnet" for the conductor at home; the engineer's has it.
+  const p = view(now, []);
+  assert.ok(!p.run('cardLines')(now, 'S502-CO', []).some((l) => /Garnet/.test(l.text)));
+  assert.ok(p.run('cardLines')(now, 'S502-EN', []).some((l) => /Home from Garnet on L50131 13/.test(l.text)));
+  assert.ok(!view(at, []).run('cardLines')(at, 'S502-CO', []).some((l) => /Garnet/.test(l.text)), 'the same before the pull');
+  // One turn's whole crew is drawn as before: the turn, then each craft's name.
+  const whole = { ...at, pools: [{ name: 'Garnet', turns: [{ pos: '001', turn: 'S501', craft: 'EN', status: 'available' }, { pos: '001', turn: 'S501', craft: 'CO', status: 'available' }] }],
+    garnetHome: { ...at.garnetHome, crew: { turn: 'S501', crafts: 'EN + CO', rested: '', late: false } } };
+  names['S501|CO'] = 'Conductor, A'; names['S501|EN'] = 'Driver, B';
+  assert.ok(text(html(whole, ['S501-CO'])).includes('S501 CO Conductor, A · EN Driver, B'));
+  assert.ok(html(whole, ['S501-CO']).includes('<mark class="t">S501</mark>'));
+  // The Garnet board not read: the 501/502 board's away rows, MU01's conductor with S502's engineer.
+  const unread = { ...at, screens: ['s5Pool', 'garnetLineup'], pools: [at.pools[0]], garnetHome: { ...at.garnetHome, crew: null } };
+  names['501/502 (S5)|MU01|CO'] = 'Spare, N';
+  const u = html(unread);
+  assert.ok(text(u).includes('MU01 CO Spare, N + S502 EN Engineer, K'), text(u));
+  assert.ok(text(u).includes('S502 EN and MU01 CO are shown away on the 501/502 board'), text(u));
+  assert.ok(!u.includes('Holder, J') && !u.includes('<mark'));
+  assert.ok(!view(unread, []).run('cardLines')(unread, 'S502-CO', []).some((l) => /Garnet/.test(l.text)));
 });
 
 test('the four menus above the boxes are gone, for every member', () => {

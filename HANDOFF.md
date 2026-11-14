@@ -1,5 +1,40 @@
 # HANDOFF — read this before doing anything
 
+## Garnet card named the turn's new holder at home, not who was at Garnet — FIXED 13 Nov 2026, about 20:10 Toronto (page + laptop), for everyone, both sites. WAITING ON ONE LAPTOP PULL (the page; + a RESTART for the alerts part)
+
+**Owner, 13 Nov 19:39 (his phone's screenshot of Current, Garnet line-up · L501 home: "S502 CO O'Dea, J · EN
+Street, K", rested, call ~13th 1930, highlighted as his):** "This is wrong. I moved to this turn today but I am
+still on rest at home. It should show Jacobson". **What happened (main site's 13 Nov day file):** L50231 13
+went out at 0400 with **S502's engineer and MU01's conductor** (S502's conductor job was on a hold turn); he
+placed on S502's conductor job at home about 15:54 (rest until 14th 0530). From 13:25 the Garnet board (31)
+showed **S502 EN and MU01 CO, both at 001**. The laptop's `garnetHome` took only the first turn's rows (S502,
+EN), so `garnetHome.crew` = S502 / EN, and the page's `crewBoth('S502')` named both of S502's crafts, the
+conductor being his name now. The row was marked for him (`marked('S502')` ignores the craft), and **his
+followed-turn card also said "Home from Garnet on L50131 13 … call ~13th 1930"** (`cardLines` by turn only).
+MU01's conductor at Garnet was **"Jacobsen, N"** in the names file (CATS's spelling; `mu.boards`, Garnet row).
+First mixed crew in the saved days (3 Nov on: S502, S501, MU01 and MU02 crews were each one turn).
+
+**Fixed.** Page (`public/board.html`): `garnetName` (beside `crewBoth`: an MU row by its own row's name,
+`muName`; a 501/502 turn by that craft's name), `garnetMembers` / `garnetSort` / `garnetBoard` / `garnetWho` /
+`garnetCrafts` (after `garnetCrew`): each person at Garnet by their row, conductor first ("MU01 CO Jacobsen, N +
+S502 EN Street, K"; one turn's whole crew drawn as before), marked only for a followed craft that is there;
+the members from the laptop's `crew.members`, else **the Garnet board's rows in that check** (so the page alone
+fixes it, and older checks), else the turn and its crafts. `garnetCrew` (Garnet board not read) takes a
+make-up turn away on the same trip as the missing craft. `cardLines`' "Home from Garnet" only for a craft at
+Garnet. Both Garnet boxes (`garnet2` and the older table `garnet`). Laptop: `toronto.js garnetHome` crew =
+every row at the first position, one a craft (`members`; `turn` stays the first row's); `site.js` publishes
+`members`; `alerts.js` the L501-home lineup per person (so the spare working MU01's conductor job is told by
+their own turn, through `fillIns['MU01-CO']`; S502's conductor at home is not).
+
+**Checked.** Suite **609 of 609** (`current-review.test.js`: his 1931 check cut down, made-up names;
+`alerts.test.js`: the mixed crew, one crew only, the spare told, S502-CO not). Broken on purpose five ways
+(both crafts named again, marked by turn, the card by turn, the laptop's first turn only, the page's fallback
+without the mate): a test failed each time. In a browser (390 px, GET only, `boardNoCount`, following
+S502-CO), the live main site at the 1931 check: **the live page as his screenshot** (S502 CO O'Dea · EN Street,
+highlighted; his card "Home from Garnet on L50131 13 …"); **this branch's page: "MU01 CO Jacobsen, N + S502 EN
+Street, K", not highlighted, no Home from Garnet on his card**, no page errors.
+**Not checked:** a real alert to the spare on MU01 (needs the restart and the next mixed crew).
+
 ## The faint visible code made much fainter, with a "sharpen the photo" step and a strength picker — BUILT FOR THE TEST SITE ONLY (his own screens, as before), 13 Nov 2026 about 18:40 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL (no restart); then his eye test, then a camera test
 
 **Owner, 13 Nov:** "is there anyway to make it less visible", then "make it as faint as you think is possbile, Ill

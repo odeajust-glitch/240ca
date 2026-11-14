@@ -2671,6 +2671,16 @@ function crewBoth(turn) {
   const parts = [['CO', CREW[`${turn}-CO`]], ['EN', CREW[`${turn}-EN`]]].filter(([, n]) => n).map(([c, n]) => `${c} ${esc(n)}`);
   return parts.length ? ` <span class="crewnm">${parts.join(' · ')}</span>` : '';
 }
+// One person of the crew at Garnet (or away on the 501/502 board), named by the row they are on (owner,
+// 2026-11-13: the Garnet card said "S502 CO O'Dea, J · EN Street, K" while S502's engineer and MU01's
+// conductor were at Garnet, and he had placed on S502's conductor job at home: "It should show Jacobson").
+// A make-up turn by its own row's name in the newest check (muName); a 501/502 turn by that craft's name;
+// any other turn by its own. board: the pool's name as the snapshot has it ("Garnet", "501/502 (S5)").
+function garnetName(s, board, turn, craft) {
+  if (BoardTurns.PLACEHOLDER.test(turn || '')) return muName(s, 'boards', board, craft, turn);
+  if (!CREW) return '';
+  return CREW[/^S5\d{2}$/.test(turn) ? `${turn}-${craft === 'CO' ? 'CO' : 'EN'}` : turn] || '';
+}
 // The name after each turn in a line of text ("CO SR05 · EN SD11"). A
 // 501/502 turn is two people: named only where the text says which
 // ("CO S501", "S501-EN").
@@ -2864,12 +2874,13 @@ function garnet(s) {
   const head = '<header><h2>Garnet line-up · L501 home</h2></header>';
   if (!g) return `<section class="sheet" id="sec-garnet">${head}<p class="empty">No L501 planned out of Garnet in the next 24 h.</p></section>`;
   const c = g.crew;
+  const who = garnetMembers(s);
   const rest = !c ? '' : !c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`;
-  const crew = c ? `<b class="num">${markTurn(c.turn)}</b>${crewBoth(c.turn)} <span class="muted">${esc(c.crafts)}</span><div class="crew">${rest} · call ~${esc(g.call)}</div>`
+  const crew = c ? `<b class="num">${garnetWho(s, who, (garnetBoard(s) || {}).name || 'Garnet')}</b> <span class="muted">${esc(garnetCrafts(who, c))}</span><div class="crew">${rest} · call ~${esc(g.call)}</div>`
     : '<span class="muted">no crew read on the Garnet board (31)</span>';
   return `<section class="sheet" id="sec-garnet">${head}
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Crew in Garnet</th></tr></thead><tbody>
-    <tr${c && marked(c.turn) ? ' class="hit"' : ''}><td class="num">${esc(g.order)}</td><td><span class="st ${esc(g.status)}">${esc(g.status)}</span></td><td><b class="num">${esc(g.train)}</b></td><td>${crew}</td></tr></tbody></table></div>
+    <tr${who.some((m) => marked(m.turn, m.craft)) ? ' class="hit"' : ''}><td class="num">${esc(g.order)}</td><td><span class="st ${esc(g.status)}">${esc(g.status)}</span></td><td><b class="num">${esc(g.train)}</b></td><td>${crew}</td></tr></tbody></table></div>
     <div class="foot">Garnet's line-up (option 41, station 47956) and the Garnet board (31). Only one crew is ever in Garnet: the 501/502 crew that took L502 out brings the next L501 home. Call = order − 2 h 15 (on duty is 15 min before the order).</div></section>`;
 }
 
@@ -3060,18 +3071,68 @@ function toronto2(s) {
 }
 // Who is in Garnet when the Garnet board wasn't read: the 501/502 turns
 // shown away on their own board, with anyone filling in from the Call Board.
+// A make-up turn away on the same trip is the other half of the crew (owner, 2026-11-13: S502's engineer
+// and MU01's conductor took L50231 13 out while S502's conductor job was held): the row of the craft the
+// first turn is missing, with the same status.
 function garnetCrew(s) {
   const away = [];
-  for (const p of s.pools || []) for (const t of p.turns || []) {
-    if (!/^S5\d{2}$/.test(t.turn) || !/away|out working on L502/.test(t.status || '')) continue;
-    away.push({ turn: t.turn, craft: t.craft === 'CO' ? 'CO' : 'EN', status: t.status });
+  for (const p of s.pools || []) {
+    const s5 = (p.turns || []).some((t) => /^S5\d{2}$/.test(t.turn));
+    for (const t of p.turns || []) {
+      if (!(/^S5\d{2}$/.test(t.turn) || (s5 && BoardTurns.PLACEHOLDER.test(t.turn || ''))) || !/away|out working on L502/.test(t.status || '')) continue;
+      away.push({ turn: t.turn, craft: t.craft === 'CO' ? 'CO' : 'EN', status: t.status, board: p.name });
+    }
   }
   if (!away.length) return null;
-  const turn = away[0].turn;
+  const first = away.find((a) => /^S5\d{2}$/.test(a.turn)) || away[0];
+  const turn = first.turn;
+  const rows = away.filter((a) => a.turn === turn);
+  for (const craft of ['CO', 'EN']) {
+    if (rows.some((a) => a.craft === craft)) continue;
+    const mate = away.find((a) => a.turn !== turn && a.craft === craft && a.status === first.status);
+    if (mate) rows.push(mate);
+  }
   const out = (s.onDuty || []).find((r) => /^L502/.test(r.train || '') && (r.crew || '').includes(turn));
-  const fills = out ? (out.backfill || []).filter((b) => b.job === turn) : [];
-  return { turn, rows: away.filter((a) => a.turn === turn), fills };
+  const fills = out ? (out.backfill || []).filter((b) => rows.some((a) => a.turn === b.job && (a.craft === 'CO') === (b.craft === 'CO'))) : [];
+  return { turn, rows, fills, members: garnetSort(rows), board: first.board };
 }
+// The crew at Garnet as [{ turn, craft }], conductor first: the laptop's own list (garnetHome.crew.members,
+// since 2026-11-13), else the Garnet board's rows at the crew's position in this check, else the one turn
+// and its crafts (checks saved before either).
+const garnetSort = (rows) => [...rows].sort((a, b) => (a.craft === 'CO' ? 0 : 1) - (b.craft === 'CO' ? 0 : 1)).map(({ turn, craft }) => ({ turn, craft }));
+const garnetBoard = (s) => (s.pools || []).find((p) => /^Garnet/.test(p.name || ''));
+function garnetMembers(s) {
+  const c = s.garnetHome && s.garnetHome.crew;
+  if (!c) return [];
+  if (Array.isArray(c.members) && c.members.length) return garnetSort(c.members);
+  const b = garnetBoard(s);
+  const rows = b ? (b.turns || []).filter((t) => /^(EN|LE|CO)$/.test(t.craft) && !/out working/.test(t.status || '')) : [];
+  const at = rows.find((t) => t.turn === c.turn);
+  if (at) {
+    const here = rows.filter((t) => t.turn === c.turn);
+    for (const co of [true, false]) {
+      if (here.some((t) => (t.craft === 'CO') === co)) continue;
+      const mate = rows.find((t) => t.turn !== c.turn && (t.craft === 'CO') === co && +t.pos === +at.pos);
+      if (mate) here.push(mate);
+    }
+    return garnetSort(here.map((t) => ({ turn: t.turn, craft: t.craft === 'CO' ? 'CO' : 'EN' })));
+  }
+  return garnetSort(String(c.crafts || '').split(' + ').filter(Boolean).map((craft) => ({ turn: c.turn, craft })));
+}
+// "S502 CO Last, F · EN Last, F" for one turn's crew, "MU01 CO Last, F + S502 EN Last, F" for two; a turn
+// marked only when a followed craft is the one at Garnet (S502's conductor at home is not "you").
+function garnetWho(s, members, board) {
+  const turns = [...new Set(members.map((m) => m.turn))];
+  return turns.map((turn) => {
+    const mine = members.filter((m) => m.turn === turn);
+    const mark = mine.some((m) => marked(turn, m.craft)) ? `<mark class="t">${esc(turn)}</mark>` : esc(turn);
+    const named = mine.map((m) => [m.craft, garnetName(s, board, turn, m.craft)]);
+    // One turn's whole crew and no names read: the turn alone, as before.
+    const words = turns.length === 1 && mine.length === 2 && !named.some(([, n]) => n) ? [] : named.map(([c, n]) => (n ? `${c} ${esc(n)}` : c));
+    return mark + (words.length ? ` <span class="crewnm">${words.join(' · ')}</span>` : '');
+  }).join(' + ');
+}
+const garnetCrafts = (members, c) => (new Set(members.map((m) => m.turn)).size > 1 ? members.map((m) => `${m.turn} ${m.craft}`).join(' + ') : c.crafts);
 function garnet2(s) {
   const g = s.garnetHome;
   const read = (s.screens || []).includes('garnetLineup');
@@ -3083,14 +3144,19 @@ function garnet2(s) {
   const guess = c ? null : garnetCrew(s);
   // Owner, 2026-11-12, reviewing Current: option 31 read and showing nobody is not "wasn't read".
   const readG = (s.screens || []).includes('garnet');
-  const crew = c ? markTurn(c.turn) + crewBoth(c.turn) : guess ? markTurn(guess.turn) + crewBoth(guess.turn) : '<span class="muted">crew not known</span>';
+  // Each person at Garnet by the row they are on (garnetMembers; owner, 2026-11-13).
+  const who = c ? garnetMembers(s) : guess ? guess.members : [];
+  const board = c ? ((garnetBoard(s) || {}).name || 'Garnet') : guess ? guess.board : '';
+  const crew = who.length ? garnetWho(s, who, board) : '<span class="muted">crew not known</span>';
   const state = c ? (!c.rested ? '<span class="ok">rested</span>' : c.late ? `<span class="spare">rested ${esc(c.rested)}, after the call</span>` : `rest until ${esc(c.rested)}`)
     : guess ? (guess.fills.length ? guess.fills.map((f) => `${esc(f.craft)} worked by ${markTurn(f.turn)}`).join(' · ') : 'took L502 out') : '';
-  const detail = c ? `<p>${esc(c.crafts)} · from the Garnet board.</p>`
-    : guess ? `<p>${readG ? 'Nobody is shown at Garnet yet.' : 'The Garnet board wasn’t read in this check.'} ${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.</p>`
+  const awayWho = guess && new Set(guess.rows.map((r) => r.turn)).size > 1 ? `${guess.rows.map((r) => `${esc(r.turn)} ${esc(r.craft)}`).join(' and ')} are shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.turn)} ${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.`
+    : guess ? `${esc(guess.turn)} is shown away on the 501/502 board: ${guess.rows.map((r) => `${esc(r.craft)} ${esc(r.status)}`).join(' · ')}.` : '';
+  const detail = c ? `<p>${esc(garnetCrafts(who, c))} · from the Garnet board.</p>`
+    : guess ? `<p>${readG ? 'Nobody is shown at Garnet yet.' : 'The Garnet board wasn’t read in this check.'} ${awayWho}</p>`
       : readG ? '<p>Nobody is shown at Garnet, and no 501/502 turn is shown away.</p>' : '<p>The Garnet board wasn’t read in this check and no 501/502 turn is shown away.</p>';
   return `<section class="sheet" id="sec-garnet"><header><h2>Garnet line-up · L501 home</h2></header><div class="daybar">${esc(d)}</div>
-    ${cur2Row({ hit: !!(c ? marked(c.turn) : guess && marked(guess.turn)), time, train: sym, od, chips: `<span class="st ${esc(g.status)}">${esc(g.status)}</span>`,
+    ${cur2Row({ hit: who.some((m) => marked(m.turn, m.craft)), time, train: sym, od, chips: `<span class="st ${esc(g.status)}">${esc(g.status)}</span>`,
       line2: `<span class="crew-craft">${crew}</span>${state ? `<span class="call">${state}</span>` : ''}<span class="call">call ~${esc(awayCall(s, { order: g.order, train: g.train }))}</span>`, foldName: 'Details', fold: detail })}
     <div class="foot">The 501/502 crew that took L502 out brings the next L501 home.</div></section>`;
 }
@@ -3179,10 +3245,13 @@ function cardLines(s, turn, lines) {
   const g = s.garnetHome;
   if (g && g.train && !out.some((l) => l.text.includes(g.train))) {
     const guess = g.crew ? null : garnetCrew(s);
-    const crewTurn = g.crew ? g.crew.turn : guess ? guess.turn : '';
+    // Only the crafts at Garnet (owner, 2026-11-13: placed on S502's conductor job at home while S502's
+    // engineer and MU01's conductor were at Garnet, his card said he was going home from Garnet).
+    const who = g.crew ? garnetMembers(s) : guess ? guess.members : [];
+    const there = who.some((m) => m.turn === base && (!craft || m.craft === (craft === 'CO' ? 'CO' : 'EN')));
     const fills = guess ? guess.fills : [];
     const covered = !!craft && fills.some((x) => (x.craft === 'CO') === (craft === 'CO'));
-    if ((crewTurn && crewTurn === base && !covered) || fills.some((x) => x.turn === base)) out.push({ kind: 'homeTrain', text: `Home from Garnet on ${g.train} (${g.status} ${g.order}), call ~${awayCall(s, { order: g.order, train: g.train })}` });
+    if ((there && !covered) || fills.some((x) => x.turn === base)) out.push({ kind: 'homeTrain', text: `Home from Garnet on ${g.train} (${g.status} ${g.order}), call ~${awayCall(s, { order: g.order, train: g.train })}` });
   }
   return out;
 }
