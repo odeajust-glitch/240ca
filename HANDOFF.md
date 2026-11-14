@@ -22,7 +22,7 @@ ordered train with no rested crew. The same gap gave 96 checks where an already-
 bunkhouse crew (every later train's crew one back). Separately, 22 trains left the Mac yard line-up 8 h or more
 before their call (E27531 11 of them, M38331 4, B73111 3) and never reached our Call Board.
 
-**Built (`d5a09f3`, `3e309d9`; no Worker change):**
+**Built (`d5a09f3`, `ede8a5e`; no Worker change):**
 1. **The Sarnia-crew rule** (`lib/board/toronto.js` `onCallBoard`): a Mac yard train on our Call Board keeps its
    Sarnia crew: it takes no one from the bunkhouse and is never "possible Toronto South"; its crew is kept out of
    the bunkhouse if CATS still lists them there (matched by a regular turn; MU turns only when both match). Used by
