@@ -279,6 +279,14 @@ are correct before pushing it as a feature". **Built:**
   since the fix). **He said: "ok ill let you know when one comes in".** Next: when he reports one, check it
   against the board (people.json / the day file at that check) and the Notifications tab row; then, at his
   word, `MEMBERS_ON = true`.
+- **14 Nov 01:05 Toronto, he asked "have you seen any potential bumping … list the last 10":** no bump on
+  the board since the test went live (13th about 17:40) up to the 14th 0056 check, so nothing sent (none in
+  the log either). The last one: **13th 1602, S502 CO, the owner (O'Dea, J) bumped its holder** (seen with
+  him in the 1554 check, on no board since); not sent, the laptop was still on `8419427` then. **A replay
+  must step through the real check times** (each day file's `snapshots[].taken`): stepping through the
+  stretch ends of people.json alone missed this one (the next stretch end was over the hour). Names came
+  from the locked data/crew.json (key from /api/crewkey) for people on a turn now; the four off every board
+  can't be named from the site (only the laptop's names.json would).
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a
