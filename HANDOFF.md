@@ -47,6 +47,14 @@ never sure of a wrong one at ~1-1.5% off, a plain page never; the verdict with h
 not sure; the screenshot rule as before). 11 breaks on purpose, each caught. On the made-up photos 36 reads, 0 wrong.
 **Not checked:** his eye on the 3 x squares; a real photo of the squares (only the hidden mark so far); a phone's own
 screen with a second phone. **Next:** his look (can he see them at 3 x?), then photos, light and dark, in the box.
+**His photos of the squares, 14 Nov ~04:20 (the laptop on `98e87c2`, which has this), read 14 Nov 04:26 by the page's
+own reader with corners as a person would tap them (5 tries each, 4 of them taps ~0.6% off; `scratchpad/read3.js`):**
+dark Members 01:45 (before the squares: the 1 x hidden mark only, corners by line-up): sure, his account, 20/20, 5 of
+5. Dark Current 04:22 (3 x): sure with the corners placed carefully, then "best: his account" 3 and nothing 1 with
+taps off (the dark page's edge is hard to see on the photo). **Light Current 04:21 (3 x): sure 3 of 5 with tapped
+corners, best 2; with the white page's own outline (OpenCV threshold + quad) sure 5 of 5.** The light page reads
+now (where the 3% code was lost). On the dark photo the camera shows the 3 x squares as a plain checker: asked him
+whether he sees them on the phone itself. Possible next: the page finding a light page's corners itself.
 
 ## Analytics log: a conductor on another pool's turn on the Call Board, and when CATS put it right — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`, `lib/board/archive.js`; `public/board-analytics.js`; page `public/board.html`, the cards on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt from the day files each publish: the 30 days fill in at once; no FORMAT bump)
 
