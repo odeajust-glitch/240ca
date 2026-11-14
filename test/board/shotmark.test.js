@@ -121,7 +121,7 @@ test('reading: the right account from a light page, a dark page, a smaller pictu
 });
 
 test('a screenshot of the test site with the squares (2 to 6 x) is read too; members\' screenshots as before', async () => {
-  // Owner, 14 Nov: "the page does not find a mark, even on normal screen shots" (his test site, the squares at 3 x).
+  // Owner, 14 Nov: "the page does not find a mark, even on normal screen shots" (the test site, the squares at 3 x).
   // A dark page's squares at 3 x are a 5 level step, which the spacing search (steps up to 4) never saw; at 3 x on a
   // light page a fill and its squares are 3 levels apart and were taken for two fills. Read again for them
   // (ShotMark.readShot) when the first read finds nothing.
@@ -135,7 +135,7 @@ test('a screenshot of the test site with the squares (2 to 6 x) is read too; mem
     const r = SM.readShot(page(W, H, { light, mark: who.mark, ox: 37, oy: 11, inkOver: true }), W, H, cands);
     assert.equal(r.found, true, JSON.stringify(r)); assert.equal(r.best, who.id); assert.equal(r.strong, undefined, 'read the first way');
   }
-  // His squares: 3 x (as he has them) and the other strengths he can pick, light (alpha 1 x N) and dark (2 x N).
+  // The owner's squares: 3 x (the default) and the other strengths on offer, light (alpha 1 x N) and dark (2 x N).
   for (const [light, alpha] of [[true, 3], [true, 6], [false, 4], [false, 6], [false, 8], [false, 12]]) {
     const px = page(W, H, { light, mark: who.mark, ox: 37, oy: 11, alpha, inkOver: true });
     const r = SM.readShot(px, W, H, cands);
@@ -143,7 +143,7 @@ test('a screenshot of the test site with the squares (2 to 6 x) is read too; mem
     assert.equal(r.found, true, say); assert.equal(r.best, who.id, say); assert.equal(r.cellsAgree, 20, say);
     if (alpha === (light ? 3 : 6)) {
       assert.equal(r.strong, true, `${say}: found by the second read`);
-      assert.equal(SM.decode(px, W, H, cands).found, false, `${say}: the first read alone finds nothing (what he saw)`);
+      assert.equal(SM.decode(px, W, H, cands).found, false, `${say}: the first read alone finds nothing (what the owner saw)`);
     }
   }
   // A page with no mark is never pinned on anyone, either read.
@@ -151,7 +151,7 @@ test('a screenshot of the test site with the squares (2 to 6 x) is read too; mem
     const r = SM.readShot(page(W, H, { light, seed: 3 }), W, H, cands);
     assert.equal(r.found, false, JSON.stringify(r));
   }
-  // Which fills are a fill and its squares, with the fills his own test-site screens gave (14 Nov, levels and pixel
+  // Which fills are a fill and its squares, with the fills the owner's own test-site screens gave (14 Nov, levels and pixel
   // counts in thousands, the squares at 3 x). Light: nothing paired (its squares 2 levels off, one fill already), not
   // the small fill 6 below the page either (a 28th of its count). Dark: the page (22) and the cards (33), each with
   // its squares 3 to 5 up; the small fill 43 (a ninth of the cards' squares) alone.

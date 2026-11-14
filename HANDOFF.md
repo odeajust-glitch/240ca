@@ -1,9 +1,9 @@
 # HANDOFF — read this before doing anything
 
-## Screenshot box: screenshots with the test site's squares read again — FIXED 14 Nov 2026 05:00 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL; then his retry of the screenshot box
+## Screenshot box: screenshots with the test site's squares read again — FIXED 14 Nov 2026 05:00 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL; then the owner's retry of the screenshot box
 
 **Owner, 14 Nov ~04:40:** "the page does not find a mark, even on normal screen shots" / "its on the first one, the photo
-of a screen option worked well". The first box (Trace a screenshot) on his test-site screens, the squares at 3 x.
+of a screen option worked well". The first box (Trace a screenshot) on the owner's test-site screens, the squares at 3 x.
 **Why:** a dark page's squares at 3 x are a 5 level step and the spacing search (`findPeriod`) only read steps up to 4;
 at 3 x on a light page a fill and its squares can be 3 levels apart and `residual` took them for two fills, wiping the
 squares out. **Fix:** `ShotMark.readShot` reads a screenshot as before and, only when that finds nothing, again for the
@@ -15,12 +15,12 @@ screen at 3 x, the Current page screenshotted and given to the box: **as pushed,
 there, but it matches no account"; now light and dark at 1/1, 2/2, 3/3, 4/4 and 6/6 all "Taken on the owner key", 20 of
 20** (3.4 s light, 5.9 s dark in the headless browser; slower on a phone). The 3/3 screenshots shrunk to 75% and 50%
 and saved as JPEG 85: all read (as pushed, four of the five dark ones did not). Made-up pages 1-6 x light and dark,
-ink marked or not: all read; plain pages never. Without the like-count rule his light page's second read fell from 93
+ink marked or not: all read; plain pages never. Without the like-count rule the owner's light page's second read fell from 93
 to 39 (it paired a small fill 6 below the page), so it stays; a wider cut for the residual measured no better, dropped.
 Suite 641 of 641 (`shotmark.test.js` 8: members' 1 x read the first way; 3 and 6 x light, 2, 3, 4 and 6 x dark read,
-the defaults by the second read, which the first alone misses; plain pages never; `twins` with his screens' fills). 8
-breaks on purpose, each caught. **Not checked:** a screenshot taken on his own phone (Safari) since the fix.
-**Next:** he pulls, then tries the screenshot box again with a screenshot of the test site, light and dark.
+the defaults by the second read, which the first alone misses; plain pages never; `twins` with the owner's screens' fills). 8
+breaks on purpose, each caught. **Not checked:** a screenshot taken on the owner's own phone (Safari) since the fix.
+**Next:** the owner pulls, then tries the screenshot box again with a screenshot of the test site, light and dark.
 
 ## "Yardmaster jobs going spare": the note under its heading taken off — 14 Nov 2026 at his word (`public/board.html`, page only, both sites). WAITING ON ONE LAPTOP PULL
 

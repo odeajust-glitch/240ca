@@ -46,7 +46,7 @@ strong. On his photos with the one-shade mark alone: sure of his account 19 time
 wrong; in the page, three of his four photos named "the owner key". See HANDOFF.
 
 **14 Nov: screenshots of the squares.** The owner: "the page does not find a mark, even on normal screen shots"
-(the screenshot box, his test-site screens with the squares at 3 x). A dark page's squares at 3 x are a 5 level step,
+(the screenshot box, the owner's test-site screens with the squares at 3 x). A dark page's squares at 3 x are a 5 level step,
 and the spacing search only reads steps up to 4; at 3 x on a light page a fill and its squares can be 3 levels apart and
 were taken for two fills. Screenshots are now read as before and, when that finds nothing, again for the squares
 (`ShotMark.readShot`: flat up to 12 levels, steps up to 11, each fill read together with its squares, `twins`). In a
