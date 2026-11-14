@@ -1,5 +1,41 @@
 # HANDOFF — read this before doing anything
 
+## A photo of a screen read by its squares (the hidden mark's own), not a typed code — BUILT FOR THE TEST SITE ONLY, 14 Nov 02:33 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL; then his eye test and camera test
+
+**Owner, 14 Nov ~01:50:** "on the light page its hard. Instead of a number would you be able to do squares or diamonds.
+Kinda like a QR code. make a binary code up using having a shaded spot or a non shaded spot". The hidden mark already
+IS that (8 x 8 squares, shaded or not, a 20-bit number, repeated over the screen); photos had failed because a photo is
+tilted and skewed, so the copies no longer stack. **Tested on his four photos (lined up on their screenshots by OpenCV
+SIFT + homography, `scratchpad/photoread.py`, `align.py`): straightened, the one-shade hidden mark alone was there.**
+- **The squares (test site, his screens):** `#shotcode` is now the hidden mark's own tile (`ShotMark.tileRGBA(mark, light,
+  alpha)`, same 64 px tile from the same corner, pixelated) drawn again on top: **3 x as strong in all by default**
+  (light page extra alpha 2, dark 4), 1 x (nothing on top) / 2 / 3 / 4 / 6 x for light and dark apart on his phone
+  (`shotCodeLevel`, `shotCodeAlpha`; localStorage `shotCodeLevel` "l/d"; old "1.5/5"-style values read as 3/3). The
+  4-character code (`codeOf`, `markOfCode`, the typed-code box), its scattered layout and `reveal` are GONE.
+- **The photo box** (Page Health → Trace a screenshot → "A photo of a screen?"): pick the photo, it shows; tap the screen's
+  four corners (top left, top right, bottom right, bottom left; it asks for each; zoom in with two fingers to be exact);
+  red dots and outline; "Tap the corners again". Then `ShotMark.readPhoto`: **straightened** (`homography`, `straighten`:
+  480 px wide, each pixel 2 x 2 samples), smoothed a little (box r 1), the tile's spacing looked for in four bands of a
+  phone's width (340-380, 370-410, 400-440, 430-470 CSS px) **by how clearly the sync cells line up** (decode `photo`:
+  the plain period search lost to the page's own lines on made-up photos), the best two bands smoothed more (r 2). The
+  bits read once at the sync's line-up, every account counted against them (each lining up its own way out of 1024,
+  random ones matched 16-18 of 20), and weighed by how strongly each bit came through. **Sure (`photoVerdict`): 18+ of
+  20 and 3 clear of any other account, weighed 0.85+ and 0.4 clear, the sync's z 6+, the fold 1.2+ its strength at a
+  wrong spacing.** "Taken on …", or "Not sure. Closest: …" with the numbers, or "No squares found". Screenshots are read
+  exactly as before (`found = !photo && …`, pinned by a test).
+- **On his photos, the one-shade mark alone, taps up to 2% off (28 reads): sure of his account 19, best match 3, none
+  wrong** (one wrong "sure" by count alone, 18/20 but 0.84 weighed, is why the weighed bar exists). **End to end in a
+  browser over the real board-test as him, the photos picked in the box and their corners tapped (live accounts list,
+  nothing sent): first dark, first light, new dark: "Taken on the owner key (your own devices)", 20, 19 and 20 of 20
+  bits; new light: no squares found** (its top corners off the photo, the faintest of the four). 1.8 to 2.9 s each.
+**Checked.** Suite 640 of 640 (`shotmark.test.js` 7: the tile at any alpha; the squares 3 x, picked apart, kept on the
+phone, 1 x draws nothing, lined up on the hidden mark, the old code gone; a made-up photo (tilted, glow, highlights
+pressed, grain) of light and dark pages at 3 x read sure with exact corners and the right account with taps ~0.5% off,
+never sure of a wrong one at ~1-1.5% off, a plain page never; the verdict with his photos' real numbers, the wrong one
+not sure; the screenshot rule as before). 11 breaks on purpose, each caught. On the made-up photos 36 reads, 0 wrong.
+**Not checked:** his eye on the 3 x squares; a real photo of the squares (only the hidden mark so far); a phone's own
+screen with a second phone. **Next:** his look (can he see them at 3 x?), then photos, light and dark, in the box.
+
 ## Analytics log: a conductor on another pool's turn on the Call Board, and when CATS put it right — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`, `lib/board/archive.js`; `public/board-analytics.js`; page `public/board.html`, the cards on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt from the day files each publish: the 30 days fill in at once; no FORMAT bump)
 
 **Owner, 14 Nov:** "keep track to see if they fix this. Also we need to keep a log of this in analytics. these

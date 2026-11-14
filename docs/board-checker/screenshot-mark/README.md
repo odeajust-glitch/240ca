@@ -36,6 +36,15 @@ the page, the trace box's photo step) at 1.5% light and 3% dark. Now 2% light / 
 tile instead of 40, and a strength picker for the owner's own phone in the trace box. The hidden mark reads the same
 under it (6 of 7 stand-ins, light and dark, as with no code). A real camera is the owner's next test. See HANDOFF.
 
+**14 Nov: squares instead of a code** (owner: "make a binary code up using having a shaded spot or a non shaded spot").
+His photos of a screenshot on his laptop lost the 3% code on light pages (a third of its shade survived). Lined up on
+their screenshots, **the one-shade hidden mark itself was in them**: a photo had only needed straightening. The page
+now reads a photo by the screen's four corners, tapped (`ShotMark.readPhoto`: straightened, the spacing found by the
+sync cells within a phone's width, the bits read at the sync's line-up and counted and weighed against every account,
+sure only with both clear), and on the test site the owner's screens carry the hidden mark's own squares 3 x as
+strong. On his photos with the one-shade mark alone: sure of his account 19 times in 28 (taps up to 2% off), never
+wrong; in the page, three of his four photos named "the owner key". See HANDOFF.
+
 ## Blocking or noticing a screenshot: no
 
 A web page is not told when the phone takes a screenshot and cannot stop one (iPhone or Android, Safari

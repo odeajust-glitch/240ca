@@ -1091,11 +1091,8 @@
   #shotmark { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }
   /* The faint visible code (owner, 2026-11-13: "build it on the test site, 5% light 7% dark"; TEST SITE ONLY, his own
      view: drawn by paintShotCode under PREVIEW): one more see-through layer, the account's code at a slant. */
-  #shotcode { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 400px 880px; }
-  .tracephotocv { display: block; width: 100%; height: auto; border-radius: 8px; }
-  .tracephotowrap { overflow: auto; max-height: 75vh; border-radius: 8px; cursor: zoom-in; }
-  .tracephotowrap.full { cursor: zoom-out; }
-  .tracephotowrap.full .tracephotocv { width: auto; max-width: none; }
+  #shotcode { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; }
+  .tracephotocv { display: block; width: 100%; height: auto; border-radius: 8px; cursor: crosshair; }
   /* What already sticks to the top keeps clear of the strip. */
   body.everyone .rail { top: 64px; }
   body.everyone .arrangebar.on { top: 50px; }
@@ -9140,12 +9137,13 @@ source().then(async (src) => {
       return v;
     }
     // The tile's pixels (8 x 8, RGBA): black at alpha 1 on a light page; white at alpha 2 on a dark one (a
-    // browser rounds a faint white wash down on a dark page: alpha 1 would change nothing there).
-    function tileRGBA(mark, light) {
+    // browser rounds a faint white wash down on a dark page: alpha 1 would change nothing there). alpha: the test
+    // site's stronger squares drawn on top (paintShotCode).
+    function tileRGBA(mark, light, alpha = light ? 1 : 2) {
       const v = cells(mark), px = new Uint8ClampedArray(N * N * 4);
       for (let i = 0; i < N * N; i++) {
         const c = light ? 0 : 255;
-        px[4 * i] = c; px[4 * i + 1] = c; px[4 * i + 2] = c; px[4 * i + 3] = v[i] > 0 ? (light ? 1 : 2) : 0;
+        px[4 * i] = c; px[4 * i + 1] = c; px[4 * i + 2] = c; px[4 * i + 3] = v[i] > 0 ? alpha : 0;
       }
       return px;
     }
@@ -9156,19 +9154,6 @@ source().then(async (src) => {
       const b = new Uint8Array(await sha(`mark:${id}`));
       return ((b[0] << 16) | (b[1] << 8) | b[2]) >>> 4;
     }
-    // The faint visible code (owner, 2026-11-13, told the hidden mark can't be read from a photo of a screen:
-    // "build it on the test site, 5% light 7% dark"): the same 20-bit number as 4 characters in Crockford's base 32
-    // (no I, L, O or U; 32^4 = 2^20, so every number has exactly one code). THE ALPHABET MUST NEVER CHANGE once
-    // codes are out, or older photos would name no one.
-    const CODE_ABC = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-    const codeOf = (mark) => [15, 10, 5, 0].map((sh) => CODE_ABC[(mark >>> sh) & 31]).join('');
-    // What someone typed off a photo: small letters, spaces and dashes are fine; O is read as 0, I and L as 1.
-    function markOfCode(text) {
-      const t = String(text == null ? '' : text).toUpperCase().replace(/[\s.·\-–—]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
-      if (!/^[0-9A-HJKMNP-TV-Z]{4}$/.test(t)) return null;
-      return [...t].reduce((n, ch) => n * 32 + CODE_ABC.indexOf(ch), 0);
-    }
-
     // ---- reading a screenshot (the same steps as wm.py's decode, grey only) ----
     function fft(re, im, inverse) {
       const n = re.length;
@@ -9313,8 +9298,17 @@ source().then(async (src) => {
       }
       return A;
     }
+    // A photo's verdict from each account's count of its 20 bits (right or wrong) and its weighed score: the best by
+    // count (then weighed); sure only with both clear (see decode's photo branch).
+    function photoVerdict(counts, weighed, z, strength) {
+      const best = counts.reduce((m, v, c) => (v > counts[m] || (v === counts[m] && weighed[c] > weighed[m]) ? c : m), 0);
+      const nextCount = Math.max(-1, ...counts.filter((_, c) => c !== best));
+      const nextWeighed = Math.max(-1, ...weighed.filter((_, c) => c !== best));
+      const sure = strength >= 1.2 && z >= 6 && counts[best] >= 18 && counts[best] - nextCount >= 3 && weighed[best] >= 0.85 && weighed[best] - nextWeighed >= 0.4;
+      return { best, nextCount, nextWeighed, sure };
+    }
     // rgba: the picture's pixels (RGBA, row by row). candidates: [{ id, mark }]. Never sends anything anywhere.
-    function decode(rgba, W, H, candidates = [], pmin = 24, pmax = 420) {
+    function decode(rgba, W, H, candidates = [], pmin = 24, pmax = 420, { photo = false } = {}) {
       const out = { size: [W, H], found: false };
       if (W < 2 * pmin || H < 2 * pmin) return { ...out, why: 'small' };
       const Y = new Float32Array(W * H);
@@ -9330,7 +9324,8 @@ source().then(async (src) => {
         const u = Math.max(0, y - 1) * W + x, m = y * W + x, d = Math.min(H - 1, y + 1) * W + x;
         flat[m] = Math.max(hmax[u], hmax[m], hmax[d]) - Math.min(hmin[u], hmin[m], hmin[d]) <= 5 ? 1 : 0;
       }
-      const per = findPeriod(Y, flat, W, H, pmin, pmax);
+      // A photo's spacing is swept below (its band is narrow), so the residual only needs one near it.
+      const per = photo ? { P: (pmin + pmax) / 2, z: 0 } : findPeriod(Y, flat, W, H, pmin, pmax);
       if (!per) return { ...out, why: 'small' };
       out.periodZ = +per.z.toFixed(1);
       const { r, w } = residual(Y, flat, W, H, per.P);
@@ -9343,10 +9338,30 @@ source().then(async (src) => {
       const m = Math.floor(n / step), sy = new Float64Array(m), sx = new Float64Array(m), sv = new Float64Array(m);
       for (let k = 0; k < m; k++) { sy[k] = ys[k * step]; sx[k] = xs[k * step]; sv[k] = vs[k * step]; }
       let best = -1, P = per.P;
-      for (let k = 0; k <= 40; k++) { const Pt = per.P * (1 + (-0.02 + 0.001 * k)); const e = energy(Pt, sy, sx, sv).e; if (e > best) { best = e; P = Pt; } }
-      const P1 = P;
-      best = -1;
-      for (let k = 0; k <= 12; k++) { const Pt = P1 * (1 + (-0.0012 + 0.0002 * k)); const e = energy(Pt, sy, sx, sv).e; if (e > best) { best = e; P = Pt; } }
+      if (photo) {
+        // A photo: the spacing at which the sync cells (every account's the same) line up most clearly, swept over
+        // the band in 0.4% steps, then 0.05%. The page's own lines and edges fold up strongly at their own spacings
+        // and won the plain search on made-up photos (14 Nov); they never look like the sync.
+        const syncZ = (Pt) => {
+          const A0 = cellViews(energy(Pt, sy, sx, sv).T);
+          let mx = 0, s1 = 0, s2 = 0;
+          for (let i = 0; i < 1024; i++) {
+            let t = 0;
+            for (let k = 0; k < SYNC_POS.length; k++) t += A0[i * 64 + SYNC_POS[k]] * SYNC_VAL[k];
+            t = Math.abs(t); if (t > mx) mx = t; s1 += t; s2 += t * t;
+          }
+          const mu = s1 / 1024;
+          return (mx - mu) / Math.sqrt(Math.max(1e-12, s2 / 1024 - mu * mu));
+        };
+        for (let Pt = pmin; Pt <= pmax; Pt *= 1.004) { const zz = syncZ(Pt); if (zz > best) { best = zz; P = Pt; } }
+        const P0 = P;
+        for (let k = -8; k <= 8; k++) { const Pt = P0 * (1 + 0.0005 * k); const zz = syncZ(Pt); if (zz > best) { best = zz; P = Pt; } }
+      } else {
+        for (let k = 0; k <= 40; k++) { const Pt = per.P * (1 + (-0.02 + 0.001 * k)); const e = energy(Pt, sy, sx, sv).e; if (e > best) { best = e; P = Pt; } }
+        const P1 = P;
+        best = -1;
+        for (let k = 0; k <= 12; k++) { const Pt = P1 * (1 + (-0.0012 + 0.0002 * k)); const e = energy(Pt, sy, sx, sv).e; if (e > best) { best = e; P = Pt; } }
+      }
       const fin = energy(P, ys, xs, vs);
       const nulls = [0.79, 0.83, 0.87, 1.17, 1.23, 1.29].map((f) => energy(P * f, sy, sx, sv).e).sort((a, b) => a - b);
       const nullE = (nulls[2] + nulls[3]) / 2;
@@ -9389,16 +9404,27 @@ source().then(async (src) => {
       const an = order.length > 1 ? Math.max(...order.slice(1, 6).map(bitsAgree)) : -1;
       Object.assign(out, { best: candidates[b].id, bestMark: candidates[b].mark, z: +z.toFixed(1), bits: +ab.toFixed(2), nextBits: +an.toFixed(2),
         cellsAgree: Math.round(((ab + 1) / 2) * NBITS), nextCellsAgree: Math.round(((an + 1) / 2) * NBITS) });
-      out.found = out.strength >= 3 && z >= 6 && ab >= 0.8 && ab - an >= 0.35;
+      out.found = !photo && out.strength >= 3 && z >= 6 && ab >= 0.8 && ab - an >= 0.35;
+      if (photo) {
+        // A photo: the 20 bits read once where the sync cells (every account's the same) line up best, then each
+        // account's number counted against them, bit by bit. (Each account lined up its own best way, out of 1024, a
+        // random one matched 16 to 18 of 20 on his photos; weighted by strength too, a few strong squares decided.)
+        // Weighed too, by how strongly each bit came through (-1 to 1). Sure takes both: 18 or more of 20 bits and 3
+        // more than any other account, the weighed score 0.85 or more and 0.4 above any other, and the sync clear (z
+        // 6). On his four photos with taps up to 2% off (28 reads) that kept every right "sure" and dropped the one
+        // wrong one (another account 18 of 20 by count, but 0.84 weighed, 0.26 above the next).
+        const bitsOf = (v) => { let k = 0; for (let x = v >>> 0; x; x &= x - 1) k++; return k; };
+        const counts = candidates.map((c) => NBITS - bitsOf((read ^ c.mark) & ((1 << NBITS) - 1)));
+        const dk = PAIRS.map(([p, q]) => sg * (A[bi * 64 + p] - A[bi * 64 + q]));
+        const tot = dk.reduce((t, v) => t + Math.abs(v), 0) || 1;
+        const weighed = candidates.map((c) => dk.reduce((t, v, k) => t + v * (((c.mark >>> k) & 1) ? 1 : -1), 0) / tot);
+        const v = photoVerdict(counts, weighed, z, out.strength);
+        Object.assign(out, { best: candidates[v.best].id, bestMark: candidates[v.best].mark, cellsAgree: counts[v.best], nextCellsAgree: Math.max(0, v.nextCount), bits: +weighed[v.best].toFixed(2), nextBits: +v.nextWeighed.toFixed(2) });
+        out.found = v.sure;
+      }
       return out;
     }
-    // A photo of a screen with the faint visible code brought out (owner, 2026-11-13: "make it as faint as you think is
-    // possbile … then we can test with a camera"; 2026-11-14, his photos of a screenshot on his laptop's screen).
-    // The page's own background is followed from below on a dark page (the darkest nearby, so the page's bright text
-    // never pulls it) or from above on a light one, on a copy 8 times smaller; then only the shades just past it are
-    // stretched. Nothing is blurred across the text, so nothing glows round it: the first way (a blur taken away)
-    // put halos round bright text that hid the code in his dark photo; this way read 8MGZ there in six places.
-    // rgba: the photo's pixels, W x H; gain: how far the shades are stretched. → { px: grey RGBA, dark: the page dark }.
+    // Box blurs for a photo (readPhoto smooths the straightened photo a little and a little more).
     function blurRows(src, dst, W, H, r) {
       const n = 2 * r + 1;
       for (let y = 0; y < H; y++) {
@@ -9421,40 +9447,75 @@ source().then(async (src) => {
       for (let k = 0; k < 3; k++) { blurRows(a, t, W, H, r); blurCols(t, a, W, H, r); }
       return a;
     }
-    function reveal(rgba, W, H, { gain = 10 } = {}) {
-      const n = W * H;
-      const Y = new Float32Array(n);
-      for (let i = 0, p = 0; i < n; i++, p += 4) Y[i] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
-      // A dark page or a light one: the middle of the photo's middle.
-      const hist = new Uint32Array(256); let m = 0;
-      for (let y = H >> 2; y < Math.max((3 * H) >> 2, (H >> 2) + 1); y++) for (let x = W >> 2; x < Math.max((3 * W) >> 2, (W >> 2) + 1); x++) { hist[Math.min(255, Math.max(0, Y[y * W + x] | 0))]++; m++; }
-      let acc = 0, med = 0;
-      for (; med < 255; med++) { acc += hist[med]; if (acc * 2 >= m) break; }
-      const dark = med < 110;
-      const fine = blurred(Y, W, H, 1);
-      // The background: a copy 8 times smaller, the darkest (dark page) or lightest (light page) within 3 cells, smoothed.
-      const k = 8, w = Math.max(1, Math.ceil(W / k)), h = Math.max(1, Math.ceil(H / k));
-      const sm = new Float32Array(w * h), cnt = new Float32Array(w * h);
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const j = ((y / k) | 0) * w + ((x / k) | 0); sm[j] += Y[y * W + x]; cnt[j]++; }
-      for (let j = 0; j < w * h; j++) sm[j] /= cnt[j];
-      const pick = dark ? Math.min : Math.max, R = 3;
-      const t = new Float32Array(w * h), e = new Float32Array(w * h);
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let v = sm[y * w + x]; for (let d = -R; d <= R; d++) { const xx = x + d; if (xx >= 0 && xx < w) v = pick(v, sm[y * w + xx]); } t[y * w + x] = v; }
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let v = t[y * w + x]; for (let d = -R; d <= R; d++) { const yy = y + d; if (yy >= 0 && yy < h) v = pick(v, t[yy * w + x]); } e[y * w + x] = v; }
-      const bg = blurred(e, w, h, 2);
-      const out = new Uint8ClampedArray(n * 4);
-      for (let y = 0; y < H; y++) {
-        const fy = Math.min(h - 1, Math.max(0, (y + 0.5) / k - 0.5)), y0 = Math.floor(fy), y1 = Math.min(h - 1, y0 + 1), ty = fy - y0;
-        for (let x = 0; x < W; x++) {
-          const fx = Math.min(w - 1, Math.max(0, (x + 0.5) / k - 0.5)), x0 = Math.floor(fx), x1 = Math.min(w - 1, x0 + 1), tx = fx - x0;
-          const b = (bg[y0 * w + x0] * (1 - tx) + bg[y0 * w + x1] * tx) * (1 - ty) + (bg[y1 * w + x0] * (1 - tx) + bg[y1 * w + x1] * tx) * ty;
-          const i = y * W + x, v = dark ? (fine[i] - b) * gain : 255 - (b - fine[i]) * gain, p = i * 4;
-          out[p] = v; out[p + 1] = v; out[p + 2] = v; out[p + 3] = 255;
-        }
+    // ---- reading a photo of a screen (owner, 2026-11-14: "Instead of a number would you be able to do squares or
+    // diamonds. Kinda like a QR code. make a binary code up using having a shaded spot or a non shaded spot") ----
+    // The squares are the hidden mark's own (the same 8 x 8 cells and number); a photo is tilted and skewed, so
+    // first it is straightened: the screen's four corners, tapped on the photo (top left, top right, bottom right,
+    // bottom left), are pulled out to a flat picture OW wide. A phone's screen is 300 to 500 CSS px wide, so the
+    // 64 px tile is OW * 64 / 500 to OW * 64 / 300 there. Smoothed a little and a little more (the camera's grain),
+    // read both ways, the better kept. Through his own photos straightened (14 Nov) the one-shade hidden mark alone
+    // came out with his account as the best match nearly every time, and sure on the black page.
+    function homography(src, dst) {
+      // 8 unknowns from 4 point pairs (h33 = 1), by Gaussian elimination.
+      const A = [], b = [];
+      for (let k = 0; k < 4; k++) {
+        const [x, y] = src[k], [u, v] = dst[k];
+        A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+        A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
       }
-      return { px: out, dark };
+      for (let c = 0; c < 8; c++) {
+        let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+        [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+        if (Math.abs(A[c][c]) < 1e-12) return null;
+        for (let r = 0; r < 8; r++) { if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+      }
+      const h = b.map((v, i) => v / A[i][i]);
+      return [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1];
     }
-    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, codeOf, markOfCode, decode, reveal };
+    // corners: [[x, y] x 4] on the photo. → { Y: grey Float32Array, w, h } or null. Each pixel the mean of 2 x 2
+    // samples (the photo is usually shrunk here: plain sampling would keep its grain).
+    function straighten(rgba, W, H, corners, OW = 480) {
+      const d = (a, b2) => Math.hypot(a[0] - b2[0], a[1] - b2[1]);
+      const [tl, tr, br, bl] = corners;
+      const wpx = (d(tl, tr) + d(bl, br)) / 2, hpx = (d(tl, bl) + d(tr, br)) / 2;
+      if (!(wpx > 20 && hpx > 20)) return null;
+      const OH = Math.max(2, Math.round((OW * hpx) / wpx));
+      const M = homography([[0, 0], [OW, 0], [OW, OH], [0, OH]], corners); // flat picture → photo
+      if (!M) return null;
+      const Y = new Float32Array(OW * OH);
+      const lum = (x, y) => { const p = (y * W + x) * 4; return 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2]; };
+      const at = (uu, vv) => {
+        const q = M[6] * uu + M[7] * vv + 1;
+        const x = (M[0] * uu + M[1] * vv + M[2]) / q - 0.5, y = (M[3] * uu + M[4] * vv + M[5]) / q - 0.5;
+        const x0 = Math.max(0, Math.min(W - 2, Math.floor(x))), y0 = Math.max(0, Math.min(H - 2, Math.floor(y)));
+        const fx = Math.max(0, Math.min(1, x - x0)), fy = Math.max(0, Math.min(1, y - y0));
+        return (lum(x0, y0) * (1 - fx) + lum(x0 + 1, y0) * fx) * (1 - fy) + (lum(x0, y0 + 1) * (1 - fx) + lum(x0 + 1, y0 + 1) * fx) * fy;
+      };
+      for (let v = 0; v < OH; v++) for (let u = 0; u < OW; u++) Y[v * OW + u] = (at(u + 0.25, v + 0.25) + at(u + 0.75, v + 0.25) + at(u + 0.25, v + 0.75) + at(u + 0.75, v + 0.75)) / 4;
+      return { Y, w: OW, h: OH };
+    }
+    const greyRGBA = (Y) => { const px = new Uint8ClampedArray(Y.length * 4); for (let i = 0, p = 0; i < Y.length; i++, p += 4) { px[p] = px[p + 1] = px[p + 2] = Y[i]; px[p + 3] = 255; } return px; };
+    // Phones' screens are about 340 to 470 CSS px wide: the tile's spacing there is looked for in four bands of that
+    // (all at once, the page's own lines and edges can win: found 14 Nov on his light photos).
+    const PHOTO_WIDTHS = [[340, 380], [370, 410], [400, 440], [430, 470]];
+    // → decode's answer for the better smoothing and band, with { flat: the straightened picture (grey RGBA), w, h }.
+    function readPhoto(rgba, W, H, corners, candidates = [], { OW = 480 } = {}) {
+      const s = straighten(rgba, W, H, corners, OW);
+      if (!s) return { found: false, why: 'corners' };
+      let best = null;
+      const better = (a, b2) => !b2 || a.key[0] > b2.key[0] || (a.key[0] === b2.key[0] && (a.key[1] > b2.key[1] || (a.key[1] === b2.key[1] && a.key[2] > b2.key[2])));
+      const tryOne = (Ys, r, [w0, w1]) => {
+        const res = decode(greyRGBA(Ys), s.w, s.h, candidates, Math.floor((OW * 64) / w1), Math.ceil((OW * 64) / w0), { photo: true });
+        const t = { key: [res.found ? 1 : 0, res.best != null ? (res.cellsAgree || 0) - (res.nextCellsAgree || 0) : -99, res.z || 0], res: { ...res, smooth: r, widths: [w0, w1] } };
+        if (better(t, best)) best = t;
+        return t;
+      };
+      const Y1 = blurred(s.Y, s.w, s.h, 1);
+      const byBand = PHOTO_WIDTHS.map((band) => tryOne(Y1, 1, band)).sort((a, b2) => (b2.res.z || 0) - (a.res.z || 0));
+      if (!best.res.found) { const Y2 = blurred(s.Y, s.w, s.h, 2); for (const t of byBand.slice(0, 2)) tryOne(Y2, 2, t.res.widths); }
+      return { ...best.res, flat: greyRGBA(s.Y), w: s.w, h: s.h };
+    }
+    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, decode, photoVerdict, homography, straighten, readPhoto };
   })();
   // The mark on the page (every signed-in account the Worker gives a number to, both sites) and Page Health's
   // "Trace a screenshot" (the owner's own page, both sites).
@@ -9485,58 +9546,44 @@ source().then(async (src) => {
   // A change of page style, or of the phone's light or dark setting, can turn the page from light to dark.
   window.addEventListener('board-theme', () => { paintShotMark(); });
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { paintShotMark(); }); } catch (e) { /* an older browser */ }
-  // The faint visible code (owner, 2026-11-13: the hidden mark can't be read from a photo of a screen; "build it on
-  // the test site, 5% light 7% dark"; then "is there anyway to make it less visible", "make it as faint as you think
-  // is possbile, Ill test it and tell you if i can see it, then we can test with a camera"). TEST SITE ONLY: PREVIEW
-  // (board-test with the owner key), the same number as the hidden mark, at a slant: black on a light page, white on
-  // a dark one, 3% and 3% unless he picks other strengths for his own phone in the trace box (kept on that phone). A
-  // member on either site, and the owner on the main site, get none. The hidden mark stays as it is under it.
-  // How faint: through the photo stand-in it read once brought out at about 1.5% light and 3% dark; his own photos of
-  // a screenshot on his laptop's screen (14 Nov) read on a dark page at 3% (brought out: ShotMark.reveal) and not on
-  // a light page at 2% (the laptop screen's own lines and dust were stronger), so light pages start at 3% now. He
-  // could not see it at 2% / 3% (13 Nov). Light and dark are picked apart, on his own phone, in the trace box.
-  const SHOTCODE_LIGHT = [1, 1.5, 2, 3, 4, 5], SHOTCODE_DARK = [2, 3, 4, 5, 7];
+  // The squares (owner, 2026-11-14: "Instead of a number would you be able to do squares or diamonds. Kinda like a QR
+  // code. make a binary code up using having a shaded spot or a non shaded spot"; a faint 4-character code before,
+  // 13-14 Nov, which his photos of a light page lost). TEST SITE ONLY: PREVIEW (board-test with the owner key). The
+  // hidden mark's own squares (the same 8 x 8 cells and number, lined up on it) drawn again on top, so that they are
+  // N times as strong as every member's: 3 x unless he picks another for light or dark pages on his own phone in the
+  // trace box (kept on that phone). A photo is read by tapping its screen's four corners (ShotMark.readPhoto):
+  // through his own photos straightened (14 Nov) the hidden mark alone, 1 x, already named his account, sure, 19
+  // times in 28 (taps up to 2% off). A member on either site, and the owner on the main site, get none, and the
+  // hidden mark under it is untouched.
+  const SHOTCODE_TIMES = [1, 2, 3, 4, 6];
   const SHOTCODE_LEVEL = '3/3';
   function shotCodeLevel() {
     let v = '';
     try { v = localStorage.getItem('shotCodeLevel') || ''; } catch (e) { /* not kept */ }
     const [l, d] = String(v).split('/').map(Number);
     const [L0, D0] = SHOTCODE_LEVEL.split('/').map(Number);
-    return `${SHOTCODE_LIGHT.includes(l) ? l : L0}/${SHOTCODE_DARK.includes(d) ? d : D0}`;
+    return `${SHOTCODE_TIMES.includes(l) ? l : L0}/${SHOTCODE_TIMES.includes(d) ? d : D0}`;
   }
-  // The codes are scattered, not in rows: a tile of 400 x 880 CSS px, 12 codes at least 139 px apart (wrapping round
-  // the tile's edges), no spot more than 143 px from one: about 11 on a phone's screen (40 at first; fewer to see,
-  // and one is enough on a photo). Codes in a small even grid (150 x 104, tried first) gave emailed screenshots of
-  // dark pages a second spacing that the reader took for the hidden mark's (6 of 8 read, 8 of 8 without the code);
-  // scattered, and the tile bigger than any spacing the reader looks for, 8 of 8 again. Fainter and fewer, the
-  // hidden mark read the same as with no code (13 Nov: 6 of 7 sharing stand-ins, light and dark, as without).
-  const SHOTCODE_W = 400, SHOTCODE_H = 880;
-  const SHOTCODE_AT = [[142, 138], [337, 608], [126, 441], [316, 314], [361, 871], [175, 756], [144, 590], [22, 222], [146, 287], [292, 136], [0, 734], [270, 487]];
+  // The squares drawn on top: alpha 1 x (N - 1) on a light page, 2 x (N - 1) on a dark one (the hidden mark's own 1
+  // and 2 are under them), so N times the hidden mark in all; 1 x: nothing on top.
+  const shotCodeAlpha = (light, level = SHOTCODE_LEVEL) => { const [l, d] = level.split('/').map(Number); return light ? l - 1 : 2 * (d - 1); };
   let shotCodeFor = '';
-  function shotCodeTile(code, light, level = SHOTCODE_LEVEL) {
-    const [onLight, onDark] = level.split('/').map(Number);
-    const ink = light ? '#000' : '#fff', op = (light ? onLight : onDark) / 100;
-    const parts = [];
-    // A code near an edge is drawn again across it, so the tiles meet without a seam.
-    for (const [x, y] of SHOTCODE_AT) for (const dx of [-SHOTCODE_W, 0, SHOTCODE_W]) for (const dy of [-SHOTCODE_H, 0, SHOTCODE_H]) {
-      const X = x + dx, Y = y + dy;
-      if (X < -40 || X > SHOTCODE_W + 40 || Y < -40 || Y > SHOTCODE_H + 40) continue;
-      parts.push(`<text x="${X}" y="${Y}" text-anchor="middle" dominant-baseline="central" transform="rotate(-24 ${X} ${Y})">${code}</text>`);
-    }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SHOTCODE_W}" height="${SHOTCODE_H}"><g font-family="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.5" fill="${ink}" fill-opacity="${op}">${parts.join('')}</g></svg>`;
-    return `url("data:image/svg+xml;base64,${btoa(svg)}")`;
-  }
   function paintShotCode() {
     const old = document.getElementById('shotcode');
     const mark = SHOT_ME && SHOT_ME.signedIn ? SHOT_ME.mark : null;
     if (!PREVIEW || !Number.isInteger(mark) || mark < 0 || mark >= 1 << ShotMark.NBITS) { if (old) old.remove(); shotCodeFor = ''; return; }
     const light = lightPage();
     const level = shotCodeLevel();
+    const alpha = shotCodeAlpha(light, level);
+    if (alpha <= 0) { if (old) old.remove(); shotCodeFor = ''; return; }
     const key = `${mark}|${light}|${level}`;
     if (old && shotCodeFor === key) return;
+    const cv = document.createElement('canvas');
+    cv.width = ShotMark.N; cv.height = ShotMark.N;
+    cv.getContext('2d').putImageData(new ImageData(ShotMark.tileRGBA(mark, light, alpha), ShotMark.N, ShotMark.N), 0, 0);
     const el = old || document.createElement('div');
     el.id = 'shotcode'; el.setAttribute('aria-hidden', 'true');
-    el.style.backgroundImage = shotCodeTile(ShotMark.codeOf(mark), light, level);
+    el.style.backgroundImage = `url(${cv.toDataURL('image/png')})`;
     if (!old) document.body.appendChild(el);
     shotCodeFor = key;
   }
@@ -9545,31 +9592,27 @@ source().then(async (src) => {
       <p>Pick a screenshot of this site. This phone reads the hidden mark in it and names the account it was taken on. The picture is not sent anywhere.</p>
       <p class="muted">Every signed-in member’s screens carry the mark, on both sites. Screenshots from before it was switched on carry none.</p>
       <p><input type="file" accept="image/*" id="tracefile" aria-label="Pick a screenshot"></p>
-      <div id="traceout" role="status" aria-live="polite">${traceLast}</div>${PREVIEW ? traceCodeBox() : ''}</div></section>`;
+      <div id="traceout" role="status" aria-live="polite">${traceLast}</div>${PREVIEW ? photoBox() : ''}</div></section>`;
   }
-  // A photo of a screen (TEST SITE ONLY, with the visible code): type the code seen on it.
-  let traceCodeLast = '';
-  function traceCodeBox() {
-    const level = shotCodeLevel();
-    const [onLight, onDark] = level.split('/').map(Number);
-    return `<div id="tracecodebox"><p><b>A photo of a screen?</b> The hidden mark can’t be read from a photo. On this test site your own screens also show a very faint code at a slant (4 letters and numbers). Pick the photo here and this phone brings out the faint shades so the code shows (the photo is not sent anywhere), then type the code you see.</p>
+  // A photo of a screen (TEST SITE ONLY): picked, the screen's four corners tapped on it, the squares read on the phone.
+  let photoLast = '';
+  function photoBox() {
+    const [onLight, onDark] = shotCodeLevel().split('/').map(Number);
+    const opts = (v0) => SHOTCODE_TIMES.map((v) => `<option value="${v}"${v === v0 ? ' selected' : ''}>${v === 1 ? '1× (the hidden mark alone)' : `${v}×`}</option>`).join('');
+    return `<div id="tracecodebox"><p><b>A photo of a screen?</b> Pick the photo, then tap the four corners of the phone’s screen on it: top left, top right, bottom right, bottom left. This phone straightens the photo and reads the squares; the photo is not sent anywhere.</p>
       <p><input type="file" accept="image/*" id="tracephoto" aria-label="Pick a photo of a screen"></p>
-      <div id="tracephotoout"></div>
-      <p><input type="text" id="tracecode" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 7KQ2" aria-label="The code on the photo"> <button type="button" id="tracecodego">Look up</button></p>
-      <div id="tracecodeout" role="status" aria-live="polite">${traceCodeLast}</div>
-      <p>How faint your code is on this phone: <label>light pages <select id="shotlight">${SHOTCODE_LIGHT.map((v) => `<option value="${v}"${v === onLight ? ' selected' : ''}>${v}%</option>`).join('')}</select></label> <label>dark pages <select id="shotdark">${SHOTCODE_DARK.map((v) => `<option value="${v}"${v === onDark ? ' selected' : ''}>${v}%</option>`).join('')}</select></label></p>
-      <p class="muted">Kept on this phone only, for trying with a camera. Members see no code at all.</p></div>`;
+      <div id="tracephotoout"><div id="tracephotosay" role="status" aria-live="polite">${photoLast}</div></div>
+      <p>Your squares on this phone: <label>light pages <select id="shotlight">${opts(onLight)}</select></label> <label>dark pages <select id="shotdark">${opts(onDark)}</select></label></p>
+      <p class="muted">The same squares as the hidden mark on every member’s screen, drawn stronger on your own screens on this test site, to try with a camera. Kept on this phone only; members see no change.</p></div>`;
   }
-  async function traceByCode(text) {
-    const mark = ShotMark.markOfCode(text);
-    if (mark === null) return '<p class="warn">A code is 4 letters and numbers, as on the screen.</p>';
-    const code = ShotMark.codeOf(mark);
-    const cands = await traceCandidates();
-    if (!cands.ready) return '<p class="warn">This site’s Worker doesn’t give out the account numbers yet: paste the new Worker code into both Workers.</p>';
-    // Only the Worker's numbers: the test-site trial's was never drawn as a code.
-    const hits = cands.filter((c) => c.id !== 'owner-trial' && c.mark === mark);
-    if (!hits.length) return `<p><b>No account has the code ${code}.</b></p><p class="muted">Check each letter: O and 0 are read the same, and I, L and 1; a code never has a U.</p>`;
-    return `${hits.map((h) => `<p class="ok"><b>${code}: ${esc(h.who)}</b></p>`).join('')}<p class="muted">A strong lead, not proof: it names the account whose screen it was, not who took the photo or sent it on.</p>`;
+  function photoWords(r, cands, secs) {
+    const warn = cands.ready ? '' : '<p class="warn">This site’s Worker doesn’t give out the account numbers yet: paste the new Worker code into both Workers.</p>';
+    if (r.why === 'corners') return `${warn}<p class="warn">Those four points don’t make a screen: tap the corners again.</p>`;
+    const hit = r.best != null && cands.find((c) => c.id === r.best);
+    const nums = hit ? `${r.cellsAgree} of 20 bits match it (weighed ${r.bits}); the next closest account ${r.nextCellsAgree} (${r.nextBits}).` : '';
+    if (r.found && hit) return `${warn}<p class="ok"><b>Taken on ${esc(hit.who)}</b></p><p class="muted">${nums} Read in ${secs} s.</p><p class="muted">A strong lead, not proof: it names the account whose screen it was, not who took the photo or sent it on.</p>`;
+    if (hit && (r.z || 0) >= 6) return `${warn}<p><b>Not sure. Closest: ${esc(hit.who)}</b></p><p class="muted">${nums} Tap the corners again more exactly (zoom in with two fingers first), or try a sharper photo taken straight on.</p>`;
+    return `${warn}<p><b>No squares found.</b></p><p class="muted">Tap the corners again more exactly, or try a sharper photo taken straight on with the screen filling most of it.</p>`;
   }
   // Who a mark could belong to: the owner key and every account on the Members list (any status, so a removed
   // member's older screenshot still names them), each with the number the Worker gives it; and the test-site
@@ -9610,43 +9653,56 @@ source().then(async (src) => {
     const hit = r.found && cands.find((c) => c.id === r.best);
     if (hit) return `<p class="ok"><b>Taken on ${esc(hit.who)}</b></p><p class="muted">${r.cellsAgree} of 20 number cells match that account; the next closest account matches ${r.nextCellsAgree}. Read in ${secs} s.</p><p class="muted">A strong lead, not proof: it names the account whose screen it was, not who sent the picture on.</p>`;
     if (r.strength >= 3 && r.z >= 6) return `<p><b>A mark is there, but it matches no account on the list</b> (number ${r.read}).</p><p class="muted">The account may have been deleted, or the picture is too damaged to be sure.</p>`;
-    return `<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark was switched on, photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.${PREVIEW ? ' For a photo of a screen, pick it in the box below: it brings out the faint shades so the code shows.' : ''}</p>`;
+    return `<p><b>No mark found.</b></p><p class="muted">Pictures taken before the mark was switched on, photos of a screen, pictures squashed very small and crops of a line or two carry none that can be read.${PREVIEW ? ' For a photo of a screen, use the box below: tap the screen’s four corners on it and the squares are read.' : ''}</p>`;
   }
   function wireTrace(view) {
-    const codeIn = view.querySelector('#tracecode'), codeGo = view.querySelector('#tracecodego');
-    if (codeIn && codeGo) {
-      const look = async () => {
-        const sayCode = (html) => { traceCodeLast = html; const o = document.getElementById('tracecodeout'); if (o) o.innerHTML = html; };
-        sayCode('<p class="muted">Looking it up…</p>');
-        try { sayCode(await traceByCode(codeIn.value)); } catch (e) { sayCode(`<p class="warn">Couldn’t look it up: ${esc(e && e.message ? e.message : String(e))}</p>`); }
-      };
-      codeGo.onclick = look;
-      codeIn.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); look(); } };
-    }
-    // A photo of a screen, the faint shades brought out on this phone so the code shows (nothing sent anywhere); Stronger redoes it.
+    // A photo of a screen: shown to tap the screen's four corners on, then straightened and read on this phone.
     const photo = view.querySelector('#tracephoto');
     if (photo) {
       photo.onchange = async () => {
         const f = photo.files && photo.files[0];
         const out = document.getElementById('tracephotoout');
         if (!f || !out) return;
-        out.innerHTML = '<p class="muted">Bringing out the faint shades…</p>';
-        await new Promise((ok) => setTimeout(ok, 50));
+        const say = (html) => { const o = document.getElementById('tracephotosay'); if (o) o.innerHTML = html; };
+        const NAMES = ['top left', 'top right', 'bottom right', 'bottom left'];
+        const ask = (k) => `<p class="muted">Tap the <b>${NAMES[k]}</b> corner of the phone’s screen (${k + 1} of 4). Zoom in with two fingers to tap it exactly.</p>`;
+        out.innerHTML = '<div id="tracephotosay" role="status" aria-live="polite"><p class="muted">Opening the photo…</p></div>';
         try {
           const { px, W, H } = await pixelsOf(f);
-          out.innerHTML = '<div class="tracephotowrap" role="button" tabindex="0" aria-label="The photo, its faint shades brought out: tap for full size"><canvas class="tracephotocv"></canvas></div><p class="muted">Look for 4 letters and numbers at a slant, in a few places. Tap the picture for full size and scroll round it; tap again to fit. <label>Stronger <input type="range" id="tracegain" min="3" max="30" step="1" value="10"></label></p>';
-          const wrap = out.querySelector('.tracephotowrap');
-          wrap.onclick = () => wrap.classList.toggle('full');
-          wrap.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wrap.classList.toggle('full'); } };
-          const draw = (gain) => { const cv = out.querySelector('canvas'); cv.width = W; cv.height = H; cv.getContext('2d').putImageData(new ImageData(ShotMark.reveal(px, W, H, { gain }).px, W, H), 0, 0); };
-          draw(10);
-          const g = out.querySelector('#tracegain');
-          g.onchange = () => draw(+g.value);
-        } catch (e) { out.innerHTML = `<p class="warn">Couldn’t open that photo: ${esc(e && e.message ? e.message : String(e))}</p>`; }
+          out.innerHTML = `<div id="tracephotosay" role="status" aria-live="polite">${ask(0)}</div><canvas class="tracephotocv" aria-label="The photo: tap the screen’s four corners"></canvas><p><button type="button" id="tracephotoredo">Tap the corners again</button></p>`;
+          const cv = out.querySelector('canvas'); cv.width = W; cv.height = H;
+          const ctx = cv.getContext('2d');
+          const shown = new ImageData(new Uint8ClampedArray(px), W, H);
+          let taps = [];
+          const draw = () => {
+            ctx.putImageData(shown, 0, 0);
+            ctx.lineWidth = Math.max(2, W / 400); ctx.strokeStyle = '#ff2d55'; ctx.fillStyle = '#ff2d55';
+            if (taps.length > 1) { ctx.beginPath(); taps.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); if (taps.length === 4) ctx.closePath(); ctx.stroke(); }
+            for (const [x, y] of taps) { ctx.beginPath(); ctx.arc(x, y, Math.max(5, W / 160), 0, 2 * Math.PI); ctx.fill(); }
+          };
+          draw();
+          cv.onclick = async (e) => {
+            if (taps.length >= 4) return;
+            const b = cv.getBoundingClientRect();
+            taps.push([((e.clientX - b.left) * W) / b.width, ((e.clientY - b.top) * H) / b.height]);
+            draw();
+            if (taps.length < 4) { say(ask(taps.length)); return; }
+            say('<p class="muted">Reading the squares… (several seconds)</p>');
+            await new Promise((ok) => setTimeout(ok, 50));
+            try {
+              const t0 = performance.now();
+              const cands = await traceCandidates();
+              const r = ShotMark.readPhoto(px, W, H, taps, cands);
+              photoLast = photoWords(r, cands, ((performance.now() - t0) / 1000).toFixed(1));
+              say(photoLast);
+            } catch (err) { say(`<p class="warn">Couldn’t read it: ${esc(err && err.message ? err.message : String(err))}</p>`); }
+          };
+          out.querySelector('#tracephotoredo').onclick = () => { taps = []; draw(); say(ask(0)); };
+        } catch (err) { out.innerHTML = `<div id="tracephotosay"><p class="warn">Couldn’t open that photo: ${esc(err && err.message ? err.message : String(err))}</p></div>`; }
         photo.value = '';
       };
     }
-    // How faint the code is on this phone (the owner's own, test site only): kept here, drawn again at once.
+    // How strong his squares are on this phone (the owner's own, test site only): kept here, drawn again at once.
     const onLight = view.querySelector('#shotlight'), onDark = view.querySelector('#shotdark');
     if (onLight && onDark) onLight.onchange = onDark.onchange = () => { try { localStorage.setItem('shotCodeLevel', `${onLight.value}/${onDark.value}`); } catch (e) { /* not kept */ } paintShotCode(); };
     const input = view.querySelector('#tracefile');
