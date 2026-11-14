@@ -343,6 +343,25 @@ are correct before pushing it as a feature". **Built:**
   stretch ends of people.json alone missed this one (the next stretch end was over the hour). Names came
   from the locked data/crew.json (key from /api/crewkey) for people on a turn now; the four off every board
   can't be named from the site (only the laptop's names.json would).
+- **14 Nov, his answer to the list:** "Can you see who was bumped in each situtation or make it so you can"
+  and "Chad, Tyson is his name (Last, First)" (the site showed "Chad T Tyson, Q" for SB01). **Built, laptop
+  code (pull + restart):**
+  - **Names on the boards** (`screens.js nameOfWords`, used by `boardPersonName` and `townPersonName`):
+    the first name is the word right after the initials, as `nameParts` reads it for the code (TYCH was
+    right all along); a word after it on the row is no longer taken as the first name. With no initials,
+    the last word, as before. Shows on the site from the first check after the pull.
+  - **The bump test names who was bumped:** board-auto keeps each name code's name from every board read
+    this run (`nameByHash`, memory only, never saved: `names.namesOfPeople` pairs `parseBoardNames` and
+    `parseBoardCrew` by turn and craft; a turn listed twice, MU01, is left out). The alert takes it first,
+    then the turn's name before this check, then the code. Every "Bump (test)" is in the alert log
+    (/health/alerts, the Notifications tab) with both names, so a later session can read who bumped whom.
+  - **The four unnamed past ones** (people on no board now, so the site can't name them):
+    `node scripts/who-was-on.js S502-CO SB03 SD05 SD01` on the laptop prints every name names.json kept on
+    those turns (Call Board crews by train, 45 days, and the board row now), with dates (`names.namesOnTurn`).
+    Holders' dates to read it against: S502 CO 10th 0523 to 13th 1554; SD05 12th 0440 to 13th 1349 (on
+    SD13 6th to 11th 0814 before); SD01 on and off 4th to 13th 0549; SB03 3rd to 10th 1650. A train's crew
+    can be a spare filling in. **Waiting on him to run it and send the output.**
+  - Suite 618 of 618 (`test/board/bump-names.test.js`, 4).
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a

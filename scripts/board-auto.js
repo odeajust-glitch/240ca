@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, listPostingAccounts, listCodeAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames, boardNameNow } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames, boardNameNow, namesOfPeople } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -500,13 +500,16 @@ async function runRoute(page, opts = {}) {
   const learn = async () => {
     const rows = await unmaskedRows();
     if (!rows) return;
-    boardNames.push(...S.parseBoardNames(rows)); // learned once, at the end
+    const people = S.parseBoardNames(rows);
+    boardNames.push(...people); // learned once, at the end
     // Who each turn shows, by name, for the crew names on the board
     // (members only, locked on the site): carried with the Call Board names.
     if (opts.names) {
       try {
         const crew = S.parseBoardCrew(rows);
         (opts.names.board = opts.names.board || []).push(...crew);
+        // Each name code's name, in memory only (nameByHash): who was bumped (owner, 2026-11-14).
+        for (const [h, name] of namesOfPeople(people, crew, People.personHash)) nameByHash.set(h, name);
         // 501/502 (29) and Garnet (31): their make-up turns are named by their own rows (owner,
         // 2026-11-13: the bunkhouse's MU01 "is not working 502"; names.js recordMakeUps).
         const board = (screens[screens.length - 1] || {}).label;
@@ -1480,10 +1483,11 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       if (displaced.boardChange) await tell({ turn: 'BUMPS', kind: 'displacedTest', title: 'Bumps (test)', tag: `bumptest-${now}`, url: './#current', text: Displaced.boardChangeText(displaced.changes, fmt(now)) }, testers);
       for (const d of displaced.events) {
         const devices = Displaced.devicesFor(d.h, live, accounts, People.personHash, owner);
-        const by = boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;
-        // Who it was: the name the turn showed before this check was saved.
+        const by = boardNameNow(store, d.turn) || nameByHash.get(d.by) || codeByHash.get(d.by) || null;
+        // Who it was: their name as a board last showed it (this run), else the
+        // name the turn showed before this check was saved, else their code.
         const was = boardNameNow(before, d.turn, new Date(), Displaced.RECENT_MIN + 15);
-        const bumped = (was && was !== by ? was : null) || codeByHash.get(d.h) || null;
+        const bumped = nameByHash.get(d.h) || (was && was !== by ? was : null) || codeByHash.get(d.h) || null;
         const why = Displaced.why(d, (h) => codeByHash.get(h) || null, fmt);
         console.log(`  Displaced: ${bumped || 'a holder'} off ${Displaced.turnLabel(d.turn)}, ${by || 'someone else'} on it; ${devices.length} device(s) on their account${Displaced.MEMBERS_ON ? '' : ' (members not told yet: owner test)'}.`);
         await tell({ turn: d.turn, kind: 'displacedTest', title: 'Bump (test)', tag: `bumptest-${d.turn}-${d.at}`, text: Displaced.testText(d, bumped, by, fmt(now), devices.length), why }, testers);
@@ -1544,6 +1548,9 @@ const health = { lastCheck: null, lastProblem: null, phones: null, subscribers: 
 // codes notifications are getting sent to"). Kept in memory only, never in
 // history; it goes no further than the owner-only health line.
 const codeByHash = new Map();
+// Each name code's full name as the boards showed it (owner, 2026-11-14: "Can
+// you see who was bumped"): memory only, like codeByHash; never saved.
+const nameByHash = new Map();
 const SUBSCRIBER_HEALTH_FILE = path.join(DATA_DIR, 'subscriber-health.json');
 // Followed people's name codes, kept over a restart (owner, 2026-11-10). On
 // the laptop only, like the cached report beside it; never on the site.
