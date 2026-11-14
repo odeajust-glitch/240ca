@@ -51,7 +51,7 @@ const { beat } = require('../lib/board/watchdog');
 const heartbeat = (state) => beat(HEARTBEAT_FILE, state);
 const { sendPush, loadOrCreateKeys } = require('../lib/board/webpush');
 const { listSubscriptions, listPostingAccounts, listCodeAccounts, deleteObject, retryingFetch } = require('../lib/board/r2');
-const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames, boardNameNow, namesOfPeople } = require('../lib/board/names');
+const { loadNames, recordNames, recordBoardCrew, recordBunkhouse, recordMakeUps, recordYardCrew, recordYardWork, saveNames, boardNameNow, namesOfPeople, fullerName } = require('../lib/board/names');
 require('dotenv').config({ path: ENV_FILES, quiet: true });
 const fs = require('fs');
 const path = require('path');
@@ -510,7 +510,7 @@ async function runRoute(page, opts = {}) {
         const crew = S.parseBoardCrew(rows);
         (opts.names.board = opts.names.board || []).push(...crew);
         // Each name code's name, in memory only (nameByHash): who was bumped (owner, 2026-11-14).
-        for (const [h, name] of namesOfPeople(people, crew, People.personHash)) nameByHash.set(h, name);
+        for (const [h, name] of namesOfPeople(people, crew, People.personHash)) nameByHash.set(h, fullerName(nameByHash.get(h), name));
         // 501/502 (29) and Garnet (31): their make-up turns are named by their own rows (owner,
         // 2026-11-13: the bunkhouse's MU01 "is not working 502"; names.js recordMakeUps).
         const board = (screens[screens.length - 1] || {}).label;
@@ -1081,6 +1081,10 @@ async function runRoute(page, opts = {}) {
   // (TT/ET) on the turn they're on; a TEMP fill-in isn't on their own;
   // TEMP VCNY = working another job for now, seen there instead (like TV).
   const town = S.parseCrewsInTownNames(townPages);
+  // Whole first names (owner, 2026-11-14: "can you put their full name in the
+  // notification"): the crews in town and the Call Board's crews show them;
+  // the boards cut them to 4 or 5 letters. Memory only (nameByHash).
+  for (const n of [...town, ...trainNames]) if (n.code && n.name) { const h = People.personHash(n.code); nameByHash.set(h, fullerName(nameByHash.get(h), n.name)); }
   for (const n of town) {
     if (n.status === 'tempVacancy') { if (n.code) tempAway.add(People.personHash(n.code)); continue; }
     // Trainees: their own slot beside the turn (S501-TT), never the holder's
@@ -1614,7 +1618,7 @@ async function sendTurnAlerts(states, lineupRead, now, sightings = [], extra = [
       if (displaced.boardChange) await tell({ turn: 'BUMPS', kind: 'displacedTest', title: 'Bumps (test)', tag: `bumptest-${now}`, url: './#current', text: Displaced.boardChangeText(displaced.changes, fmt(now)) }, testers);
       for (const d of displaced.events) {
         const devices = Displaced.devicesFor(d.h, live, accounts, People.personHash, owner);
-        const by = boardNameNow(store, d.turn) || nameByHash.get(d.by) || codeByHash.get(d.by) || null;
+        const by = nameByHash.get(d.by) || boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;
         // Who it was: their name as a board last showed it (this run), else the
         // name the turn showed before this check was saved, else their code.
         const was = boardNameNow(before, d.turn, new Date(), Displaced.RECENT_MIN + 15);

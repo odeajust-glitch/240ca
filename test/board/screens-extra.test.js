@@ -250,7 +250,7 @@ test('yardmaster spareboard: read on the route, menu 2 guarded', () => {
 // the Call Board under that job's turn; found by name, kept as turns only.
 test('spare person filling in: job turn vs their own turn', () => {
   const crew = S.parseTrainCrewNames(grid(yardPage, false));
-  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J/JOH', code: 'JOSM' }]);
+  assert.deepEqual(crew, [{ train: 'M38261 23', craft: 'CO', job: 'SR03', key: 'SMITH/J/JOH', code: 'JOSM', name: 'John Smith' }]);
   const BoardTurns = require('../../public/board-turns');
   const s = { onDuty: [{ train: 'M38261 23', station: 'SARNIA', onDuty: '24th 0145', crew: 'CO SR03', backfill: [{ craft: 'CO', job: 'SR03', turn: 'B138' }] }] };
   assert.deepEqual(BoardTurns.facts(s, 'B138').map((f) => f.text), ['On duty on M38261 23 at Sarnia, 24th 0145, working SR03 (CO)']);
@@ -590,6 +590,8 @@ test('crews in town: trainees, vacancies, 501/502 and yard jobs', () => {
     'TRHI S105 EN rested', 'JIDA S102 ET vacancy', 'CHGO S106 EN rested', 'CHST S501 EN rest', 'JURI S501 CO rested', 'WABR S501 TT rest',
     'CLLA XSAS01 FO vacancy', 'PAFI XSAS01 S1 tempVacancy', 'JEME XSAS03 FO off', 'DRBR XSAS03 FO rested', 'TRGR XSAS03 S1 rest',
   ]);
+  // Whole first names, kept in memory for the bump alerts (owner, 2026-11-14: "their full name").
+  assert.deepEqual(names.filter((n) => n.turn === 'S501').map((n) => n.name), ['Chad Stone', 'Justin River', 'Wayne Brooke']);
   // Masked as saved: day-off pairs and status words kept, names not.
   const masked = grid(town8).map((r) => r.text).join('\n');
   assert.match(masked, /TH\/FR/);

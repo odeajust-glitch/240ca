@@ -384,6 +384,15 @@ are correct before pushing it as a feature". **Built:**
     SD13 6th to 11th 0814 before); SD01 on and off 4th to 13th 0549; SB03 3rd to 10th 1650. A train's crew
     can be a spare filling in. **Waiting on him to run it and send the output.**
   - Suite 618 of 618 (`test/board/bump-names.test.js`, 4).
+- **14 Nov ~01:35, his first real test alert** (SB04, the 0134 check: the person bumped off SB03 on the
+  10th, back on a board for the first time, took SB04 from its holder). He asked: **"can you put their full
+  name in the notification"**. The boards cut first names to 4 or 5 letters (JUSTI); the crews in town and
+  the Call Board's crews show them whole. **Built (laptop code, pull + restart):** `parseCrewsInTownNames`
+  and `parseTrainCrewNames` now also give `name` (whole), and board-auto keeps the fuller of the reads per
+  name code (`names.fullerName`: same surname, one first name starting the other) in `nameByHash` (memory
+  only). Both people in the alert come from it first (the bumper too, before the turn's board-row name).
+  The site's copy of the alert log had not refreshed past 01:08 when looked at, so the wording he got was
+  not seen here. Suite 620 of 620.
 - His TEST phones are kept past the 17 Nov cut-off for phones with no account (`membersOnly` takes several
   codes: his own and TEST); Page Health's followers show TEST by name (`codeByHash`).
 - **Checked:** suite **595 of 595** (3 more in displaced.test.js; watchdog.test.js for the cut-off). In a

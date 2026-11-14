@@ -67,8 +67,29 @@ test('who was on a turn: every name kept for it, oldest first, one craft on 501/
 
 test('displacement test: the bumped person is named from the boards this run', () => {
   const auto = fs.readFileSync(require.resolve('../../scripts/board-auto.js'), 'utf8');
-  assert.ok(auto.includes('for (const [h, name] of namesOfPeople(people, crew, People.personHash)) nameByHash.set(h, name);'));
+  assert.ok(auto.includes('for (const [h, name] of namesOfPeople(people, crew, People.personHash)) nameByHash.set(h, fullerName(nameByHash.get(h), name));'));
+  // Whole first names from the crews in town and the Call Board (owner, 2026-11-14: "can you put their full name in the notification").
+  assert.ok(auto.includes('for (const n of [...town, ...trainNames]) if (n.code && n.name) { const h = People.personHash(n.code); nameByHash.set(h, fullerName(nameByHash.get(h), n.name)); }'));
+  assert.ok(auto.includes('const by = nameByHash.get(d.by) || boardNameNow(store, d.turn) || codeByHash.get(d.by) || null;'));
   assert.ok(auto.includes('const bumped = nameByHash.get(d.h) || (was && was !== by ? was : null) || codeByHash.get(d.h) || null;'));
   // Memory only: nameByHash is never written to a file.
   assert.ok(!/nameByHash[^\n]*(writeFile|saveTold|saveNames)/.test(auto));
+});
+
+// Owner, 2026-11-14, after his first test alert: "can you put their full name in
+// the notification". The boards cut first names to 4 or 5 letters (JUSTI, MICHA);
+// the crews in town and the Call Board's crews show them whole.
+test('full names: the whole first name wins over the boards\' cut one, for the same person', () => {
+  const { fullerName } = require('../../lib/board/names');
+  assert.equal(fullerName("Justi O'Dea", "Justin O'Dea"), "Justin O'Dea");
+  assert.equal(fullerName("Justin O'Dea", "Justi O'Dea"), "Justin O'Dea"); // a later board read keeps the whole one
+  assert.equal(fullerName(null, 'Micha de Man'), 'Micha de Man');
+  assert.equal(fullerName('Micha de Man', null), 'Micha de Man');
+  assert.equal(fullerName('Joe Haugh', 'Mark Robbins'), 'Mark Robbins'); // another person on that code: the newer
+  // The two readers that see whole first names give them.
+  const train = S.parseTrainCrewNames(parseGrid([
+    '100 | 46:M38261 | 109:23 | 154:ON DUTY AT: | 262:SARNIA | 451:26/10/24 | 532:0145',
+    '120 | 46:CO | 120:CHAD+ | 300:T | 340:TYSON | 520:SB01',
+  ]));
+  assert.deepEqual(train.map((t) => [t.job, t.code, t.name]), [['SB01', 'TYCH', 'Tyson Chad']]);
 });
