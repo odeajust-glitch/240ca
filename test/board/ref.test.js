@@ -76,7 +76,7 @@ test('yard jobs: on both sites for every member, and the search finds them', () 
   // No "covered by" column on the jobs' table (owner, 2026-11-13: "get rid of the covered by column for the non relief jobs").
   const jobsTable = html.slice(html.indexOf('<h4>Each job</h4>'), html.indexOf('<h4>Relief jobs'));
   assert.ok(jobsTable.includes('<th>Crew off</th></tr>') && !/Covered by|XSAS/.test(jobsTable));
-  assert.ok(jobsTable.includes('Runs Mon–Fri only'));
+  assert.ok(!jobsTable.includes('Mon–Fri') && jobsTable.includes('<b>YINS30</b></td>')); // the line under YINS30 taken off (owner, 2026-11-14)
   assert.ok(/This week<div class="crew">from Nov 9<\/div><\/td><td><div class="nw">Mon, Tue: <b class="num">YSBY01 \/ YSBY02/.test(html));
   const found = page({ preview: true, today: '2026-11-13', q: 'xsas02' });
   assert.ok(found.includes('YFLS60') && found.includes('YPRS60') && !found.includes('YBHS01'));

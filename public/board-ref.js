@@ -83,7 +83,7 @@
     ['YSBY06', '1430', 12, { off: ['Sat', 'Sun'] }],
     ['YPRS30', '1445', 8],
     ['YMPS31', '1500', 8],
-    ['YINS30', '1530', 8, { off: ['Sat', 'Sun'], note: 'Runs Mon–Fri only' }],
+    ['YINS30', '1530', 8, { off: ['Sat', 'Sun'] }], // no "Runs Mon–Fri only" line under it (owner, 2026-11-14: "remove the test")
     ['YBHS31', '1600', 8],
     ['YEBS30', '1600', 8],
     ['YPRS60', '2245', 8],

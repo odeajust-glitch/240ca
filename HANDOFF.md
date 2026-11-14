@@ -1,5 +1,11 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids: YINS30's "Runs Mon–Fri only" line taken off — 14 Nov 2026, at his word ("this is in the job aid section, remove the test Runs Mon–Fri only. push to the main"). ON BOTH SITES in the code (Job Aids is every member's since earlier on 14 Nov). WAITING ON ONE LAPTOP PULL
+
+`YARD_JOBS` in `public/board-ref.js`: YINS30 has no `note` now (the row is Job · On duty · Crew off like the
+rest: "YINS30 1530 Sat, Sun"); `ref.test.js` checks the line is gone. Suite 619 of 619; seen on the main site
+as a member in a browser (this branch's page over the real data).
+
 ## The tie rule: a rest ending right at the call counts as free — SETTLED 14 Nov 2026, about 01:25 Toronto, at his word; WATCHED (owner view marks every tie). Laptop at 00:40's code (`a0ec3ca`): the three changes of tonight above still WAITING ON ONE PULL + RESTART
 
 **Asked him:** the spare yardmaster rests until 0500 and YSBY01's call is 0500: taken as free? **Owner:** "yes we will go
