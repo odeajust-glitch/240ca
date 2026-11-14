@@ -1,5 +1,18 @@
 # HANDOFF — read this before doing anything
 
+## Are YM jobs going spare tracked? — 14 Nov 2026, about 00:40 Toronto. YES; shown on the test site only. Nothing changed; asked him where to show them
+
+**Owner:** "does either site show YM jobs going spare, or do we track that. I know we didn't but I want to make sure
+we do". **Read live (both sites' `data/analytics.json`, generated 00:33, the 0030 check):** `yardmasterJobs` has **47**
+YA jobs going spare on 19 days, 24 Oct to 14 Nov (YSTY01 9, YSBY06 10, YSBY04 8, YSBY03 7, YSBY01 7, YSBY02 6), each
+with first / last listed; 45 matched to their shift on the Call Board; "worked by" known for only 3 (the yardmaster
+spareboard is not read). **On CATS's list at 0030: YSTY01 Sat 14th 0630 (since 13th 1845) and YSBY01 Sat 14th 0700
+(since 13th 1913).** Shown only on board-test with his key (Analytics → Yardmaster jobs, `PREVIEW`); the main site
+nowhere; Current's "Jobs going spare" leaves YA out (his word of 24 Oct); no alerts. **Offered:** that Analytics tab on
+the main site (him only, or every member), YA jobs back in Current's Jobs going spare as their own rows, and Page
+Health's Next Yard Job saying when the job is on CATS's spare list now (YSBY01 was, while the box said "If it was
+spare").
+
 ## Job Aids and Page Health's test-site pieces on to the main site — 14 Nov 2026 at his word (page only: `public/board-ref.js`, `public/board.html`). WAITING ON ONE LAPTOP PULL. One Page Health piece ASKED ABOUT, not moved
 
 **Owner:** "Can you push the Job Aid tab and Page Health from the test to the main". **Done (clean-up items 5 and 6 = P,
