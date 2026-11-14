@@ -208,7 +208,8 @@
   // Y the call order's logic (public/board-ym.js), L the site's list (data/ym-list.json, its names opened), now
   // (railway minutes) and the rules saved on the call order page on this phone (null: its starting rules).
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  function ymNextHtml({ Y, L, now, rules = null }) {
+  // link: the call order page (on the main site, the test site's: ym.html is the test site's for now).
+  function ymNextHtml({ Y, L, now, rules = null, link = 'ym.html' }) {
     const head = '<h4>Next Yard Job</h4>';
     if (!L || L.error) return `${head}<p class="muted">${L && L.error === 'none' ? 'The yardmaster seniority list isn’t on the site yet, so who would work it can’t be worked out.' : 'The yardmaster seniority list didn’t load. Try again in a minute.'}</p>`;
     const r = Y.normalize(rules || Y.startingRules());
@@ -227,7 +228,7 @@
       <table class="reft"><thead><tr><th>YM spareboard</th><th>Who would work it</th></tr></thead><tbody>
         <tr><td>Someone on it</td><td>${who(a.yes)}</td></tr>
         <tr><td>Nobody on it</td><td>${who(a.no)}</td></tr></tbody></table>
-      <p class="muted" style="margin:0 0 12px">${live ? `Everyone as the board check of ${esc(live.slice(11))} on ${esc(day(live))} showed them (on rest, on duty, away, days off)` : 'Everyone by their status on the seniority list only (no board check with them yet)'}, the seniority list as read ${esc(read)}, by ${rules ? 'the rules saved on the call order page on this phone' : 'the call order page’s starting rules'}. The whole order and why: <a href="ym.html">the call order test →</a></p>`;
+      <p class="muted" style="margin:0 0 12px">${live ? `Everyone as the board check of ${esc(live.slice(11))} on ${esc(day(live))} showed them (on rest, on duty, away, days off)` : 'Everyone by their status on the seniority list only (no board check with them yet)'}, the seniority list as read ${esc(read)}, by ${rules ? 'the rules saved on the call order page on this phone' : 'the call order page’s starting rules'}. The whole order and why: <a href="${esc(link)}">the call order test →</a></p>`;
   }
   const paintYmNext = (box, o) => { if (box) box.innerHTML = ymNextHtml(o); };
 
@@ -420,12 +421,14 @@
     for (let m = 600; m <= 960; m += 1) penaltyRows.push(`<tr><td class="num">${hm(m)}</td><td class="num">${penalty(m).toFixed(2)}</td></tr>`);
     const steps = [[961, 1020], [1021, 1080], [1081, 1140], [1141, 1200], [1201, 1260], [1261, 1320]].map(([a, b]) => `<tr><td class="num">${hm(a)} – ${hm(b)}</td><td class="num">${penalty(b).toFixed(2)}</td></tr>`).join('');
     // The sections' order (owner, 2026-11-14): yard jobs, days out of Sarnia, track lengths, CATS status and ECC
-    // codes, job types, then the held-away penalty last.
+    // codes, job types, then the held-away penalty last. Every section for every member, both sites, since
+    // 2026-11-14 (owner: "Can you push the Job Aid tab and Page Health from the test to the main"); the yard jobs
+    // and days out of Sarnia had been the test site's (state.preview, gone).
     view.innerHTML = `<div class="thead"><div class="when">Job Aids</div>
         <div class="turnpick"><label for="refq">Search (a track, a code, a word)</label><div class="row"><input id="refq" placeholder="e.g. R013, 33, vacation" autocomplete="off" spellcheck="false" value="${esc(state.q || '')}"></div></div></div>
       <section class="sheet refpage">
-      ${state.preview ? sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA'))) : ''}
-      ${state.preview ? sec('due', 'Days out of Sarnia: add each pool to your calendar', !q || outTurnQ || hit('days out of Sarnia', 'due out', 'calendar', ...OUT_POOLS.map((p) => p[1])) ? '<div id="duebox"></div>' : '') : ''}
+      ${sec('yardjobs', 'Yard jobs: start times, days off and relief', yardSection(q, hit, state.today || new Date().toLocaleDateString('en-CA')))}
+      ${sec('due', 'Days out of Sarnia: add each pool to your calendar', !q || outTurnQ || hit('days out of Sarnia', 'due out', 'calendar', ...OUT_POOLS.map((p) => p[1])) ? '<div id="duebox"></div>' : '')}
       ${sec('tracks', 'Track lengths: Mac Yard, B.I.T. Yard, Malport', yards)}
       ${sec('status', 'CATS status and ECC codes', status && `<table class="reft"><thead><tr><th>Status</th><th>Meaning · ECC codes</th></tr></thead><tbody>${status}</tbody></table>`)}
       ${sec('jobs', 'Job types for Eastern Canada', jobs && `<table class="reft"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody>${jobs}</tbody></table>`)}
@@ -437,7 +440,7 @@
         <details><summary>The whole table</summary><table class="reft"><thead><tr><th>Off duty</th><th>Miles</th></tr></thead><tbody>${penaltyRows.join('')}${steps}</tbody></table></details>`, true)}
       <p class="muted" style="padding:10px 14px">From the CATS Eastern Canada Guide for Operating Crews and the sheets posted at work. Check the posted sheet if anything here looks off.</p>
       </section>`;
-    if (state.preview) wireDue(view, state);
+    wireDue(view, state);
     const box = view.querySelector('#refq');
     box.oninput =() => { state.q = box.value; const pos = box.selectionStart; render(view, state); const b = view.querySelector('#refq'); b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } };
     const out = view.querySelector('#refout');

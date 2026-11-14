@@ -6802,7 +6802,7 @@ source().then(async (src) => {
         <p><button type="button" class="linkbtn" id="forgetkey">Forget the owner key on this phone</button> <span class="muted">(Page Health and the sign-in countdown go away here)</span></p></div></section></div>`;
     wireHealthRetry(view);
     wireTrace(view); // screenshot mark
-    if (PREVIEW) paintYmNext(view); // the next yardmaster job (test site)
+    paintYmNext(view); // the next yardmaster job (Page Health is the owner's, either site)
     // Kept as the plain '1' the visit counter (Settings script) reads.
     document.getElementById('nocount').onchange = (e) => { try { if (e.target.checked) localStorage.setItem('boardNoCount', '1'); else localStorage.removeItem('boardNoCount'); } catch (err) { /* not kept */ } };
     document.getElementById('forgetkey').onclick = () => { OwnerKey.forget(); location.hash = '#current'; location.reload(); };
@@ -7668,11 +7668,11 @@ source().then(async (src) => {
     const view = document.getElementById('view');
     try { history.replaceState(null, '', '#ref'); } catch (e) { /* not allowed in some frames */ }
     if (!window.BoardRef) { view.innerHTML = '<p class="empty">The reference page isn\'t available right now.</p>'; return; }
-    // Yard jobs, their days off and the relief rotations: the test site only for now (owner, 2026-11-13).
-    refState.preview = PREVIEW;
+    // Yard jobs and the days out of Sarnia: every member, both sites, since 2026-11-14 (owner: "Can you push the Job Aid
+    // tab and Page Health from the test to the main"; the test site's from 2026-11-13).
     window.BoardRef.render(view, refState);
     // Days out of Sarnia for a calendar (owner, 2026-11-13; test site): the site's trains, once, then only its box is drawn again.
-    if (PREVIEW && refState.trains === undefined && src && src.trains) {
+    if (refState.trains === undefined && src && src.trains) {
       src.trains().then((t) => t, () => null).then((t) => { refState.trains = t; if (mode === 'ref' && window.BoardRef.paintOut) window.BoardRef.paintOut(document.getElementById('view'), refState); });
     }
   }
@@ -7696,10 +7696,13 @@ source().then(async (src) => {
     }
     return ymLogic;
   }
-  // Its box on Page Health: the test site with the owner key only, as it was in Job Aids.
+  // Its box on Page Health (the owner's, either site): the test site's first, on both since 2026-11-14 (owner: "Can you
+  // push the Job Aid tab and Page Health from the test to the main"). The call order page (ym.html) is still the test
+  // site's, so on the main site its link goes there.
   function ymNextSection() {
-    return PREVIEW ? '<section class="sheet" id="hymnext"><header><h2>Yardmaster jobs</h2><span class="meta">test site · the call order test</span></header><div class="hbody ymnext" id="ymnext"></div></section>' : '';
+    return '<section class="sheet" id="hymnext"><header><h2>Yardmaster jobs</h2><span class="meta">the call order test</span></header><div class="hbody ymnext" id="ymnext"></div></section>';
   }
+  function ymPage() { return PREVIEW_HOST ? 'ym.html' : `https://${location.hostname.replace(/^board\./, 'board-test.')}/ym.html`; }
   async function paintYmNext(view) {
     const box = view.querySelector('#ymnext');
     if (!box || !window.BoardRef.paintYmNext) return;
@@ -7710,7 +7713,7 @@ source().then(async (src) => {
       if (!fresh && L && !L.error) ymKept = { at: Date.now(), L };
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem('ym-rules') || 'null'); } catch (e) { /* its starting rules */ }
-      if (box.isConnected) window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null });
+      if (box.isConnected) window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null, link: ymPage() });
     } catch (e) {
       if (box.isConnected) box.innerHTML = `<h4>Next Yard Job</h4><p class="muted">It couldn’t be worked out (${esc(e.message)}). Try again in a minute.</p>`;
     }

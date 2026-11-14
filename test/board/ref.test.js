@@ -66,11 +66,12 @@ test('yard jobs: the tower turn about matches every day the checks saw', () => {
   assert.strictEqual(R.towerOn('2027-01-04'), R.towerOn('2026-10-26')); // ten weeks on: the same week
 });
 
-test('yard jobs: only on the test site (preview), and the search finds them', () => {
+test('yard jobs: on both sites for every member, and the search finds them', () => {
   const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
   const page = (state) => { const view = { innerHTML: '', querySelector: stub }; R.render(view, state); return view.innerHTML; };
-  assert.ok(!/XSAS|Yard jobs: start/.test(page({})));
-  const html = page({ preview: true, today: '2026-11-13' });
+  // The test site's first; every member since 2026-11-14 (owner, 2026-11-14: "Can you push the Job Aid tab and Page Health from the test to the main").
+  assert.equal(page({ today: '2026-11-13' }), page({ preview: true, today: '2026-11-13' }));
+  const html = page({ today: '2026-11-13' });
   assert.ok(html.includes('Yard jobs: start times, days off and relief'));
   // No "covered by" column on the jobs' table (owner, 2026-11-13: "get rid of the covered by column for the non relief jobs").
   const jobsTable = html.slice(html.indexOf('<h4>Each job</h4>'), html.indexOf('<h4>Relief jobs'));
@@ -151,12 +152,13 @@ test('due out: the calendar file, an all-day event a turn a day', () => {
   assert.strictEqual((one.match(/SUMMARY:/g) || []).length, 1);
 });
 
-test('days out: on the test site only; a download a pool, then the week from the day picked', () => {
+test('days out: on both sites; a download a pool, then the week from the day picked', () => {
   const trains = rotationTrains('2026-10-17', 28);
   let boxes = {};
   const stub = () => ({ value: '', focus() {}, setSelectionRange() {}, querySelector: () => null, querySelectorAll: () => [] });
   const page = (state) => { boxes = {}; const view = { innerHTML: '', querySelector: (s) => (s === '#duebox' ? { set innerHTML(v) { boxes[s] = v; }, get innerHTML() { return boxes[s]; }, querySelector: () => null, querySelectorAll: () => [] } : stub()) }; R.render(view, state); return view.innerHTML + Object.values(boxes).join(''); };
-  assert.ok(!/Days out of Sarnia/.test(page({ trains })));
+  // Every member since 2026-11-14 (owner, 2026-11-14: "Can you push the Job Aid tab and Page Health from the test to the main").
+  assert.ok(/Days out of Sarnia/.test(page({ today: '2026-11-13', trains })));
   const html = page({ preview: true, today: '2026-11-13', trains });
   assert.ok(html.includes('Days out of Sarnia: add each pool to your calendar'));
   // The record of trips worked is gone (owner: "I dont want a calendar of what jobs were worked").
@@ -200,7 +202,7 @@ test('yard jobs: the yardmaster jobs in their own table, on the schedule the cal
   // "Next Yard Job" is on Page Health now (owner, 2026-11-14: "take this out of the job aid section, move it to
   // page health"): Job Aids has no box for it and no longer calls the page's hook.
   assert.ok(!html.includes('ymnext'));
-  assert.ok(!/ymnext|Yardmaster jobs/.test(page({}))); // the main site: none of the yard jobs
+  assert.ok(page({ today: '2026-11-13' }).includes('<h4>Yardmaster jobs (YA)</h4>')); // the main site too, since 2026-11-14
   assert.ok(page({ preview: true, today: '2026-11-13', q: 'ysby04' }).includes('<b>YSBY04</b>'));
   let drawn = 0;
   page({ preview: true, today: '2026-11-13', ymNext: () => { drawn++; } });
@@ -243,7 +245,7 @@ test('yard jobs: "Next Yard Job" and "If it was spare, who would work it", with 
 // Owner, 2026-11-14: "Yard jobs: start times, days off and relief / Days out of Sarnia: add each pool to your
 // calendar / Track lengths: Mac Yard, B.I.T. Yard, Malport / CATS status and ECC codes / Job types for Eastern
 // Canada / Held-away penalty (time off duty → penalty miles) — in Job Aids, make this the correct order".
-// The first two are the test site's for now (state.preview); the rest keep the same order on the main site.
+// All six on both sites since 2026-11-14 (owner, 2026-11-14: "Can you push the Job Aid tab and Page Health from the test to the main"); state.preview no longer changes anything.
 test('Job Aids: the sections in the owner\'s order, the held-away penalty last', () => {
   const draw = (preview) => {
     const view = { innerHTML: '', querySelector: (sel) => (sel === '#refq' ? {} : null) };
@@ -251,5 +253,5 @@ test('Job Aids: the sections in the owner\'s order, the held-away penalty last',
     return [...view.innerHTML.matchAll(/<details class="refsec" id="ref-([a-z]+)"/g)].map((m) => m[1]);
   };
   assert.deepStrictEqual(draw(true), ['yardjobs', 'due', 'tracks', 'status', 'jobs', 'held']);
-  assert.deepStrictEqual(draw(false), ['tracks', 'status', 'jobs', 'held']);
+  assert.deepStrictEqual(draw(false), ['yardjobs', 'due', 'tracks', 'status', 'jobs', 'held']);
 });

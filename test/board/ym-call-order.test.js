@@ -312,18 +312,22 @@ test('yardmaster call order: the site\'s list as people, facts from the newest c
   assert.deepEqual(alone, { yes: null, no: null });
 });
 
-test('yardmaster call order: the Page Health box loads the logic only on the test site, with the rules saved on this phone', () => {
+test('yardmaster call order: the Page Health box (the owner, either site) loads the logic when drawn, with the rules saved on this phone', () => {
   const html = require('fs').readFileSync(require('path').join(__dirname, '../../public/board.html'), 'utf8');
-  assert.doesNotMatch(html, /<script src="board-ym\.js">/); // the main site never fetches it
-  // On Page Health since 2026-11-14 (owner: "take this out of the job aid section, move it to page health"), the test
-  // site with the owner key only; Job Aids no longer draws it.
+  assert.doesNotMatch(html, /<script src="board-ym\.js">/); // fetched only when the box is drawn
+  // On Page Health since 2026-11-14 (owner: "take this out of the job aid section, move it to page health"); on both
+  // sites the same day (owner: "Can you push the Job Aid tab and Page Health from the test to the main"). Page Health
+  // is the owner's only. Job Aids no longer draws it.
   assert.ok(!html.includes('refState.ymNext'));
   const health = html.slice(html.indexOf('  async function renderHealth() {'), html.indexOf('    paintHeldSettings();'));
   assert.ok(health.includes('${traceSection()}${who}${ymNextSection()}'));
-  assert.ok(health.includes('if (PREVIEW) paintYmNext(view);'));
-  assert.ok(html.includes("    return PREVIEW ? '<section class=\"sheet\" id=\"hymnext\">"));
+  assert.ok(health.includes('    paintYmNext(view);'));
+  assert.ok(!/\bPREVIEW\b/.test(html.slice(html.indexOf('  function ymNextSection() {'), html.indexOf('  async function paintYmNext(view) {'))));
+  assert.ok(html.includes("    return '<section class=\"sheet\" id=\"hymnext\">"));
   assert.ok(html.includes('<div class="hbody ymnext" id="ymnext"></div>'));
+  // ym.html is still the test site's: on the main site the box links there.
+  assert.ok(html.includes("function ymPage() { return PREVIEW_HOST ? 'ym.html' : `https://${location.hostname.replace(/^board\\./, 'board-test.')}/ym.html`; }"));
   assert.ok(html.includes("el.src = 'board-ym.js';"));
   assert.ok(html.includes("JSON.parse(localStorage.getItem('ym-rules') || 'null')")); // the call order page's own key
-  assert.ok(html.includes("window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null })"));
+  assert.ok(html.includes("window.BoardRef.paintYmNext(box, { Y, L, now: torontoNowMin(), rules: saved && saved.rules ? saved.rules : null, link: ymPage() })"));
 });

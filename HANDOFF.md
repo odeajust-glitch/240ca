@@ -1,5 +1,31 @@
 # HANDOFF — read this before doing anything
 
+## Job Aids and Page Health's test-site pieces on to the main site — 14 Nov 2026 at his word (page only: `public/board-ref.js`, `public/board.html`). WAITING ON ONE LAPTOP PULL. One Page Health piece ASKED ABOUT, not moved
+
+**Owner:** "Can you push the Job Aid tab and Page Health from the test to the main". **Done (clean-up items 5 and 6 = P,
+and the Page Health part of 10):**
+- **Job Aids, every member, both sites:** "Yard jobs: start times, days off and relief" (each job, relief jobs, extra
+  jobs, the Yardmaster jobs (YA) table, the Tower) and "Days out of Sarnia: add each pool to your calendar" (the pool
+  downloads, the week). `state.preview` no longer changes anything in `board-ref.js` render; `renderRef` no longer sets
+  it, and loads the site's trains for the calendar on either site. Static schedules, no names. YEBS03's weekends (his
+  open question) go out as they were.
+- **Page Health, the owner on either site:** the "Yardmaster jobs" box (Next Yard Job, If it was spare…), no `PREVIEW`
+  (`ymNextSection`, `paintYmNext`). Page Health is the owner's only. `ym.html` is still the test site's (it says so on
+  the main site), so the box's link is `ymPage()`: `ym.html` on board-test, `https://board-test.…/ym.html` elsewhere
+  (`ymNextHtml`'s new `link`). `data/ym-list.json`, `board-ym.js`, `ym.html`, `data/yardjobs.json` were already on both.
+- **Not moved, asked him:** Trace a screenshot's "A photo of a screen?" box (`traceCodeBox`: sharpen a photo, look up
+  the 4-character code, "How faint your code is on this phone"). It reads the faint visible code, which is drawn only
+  on his own screens on the test site (`paintShotCode`, `PREVIEW`), so on the main site it would look up codes his
+  main-site screens don't carry and its strength picker would change nothing. Asked: the faint code on his own main
+  site screens too (owner key only; members still none), then the box with it, or both stay on the test site.
+- **Still the test site's (item 10):** Analytics' Yardmaster jobs and YM seniority list tabs, and `ym.html`.
+- **Checked:** suite 610 of 610 (`ref.test.js` and `ym-call-order.test.js` changed to the promoted state, quoting him);
+  re-gated on purpose four ways (yard jobs, days out, the box's section, its paint), a test failed each time. In a
+  browser with this branch's page: the main site as a member (no key), Job Aids: the six sections in his order, the
+  days out with S1 S3 SA SB S5 all and the week, the yard jobs' five tables; the main site as him, Page Health → Yardmaster
+  jobs: YSBY01 Sat 14th 0700, rank 140 / rank 410, the link to board-test's ym.html; the test site as him unchanged; no
+  page errors. **Not checked:** a calendar file imported for real on a member's phone.
+
 ## The header's second line taken off, every screen, both sites — 14 Nov 2026 (`public/board.html`, page only). WAITING ON ONE LAPTOP PULL
 
 **Owner:** "Sarnia road · what CATS showed when each check ran . Can take this off both the main and branch test. Its
