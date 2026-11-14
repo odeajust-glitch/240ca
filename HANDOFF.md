@@ -59,6 +59,14 @@ M39671 12 and E27861 13 checks as they were, wrong again after a fix, the engine
 browser with the 30 days' records put into the real file: the card on board-test as him; nothing on board as a
 member. **Watching E27861 13** for him: a check-in is booked in this session (send_later) to look again.
 
+**14 Nov, then: "can you add a sub option to see a table laid out like the one above"** (the table in chat:
+Train | Call Board first had | Put right to | Took). Done (test site): Assignment errors opens with two buttons,
+"By train" (the list as before) and "Conductor on the wrong turn: table <n>" (`wrongTurnTable`, the switch kept
+in `ana2.aeView`): tiles (trains, put right, not put right, average time to put right), then one row a train,
+oldest first: train and its on-duty day, the conductor (spare in brackets) + engineer when first wrong with that
+check's time, the conductor it was put right to (spare) with its time, how long; "not put right" in red. On a
+phone the rows stack as the site's other tables do. Seen in a browser with the 30 days' records put in.
+
 ## Runarounds: the board's turn against the turn charged ("same spare, wrong turn charged") — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`; page `public/board.html`, the line on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt each publish from the day files: no FORMAT bump)
 
 **Owner, 14 Nov**, on the To check lines for **E27861 13** ("went to B (SB01) but the sequence says SR"; "conductor

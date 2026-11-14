@@ -4766,8 +4766,37 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], c
   }).join('');
   return `<p class="anote">Three checks on every train, kept apart. <b>Wrong pool</b>: the line-up showed the train for one pool when the calling sequence said another. <b>CATS listed the wrong turn</b>: CATS's jobs going spare (option 5) had a job under a turn the order doesn't have on that train; a one-check blip isn't counted. <b>Spare job missing from CATS</b>: the order says a job goes spare and CATS didn't list it for 30 minutes or more.</p>
     <p class="anote"><b>Showing now</b>: in the latest check. <b>Needs a look</b>: still wrong when the train went, or a pool crew went and the checks don't show it matching the sequence. <b>Stopped showing</b>: the mismatch went away before the train went; that is not proof the right crew was called. <b>Fine in the end</b>: the train went as the sequence said. <b>Can't tell</b>: the saved checks don't show how it ended. A train can carry more than one.</p>
+    ${PREVIEW && crewWrong.length ? `<div class="ae2-chips" role="group" aria-label="How to show it"><button type="button" data-ae2view="list" aria-pressed="true">By train</button><button type="button" data-ae2view="table" aria-pressed="false">Conductor on the wrong turn: table <b>${crewWrong.length}</b></button></div>
+    <div data-ae2-table hidden>${wrongTurnTable(crewWrong)}</div>` : ''}<div data-ae2-listwrap>
     ${items.length ? `<p class="ae2-count">${plural(items.length, 'train')} with something flagged in these dates. Tap a train for what was wrong and how it ended.</p>
-    <div class="ae2-chips">${chips}</div><section class="sheet ae2-list">${rows}<p class="empty" data-ae2-empty hidden>No trains with that outcome.</p></section>` : '<p class="empty">No assignment errors in the selected dates.</p>'}`;
+    <div class="ae2-chips">${chips}</div><section class="sheet ae2-list">${rows}<p class="empty" data-ae2-empty hidden>No trains with that outcome.</p></section>` : '<p class="empty">No assignment errors in the selected dates.</p>'}</div>`;
+}
+// Conductor on the wrong turn as one table (owner, 2026-11-14: "can you add a sub option to see a table laid out
+// like the one above"): train and day, what the Call Board first had, what it was put right to, how long it took.
+function wrongTurnTable(list) {
+  const turnOf = (crew, re) => (re.exec(crew || '') || [])[1] || '';
+  const CO = /(?:^|· )CO (\S+)/;
+  const EN = /(?:^|· )(?:EN|LE) (\S+)/;
+  const spareOn = (by, turn) => ((by || '').split(', ').find((x) => x.endsWith(` on ${turn}`)) || '').split(' on ')[0];
+  const day = (st) => new Date(`${String(st).slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-CA', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`);
+  const rows = [...list].sort((a, b) => (a.first < b.first ? -1 : 1)).map((r) => {
+    const w = (r.changes || []).find((c) => c.wrong) || { crew: `EN ${r.en} · CO ${r.co}`, by: '' };
+    const co = turnOf(w.crew, CO) || r.co;
+    const en = turnOf(w.crew, EN) || r.en;
+    const coSpare = spareOn(w.by, co);
+    const fixCo = r.fixedAt ? turnOf(r.fixedCrew, CO) : '';
+    const fixSpare = fixCo ? spareOn(r.fixedBy, fixCo) : '';
+    return `<tr class="nolink${r.fixedAt ? '' : ' hit'}"><td class="num"><b>${esc(r.train)}</b><div class="crew">${esc(day(r.onDuty || r.first))}</div></td>
+      <td class="num">${esc(co)}${coSpare ? ` (${esc(coSpare)})` : ''} + ${esc(en)}<div class="crew">${stampBtn(r.first)}</div></td>
+      <td class="num">${r.fixedAt ? `${esc(fixCo)}${fixSpare ? ` (spare ${esc(fixSpare)})` : ''}<div class="crew">${stampBtn(r.fixedAt)}</div>` : '<b class="bad">not put right</b>'}</td>
+      <td class="num">${r.fixedAt ? esc(long(r.minutes)) : '—'}</td></tr>`;
+  }).join('');
+  const fixed = list.filter((r) => r.fixedAt);
+  const avg = fixed.length ? Math.round(fixed.reduce((n, r) => n + r.minutes, 0) / fixed.length) : null;
+  return `<p class="anote">Each train the Call Board showed with a conductor on another pool's turn (the conductor's pool doesn't go with the engineer's), what CATS put it right to and how long that took. A spare working the turn is in brackets. Tap a time to open that check.</p>
+    <div class="strip">${anaTile(list.length, 'Trains')}${anaTile(fixed.length, 'Put right')}${anaTile(list.length - fixed.length, 'Not put right', list.length > fixed.length)}${anaTile(avg == null ? '—' : long(avg), 'Average time to put right')}</div>
+    <section class="sheet"><div class="scroll"><table class="orders"><thead><tr><th>Train</th><th>Call Board first had</th><th>Put right to</th><th>Took</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 // The board's turn against the turn charged (owner, 2026-11-14, E27861 13; test site): "Board had SR05
 // (going spare → B139). B139 went, on SB01's job: same spare, wrong turn charged."
@@ -8760,6 +8789,19 @@ source().then(async (src) => {
       if (latest) { [...latest.children].forEach((el) => { if (!el.matches('header')) el.remove(); }); latest.insertAdjacentHTML('beforeend', ana2CallList(calls, true)); }
     } else if (who) ana2SearchCalls(view, calls, who);
     view.querySelectorAll('[data-lt2-more]').forEach((b) => { b.onclick = () => { view.querySelectorAll('details.lt2-run[hidden]').forEach((d) => { d.hidden = false; }); b.remove(); }; });
+    // Assignment errors (test site): by train, or the wrong-turn table; kept while Analytics is open.
+    const views = [...view.querySelectorAll('[data-ae2view]')];
+    if (views.length) {
+      const pick = (k) => {
+        views.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ae2view === k)));
+        const table = view.querySelector('[data-ae2-table]');
+        const list = view.querySelector('[data-ae2-listwrap]');
+        if (table) table.hidden = k !== 'table';
+        if (list) list.hidden = k === 'table';
+      };
+      views.forEach((b) => { b.onclick = () => { ana2.aeView = b.dataset.ae2view; pick(ana2.aeView); }; });
+      pick(ana2.aeView === 'table' ? 'table' : 'list');
+    }
     // Assignment errors: the outcome chips; open on what is showing now, else what needs a look.
     const chips = [...view.querySelectorAll('[data-ae2]')];
     if (chips.length) {
