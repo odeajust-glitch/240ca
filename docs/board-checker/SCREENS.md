@@ -347,6 +347,35 @@ ENG CRW TRN CRW`, ends with END OF FILE.
   - crews were available → **"Possible Non-Sarnia Crew or Train Cancelled"**,
     train ID in **yellow**.
 
+## The Toronto South Call Board (owner, 2026-11-14): ❓ HOW TO REACH IT NOT KNOWN YET
+
+**Owner, 2026-11-14:** "IF you see a Sarnia crew on a train then its not a possible toronto south
+crew. if you see a train in the line up in mac yard and then fall off 8 hours before its was
+supposed to get called. Check the Toronto South call board 4 hours before the suspected call time,
+at the suspected call time, and 2 hours after the suspected call time to see if the train is there.
+we can have a list of train ids to look for to see if a TS crew is on one of our trains departing
+mac yard".
+
+- **What is built (lib/board/toronto-south.js, scripts/board-auto.js `watchTorontoSouth`):** a train
+  gone from the Mac yard line-up above (41975 W S1) at a check 8 h or more before the call it last
+  showed (order − 2 h 15), not a deadhead, not on our Call Board, goes on a list
+  (`BoardChecker\toronto-south.json`). The Toronto South Call Board is read only when one of its
+  three looks is due (call − 4 h, the call, call + 2 h), one read for every train due then, never
+  on every check. Seen there: done. A Sarnia crew on our Call Board for it, or back on the Mac yard
+  line-up: off the list.
+- **Assumed, to confirm with him before the first real look:** it is our Call Board (3 → 6) with
+  Toronto South's two codes typed on its first screen in place of 45 / SA (the screen above, "boxes
+  prefilled 45 / SA"), and it looks like ours: "<train> <day> ON DUTY AT: <place> YY/MM/DD HHMM",
+  crew lines under it, PAGE n OF n, trains before yard jobs. The reader for it is looser than ours
+  (`parseCallBoardTrains`: a place of more than one word, turns not like ours) and stops at the
+  first yard job. Its pages are read masked and kept only in memory, never with the check's screens
+  (summary.js would take them for Sarnia's). Afterwards the checker types 45 / SA on that first
+  screen again, since CATS may keep the last codes typed as it keeps the line-up's boxes.
+- **Not known:** the two codes (`torontoSouthCallBoard` in lib/board/config.js, or
+  BOARD_TS_CALLBOARD="<district> <sub-district>" in the laptop's .env). Until they're set no look is
+  made and CATS isn't touched; the list still fills. Wanted from him: the two codes, and a photo of
+  the Toronto South Call Board with a train on it (names can be covered).
+
 ## Option 4: upcoming days off (owner, 2026-11-05)
 
 Train Service 3 → 4. Nothing to type (the ASSIGNMENT TYPE box A/U/X is left

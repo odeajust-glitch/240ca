@@ -1,5 +1,77 @@
 # HANDOFF — read this before doing anything
 
+## Toronto South check — BUILT 14 Nov 2026, about 01:45 Toronto (laptop + page). The Sarnia-crew rule ON FOR EVERY MEMBER, BOTH SITES (page + the Toronto lined-up alerts); the watch list runs on the laptop and shows on the TEST SITE ONLY. WAITING ON ONE LAPTOP PULL + RESTART, and the looks themselves WAIT ON HIM: the Toronto South Call Board's codes and two photos (asked)
+
+**Owner, 14 Nov about 01:00 Toronto:** "I want to add a check for a Toronto South crew to confirm. if the checker
+thinks there is someone on a sarnia train out of mac yard. I would like the checker only to check once after it
+thinks there could be a toronto south crew, I dont want it to check every time since that extra check could bog
+down how it runs". Asked how the confirming check should work (with the numbers below), he answered: "IF you see
+a Sarnia crew on a train then its not a possible toronto south crew. if you see a train in the line up in mac yard
+and then fall off 8 hours before its was supposed to get called. Check the Toronto South call board 4 hours
+before the suspected call time, at the suspected call time, and 2 hours after the suspected call time to see if
+the train is there. we can have a list of train ids to look for to see if a TS crew is on one of our trains
+departing mac yard". Then: "Do you need the screens to check to see if a TS crew is on our train": yes, asked for
+the two codes, a photo of the Toronto South Call Board with a train on it, and one of the Call Board's first
+screen with the codes typed.
+
+**Found first (the live site's checks, 24 Oct to 13 Nov, 3,514 snapshots):** 47 trains were labelled "possible
+Toronto South crew", and a Sarnia crew went on duty on all 47 (on our Call Board, at Toronto). 24 were already on
+the Call Board in the very check that first showed the label (72 of the 108 labelled checks). Why: a called crew
+drops off the bunkhouse (28) while its train stays on the Mac yard line-up until it leaves, so the site saw an
+ordered train with no rested crew. The same gap gave 96 checks where an already-called train took another
+bunkhouse crew (every later train's crew one back). Separately, 22 trains left the Mac yard line-up 8 h or more
+before their call (E27531 11 of them, M38331 4, B73111 3) and never reached our Call Board.
+
+**Built (`d5a09f3`, `3e309d9`; no Worker change):**
+1. **The Sarnia-crew rule** (`lib/board/toronto.js` `onCallBoard`): a Mac yard train on our Call Board keeps its
+   Sarnia crew: it takes no one from the bunkhouse and is never "possible Toronto South"; its crew is kept out of
+   the bunkhouse if CATS still lists them there (matched by a regular turn; MU turns only when both match). Used by
+   `site.js` (Mac yard rows get `called`, bunkhouse rows `onTrain`; **FORMAT 30 → 31**, one slower publish, which
+   also covers the other session's 30 if not yet published), `alerts.js` (no bunkhouse crew is told it's lined up
+   for a train already crewed; the "Toronto South may get it" alert itself was taken off 13 Nov and stays off),
+   the page's two Toronto boxes (the called crew, "on the Call Board · on duty …") and Turn History ("On the Call
+   Board for …"). On the saved checks the label would have shown on 23 trains instead of 47.
+2. **The watch** (`lib/board/toronto-south.js`, `BoardChecker\toronto-south.json`): "fall off 8 hours before"
+   taken as gone at a check 8 h or more before the call it last showed (order − 2 h 15); never a deadhead (owner,
+   2026-10-25); not when on our Call Board. Looks due at call − 4 h, the call and call + 2 h; one read answers every
+   train due; looks missed while the checker was off are answered by one read; seen → done; a Sarnia crew on our
+   Call Board, or back on the Mac yard line-up → off the list; CATS not showing the board → tried at the next
+   check, twice; a finished entry is kept 48 h. Replayed on the saved checks: the 22 trains above, 52 reads in 21
+   days (2 to 3 a day, at most 6), against about 4,000 checks.
+3. **The checker** (`scripts/board-auto.js` `watchTorontoSouth`, after the Garnet line-up): reads the Toronto South
+   Call Board only when a look is due: 3 → 6, Toronto South's codes on the first screen, F8 until the first yard
+   job or the trains are found; masked, in memory, never in the check's `screens` (summary.js would read them as
+   ours); then `putSarniaBack` (3 → 6, 45 / SA, checks the board says SARNIA). If that fails, `restoreSarnia`: the
+   next check types 45 / SA and makes sure its Call Board is Sarnia's (F3 + 45 / SA, or stops the check rather than
+   read another terminal's board). Otherwise the route is exactly as before. Log: "Toronto South Call Board (45
+   TS): N trains on P pages; E27531 14 IS ON IT / not on it", or once a run "… due a look, but the Toronto South
+   Call Board's codes aren't set yet".
+4. **The page, TEST SITE ONLY** (owner key on board-test): "Toronto South watch" at the foot of the Toronto box
+   (Current and Snapshots): each train, when it left, its call, each look ("not there", "on it", "waiting", "to
+   come") and how it ended ("A Toronto South crew is on it (EN … · CO …)", "A Sarnia crew is on it: not Toronto
+   South", "Not on the Toronto South Call Board at any look"); the train's Order summary row says the same.
+
+**The codes are NOT KNOWN:** `torontoSouthCallBoard: null` in `lib/board/config.js` (BOARD_TS_CALLBOARD="<district>
+<sub-district>" in the laptop's .env works too). Until set: no look, CATS untouched; the list still fills and the
+test site says the board "isn't set up in the checker yet". Assumed (docs/board-checker/SCREENS.md, "The Toronto
+South Call Board"): it is our Call Board with other codes on its first screen, laid out like ours. **When he
+sends them:** set the default in config.js, check his photo against `parseCallBoardTrains`
+(`test/board/toronto-south.test.js` has the layout), and watch the first real look in the laptop's log.
+
+**Checked.** Suite **622 of 622** (`test/board/toronto-south.test.js`, 18 tests: the rule at the helper, site,
+alerts and page; the watch's rules and edges; the reader on a two-word place and other turn ids; the checker's
+structure). Six pieces broken on purpose, a test failed each time. The CATS part run in Chromium against a
+stand-in CATS page (main menu, Train Service, the Call Board's first screen keeping the last codes, paged boards):
+the train on page 2 found with its crew and Sarnia's codes put back (10 key presses); not there; codes not set
+(no key pressed); CATS going straight to the last board (gives up, tries again next check, back to Sarnia's by F3
+and 45 / SA). The built site in Chromium at 390 px, as a member and on the test site: the called crew's row, no
+label, the watch on the test site only, no page errors, no sideways scroll.
+**Not checked:** real CATS (the codes, the first screen's boxes, the Toronto South board's layout, whether CATS
+keeps typed codes), the published site, a real phone.
+**After his pull + restart:** when a Mac yard train is called, compare the Toronto box with CATS (the called crew
+on its row, the next trains' crews). Call stability's Mac yard records may shift a little when the 30 days are
+rebuilt (truer: a crew whose train went to another crew now waits for its next train).
+
 ## Job Aids: YINS30's "Runs Mon–Fri only" line taken off — 14 Nov 2026, at his word ("this is in the job aid section, remove the test Runs Mon–Fri only. push to the main"). ON BOTH SITES in the code (Job Aids is every member's since earlier on 14 Nov). WAITING ON ONE LAPTOP PULL
 
 `YARD_JOBS` in `public/board-ref.js`: YINS30 has no `note` now (the row is Job · On duty · Crew off like the

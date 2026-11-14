@@ -46,6 +46,15 @@ Owner's list (Justin, started 2026-10-26). Add new asks at the bottom of
   turn's holder its trainee's trains and the other way round, and gives everyone seen on a
   make-up turn every train it worked. My stats has all of these right since 2026-11-12
   (`personRecord(..., { strict: true })` and `build` in `public/board-mystats.js`).
+- **Toronto South check (owner, 2026-11-14): waiting on him for the Toronto South Call Board.**
+  Built and pushed: a train with a Sarnia crew on the Call Board is never "possible Toronto South"
+  and takes no one from the bunkhouse (both sites, alerts too); the watch list of trains that left
+  the Mac yard line-up 8 h or more before their call, with looks at call − 4 h, the call and call
+  + 2 h (laptop; shown on the test site only). **Wanted from him** (asked 14 Nov): the two codes
+  for the Toronto South Call Board (the boxes that say 45 / SA on the Call Board's first screen,
+  if that's how it's reached), a photo of that board with a train on it, and one of the first
+  screen with the codes typed. Then set `torontoSouthCallBoard` in lib/board/config.js and check
+  the first real look in the laptop's log. See HANDOFF, "Toronto South check".
 
 ### Housekeeping list (owner, 2026-11-10: "put those 2 items on a house keeping list")
 
