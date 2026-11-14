@@ -193,6 +193,12 @@
           r.events.push({ taken: s.taken, kind: 'gone' });
         }
       }
+      // The Toronto South watch (owner, 2026-11-14; lib/board/site.js tsWatch): what the looks at the
+      // Toronto South Call Board found, on the Mac yard train it's about, as the newest check had it.
+      for (const w of s.tsWatch || []) {
+        const r = state.trains[trainKey(w.train, s.taken)];
+        if (r && r.from === 'mac') r.ts = { call: w.call, looks: w.looks, end: w.end, ...(w.seen ? { seen: w.seen } : {}), ...(w.sarnia ? { sarnia: w.sarnia } : {}) };
+      }
     }
     return state;
   }

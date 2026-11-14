@@ -2938,6 +2938,31 @@ function southCrew(s, x) {
 const calledCrew = (s, t) => wayCrew(s, { en: t.called.en, co: t.called.co, train: t.train });
 const calledCell = (s, t) => `<b class="num">${calledCrew(s, t)}</b> <span class="chip">on the Call Board</span>
   <div class="crew">a Sarnia crew is on it · on duty ${esc(t.called.onDuty)}${t.call ? ` · call ~${esc(t.call)}` : ''}</div>`;
+// The Toronto South watch (owner, 2026-11-14: "if you see a train in the line up in mac yard and then fall
+// off 8 hours before its was supposed to get called. Check the Toronto South call board 4 hours before the
+// suspected call time, at the suspected call time, and 2 hours after"; lib/board/toronto-south.js). TEST
+// SITE ONLY until he has looked at it. w: one entry of s.tsWatch (or a train row's ts); taken: the check's.
+function tsWatchText(w, taken) {
+  const now = taken ? stampMin(taken) : null;
+  const looks = (w.looks || []).map((l) => {
+    if (l.at) return `${esc(l.at)} ${l.failed ? 'couldn’t be read' : l.seen ? '<b class="bad">on it</b>' : 'not there'}`;
+    if (w.end || !taken) return ''; // not needed any more; or no check to tell "to come" from "waiting"
+    const due = BoardTrains.resolve(l.due, taken);
+    return `${esc(l.due)} ${due && stampMin(due) <= now ? 'waiting' : 'to come'}`;
+  }).filter(Boolean).join(' · ');
+  const end = w.end === 'seen' ? `<b class="bad">A Toronto South crew is on it</b>${w.seen && w.seen.crew ? ` (${esc(w.seen.crew)})` : ''}.`
+    : w.end === 'sarnia' ? `A Sarnia crew is on it${w.sarnia && w.sarnia.crew ? ` (${esc(w.sarnia.crew)})` : ''}: not Toronto South.`
+    : w.end === 'notSeen' ? 'Not on the Toronto South Call Board at any look.'
+    : w.end === 'unread' ? 'The Toronto South Call Board couldn’t be read.' : '';
+  return `${looks ? `Toronto South Call Board: ${looks}.` : ''}${end ? ` ${end}` : ''}`.trim();
+}
+function tsWatchFoot(s) {
+  if (!(s.tsWatch || []).length || !PREVIEW) return '';
+  const one = (w) => `<b>${esc(w.train)}</b> left the Mac yard line-up ${esc(w.fellOff)}, call ~${esc(w.call)}. ${tsWatchText(w, s.taken)}`;
+  const waiting = s.tsCodes === false && s.tsWatch.some((w) => !w.end) ? '<br><span class="muted">The Toronto South Call Board isn’t set up in the checker yet, so no look is made.</span>' : '';
+  const err = s.tsRead && s.tsRead.error ? `<br><span class="muted">The look at ${esc(s.tsRead.at)} didn’t work: ${esc(s.tsRead.error)}</span>` : '';
+  return `<div class="foot"><b>Toronto South watch</b> <span class="chip">test site</span> trains that left the Mac yard line-up 8 h or more before their call, looked for on the Toronto South Call Board 4 h before the call, at the call and 2 h after:<br>${s.tsWatch.map(one).join('<br>')}${waiting}${err}</div>`;
+}
 function toronto(s) {
   const trains = s.macLineup || [];
   const crews = s.bunkhouse || [];
@@ -2997,7 +3022,7 @@ function toronto(s) {
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${wayCrew(s, c)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
   return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
     <div class="scroll"><table><thead><tr><th>Order</th><th></th><th>Train</th><th>Predicted crew (bunkhouse order)</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">No trains on the Toronto line-up.</td></tr>'}</tbody></table></div>
-    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. A train already on the Call Board has its Sarnia crew: it takes no one from the bunkhouse, and it isn't a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
+    ${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}${tsWatchFoot(s)}<div class="foot">Crews take these trains in bunkhouse order (option 28): first crew home, first train. After the bunkhouse come the crews still on their way (marked <span class="chip">estimate</span>): each Sarnia train on duty on the Call Board is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h), and to be rested 8 h after that. A <b>planned</b> train stays with the next crew in line; if it's still on rest at the call, when it's rested shows in yellow. An <b>ordered</b> train goes to the next crew rested by the call (2 h before on duty); one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. A train already on the Call Board has its Sarnia crew: it takes no one from the bunkhouse, and it isn't a Toronto South crew. Off duty = rest − 8 h.</div></section>`;
 }
 
 // ---- Current, the layout since 2026-11-10 (owner; built in Test first, then
@@ -3090,7 +3115,7 @@ function toronto2(s) {
   const way = coming.length ? `<div class="foot">On the way, no Toronto train for them yet (estimates): ${coming.map((c) => `${wayCrew(s, c)} (${esc(c.train)}, in Toronto ~${esc(c.offDuty)}, rested ~${esc(c.rested)})`).join(' · ')}</div>` : '';
   const missing = !readB ? 'The bunkhouse wasn’t read in this check, so no crews are shown.' : !readM ? 'The Mac yard line-up wasn’t read in this check, so no trains are shown.' : '';
   return `<section class="sheet" id="sec-toronto"><header><h2>Toronto line-up · Mac yard</h2><span class="meta">${trains.length} trains · ${crews.length} crews in the bunkhouse</span></header>
-    ${rows || '<p class="empty">No trains on the Toronto line-up.</p>'}${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}
+    ${rows || '<p class="empty">No trains on the Toronto line-up.</p>'}${missing ? `<div class="foot bad">${missing}</div>` : ''}${left}${way}${tsWatchFoot(s)}
     <details class="why cur2-how"><summary>How crews are picked</summary><p>Crews take these trains in bunkhouse order: first crew home, first train. After the bunkhouse come the crews still on their way, as estimates: a Sarnia train is guessed to tie up in Toronto about 8 h after going on duty (a deadhead about 3 h) and to be rested 8 h after that. A planned train stays with the next crew in line. An ordered train goes to the next crew rested by the call; one still on rest is skipped and keeps its place. Ordered with no rested crew: possibly a Toronto South crew. A train already on the Call Board has its Sarnia crew: it takes no one from the bunkhouse, and it isn't a Toronto South crew. The call here is 2 h before on duty (on duty is 15 min before the order for a train).</p></details></section>`;
 }
 // Who is in Garnet when the Garnet board wasn't read: the 501/502 turns
@@ -4127,6 +4152,8 @@ function storyBody(r) {
   sum.push(`<button type="button" class="sharebtn" data-share="${esc(r.id)}">🔗 Share this train</button>`);
   if (r.flag === 'deadhead') sum.push(`<span class="chg">${esc(FLAG_TEXT.deadhead)}</span>: left the ${r.from === 'mac' ? 'Toronto' : 'Sarnia'} line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later.`);
   else if (r.flag) sum.push(`<span class="${r.flag === 'nonSarnia' ? 'bad' : 'chg'}">${esc(FLAG_TEXT[r.flag])}</span>: left the Toronto line-up and wasn't on the Call Board ${BoardTrains.FLAG_WAIT} minutes later; ${r.avail === 0 ? `no rested Sarnia crew was in the bunkhouse${r.flag === 'possible' && r.predicted ? `, but ${esc([r.predicted.en, r.predicted.co].filter(Boolean).join(' + '))} ${r.predicted.en && r.predicted.co ? 'were' : 'was'} predicted for it, so it may have been cancelled` : ''}` : r.avail == null ? 'the bunkhouse wasn\'t read' : `${r.avail} rested Sarnia crew${r.avail === 1 ? ' was' : 's were'} in the bunkhouse`}.`);
+  // The Toronto South watch's looks for it (owner, 2026-11-14), test site only for now.
+  if (r.ts && PREVIEW) { const t = tsWatchText(r.ts, null); if (t) sum.push(`${t} <span class="chip">test site</span>`); }
   return `<ol>${r.events.map(line).join('')}</ol>${sum.length ? `<div class="sum">${sum.map((x) => `<div>${x}</div>`).join('')}</div>` : ''}`;
 }
 // As a table row of its own (Trains, the older Order summary).

@@ -384,3 +384,57 @@ test('screens: another terminal\'s Call Board, read for its trains only', () => 
   const ours = parseGrid(JSON.parse(fixture('2026-10-14.json')).screens[0].screenGrid);
   assert.equal(S.callBoardPlace(ours), 'SARNIA');
 });
+
+// --- 4. What the site shows: the watch in the Toronto box and on the Order summary, test site only ---
+
+// A check's summary as board-auto.js saves it after the 2345 look found E27531 14 on the Toronto South board.
+function watchSummary({ codes = true, end = 'seen' } = {}) {
+  const fx = JSON.parse(fixture('2026-10-15b.json'));
+  const s = W.update(W.empty(), { now: t1200, lineup: [e275], callBoard: [] });
+  W.update(s, { now: t1205, lineup: [m383], callBoard: [] });
+  W.record(s, at(2026, 11, 13, 19, 46), new Map());
+  if (end === 'seen') W.record(s, at(2026, 11, 13, 23, 50), new Map([['E27531 14', { station: 'TORONTO', onDuty: at(2026, 11, 14, 1, 45), crew: [{ craft: 'EN', turn: 'T104' }, { craft: 'CO', turn: 'T207' }] }]]));
+  return { ...fx, torontoSouth: { list: W.list(s), codes, read: { at: at(2026, 11, 13, 23, 50), pages: 2, trains: 5 } } };
+}
+
+test('site: each check carries the watch as the page shows it; a check without one is unchanged', () => {
+  const fx = JSON.parse(fixture('2026-10-15b.json'));
+  const plain = snapshotOf(fx).shown;
+  assert.equal('tsWatch' in plain, false);
+  assert.equal('tsRead' in plain, false);
+  const { shown } = snapshotOf(watchSummary());
+  assert.deepEqual(shown.tsWatch, [{ train: 'E27531 14', status: 'PLN', order: '14th 0200', call: '13th 2345', lastSeen: '13th 1200', fellOff: '13th 1205',
+    looks: [{ due: '13th 1945', at: '13th 1946', seen: false }, { due: '13th 2345', at: '13th 2350', seen: true }, { due: '14th 0145' }],
+    end: 'seen', seen: { crew: 'EN T104 · CO T207', onDuty: '14th 0145', station: 'TORONTO' } }]);
+  assert.deepEqual(shown.tsRead, { at: '13th 2350', pages: 2, trains: 5 });
+  assert.equal(shown.tsCodes, undefined);
+  assert.equal(snapshotOf(watchSummary({ codes: false, end: '' })).shown.tsCodes, false);
+});
+
+const tight = (h) => text(h).replace(/ ([.,:;)])/g, '$1');
+test('page: the Toronto South watch in both Toronto boxes and on the train\'s Order summary row, test site only', () => {
+  const { shown } = snapshotOf({ ...watchSummary(), screens: [...JSON.parse(fixture('2026-10-15b.json')).screens, ...macScreens()] });
+  const test = page({ preview: true });
+  for (const box of ['toronto2', 'toronto']) {
+    const words = tight(test[box](shown));
+    assert.match(words, /Toronto South watch test site/, box);
+    assert.match(words, /E27531 14 left the Mac yard line-up 13th 1205, call ~13th 2345\. Toronto South Call Board: 13th 1946 not there · 13th 2350 on it\. A Toronto South crew is on it \(EN T104 · CO T207\)\./, box);
+    assert.doesNotMatch(tight(page({ preview: false })[box](shown)), /Toronto South watch/, box); // members: nothing new
+  }
+  // Waiting on the codes: said so; a look past due reads "waiting", one ahead "to come".
+  const wait = snapshotOf({ ...watchSummary({ codes: false, end: '' }), screens: [...JSON.parse(fixture('2026-10-15b.json')).screens, ...macScreens()] }).shown;
+  const late = { ...wait, taken: '2026-11-14 0000' };
+  const words = tight(test.toronto2(late));
+  assert.match(words, /13th 1946 not there · 13th 2345 waiting · 14th 0145 to come\./);
+  assert.match(words, /isn’t set up in the checker yet/);
+  // The Order summary: the train's row carries the looks, the page says what they found.
+  const T2 = require('../../public/board-trains');
+  const state = T2.track([{ taken: '2026-11-13 1200', screens: ['macLineup'], macLineup: [{ train: 'E27531 14', status: 'PLN', order: '14th 0200' }] },
+    { taken: '2026-11-13 2350', screens: ['macLineup'], macLineup: [], tsWatch: shown.tsWatch }]);
+  const row = T2.summarize(state).find((r) => r.id === 'E27531 14');
+  assert.equal(row.ts.end, 'seen');
+  assert.equal(tight(test.tsWatchText(row.ts, null)), 'Toronto South Call Board: 13th 1946 not there · 13th 2350 on it. A Toronto South crew is on it (EN T104 · CO T207).');
+  // A Sarnia crew on it ends the watch in those words.
+  assert.equal(tight(test.tsWatchText({ looks: [{ due: '13th 1945', at: '13th 1946', seen: false }, { due: '13th 2345' }, { due: '14th 0145' }], end: 'sarnia', sarnia: { crew: 'EN SD10 · CO SR07' } }, '2026-11-13 2200')),
+    'Toronto South Call Board: 13th 1946 not there. A Sarnia crew is on it (EN SD10 · CO SR07): not Toronto South.');
+});

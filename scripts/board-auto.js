@@ -1151,7 +1151,7 @@ async function watchTorontoSouth(page, screens) {
     }
   }
   South.save(TORONTO_SOUTH_FILE, state);
-  return { list: South.list(state), ...(read ? { read } : {}) };
+  return { list: South.list(state), codes: !!South.boardCodes(), ...(read ? { read } : {}) };
 }
 
 // The Toronto South Call Board, for the watched trains: train + day, where
