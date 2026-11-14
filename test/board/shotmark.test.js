@@ -63,17 +63,21 @@ test('the tile: black at alpha 1 on a light page, white at alpha 2 on a dark one
 
 // A made-up page: background and card fills, lines of "text", a coloured chip, then the mark the way a browser
 // lays it over the page (darker by a level on a light page, lighter on a dark one), at a given size.
-function page(W, H, { light = true, mark = null, scale = 3, ox = 0, oy = 0, noise = 0, seed = 1, alpha = null } = {}) {
+// inkOver: the text drawn over the mark, unmarked (real text is thin: its insides never carry the mark to the reader).
+function page(W, H, { light = true, mark = null, scale = 3, ox = 0, oy = 0, noise = 0, seed = 1, alpha = null, inkOver = false } = {}) {
   let s = seed >>> 0;
   const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
   const bg = light ? [236, 238, 234] : [26, 35, 38], card = light ? [251, 251, 249] : [32, 42, 46], ink = light ? [29, 42, 46] : [226, 233, 232];
   const px = new Uint8ClampedArray(W * H * 4);
   const put = (x, y, c) => { const i = 4 * (y * W + x); px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) put(x, y, x > 30 && x < W - 30 && y > 90 && y < H - 60 ? card : bg);
+  const blocks = [];
   for (let k = 0; k < (W * H) / 900; k++) {
     const x0 = 40 + Math.floor(rnd() * (W - 120)), y0 = 100 + Math.floor(rnd() * (H - 180)), w = 3 + Math.floor(rnd() * 30), h = 2 + Math.floor(rnd() * 9);
-    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) put(x, y, ink);
+    blocks.push([x0, y0, w, h]);
   }
+  const text = () => { for (const [x0, y0, w, h] of blocks) for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) put(x, y, ink); };
+  text();
   for (let y = 120; y < 150; y++) for (let x = 60; x < 160; x++) put(x, y, [220, 240, 226]);
   if (mark !== null) {
     const v = SM.cells(mark), cell = SM.CELL * scale;
@@ -85,6 +89,7 @@ function page(W, H, { light = true, mark = null, scale = 3, ox = 0, oy = 0, nois
       for (let c = 0; c < 3; c++) px[i + c] = light ? Math.floor(px[i + c] * (255 - al) / 255) : px[i + c] + Math.floor(al * (255 - px[i + c]) / 255);
     }
   }
+  if (inkOver) text();
   if (noise) for (let i = 0; i < W * H * 4; i += 4) { const n = Math.round((rnd() + rnd() + rnd() - 1.5) * noise); for (let c = 0; c < 3; c++) px[i + c] += n; }
   return px;
 }
@@ -113,6 +118,49 @@ test('reading: the right account from a light page, a dark page, a smaller pictu
   }
   // too small to read
   assert.equal(read(page(40, 40, { mark: who.mark }), 40, 40).found, false);
+});
+
+test('a screenshot of the test site with the squares (2 to 6 x) is read too; members\' screenshots as before', async () => {
+  // Owner, 14 Nov: "the page does not find a mark, even on normal screen shots" (his test site, the squares at 3 x).
+  // A dark page's squares at 3 x are a 5 level step, which the spacing search (steps up to 4) never saw; at 3 x on a
+  // light page a fill and its squares are 3 levels apart and were taken for two fills. Read again for them
+  // (ShotMark.readShot) when the first read finds nothing.
+  const ids = ['owner', ...Array.from({ length: 40 }, (_, k) => nodeCrypto.createHash('sha256').update(`made-up ${k}`).digest('hex').slice(0, 32))];
+  const cands = [];
+  for (const id of ids) cands.push({ id, mark: await SM.markOf(id) });
+  const who = cands[7];
+  const W = 600, H = 820;
+  // Members' screens (the hidden mark alone, 1 x): the first read, as always.
+  for (const light of [true, false]) {
+    const r = SM.readShot(page(W, H, { light, mark: who.mark, ox: 37, oy: 11, inkOver: true }), W, H, cands);
+    assert.equal(r.found, true, JSON.stringify(r)); assert.equal(r.best, who.id); assert.equal(r.strong, undefined, 'read the first way');
+  }
+  // His squares: 3 x (as he has them) and the other strengths he can pick, light (alpha 1 x N) and dark (2 x N).
+  for (const [light, alpha] of [[true, 3], [true, 6], [false, 4], [false, 6], [false, 8], [false, 12]]) {
+    const px = page(W, H, { light, mark: who.mark, ox: 37, oy: 11, alpha, inkOver: true });
+    const r = SM.readShot(px, W, H, cands);
+    const say = `${light ? 'light' : 'dark'} alpha ${alpha}: ${JSON.stringify(r)}`;
+    assert.equal(r.found, true, say); assert.equal(r.best, who.id, say); assert.equal(r.cellsAgree, 20, say);
+    if (alpha === (light ? 3 : 6)) {
+      assert.equal(r.strong, true, `${say}: found by the second read`);
+      assert.equal(SM.decode(px, W, H, cands).found, false, `${say}: the first read alone finds nothing (what he saw)`);
+    }
+  }
+  // A page with no mark is never pinned on anyone, either read.
+  for (const light of [true, false]) {
+    const r = SM.readShot(page(W, H, { light, seed: 3 }), W, H, cands);
+    assert.equal(r.found, false, JSON.stringify(r));
+  }
+  // Which fills are a fill and its squares, with the fills his own test-site screens gave (14 Nov, levels and pixel
+  // counts in thousands, the squares at 3 x). Light: nothing paired (its squares 2 levels off, one fill already), not
+  // the small fill 6 below the page either (a 28th of its count). Dark: the page (22) and the cards (33), each with
+  // its squares 3 to 5 up; the small fill 43 (a ninth of the cards' squares) alone.
+  assert.deepEqual(SM.twins([236, 250, 39, 230], [1751, 735, 90, 61]), { cls: [0, 1, 2, 3], d: 0 });
+  assert.deepEqual(SM.twins([26, 22, 33, 37, 230, 43], [897, 850, 379, 358, 81, 41]), { cls: [1, 1, 2, 2, 4, 5], d: 3 });
+  // A plain page's fills: nothing paired.
+  assert.deepEqual(SM.twins([237, 251, 39], [500, 900, 60]), { cls: [0, 1, 2], d: 0 });
+  // The screenshot box reads with it.
+  assert.ok(cut("    const input = view.querySelector('#tracefile');", '  // -----').includes('const r = ShotMark.readShot(px, W, H, cands);'));
 });
 
 test('on for every signed-in account with a number from the Worker, both sites; the trace box on the owner’s Page Health; nothing sent anywhere', () => {

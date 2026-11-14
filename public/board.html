@@ -9240,8 +9240,7 @@ source().then(async (src) => {
       for (let i = 0; i < len; i++) ac[i] /= z;
       return ac;
     }
-    function findPeriod(Y, flat, W, H, pmin, pmax) {
-      const G = 4;
+    function findPeriod(Y, flat, W, H, pmin, pmax, G = 4) {
       const ax = autocorr({ count: H, get: (y, out) => { const o = y * W; for (let x = 0; x < W - 1; x++) { const d = Y[o + x + 1] - Y[o + x]; if (flat[o + x] && flat[o + x + 1] && Math.abs(d) <= G) out[x] = d; } } }, W - 1);
       const ay = autocorr({ count: W, get: (x, out) => { for (let y = 0; y < H - 1; y++) { const a = y * W + x, d = Y[a + W] - Y[a]; if (flat[a] && flat[a + W] && Math.abs(d) <= G) out[y] = d; } } }, H - 1);
       const n = Math.min(ax.length, ay.length);
@@ -9272,7 +9271,8 @@ source().then(async (src) => {
     // Each flat pixel against the mean of its own fill colour around it (about 7 x 7 cells). Fills are the peaks
     // of the flat pixels' values; each pixel goes to its nearest peak within 3 levels, so two fills a few levels
     // apart are never mixed.
-    function residual(Y, flat, W, H, P) {
+    // strong: the test site's squares (see twins), a fill and its squares read as one.
+    function residual(Y, flat, W, H, P, { strong = false } = {}) {
       const hist = new Float64Array(256);
       let nflat = 0;
       for (let i = 0; i < W * H; i++) if (flat[i]) { hist[Math.max(0, Math.min(255, Math.round(Y[i])))]++; nflat++; }
@@ -9290,8 +9290,9 @@ source().then(async (src) => {
         levels.forEach((L, j) => { const d = Math.abs(v - L); if (d <= 3 && d < bd) { bd = d; best = j; } });
         lut[v] = best;
       }
+      const cls = strong ? twins(levels, levels.map((L) => sm[L])).cls : levels.map((_, j) => j);
       const idx = new Int8Array(W * H).fill(-1);
-      for (let i = 0; i < W * H; i++) if (flat[i]) idx[i] = lut[Math.max(0, Math.min(255, Math.round(Y[i])))];
+      for (let i = 0; i < W * H; i++) if (flat[i]) { const l = lut[Math.max(0, Math.min(255, Math.round(Y[i])))]; idx[i] = l >= 0 ? cls[l] : -1; }
       const R = Math.max(3, Math.round(3 * P / N)), need = 0.25 * (2 * R + 1) * (2 * R + 1);
       const r = new Float32Array(W * H), w = new Uint8Array(W * H);
       for (let j = 0; j < levels.length; j++) {
@@ -9311,6 +9312,26 @@ source().then(async (src) => {
       }
       for (let i = 0; i < W * H; i++) if (w[i] && Math.abs(r[i]) > 6) w[i] = 0;
       return { r, w };
+    }
+    // The test site's stronger squares (2 to 6 x: 2 to 10 levels) make each fill two: the fill and its shaded squares,
+    // d levels apart, with like counts (a square is marked or not, half and half), the same d for every fill. Which
+    // fills are twins, from the fills' levels and pixel counts: each fill's class (a fill and its twin share one) and
+    // d (0: none). A twin is d brighter (within 1) and within 3 x the count; d (2 to 12) pairs the most pixels.
+    // A twin that lands on another fill (a dark page's squares 1 level off its cards) goes with that fill: the page
+    // gives nothing there, and nothing false. His screens, 14 Nov: light 3 x, nothing paired (its squares 2 levels
+    // off, one fill already); dark 3 x, the page and the cards each with their squares 4 up. Without the like counts
+    // the light page took a small fill 6 below it for a twin and its read fell from 93 to 39 (dark, 96 to 76).
+    function twins(levels, counts) {
+      const cls = levels.map((_, j) => j);
+      const twin = (j, d) => levels.findIndex((x, k) => Math.abs(x - (levels[j] + d)) <= 1 && counts[k] < 3 * counts[j] && counts[j] < 3 * counts[k]);
+      let d = 0, most = 0;
+      for (let t = 2; t <= 12; t++) {
+        let mass = 0;
+        levels.forEach((_, j) => { const k = twin(j, t); if (k >= 0) mass += Math.min(counts[j], counts[k]); });
+        if (mass > most) { most = mass; d = t; }
+      }
+      if (d) [...levels.keys()].sort((a, b) => levels[a] - levels[b]).forEach((j) => { const k = twin(j, d); if (k >= 0) cls[k] = cls[j]; });
+      return { cls, d };
     }
     function energy(P, ys, xs, vs) {
       const S = new Float64Array(B * B), C = new Float64Array(B * B);
@@ -9341,6 +9362,15 @@ source().then(async (src) => {
       }
       return A;
     }
+    // A screenshot (Page Health): read as always; if no mark is found, read again for the test site's stronger squares
+    // (owner, 14 Nov: "the page does not find a mark, even on normal screen shots": at 3 x the squares are 3 levels
+    // off the page and were taken for a fill of their own, so the residual wiped them out).
+    function readShot(rgba, W, H, candidates = []) {
+      const r = decode(rgba, W, H, candidates);
+      if (r.found) return r;
+      const r2 = decode(rgba, W, H, candidates, 24, 420, { strong: true });
+      return r2.found ? { ...r2, strong: true } : r;
+    }
     // A photo's verdict from each account's count of its 20 bits (right or wrong) and its weighed score: the best by
     // count (then weighed); sure only with both clear (see decode's photo branch).
     function photoVerdict(counts, weighed, z, strength) {
@@ -9351,12 +9381,15 @@ source().then(async (src) => {
       return { best, nextCount, nextWeighed, sure };
     }
     // rgba: the picture's pixels (RGBA, row by row). candidates: [{ id, mark }]. Never sends anything anywhere.
-    function decode(rgba, W, H, candidates = [], pmin = 24, pmax = 420, { photo = false } = {}) {
+    function decode(rgba, W, H, candidates = [], pmin = 24, pmax = 420, { photo = false, strong = false } = {}) {
       const out = { size: [W, H], found: false };
       if (W < 2 * pmin || H < 2 * pmin) return { ...out, why: 'small' };
       const Y = new Float32Array(W * H);
       for (let i = 0, j = 0; i < W * H; i++, j += 4) Y[i] = 0.299 * rgba[j] + 0.587 * rgba[j + 1] + 0.114 * rgba[j + 2];
-      // flat: the 3 x 3 neighbourhood varies by 5 levels or less (backgrounds and card fills; not text or edges)
+      // flat: the 3 x 3 neighbourhood varies by 5 levels or less (backgrounds and card fills; not text or edges).
+      // strong: 12 or less, and the spacing search reads steps up to 11 (the test site's squares at 6 x on a dark
+      // page are a 10 level step; at 3 x, 5, which the plain search (steps up to 4) never saw).
+      const flatMax = strong ? 12 : 5;
       const hmax = new Float32Array(W * H), hmin = new Float32Array(W * H);
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const o = y * W, a = Y[o + Math.max(0, x - 1)], b = Y[o + x], c = Y[o + Math.min(W - 1, x + 1)];
@@ -9365,13 +9398,13 @@ source().then(async (src) => {
       const flat = new Uint8Array(W * H);
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const u = Math.max(0, y - 1) * W + x, m = y * W + x, d = Math.min(H - 1, y + 1) * W + x;
-        flat[m] = Math.max(hmax[u], hmax[m], hmax[d]) - Math.min(hmin[u], hmin[m], hmin[d]) <= 5 ? 1 : 0;
+        flat[m] = Math.max(hmax[u], hmax[m], hmax[d]) - Math.min(hmin[u], hmin[m], hmin[d]) <= flatMax ? 1 : 0;
       }
       // A photo's spacing is swept below (its band is narrow), so the residual only needs one near it.
-      const per = photo ? { P: (pmin + pmax) / 2, z: 0 } : findPeriod(Y, flat, W, H, pmin, pmax);
+      const per = photo ? { P: (pmin + pmax) / 2, z: 0 } : findPeriod(Y, flat, W, H, pmin, pmax, strong ? 11 : 4);
       if (!per) return { ...out, why: 'small' };
       out.periodZ = +per.z.toFixed(1);
-      const { r, w } = residual(Y, flat, W, H, per.P);
+      const { r, w } = residual(Y, flat, W, H, per.P, { strong });
       let n = 0;
       for (let i = 0; i < W * H; i++) n += w[i];
       const ys = new Float64Array(n), xs = new Float64Array(n), vs = new Float64Array(n);
@@ -9558,7 +9591,7 @@ source().then(async (src) => {
       if (!best.res.found) { const Y2 = blurred(s.Y, s.w, s.h, 2); for (const t of byBand.slice(0, 2)) tryOne(Y2, 2, t.res.widths); }
       return { ...best.res, flat: greyRGBA(s.Y), w: s.w, h: s.h };
     }
-    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, decode, photoVerdict, homography, straighten, readPhoto };
+    return { N, CELL, NBITS, SYNC_POS, SYNC_VAL, PAIRS, cells, tileRGBA, markOf, decode, readShot, twins, photoVerdict, homography, straighten, readPhoto };
   })();
   // The mark on the page (every signed-in account the Worker gives a number to, both sites) and Page Health's
   // "Trace a screenshot" (the owner's own page, both sites).
@@ -9754,12 +9787,12 @@ source().then(async (src) => {
       const f = input.files && input.files[0];
       if (!f) return;
       const say = (html) => { traceLast = html; const o = document.getElementById('traceout'); if (o) o.innerHTML = html; };
-      say('<p class="muted">Reading the picture… (a few seconds)</p>');
+      say('<p class="muted">Reading the picture… (several seconds)</p>');
       await new Promise((ok) => setTimeout(ok, 50));
       try {
         const t0 = performance.now();
         const [{ px, W, H }, cands] = await Promise.all([pixelsOf(f), traceCandidates()]);
-        const r = ShotMark.decode(px, W, H, cands);
+        const r = ShotMark.readShot(px, W, H, cands);
         say(traceWords(r, cands, ((performance.now() - t0) / 1000).toFixed(1)));
       } catch (e) { say(`<p class="warn">Couldn’t read that picture: ${esc(e && e.message ? e.message : String(e))}</p>`); }
       input.value = '';

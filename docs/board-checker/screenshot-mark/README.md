@@ -45,6 +45,15 @@ sure only with both clear), and on the test site the owner's screens carry the h
 strong. On his photos with the one-shade mark alone: sure of his account 19 times in 28 (taps up to 2% off), never
 wrong; in the page, three of his four photos named "the owner key". See HANDOFF.
 
+**14 Nov: screenshots of the squares.** The owner: "the page does not find a mark, even on normal screen shots"
+(the screenshot box, his test-site screens with the squares at 3 x). A dark page's squares at 3 x are a 5 level step,
+and the spacing search only reads steps up to 4; at 3 x on a light page a fill and its squares can be 3 levels apart and
+were taken for two fills. Screenshots are now read as before and, when that finds nothing, again for the squares
+(`ShotMark.readShot`: flat up to 12 levels, steps up to 11, each fill read together with its squares, `twins`). In a
+browser, the test site at 3 x, light and dark, squares at 1, 2, 3, 4 and 6 x: all 20 of 20 on the owner key's
+account; as pushed before, dark at 3 x read "matches no account". Members' screenshots are read the first way, as
+before. See HANDOFF.
+
 ## Blocking or noticing a screenshot: no
 
 A web page is not told when the phone takes a screenshot and cannot stop one (iPhone or Android, Safari
