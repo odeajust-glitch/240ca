@@ -55,7 +55,7 @@ test('15. the compact header on a phone, for every member; the TEST SITE badge s
   // each check ran . Can take this off both the main and branch test. Its on the desktop and tablet layout it seems").
   const body = html.slice(html.indexOf('<body'));
   assert.ok(!body.includes('class="where"') && !body.includes('what CATS showed when each check ran'));
-  assert.ok(html.includes('<div class="top">\n  <h1>Line-up Snapshots</h1>\n  <div class="modes"'));
+  assert.ok(html.includes('<div class="top">\n  <h1>Herding CATS</h1>\n  <div class="modes"'));
   // The badge is the one rule left under the test site's class (comments aside).
   const rules = style.replace(/\/\*[\s\S]*?\*\//g, '');
   assert.deepEqual(rules.match(/body\.preview-site[^{,]*(?=[{,])/g), ['body.preview-site .top h1::after ']);
@@ -63,8 +63,9 @@ test('15. the compact header on a phone, for every member; the TEST SITE badge s
   // switched by the page for what remains.
   assert.ok(html.includes('<body class="everyone">'));
   assert.ok(html.includes("PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);"));
-  // The page's name stays as it is (his "2 leave it"): only the second line is off on a phone.
-  assert.ok(html.includes('<title>Line-up Snapshots</title>') && html.includes('<h1>Line-up Snapshots</h1>'));
+  // The page's name: "Herding CATS" on both sites since 14 Nov (his "can we push the hearding cats name from
+  // the test page to the main"; it was "Line-up Snapshots", his "2 leave it" of 12 Nov until then).
+  assert.ok(html.includes('<title>Herding CATS</title>') && html.includes('<h1>Herding CATS</h1>'));
 });
 
 test('still the test site’s: 9, 16, the purple pieces and the Likely-call test', () => {

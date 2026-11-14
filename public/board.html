@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Line-up Snapshots</title>
+<title>Herding CATS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Board">
+<meta name="apple-mobile-web-app-title" content="Herding CATS">
 <link rel="apple-touch-icon" href="board-icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="board-icon-192.png">
 <script>
@@ -2303,7 +2303,7 @@
 </head>
 <body class="everyone">
 <div class="top">
-  <h1>Line-up Snapshots</h1>
+  <h1>Herding CATS</h1>
   <div class="modes" role="group" aria-label="View"><button id="modeCurrent" type="button" aria-pressed="true">Current</button><button id="modeTurns" type="button" aria-pressed="false">Turn History</button><button id="modeMine" type="button" aria-pressed="false" hidden>My stats</button><button id="modeOrders" type="button" aria-pressed="false">Order summary</button><button id="modeHeld" type="button" aria-pressed="false">Article 18.6(b)</button><button id="modeAna" type="button" aria-pressed="false">Analytics</button><button id="modeAsk" type="button" aria-pressed="false">Agreements</button><button id="modeRef" type="button" aria-pressed="false">Job Aids</button><button id="modePost" type="button" aria-pressed="false" hidden>Job postings</button><button id="modeSnap" type="button" aria-pressed="false">Snapshots</button><button id="modeHealth" type="button" aria-pressed="false" hidden>Page Health</button><button id="modeReview" type="button" aria-pressed="false" hidden>Search Review</button><button id="modeNotes" type="button" aria-pressed="false" hidden>Notifications</button><button id="modeMembers" type="button" aria-pressed="false" hidden>Members</button></div>
   <span class="sample" id="sample" hidden>Sample data · names masked</span>
   <span class="updated" id="updated" hidden></span>
@@ -5889,17 +5889,6 @@ function wireHeld186(box, rows, { names = null, noNames = false } = {}) {
   });
 }
 
-// The site's name (owner, 2026-11-13: "Can we change the name of the site to Hearding CATS", spelled
-// Herding): the test site first, as everything else; the page itself still says Line-up Snapshots, so
-// members and the main site are as they were. The Home Screen name (board.webmanifest) is one file for
-// both sites: left until he says.
-const SITE_NAME = { was: 'Line-up Snapshots', test: 'Herding CATS' };
-function paintSiteName() {
-  const name = PREVIEW ? SITE_NAME.test : SITE_NAME.was;
-  const h = document.querySelector('.top h1');
-  if (h) h.textContent = name;
-  document.title = name;
-}
 async function source() {
   try {
     const index = await getJSON('data/index.json');
@@ -6073,7 +6062,6 @@ source().then(async (src) => {
     const preview = PREVIEW_HOST && !!(h && OwnerKey.has());
     if (preview !== PREVIEW) {
       PREVIEW = preview; document.body.classList.toggle('preview-site', PREVIEW);
-      paintSiteName();
       // The boards were coloured from resets.json before the owner key was known: the test site's tracker instead.
       if (RESETS) resetsFile().then((r) => { if (r && r.turns) { RESETS = r; paintResets(); } }).catch(() => {});
       paintMine();

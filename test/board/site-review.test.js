@@ -141,10 +141,13 @@ test('7. Analytics: the section row wraps and Overview is a line a page, for eve
   assert.ok(html.includes("view.querySelectorAll('[data-overview-open]').forEach(button => { button.onclick = () => { ana.q = ''; ana.kind = 'auto'; ana.sec = button.dataset.overviewOpen; renderAnalytics(); }; });"), 'the lines open pages the way the cards do');
 });
 
-test('left as they are at his word: the site’s name (item 2) and the order of Settings (item 11)', () => {
-  assert.ok(html.includes('<title>Line-up Snapshots</title>') && html.includes('<h1>Line-up Snapshots</h1>'));
-  // 13 Nov he asked for it ("Can we change the name of the site to Hearding CATS"): the test site only so far.
-  assert.ok(html.includes("const SITE_NAME = { was: 'Line-up Snapshots', test: 'Herding CATS' };") && html.includes('const name = PREVIEW ? SITE_NAME.test : SITE_NAME.was;'));
+test('the site’s name, Herding CATS since 14 Nov at his word (item 2 was left until then), and the order of Settings (item 11)', () => {
+  // The site's name (owner, 2026-11-13: "Can we change the name of the site to Hearding CATS", spelled Herding;
+  // then "can we push the hearding cats name from the test page to the main"): both sites, and the Home Screen name.
+  assert.ok(html.includes('<title>Herding CATS</title>') && html.includes('<h1>Herding CATS</h1>') && !html.includes('Line-up Snapshots'));
+  assert.ok(html.includes('<meta name="apple-mobile-web-app-title" content="Herding CATS">'));
+  const manifest = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../public/board.webmanifest'), 'utf8'));
+  assert.deepStrictEqual([manifest.name, manifest.short_name], ['Herding CATS', 'Herding CATS']);
   const settings = cut('<div class="settings" id="settings"', '<div class="signnote');
   const order = ['<h2>Profile</h2>', '<h2 id="styhead">Page style</h2>'].map((x) => settings.indexOf(x));
   assert.ok(order[0] > 0 && order[1] > order[0], 'Profile, then Page style');
