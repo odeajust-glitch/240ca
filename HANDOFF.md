@@ -1,5 +1,24 @@
 # HANDOFF — read this before doing anything
 
+## Test site → main: what still needs his approval — LISTED FOR HIM 14 Nov 2026, about 05:10 Toronto (the clean-up chat). NOTHING CHANGED; waiting on his reply per item (P main site / K keep testing / X take off)
+
+**Owner:** "review things i need to approve to go from the test site to the main". From the code at `33a1cd0` (every
+`PREVIEW` test in `public/board.html`; Job Aids, Page Health's yardmaster box, Herding CATS and the header line are on both
+sites already) and the sections below. The laptop runs `bbfb68d` (pulled and restarted about 04:26).
+**Ready for his word:** 1 My stats for yard workers (the eight yard pieces) · 2 My stats "Open another name code's page"
+(still his key only on the main site) · 3 the reset tracker by CATS's yard O-T (`resets-test.json`; P needs the laptop to
+publish `resets.json` that way so the board, alerts and My stats agree: pull + restart) · 4 My week's "Sleep this week" ·
+5 Assignment errors: "Conductor on the wrong turn" cards and table, and the "turn charged" line (`crewWrong`,
+`chargedLines`; built overnight by another chat).
+**Not ready:** 6 Toronto South watch (his Toronto South Call Board codes and photos) · 7 the faint code on his own screens
+and the photo reader (his eye and camera test) · 8 the yardmaster pieces: Analytics' Yardmaster jobs and YM seniority list,
+`ym.html` (the yardmasters; the rest-at-the-call question from the first real case) · 9 Likely-call test and the purple
+pieces (24 Nov).
+**Recommended X:** 10 the newer-version bar (never shows) · 11 the code tidy (dead `|| PREVIEW` switches, the Test tab's
+leftovers).
+**Owner-key-only on both sites (members at his word, not test-site items):** the YM predictions in Jobs going spare (being
+checked: the first real case broke the rest rule) and the bump test (`MEMBERS_ON`, waiting on a real bump).
+
 ## Screenshot box: screenshots with the test site's squares read again — FIXED 14 Nov 2026 05:00 Toronto (`public/board.html` only; no Worker change). WAITING ON ONE LAPTOP PULL; then the owner's retry of the screenshot box
 
 **Owner, 14 Nov ~04:40:** "the page does not find a mark, even on normal screen shots" / "its on the first one, the photo
@@ -229,7 +248,7 @@ restart, so the spare's rest isn't known).
 photo). Predicted (with the photo's facts): YSTY01 → rank 330 (YPRS02 FO 0645 → B112), YSBY01 → rank 140 (the tie;
 otherwise rank 410, YBHS01 0800 going spare). **To check after 0700:** who the Call Board shows on YSTY01, YSBY01, YPRS02
 and YBHS01 (crew names in data/crew.json `working`, opened with /api/crewkey; turns in the day file's `yardJobs`); a
-check-in is booked in this session for 07:45 Toronto. A conflict = report it to him, rule unchanged until he says.
+check-in had been booked in this session for 07:45 Toronto: CANCELLED at 05:10 (the other chat's 05:20 and 12:45 check-ins cover it, with the predictions as they stood after the first real case below). A conflict = report it to him, rule unchanged until he says.
 
 **First real case, 14 Nov, read from the day file at 04:55 (another chat):** at 0421 the spare YA01 (rank 140) was on the YM
 spareboard, rest until 0500; option 5 had YSTY01 0630, YSBY01 0700, YSBY06 1430. At 0432 YA01 was off the YM spareboard; at
@@ -521,7 +540,7 @@ tried did better. So at 3% a photo of a laptop screen traces on the retro black 
 plain dark page here. Put to him: raise to 4% and test again, keep 3% (photos trace only sometimes; screenshots
 always, by the hidden mark), or try a phone's screen with a second phone first. Also asked: can he see light 3%?
 
-## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). The list below PUT TO HIM; NOTHING CHANGED. Waiting on his reply per item: P (push to the main site), K (keep on the test site), X (take off)
+## Test site clean-up — STARTED 13 Nov 2026, about 18:30 Toronto (its own chat, at his word). SUPERSEDED by the refreshed list at the top (14 Nov 05:10); items 1, 5 and 6 and the Page Health box went to both sites on 14 Nov at his word
 
 **Owner, 13 Nov:** "Test Site Clean up . This will be the chat to clean up the things on the test site". Read as:
 everything a member does not get because it is behind `PREVIEW` (board-test with the owner key) or the test
