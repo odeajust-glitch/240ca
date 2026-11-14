@@ -33,7 +33,7 @@
 // .env (Cloudflare, owner 2026-10-22; docs/board-checker/CLOUDFLARE.md), the
 // line-up snapshot website (lib/board/site.js) is rebuilt from history\ and
 // published after every check (BOARD_SITE_EVERY=N for a gap of N minutes).
-const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE, YM_SENIORITY_FILE, DISPLACED_FILE } = require('../lib/board/paths');
+const { DATA_DIR, ENV_FILES, HISTORY_DIR, NAMES_FILE, ROAD_DAYS_FILE, TOLD_FILE, PHONES_FILE, PUSH_KEYS_FILE, HEARTBEAT_FILE, browser, alertsLog, FILLINS_FILE, HOLDERS_FILE, PERSON_TURNS_FILE, DAYS_OFF_FILE, CODE_SPLITS_FILE, POSTINGS_FILE, POSTING_ALERTS_FILE, YM_SENIORITY_FILE, DISPLACED_FILE, TORONTO_SOUTH_FILE } = require('../lib/board/paths');
 const DaysOff = require('../lib/board/daysoff');
 const Holders = require('../lib/board/holders');
 const FillIns = require('../lib/board/fillins');
@@ -63,6 +63,7 @@ const Displaced = require('../lib/board/displaced');
 const OwnerNotify = require('../lib/board/owner-notify');
 const Trainees = require('../lib/board/trainees');
 const S = require('../lib/board/screens');
+const South = require('../lib/board/toronto-south');
 const Seniority = require('../lib/board/seniority');
 const { loadSummary } = require('../lib/board/summary');
 const { runBoardCheck } = require('../lib/board/engine');
@@ -531,8 +532,12 @@ async function runRoute(page, opts = {}) {
   let cb = await chooseFromMenus(page, 6);
   if (!is.callBoardList(cb || { text: '' })) {
     expect(cb, is.callBoardPrompt, 'Call Board prompt');
+    // A look at the Toronto South Call Board that couldn't put Sarnia's codes
+    // back (watchTorontoSouth): type them, as they normally come prefilled.
+    if (restoreSarnia) await fill(page, { 0: '45', 1: 'SA' });
     expect(await press(page, 'Enter'), is.callBoardList, 'Call Board');
   }
+  if (restoreSarnia) await makeSarniaCallBoard(page);
   for (let pageNo = 0; pageNo < 45; pageNo++) {
     const grid = await capture();
     const parsed = S.parseCallBoardPage(parseGrid(grid));
@@ -680,6 +685,18 @@ async function runRoute(page, opts = {}) {
   } catch (err) {
     if (err instanceof NeedSignIn) throw err;
     console.log(`  (skipped Garnet line-up 41: ${err.message})`);
+  }
+
+  // The Toronto South watch (owner, 2026-11-14; lib/board/toronto-south.js):
+  // our trains that fell off the Mac yard line-up 8 h or more before their
+  // call, looked for on the Toronto South Call Board 4 h before the call, at
+  // the call and 2 h after, never on every check. Trouble here only skips it.
+  let torontoSouth = null;
+  try {
+    torontoSouth = await watchTorontoSouth(page, screens);
+  } catch (err) {
+    if (err instanceof NeedSignIn) throw err;
+    console.log(`  (Toronto South watch skipped: ${err.message})`);
   }
 
   // Assignment history (3 → 7; owner, 2026-11-04): each train's on duty and
@@ -1085,7 +1102,121 @@ async function runRoute(page, opts = {}) {
     const codeSplits = People.loadSplits(CODE_SPLITS_FILE);
     if (People.learnSplit(codeSplits, codeSeen, Date.now() / 60000)) fs.writeFileSync(CODE_SPLITS_FILE, JSON.stringify(codeSplits));
   } catch (err) { console.log(`  (name code splits not saved: ${err.message})`); }
-  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, yardDuty: 1, ...(tempAway.size ? { tempAway: [...tempAway] } : {}), ...(daysOffKnown.length ? { daysOffKnown } : {}) };
+  return { probedAt: new Date().toISOString(), screens, yardCrew: yardCrew.filter((y) => y.turn), backfill, bunkFill, people: [...seen.values()], peopleV: People.PEOPLE_V, yardDuty: 1, ...(tempAway.size ? { tempAway: [...tempAway] } : {}), ...(daysOffKnown.length ? { daysOffKnown } : {}),
+    ...(torontoSouth && (torontoSouth.list.length || torontoSouth.read) ? { torontoSouth } : {}) };
+}
+
+// --- The Toronto South watch (owner, 2026-11-14) ------------------------------
+// The list and its looks are lib/board/toronto-south.js; this is the CATS part.
+// The Toronto South Call Board is our Call Board (3 → 6) with Toronto South's
+// two codes typed on its first screen in place of 45 / SA (config
+// torontoSouthCallBoard or BOARD_TS_CALLBOARD; not known yet, so no look is
+// made until they are). Its pages are read masked and only in memory, never
+// saved with the check's screens (the loader would take them for Sarnia's).
+let restoreSarnia = false; // a look couldn't put Sarnia's codes back: the next Call Board types them
+let tsCodesSaid = false; // "codes not set" is said once per run, not every check
+
+// this check's screens so far → { list, read } for the check's summary.
+async function watchTorontoSouth(page, screens) {
+  const L = loadSummary({ screens, probedAt: new Date().toISOString() });
+  const macRead = screens.some((x) => x.label === 'mac') && L.macLineup.length > 0;
+  const state = South.update(South.load(TORONTO_SOUTH_FILE), { now: L.now, lineup: macRead ? L.macLineup : null, callBoard: L.callBoard });
+  const due = South.due(state, L.now);
+  let read = null;
+  if (due.length) {
+    const codes = South.boardCodes();
+    const ids = due.map((w) => w.id);
+    if (!codes) {
+      if (!tsCodesSaid) console.log(`  Toronto South watch: ${ids.join(', ')} due a look, but the Toronto South Call Board's codes aren't set yet.`);
+      tsCodesSaid = true;
+    } else {
+      let found = null;
+      try {
+        const got = await readTorontoSouth(page, codes, ids);
+        found = got.found;
+        read = { at: L.now, pages: got.pages, trains: got.trains, place: got.place };
+        console.log(`  Toronto South Call Board (${codes.district} ${codes.sub}): ${got.trains} train${got.trains === 1 ? '' : 's'} on ${got.pages} page${got.pages === 1 ? '' : 's'}; ${ids.map((id) => `${id} ${found.has(id) ? 'IS ON IT' : 'not on it'}`).join(', ')}.`);
+      } catch (err) {
+        if (err instanceof NeedSignIn) throw err;
+        read = { at: L.now, error: err.message.slice(0, 200) };
+        console.log(`  (Toronto South Call Board not read: ${err.message})`);
+      } finally {
+        await putSarniaBack(page);
+      }
+      South.record(state, L.now, found);
+    }
+  }
+  South.save(TORONTO_SOUTH_FILE, state);
+  return { list: South.list(state), ...(read ? { read } : {}) };
+}
+
+// The Toronto South Call Board, for the watched trains: train + day, where
+// they're on duty, the crew lines' crafts and turns (no names).
+async function readTorontoSouth(page, codes, ids) {
+  const want = new Set(ids);
+  const found = new Map();
+  let s = await chooseFromMenus(page, 6);
+  if (is.callBoardList(s || { text: '' })) throw new OffRoute('CATS went straight to a Call Board list, with no first screen to type the codes on');
+  expect(s, is.callBoardPrompt, 'Call Board prompt');
+  await fill(page, { 0: codes.district, 1: codes.sub });
+  s = expect(await press(page, 'Enter'), is.callBoardList, 'Toronto South Call Board');
+  const carry = {};
+  let pages = 0;
+  let trains = 0;
+  let place = '';
+  for (let pageNo = 0; pageNo < 15; pageNo++) {
+    const rows = parseGrid((await describeFrame(catsFrame(page))).screenGrid || []);
+    if (pageNo === 0) {
+      place = S.callBoardPlace(rows);
+      if (place === 'SARNIA') throw new OffRoute(`CATS showed Sarnia's Call Board for ${codes.district} ${codes.sub}`);
+    }
+    const p = S.parseCallBoardTrains(rows, carry);
+    pages++;
+    trains += p.trains.length;
+    for (const t of p.trains) {
+      const id = `${t.symbol} ${t.originDay}`;
+      if (want.has(id) && !found.has(id)) found.set(id, t);
+    }
+    if (p.reachedYard || p.crewsInTown || found.size === want.size) break;
+    const m = /PAGE (\d+) OF (\d+)/.exec(s.text);
+    if (!m || +m[1] >= +m[2]) break;
+    s = expect(await press(page, 'F8'), is.callBoardList, 'next Toronto South Call Board page');
+  }
+  return { found, pages, trains, place };
+}
+
+// After a look at another terminal's Call Board: Sarnia's codes back on the
+// Call Board's first screen (CATS may keep the last ones typed, as it does the
+// line-up's), so the next check reads ours. Never throws: if it can't, the
+// next check's Call Board types them (restoreSarnia).
+async function putSarniaBack(page) {
+  try {
+    const s = await chooseFromMenus(page, 6);
+    if (!is.callBoardList(s || { text: '' })) {
+      expect(s, is.callBoardPrompt, 'Call Board prompt');
+      await fill(page, { 0: '45', 1: 'SA' });
+      expect(await press(page, 'Enter'), is.callBoardList, 'Call Board');
+    }
+    await makeSarniaCallBoard(page);
+  } catch (err) {
+    restoreSarnia = true;
+    console.log(`  (Sarnia's Call Board codes not put back: ${err instanceof NeedSignIn ? 'signed out' : err.message}; the next check types them)`);
+  }
+}
+
+// On a Call Board list: make it Sarnia's (F3 back to the first screen and
+// 45 / SA, as you would), or stop the check rather than read another
+// terminal's board as ours. A page with no place line is left as it is.
+async function makeSarniaCallBoard(page) {
+  const place = async () => S.callBoardPlace(parseGrid((await describeFrame(catsFrame(page))).screenGrid || []));
+  const here = await place();
+  if (here === 'SARNIA') { restoreSarnia = false; return; }
+  if (!here) return; // can't tell: Sarnia's codes were typed, and stay typed while restoreSarnia is set
+  expect(await press(page, 'F3'), is.callBoardPrompt, 'Call Board prompt (to put Sarnia back)');
+  await fill(page, { 0: '45', 1: 'SA' });
+  expect(await press(page, 'Enter'), is.callBoardList, 'Call Board');
+  if ((await place()) !== 'SARNIA') { restoreSarnia = true; throw new OffRoute(`The Call Board shows ${here}, not Sarnia, after a look at Toronto South's`); }
+  restoreSarnia = false;
 }
 
 // The full view, plus what changed since the previous check (kept in
@@ -2288,4 +2419,6 @@ if (require.main === module) {
 }
 
 // For trying the Microsoft steps against a fake sign-in page.
-module.exports = { microsoftStep, microsoftDone, clearSignInCookies, waitForMainMenu };
+module.exports = { microsoftStep, microsoftDone, clearSignInCookies, waitForMainMenu,
+  // The Toronto South look, for trying it against a stand-in CATS page.
+  watchTorontoSouth, readTorontoSouth, putSarniaBack, makeSarniaCallBoard, southFlags: () => ({ restoreSarnia }) };
