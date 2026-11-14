@@ -435,20 +435,20 @@ their name code to get these; phones following a person by code (he said only th
 turn is abolished or a board is cut with nobody new on it (that looks like "not seen" today); Person
 search's "Someone else has been on …" for 501/502 by craft (it skips 501/502 today).
 
-## The site's name: "Herding CATS" — TEST SITE ONLY, 13 Nov 2026 (`public/board.html`, page only). WAITING ON ONE LAPTOP PULL; then his look, and his word for the main site and the Home Screen name
+## The site's name: "Herding CATS" — ON BOTH SITES in the code since 14 Nov 2026 at his word ("can we push the hearding cats name from the test page to the main"), heading, tab title and Home Screen name. WAITING ON ONE LAPTOP PULL (page and manifest; no Worker change)
 
 **Owner, 13 Nov:** asked for a "good/funny name" (the site was "built on spite": the company's system should
-do this itself), was given a list, then: **"Can we change the name of the site to Hearding CATS"**, spelled
-"Herding" (told him; one word to change if he meant it). This replaces his 12 Nov "2 leave it" on the name.
-**Built:** `SITE_NAME` and `paintSiteName()` (just above `source()`), called where `PREVIEW` is switched: the
-heading (shown in capitals, "HERDING CATS" + the TEST SITE tag) and the browser tab's title on board-test
-with the owner key. The page's own `<title>` / `<h1>` still say Line-up Snapshots, so members on both sites
-and the main site are unchanged (`site-review.test.js` pins both). The second line ("Sarnia road · what CATS
-showed when each check ran") is kept. **(Taken off everywhere 14 Nov at his word: the section at the top.)** **Not changed:** the Home Screen name (`board.webmanifest` "Sarnia
-Board" / "Board", and `apple-mobile-web-app-title` "Board"): one file for both sites, so only at his word for
-both. **To promote:** put Herding CATS in `<title>` and `<h1>`, drop `SITE_NAME`/`paintSiteName`, the manifest's
-`name` / `short_name` and the Apple title, and change the two tests, quoting him. Checked: suite 573 of 573;
-in a browser, board-test as him "HERDING CATS", board-test as a member and board as him "LINE-UP SNAPSHOTS".
+do this itself), then "Can we change the name of the site to Hearding CATS" (spelled Herding, told him; he
+kept it), first on the test site; **14 Nov: "can we push the hearding cats name from the test page to the
+main".** This replaces his 12 Nov "2 leave it" on the name. **Done:** `<title>` and `<h1>` in
+`public/board.html` say Herding CATS (shown in capitals); `apple-mobile-web-app-title` (iPhone Home Screen)
+and `board.webmanifest` `name` / `short_name` (Android) "Herding CATS" (were "Board" / "Sarnia Board");
+the test-site switch (`SITE_NAME`, `paintSiteName`) is gone. The second line ("Sarnia road · what CATS
+showed…") is unchanged. **Home Screen icons already added keep their old name** until removed and added
+again (told him). Other text that says "the Sarnia board site" (shared agreement answers, the error report,
+the calendar file's PRODID) left as it is. Checked: suite 619 of 619 (`site-review.test.js` pins the name, the
+Apple title and the manifest; `test-site-promoted.test.js`); in a browser, board and board-test as a member and
+board-test as him: "HERDING CATS" and the tab title.
 
 ## Yardmaster spare jobs: WHO GETS THEM — STARTED 13 Nov 2026 (evening). The seniority list read BUILT (laptop only, WAITING ON ONE LAPTOP PULL + RESTART). A teachable test page, "Yardmaster Call Order", PUBLISHED (private artifact; version 6: his rules of 13 Nov incl. the yard that day, Yes / No beside the call order, the spareboard question; he is about to share it with a yardmaster). **The same page BUILT INTO THE TEST SITE (`public/ym.html`), WAITING ON ONE LAPTOP PULL + RESTART.** **On it, "If a yardmaster job went spare now" (the order and why, from the newest check) BUILT AND SEEN LIVE (check 1754).** **A "YM seniority list" tab in the test site's Analytics (the list as last read) BUILT, WAITING ON ONE LAPTOP PULL (no restart needed).** **Job Aids (test site): the yardmaster jobs' schedule, "Next Yard Job" and "If it was spare, who would work it" (with and without someone on the YM spareboard) BUILT, WAITING ON THE SAME PULL.** **His questions are on hold until the yardmaster has looked** (his word)
 
