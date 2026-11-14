@@ -380,6 +380,7 @@
     stale: (r) => `${r.train}|${String(r.from).slice(0, 7)}`,
     catsMissing: (r) => `${r.train}|${r.craft}|${String(r.first).slice(0, 7)}`,
     runLog: (r) => `${r.train}|${r.craft}|${String(r.seen).slice(0, 7)}`,
+    crewWrong: (r) => T.trainKey(r.train, r.first),
   };
   // older + newer as one list, each thing once.
   function joinOld(kind, older = [], newer = []) {
@@ -398,6 +399,16 @@
         o.wrongChecks = o.stretches.reduce((t, x) => t + x.checks, 0);
         if (more.length) Object.assign(o, { expected: n.expected, actual: n.actual, turn: n.turn, lastWrong: n.lastWrong });
         if (n.onDuty && !o.onDuty) Object.assign(o, { onDuty: n.onDuty, crew: n.crew, station: n.station });
+      }
+      return out;
+    }
+    if (kind === 'crewWrong') {
+      // The copy that followed the train longest wins (it saw the fix, if there was one).
+      const out = older.map((x) => ({ ...x }));
+      const by = new Map(out.map((x, i) => [IDS.crewWrong(x), i]));
+      for (const n of newer) {
+        const i = by.get(IDS.crewWrong(n));
+        if (i == null) { by.set(IDS.crewWrong(n), out.length); out.push(n); } else if ((n.seen || '') > (out[i].seen || '')) out[i] = n;
       }
       return out;
     }

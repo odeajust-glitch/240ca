@@ -1,5 +1,28 @@
 # HANDOFF — read this before doing anything
 
+## Analytics log: a conductor on another pool's turn on the Call Board, and when CATS put it right — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`, `lib/board/archive.js`; `public/board-analytics.js`; page `public/board.html`, the cards on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt from the day files each publish: the 30 days fill in at once; no FORMAT bump)
+
+**Owner, 14 Nov:** "keep track to see if they fix this. Also we need to keep a log of this in analytics. these
+exact errors and when they fixed them" (after "are there any other example of this happening in the data").
+**Found over 30 days (16 Oct – 14 Nov 01:58):** 7 trains with the engine's pairing flag; 6 put right on the Call
+Board: X30241 17 (SB05 → SR12, 6 min), X27691 21 (SA08 → SB02, 18 min), E27861 28 (SB05 → SR06, 15 min),
+E27861 30 (SA08 → SR09 B123, 8 min; first shown SR01 B114 + SD11), M39671 04 (SA08 → SB02 B126, 33 min),
+M39671 12 (SB01 B139 → SR02, 8 min); **E27861 13 (SB01, B139) not put right** at 01:58. Repeat turns: SB05 ×2,
+SB01 ×2, SA08 ×3. Only E27861 13 is "same spare, wrong turn charged" (the runaround record below).
+**Built.** `insights.js` `crewCheck`: the pairing flag text (`PAIRING`, engine.js rule `pairing`) opens one
+record a train (`trainKey`): station, first, checks, lastWrong, co / en / expectedEn, onDuty; for 36 h from first,
+every change of its Call Board crew (`changes: [{ at, crew, by: "B139 on SB01", wrong }]`, a change is kept only
+when crew, fill-in or wrong differs). `finish` → `crewWrong`: put right = the first crew after the last wrong
+one that shows a conductor (an engineer alone isn't a fix: X27691 21) → fixedAt, fixedCrew, fixedBy, minutes.
+Archived a year (`archive.js` LISTS, EMPTY, startOf, the insights copy); `joinOld('crewWrong')` keeps the copy
+seen latest. Page (`PREVIEW`): Assignment errors gets "Conductor on the wrong turn" cards (status: Stopped
+showing when put right, Showing now, else Needs a look): what the Call Board had, wrong for (first – last, checks),
+every crew change with right / wrong, and "Put right <time>, <n> min after …: <crew> (<spare>)". The page falls
+back to the site's own list if a phone has an older board-analytics.js. Suite 642 of 642 (insights.test.js: the
+M39671 12 and E27861 13 checks as they were, wrong again after a fix, the engineer-alone stretch; joinOld). In a
+browser with the 30 days' records put into the real file: the card on board-test as him; nothing on board as a
+member. **Watching E27861 13** for him: a check-in is booked in this session (send_later) to look again.
+
 ## Runarounds: the board's turn against the turn charged ("same spare, wrong turn charged") — BUILT 14 Nov 2026 (laptop `lib/board/insights.js`; page `public/board.html`, the line on the test site only). WAITING ON ONE LAPTOP PULL + RESTART (analytics.json is rebuilt each publish from the day files: no FORMAT bump)
 
 **Owner, 14 Nov**, on the To check lines for **E27861 13** ("went to B (SB01) but the sequence says SR"; "conductor

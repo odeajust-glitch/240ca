@@ -4696,7 +4696,7 @@ const AE2 = { // plain status → [chip class, the statuses of anaAssignments it
 };
 const ae2Of = (status) => Object.keys(AE2).find((k) => AE2[k][1].includes(status)) || "Can't tell";
 const ae2Chip = (k) => `<span class="ae2-st ${AE2[k][0]}">${esc(k)}</span>`;
-function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], latestCheck = '' }) {
+function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], crewWrong = [], latestCheck = '' }) {
   const craft = (c) => (c === 'EN' ? 'Engineer' : 'Conductor');
   const long = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m` : `${m} min`);
   const line = (label, html) => `<div><dt>${label}</dt><dd>${html}</dd></div>`;
@@ -4743,7 +4743,19 @@ function anaAssignments2({ runarounds = [], catsErrors = [], catsMissing = [], l
     if ((r[stamp] || '') > g.latest) g.latest = r[stamp] || '';
     if (r.onDuty) g.onDuty = r.onDuty;
   });
-  add(runarounds, pool, 'taken'); add(catsErrors, wrong, 'first'); add(catsMissing, missing, 'first');
+  // A conductor on another pool's turn on the Call Board, and when CATS put it right (owner, 2026-11-14: "these
+  // exact errors and when they fixed them"; test site).
+  const wrongTurn = (r) => {
+    const st = r.fixedAt ? 'Stopped showing' : latestCheck && r.lastWrong === latestCheck ? 'Showing now' : 'Needs a look';
+    const steps = (r.changes || []).map((c) => `${stampBtn(c.at)} ${esc(c.crew || 'no crew shown')}${c.by ? ` <span class="muted">(${esc(c.by)})</span>` : ''} ${c.wrong ? '<span class="bad">wrong</span>' : '<span class="ok">right</span>'}`).join('<br>');
+    const end = r.fixedAt ? `Put right ${esc(dt(r.fixedAt))}, ${long(r.minutes)} after the board first saw it: ${esc(r.fixedCrew)}${r.fixedBy ? ` (${esc(r.fixedBy)})` : ''}.`
+      : st === 'Showing now' ? 'Still wrong at the latest check.' : `Not put right while the train was on the Call Board (last seen ${esc(dt(r.seen || r.lastWrong))}).`;
+    return { st, kind: 'Conductor on the wrong turn', html: card('Conductor on the wrong turn', '', st, [
+      line('Call Board had', `conductor <b>${esc(r.co)}</b> with engineer <b>${esc(r.en)}</b> <span class="muted">(a ${esc({ SA: 'A pool', SB: 'B pool', SR: 'Chain Gang' }[r.co.slice(0, 2)] || r.co.slice(0, 2))} conductor goes with an ${esc(r.expectedEn)} engineer)</span>`),
+      line('Wrong for', `${stampBtn(r.first)}${r.lastWrong && r.lastWrong !== r.first ? ` – ${stampBtn(r.lastWrong)}` : ''} <span class="muted nw">(${plural(r.checks, 'check')})</span>`),
+      line('Call Board crew', steps)], end) };
+  };
+  add(runarounds, pool, 'taken'); add(catsErrors, wrong, 'first'); add(catsMissing, missing, 'first'); add(crewWrong, wrongTurn, 'first');
   const items = [...groups.values()].sort((a, b) => b.latest.localeCompare(a.latest));
   const order = Object.keys(AE2);
   const count = (k) => items.filter((g) => g.finds.some((f) => f.st === k)).length;
@@ -8368,7 +8380,7 @@ source().then(async (src) => {
   // Opens on the last 90 days, so only those archive months load (F7).
   const ana = { q: '', kind: 'auto', range: '90', from: '', to: '', sec: 'overview', pool: 'SR' };
   const RANGES = [['7', 'Last 7 days'], ['14', 'Last 14 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['all', 'Everything kept'], ['custom', 'Pick dates…']];
-  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [] };
+  const NO_ARCHIVE = { trains: [], work: {}, spares: {}, rests: {}, people: {}, runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], crewWrong: [] };
   function callRecordsInRange(archive, live, range) {
     return BoardAnalytics.joinOld('sleep', archive?.sleep || [], live?.sleep || []).filter(record => {
       const day = (record.onDuty || '').slice(0, 10);
@@ -8475,7 +8487,7 @@ source().then(async (src) => {
     const parts = await Promise.all(want.map((m) => archMonths.get(m) || archMonths.set(m, getJSON(`data/archive-${m}.json`).catch(() => null)).get(m)));
     const out = { ...NO_ARCHIVE, work: {}, spares: {}, rests: {}, people: {}, since: idx.since };
     for (const p of parts.filter(Boolean)) {
-      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'catsMissing', 'stale', 'runLog']) out[k] = out[k].concat(p[k] || []);
+      for (const k of ['trains', 'runarounds', 'spareJobs', 'sleep', 'catsErrors', 'catsMissing', 'stale', 'runLog', 'crewWrong']) out[k] = out[k].concat(p[k] || []);
       for (const k of ['work', 'spares', 'rests', 'people']) for (const [t, l] of Object.entries(p[k] || {})) out[k][t] = (out[k][t] || []).concat(l);
     }
     return out;
@@ -8833,7 +8845,7 @@ source().then(async (src) => {
     } catch (e) { view.innerHTML = '<p class="empty">Analytics aren\'t available right now.</p>'; return; }
     if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
     arch = { ...NO_ARCHIVE, ...(arch || {}) };
-    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], ...(found || {}) };
+    found = { runarounds: [], spareJobs: [], sleep: [], catsErrors: [], catsMissing: [], stale: [], runLog: [], crewWrong: [], ...(found || {}) };
     // What the site has now, plus the archive from before its first day;
     // anything in both once (BoardAnalytics.joinOld, the archive's copy).
     const { joinOld } = BoardAnalytics;
@@ -8860,6 +8872,9 @@ source().then(async (src) => {
     const catsErrors = joinOld('catsErrors', arch.catsErrors || [], found.catsErrors).filter((r) => inDates(r.first));
     const stale = joinOld('stale', arch.stale || [], found.stale).filter((r) => inDates(r.from));
     const catsMissing = joinOld('catsMissing', arch.catsMissing || [], found.catsMissing).filter((r) => inDates(r.first));
+    // A conductor on another pool's turn and when it was put right (owner, 2026-11-14): the test site's for now.
+    // (An older board-analytics.js without this kind, from a phone's cache: the site's own list alone.)
+    const crewWrong = PREVIEW ? (() => { try { return joinOld('crewWrong', arch.crewWrong || [], found.crewWrong || []); } catch (e) { return found.crewWrong || []; } })().filter((r) => inDates(r.first)) : [];
     const runLog = joinOld('runLog', arch.runLog || [], found.runLog).filter((r) => inDates(r.seen));
     const unique = (rows) => { const seen = new Set(); return rows.filter((o) => { const k = `${String(o.train).replace(/ \(\S+\)$/, '')}|${o.at}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
     // The trains a turn worked: Turn History's work history and the archive's.
@@ -8915,7 +8930,7 @@ source().then(async (src) => {
       // The YM seniority list tab (test site): its file, read when the tab is open.
       const ymList = PREVIEW && ana.sec === 'ymlist' ? await loadYmList() : null;
       if (mode !== (ANA2 ? ana2.mode : 'analytics')) return;
-      body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, yardmasterJobs, sleep, catsErrors, catsMissing, stale, runLog, weeks, ymList });
+      body = analyticsOverview({ runs, range, reviewPools: true, latestCheck: src.index?.latest, preview: true, sec: ana.sec, pool: ana.pool, turnRows, runarounds, spareJobs, yardmasterJobs, sleep, catsErrors, catsMissing, crewWrong, stale, runLog, weeks, ymList });
     } else if (kind === 'train') {
       const runs = inRange(trainRuns(all, q), range);
       const ids = [...new Set(runs.map((r) => r.id.split(' ')[0]))];

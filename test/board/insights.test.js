@@ -570,3 +570,56 @@ test('insights: a runaround keeps the board crew and its spare, and the turn the
   ])).runarounds[0];
   assert.deepStrictEqual(changed.charged, [{ craft: 'CO', board: 'SR05', boardSpare: 'B139', went: 'SB01', by: 'B139', sameSpare: true }]);
 });
+
+// A conductor on another pool's turn on the Call Board, and when it was put right (owner, 2026-11-14: "keep
+// track to see if they fix this. Also we need to keep a log of this in analytics. these exact errors and when
+// they fixed them"). M39671 12 (put right in 8 min) and E27861 13 (still wrong), as the checks showed them.
+test('insights: a conductor on the wrong turn, every crew change, and when it was put right', () => {
+  const snap = (taken, extra) => ({ taken, sequence: [], vacancies: [], onDuty: [], flags: [], ...extra });
+  const m39 = (crew, backfill) => ({ train: 'M39671 12', onDuty: '14th 0155', station: 'SARNIA', crew, backfill });
+  const e27 = (crew, backfill) => ({ train: 'E27861 13', onDuty: '14th 0330', station: 'SARNIA', crew, backfill });
+  const flagM = 'M39671 12 (on duty SARNIA 14th 0155): conductor SB01 paired with engineer SD04; expected an S3 turn.';
+  const flagE = 'E27861 13 (on duty SARNIA 14th 0330): conductor SB01 paired with engineer SD01; expected an S3 turn.';
+  const f = Insights.finish(Insights.collect([
+    snap('2026-11-13 2358', { flags: [flagM], onDuty: [m39('EN SD04 · CO SB01', [{ craft: 'EN', job: 'SD04', turn: 'EN05' }, { craft: 'CO', job: 'SB01', turn: 'B139' }])] }),
+    snap('2026-11-14 0006', { onDuty: [m39('EN SD04 · CO SR02', [{ craft: 'EN', job: 'SD04', turn: 'EN05' }])] }),
+    snap('2026-11-14 0015', { onDuty: [m39('EN SD04 · CO SR02', [{ craft: 'EN', job: 'SD04', turn: 'EN05' }])] }), // no change: not kept again
+    snap('2026-11-14 0134', { flags: [flagE], onDuty: [m39('EN SD04 · CO SR02', [{ craft: 'EN', job: 'SD04', turn: 'EN05' }]), e27('EN SD01 · CO SB01', [{ craft: 'CO', job: 'SB01', turn: 'B139' }])] }),
+    snap('2026-11-14 0158', { flags: [flagE], onDuty: [e27('EN SD01 · CO SB01', [{ craft: 'CO', job: 'SB01', turn: 'B139' }])] }),
+  ]));
+  const [m, e] = f.crewWrong;
+  assert.deepStrictEqual([m.train, m.co, m.en, m.expectedEn, m.first, m.checks, m.onDuty, m.fixedAt, m.fixedCrew, m.fixedBy, m.minutes],
+    ['M39671 12', 'SB01', 'SD04', 'S3', '2026-11-13 2358', 1, '2026-11-14 0155', '2026-11-14 0006', 'EN SD04 · CO SR02', 'EN05 on SD04', 8]);
+  assert.deepStrictEqual(m.changes.map((c) => [c.at, c.crew, c.by, c.wrong]), [
+    ['2026-11-13 2358', 'EN SD04 · CO SB01', 'EN05 on SD04, B139 on SB01', true],
+    ['2026-11-14 0006', 'EN SD04 · CO SR02', 'EN05 on SD04', false],
+  ]);
+  assert.deepStrictEqual([e.train, e.checks, e.lastWrong, e.fixedAt, e.changes.length], ['E27861 13', 2, '2026-11-14 0158', undefined, 1]);
+  // Wrong again after being put right: not fixed.
+  const again = Insights.finish(Insights.collect([
+    snap('2026-11-14 0134', { flags: [flagE], onDuty: [e27('EN SD01 · CO SB01', [])] }),
+    snap('2026-11-14 0142', { onDuty: [e27('EN SD01 · CO SR05', [])] }),
+    snap('2026-11-14 0150', { flags: [flagE], onDuty: [e27('EN SD01 · CO SB01', [])] }),
+  ])).crewWrong[0];
+  assert.deepStrictEqual([again.fixedAt, again.changes.map((c) => c.wrong)], [undefined, [true, false, true]]);
+  // The engineer alone for a while is not a fix; the conductor shown again is (X27691 21, 21 Oct).
+  const x = (crew) => ({ train: 'X27691 21', onDuty: '21st 1805', crew, backfill: [] });
+  const flagX = 'X27691 21 (on duty SARNIA 21st 1805): conductor SA08 paired with engineer S302; expected an S1 turn.';
+  const x27 = Insights.finish(Insights.collect([
+    snap('2026-10-21 1805', { flags: [flagX], onDuty: [x('EN S302 · CO SA08')] }),
+    snap('2026-10-21 1817', { onDuty: [x('EN S302')] }),
+    snap('2026-10-21 1823', { onDuty: [x('EN S302 · CO SB02')] }),
+    snap('2026-10-21 2108', { onDuty: [x('EN S302')] }),
+    snap('2026-10-21 2126', { onDuty: [x('EN S302 · CO SB02')] }),
+  ])).crewWrong[0];
+  assert.deepStrictEqual([x27.fixedAt, x27.fixedCrew, x27.minutes], ['2026-10-21 1823', 'EN S302 · CO SB02', 18]);
+});
+
+test('archive: the wrong-turn log is kept and joined like the rest', () => {
+  const { joinOld } = require('../../public/board-analytics');
+  const old = { train: 'E27861 13', first: '2026-11-14 0134', seen: '2026-11-14 0158', changes: [] };
+  const newer = { ...old, seen: '2026-11-14 0905', fixedAt: '2026-11-14 0905' };
+  assert.deepStrictEqual(joinOld('crewWrong', [old], [newer]), [newer]);
+  assert.deepStrictEqual(joinOld('crewWrong', [newer], [old]), [newer]);
+  assert.ok(require('fs').readFileSync(require('path').join(__dirname, '../../lib/board/archive.js'), 'utf8').includes("'runLog', 'crewWrong']"));
+});
